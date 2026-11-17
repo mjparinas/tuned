@@ -1,0 +1,16 @@
+.gradle/
+build/
+local.properties
+.idea/
+*.iml
+.DS_Store
+captures/
+.kotlin/
+node_modules/
+*.jks
+*.keystore
+# Real playlists and guides hold login details in their URLs; never commit one.
+*.m3u
+*.m3u8
+*.xmltv
+.env
