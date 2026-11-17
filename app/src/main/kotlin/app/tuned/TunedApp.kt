@@ -15,6 +15,7 @@ import app.tuned.data.CredentialStore
 import app.tuned.data.Credentials
 import app.tuned.data.MetadataRepository
 import app.tuned.data.Offline
+import app.tuned.data.PeopleRepository
 import app.tuned.data.Picks
 import app.tuned.data.SettingsRepository
 import app.tuned.data.SyncRepository
@@ -79,6 +80,7 @@ class AppContainer(
     val offline by lazy { Offline(context, db, settings) }
     val picks by lazy { Picks(db, appScope) }
     val metadata by lazy { MetadataRepository(http, settings, db.metadata()) }
+    val people by lazy { PeopleRepository(http, settings, db.metadata()) }
 
     /** True while the player is open; downloads and channel scans hold back so only one stream is ever open. */
     val playerOpen = MutableStateFlow(false)

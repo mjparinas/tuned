@@ -3,6 +3,7 @@ package app.tuned.ui.details
 import android.app.Application
 import android.content.Intent
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -69,6 +70,7 @@ import app.tuned.data.Metadata
 import app.tuned.data.db.ItemEntity
 import app.tuned.diagnostics.launchSafely
 import app.tuned.diagnostics.startActivitySafely
+import app.tuned.ui.common.focusRing
 import app.tuned.ui.library.LibraryViewModel
 import app.tuned.ui.library.WatchLaterButton
 import app.tuned.ui.library.WatchedButton
@@ -129,6 +131,7 @@ fun MovieScreen(
     itemId: Long,
     onPlay: (Long) -> Unit,
     onBack: () -> Unit,
+    onOpenPerson: (CastMember) -> Unit = {},
     vm: DetailsViewModel = viewModel(),
 ) {
     LaunchedEffect(itemId) { vm.loadItem(itemId) }
@@ -191,7 +194,7 @@ fun MovieScreen(
                         WatchedButton(it.id)
                     }
                 }
-                DetailsBody(details, hasKey)
+                DetailsBody(details, hasKey, onOpenPerson = onOpenPerson)
             }
         }
     }
@@ -254,12 +257,16 @@ private fun RatingChip(text: String) {
     }
 }
 
-/** Genres, summary, cast and the TMDB credit; with no key, one line on where to add it. */
+/**
+ * Genres, summary, cast and the TMDB credit; with no key, one line on where to add it. Tapping someone in the cast
+ * opens their films and shows.
+ */
 @Composable
 fun DetailsBody(
     details: Metadata?,
     hasKey: Boolean,
     modifier: Modifier = Modifier,
+    onOpenPerson: (CastMember) -> Unit = {},
 ) {
     Column(modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(16.dp)) {
         if (details == null) {
@@ -284,7 +291,7 @@ fun DetailsBody(
         details.overview?.let { Text(it, style = MaterialTheme.typography.bodyMedium) }
         if (details.cast.isNotEmpty()) {
             Text(stringResource(R.string.details_cast), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-            CastRow(details.cast)
+            CastRow(details.cast, onOpenPerson)
         }
         Text(
             stringResource(R.string.details_source),
@@ -295,10 +302,22 @@ fun DetailsBody(
 }
 
 @Composable
-private fun CastRow(cast: List<CastMember>) {
-    LazyRow(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+private fun CastRow(
+    cast: List<CastMember>,
+    onOpen: (CastMember) -> Unit,
+) {
+    val shape = RoundedCornerShape(12.dp)
+    LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
         items(cast, key = { it.name + it.character }) { person ->
-            Column(Modifier.width(76.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+            Column(
+                Modifier
+                    .width(84.dp)
+                    .focusRing(shape, MaterialTheme.colorScheme.primary)
+                    .clip(shape)
+                    .clickable(onClickLabel = stringResource(R.string.person_open, person.name)) { onOpen(person) }
+                    .padding(4.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
                 AsyncImage(
                     model = person.photo,
                     contentDescription = null,

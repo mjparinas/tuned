@@ -17,11 +17,12 @@ import okhttp3.Request
 import java.io.IOException
 import java.util.concurrent.ConcurrentHashMap
 
-/** Someone in the cast, with the part they play. */
+/** Someone in the cast, with the part they play. [id] is TMDB's, null for cast saved before it was kept. */
 data class CastMember(
     val name: String,
     val character: String?,
     val photo: String?,
+    val id: Long? = null,
 )
 
 /** A film or show as The Movie Database describes it. */
@@ -158,7 +159,12 @@ class MetadataRepository(
                     .orEmpty()
                     .take(MAX_CAST)
                     .joinToString("\n") { c ->
-                        listOf(c.name.clean(), c.character.orEmpty().clean(), c.profilePath?.let { Tmdb.PROFILES + it }.orEmpty())
+                        listOf(
+                            c.name.clean(),
+                            c.character.orEmpty().clean(),
+                            c.profilePath?.let { Tmdb.PROFILES + it }.orEmpty(),
+                            c.id?.toString().orEmpty(),
+                        )
                             .joinToString("\t")
                     },
             trailer = Tmdb.trailer(videos),
@@ -180,7 +186,7 @@ class MetadataRepository(
         cast =
             cast.split('\n').filter { it.isNotBlank() }.map { line ->
                 val p = line.split('\t')
-                CastMember(p[0], p.getOrNull(1)?.ifBlank { null }, p.getOrNull(2)?.ifBlank { null })
+                CastMember(p[0], p.getOrNull(1)?.ifBlank { null }, p.getOrNull(2)?.ifBlank { null }, p.getOrNull(3)?.toLongOrNull())
             },
         trailer = trailer,
     )
@@ -246,6 +252,7 @@ class MetadataRepository(
 
     @Serializable
     private data class Person(
+        val id: Long? = null,
         val name: String,
         val character: String? = null,
         @SerialName("profile_path") val profilePath: String? = null,

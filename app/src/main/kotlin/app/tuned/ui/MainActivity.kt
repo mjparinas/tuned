@@ -18,9 +18,11 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
 import app.tuned.container
 import app.tuned.data.AppSettings
+import app.tuned.data.CastMember
 import app.tuned.player.PlayerActivity
 import app.tuned.ui.browse.HomeScreen
 import app.tuned.ui.details.MovieScreen
+import app.tuned.ui.details.PersonScreen
 import app.tuned.ui.guide.GuideScreen
 import app.tuned.ui.login.LoginScreen
 import app.tuned.ui.offline.DownloadsScreen
@@ -83,6 +85,7 @@ class MainActivity : ComponentActivity() {
             if (container.credentials.load() != null) nav.navigate(SearchRoute(query)) { launchSingleTop = true }
             incomingSearch.value = null
         }
+        val openPerson: (CastMember) -> Unit = { person -> nav.navigate(PersonRoute(person.id ?: 0, person.name)) }
         NavHost(navController = nav, startDestination = if (signedIn) HomeRoute else LoginRoute) {
             composable<LoginRoute> {
                 // From sign-in or from Settings › Playlists › Add: either way the new playlist opens on its own.
@@ -97,6 +100,7 @@ class MainActivity : ComponentActivity() {
                     onOpenShow = { key, title -> nav.navigate(ShowRoute(key, title)) },
                     onOpenGuide = { id -> nav.navigate(GuideRoute(id)) },
                     onOpenMovie = { id -> nav.navigate(MovieRoute(id)) },
+                    onOpenPerson = openPerson,
                     onOpenSettings = { nav.navigate(SettingsRoute) },
                     onOpenSearch = { nav.navigate(SearchRoute()) },
                     onOpenDownloads = { nav.navigate(DownloadsRoute) },
@@ -116,10 +120,31 @@ class MainActivity : ComponentActivity() {
             }
             composable<ShowRoute> { entry ->
                 val route = entry.toRoute<ShowRoute>()
-                ShowScreen(showKey = route.showKey, title = route.title, onPlay = play, onBack = { nav.popBackStack() })
+                ShowScreen(
+                    showKey = route.showKey,
+                    title = route.title,
+                    onPlay = play,
+                    onBack = { nav.popBackStack() },
+                    onOpenPerson = openPerson,
+                )
             }
             composable<MovieRoute> { entry ->
-                MovieScreen(itemId = entry.toRoute<MovieRoute>().itemId, onPlay = play, onBack = { nav.popBackStack() })
+                MovieScreen(
+                    itemId = entry.toRoute<MovieRoute>().itemId,
+                    onPlay = play,
+                    onBack = { nav.popBackStack() },
+                    onOpenPerson = openPerson,
+                )
+            }
+            composable<PersonRoute> { entry ->
+                val route = entry.toRoute<PersonRoute>()
+                PersonScreen(
+                    personId = route.personId,
+                    name = route.name,
+                    onOpenMovie = { id -> nav.navigate(MovieRoute(id)) },
+                    onOpenShow = { key, title -> nav.navigate(ShowRoute(key, title)) },
+                    onBack = { nav.popBackStack() },
+                )
             }
             composable<GuideRoute> { entry ->
                 GuideScreen(itemId = entry.toRoute<GuideRoute>().itemId, onPlay = play, onBack = { nav.popBackStack() })

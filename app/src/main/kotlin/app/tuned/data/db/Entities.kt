@@ -111,7 +111,10 @@ data class MetadataEntity(
     /** Comma-separated. */
     val genres: String,
     val runtime: String?,
-    /** One person per line: name, character and photo link, tab-separated. */
+    /**
+     * One person per line: name, character, photo link and TMDB person id, tab-separated. A person's own row
+     * ("person|<id>", see PeopleRepository) keeps their credits here as JSON instead.
+     */
     val cast: String,
     val trailer: String?,
     val fetchedAt: Long,
