@@ -50,10 +50,13 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import app.tuned.R
 import app.tuned.container
 import app.tuned.core.Search
+import app.tuned.core.Titles
 import app.tuned.data.db.ChannelWithNow
+import app.tuned.data.db.FavouriteEntity
 import app.tuned.data.db.ItemEntity
 import app.tuned.data.db.ShowSummary
 import app.tuned.data.hiddenKeys
+import app.tuned.ui.browse.FavouriteButton
 import app.tuned.ui.browse.Logo
 import app.tuned.ui.common.VoiceSearchButton
 import app.tuned.ui.common.focusRing
@@ -64,8 +67,10 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.mapLatest
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 
 /** One search across Live TV, Movies and Shows, typed or spoken (also what the Assistant and TV remote open). */
 @OptIn(ExperimentalCoroutinesApi::class, FlowPreview::class)
@@ -102,6 +107,24 @@ class SearchViewModel(
                 }
             }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
+    /** Which channels are favourites, live, so a heart fills the moment it's tapped. */
+    val favourites =
+        container.db
+            .library()
+            .favouriteIds()
+            .map { it.toHashSet() }
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptySet())
+
+    fun toggleFavourite(
+        itemId: Long,
+        favourite: Boolean,
+    ) {
+        viewModelScope.launch {
+            val library = container.db.library()
+            if (favourite) library.removeFavourite(itemId) else library.addFavourite(FavouriteEntity(itemId, System.currentTimeMillis()))
+        }
+    }
+
     private companion object {
         const val LIMIT = 25
     }
@@ -120,6 +143,7 @@ fun SearchScreen(
     LaunchedEffect(initialQuery) { if (initialQuery.isNotBlank()) vm.query.value = initialQuery }
     val text by vm.query.collectAsStateWithLifecycle()
     val results by vm.results.collectAsStateWithLifecycle()
+    val favourites by vm.favourites.collectAsStateWithLifecycle()
     val focus = remember { FocusRequester() }
     LaunchedEffect(Unit) { if (initialQuery.isBlank()) runCatching { focus.requestFocus() } }
 
@@ -183,10 +207,17 @@ fun SearchScreen(
         ) {
             if (r == null) return@LazyColumn
             section(R.string.tab_live, r.channels) { c ->
-                ResultRow(c.name, c.nowTitle ?: c.groupName, c.logo) { onPlay(c.id) }
+                val favourite = c.id in favourites
+                ResultRow(c.name, c.nowTitle ?: c.groupName, c.logo, trailing = {
+                    FavouriteButton(favourite) { vm.toggleFavourite(c.id, favourite) }
+                }) { onPlay(c.id) }
             }
-            section(R.string.tab_movies, r.movies) { m -> ResultRow(m.name, m.groupName, m.logo) { onOpenMovie(m.id) } }
-            section(R.string.tab_shows, r.shows) { s -> ResultRow(s.showName, s.groupName, s.logo) { onOpenShow(s.showKey, s.showName) } }
+            section(R.string.tab_movies, r.movies) { m -> ResultRow(Titles.display(m.name), m.groupName, m.logo) { onOpenMovie(m.id) } }
+            section(R.string.tab_shows, r.shows) { s ->
+                ResultRow(Titles.display(s.showName), s.groupName, s.logo) {
+                    onOpenShow(s.showKey, s.showName)
+                }
+            }
         }
     }
 }
@@ -212,6 +243,7 @@ private fun ResultRow(
     title: String,
     subtitle: String,
     image: String?,
+    trailing: @Composable () -> Unit = {},
     onClick: () -> Unit,
 ) {
     Row(
@@ -234,5 +266,6 @@ private fun ResultRow(
                 overflow = TextOverflow.Ellipsis,
             )
         }
+        trailing()
     }
 }

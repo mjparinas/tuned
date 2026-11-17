@@ -49,6 +49,7 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import app.tuned.R
 import app.tuned.container
+import app.tuned.core.Titles
 import app.tuned.data.db.HistoryEntity
 import app.tuned.data.db.ItemEntity
 import app.tuned.data.db.SeenEpisodeEntity
@@ -130,7 +131,7 @@ fun ShowScreen(
     var selected by rememberSaveable { mutableIntStateOf(0) }
     val season = seasons.getOrNull(selected.coerceAtMost((seasons.size - 1).coerceAtLeast(0)))
 
-    Scaffold(topBar = { BackTopBar(title, onBack) }) { padding ->
+    Scaffold(topBar = { BackTopBar(Titles.display(title), onBack) }) { padding ->
         Column(Modifier.padding(padding).fillMaxSize()) {
             if (seasons.size > 1) {
                 PrimaryScrollableTabRow(selectedTabIndex = selected.coerceIn(0, seasons.size - 1), edgePadding = 12.dp) {

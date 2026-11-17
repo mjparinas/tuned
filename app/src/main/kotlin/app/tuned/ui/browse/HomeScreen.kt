@@ -40,6 +40,7 @@ import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.DownloadForOffline
 import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Movie
 import androidx.compose.material.icons.filled.Radar
@@ -448,6 +449,21 @@ private fun LiveList(
     }
 }
 
+/** One tap to favourite a channel or take it off: a filled heart in the accent colour when it is a favourite. */
+@Composable
+internal fun FavouriteButton(
+    favourite: Boolean,
+    onToggle: () -> Unit,
+) {
+    IconButton(onClick = onToggle) {
+        if (favourite) {
+            Icon(Icons.Filled.Favorite, stringResource(R.string.favourite_remove), tint = MaterialTheme.colorScheme.primary)
+        } else {
+            Icon(Icons.Filled.FavoriteBorder, stringResource(R.string.favourite_add))
+        }
+    }
+}
+
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun ChannelRow(
@@ -479,10 +495,6 @@ private fun ChannelRow(
                         overflow = TextOverflow.Ellipsis,
                         modifier = Modifier.weight(1f, fill = false),
                     )
-                    if (channel.favourite) {
-                        Spacer(Modifier.width(6.dp))
-                        Icon(Icons.Filled.Favorite, null, Modifier.size(14.dp), tint = MaterialTheme.colorScheme.primary)
-                    }
                 }
                 val now = channel.nowTitle
                 if (showGuide && now != null) {
@@ -510,6 +522,7 @@ private fun ChannelRow(
                     }
                 }
             }
+            FavouriteButton(channel.favourite, onToggleFavourite)
             if (channel.tvgId != null) {
                 IconButton(onClick = onGuide) {
                     Icon(Icons.AutoMirrored.Filled.List, contentDescription = stringResource(R.string.guide_open))
