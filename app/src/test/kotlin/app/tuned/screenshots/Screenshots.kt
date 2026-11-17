@@ -7,9 +7,11 @@ import android.graphics.Paint
 import android.graphics.Shader
 import android.graphics.Typeface
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onRoot
+import androidx.compose.ui.test.performTextInput
 import androidx.test.core.app.ApplicationProvider
 import androidx.work.Configuration
 import androidx.work.testing.SynchronousExecutor
@@ -86,6 +88,11 @@ class Screenshots {
         wait = "CBC News Network",
     ) { Home(dark.copy(theme = ThemeMode.LIGHT)) }
 
+    @Test fun autoTune() = shot("11-auto-tune", ThemeMode.DARK, wait = "Hockey Night", before = {
+        compose.waitUntil(10_000) { compose.onAllNodes(hasText("CBC News Network")).fetchSemanticsNodes().isNotEmpty() }
+        compose.onNode(hasSetTextAction()).performTextInput("hockey")
+    }) { Home(dark) }
+
     @Test fun movies() = shot("04-movies", ThemeMode.DARK, wait = "Northern Lights") { Home(dark.copy(startTab = StartTab.MOVIES)) }
 
     @Test fun shows() = shot("05-shows", ThemeMode.DARK, wait = "Harbour Town") { Home(dark.copy(startTab = StartTab.SHOWS)) }
@@ -110,18 +117,25 @@ class Screenshots {
 
     @Composable
     private fun Home(settings: AppSettings) =
-        HomeScreen(settings, onPlay = {}, onOpenShow = { _, _ -> }, onOpenGuide = {}, onOpenSettings = {})
+        HomeScreen(settings, onPlay = {}, onOpenShow = { _, _ -> }, onOpenGuide = {}, onOpenSettings = {}, onTune = {})
 
     private fun shot(
         name: String,
         theme: ThemeMode,
         wait: String,
+        before: () -> Unit = {},
         content: @Composable () -> Unit,
     ) {
         compose.setContent { TunedTheme(mode = theme) { content() } }
-        compose.waitUntil(10_000) { compose.onAllNodes(hasText(wait, substring = true)).fetchSemanticsNodes().isNotEmpty() }
+        before()
+        val shown =
+            runCatching {
+                compose.waitUntil(10_000) { compose.onAllNodes(hasText(wait, substring = true)).fetchSemanticsNodes().isNotEmpty() }
+            }
         compose.waitForIdle()
+        // Captured either way, so a failure can be seen.
         compose.onRoot().captureRoboImage("$name.png")
+        shown.getOrThrow()
     }
 
     private suspend fun seed() {

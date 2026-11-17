@@ -59,6 +59,28 @@ data class HistoryEntity(
     val watchedAt: Long,
 )
 
+/** What auto-tune learned about a live channel: when it last played or failed, and how sharp it was. */
+@Entity(tableName = "channel_health")
+data class ChannelHealthEntity(
+    @PrimaryKey val itemId: Long,
+    val okAt: Long,
+    val deadAt: Long,
+    val height: Int,
+)
+
+/** A live channel an event search found, with its health, for auto-tune to rank. */
+data class TuneRow(
+    val id: Long,
+    val name: String,
+    val groupName: String,
+    val region: String?,
+    val nameMatch: Boolean,
+    val guideMatch: Boolean,
+    val okAt: Long?,
+    val deadAt: Long?,
+    val height: Int?,
+)
+
 /** A live channel with what's on now (from the guide), for the Live TV list. */
 data class ChannelWithNow(
     val id: Long,

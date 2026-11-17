@@ -72,6 +72,10 @@ data class AppSettings(
     val pictureInPicture: Boolean = true,
     val landscapePlayback: Boolean = true,
     val controlsTimeoutMs: Int = 3_000,
+    /** Auto-tune moves on when a channel shows no picture within this long. */
+    val tuneTimeoutMs: Int = 10_000,
+    /** Auto-tune skips channels below this picture height (0 takes any picture). */
+    val tuneMinHeight: Int = 0,
     val seekBackMs: Long = 10_000,
     val seekForwardMs: Long = 30_000,
     val userAgent: String = "",
@@ -120,6 +124,8 @@ class SettingsRepository(
             pictureInPicture = p[K.pictureInPicture] ?: d.pictureInPicture,
             landscapePlayback = p[K.landscapePlayback] ?: d.landscapePlayback,
             controlsTimeoutMs = p[K.controlsTimeoutMs] ?: d.controlsTimeoutMs,
+            tuneTimeoutMs = p[K.tuneTimeoutMs] ?: d.tuneTimeoutMs,
+            tuneMinHeight = p[K.tuneMinHeight] ?: d.tuneMinHeight,
             seekBackMs = p[K.seekBackMs] ?: d.seekBackMs,
             seekForwardMs = p[K.seekForwardMs] ?: d.seekForwardMs,
             userAgent = p[K.userAgent] ?: d.userAgent,
@@ -168,6 +174,8 @@ class SettingsRepository(
         p[K.pictureInPicture] = s.pictureInPicture
         p[K.landscapePlayback] = s.landscapePlayback
         p[K.controlsTimeoutMs] = s.controlsTimeoutMs
+        p[K.tuneTimeoutMs] = s.tuneTimeoutMs
+        p[K.tuneMinHeight] = s.tuneMinHeight
         p[K.seekBackMs] = s.seekBackMs
         p[K.seekForwardMs] = s.seekForwardMs
         p[K.userAgent] = s.userAgent
@@ -215,6 +223,8 @@ class SettingsRepository(
         val pictureInPicture = booleanPreferencesKey("picture_in_picture")
         val landscapePlayback = booleanPreferencesKey("landscape_playback")
         val controlsTimeoutMs = intPreferencesKey("controls_timeout_ms")
+        val tuneTimeoutMs = intPreferencesKey("tune_timeout_ms")
+        val tuneMinHeight = intPreferencesKey("tune_min_height")
         val seekBackMs = longPreferencesKey("seek_back_ms")
         val seekForwardMs = longPreferencesKey("seek_forward_ms")
         val userAgent = stringPreferencesKey("user_agent")
