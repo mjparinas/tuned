@@ -119,7 +119,9 @@ interface ItemDao {
 
     @Query(
         """
-        SELECT showKey, MIN(showName) AS showName, MAX(logo) AS logo, MIN(groupName) AS groupName, COUNT(*) AS episodes
+        SELECT showKey, MIN(showName) AS showName, MAX(logo) AS logo, MIN(groupName) AS groupName, COUNT(*) AS episodes,
+            SUM(CASE WHEN i.showKey IN (SELECT showKey FROM seen_episodes) AND i.id NOT IN (SELECT itemId FROM seen_episodes)
+                THEN 1 ELSE 0 END) AS newEpisodes
         FROM items i
         WHERE i.kind = 2 AND i.showKey IS NOT NULL
             AND (i.region IS NULL OR i.region NOT IN (:hidden)) AND ('g:' || i.kind || ':' || i.groupName) NOT IN (:hidden)
@@ -186,7 +188,9 @@ interface ItemDao {
 
     @Query(
         """
-        SELECT showKey, MIN(showName) AS showName, MAX(logo) AS logo, MIN(groupName) AS groupName, COUNT(*) AS episodes
+        SELECT showKey, MIN(showName) AS showName, MAX(logo) AS logo, MIN(groupName) AS groupName, COUNT(*) AS episodes,
+            SUM(CASE WHEN i.showKey IN (SELECT showKey FROM seen_episodes) AND i.id NOT IN (SELECT itemId FROM seen_episodes)
+                THEN 1 ELSE 0 END) AS newEpisodes
         FROM items i
         WHERE i.kind = 2 AND i.showKey IS NOT NULL AND i.searchName LIKE '%' || :query || '%'
             AND (i.region IS NULL OR i.region NOT IN (:hidden)) AND ('g:' || i.kind || ':' || i.groupName) NOT IN (:hidden)
@@ -460,4 +464,13 @@ interface WatchLaterDao {
 
     @Query("SELECT `key` FROM watch_later")
     fun keys(): Flow<List<String>>
+}
+
+@Dao
+interface SeenEpisodeDao {
+    @Query("SELECT itemId FROM seen_episodes WHERE showKey = :showKey")
+    suspend fun seen(showKey: String): List<Long>
+
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    suspend fun add(rows: List<SeenEpisodeEntity>)
 }

@@ -568,7 +568,16 @@ private fun ShowGrid(
                     title = show.showName,
                     image = show.logo,
                     rating = rating,
-                    subtitle = pluralEpisodes(show.episodes),
+                    subtitle =
+                        if (show.newEpisodes > 0) {
+                            stringResource(
+                                R.string.episodes_with_new,
+                                pluralEpisodes(show.episodes),
+                                pluralStringResource(R.plurals.new_episodes, show.newEpisodes, show.newEpisodes),
+                            )
+                        } else {
+                            pluralEpisodes(show.episodes)
+                        },
                     onClick = { onOpenShow(show.showKey, show.showName) },
                     extraMenu =
                         listOf(

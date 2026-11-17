@@ -186,6 +186,8 @@ data class ShowSummary(
     val logo: String?,
     val groupName: String,
     val episodes: Int,
+    /** Episodes added since the show was last opened; 0 for a show never opened (see [SeenEpisodeEntity]). */
+    val newEpisodes: Int,
 )
 
 data class GroupCount(
@@ -225,3 +227,13 @@ data class WatchLaterEntity(
         fun showKey(showKey: String) = "s:$showKey"
     }
 }
+
+/**
+ * An episode that was in the list the last time its show was opened (Melvin, 2026-11-17: "new episodes"). Episodes of
+ * an opened show that aren't here arrived since, and show as new. Ids are stable across refreshes, so this survives them.
+ */
+@Entity(tableName = "seen_episodes", indices = [Index("showKey")])
+data class SeenEpisodeEntity(
+    @PrimaryKey val itemId: Long,
+    val showKey: String,
+)
