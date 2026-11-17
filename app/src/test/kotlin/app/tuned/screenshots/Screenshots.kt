@@ -88,7 +88,7 @@ class Screenshots {
         wait = "CBC News Network",
     ) { Home(dark.copy(theme = ThemeMode.LIGHT)) }
 
-    @Test fun autoTune() = shot("11-auto-tune", ThemeMode.DARK, wait = "Auto-tune", before = {
+    @Test fun autoTune() = shot("11-auto-tune", ThemeMode.DARK, wait = "Hockey Night", before = {
         compose.waitUntil(10_000) { compose.onAllNodes(hasText("CBC News Network")).fetchSemanticsNodes().isNotEmpty() }
         compose.onNode(hasSetTextAction()).performTextInput("hockey")
     }) { Home(dark) }
