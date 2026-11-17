@@ -69,12 +69,14 @@ class Downloader(
                     part.delete()
                 }
                 return@withContext target
-            } catch (e: IOException) {
+            } catch (e: HttpError) {
                 // A server that says no (wrong login, missing file) won't change its mind on a retry.
-                if (e is HttpError && e.isFinal) {
+                if (e.isFinal) {
                     part.delete()
                     throw e
                 }
+                lastError = e
+            } catch (e: IOException) {
                 lastError = e
             }
             val after = if (part.exists()) part.length() else 0L
