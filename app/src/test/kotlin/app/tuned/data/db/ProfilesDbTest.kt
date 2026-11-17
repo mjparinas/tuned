@@ -72,28 +72,36 @@ class ProfilesDbTest {
         // The SQL and the Kotlin rule agree.
         assertEquals(items.filter { KidsContent.isKids(it.groupName, it.name, live = true) }.map { it.id }, shown)
         assertEquals(listOf(1L, 2L, 3L, 4L), search(emptyList()))
-        assertEquals(listOf("US| KIDS"), db.items().groups(0, kids, adult = false).first().map { it.groupName })
+        assertEquals(
+            listOf("US| KIDS"),
+            db
+                .items()
+                .groups(0, kids, adult = false)
+                .first()
+                .map { it.groupName },
+        )
     }
 
     @Test
     fun upgradeGivesEverythingToTheFirstProfileInTheShapeRoomExpects() {
-        val helper = openHelper(11) { old ->
-            old.execSQL(
-                "CREATE TABLE `favourites` (`itemId` INTEGER NOT NULL, `addedAt` INTEGER NOT NULL, " +
-                    "`position` INTEGER NOT NULL DEFAULT 0, PRIMARY KEY(`itemId`))",
-            )
-            old.execSQL(
-                "CREATE TABLE `history` (`itemId` INTEGER NOT NULL, `positionMs` INTEGER NOT NULL, `durationMs` INTEGER NOT NULL, " +
-                    "`watchedAt` INTEGER NOT NULL, PRIMARY KEY(`itemId`))",
-            )
-            old.execSQL("CREATE INDEX `index_history_watchedAt` ON `history` (`watchedAt`)")
-            old.execSQL(
-                "CREATE TABLE `watch_later` (`key` TEXT NOT NULL, `itemId` INTEGER, `showKey` TEXT, `title` TEXT NOT NULL, " +
-                    "`image` TEXT, `addedAt` INTEGER NOT NULL, PRIMARY KEY(`key`))",
-            )
-            old.execSQL("CREATE TABLE `seen_episodes` (`itemId` INTEGER NOT NULL, `showKey` TEXT NOT NULL, PRIMARY KEY(`itemId`))")
-            old.execSQL("CREATE INDEX `index_seen_episodes_showKey` ON `seen_episodes` (`showKey`)")
-        }
+        val helper =
+            openHelper(11) { old ->
+                old.execSQL(
+                    "CREATE TABLE `favourites` (`itemId` INTEGER NOT NULL, `addedAt` INTEGER NOT NULL, " +
+                        "`position` INTEGER NOT NULL DEFAULT 0, PRIMARY KEY(`itemId`))",
+                )
+                old.execSQL(
+                    "CREATE TABLE `history` (`itemId` INTEGER NOT NULL, `positionMs` INTEGER NOT NULL, `durationMs` INTEGER NOT NULL, " +
+                        "`watchedAt` INTEGER NOT NULL, PRIMARY KEY(`itemId`))",
+                )
+                old.execSQL("CREATE INDEX `index_history_watchedAt` ON `history` (`watchedAt`)")
+                old.execSQL(
+                    "CREATE TABLE `watch_later` (`key` TEXT NOT NULL, `itemId` INTEGER, `showKey` TEXT, `title` TEXT NOT NULL, " +
+                        "`image` TEXT, `addedAt` INTEGER NOT NULL, PRIMARY KEY(`key`))",
+                )
+                old.execSQL("CREATE TABLE `seen_episodes` (`itemId` INTEGER NOT NULL, `showKey` TEXT NOT NULL, PRIMARY KEY(`itemId`))")
+                old.execSQL("CREATE INDEX `index_seen_episodes_showKey` ON `seen_episodes` (`showKey`)")
+            }
         val old = helper.writableDatabase
         old.execSQL("INSERT INTO favourites VALUES (7, 500, 3)")
         old.execSQL("INSERT INTO history VALUES (8, 1000, 2000, 50)")

@@ -98,17 +98,25 @@ fun PinDialog(
                             onDone()
                         }
 
-                        PinResult.Wrong -> error = R.string.pin_wrong
+                        PinResult.Wrong -> {
+                            error = R.string.pin_wrong
+                        }
 
-                        PinResult.TooMany -> error = R.string.pin_too_many
+                        PinResult.TooMany -> {
+                            error = R.string.pin_too_many
+                        }
                     }
                 }
 
                 PinMode.Forgot -> {
                     when {
-                        !vm.matchesLogin(first) -> error = R.string.pin_forgot_wrong
+                        !vm.matchesLogin(first) -> {
+                            error = R.string.pin_forgot_wrong
+                        }
 
-                        forgotResets -> mode = PinMode.Create
+                        forgotResets -> {
+                            mode = PinMode.Create
+                        }
 
                         else -> {
                             onSuccess()

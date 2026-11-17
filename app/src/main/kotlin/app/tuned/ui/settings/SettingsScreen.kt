@@ -79,7 +79,10 @@ class SettingsViewModel(
     val hasPin = container.settings.hasAdultPin.stateIn(viewModelScope, SharingStarted.Eagerly, false)
 
     /** How many profiles there are, for the Profiles row. */
-    val profileCount = container.profiles.profiles.map { it.size }.stateIn(viewModelScope, SharingStarted.Eagerly, 1)
+    val profileCount =
+        container.profiles.profiles
+            .map { it.size }
+            .stateIn(viewModelScope, SharingStarted.Eagerly, 1)
 
     override suspend fun setPin(pin: String) = container.settings.setAdultPin(pin)
 
