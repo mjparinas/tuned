@@ -1,5 +1,6 @@
 package app.tuned.ui.browse
 
+import android.widget.Toast
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -44,6 +45,7 @@ import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.TravelExplore
 import androidx.compose.material.icons.filled.Tv
 import androidx.compose.material.icons.filled.VideoLibrary
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Button
@@ -322,10 +324,34 @@ private fun CategoryChips(
         }
         items(groups, key = { "g:" + it.groupName }) { g ->
             val on = filter == Filter.Group(g.groupName)
+            val context = LocalContext.current
+            val hiddenMessage = stringResource(R.string.group_hidden, g.groupName)
             FilterChip(
                 selected = on,
                 onClick = { filterFlow.value = if (on) Filter.All else Filter.Group(g.groupName) },
                 label = { Text(g.groupName) },
+                // The chosen group can be hidden from here; Settings › Hidden groups brings it back.
+                trailingIcon =
+                    if (on) {
+                        {
+                            Icon(
+                                Icons.Filled.VisibilityOff,
+                                contentDescription = stringResource(R.string.group_hide),
+                                modifier =
+                                    Modifier.size(18.dp).clickable {
+                                        vm.hideGroup(kind, g.groupName)
+                                        Toast
+                                            .makeText(
+                                                context,
+                                                hiddenMessage,
+                                                Toast.LENGTH_LONG,
+                                            ).show()
+                                    },
+                            )
+                        }
+                    } else {
+                        null
+                    },
             )
         }
     }

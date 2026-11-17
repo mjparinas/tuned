@@ -2,11 +2,11 @@ name: Release
 
 # On every promotion to main (nightly or by hand; promote-staging.yml dispatches this, because a merge made with
 # GITHUB_TOKEN doesn't fire `push`) and on demand (Actions › Release › Run workflow, from any branch):
-#   - builds a signed APK and publishes it as a GitHub release tagged v<version>-build.<run number>. Installed
+#   - builds a signed APK and publishes it as a GitHub release tagged v<version> (for example v1.2.0). Installed
 #     copies find it and offer to update (docs/decisions/updates.md);
 #   - builds a signed App Bundle and, once PLAY_SERVICE_ACCOUNT_JSON exists, uploads it to the Play internal track.
-# Version name: the last release's version, bumped by the commits since (scripts/next-version.mjs); version code: the
-# run number, so every release is newer than the last for the in-app updater. Skips itself with a notice until the
+# Version name: the last release's version, bumped by the commits since (scripts/next-version.mjs); version code: made
+# from the version (1.2.3 -> 1002003), so every release is newer than the last for Android and the in-app updater. Skips itself with a notice until the
 # signing secrets exist.
 
 on:
@@ -41,13 +41,16 @@ jobs:
       - id: v
         if: env.HAS_KEY == 'true'
         # Semver from the commits since the last release: feat -> minor, anything else -> patch, ! -> major.
-        run: echo "version=$(node scripts/next-version.mjs)" >> "$GITHUB_OUTPUT"
+        run: |
+          version=$(node scripts/next-version.mjs)
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "code=$(node scripts/next-version.mjs --code "$version")" >> "$GITHUB_OUTPUT"
       - name: Signed APK and app bundle
         if: env.HAS_KEY == 'true'
         env:
           ANDROID_KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_B64 }}
           ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
-          VERSION_CODE: ${{ github.run_number }}
+          VERSION_CODE: ${{ steps.v.outputs.code }}
           VERSION_NAME: ${{ steps.v.outputs.version }}
         run: |
           echo "$ANDROID_KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/upload.jks"
@@ -58,11 +61,11 @@ jobs:
         if: env.HAS_KEY == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
-          TAG: v${{ steps.v.outputs.version }}-build.${{ github.run_number }}
+          TAG: v${{ steps.v.outputs.version }}
         run: |
           gh release create "$TAG" "$RUNNER_TEMP/tuned.apk" \
             --target "$GITHUB_SHA" \
-            --title "Tuned ${{ steps.v.outputs.version }} (build ${{ github.run_number }})" \
+            --title "Tuned ${{ steps.v.outputs.version }}" \
             --generate-notes \
             --latest
           echo "::notice::Released $TAG: https://github.com/${{ github.repository }}/releases/tag/$TAG"

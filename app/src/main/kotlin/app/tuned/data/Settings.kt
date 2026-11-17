@@ -73,6 +73,8 @@ data class AppSettings(
     val startTab: StartTab = StartTab.LIVE,
     val lastTab: Int = 0,
     val hiddenRegions: Set<String> = emptySet(),
+    /** Hidden groups, as [app.tuned.core.HiddenGroups] keys. */
+    val hiddenGroups: Set<String> = emptySet(),
     val showAdult: Boolean = false,
     val playlistRefreshHours: Int = 12,
     val guideRefreshHours: Int = 6,
@@ -110,6 +112,9 @@ data class AppSettings(
     /** The Xtream server's time zone, read at each refresh; catch-up links are in its local time. */
     val serverTimezone: String = "",
 )
+
+/** Hidden countries and hidden groups together: the one list every query filters by. */
+fun AppSettings.hiddenKeys(): List<String> = (hiddenRegions + hiddenGroups).sorted()
 
 private val Context.dataStore by preferencesDataStore(name = "settings")
 
@@ -192,6 +197,7 @@ class SettingsRepository(
             startTab = enumOr(p[K.startTab], d.startTab),
             lastTab = p[K.lastTab] ?: d.lastTab,
             hiddenRegions = p[K.hiddenRegions] ?: d.hiddenRegions,
+            hiddenGroups = p[K.hiddenGroups] ?: d.hiddenGroups,
             playlistRefreshHours = p[K.playlistRefreshHours] ?: d.playlistRefreshHours,
             guideRefreshHours = p[K.guideRefreshHours] ?: d.guideRefreshHours,
             reminderLeadMinutes = p[K.reminderLeadMinutes] ?: d.reminderLeadMinutes,
@@ -249,6 +255,7 @@ class SettingsRepository(
         p[K.startTab] = s.startTab.name
         p[K.lastTab] = s.lastTab
         p[K.hiddenRegions] = s.hiddenRegions
+        p[K.hiddenGroups] = s.hiddenGroups
         p[K.playlistRefreshHours] = s.playlistRefreshHours
         p[K.guideRefreshHours] = s.guideRefreshHours
         p[K.reminderLeadMinutes] = s.reminderLeadMinutes
@@ -305,6 +312,7 @@ class SettingsRepository(
         val startTab = stringPreferencesKey("start_tab")
         val lastTab = intPreferencesKey("last_tab")
         val hiddenRegions = stringSetPreferencesKey("hidden_regions")
+        val hiddenGroups = stringSetPreferencesKey("hidden_groups")
         val adultPin = stringPreferencesKey("adult_pin")
         val playlistRefreshHours = intPreferencesKey("playlist_refresh_hours")
         val guideRefreshHours = intPreferencesKey("guide_refresh_hours")
