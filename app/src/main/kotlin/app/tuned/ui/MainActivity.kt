@@ -20,6 +20,7 @@ import app.tuned.container
 import app.tuned.data.AppSettings
 import app.tuned.player.PlayerActivity
 import app.tuned.ui.browse.HomeScreen
+import app.tuned.ui.details.MovieScreen
 import app.tuned.ui.guide.GuideScreen
 import app.tuned.ui.login.LoginScreen
 import app.tuned.ui.search.SearchScreen
@@ -91,6 +92,7 @@ class MainActivity : ComponentActivity() {
                     onPlay = play,
                     onOpenShow = { key, title -> nav.navigate(ShowRoute(key, title)) },
                     onOpenGuide = { id -> nav.navigate(GuideRoute(id)) },
+                    onOpenMovie = { id -> nav.navigate(MovieRoute(id)) },
                     onOpenSettings = { nav.navigate(SettingsRoute) },
                     onOpenSearch = { nav.navigate(SearchRoute()) },
                     onTune = tune,
@@ -109,6 +111,9 @@ class MainActivity : ComponentActivity() {
             composable<ShowRoute> { entry ->
                 val route = entry.toRoute<ShowRoute>()
                 ShowScreen(showKey = route.showKey, title = route.title, onPlay = play, onBack = { nav.popBackStack() })
+            }
+            composable<MovieRoute> { entry ->
+                MovieScreen(itemId = entry.toRoute<MovieRoute>().itemId, onPlay = play, onBack = { nav.popBackStack() })
             }
             composable<GuideRoute> { entry ->
                 GuideScreen(itemId = entry.toRoute<GuideRoute>().itemId, onPlay = play, onBack = { nav.popBackStack() })

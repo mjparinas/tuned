@@ -380,6 +380,23 @@ fun SettingsScreen(
                 vm.update { it.copy(pureBlack = on) }
             }
 
+            SectionHeader(stringResource(R.string.settings_ratings))
+            var editTmdb by remember { mutableStateOf(false) }
+            SettingRow(
+                stringResource(R.string.settings_tmdb_key),
+                if (settings.tmdbKey.isBlank()) {
+                    stringResource(R.string.settings_tmdb_key_summary)
+                } else {
+                    stringResource(R.string.settings_tmdb_key_set)
+                },
+                onClick = { editTmdb = true },
+            )
+            if (editTmdb) {
+                TextDialog(stringResource(R.string.settings_tmdb_key), settings.tmdbKey, onDismiss = { editTmdb = false }) { key ->
+                    vm.update { it.copy(tmdbKey = key.trim()) }
+                }
+            }
+
             SectionHeader(stringResource(R.string.settings_advanced))
             var editUa by remember { mutableStateOf(false) }
             SettingRow(

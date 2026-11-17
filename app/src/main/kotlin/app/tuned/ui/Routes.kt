@@ -26,3 +26,8 @@ import kotlinx.serialization.Serializable
 @Serializable data class SearchRoute(
     val query: String = "",
 )
+
+/** A film's details page (rating, summary, trailer). */
+@Serializable data class MovieRoute(
+    val itemId: Long,
+)

@@ -98,6 +98,8 @@ data class AppSettings(
     val seekBackMs: Long = 10_000,
     val seekForwardMs: Long = 30_000,
     val userAgent: String = "",
+    /** The person's own TMDB key (v3 key or v4 read token) for ratings and trailers; blank turns them off. */
+    val tmdbKey: String = "",
     val showGuideInList: Boolean = true,
     /** Look for a newer release on GitHub at start (copies from Play update through Play either way). */
     val checkUpdates: Boolean = true,
@@ -210,6 +212,7 @@ class SettingsRepository(
             seekBackMs = p[K.seekBackMs] ?: d.seekBackMs,
             seekForwardMs = p[K.seekForwardMs] ?: d.seekForwardMs,
             userAgent = p[K.userAgent] ?: d.userAgent,
+            tmdbKey = p[K.tmdbKey] ?: d.tmdbKey,
             showGuideInList = p[K.showGuideInList] ?: d.showGuideInList,
             checkUpdates = p[K.checkUpdates] ?: d.checkUpdates,
             captions =
@@ -266,6 +269,7 @@ class SettingsRepository(
         p[K.seekBackMs] = s.seekBackMs
         p[K.seekForwardMs] = s.seekForwardMs
         p[K.userAgent] = s.userAgent
+        p[K.tmdbKey] = s.tmdbKey
         p[K.showGuideInList] = s.showGuideInList
         p[K.checkUpdates] = s.checkUpdates
         val c = s.captions
@@ -322,6 +326,7 @@ class SettingsRepository(
         val seekBackMs = longPreferencesKey("seek_back_ms")
         val seekForwardMs = longPreferencesKey("seek_forward_ms")
         val userAgent = stringPreferencesKey("user_agent")
+        val tmdbKey = stringPreferencesKey("tmdb_key")
         val showGuideInList = booleanPreferencesKey("show_guide_in_list")
         val checkUpdates = booleanPreferencesKey("check_updates")
         val ccEnabled = booleanPreferencesKey("cc_enabled")
