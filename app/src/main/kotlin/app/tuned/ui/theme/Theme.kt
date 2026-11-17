@@ -17,6 +17,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import app.tuned.data.Accent
 import app.tuned.data.ThemeMode
 
 /** Brand colours (docs/decisions/branding.md): Tuned violet with a signal teal accent. */
@@ -81,6 +82,52 @@ private val Dark =
         error = Color(0xFFFFB4AB),
     )
 
+/** The primary tones for each accent, light then dark (Material 3 tones 40/90/10 and 80/20/30/90). */
+private class Tones(
+    val light: Long,
+    val lightContainer: Long,
+    val onLightContainer: Long,
+    val dark: Long,
+    val onDark: Long,
+    val darkContainer: Long,
+    val onDarkContainer: Long,
+)
+
+private val accents =
+    mapOf(
+        Accent.BLUE to Tones(0xFF1F5FD6, 0xFFD9E2FF, 0xFF001A43, 0xFFB0C6FF, 0xFF002D6E, 0xFF00449B, 0xFFD9E2FF),
+        Accent.TEAL to Tones(0xFF006B5C, 0xFF9FF2DF, 0xFF00201B, 0xFF5FDCC3, 0xFF00382F, 0xFF005045, 0xFF9FF2DF),
+        Accent.GREEN to Tones(0xFF386A20, 0xFFB8F397, 0xFF042100, 0xFF9CD67D, 0xFF0B3900, 0xFF205107, 0xFFB8F397),
+        Accent.ORANGE to Tones(0xFF9A4600, 0xFFFFDBC8, 0xFF321300, 0xFFFFB68B, 0xFF532200, 0xFF763300, 0xFFFFDBC8),
+        Accent.PINK to Tones(0xFFB0136E, 0xFFFFD8E7, 0xFF3D0022, 0xFFFFB0CF, 0xFF640039, 0xFF8C0053, 0xFFFFD8E7),
+        Accent.RED to Tones(0xFFBB1A2C, 0xFFFFDAD9, 0xFF410007, 0xFFFFB3B1, 0xFF680011, 0xFF92001C, 0xFFFFDAD9),
+    )
+
+/** The swatch shown in Settings for each accent. */
+fun Accent.swatch(): Color = accents[this]?.let { Color(it.light) } ?: Light.primary
+
+private fun ColorScheme.withAccent(
+    accent: Accent,
+    dark: Boolean,
+): ColorScheme {
+    val t = accents[accent] ?: return this // violet is the built-in scheme
+    return if (dark) {
+        copy(
+            primary = Color(t.dark),
+            onPrimary = Color(t.onDark),
+            primaryContainer = Color(t.darkContainer),
+            onPrimaryContainer = Color(t.onDarkContainer),
+        )
+    } else {
+        copy(
+            primary = Color(t.light),
+            onPrimary = Color.White,
+            primaryContainer = Color(t.lightContainer),
+            onPrimaryContainer = Color(t.onLightContainer),
+        )
+    }
+}
+
 /** For OLED screens: true black behind everything, so the video is the only light in the room. */
 private fun ColorScheme.pureBlack(): ColorScheme = copy(
     background = Color.Black,
@@ -125,6 +172,7 @@ fun TunedTheme(
     mode: ThemeMode = ThemeMode.SYSTEM,
     dynamicColour: Boolean = false,
     pureBlack: Boolean = false,
+    accent: Accent = Accent.VIOLET,
     content: @Composable () -> Unit,
 ) {
     val dark = isDark(mode)
@@ -136,11 +184,11 @@ fun TunedTheme(
             }
 
             dark -> {
-                Dark
+                Dark.withAccent(accent, dark = true)
             }
 
             else -> {
-                Light
+                Light.withAccent(accent, dark = false)
             }
         }
     if (dark && pureBlack) scheme = scheme.pureBlack()
