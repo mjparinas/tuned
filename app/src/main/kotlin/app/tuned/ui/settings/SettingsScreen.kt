@@ -350,6 +350,18 @@ fun SettingsScreen(
                 settings.seekForwardMs,
                 label = { ms -> pluralStringResource(R.plurals.seconds, (ms / 1000).toInt(), (ms / 1000).toInt()) },
             ) { ms -> vm.update { it.copy(seekForwardMs = ms) } }
+            ChoiceRow(
+                stringResource(R.string.settings_skip_intro),
+                listOf(0L, 30_000L, 60_000L, 85_000L, 90_000L, 120_000L),
+                settings.skipIntroMs,
+                label = { ms ->
+                    if (ms == 0L) {
+                        stringResource(R.string.settings_skip_intro_off)
+                    } else {
+                        pluralStringResource(R.plurals.seconds, (ms / 1000).toInt(), (ms / 1000).toInt())
+                    }
+                },
+            ) { ms -> vm.update { it.copy(skipIntroMs = ms) } }
             SettingRow(stringResource(R.string.settings_clear_history), onClick = vm::clearHistory)
 
             SectionHeader(stringResource(R.string.settings_tune))
