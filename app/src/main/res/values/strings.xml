@@ -212,6 +212,16 @@
     <string name="update_failed">The update didn’t install. Tuned will try again next time.</string>
     <string name="settings_check_updates">Check for updates</string>
     <string name="settings_check_updates_summary">Download new versions from GitHub when Tuned opens</string>
+    <string name="settings_gestures">Gestures</string>
+    <string name="settings_gestures_summary">Drag left for brightness, right for volume. Double-tap the sides to skip. Swipe to change channel.</string>
+    <string name="settings_reconnect">Reconnect automatically</string>
+    <string name="settings_reconnect_summary">When a stream drops or the connection comes back, start it again where it was</string>
+    <string name="gesture_brightness">Brightness %1$d%%</string>
+    <string name="gesture_volume">Volume %1$d%%</string>
+    <string name="gesture_back">− %1$d s</string>
+    <string name="gesture_forward">+ %1$d s</string>
+    <string name="player_reconnecting">Reconnecting…</string>
+    <string name="player_reconnecting_try">Reconnecting… (%1$d of %2$d)</string>
     <string name="filter_recent">Recent</string>
     <string name="continue_watching">Continue watching</string>
     <string name="continue_episode">%1$s · S%2$d E%3$d</string>

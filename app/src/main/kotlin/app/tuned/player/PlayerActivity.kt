@@ -1,5 +1,6 @@
 package app.tuned.player
 
+import android.annotation.SuppressLint
 import android.app.PictureInPictureParams
 import android.content.Context
 import android.content.Intent
@@ -7,6 +8,8 @@ import android.content.pm.ActivityInfo
 import android.content.res.Configuration
 import android.graphics.Color
 import android.graphics.Rect
+import android.net.ConnectivityManager
+import android.net.Network
 import android.os.Build
 import android.os.Bundle
 import android.util.Rational
@@ -68,6 +71,8 @@ class PlayerActivity : ComponentActivity() {
     private var queue: List<ItemEntity> = emptyList()
     private var progressJob: Job? = null
     private var liveRetries = 0
+    private var gestures: PlayerGestures? = null
+    private var reconnect: ConnectivityManager.NetworkCallback? = null
     private var autoTune: AutoTune? = null
     private lateinit var statusView: TextView
 
@@ -78,6 +83,8 @@ class PlayerActivity : ComponentActivity() {
         lifecycleScope.launch {
             settings = container.settings.settings.first()
             if (settings.landscapePlayback) requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
+            if (settings.playerGestures) setUpGestures()
+            if (settings.autoReconnect) reconnectWhenOnline()
             val query = intent.getStringExtra(EXTRA_TUNE)
             if (query != null) {
                 startTune(query)
@@ -148,6 +155,68 @@ class PlayerActivity : ComponentActivity() {
             },
         )
         setContentView(root)
+    }
+
+    @SuppressLint("ClickableViewAccessibility") // PlayerGestures calls performClick on every tap
+    private fun setUpGestures() {
+        val g =
+            PlayerGestures(
+                activity = this,
+                playerView = playerView,
+                isLive = ::live,
+                onSeek = { forward ->
+                    player?.let { p ->
+                        if (forward) p.seekForward() else p.seekBack()
+                        val seconds = (if (forward) settings.seekForwardMs else settings.seekBackMs) / 1_000
+                        flash(getString(if (forward) R.string.gesture_forward else R.string.gesture_back, seconds))
+                    }
+                },
+                onChannel = { next -> player?.let { p -> if (next) p.seekToNextMediaItem() else p.seekToPreviousMediaItem() } },
+                say = { text -> showStatus(text) },
+                quiet = { flash(null) },
+            )
+        gestures = g
+        playerView.setOnTouchListener(g)
+    }
+
+    private fun showStatus(text: String) {
+        statusView.text = text
+        statusView.visibility = View.VISIBLE
+    }
+
+    private var flashJob: Job? = null
+
+    /** Shows [text] (or keeps what's there) for a moment, then hides it. */
+    private fun flash(text: String?) {
+        if (text != null) showStatus(text)
+        flashJob?.cancel()
+        flashJob =
+            lifecycleScope.launch {
+                delay(FLASH_MS)
+                if (autoTune?.searching != true) statusView.visibility = View.GONE
+            }
+    }
+
+    /**
+     * When the connection comes back (Wi-Fi to mobile, a tunnel, a router restart), a stream that stopped on an error
+     * starts again by itself, from where it was for films and episodes.
+     */
+    private fun reconnectWhenOnline() {
+        val cm = getSystemService(ConnectivityManager::class.java) ?: return
+        val callback =
+            object : ConnectivityManager.NetworkCallback() {
+                override fun onAvailable(network: Network) {
+                    lifecycleScope.launch {
+                        val p = player ?: return@launch
+                        if (p.playerError != null || p.playbackState == Player.STATE_IDLE) {
+                            liveRetries = 0
+                            flash(getString(R.string.player_reconnecting))
+                            p.prepare()
+                        }
+                    }
+                }
+            }
+        runCatching { cm.registerDefaultNetworkCallback(callback) }.onSuccess { reconnect = callback }
     }
 
     /** Live: the other channels in the same category, so next/previous flips channels. Shows: the show's episodes. */
@@ -275,6 +344,11 @@ class PlayerActivity : ComponentActivity() {
             liveRetries = 0
         }
 
+        override fun onPlaybackStateChanged(playbackState: Int) {
+            // Playing again after a drop: the next drop gets the full set of retries.
+            if (playbackState == Player.STATE_READY) liveRetries = 0
+        }
+
         override fun onPlayerError(error: PlaybackException) {
             val p = player ?: return
             // Auto-tune: a channel that fails while being tried is dead; move straight on to the next one.
@@ -288,9 +362,13 @@ class PlayerActivity : ComponentActivity() {
                 p.prepare()
                 return
             }
-            // Live streams drop now and then; try again quietly a few times before saying anything.
-            if (live && liveRetries < MAX_LIVE_RETRIES) {
+            // Streams drop now and then: try again a few times, with a short note, before saying anything else. A film or
+            // episode picks up where it was (prepare keeps the position).
+            val network =
+                error.errorCode in PlaybackException.ERROR_CODE_IO_UNSPECIFIED..PlaybackException.ERROR_CODE_IO_READ_POSITION_OUT_OF_RANGE
+            if (settings.autoReconnect && (live || network) && liveRetries < MAX_RETRIES) {
                 liveRetries++
+                flash(getString(R.string.player_reconnecting_try, liveRetries, MAX_RETRIES))
                 lifecycleScope.launch {
                     delay(1_500L * liveRetries)
                     p.prepare()
@@ -455,6 +533,8 @@ class PlayerActivity : ComponentActivity() {
     override fun onDestroy() {
         progressJob?.cancel()
         autoTune?.release()
+        gestures?.release()
+        reconnect?.let { cb -> runCatching { getSystemService(ConnectivityManager::class.java)?.unregisterNetworkCallback(cb) } }
         player?.release()
         player = null
         super.onDestroy()
@@ -463,7 +543,8 @@ class PlayerActivity : ComponentActivity() {
     companion object {
         private const val EXTRA_ID = "id"
         private const val EXTRA_TUNE = "tune"
-        private const val MAX_LIVE_RETRIES = 3
+        private const val MAX_RETRIES = 5
+        private const val FLASH_MS = 900L
 
         fun start(
             context: Context,

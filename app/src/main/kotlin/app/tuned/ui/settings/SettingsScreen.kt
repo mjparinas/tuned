@@ -276,6 +276,16 @@ fun SettingsScreen(
                 vm.update { it.copy(pictureInPicture = on) }
             }
             SwitchRow(
+                stringResource(R.string.settings_gestures),
+                settings.playerGestures,
+                stringResource(R.string.settings_gestures_summary),
+            ) { on -> vm.update { it.copy(playerGestures = on) } }
+            SwitchRow(
+                stringResource(R.string.settings_reconnect),
+                settings.autoReconnect,
+                stringResource(R.string.settings_reconnect_summary),
+            ) { on -> vm.update { it.copy(autoReconnect = on) } }
+            SwitchRow(
                 stringResource(R.string.settings_landscape),
                 settings.landscapePlayback,
             ) { on -> vm.update { it.copy(landscapePlayback = on) } }
