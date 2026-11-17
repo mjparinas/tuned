@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="playlists">Playlists</string>
+    <plurals name="playlists_saved">
+        <item quantity="one">%d saved: tap to switch or add another</item>
+        <item quantity="other">%d saved: tap to switch or add another</item>
+    </plurals>
+    <string name="playlists_add">Add a playlist</string>
+    <string name="playlists_forget">Forget this playlist</string>
+</resources>

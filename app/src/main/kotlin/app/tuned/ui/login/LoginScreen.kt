@@ -104,11 +104,7 @@ class LoginViewModel(
                 state.update { State(error = error) }
                 return@launch
             }
-            container.credentials.save(login)
-            container.settings.update { it.copy(lastSyncError = "") }
-            container.scheduler.refreshNow(first = true)
-            val s = container.settings.settings.first()
-            container.scheduler.schedule(s.playlistRefreshHours, s.guideRefreshHours, s.unmeteredOnly)
+            container.useLogin(login)
             state.update { State() }
             onDone()
         }
