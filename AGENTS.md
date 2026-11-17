@@ -58,8 +58,8 @@ One file per topic in `docs/decisions/`, A to Z. Add a line when you add a topic
 - [Diagnostics](docs/decisions/diagnostics.md): crash reports, `launchSafely` and `attempt`, the developer log, keeping logins out of it.
 - [Large screens](docs/decisions/large-screens.md): navigation rail, list and detail panes, the guide beside the player on tablets.
 - [Offline downloads](docs/decisions/offline.md): saving films and episodes, one connection at a time.
-- [Playlist and guide](docs/decisions/playlist.md): Xtream URLs, how streams are sorted, countries, refresh.
 - [People](docs/decisions/people.md): actor filmography pages, oldest first, with what is in the playlist marked.
+- [Playlist and guide](docs/decisions/playlist.md): Xtream URLs, how streams are sorted, countries, refresh.
 - [Player](docs/decisions/player.md): Media3 setup, controls, captions, audio, picture-in-picture.
 - [Security](docs/decisions/security.md): login storage, cleartext HTTP, backups.
 - [Speed](docs/decisions/speed.md): what keeps the app fast, and the budget.
