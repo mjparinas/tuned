@@ -1,0 +1,189 @@
+name: CI
+
+# Modelled on Liftsmith's CI (Melvin, 2026-11-17: "follow the similar dev tooling as the other apps"). Every job
+# runs in parallel; "CI passed" is the one check to require in branch protection, and it is green only when every
+# other job is (a skipped job counts as passed).
+
+on:
+  push:
+    branches: [main, staging]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  # What this run has to do, as in Liftsmith:
+  #  1. Nothing, when this exact tree already passed. "CI passed" records the tree it tested as a commit status
+  #     ("CI passed tree"), so the staging push after a squash merge, the nightly promotion pull request, the push
+  #     to main and the merge back into staging finish in seconds.
+  #  2. Only the gate, when every changed file is Markdown and the commit before it passed.
+  #  3. Everything otherwise.
+  changes:
+    name: Changed files
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      pull-requests: read
+      statuses: read
+    outputs:
+      run: ${{ steps.diff.outputs.run }}
+      tree: ${{ steps.diff.outputs.tree }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 2
+      - id: diff
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          EVENT: ${{ github.event_name }}
+          BEFORE: ${{ github.event.before }}
+        run: |
+          tree=$(git rev-parse 'HEAD^{tree}')
+          echo "tree=$tree" >> "$GITHUB_OUTPUT"
+          everything() { echo "run=true" >> "$GITHUB_OUTPUT"; exit 0; }
+          passed() {
+            [ -n "$1" ] || return 1
+            desc=$(gh api "repos/$REPO/commits/$1/statuses?per_page=100" \
+              --jq '[.[] | select(.context == "CI passed tree")][0] | select(.state == "success") | .description' 2>/dev/null || true)
+            [ "$desc" = "Passed on tree $2" ]
+          }
+
+          candidates="$(git rev-parse HEAD^@ 2>/dev/null || true)"
+          if [ "$EVENT" = push ]; then
+            candidates="$GITHUB_SHA $candidates $(gh api "repos/$REPO/commits/$GITHUB_SHA/pulls" --jq '.[].head.sha' 2>/dev/null || true)"
+          fi
+          for c in $candidates; do
+            if passed "$c" "$tree"; then
+              echo "run=false" >> "$GITHUB_OUTPUT"
+              echo "::notice::This exact tree already passed CI on ${c:0:7}, so nothing runs again."
+              exit 0
+            fi
+          done
+
+          if [ "$EVENT" = pull_request ]; then
+            base=$(git rev-parse HEAD^1)
+          else
+            base=$BEFORE
+            case "$base" in ""|0000000000000000000000000000000000000000) everything ;; esac
+            git fetch --no-tags --depth=1 origin "$base" || everything
+          fi
+          files=$(git diff --name-only "$base" HEAD)
+          echo "$files"
+          [ -n "$files" ] || everything
+          not_md=$(grep -vE '\.md$' <<< "$files" || true)
+          if [ -z "$not_md" ] && passed "$base" "$(git rev-parse "$base^{tree}")"; then
+            echo "run=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Only Markdown changed and ${base:0:7} passed CI, so the checks and builds are skipped."
+            exit 0
+          fi
+          echo "run=true" >> "$GITHUB_OUTPUT"
+
+  format:
+    name: Formatting
+    needs: changes
+    if: needs.changes.outputs.run == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - name: Prettier (YAML, JSON, Markdown)
+        run: npx prettier --check .
+      - uses: ./.github/actions/setup-android
+      - name: ktlint (Kotlin, through Spotless)
+        if: ${{ !cancelled() }}
+        run: ./gradlew spotlessCheck
+
+  analysis:
+    name: Lint and static analysis
+    needs: changes
+    if: needs.changes.outputs.run == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup-android
+      # detekt and Android Lint both fail on any finding (warnings are errors).
+      - run: ./gradlew detekt :app:lintDebug --continue
+      - name: Print the findings
+        if: failure()
+        run: cat app/build/reports/lint-results-debug.txt build/reports/detekt/detekt.txt 2>/dev/null || true
+      - uses: actions/upload-artifact@v7
+        if: failure()
+        with:
+          name: lint-reports
+          path: |
+            build/reports/detekt/
+            app/build/reports/lint-results-debug.html
+          retention-days: 7
+
+  test:
+    name: Unit tests
+    needs: changes
+    if: needs.changes.outputs.run == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup-android
+      - run: ./gradlew :core:test :app:testDebugUnitTest --continue
+      - uses: actions/upload-artifact@v7
+        if: failure()
+        with:
+          name: test-reports
+          path: |
+            core/build/reports/tests/
+            app/build/reports/tests/
+          retention-days: 7
+
+  android:
+    name: Android build
+    needs: changes
+    if: needs.changes.outputs.run == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup-android
+      # The debug APK to install and try, plus an unsigned release build so R8 fails here on a missing keep rule,
+      # not in Release.
+      - run: ./gradlew :app:assembleDebug :app:assembleRelease
+      - uses: actions/upload-artifact@v7
+        with:
+          name: tuned-debug-apk
+          path: app/build/outputs/apk/debug/app-debug.apk
+          retention-days: 7
+
+  passed:
+    name: CI passed
+    needs: [changes, format, analysis, test, android]
+    if: always()
+    runs-on: ubuntu-latest
+    permissions:
+      statuses: write
+    steps:
+      - name: Every job succeeded
+        run: |
+          echo '${{ toJSON(needs) }}'
+          if [ "${{ needs.changes.result }}" != "success" ] || [ "${{ contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled') }}" = "true" ]; then
+            exit 1
+          fi
+      - name: Record the tested tree
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: >
+          gh api "repos/${{ github.repository }}/statuses/$SHA" -f state=success -f context="CI passed tree"
+          -f description="Passed on tree ${{ needs.changes.outputs.tree }}" --silent

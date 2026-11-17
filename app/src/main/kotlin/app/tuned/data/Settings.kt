@@ -1,0 +1,254 @@
+package app.tuned.data
+
+import android.content.Context
+import androidx.datastore.preferences.core.MutablePreferences
+import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.booleanPreferencesKey
+import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.floatPreferencesKey
+import androidx.datastore.preferences.core.intPreferencesKey
+import androidx.datastore.preferences.core.longPreferencesKey
+import androidx.datastore.preferences.core.stringPreferencesKey
+import androidx.datastore.preferences.core.stringSetPreferencesKey
+import androidx.datastore.preferences.preferencesDataStore
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
+
+enum class ThemeMode { SYSTEM, LIGHT, DARK }
+
+enum class StartTab { LIVE, MOVIES, SHOWS, LAST }
+
+/** How much video to hold before and during playback: quick starts or fewer stalls. */
+enum class BufferMode(
+    val minMs: Int,
+    val maxMs: Int,
+    val startMs: Int,
+) {
+    FAST_START(5_000, 20_000, 800),
+    BALANCED(15_000, 50_000, 1_500),
+    SMOOTH(30_000, 120_000, 3_000),
+}
+
+enum class CaptionEdge { NONE, OUTLINE, DROP_SHADOW, RAISED, DEPRESSED }
+
+enum class CaptionFont { DEFAULT, SANS, SERIF, MONO, CASUAL }
+
+/** Caption look. Colours are ARGB. */
+data class CaptionStyle(
+    val enabled: Boolean = false,
+    val language: String = "",
+    val textScale: Float = 1f,
+    val textColor: Int = 0xFFFFFFFF.toInt(),
+    val backgroundColor: Int = 0xFF000000.toInt(),
+    val backgroundOpacity: Float = 0.6f,
+    val windowColor: Int = 0x00000000,
+    val edge: CaptionEdge = CaptionEdge.OUTLINE,
+    val edgeColor: Int = 0xFF000000.toInt(),
+    val font: CaptionFont = CaptionFont.DEFAULT,
+    val bold: Boolean = false,
+    /** Ignore the colours and fonts a stream brings, so captions always look like the settings. */
+    val overrideStreamStyle: Boolean = true,
+    /** Distance from the bottom of the video, as a fraction of its height. */
+    val bottomPadding: Float = 0.08f,
+)
+
+data class AppSettings(
+    val theme: ThemeMode = ThemeMode.SYSTEM,
+    val dynamicColour: Boolean = false,
+    val pureBlack: Boolean = false,
+    val startTab: StartTab = StartTab.LIVE,
+    val lastTab: Int = 0,
+    val hiddenRegions: Set<String> = emptySet(),
+    val showAdult: Boolean = false,
+    val playlistRefreshHours: Int = 12,
+    val guideRefreshHours: Int = 6,
+    val guideDays: Int = 3,
+    val unmeteredOnly: Boolean = false,
+    val buffer: BufferMode = BufferMode.BALANCED,
+    val audioLanguage: String = "",
+    val resumePlayback: Boolean = true,
+    val autoPlayNext: Boolean = true,
+    val pictureInPicture: Boolean = true,
+    val landscapePlayback: Boolean = true,
+    val controlsTimeoutMs: Int = 3_000,
+    /** Auto-tune moves on when a channel shows no picture within this long. */
+    val tuneTimeoutMs: Int = 10_000,
+    /** Auto-tune skips channels below this picture height (0 takes any picture). */
+    val tuneMinHeight: Int = 0,
+    val seekBackMs: Long = 10_000,
+    val seekForwardMs: Long = 30_000,
+    val userAgent: String = "",
+    val showGuideInList: Boolean = true,
+    /** Look for a newer release on GitHub at start (copies from Play update through Play either way). */
+    val checkUpdates: Boolean = true,
+    val captions: CaptionStyle = CaptionStyle(),
+    val lastPlaylistSync: Long = 0,
+    val lastGuideSync: Long = 0,
+    val lastSyncError: String = "",
+)
+
+private val Context.dataStore by preferencesDataStore(name = "settings")
+
+/** Every setting in one DataStore. Screens read [settings] and write through [update]. */
+class SettingsRepository(
+    private val context: Context,
+) {
+    val settings: Flow<AppSettings> =
+        context.dataStore.data
+            .map(::read)
+            .distinctUntilChanged()
+
+    suspend fun update(change: (AppSettings) -> AppSettings) {
+        context.dataStore.edit { prefs -> write(prefs, change(read(prefs))) }
+    }
+
+    @Suppress("CyclomaticComplexMethod") // one `?:` per setting, nothing to untangle
+    private fun read(p: Preferences): AppSettings {
+        val d = AppSettings()
+        val c = d.captions
+        return AppSettings(
+            theme = enumOr(p[K.theme], d.theme),
+            dynamicColour = p[K.dynamicColour] ?: d.dynamicColour,
+            pureBlack = p[K.pureBlack] ?: d.pureBlack,
+            startTab = enumOr(p[K.startTab], d.startTab),
+            lastTab = p[K.lastTab] ?: d.lastTab,
+            hiddenRegions = p[K.hiddenRegions] ?: d.hiddenRegions,
+            showAdult = p[K.showAdult] ?: d.showAdult,
+            playlistRefreshHours = p[K.playlistRefreshHours] ?: d.playlistRefreshHours,
+            guideRefreshHours = p[K.guideRefreshHours] ?: d.guideRefreshHours,
+            guideDays = p[K.guideDays] ?: d.guideDays,
+            unmeteredOnly = p[K.unmeteredOnly] ?: d.unmeteredOnly,
+            buffer = enumOr(p[K.buffer], d.buffer),
+            audioLanguage = p[K.audioLanguage] ?: d.audioLanguage,
+            resumePlayback = p[K.resumePlayback] ?: d.resumePlayback,
+            autoPlayNext = p[K.autoPlayNext] ?: d.autoPlayNext,
+            pictureInPicture = p[K.pictureInPicture] ?: d.pictureInPicture,
+            landscapePlayback = p[K.landscapePlayback] ?: d.landscapePlayback,
+            controlsTimeoutMs = p[K.controlsTimeoutMs] ?: d.controlsTimeoutMs,
+            tuneTimeoutMs = p[K.tuneTimeoutMs] ?: d.tuneTimeoutMs,
+            tuneMinHeight = p[K.tuneMinHeight] ?: d.tuneMinHeight,
+            seekBackMs = p[K.seekBackMs] ?: d.seekBackMs,
+            seekForwardMs = p[K.seekForwardMs] ?: d.seekForwardMs,
+            userAgent = p[K.userAgent] ?: d.userAgent,
+            showGuideInList = p[K.showGuideInList] ?: d.showGuideInList,
+            checkUpdates = p[K.checkUpdates] ?: d.checkUpdates,
+            captions =
+                CaptionStyle(
+                    enabled = p[K.ccEnabled] ?: c.enabled,
+                    language = p[K.ccLanguage] ?: c.language,
+                    textScale = p[K.ccScale] ?: c.textScale,
+                    textColor = p[K.ccText] ?: c.textColor,
+                    backgroundColor = p[K.ccBackground] ?: c.backgroundColor,
+                    backgroundOpacity = p[K.ccBackgroundOpacity] ?: c.backgroundOpacity,
+                    windowColor = p[K.ccWindow] ?: c.windowColor,
+                    edge = enumOr(p[K.ccEdge], c.edge),
+                    edgeColor = p[K.ccEdgeColor] ?: c.edgeColor,
+                    font = enumOr(p[K.ccFont], c.font),
+                    bold = p[K.ccBold] ?: c.bold,
+                    overrideStreamStyle = p[K.ccOverride] ?: c.overrideStreamStyle,
+                    bottomPadding = p[K.ccBottom] ?: c.bottomPadding,
+                ),
+            lastPlaylistSync = p[K.lastPlaylistSync] ?: d.lastPlaylistSync,
+            lastGuideSync = p[K.lastGuideSync] ?: d.lastGuideSync,
+            lastSyncError = p[K.lastSyncError] ?: d.lastSyncError,
+        )
+    }
+
+    private fun write(
+        p: MutablePreferences,
+        s: AppSettings,
+    ) {
+        p[K.theme] = s.theme.name
+        p[K.dynamicColour] = s.dynamicColour
+        p[K.pureBlack] = s.pureBlack
+        p[K.startTab] = s.startTab.name
+        p[K.lastTab] = s.lastTab
+        p[K.hiddenRegions] = s.hiddenRegions
+        p[K.showAdult] = s.showAdult
+        p[K.playlistRefreshHours] = s.playlistRefreshHours
+        p[K.guideRefreshHours] = s.guideRefreshHours
+        p[K.guideDays] = s.guideDays
+        p[K.unmeteredOnly] = s.unmeteredOnly
+        p[K.buffer] = s.buffer.name
+        p[K.audioLanguage] = s.audioLanguage
+        p[K.resumePlayback] = s.resumePlayback
+        p[K.autoPlayNext] = s.autoPlayNext
+        p[K.pictureInPicture] = s.pictureInPicture
+        p[K.landscapePlayback] = s.landscapePlayback
+        p[K.controlsTimeoutMs] = s.controlsTimeoutMs
+        p[K.tuneTimeoutMs] = s.tuneTimeoutMs
+        p[K.tuneMinHeight] = s.tuneMinHeight
+        p[K.seekBackMs] = s.seekBackMs
+        p[K.seekForwardMs] = s.seekForwardMs
+        p[K.userAgent] = s.userAgent
+        p[K.showGuideInList] = s.showGuideInList
+        p[K.checkUpdates] = s.checkUpdates
+        val c = s.captions
+        p[K.ccEnabled] = c.enabled
+        p[K.ccLanguage] = c.language
+        p[K.ccScale] = c.textScale
+        p[K.ccText] = c.textColor
+        p[K.ccBackground] = c.backgroundColor
+        p[K.ccBackgroundOpacity] = c.backgroundOpacity
+        p[K.ccWindow] = c.windowColor
+        p[K.ccEdge] = c.edge.name
+        p[K.ccEdgeColor] = c.edgeColor
+        p[K.ccFont] = c.font.name
+        p[K.ccBold] = c.bold
+        p[K.ccOverride] = c.overrideStreamStyle
+        p[K.ccBottom] = c.bottomPadding
+        p[K.lastPlaylistSync] = s.lastPlaylistSync
+        p[K.lastGuideSync] = s.lastGuideSync
+        p[K.lastSyncError] = s.lastSyncError
+    }
+
+    private inline fun <reified E : Enum<E>> enumOr(
+        name: String?,
+        default: E,
+    ): E = name?.let { n -> enumValues<E>().firstOrNull { it.name == n } } ?: default
+
+    private object K {
+        val theme = stringPreferencesKey("theme")
+        val dynamicColour = booleanPreferencesKey("dynamic_colour")
+        val pureBlack = booleanPreferencesKey("pure_black")
+        val startTab = stringPreferencesKey("start_tab")
+        val lastTab = intPreferencesKey("last_tab")
+        val hiddenRegions = stringSetPreferencesKey("hidden_regions")
+        val showAdult = booleanPreferencesKey("show_adult")
+        val playlistRefreshHours = intPreferencesKey("playlist_refresh_hours")
+        val guideRefreshHours = intPreferencesKey("guide_refresh_hours")
+        val guideDays = intPreferencesKey("guide_days")
+        val unmeteredOnly = booleanPreferencesKey("unmetered_only")
+        val buffer = stringPreferencesKey("buffer")
+        val audioLanguage = stringPreferencesKey("audio_language")
+        val resumePlayback = booleanPreferencesKey("resume_playback")
+        val autoPlayNext = booleanPreferencesKey("auto_play_next")
+        val pictureInPicture = booleanPreferencesKey("picture_in_picture")
+        val landscapePlayback = booleanPreferencesKey("landscape_playback")
+        val controlsTimeoutMs = intPreferencesKey("controls_timeout_ms")
+        val tuneTimeoutMs = intPreferencesKey("tune_timeout_ms")
+        val tuneMinHeight = intPreferencesKey("tune_min_height")
+        val seekBackMs = longPreferencesKey("seek_back_ms")
+        val seekForwardMs = longPreferencesKey("seek_forward_ms")
+        val userAgent = stringPreferencesKey("user_agent")
+        val showGuideInList = booleanPreferencesKey("show_guide_in_list")
+        val checkUpdates = booleanPreferencesKey("check_updates")
+        val ccEnabled = booleanPreferencesKey("cc_enabled")
+        val ccLanguage = stringPreferencesKey("cc_language")
+        val ccScale = floatPreferencesKey("cc_scale")
+        val ccText = intPreferencesKey("cc_text")
+        val ccBackground = intPreferencesKey("cc_background")
+        val ccBackgroundOpacity = floatPreferencesKey("cc_background_opacity")
+        val ccWindow = intPreferencesKey("cc_window")
+        val ccEdge = stringPreferencesKey("cc_edge")
+        val ccEdgeColor = intPreferencesKey("cc_edge_color")
+        val ccFont = stringPreferencesKey("cc_font")
+        val ccBold = booleanPreferencesKey("cc_bold")
+        val ccOverride = booleanPreferencesKey("cc_override")
+        val ccBottom = floatPreferencesKey("cc_bottom")
+        val lastPlaylistSync = longPreferencesKey("last_playlist_sync")
+        val lastGuideSync = longPreferencesKey("last_guide_sync")
+        val lastSyncError = stringPreferencesKey("last_sync_error")
+    }
+}

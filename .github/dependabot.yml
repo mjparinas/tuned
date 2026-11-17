@@ -1,0 +1,17 @@
+version: 2
+updates:
+  # Kotlin, AndroidX, Media3 and the rest: minor and patch grouped into one pull request a week.
+  - package-ecosystem: gradle
+    directory: /
+    target-branch: staging
+    schedule: { interval: weekly }
+    groups:
+      minor-and-patch: { update-types: [minor, patch] }
+  - package-ecosystem: npm
+    directory: /
+    target-branch: staging
+    schedule: { interval: weekly }
+  - package-ecosystem: github-actions
+    directory: /
+    target-branch: staging
+    schedule: { interval: weekly }
