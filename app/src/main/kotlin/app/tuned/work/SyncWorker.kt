@@ -17,6 +17,7 @@ import androidx.work.workDataOf
 import app.tuned.R
 import app.tuned.container
 import app.tuned.data.SyncProgress
+import app.tuned.diagnostics.AppLog
 import app.tuned.ui.SyncText
 import app.tuned.updates.UpdateNotice
 import app.tuned.widget.FavouritesWidget
@@ -55,7 +56,8 @@ class SyncWorker(
             // A copy left running for days still hears about a new release.
             UpdateNotice.checkInBackground(applicationContext)
             Result.success()
-        } catch (_: IOException) {
+        } catch (e: IOException) {
+            AppLog.w(TAG, "Refresh failed (attempt ${runAttemptCount + 1})", e)
             // The download already retried with backoff; the first sign-in reports at once instead of waiting for more.
             if (!inputData.getBoolean(KEY_FIRST, false) && runAttemptCount < MAX_ATTEMPTS) Result.retry() else Result.failure()
         }
@@ -107,6 +109,7 @@ class SyncWorker(
         const val KEY_FIRST = "first"
         const val MODE_ALL = "all"
         const val MODE_GUIDE = "guide"
+        private const val TAG = "Sync"
         private const val KEY_STEP = "step"
         private const val KEY_DONE = "done"
         private const val KEY_TOTAL = "total"

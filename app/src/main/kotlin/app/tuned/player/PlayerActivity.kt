@@ -55,6 +55,7 @@ import app.tuned.data.AppSettings
 import app.tuned.data.db.HistoryEntity
 import app.tuned.data.db.ItemEntity
 import app.tuned.data.hiddenKeys
+import app.tuned.diagnostics.AppLog
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
@@ -465,6 +466,7 @@ class PlayerActivity : FragmentActivity() {
         }
 
         override fun onPlayerError(error: PlaybackException) {
+            AppLog.w("Player", "Playback error: ${error.errorCodeName}", error)
             val p = player ?: return
             // Auto-tune: a channel that fails while being tried is dead; move straight on to the next one.
             val tuner = autoTune

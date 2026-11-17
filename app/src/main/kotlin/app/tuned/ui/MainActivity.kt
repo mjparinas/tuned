@@ -27,6 +27,7 @@ import app.tuned.ui.offline.DownloadsScreen
 import app.tuned.ui.search.SearchScreen
 import app.tuned.ui.settings.CaptionSettingsScreen
 import app.tuned.ui.settings.ChannelHealthScreen
+import app.tuned.ui.settings.DeveloperLogScreen
 import app.tuned.ui.settings.FavouriteOrderScreen
 import app.tuned.ui.settings.HiddenGroupsScreen
 import app.tuned.ui.settings.RegionSettingsScreen
@@ -133,6 +134,7 @@ class MainActivity : ComponentActivity() {
                     onOpenChannelHealth = { nav.navigate(ChannelHealthRoute) },
                     onOpenFavouriteOrder = { nav.navigate(FavouriteOrderRoute) },
                     onOpenDownloads = { nav.navigate(DownloadsRoute) },
+                    onOpenLogs = { nav.navigate(DeveloperLogRoute) },
                     onSignedOut = {
                         nav.navigate(LoginRoute) { popUpTo(0) { inclusive = true } }
                     },
@@ -140,6 +142,7 @@ class MainActivity : ComponentActivity() {
                     onSwitchedPlaylist = { nav.navigate(HomeRoute) { popUpTo(0) { inclusive = true } } },
                 )
             }
+            composable<DeveloperLogRoute> { DeveloperLogScreen(onBack = { nav.popBackStack() }) }
             composable<DownloadsRoute> {
                 DownloadsScreen(onPlay = play, onBack = { nav.popBackStack() })
             }

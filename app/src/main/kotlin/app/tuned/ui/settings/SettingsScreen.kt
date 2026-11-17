@@ -153,6 +153,7 @@ fun SettingsScreen(
     onOpenChannelHealth: () -> Unit,
     onOpenFavouriteOrder: () -> Unit,
     onOpenDownloads: () -> Unit,
+    onOpenLogs: () -> Unit,
     onSignedOut: () -> Unit,
     onAddPlaylist: () -> Unit,
     onSwitchedPlaylist: () -> Unit,
@@ -460,6 +461,21 @@ fun SettingsScreen(
                 stringResource(R.string.settings_check_updates_summary),
             ) { on -> vm.update { it.copy(checkUpdates = on) } }
             UpdateCheckRow()
+
+            SectionHeader(stringResource(R.string.settings_developer))
+            SwitchRow(
+                stringResource(R.string.settings_developer_mode),
+                settings.developerMode,
+                stringResource(R.string.settings_developer_mode_summary),
+            ) { on -> vm.update { it.copy(developerMode = on) } }
+            if (settings.developerMode) {
+                SettingRow(
+                    stringResource(R.string.logs_title),
+                    stringResource(R.string.settings_logs_summary),
+                    onClick = onOpenLogs,
+                    trailing = { Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null) },
+                )
+            }
             HorizontalDivider(Modifier.padding(top = 16.dp))
             Text(
                 stringResource(R.string.settings_version, BuildConfig.VERSION_NAME, BuildConfig.VERSION_CODE),
