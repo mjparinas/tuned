@@ -8,6 +8,8 @@
 
 **Countries** (Melvin, 2026-11-17: "toggle controls in the settings that allow you to hide certain countries' content"). Providers seldom fill `tvg-country`, so the region comes from the category prefix: `US| News`, `UK: Sport`, `|CA| Kids`, `[FR] Cinéma`, `4K | US Movies` (quality tags are skipped). Settings › Countries lists every region found, with how many streams each has; turning one off hides it in every list and search. Streams with no region always show. _To revisit once we've seen the real eros4k playlist's categories._
 
+**Languages** (Melvin, 2026-11-17: "is there already channel filtering by country / language?"). Providers tag streams by country or language, not by spoken language, so a language is the set of tags that speak it (`core/RegionLanguages`): English is EN, US, UK, CA, AU, IE and NZ; Spanish is ES, MX and LAT; and so on. Settings › Countries and languages lists those languages above the countries, and each switch turns all its tags off or on together, so nothing new is stored. Countries with several common languages (Belgium, Switzerland, India) belong to none and stay under their own switch, so a language never hides more than it says.
+
 **Adult categories** are hidden by default (Settings › Content › Show adult categories).
 
 **Downloading (2026-11-17, after v0.1.0 failed to sign in with "Software caused connection abort").** Melvin's provider serves playlists of about 400 MB from slow servers. So each file is first saved to disk by `Downloader` and only then read into the database:

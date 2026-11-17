@@ -66,9 +66,9 @@
     <string name="settings_sign_out_confirm">This removes your login and the downloaded channels and guide from this device. Favourites stay.</string>
 
     <string name="settings_content">Content</string>
-    <string name="settings_countries">Countries</string>
+    <string name="settings_countries">Countries and languages</string>
     <string name="settings_countries_none_hidden">Showing every country</string>
-    <string name="regions_help">Turn a country off to hide its channels, movies and shows everywhere, search included.</string>
+    <string name="regions_help">Turn a language or country off to hide its channels, movies and shows everywhere, search included. A language covers the countries that speak it, so English covers US, UK, Canada and the rest.</string>
     <string name="regions_show_all">Show all</string>
     <string name="regions_hide_all">Hide all</string>
     <string name="settings_show_adult">Show adult categories</string>
