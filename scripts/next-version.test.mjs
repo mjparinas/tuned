@@ -8,6 +8,8 @@ test("a feature bumps the minor", () => assert.equal(bump("0.1.3", ["fix: a", "f
 test("a breaking change bumps the major", () => {
     assert.equal(bump("0.4.2", ["feat!: new data format"]), "1.0.0");
     assert.equal(bump("0.4.2", ["fix: x\n\nBREAKING CHANGE: sign in again"]), "1.0.0");
+    // Only a footer counts: a body that merely mentions the words (as PR descriptions do) is not a breaking change.
+    assert.equal(bump("0.4.2", ["fix: x\n\nPR titles decide it (feat: minor, ! or BREAKING CHANGE: major)"]), "0.4.3");
 });
 test("the first release uses package.json", () => assert.equal(next("0.1.0", undefined, []), "0.1.0"));
 test("from the last release tag", () => assert.equal(next("0.1.0", "v0.1.0-build.1", ["feat: accent colours"]), "0.2.0"));
