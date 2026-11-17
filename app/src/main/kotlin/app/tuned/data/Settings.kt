@@ -11,9 +11,15 @@ import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
+import app.tuned.core.PinHash
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.withContext
 
 enum class ThemeMode { SYSTEM, LIGHT, DARK }
 
@@ -94,10 +100,40 @@ private val Context.dataStore by preferencesDataStore(name = "settings")
 class SettingsRepository(
     private val context: Context,
 ) {
+    /**
+     * Adult categories show only while unlocked with the parental PIN, and only until the app closes: the unlock lives
+     * in memory, never on disk, so `showAdult` always starts false.
+     */
+    private val adultUnlocked = MutableStateFlow(false)
+
     val settings: Flow<AppSettings> =
-        context.dataStore.data
-            .map(::read)
+        combine(context.dataStore.data.map(::read), adultUnlocked) { s, unlocked -> s.copy(showAdult = unlocked) }
             .distinctUntilChanged()
+
+    /** Whether a parental PIN has been set. */
+    val hasAdultPin: Flow<Boolean> =
+        context.dataStore.data
+            .map { !it[K.adultPin].isNullOrEmpty() }
+            .distinctUntilChanged()
+
+    /** Sets (or replaces) the PIN and unlocks. The caller has already checked the old PIN, if there was one. */
+    suspend fun setAdultPin(pin: String) {
+        val hash = withContext(Dispatchers.Default) { PinHash.create(pin) }
+        context.dataStore.edit { it[K.adultPin] = hash }
+        adultUnlocked.value = true
+    }
+
+    /** Unlocks adult categories when [pin] matches. */
+    suspend fun unlockAdult(pin: String): Boolean {
+        val stored = context.dataStore.data.first()[K.adultPin] ?: return false
+        val ok = withContext(Dispatchers.Default) { PinHash.verify(pin, stored) }
+        if (ok) adultUnlocked.value = true
+        return ok
+    }
+
+    fun lockAdult() {
+        adultUnlocked.value = false
+    }
 
     suspend fun update(change: (AppSettings) -> AppSettings) {
         context.dataStore.edit { prefs -> write(prefs, change(read(prefs))) }
@@ -114,7 +150,6 @@ class SettingsRepository(
             startTab = enumOr(p[K.startTab], d.startTab),
             lastTab = p[K.lastTab] ?: d.lastTab,
             hiddenRegions = p[K.hiddenRegions] ?: d.hiddenRegions,
-            showAdult = p[K.showAdult] ?: d.showAdult,
             playlistRefreshHours = p[K.playlistRefreshHours] ?: d.playlistRefreshHours,
             guideRefreshHours = p[K.guideRefreshHours] ?: d.guideRefreshHours,
             guideDays = p[K.guideDays] ?: d.guideDays,
@@ -165,7 +200,6 @@ class SettingsRepository(
         p[K.startTab] = s.startTab.name
         p[K.lastTab] = s.lastTab
         p[K.hiddenRegions] = s.hiddenRegions
-        p[K.showAdult] = s.showAdult
         p[K.playlistRefreshHours] = s.playlistRefreshHours
         p[K.guideRefreshHours] = s.guideRefreshHours
         p[K.guideDays] = s.guideDays
@@ -215,7 +249,7 @@ class SettingsRepository(
         val startTab = stringPreferencesKey("start_tab")
         val lastTab = intPreferencesKey("last_tab")
         val hiddenRegions = stringSetPreferencesKey("hidden_regions")
-        val showAdult = booleanPreferencesKey("show_adult")
+        val adultPin = stringPreferencesKey("adult_pin")
         val playlistRefreshHours = intPreferencesKey("playlist_refresh_hours")
         val guideRefreshHours = intPreferencesKey("guide_refresh_hours")
         val guideDays = intPreferencesKey("guide_days")
