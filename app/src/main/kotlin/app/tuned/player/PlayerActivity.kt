@@ -15,6 +15,7 @@ import android.os.Bundle
 import android.util.Rational
 import android.util.TypedValue
 import android.view.Gravity
+import android.view.KeyEvent
 import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
@@ -173,7 +174,11 @@ class PlayerActivity : FragmentActivity() {
                 val pad = (12 * resources.displayMetrics.density).toInt()
                 setPadding(pad * 2, pad, pad * 2, pad)
             }
-        val root = FrameLayout(this)
+        // TV remote buttons go to the tools before the player's own controls; see [PlayerTools.onKey].
+        val root =
+            object : FrameLayout(this) {
+                override fun dispatchKeyEvent(event: KeyEvent): Boolean = tools.onKey(event) || super.dispatchKeyEvent(event)
+            }
         root.addView(playerView, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
         root.addView(
             overlay,
