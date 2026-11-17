@@ -290,18 +290,21 @@ interface ItemDao {
     ): Flow<List<GroupCount>>
 
     /**
-     * Auto-tune's candidates: live channels whose name matches the search, or whose guide has a matching programme
-     * on now or starting within [to]. `title LIKE` ignores case for English letters, which is what event names use.
+     * Auto-tune's candidates: live channels whose name has every word of the search ([app.tuned.core.Tuner.words], in
+     * any order; an unused word is empty and matches anything), or whose guide has such a programme on now or starting
+     * within [to]. `LIKE` ignores case for English letters, which is what event names use.
      * Channels hidden as dead or as "No event" placeholders come back marked `held`: the caller keeps the sports, PPV
      * and event ones ([EventChannels][app.tuned.core.EventChannels]), since an empty slot can carry the next event.
      */
     @Query(
         """
         SELECT i.id, i.name, i.groupName, i.region,
-            (i.searchName LIKE '%' || :normalized || '%') AS nameMatch,
+            (i.searchName LIKE '%' || :w1 || '%' AND i.searchName LIKE '%' || :w2 || '%'
+                AND i.searchName LIKE '%' || :w3 || '%') AS nameMatch,
             (i.tvgId IN (
                 SELECT channelId FROM programmes
-                WHERE start > :from - 86400000 AND start < :to AND stop > :from AND title LIKE '%' || :query || '%'
+                WHERE start > :from - 86400000 AND start < :to AND stop > :from AND title LIKE '%' || :w1 || '%'
+                    AND title LIKE '%' || :w2 || '%' AND title LIKE '%' || :w3 || '%'
             )) AS guideMatch,
             h.okAt, h.deadAt, h.height,
             (('scan:dead' IN (:hidden) AND i.id IN (SELECT itemId FROM channel_scan WHERE hidden = 1))
@@ -318,8 +321,9 @@ interface ItemDao {
         """,
     )
     suspend fun tuneCandidates(
-        query: String,
-        normalized: String,
+        w1: String,
+        w2: String,
+        w3: String,
         from: Long,
         to: Long,
         hidden: List<String>,
