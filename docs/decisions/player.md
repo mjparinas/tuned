@@ -22,6 +22,8 @@
 
 **Resume.** Movies and episodes save their position every 10 seconds and on leaving; reopening resumes after 30 seconds in, unless 95% watched. Shows mark watched episodes.
 
+**Cast** (Chromecast, 2026-11-17). The cast button sits with the player tools; phones without Google Play services don't show it. Casting uses the default media receiver. When a cast starts the phone stops its own stream, so the provider only ever sees one connection, and the TV plays the channel. Next, previous, swipes and the mini guide change the channel on the TV, and the play and pause buttons control the TV. Ending the cast resumes on the phone, at the same point for films and episodes. The default receiver can't play raw MPEG-TS, so Xtream live links are sent as the same channel's `.m3u8`; films in formats the receiver lacks (MKV, for example) may not play. DLNA and UPnP renderers are a separate change.
+
 **Picture-in-picture** when leaving the app while playing (Settings, on by default). Leaving without it ends playback.
 
 ## Gestures and reconnecting (2026-11-17)
