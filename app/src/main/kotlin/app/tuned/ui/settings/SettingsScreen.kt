@@ -150,6 +150,7 @@ fun SettingsScreen(
     onOpenCaptions: () -> Unit,
     onOpenRegions: () -> Unit,
     onOpenHiddenGroups: () -> Unit,
+    onOpenChannelHealth: () -> Unit,
     onOpenFavouriteOrder: () -> Unit,
     onOpenDownloads: () -> Unit,
     onSignedOut: () -> Unit,
@@ -211,6 +212,12 @@ fun SettingsScreen(
                     pluralStringResource(R.plurals.groups_hidden, settings.hiddenGroups.size, settings.hiddenGroups.size)
                 },
                 onClick = onOpenHiddenGroups,
+                trailing = { Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null) },
+            )
+            SettingRow(
+                stringResource(R.string.health_title),
+                stringResource(R.string.settings_channel_health_summary),
+                onClick = onOpenChannelHealth,
                 trailing = { Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null) },
             )
             SettingRow(

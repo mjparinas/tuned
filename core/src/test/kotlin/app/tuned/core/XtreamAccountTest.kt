@@ -20,4 +20,12 @@ class XtreamAccountTest {
         assertEquals(null, XtreamAccount.accepted("[]"))
         assertEquals(null, XtreamAccount.accepted("<html>Not found</html>"))
     }
+
+    @Test
+    fun readsWhetherEveryConnectionIsInUse() {
+        assertEquals(true, XtreamAccount.connectionsFull("""{"user_info":{"active_cons":"1","max_connections":"1"}}"""))
+        assertEquals(false, XtreamAccount.connectionsFull("""{"user_info":{"active_cons":0,"max_connections":2}}"""))
+        assertEquals(false, XtreamAccount.connectionsFull("""{"user_info":{"active_cons":"0","max_connections":"0"}}"""))
+        assertEquals(null, XtreamAccount.connectionsFull("""{"user_info":{"auth":1}}"""))
+    }
 }

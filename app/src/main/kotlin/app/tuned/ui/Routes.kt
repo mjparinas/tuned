@@ -23,6 +23,8 @@ import kotlinx.serialization.Serializable
 
 @Serializable data object HiddenGroupsRoute
 
+@Serializable data object ChannelHealthRoute
+
 @Serializable data object FavouriteOrderRoute
 
 @Serializable data class SearchRoute(

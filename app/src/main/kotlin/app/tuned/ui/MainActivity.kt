@@ -26,6 +26,7 @@ import app.tuned.ui.login.LoginScreen
 import app.tuned.ui.offline.DownloadsScreen
 import app.tuned.ui.search.SearchScreen
 import app.tuned.ui.settings.CaptionSettingsScreen
+import app.tuned.ui.settings.ChannelHealthScreen
 import app.tuned.ui.settings.FavouriteOrderScreen
 import app.tuned.ui.settings.HiddenGroupsScreen
 import app.tuned.ui.settings.RegionSettingsScreen
@@ -129,6 +130,7 @@ class MainActivity : ComponentActivity() {
                     onOpenCaptions = { nav.navigate(CaptionSettingsRoute) },
                     onOpenRegions = { nav.navigate(RegionSettingsRoute) },
                     onOpenHiddenGroups = { nav.navigate(HiddenGroupsRoute) },
+                    onOpenChannelHealth = { nav.navigate(ChannelHealthRoute) },
                     onOpenFavouriteOrder = { nav.navigate(FavouriteOrderRoute) },
                     onOpenDownloads = { nav.navigate(DownloadsRoute) },
                     onSignedOut = {
@@ -150,6 +152,9 @@ class MainActivity : ComponentActivity() {
             }
             composable<HiddenGroupsRoute> {
                 HiddenGroupsScreen(settings = current, onBack = { nav.popBackStack() })
+            }
+            composable<ChannelHealthRoute> {
+                ChannelHealthScreen(settings = current, onBack = { nav.popBackStack() })
             }
         }
     }

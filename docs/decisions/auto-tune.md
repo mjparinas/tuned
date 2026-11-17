@@ -22,5 +22,5 @@ Providers limit how many streams an account may have open, and Melvin doesn't wa
 
 ## Not done (yet)
 
-- Checking channels' health in the background. It would open connections while the person is watching something else.
+- Checking channels' health in the background. It would open connections while the person is watching something else. A scan started by hand does it instead ([channel scan](channel-scan.md)), and auto-tune skips the channels it hides.
 - Matching the guide's language attribute. The real guide rarely sets it, so the country tag is the better signal.

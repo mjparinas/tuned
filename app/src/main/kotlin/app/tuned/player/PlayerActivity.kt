@@ -89,7 +89,8 @@ class PlayerActivity : FragmentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        // One connection to the provider at a time: downloads wait while anything plays.
+        // One connection to the provider at a time: downloads and channel scans wait while anything plays.
+        container.playerOpen.value = true
         container.offline.pause()
         buildViews()
         hideSystemBars()
@@ -658,6 +659,7 @@ class PlayerActivity : FragmentActivity() {
         reconnect?.let { cb -> runCatching { getSystemService(ConnectivityManager::class.java)?.unregisterNetworkCallback(cb) } }
         player?.release()
         player = null
+        container.playerOpen.value = false
         super.onDestroy()
     }
 
