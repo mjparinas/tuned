@@ -10,10 +10,12 @@ import android.graphics.Rect
 import android.os.Build
 import android.os.Bundle
 import android.util.Rational
+import android.util.TypedValue
 import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
+import android.widget.ImageButton
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
@@ -113,14 +115,39 @@ class PlayerActivity : ComponentActivity() {
                 setTextColor(0xCCFFFFFF.toInt())
                 textSize = 14f
             }
-        overlay =
+        val density = resources.displayMetrics.density
+        // Back sits with the title, so it shows whenever the controls do (system back and gestures work too).
+        val back =
+            ImageButton(this).apply {
+                setImageResource(R.drawable.ic_arrow_back)
+                contentDescription = getString(R.string.back)
+                val ripple = TypedValue()
+                theme.resolveAttribute(android.R.attr.selectableItemBackgroundBorderless, ripple, true)
+                setBackgroundResource(ripple.resourceId)
+                val pad = (12 * density).toInt()
+                setPadding(pad, pad, pad, pad)
+                setOnClickListener { onBackPressedDispatcher.onBackPressed() }
+            }
+        val titles =
             LinearLayout(this).apply {
                 orientation = LinearLayout.VERTICAL
-                setBackgroundResource(R.drawable.player_top_scrim)
-                val pad = (24 * resources.displayMetrics.density).toInt()
-                setPadding(pad, pad, pad, pad * 2)
                 addView(titleView)
                 addView(subtitleView)
+            }
+        overlay =
+            LinearLayout(this).apply {
+                orientation = LinearLayout.HORIZONTAL
+                setBackgroundResource(R.drawable.player_top_scrim)
+                val pad = (24 * density).toInt()
+                setPadding(pad / 2, pad / 2, pad, pad * 2)
+                addView(back, LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT))
+                addView(
+                    titles,
+                    LinearLayout
+                        .LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f)
+                        .apply { marginStart = (4 * density).toInt() },
+                )
+                gravity = Gravity.CENTER_VERTICAL
             }
         statusView =
             TextView(this).apply {
