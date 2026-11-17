@@ -47,7 +47,7 @@ class CastControl(
 
     /** The standard cast button, listing Chromecasts (with Play services) and DLNA TVs together. */
     val button: MediaRouteButton =
-        MediaRouteButton(ContextThemeWrapper(activity, R.style.Theme_Tuned_CastButton)).also { button ->
+        SafeRouteButton(ContextThemeWrapper(activity, R.style.Theme_Tuned_CastButton)).also { button ->
             if (context != null) CastButtonFactory.setUpMediaRouteButton(activity.applicationContext, button)
             button.routeSelector =
                 MediaRouteSelector
@@ -184,6 +184,16 @@ class CastControl(
         context?.sessionManager?.removeSessionManagerListener(listener, CastSession::class.java)
         dlna.release()
     }
+}
+
+/**
+ * The cast button, made so that it can never take the player down: if the device picker can't open (Play services
+ * missing or updating, the screen going away mid-tap), the tap does nothing instead of crashing.
+ */
+private class SafeRouteButton(
+    context: Context,
+) : MediaRouteButton(context) {
+    override fun showDialog(): Boolean = runCatching { super.showDialog() }.getOrDefault(false)
 }
 
 /** Read by the Cast framework (manifest meta-data): the default receiver, with a notification while casting. */
