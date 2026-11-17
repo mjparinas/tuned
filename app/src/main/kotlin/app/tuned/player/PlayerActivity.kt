@@ -217,7 +217,7 @@ class PlayerActivity : FragmentActivity() {
                 current = { player?.let { queue.getOrNull(it.currentMediaItemIndex) } },
                 isLive = ::live,
                 onStatus = { text -> if (text == null) statusView.visibility = View.GONE else showStatus(text) },
-            ).also { c -> c.button?.let(tools::addButton) }
+            ).also { c -> tools.addButton(c.button) }
     }
 
     @SuppressLint("ClickableViewAccessibility") // PlayerGestures calls performClick on every tap
