@@ -15,6 +15,7 @@ import android.widget.TextView
 import androidx.activity.ComponentActivity
 import androidx.activity.OnBackPressedCallback
 import androidx.annotation.OptIn
+import androidx.core.view.isVisible
 import androidx.lifecycle.lifecycleScope
 import androidx.media3.common.C
 import androidx.media3.common.Format
@@ -228,7 +229,7 @@ class PlayerTools(
     // ---- Stream info: what is actually playing, refreshed every second while open.
 
     private fun toggleInfo() {
-        if (info.visibility == View.VISIBLE) {
+        if (info.isVisible) {
             info.visibility = View.GONE
             infoJob?.cancel()
             return
