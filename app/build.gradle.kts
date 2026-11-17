@@ -1,6 +1,6 @@
+// AGP 9 compiles Kotlin itself (built-in Kotlin), so there is no org.jetbrains.kotlin.android plugin.
 plugins {
     alias(libs.plugins.android.application)
-    alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.ksp)
@@ -8,7 +8,7 @@ plugins {
 
 android {
     namespace = "app.tuned"
-    compileSdk = 36
+    compileSdk = 37
 
     defaultConfig {
         applicationId = "app.tuned"
@@ -32,13 +32,13 @@ android {
     }
 
     buildTypes {
-        release {
+        getByName("release") {
             if (System.getenv("ANDROID_KEYSTORE_PATH") != null) signingConfig = signingConfigs.getByName("release")
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
-        debug {
+        getByName("debug") {
             applicationIdSuffix = ".debug"
         }
     }
