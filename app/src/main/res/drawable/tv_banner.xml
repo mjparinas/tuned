@@ -1,10 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- The Android TV home screen banner (320 × 180): the app mark and the name on Tuned violet. The name is drawn as a
-     path (Liberation Sans Bold, SIL Open Font License) because the TV launcher shows banners without a label. -->
+<!-- The Android TV home screen banner (16:9): the app mark and the name on Tuned violet. A vector is drawn at the
+     launcher's size, so the small intrinsic size (kept under Lint's 200 dp limit) loses nothing. The name is a path
+     (Liberation Sans Bold, SIL Open Font License) because the TV launcher shows banners without a label. -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:aapt="http://schemas.android.com/aapt"
-    android:width="320dp"
-    android:height="180dp"
+    android:width="160dp"
+    android:height="90dp"
     android:viewportWidth="320"
     android:viewportHeight="180">
     <path android:pathData="M0,0h320v180h-320z">
