@@ -50,7 +50,19 @@ class HiddenGroupsViewModel(
             .distinctUntilChanged()
             .flatMapLatest { (regions, adult) ->
                 val items = container.db.items()
-                combine(ContentKind.entries.map { kind -> items.groups(kind.code, regions, adult).map { kind to it } }) { pairs ->
+                val lists =
+                    ContentKind.entries.map { kind ->
+                        val groups =
+                            if (kind ==
+                                ContentKind.SERIES
+                            ) {
+                                container.db.shows().showGroupChips(regions, adult)
+                            } else {
+                                items.groups(kind.code, regions, adult)
+                            }
+                        groups.map { kind to it }
+                    }
+                combine(lists) { pairs ->
                     pairs.toMap()
                 }
             }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyMap())

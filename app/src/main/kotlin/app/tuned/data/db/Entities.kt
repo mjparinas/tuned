@@ -36,6 +36,24 @@ data class ItemEntity(
     val sortOrder: Int,
 )
 
+/**
+ * One row per show and the group, country and adult flag its episodes are listed under, rebuilt from `items` after every
+ * playlist refresh ([ShowGroups]). The Shows tab groups these few thousand rows instead of every episode, which on a
+ * big playlist took a phone seconds per page.
+ */
+@Entity(tableName = "show_groups", indices = [Index("showKey"), Index("sortOrder")])
+data class ShowGroupEntity(
+    @PrimaryKey(autoGenerate = true) val rowId: Long = 0,
+    val showKey: String,
+    val groupName: String,
+    val region: String?,
+    val adult: Boolean,
+    val showName: String,
+    val logo: String?,
+    val episodes: Int,
+    val sortOrder: Int,
+)
+
 /** A film or episode saved for watching offline. Kept across playlist refreshes, like favourites. */
 @Entity(tableName = "downloads")
 data class DownloadEntity(

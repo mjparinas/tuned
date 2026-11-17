@@ -59,6 +59,7 @@ class GuideWriter(
             )
         }
         discard()
+        Upkeep.optimize(db)
         return count
     }
 
@@ -86,9 +87,11 @@ class PlaylistWriter(
     private val sql get() = db.openHelper.writableDatabase
     private val seen = HashSet<Long>()
     private var direct = false
+    private var batches = 0
 
     suspend fun begin() {
         seen.clear()
+        batches = 0
         discard()
         direct = !db.items().any()
         if (!direct) sql.execSQL("CREATE TABLE $NEXT ($SCHEMA)")
@@ -103,6 +106,8 @@ class PlaylistWriter(
         if (batch.isEmpty()) return
         if (direct) {
             db.items().insertAll(batch)
+            // The first download fills the lists as it goes; the Shows tab catches up every so often.
+            if (++batches % SHOWS_EVERY == 0) ShowGroups.rebuild(db)
             return
         }
         db.withTransaction {
@@ -121,10 +126,18 @@ class PlaylistWriter(
      * changes nothing, so a server that answers with nothing can't wipe a good cache.
      */
     suspend fun commit(): Int {
-        if (seen.isEmpty() || direct) {
+        if (seen.isEmpty()) {
             discard()
-            return seen.size
+            return 0
         }
+        if (!direct) apply()
+        ShowGroups.rebuild(db)
+        Upkeep.optimize(db)
+        return seen.size
+    }
+
+    /** Changes only the streams that differ, a chunk per transaction. */
+    private suspend fun apply() {
         // Which streams differ, worked out once, inside SQLite.
         sql.execSQL("DROP TABLE IF EXISTS temp.$CHANGED")
         sql.execSQL("CREATE TEMP TABLE $CHANGED (seq INTEGER PRIMARY KEY, id INTEGER NOT NULL)")
@@ -144,7 +157,6 @@ class PlaylistWriter(
         }
         sql.execSQL("DROP TABLE IF EXISTS temp.$CHANGED")
         discard()
-        return seen.size
     }
 
     /** Throws a half-written playlist away; the cache stays as it was. */
@@ -187,6 +199,9 @@ class PlaylistWriter(
         /** Small enough that a search waiting behind one is never kept long. */
         const val APPLY_CHUNK = 2_000
 
+        /** Batches between Shows tab refreshes during a first download: every 25,000 streams or so. */
+        const val SHOWS_EVERY = 25
+
         /** The columns of [ItemEntity], in the order [bind] fills them. */
         val COLUMN_LIST =
             listOf(
@@ -214,5 +229,38 @@ class PlaylistWriter(
 
         /** A stream that came back exactly as it was. */
         val SAME = COLUMN_LIST.drop(1).joinToString(" AND ") { "i.$it IS n.$it" }
+    }
+}
+
+/** Keeps the Shows tab's per-show table ([ShowGroupEntity]) in step with the playlist. */
+object ShowGroups {
+    const val COLUMNS = "showKey, groupName, region, adult, showName, logo, episodes, sortOrder"
+    const val SELECT =
+        "SELECT showKey, groupName, region, adult, COALESCE(MIN(showName), showKey), MAX(logo), COUNT(*), MIN(sortOrder) " +
+            "FROM items WHERE kind = 2 AND showKey IS NOT NULL GROUP BY showKey, groupName, region, adult"
+
+    /** Worked out beside the live table, then swapped in with one quick copy, so the Shows tab never waits long. */
+    suspend fun rebuild(db: TunedDatabase) {
+        val sql = db.openHelper.writableDatabase
+        sql.execSQL("DROP TABLE IF EXISTS temp.show_groups_next")
+        sql.execSQL("CREATE TEMP TABLE show_groups_next AS $SELECT")
+        db.withTransaction {
+            sql.execSQL("DELETE FROM show_groups")
+            sql.execSQL("INSERT INTO show_groups ($COLUMNS) SELECT * FROM temp.show_groups_next")
+        }
+        sql.execSQL("DROP TABLE IF EXISTS temp.show_groups_next")
+    }
+}
+
+/** Database housekeeping that keeps queries fast as the cache changes. */
+object Upkeep {
+    /**
+     * Lets SQLite refresh what it knows about the tables (`PRAGMA optimize`) after a big change, so it keeps picking
+     * the right index. Cheap: it only analyzes what changed enough to matter.
+     */
+    fun optimize(db: TunedDatabase) {
+        db.openHelper.writableDatabase
+            .query("PRAGMA optimize")
+            .use { it.moveToFirst() }
     }
 }
