@@ -4,6 +4,8 @@ import android.content.Context
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import app.tuned.data.db.TunedDatabase
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.test.runTest
 import mockwebserver3.MockResponse
 import mockwebserver3.MockWebServer
@@ -47,7 +49,7 @@ class SeasonMetadataTest {
                 )
             }.build()
     private val settings = SettingsRepository(context)
-    private val repo = MetadataRepository(http, settings, db.metadata())
+    private val repo = MetadataRepository(http, settings, db.metadata(), CoroutineScope(SupervisorJob()), online = { true })
 
     @After
     fun close() {
