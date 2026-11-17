@@ -6,6 +6,7 @@ import android.content.Intent
 import android.content.pm.ActivityInfo
 import android.content.res.Configuration
 import android.graphics.Color
+import android.graphics.Rect
 import android.os.Build
 import android.os.Bundle
 import android.util.Rational
@@ -309,6 +310,9 @@ class PlayerActivity : ComponentActivity() {
                 Rational(16, 9)
             }
         val builder = PictureInPictureParams.Builder().setAspectRatio(ratio)
+        // Where the video is on screen, so the shrink into the window animates from the picture, not the whole screen.
+        val bounds = Rect()
+        if (playerView.videoSurfaceView?.getGlobalVisibleRect(bounds) == true) builder.setSourceRectHint(bounds)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             builder.setAutoEnterEnabled(settings.pictureInPicture && player?.isPlaying == true)
             builder.setSeamlessResizeEnabled(true)
