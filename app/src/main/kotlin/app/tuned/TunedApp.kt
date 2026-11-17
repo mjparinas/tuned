@@ -8,6 +8,7 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.ProcessLifecycleOwner
 import androidx.work.WorkInfo
 import androidx.work.WorkManager
+import app.tuned.data.AccountRepository
 import app.tuned.data.BackupRepository
 import app.tuned.data.ChannelScanner
 import app.tuned.data.CredentialStore
@@ -85,6 +86,7 @@ class AppContainer(
                 .map { infos -> infos.any { it.state == WorkInfo.State.RUNNING } }
         combine(playerOpen, downloading) { open, down -> open || down }.stateIn(appScope, SharingStarted.Eagerly, false)
     }
+    val account by lazy { AccountRepository(http, credentials, settings, playerOpen) }
     val channelScan by lazy { ChannelScanner(context, db, http, credentials, settings, streamBusy) }
     val scanControl by lazy { ScanWorker.Control(context) }
 
@@ -106,6 +108,7 @@ class AppContainer(
             settings.update { it.copy(lastPlaylistSync = 0, lastGuideSync = 0) }
         }
         settings.update { it.copy(lastSyncError = "") }
+        account.clear()
         scheduler.refreshNow(first = true)
         val s = settings.settings.first()
         scheduler.schedule(s.playlistRefreshHours, s.guideRefreshHours, s.unmeteredOnly)
@@ -117,6 +120,7 @@ class AppContainer(
         scanControl.stop()
         reminders.cancelAll()
         credentials.clear()
+        account.clear()
         db.items().deleteAll()
         db.programmes().deleteAll()
         settings.update { it.copy(lastPlaylistSync = 0, lastGuideSync = 0, lastSyncError = "") }
