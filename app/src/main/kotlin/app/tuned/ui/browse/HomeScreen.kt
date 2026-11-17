@@ -209,12 +209,24 @@ fun HomeScreen(
             progress?.let { RefreshBar(it) }
             UpdateBanner()
             CategoryChips(vm, tab.kind)
-            PullToRefreshBox(isRefreshing = refreshing && progress == null, onRefresh = vm::refresh, modifier = Modifier.fillMaxSize()) {
+            val lists: @Composable () -> Unit = {
                 when (tab.kind) {
                     ContentKind.LIVE -> LiveList(vm, settings.showGuideInList, onPlay, onOpenGuide)
                     ContentKind.MOVIE -> MovieGrid(vm, onPlay, onOpenMovie)
                     ContentKind.SERIES -> ShowGrid(vm, onOpenShow, onPlay)
                 }
+            }
+            // Pull to refresh is a setting, off by default; Settings › Refresh now always works.
+            if (settings.pullToRefresh) {
+                PullToRefreshBox(
+                    isRefreshing = refreshing && progress == null,
+                    onRefresh = vm::refresh,
+                    modifier = Modifier.fillMaxSize(),
+                ) {
+                    lists()
+                }
+            } else {
+                Box(Modifier.fillMaxSize()) { lists() }
             }
         }
     }

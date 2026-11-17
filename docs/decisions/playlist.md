@@ -25,7 +25,7 @@
 
 **Guide.** Only programmes for channels in the playlist, from an hour ago to _Guide days to keep_ ahead (3 by default), are stored. Gzipped guides are unwrapped by their magic bytes.
 
-**Background refresh.** WorkManager, periodic, with a network and not on low battery (optionally Wi-Fi only): channels and movies every 12 hours, the guide every 6, both editable (or off). Pull to refresh and Settings › Refresh now run it at once.
+**Background refresh.** WorkManager, periodic, with a network and not on low battery (optionally Wi-Fi only): channels and movies every 12 hours, the guide every 6, both editable (or off). Settings › Refresh now runs it at once. Pull to refresh does the same but is off by default (Melvin, 2026-11-17: "disable swipe down to refresh or maybe add it as a setting"), so a scroll to the top never starts a download; Settings › Pull down to refresh turns it on.
 
 **Guide reminders** (2026-11-17). A bell on each upcoming programme in a channel's guide sets a reminder, a few minutes before it starts (Settings › Background, default 5 minutes). Each reminder is a WorkManager job tagged with the channel and start time, so it survives restarts and needs no table; tapping the notification plays the channel. Android 13 and later ask for the notification permission the first time a bell is tapped, and a "no" leaves the reminder unset. A reminder more than 30 minutes late says nothing, and signing out cancels them all.
 

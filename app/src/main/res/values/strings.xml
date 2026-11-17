@@ -58,6 +58,8 @@
 
     <string name="settings_account">Account</string>
     <string name="settings_refresh_now">Refresh now</string>
+    <string name="settings_pull_to_refresh">Pull down to refresh</string>
+    <string name="settings_pull_to_refresh_summary">Pulling down on a list downloads the playlist and guide again</string>
     <string name="settings_last_synced">Updated %1$s</string>
     <string name="settings_never_synced">Not updated yet</string>
     <string name="settings_last_error">Last refresh failed: %1$s</string>
