@@ -98,6 +98,13 @@ class PlayerActivity : FragmentActivity() {
     private val subtitleTiming = SubtitleTiming()
     private var reconnect: ConnectivityManager.NetworkCallback? = null
     private var autoTune: AutoTune? = null
+    private val tuneNext by lazy {
+        TuneNext(
+            activity = this,
+            hasNext = { autoTune != null && player?.hasNextMediaItem() == true },
+            onNext = { player?.seekToNextMediaItem() },
+        )
+    }
 
     /** The current channel has drawn a picture since it started (a channel that never did gets one retry, not five). */
     private var pictured = false
@@ -230,12 +237,14 @@ class PlayerActivity : FragmentActivity() {
         )
         tools.attach(root)
         skipIntro.attach(root)
+        tuneNext.attach(root)
         levelBars.attach(root)
         // The title shows and hides with the controls, so a tap reveals everything and the video is otherwise bare.
         playerView.setControllerVisibilityListener(
             PlayerView.ControllerVisibilityListener { visibility ->
                 overlay.visibility = visibility
                 tools.onControls(visibility)
+                tuneNext.onControls(visibility)
             },
         )
         setContentView(root)
@@ -376,6 +385,7 @@ class PlayerActivity : FragmentActivity() {
                 onStatus = { position ->
                     statusView.visibility = if (position == null) View.GONE else View.VISIBLE
                     if (position != null) statusView.text = getString(R.string.tune_trying, position, queue.size)
+                    if (position == null) tuneNext.flash()
                 },
                 onGiveUp = { Toast.makeText(this, getString(R.string.tune_none, query), Toast.LENGTH_LONG).show() },
                 onDead = backups::channelFailed,
