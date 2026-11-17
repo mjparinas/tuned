@@ -2,7 +2,20 @@ package app.tuned.ui
 
 import kotlinx.serialization.Serializable
 
-@Serializable data object LoginRoute
+/** First run: what kind of playlist to add. */
+@Serializable data object WelcomeRoute
+
+/** Settings › Playlists › Add: the same question as [WelcomeRoute], with a back arrow. */
+@Serializable data object ChoosePlaylistRoute
+
+/** The form for one kind of playlist ([app.tuned.data.Credentials.Kind] by name); [editIndex] edits a saved one. */
+@Serializable data class AddPlaylistRoute(
+    val kind: String,
+    val editIndex: Int = -1,
+)
+
+/** Settings › Playlists. */
+@Serializable data object PlaylistsRoute
 
 @Serializable data object HomeRoute
 

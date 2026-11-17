@@ -18,11 +18,13 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
 import app.tuned.container
 import app.tuned.data.AppSettings
+import app.tuned.data.Credentials
 import app.tuned.player.PlayerActivity
 import app.tuned.ui.browse.HomeScreen
 import app.tuned.ui.details.MovieScreen
 import app.tuned.ui.guide.GuideScreen
-import app.tuned.ui.login.LoginScreen
+import app.tuned.ui.onboarding.AddPlaylistScreen
+import app.tuned.ui.onboarding.WelcomeScreen
 import app.tuned.ui.offline.DownloadsScreen
 import app.tuned.ui.search.SearchScreen
 import app.tuned.ui.settings.CaptionSettingsScreen
@@ -30,6 +32,7 @@ import app.tuned.ui.settings.ChannelHealthScreen
 import app.tuned.ui.settings.DeveloperLogScreen
 import app.tuned.ui.settings.FavouriteOrderScreen
 import app.tuned.ui.settings.HiddenGroupsScreen
+import app.tuned.ui.settings.PlaylistsScreen
 import app.tuned.ui.settings.RegionSettingsScreen
 import app.tuned.ui.settings.SettingsScreen
 import app.tuned.ui.shows.ShowScreen
@@ -83,12 +86,43 @@ class MainActivity : ComponentActivity() {
             if (container.credentials.load() != null) nav.navigate(SearchRoute(query)) { launchSingleTop = true }
             incomingSearch.value = null
         }
-        NavHost(navController = nav, startDestination = if (signedIn) HomeRoute else LoginRoute) {
-            composable<LoginRoute> {
-                // From sign-in or from Settings › Playlists › Add: either way the new playlist opens on its own.
-                LoginScreen(onSignedIn = {
-                    nav.navigate(HomeRoute) { popUpTo(0) { inclusive = true } }
-                })
+        val openHome: () -> Unit = { nav.navigate(HomeRoute) { popUpTo(0) { inclusive = true } } }
+        val openWelcome: () -> Unit = { nav.navigate(WelcomeRoute) { popUpTo(0) { inclusive = true } } }
+        NavHost(navController = nav, startDestination = if (signedIn) HomeRoute else WelcomeRoute) {
+            composable<WelcomeRoute> {
+                WelcomeScreen(
+                    firstRun = true,
+                    onPick = { kind -> nav.navigate(AddPlaylistRoute(kind.name)) },
+                    onRestored = openHome,
+                    onBack = {},
+                )
+            }
+            composable<ChoosePlaylistRoute> {
+                WelcomeScreen(
+                    firstRun = false,
+                    onPick = { kind -> nav.navigate(AddPlaylistRoute(kind.name)) },
+                    onRestored = openHome,
+                    onBack = { nav.popBackStack() },
+                )
+            }
+            composable<AddPlaylistRoute> { entry ->
+                val route = entry.toRoute<AddPlaylistRoute>()
+                AddPlaylistScreen(
+                    kind = Credentials.Kind.valueOf(route.kind),
+                    editIndex = route.editIndex,
+                    onBack = { nav.popBackStack() },
+                    // A new playlist (or an edit of the one in use) opens on its own; an edit of another goes back.
+                    onDone = { opened -> if (opened) openHome() else nav.popBackStack() },
+                )
+            }
+            composable<PlaylistsRoute> {
+                PlaylistsScreen(
+                    onBack = { nav.popBackStack() },
+                    onAdd = { nav.navigate(ChoosePlaylistRoute) },
+                    onEdit = { index, kind -> nav.navigate(AddPlaylistRoute(kind.name, index)) },
+                    onSwitched = openHome,
+                    onEmpty = openWelcome,
+                )
             }
             composable<HomeRoute> {
                 HomeScreen(
@@ -101,7 +135,7 @@ class MainActivity : ComponentActivity() {
                     onOpenSearch = { nav.navigate(SearchRoute()) },
                     onOpenDownloads = { nav.navigate(DownloadsRoute) },
                     onTune = tune,
-                    onSignedOut = { nav.navigate(LoginRoute) { popUpTo(0) { inclusive = true } } },
+                    onOpenPlaylists = { nav.navigate(PlaylistsRoute) },
                 )
             }
             composable<SearchRoute> { entry ->
@@ -135,11 +169,8 @@ class MainActivity : ComponentActivity() {
                     onOpenFavouriteOrder = { nav.navigate(FavouriteOrderRoute) },
                     onOpenDownloads = { nav.navigate(DownloadsRoute) },
                     onOpenLogs = { nav.navigate(DeveloperLogRoute) },
-                    onSignedOut = {
-                        nav.navigate(LoginRoute) { popUpTo(0) { inclusive = true } }
-                    },
-                    onAddPlaylist = { nav.navigate(LoginRoute) },
-                    onSwitchedPlaylist = { nav.navigate(HomeRoute) { popUpTo(0) { inclusive = true } } },
+                    onSignedOut = openWelcome,
+                    onOpenPlaylists = { nav.navigate(PlaylistsRoute) },
                 )
             }
             composable<DeveloperLogRoute> { DeveloperLogScreen(onBack = { nav.popBackStack() }) }

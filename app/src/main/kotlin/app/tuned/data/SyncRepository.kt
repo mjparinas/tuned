@@ -6,6 +6,7 @@ import app.tuned.core.CatchUp
 import app.tuned.core.Episodes
 import app.tuned.core.M3uParser
 import app.tuned.core.PlaylistEntry
+import app.tuned.core.PlaylistLink
 import app.tuned.core.Search
 import app.tuned.core.StableId
 import app.tuned.core.Streams
@@ -32,9 +33,11 @@ import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.decodeToSequence
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import java.io.BufferedReader
 import java.io.File
 import java.io.IOException
 import java.io.InputStream
+import java.net.URI
 
 /** Where a refresh is, for the progress bars on sign-in, on the lists and in the notification. */
 data class SyncProgress(
@@ -139,7 +142,15 @@ class SyncRepository(
 
     private suspend fun refreshGuideLocked(progress: (SyncProgress) -> Unit): Int {
         val login = credentials.load() ?: throw IOException("Not signed in")
-        val url = login.guideUrl.ifBlank { XtreamUrls.guide(login.server, login.username, login.password) }
+        val url =
+            login.guideUrl.ifBlank {
+                if (login.kind == Credentials.Kind.Xtream) {
+                    XtreamUrls.guide(login.server, login.username, login.password)
+                } else {
+                    // A plain playlist's guide is the one its header names; without one there is no guide to fetch.
+                    headerGuide.takeIf { it.exists() }?.readText()?.takeIf { it.isNotBlank() } ?: return 0
+                }
+            }
         val days = settings.settings.first().guideDays
         val count =
             download(url, "guide", SyncProgress.Step.Guide, progress) { input ->
@@ -157,6 +168,12 @@ class SyncRepository(
         progress: (SyncProgress) -> Unit,
         read: suspend (InputStream) -> T,
     ): T {
+        if (url.startsWith(Credentials.FILE_SCHEME)) {
+            // A playlist picked from a file was copied into the app when it was added: read it where it is.
+            val local = File(URI(url))
+            if (!local.exists()) throw IOException("The playlist file is missing. Add it again in Settings › Playlists.")
+            return withContext(Dispatchers.IO) { local.inputStream().use { read(Streams.maybeGunzip(it)) } }
+        }
         val ua = settings.settings.first().userAgent
         val file = File(dir, name)
         try {
@@ -165,6 +182,21 @@ class SyncRepository(
         } finally {
             file.delete()
         }
+    }
+
+    /** Where the guide named in the last playlist's `#EXTM3U` line is kept, for plain playlists without a guide link. */
+    private val headerGuide get() = File(dir, "header-guide")
+
+    /** Peeks at the first line for `x-tvg-url` and puts the reader back, so the parser still sees every line. */
+    private fun rememberHeaderGuide(reader: BufferedReader) {
+        reader.mark(HEADER_PEEK)
+        val buffer = CharArray(HEADER_PEEK)
+        val read = reader.read(buffer).coerceAtLeast(0)
+        reader.reset()
+        val first = String(buffer, 0, read).substringBefore('\n')
+        val guide = PlaylistLink.headerGuide(first)
+        dir.mkdirs()
+        if (guide == null) headerGuide.delete() else headerGuide.writeText(guide)
     }
 
     private suspend fun importPlaylist(
@@ -176,7 +208,9 @@ class SyncRepository(
         writer.begin()
         try {
             val batch = ArrayList<ItemEntity>(BATCH)
-            for (entry in M3uParser.entries(input.bufferedReader())) {
+            val reader = input.bufferedReader()
+            rememberHeaderGuide(reader)
+            for (entry in M3uParser.entries(reader)) {
                 val row = entry.toRow()
                 if (!writer.accept(row.id)) continue // the same stream listed twice
                 batch += row
@@ -264,6 +298,7 @@ class SyncRepository(
 
     private companion object {
         const val BATCH = 1_000
+        const val HEADER_PEEK = 8_192
         const val MAX_ACCOUNT_ANSWER = 64_000
         const val HOUR = 3_600_000L
         const val DAY = 24 * HOUR

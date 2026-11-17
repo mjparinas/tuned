@@ -2,9 +2,45 @@
 <resources>
     <string name="playlists">Playlists</string>
     <plurals name="playlists_saved">
-        <item quantity="one">%d saved: tap to switch or add another</item>
-        <item quantity="other">%d saved: tap to switch or add another</item>
+        <item quantity="one">%d playlist saved</item>
+        <item quantity="other">%d playlists saved</item>
     </plurals>
+    <string name="playlists_in_use">%1$s · %2$d saved</string>
     <string name="playlists_add">Add a playlist</string>
-    <string name="playlists_forget">Forget this playlist</string>
+    <string name="playlists_help">Tap a playlist to watch it. Tuned keeps one playlist\'s channels at a time, so switching downloads the other one.</string>
+    <string name="playlists_active">In use</string>
+    <string name="playlists_options">Options for %1$s</string>
+    <string name="playlists_rename">Rename</string>
+    <string name="playlists_edit">Edit</string>
+    <string name="playlists_remove">Remove</string>
+    <string name="playlists_remove_title">Remove %1$s?</string>
+    <string name="playlists_remove_body">Its login is deleted from this device. You can add it again later.</string>
+    <string name="playlists_remove_last">It\'s your only playlist, so this signs you out and clears the saved channels and guide.</string>
+
+    <string name="welcome_title">Welcome to Tuned</string>
+    <string name="welcome_body">Add a playlist from your TV provider to start watching. You can add as many as you like later in Settings.</string>
+    <string name="welcome_pick">What did your provider give you?</string>
+    <string name="kind_xtream">Xtream Codes login</string>
+    <string name="kind_xtream_summary">A server address, username and password</string>
+    <string name="kind_link">Playlist link</string>
+    <string name="kind_link_summary">An M3U or M3U8 web link, with a guide link if you have one</string>
+    <string name="kind_file">Playlist file</string>
+    <string name="kind_file_summary">An .m3u file saved on this device</string>
+
+    <string name="add_xtream_hint">Enter the details your provider sent you. You can also paste a whole Xtream link into the server box.</string>
+    <string name="add_server_help">For example http://example.com:8080</string>
+    <string name="add_link_hint">Paste the playlist link your provider sent you.</string>
+    <string name="add_link_is_xtream">This is an Xtream login link, so Tuned will sign in with it and catch-up works too.</string>
+    <string name="add_file_hint">Pick a playlist file. Tuned keeps its own copy, so it still works if you move or delete the original.</string>
+    <string name="add_file_choose">Choose a file</string>
+    <string name="add_file_replace">Keep the current file, or choose a new one</string>
+    <string name="add_name">Name (optional)</string>
+    <string name="add_name_help">How it\'s listed, such as Sports or Living room</string>
+    <string name="add_guide">Guide (XMLTV) link (optional)</string>
+    <string name="add_guide_help">Leave blank to use the guide the playlist names</string>
+    <string name="add_submit">Add playlist</string>
+    <string name="add_save">Save</string>
+    <string name="add_bad_link">That doesn\'t look like a web link. Check it and try again.</string>
+    <string name="add_bad_file">That file doesn\'t look like an M3U playlist.</string>
+    <string name="add_pick_file">Choose a playlist file first.</string>
 </resources>

@@ -33,6 +33,8 @@ class BackupRepository(
     private data class Contents(
         val version: Int = 1,
         val login: Login? = null,
+        /** Every saved playlist (Settings › Playlists), so a restore brings back the whole list. */
+        val playlists: List<Login> = emptyList(),
         val settings: Map<String, JsonElement> = emptyMap(),
         val favourites: List<Favourite> = emptyList(),
         val watchLater: List<Later> = emptyList(),
@@ -55,7 +57,12 @@ class BackupRepository(
         val password: String,
         val playlistUrl: String = "",
         val guideUrl: String = "",
-    )
+        val name: String = "",
+    ) {
+        fun toCredentials() = Credentials(server, username, password, playlistUrl, guideUrl, name)
+    }
+
+    private fun Credentials.toLogin() = Login(server, username, password, playlistUrl, guideUrl, name)
 
     @Serializable
     private data class Favourite(
@@ -73,7 +80,9 @@ class BackupRepository(
     suspend fun export(passphrase: CharArray): ByteArray = withContext(Dispatchers.IO) {
         val contents =
             Contents(
-                login = credentials.load()?.let { Login(it.server, it.username, it.password, it.playlistUrl, it.guideUrl) },
+                login = credentials.load()?.toLogin(),
+                // A playlist picked from a file lives on this device only, so it isn't in the backup.
+                playlists = credentials.saved().filter { it.kind != Credentials.Kind.File }.map { it.toLogin() },
                 settings = settings.snapshot().mapValues { (_, v) -> encode(v) },
                 favourites = db.library().allFavourites().map { Favourite(it.itemId, it.addedAt, it.position) },
                 watchLater =
@@ -98,8 +107,9 @@ class BackupRepository(
         settings.restore(contents.settings.mapNotNull { (k, v) -> decode(v)?.let { k to it } }.toMap())
         contents.favourites.forEach { db.library().addFavourite(FavouriteEntity(it.itemId, it.addedAt, it.position)) }
         contents.watchLater.forEach { db.watchLater().add(WatchLaterEntity(it.key, it.itemId, it.showKey, it.title, it.image, it.addedAt)) }
+        contents.playlists.forEach { credentials.remember(it.toCredentials()) }
         contents.login?.let {
-            val login = Credentials(it.server, it.username, it.password, it.playlistUrl, it.guideUrl)
+            val login = it.toCredentials()
             credentials.save(login)
             credentials.remember(login)
         }

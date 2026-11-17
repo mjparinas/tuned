@@ -1,6 +1,6 @@
 # Playlist and guide
 
-**Source.** Xtream Codes-style servers: `get.php?type=m3u_plus&output=ts` for the playlist and `xmltv.php` for the guide, both built from the server, username and password (`XtreamUrls`). The default server is `http://eros4k.ddns.net`, editable at sign-in and in Settings (Melvin, 2026-11-17). Sign-in also takes a plain M3U link and XMLTV link instead, for other providers.
+**Source.** Xtream Codes-style servers: `get.php?type=m3u_plus&output=ts` for the playlist and `xmltv.php` for the guide, both built from the server, username and password (`XtreamUrls`). The default server is `http://eros4k.ddns.net`, editable at sign-in and in Settings (Melvin, 2026-11-17). Other providers can be added as a plain M3U link or an M3U file, with an optional XMLTV link; a plain playlist without one uses the guide its `#EXTM3U` line names ([onboarding](onboarding.md)).
 
 **Sections.** Xtream URLs carry the section in the path (`/live/`, `/movie/`, `/series/`), which decides Live TV, Movies or Shows. Without it, the category name decides (`VOD`, `Movies`, `Series`…), then the file type (`.mkv`, `.mp4` are movies), and anything else is live.
 

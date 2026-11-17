@@ -189,14 +189,6 @@ class BrowseViewModel(
 
     fun refresh() = container.scheduler.refreshNow()
 
-    /** "Change login" when the first download fails: back to sign-in with nothing kept. */
-    fun signOut(onDone: () -> Unit) {
-        viewModelScope.launchSafely("BrowseViewModel") {
-            container.signOut()
-            onDone()
-        }
-    }
-
     /** The poster badge's rating: from the device when seen before, otherwise one TMDB search (only with a key). */
     suspend fun rating(
         name: String,

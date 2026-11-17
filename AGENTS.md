@@ -24,7 +24,7 @@ Kotlin, Jetpack Compose with Material 3, Navigation Compose (type-safe routes), 
 
 ## Product rules
 
-- **Get out of the way.** Opening the app shows channels from the cache at once; nothing waits on the network. The player shows only video until a tap; the controls hide themselves. No pop-ups, no onboarding beyond sign-in.
+- **Get out of the way.** Opening the app shows channels from the cache at once; nothing waits on the network. The player shows only video until a tap; the controls hide themselves. No pop-ups, no onboarding beyond adding a first playlist ([onboarding](docs/decisions/onboarding.md)).
 - **Speed first** ([speed](docs/decisions/speed.md)): lists are paged straight from Room; downloads stream into the database in batches; nothing heavy runs before the first frame.
 - **Customizable** (Melvin, 2026-11-17: "customizing most things in the settings"): a new behaviour gets a setting when people could reasonably want it either way, with the common choice as the default.
 - **Never ask for, log or commit a login.** The app stores it encrypted until sign-out ([security](docs/decisions/security.md)). Error messages go through `XtreamUrls.redact`; log lines through `AppLog`, which scrubs them ([diagnostics](docs/decisions/diagnostics.md)). Playlists and guides are never committed (`.gitignore` blocks `*.m3u`, `*.xmltv`, `.env`).
@@ -57,6 +57,7 @@ One file per topic in `docs/decisions/`, A to Z. Add a line when you add a topic
 - [Channel scan](docs/decisions/channel-scan.md): finding dead channels without blaming them for the internet or the server.
 - [Diagnostics](docs/decisions/diagnostics.md): crash reports, `launchSafely` and `attempt`, the developer log, keeping logins out of it.
 - [Large screens](docs/decisions/large-screens.md): navigation rail, list and detail panes, the guide beside the player on tablets.
+- [Onboarding and playlists](docs/decisions/onboarding.md): the welcome screen, one form per playlist kind (Xtream, link, file), Settings › Playlists.
 - [Offline downloads](docs/decisions/offline.md): saving films and episodes, one connection at a time.
 - [Playlist and guide](docs/decisions/playlist.md): Xtream URLs, how streams are sorted, countries, refresh.
 - [Player](docs/decisions/player.md): Media3 setup, controls, captions, audio, picture-in-picture.
