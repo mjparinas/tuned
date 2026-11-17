@@ -137,6 +137,15 @@ class PlayerActivity : FragmentActivity() {
     private val audioCheck by lazy {
         AudioCheck { codec -> Toast.makeText(this, getString(R.string.player_no_sound, codec), Toast.LENGTH_LONG).show() }
     }
+    private val timeshift by lazy {
+        LiveTimeshift(
+            context = this,
+            scope = lifecycleScope,
+            http = container.http,
+            userAgent = { settings.userAgent.ifBlank { "Tuned/${BuildConfig.VERSION_NAME}" } },
+            keepMinutes = { settings.liveRewindMinutes },
+        )
+    }
     private val frameRate by lazy { FrameRateMatch(this) { settings.matchFrameRate && cast?.casting != true } }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -419,8 +428,9 @@ class PlayerActivity : FragmentActivity() {
         playerView.setControllerShowTimeoutMs(settings.controlsTimeoutMs)
         playerView.setShowNextButton(queue.size > 1)
         playerView.setShowPreviousButton(queue.size > 1)
-        playerView.setShowFastForwardButton(!live)
-        playerView.setShowRewindButton(!live)
+        // Live channels can rewind and catch up once paused (see [LiveTimeshift]); the buttons are greyed out until then.
+        playerView.setShowFastForwardButton(!live || timeshift.enabled)
+        playerView.setShowRewindButton(!live || timeshift.enabled)
         CaptionStyles.apply(requireNotNull(playerView.subtitleView), settings.captions)
 
         // Saved films and episodes play from the device.
@@ -457,8 +467,9 @@ class PlayerActivity : FragmentActivity() {
     }
 
     private fun buildPlayer(live: Boolean): ExoPlayer {
-        // Streams over OkHttp, saved downloads from the device.
-        val http = PlayerSources.factory(this, container.http, settings.userAgent.ifBlank { "Tuned/${BuildConfig.VERSION_NAME}" })
+        // Streams over OkHttp (through the live rewind copy on live TV), saved downloads from the device.
+        val agent = settings.userAgent.ifBlank { "Tuned/${BuildConfig.VERSION_NAME}" }
+        val http = PlayerSources.factory(this, container.http, agent) { network -> if (live) timeshift.factory(network) else network }
         // TS streams from IPTV servers often start on a non-IDR frame; these flags start them sooner.
         val extractors =
             DefaultExtractorsFactory().setTsExtractorFlags(
@@ -517,6 +528,7 @@ class PlayerActivity : FragmentActivity() {
             if (cast?.casting == true) cast?.load(item, live, 0)
             liveRetries = 0
             pictured = false
+            player?.let(timeshift::onChannelChanged)
             // Flipping to another channel ends the search for a copy of the last one.
             backups.onChannelChanged(id)
         }
@@ -617,7 +629,7 @@ class PlayerActivity : FragmentActivity() {
 
     /** What the on-screen controls drive: the phone's player, or the TV's play and pause while casting. */
     private inner class ViewPlayer(
-        exo: ExoPlayer,
+        private val exo: ExoPlayer,
     ) : ForwardingPlayer(exo) {
         override fun prepare() {
             if (cast?.casting != true) super.prepare()
@@ -643,7 +655,12 @@ class PlayerActivity : FragmentActivity() {
         }
 
         override fun pause() {
-            if (cast?.casting == true) cast?.pause() else super.pause()
+            when {
+                cast?.casting == true -> cast?.pause()
+                // A live channel pauses into the copy kept on the device, so it can carry on, rewind or catch up.
+                live() && timeshift.shift(exo) -> Unit
+                else -> super.pause()
+            }
         }
     }
 
@@ -781,6 +798,7 @@ class PlayerActivity : FragmentActivity() {
         progressJob?.cancel()
         autoTune?.release()
         backups.release()
+        timeshift.release()
         gestures?.release()
         tools.release()
         cast?.release()
