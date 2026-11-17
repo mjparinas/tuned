@@ -5,6 +5,7 @@ import android.content.Context
 import app.tuned.data.CredentialStore
 import app.tuned.data.SettingsRepository
 import app.tuned.data.SyncRepository
+import app.tuned.data.TuneRepository
 import app.tuned.data.db.TunedDatabase
 import app.tuned.updates.GitHubUpdates
 import app.tuned.work.SyncScheduler
@@ -42,6 +43,7 @@ class AppContainer(
             .build()
     }
     val sync by lazy { SyncRepository(db, http, credentials, settings) }
+    val tune by lazy { TuneRepository(db, settings) }
     val scheduler = SyncScheduler(context)
     val updates by lazy { GitHubUpdates(context, http) }
 }

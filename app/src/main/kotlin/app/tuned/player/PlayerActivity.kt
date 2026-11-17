@@ -68,6 +68,8 @@ class PlayerActivity : ComponentActivity() {
     private var queue: List<ItemEntity> = emptyList()
     private var progressJob: Job? = null
     private var liveRetries = 0
+    private var autoTune: AutoTune? = null
+    private lateinit var statusView: TextView
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -76,6 +78,11 @@ class PlayerActivity : ComponentActivity() {
         lifecycleScope.launch {
             settings = container.settings.settings.first()
             if (settings.landscapePlayback) requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
+            val query = intent.getStringExtra(EXTRA_TUNE)
+            if (query != null) {
+                startTune(query)
+                return@launch
+            }
             val id = intent.getLongExtra(EXTRA_ID, 0)
             val item = container.db.items().get(id)
             if (item == null) {
@@ -115,11 +122,24 @@ class PlayerActivity : ComponentActivity() {
                 addView(titleView)
                 addView(subtitleView)
             }
+        statusView =
+            TextView(this).apply {
+                setTextColor(Color.WHITE)
+                textSize = 14f
+                visibility = View.GONE
+                setBackgroundColor(0x99000000.toInt())
+                val pad = (12 * resources.displayMetrics.density).toInt()
+                setPadding(pad * 2, pad, pad * 2, pad)
+            }
         val root = FrameLayout(this)
         root.addView(playerView, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
         root.addView(
             overlay,
             FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT, Gravity.TOP),
+        )
+        root.addView(
+            statusView,
+            FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT, Gravity.CENTER),
         )
         // The title shows and hides with the controls, so a tap reveals everything and the video is otherwise bare.
         playerView.setControllerVisibilityListener(
@@ -138,6 +158,40 @@ class PlayerActivity : ComponentActivity() {
             ContentKind.SERIES -> item.showKey?.let { items.episodesNow(it) }.orEmpty()
             ContentKind.MOVIE -> emptyList()
         }.ifEmpty { listOf(item) }
+    }
+
+    /** Auto-tune: queue the channels for an event, best first, and let [AutoTune] find one that plays. */
+    private suspend fun startTune(query: String) {
+        val ids = container.tune.candidates(query)
+        val byId =
+            container.db
+                .items()
+                .getAll(ids)
+                .associateBy { it.id }
+        queue = ids.mapNotNull(byId::get)
+        if (queue.isEmpty()) {
+            Toast.makeText(this, getString(R.string.tune_nothing_found, query), Toast.LENGTH_LONG).show()
+            finish()
+            return
+        }
+        val tuner =
+            AutoTune(
+                scope = lifecycleScope,
+                tune = container.tune,
+                timeoutMs = settings.tuneTimeoutMs.toLong(),
+                minHeight = settings.tuneMinHeight,
+                onStatus = { position ->
+                    statusView.visibility = if (position == null) View.GONE else View.VISIBLE
+                    if (position != null) statusView.text = getString(R.string.tune_trying, position, queue.size)
+                },
+                onGiveUp = { Toast.makeText(this, getString(R.string.tune_none, query), Toast.LENGTH_LONG).show() },
+            )
+        autoTune = tuner
+        start(queue.first())
+        val exo = requireNotNull(player)
+        tuner.player = exo
+        exo.addListener(tuner)
+        tuner.begin()
     }
 
     private suspend fun start(item: ItemEntity) {
@@ -223,6 +277,12 @@ class PlayerActivity : ComponentActivity() {
 
         override fun onPlayerError(error: PlaybackException) {
             val p = player ?: return
+            // Auto-tune: a channel that fails while being tried is dead; move straight on to the next one.
+            val tuner = autoTune
+            if (tuner != null && tuner.searching) {
+                tuner.failCurrent()
+                return
+            }
             if (error.errorCode == PlaybackException.ERROR_CODE_BEHIND_LIVE_WINDOW) {
                 p.seekToDefaultPosition()
                 p.prepare()
@@ -235,6 +295,11 @@ class PlayerActivity : ComponentActivity() {
                     delay(1_500L * liveRetries)
                     p.prepare()
                 }
+                return
+            }
+            // A tuned channel that dropped for good: carry on to the next working one, as a radio would.
+            if (tuner != null) {
+                tuner.failCurrent()
                 return
             }
             Toast.makeText(this@PlayerActivity, getString(R.string.player_error, error.errorCodeName), Toast.LENGTH_LONG).show()
@@ -381,6 +446,7 @@ class PlayerActivity : ComponentActivity() {
 
     override fun onDestroy() {
         progressJob?.cancel()
+        autoTune?.release()
         player?.release()
         player = null
         super.onDestroy()
@@ -388,6 +454,7 @@ class PlayerActivity : ComponentActivity() {
 
     companion object {
         private const val EXTRA_ID = "id"
+        private const val EXTRA_TUNE = "tune"
         private const val MAX_LIVE_RETRIES = 3
 
         fun start(
@@ -395,6 +462,14 @@ class PlayerActivity : ComponentActivity() {
             itemId: Long,
         ) {
             context.startActivity(Intent(context, PlayerActivity::class.java).putExtra(EXTRA_ID, itemId))
+        }
+
+        /** Auto-tune: find a working channel showing [query] (a channel name or an event in the guide) and play it. */
+        fun tune(
+            context: Context,
+            query: String,
+        ) {
+            context.startActivity(Intent(context, PlayerActivity::class.java).putExtra(EXTRA_TUNE, query))
         }
     }
 }

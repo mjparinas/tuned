@@ -58,6 +58,7 @@ class MainActivity : ComponentActivity() {
                             onOpenShow = { key, title -> nav.navigate(ShowRoute(key, title)) },
                             onOpenGuide = { id -> nav.navigate(GuideRoute(id)) },
                             onOpenSettings = { nav.navigate(SettingsRoute) },
+                            onTune = { query -> PlayerActivity.tune(this@MainActivity, query) },
                         )
                     }
                     composable<ShowRoute> { entry ->

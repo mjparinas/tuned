@@ -95,6 +95,15 @@
     <string name="settings_pip_summary">Keep watching in a small window when you leave the app</string>
     <string name="settings_landscape">Rotate to landscape for playback</string>
     <string name="settings_controls_timeout">Hide controls after</string>
+    <string name="settings_tune">Auto-tune</string>
+    <string name="settings_tune_timeout">Try the next channel after</string>
+    <string name="settings_tune_quality">Lowest picture to accept</string>
+    <string name="tune_quality_any">Any</string>
+    <string name="tune_quality_at_least">%1$dp or better</string>
+    <string name="tune_button">Auto-tune</string>
+    <string name="tune_trying">Finding a working channel: %1$d of %2$d</string>
+    <string name="tune_none">No channel showing “%1$s” is working right now</string>
+    <string name="tune_nothing_found">Nothing found for “%1$s”</string>
     <string name="settings_seek_back">Skip back</string>
     <string name="settings_seek_forward">Skip forward</string>
     <string name="settings_clear_history">Clear watch history</string>
