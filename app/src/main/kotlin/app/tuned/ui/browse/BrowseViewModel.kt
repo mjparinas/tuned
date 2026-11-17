@@ -16,7 +16,6 @@ import app.tuned.data.SyncProgress
 import app.tuned.data.db.ChannelWithNow
 import app.tuned.data.db.ContinueRow
 import app.tuned.data.db.GroupCount
-import app.tuned.data.db.ItemDao
 import app.tuned.data.db.ItemEntity
 import app.tuned.data.db.ShowSummary
 import app.tuned.data.hiddenKeys
@@ -97,19 +96,13 @@ class BrowseViewModel(
         query(ContentKind.LIVE)
             .flatMapLatest { q ->
                 Pager(config) {
-                    items.channels(
-                        q.now,
-                        q.hidden,
-                        q.adult,
-                        (q.filter as? Filter.Group)?.name,
-                        when (q.filter) {
-                            Filter.Favourites -> ItemDao.ONLY_FAVOURITES
-                            Filter.Recent -> ItemDao.ONLY_RECENT
-                            else -> 0
-                        },
-                        q.search,
-                        Search.match(q.search),
-                    )
+                    val group = (q.filter as? Filter.Group)?.name
+                    val match = Search.match(q.search)
+                    when (q.filter) {
+                        Filter.Favourites -> items.favouriteChannels(q.now, q.hidden, q.adult, group, q.search, match)
+                        Filter.Recent -> items.recentChannels(q.now, q.hidden, q.adult, group, q.search, match)
+                        else -> items.channels(q.now, q.hidden, q.adult, group, q.search, match)
+                    }
                 }.flow
             }.cachedIn(viewModelScope)
 
@@ -133,14 +126,13 @@ class BrowseViewModel(
         query(ContentKind.SERIES)
             .flatMapLatest { q ->
                 Pager(config) {
-                    items.shows(
-                        q.hidden,
-                        q.adult,
-                        (q.filter as? Filter.Group)?.name,
-                        q.filter == Filter.Favourites,
-                        q.search,
-                        Search.match(q.search),
-                    )
+                    val group = (q.filter as? Filter.Group)?.name
+                    // Browsing reads the per-show table; a search or Favourites narrows the episodes themselves.
+                    if (q.search.isEmpty() && q.filter != Filter.Favourites) {
+                        items.showsTab(q.hidden, q.adult, group)
+                    } else {
+                        items.shows(q.hidden, q.adult, group, q.filter == Filter.Favourites, q.search, Search.match(q.search))
+                    }
                 }.flow
             }.cachedIn(viewModelScope)
 

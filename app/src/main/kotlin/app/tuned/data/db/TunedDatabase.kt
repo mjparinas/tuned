@@ -21,8 +21,9 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         SeenEpisodeEntity::class,
         ChannelScanEntity::class,
         ItemFts::class,
+        ShowGroupEntity::class,
     ],
-    version = 10,
+    version = 11,
     exportSchema = true,
 )
 abstract class TunedDatabase : RoomDatabase() {
@@ -60,6 +61,7 @@ abstract class TunedDatabase : RoomDatabase() {
                 MIGRATION_7_8,
                 MIGRATION_8_9,
                 MIGRATION_9_10,
+                MIGRATION_10_11,
             ).build()
 
         /** Adds auto-tune's channel health. */
@@ -164,6 +166,21 @@ abstract class TunedDatabase : RoomDatabase() {
                     for ((name, sql) in ftsTriggers) db.execSQL("CREATE TRIGGER IF NOT EXISTS room_fts_content_sync_items_fts_$name $sql")
                     db.execSQL("INSERT INTO `items_fts`(`items_fts`) VALUES('rebuild')")
                     db.execSQL("CREATE INDEX IF NOT EXISTS `index_programmes_start` ON `programmes` (`start`)")
+                }
+            }
+
+        /** Adds the per-show table the Shows tab reads, filled from the cached playlist. */
+        val MIGRATION_10_11 =
+            object : Migration(10, 11) {
+                override fun migrate(db: SupportSQLiteDatabase) {
+                    db.execSQL(
+                        "CREATE TABLE IF NOT EXISTS `show_groups` (`rowId` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+                            "`showKey` TEXT NOT NULL, `groupName` TEXT NOT NULL, `region` TEXT, `adult` INTEGER NOT NULL, " +
+                            "`showName` TEXT NOT NULL, `logo` TEXT, `episodes` INTEGER NOT NULL, `sortOrder` INTEGER NOT NULL)",
+                    )
+                    db.execSQL("CREATE INDEX IF NOT EXISTS `index_show_groups_showKey` ON `show_groups` (`showKey`)")
+                    db.execSQL("CREATE INDEX IF NOT EXISTS `index_show_groups_sortOrder` ON `show_groups` (`sortOrder`)")
+                    db.execSQL("INSERT INTO show_groups (${ShowGroups.COLUMNS}) ${ShowGroups.SELECT}")
                 }
             }
 
