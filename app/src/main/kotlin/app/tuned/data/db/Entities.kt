@@ -34,6 +34,19 @@ data class ItemEntity(
     val sortOrder: Int,
 )
 
+/** A live channel that keeps recordings (Xtream `tv_archive`), by its stream id; replaced on every playlist refresh. */
+@Entity(tableName = "catchup")
+data class CatchUpEntity(
+    @PrimaryKey val streamId: String,
+    val days: Int,
+)
+
+/** A live channel's guide id and link, to match it with its catch-up days. */
+data class LiveLink(
+    val tvgId: String,
+    val url: String,
+)
+
 @Entity(tableName = "programmes", indices = [Index(value = ["channelId", "start"]), Index(value = ["stop"])])
 data class ProgrammeEntity(
     @PrimaryKey(autoGenerate = true) val rowId: Long = 0,
