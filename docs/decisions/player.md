@@ -15,3 +15,17 @@
 **Resume.** Movies and episodes save their position every 10 seconds and on leaving; reopening resumes after 30 seconds in, unless 95% watched. Shows mark watched episodes.
 
 **Picture-in-picture** when leaving the app while playing (Settings, on by default). Leaving without it ends playback.
+
+## Gestures and reconnecting (2026-11-17)
+
+Melvin asked for auto-reconnect and player gestures. Both are on by default and each has a switch in Settings › Player.
+
+- **Gestures** (`PlayerGestures`), as most phone players do them:
+  - drag up or down on the left half for brightness, on the right half for volume;
+  - double-tap the left or right third to skip back or forward (films and episodes);
+  - swipe sideways to change channel (live TV);
+  - a single tap still shows the controls.
+
+  Brightness goes back to the system's when the player closes.
+
+- **Reconnect.** A dropped live stream, or a network error on a film or episode, is retried up to five times with a growing pause, and "Reconnecting… (2 of 5)" shows meanwhile. The count resets once it plays again. When the phone's connection comes back (`ConnectivityManager` default network), a stopped stream starts again by itself, and `prepare()` keeps a film's position. It still uses one connection at a time, never a second stream.

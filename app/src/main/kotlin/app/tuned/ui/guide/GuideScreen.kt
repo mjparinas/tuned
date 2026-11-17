@@ -1,7 +1,12 @@
 package app.tuned.ui.guide
 
+import android.Manifest
 import android.app.Application
+import android.content.pm.PackageManager
+import android.os.Build
 import android.text.format.DateFormat
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
@@ -18,6 +23,8 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
+import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.NotificationsNone
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
@@ -28,11 +35,15 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
@@ -43,12 +54,14 @@ import app.tuned.data.db.FavouriteEntity
 import app.tuned.data.db.ItemEntity
 import app.tuned.data.db.ProgrammeEntity
 import app.tuned.ui.common.BackTopBar
+import app.tuned.work.Reminders
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -77,6 +90,24 @@ class GuideViewModel(
             .filterNotNull()
             .flatMapLatest { db.library().isFavourite(it.id) }
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), false)
+
+    private val reminders = app.container.reminders
+    private val settings = app.container.settings
+
+    /** Keys ([Reminders.key]) of the reminders waiting to go off. */
+    val scheduled: StateFlow<Set<String>> =
+        reminders.scheduled.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptySet())
+
+    fun toggleReminder(p: ProgrammeEntity) {
+        val c = channel.value ?: return
+        if (Reminders.key(c.id, p.start) in scheduled.value) {
+            reminders.cancel(c.id, p.start)
+        } else {
+            viewModelScope.launch {
+                reminders.set(c.id, c.name, p.title, p.start, settings.settings.first().reminderLeadMinutes)
+            }
+        }
+    }
 
     fun toggleFavourite() {
         val c = channel.value ?: return
@@ -108,6 +139,25 @@ fun GuideScreen(
     val time = DateFormat.getTimeFormat(context)
     val day = DateFormat.getMediumDateFormat(context)
     val now = System.currentTimeMillis()
+    val scheduled by vm.scheduled.collectAsStateWithLifecycle()
+    var pending by remember { mutableStateOf<ProgrammeEntity?>(null) }
+    // Android 13+ asks once for notifications the first time a reminder is set; a "no" just leaves it unset.
+    val askPermission =
+        rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+            pending?.takeIf { granted }?.let(vm::toggleReminder)
+            pending = null
+        }
+    val toggleReminder: (ProgrammeEntity) -> Unit = { p ->
+        val needsPermission =
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+                ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
+        if (needsPermission) {
+            pending = p
+            askPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
+        } else {
+            vm.toggleReminder(p)
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -156,18 +206,20 @@ fun GuideScreen(
                         )
                     }
                     Row(
-                        Modifier
-                            .fillMaxWidth()
-                            .then(
-                                if (onNow) {
-                                    Modifier.background(
-                                        MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f),
-                                    )
-                                } else {
-                                    Modifier
-                                },
-                            ).clickable(enabled = onNow) { onPlay(itemId) }
-                            .padding(horizontal = 16.dp, vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .then(
+                                    if (onNow) {
+                                        Modifier.background(
+                                            MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f),
+                                        )
+                                    } else {
+                                        Modifier
+                                    },
+                                ).clickable(enabled = onNow) { onPlay(itemId) }
+                                .padding(horizontal = 16.dp, vertical = 10.dp),
                     ) {
                         Text(
                             time.format(Date(p.start)),
@@ -187,6 +239,16 @@ fun GuideScreen(
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     maxLines = 3,
+                                )
+                            }
+                        }
+                        if (p.start > now) {
+                            val reminded = channel?.let { Reminders.key(it.id, p.start) in scheduled } == true
+                            IconButton(onClick = { toggleReminder(p) }) {
+                                Icon(
+                                    if (reminded) Icons.Filled.Notifications else Icons.Filled.NotificationsNone,
+                                    contentDescription = stringResource(if (reminded) R.string.reminder_cancel else R.string.remind_me),
+                                    tint = if (reminded) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                                 )
                             }
                         }
