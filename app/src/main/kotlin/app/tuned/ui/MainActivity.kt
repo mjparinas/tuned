@@ -82,8 +82,9 @@ class MainActivity : ComponentActivity() {
         }
         NavHost(navController = nav, startDestination = if (signedIn) HomeRoute else LoginRoute) {
             composable<LoginRoute> {
+                // From sign-in or from Settings › Playlists › Add: either way the new playlist opens on its own.
                 LoginScreen(onSignedIn = {
-                    nav.navigate(HomeRoute) { popUpTo<LoginRoute> { inclusive = true } }
+                    nav.navigate(HomeRoute) { popUpTo(0) { inclusive = true } }
                 })
             }
             composable<HomeRoute> {
@@ -129,6 +130,8 @@ class MainActivity : ComponentActivity() {
                     onSignedOut = {
                         nav.navigate(LoginRoute) { popUpTo(0) { inclusive = true } }
                     },
+                    onAddPlaylist = { nav.navigate(LoginRoute) },
+                    onSwitchedPlaylist = { nav.navigate(HomeRoute) { popUpTo(0) { inclusive = true } } },
                 )
             }
             composable<CaptionSettingsRoute> {

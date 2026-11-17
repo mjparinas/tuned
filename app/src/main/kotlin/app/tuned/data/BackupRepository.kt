@@ -78,7 +78,11 @@ class BackupRepository(
                 .getOrElse { throw BackupCrypto.NotABackup() }
         settings.restore(contents.settings.mapNotNull { (k, v) -> decode(v)?.let { k to it } }.toMap())
         contents.favourites.forEach { db.library().addFavourite(FavouriteEntity(it.itemId, it.addedAt, it.position)) }
-        contents.login?.let { credentials.save(Credentials(it.server, it.username, it.password, it.playlistUrl, it.guideUrl)) }
+        contents.login?.let {
+            val login = Credentials(it.server, it.username, it.password, it.playlistUrl, it.guideUrl)
+            credentials.save(login)
+            credentials.remember(login)
+        }
         Restored(signedIn = contents.login != null, favourites = contents.favourites.size)
     }
 
