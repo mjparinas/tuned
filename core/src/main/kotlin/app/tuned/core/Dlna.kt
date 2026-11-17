@@ -14,6 +14,9 @@ object Dlna {
     const val RENDERER = "urn:schemas-upnp-org:device:MediaRenderer:1"
     private const val AV_TRANSPORT = "urn:schemas-upnp-org:service:AVTransport:1"
 
+    /** Any version of AVTransport. */
+    private const val AV_TRANSPORT_PREFIX = "urn:schemas-upnp-org:service:AVTransport:"
+
     /** A TV or speaker that can be told to play a link. */
     data class Renderer(
         val name: String,
@@ -50,49 +53,62 @@ object Dlna {
         parser: XmlPullParser,
         location: String,
     ): Renderer? {
-        var name: String? = null
-        var udn: String? = null
-        var base: String? = null
-        var serviceType: String? = null
-        var control: String? = null
-        var avControl: String? = null
+        val d = Description()
         var event = parser.eventType
         while (event != XmlPullParser.END_DOCUMENT) {
             if (event == XmlPullParser.START_TAG) {
-                when (parser.name) {
-                    "friendlyName" -> {
-                        if (name == null) name = parser.nextText().trim()
-                    }
-
-                    "UDN" -> {
-                        if (udn == null) udn = parser.nextText().trim()
-                    }
-
-                    "URLBase" -> {
-                        base = parser.nextText().trim()
-                    }
-
-                    "service" -> {
-                        serviceType = null
-                        control = null
-                    }
-
-                    "serviceType" -> {
-                        serviceType = parser.nextText().trim()
-                    }
-
-                    "controlURL" -> {
-                        control = parser.nextText().trim()
-                    }
-                }
-            } else if (event == XmlPullParser.END_TAG && parser.name == "service") {
-                if (avControl == null && serviceType?.startsWith(AV_TRANSPORT.dropLast(1)) == true) avControl = control
+                d.start(parser)
+            } else if (event == XmlPullParser.END_TAG) {
+                d.end(parser.name)
             }
             event = parser.next()
         }
-        val path = avControl?.takeIf { it.isNotEmpty() } ?: return null
-        val url = runCatching { URI(base?.takeIf { it.isNotEmpty() } ?: location).resolve(path).toString() }.getOrNull() ?: return null
-        return Renderer(name?.takeIf { it.isNotEmpty() } ?: "DLNA", url, udn ?: location)
+        val path = d.avControl?.takeIf { it.isNotEmpty() } ?: return null
+        val url = runCatching { URI(d.base?.takeIf { it.isNotEmpty() } ?: location).resolve(path).toString() }.getOrNull() ?: return null
+        return Renderer(d.name?.takeIf { it.isNotEmpty() } ?: "DLNA", url, d.udn ?: location)
+    }
+
+    /** What a description has said so far: the first device's name and id, and the AVTransport control link. */
+    private class Description {
+        var name: String? = null
+        var udn: String? = null
+        var base: String? = null
+        var avControl: String? = null
+        private var serviceType: String? = null
+        private var control: String? = null
+
+        fun start(parser: XmlPullParser) {
+            when (parser.name) {
+                "friendlyName" -> {
+                    if (name == null) name = parser.nextText().trim()
+                }
+
+                "UDN" -> {
+                    if (udn == null) udn = parser.nextText().trim()
+                }
+
+                "URLBase" -> {
+                    base = parser.nextText().trim()
+                }
+
+                "service" -> {
+                    serviceType = null
+                    control = null
+                }
+
+                "serviceType" -> {
+                    serviceType = parser.nextText().trim()
+                }
+
+                "controlURL" -> {
+                    control = parser.nextText().trim()
+                }
+            }
+        }
+
+        fun end(tag: String?) {
+            if (tag == "service" && avControl == null && serviceType?.startsWith(AV_TRANSPORT_PREFIX) == true) avControl = control
+        }
     }
 
     /** The SOAPAction header for [action]. */

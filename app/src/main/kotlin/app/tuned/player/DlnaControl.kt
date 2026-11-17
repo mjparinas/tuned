@@ -14,7 +14,6 @@ import kotlinx.coroutines.sync.withLock
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
-import java.io.IOException
 
 /**
  * Playing on a DLNA TV picked from the cast picker. Like a Chromecast, the TV fetches the stream itself, so the phone
@@ -107,11 +106,7 @@ class DlnaControl(
                         .post(body.toRequestBody(SOAP))
                         .build()
                 // A TV that refuses one step (Stop when idle, Seek on a live stream) still plays.
-                try {
-                    http.newCall(request).execute().close()
-                } catch (_: IOException) {
-                    Unit
-                }
+                runCatching { http.newCall(request).execute().close() }
             }
         }
     }

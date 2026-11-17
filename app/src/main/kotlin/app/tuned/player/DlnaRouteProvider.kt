@@ -3,8 +3,8 @@ package app.tuned.player
 import android.content.Context
 import android.content.IntentFilter
 import android.net.wifi.WifiManager
+import android.os.Bundle
 import android.util.Xml
-import androidx.core.os.bundleOf
 import androidx.mediarouter.media.MediaRouteDescriptor
 import androidx.mediarouter.media.MediaRouteDiscoveryRequest
 import androidx.mediarouter.media.MediaRouteProvider
@@ -116,7 +116,7 @@ class DlnaRouteProvider(
                     .setPlaybackType(MediaRouter.RouteInfo.PLAYBACK_TYPE_REMOTE)
                     .setDeviceType(MediaRouter.RouteInfo.DEVICE_TYPE_TV)
                     .setVolumeHandling(MediaRouter.RouteInfo.PLAYBACK_VOLUME_FIXED)
-                    .setExtras(bundleOf(EXTRA_CONTROL to r.controlUrl))
+                    .setExtras(Bundle().apply { putString(EXTRA_CONTROL, r.controlUrl) })
                     .build()
             }
         withContext(Dispatchers.Main) { descriptor = MediaRouteProviderDescriptor.Builder().addRoutes(routes).build() }
