@@ -81,6 +81,7 @@ class PlayerActivity : FragmentActivity() {
     private var gestures: PlayerGestures? = null
     private lateinit var tools: PlayerTools
     private var cast: CastControl? = null
+    private val subtitleTiming = SubtitleTiming()
     private var reconnect: ConnectivityManager.NetworkCallback? = null
     private var autoTune: AutoTune? = null
     private lateinit var statusView: TextView
@@ -226,6 +227,8 @@ class PlayerActivity : FragmentActivity() {
                         touch = { gestures },
                         say = ::flash,
                         onFitChanged = { fit -> lifecycleScope.launch { container.settings.update { it.copy(videoFit = fit) } } },
+                        subtitles = subtitleTiming,
+                        casting = { cast?.casting == true },
                     ),
             )
         overlay.addView(tools.toolbar)
@@ -407,7 +410,7 @@ class PlayerActivity : FragmentActivity() {
             }
         return ExoPlayer
             .Builder(this)
-            .setMediaSourceFactory(DefaultMediaSourceFactory(http, extractors))
+            .setMediaSourceFactory(DefaultMediaSourceFactory(http, extractors).setSubtitleParserFactory(subtitleTiming.parsers))
             .setLoadControl(load)
             .setTrackSelector(selector)
             .setSeekBackIncrementMs(settings.seekBackMs)
