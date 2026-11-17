@@ -3,6 +3,7 @@ package app.tuned.ui
 import android.app.SearchManager
 import android.content.Intent
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -13,14 +14,20 @@ import androidx.compose.runtime.remember
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
+import androidx.navigation.NavDestination.Companion.hasRoute
+import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
+import app.tuned.R
 import app.tuned.container
 import app.tuned.data.AppSettings
+import app.tuned.diagnostics.launchSafely
 import app.tuned.player.PlayerActivity
 import app.tuned.ui.browse.HomeScreen
+import app.tuned.ui.common.WithOfflineBanner
 import app.tuned.ui.details.MovieScreen
 import app.tuned.ui.guide.GuideScreen
 import app.tuned.ui.login.LoginScreen
@@ -28,6 +35,7 @@ import app.tuned.ui.offline.DownloadsScreen
 import app.tuned.ui.search.SearchScreen
 import app.tuned.ui.settings.CaptionSettingsScreen
 import app.tuned.ui.settings.ChannelHealthScreen
+import app.tuned.ui.settings.DeveloperLogScreen
 import app.tuned.ui.settings.FavouriteOrderScreen
 import app.tuned.ui.settings.HiddenGroupsScreen
 import app.tuned.ui.settings.ProfilesScreen
@@ -76,8 +84,33 @@ class MainActivity : ComponentActivity() {
         signedIn: Boolean,
     ) {
         val nav = rememberNavController()
-        val play: (Long) -> Unit = { id -> PlayerActivity.start(this, id) }
-        val tune: (String) -> Unit = { query -> PlayerActivity.tune(this@MainActivity, query) }
+        val play: (Long) -> Unit = { id -> playIfReachable(id) }
+        val tune: (String) -> Unit = { query ->
+            if (offline()) offlineNotice() else PlayerActivity.tune(this@MainActivity, query)
+        }
+        val online by container.connectivity.online.collectAsStateWithLifecycle()
+        val entry by nav.currentBackStackEntryAsState()
+        val here = entry?.destination
+        // A way to the saved films and episodes, except where it can't help (signed out, or already there).
+        val toDownloads =
+            if (here == null || here.hasRoute<LoginRoute>() || here.hasRoute<DownloadsRoute>()) {
+                null
+            } else {
+                { nav.navigate(DownloadsRoute) { launchSingleTop = true } }
+            }
+        WithOfflineBanner(offline = !online, onOpenDownloads = toDownloads) {
+            Routes(nav, current, signedIn, play, tune)
+        }
+    }
+
+    @Composable
+    private fun Routes(
+        nav: NavHostController,
+        current: AppSettings,
+        signedIn: Boolean,
+        play: (Long) -> Unit,
+        tune: (String) -> Unit,
+    ) {
         val pending by incomingSearch.collectAsStateWithLifecycle()
         LaunchedEffect(pending) {
             val query = pending ?: return@LaunchedEffect
@@ -158,6 +191,7 @@ class MainActivity : ComponentActivity() {
                     onOpenFavouriteOrder = { nav.navigate(FavouriteOrderRoute) },
                     onOpenDownloads = { nav.navigate(DownloadsRoute) },
                     onOpenProfiles = { nav.navigate(ProfilesRoute()) },
+                    onOpenLogs = { nav.navigate(DeveloperLogRoute) },
                     onSignedOut = {
                         nav.navigate(LoginRoute) { popUpTo(0) { inclusive = true } }
                     },
@@ -165,6 +199,7 @@ class MainActivity : ComponentActivity() {
                     onSwitchedPlaylist = { nav.navigate(HomeRoute) { popUpTo(0) { inclusive = true } } },
                 )
             }
+            composable<DeveloperLogRoute> { DeveloperLogScreen(onBack = { nav.popBackStack() }) }
             composable<DownloadsRoute> {
                 DownloadsScreen(onPlay = play, onBack = { nav.popBackStack() })
             }
@@ -182,6 +217,27 @@ class MainActivity : ComponentActivity() {
                 ChannelHealthScreen(settings = current, onBack = { nav.popBackStack() })
             }
         }
+    }
+
+    /**
+     * Offline, only what's saved on the device can play: a channel or a film that isn't downloaded says so instead of
+     * opening a player that can only fail. Offline means both the settled state (the banner) and Android's answer now
+     * agree, so a moment between two networks never stops a tap.
+     */
+    private fun playIfReachable(id: Long) {
+        if (!offline()) {
+            PlayerActivity.start(this, id)
+            return
+        }
+        lifecycleScope.launchSafely("Main") {
+            if (container.offline.files(listOf(id)).isNotEmpty()) PlayerActivity.start(this@MainActivity, id) else offlineNotice()
+        }
+    }
+
+    private fun offline(): Boolean = !container.connectivity.online.value && !container.connectivity.onlineNow()
+
+    private fun offlineNotice() {
+        Toast.makeText(this, R.string.offline_cant_play, Toast.LENGTH_LONG).show()
     }
 
     override fun onNewIntent(intent: Intent) {

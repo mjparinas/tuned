@@ -5,6 +5,8 @@ import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyProperties
 import android.util.Base64
 import androidx.core.content.edit
+import app.tuned.diagnostics.AppLog
+import app.tuned.diagnostics.attempt
 import java.security.KeyStore
 import javax.crypto.Cipher
 import javax.crypto.KeyGenerator
@@ -47,26 +49,33 @@ class CredentialStore(
     fun load(): Credentials? {
         cached?.let { return it }
         val blob = prefs.getString(KEY_BLOB, null) ?: return null
-        val loaded = runCatching { decode(decrypt(blob)) }.getOrNull()
+        val loaded = attempt(TAG, "Couldn't read the saved login") { decode(decrypt(blob)) }.getOrNull()
         cached = loaded
+        loaded?.let(::maskInLogs)
         return loaded
     }
 
     fun save(credentials: Credentials) {
         prefs.edit { putString(KEY_BLOB, encrypt(encode(credentials))) }
         cached = credentials
+        maskInLogs(credentials)
     }
+
+    private fun maskInLogs(c: Credentials) = AppLog.setSecrets(c.password, c.username, c.playlistUrl, c.guideUrl)
 
     /** Signing out forgets every saved playlist too. */
     fun clear() {
         prefs.edit { clear() }
         cached = null
+        AppLog.setSecrets()
     }
 
     /** Every playlist signed in to on this device, oldest first, kept encrypted like the login in use. */
     fun saved(): List<Credentials> {
         val blob = prefs.getString(KEY_SAVED, null) ?: return listOfNotNull(load())
-        val all = runCatching { decrypt(blob).split(LINE).filter { it.isNotEmpty() }.map(::decode) }.getOrDefault(emptyList())
+        val all =
+            attempt(TAG, "Couldn't read the saved playlists") { decrypt(blob).split(LINE).filter { it.isNotEmpty() }.map(::decode) }
+                .getOrDefault(emptyList())
         return all.ifEmpty { listOfNotNull(load()) }
     }
 
@@ -120,6 +129,7 @@ class CredentialStore(
     }
 
     private companion object {
+        const val TAG = "Login"
         const val KEYSTORE = "AndroidKeyStore"
         const val ALIAS = "tuned.credentials"
         const val TRANSFORMATION = "AES/GCM/NoPadding"

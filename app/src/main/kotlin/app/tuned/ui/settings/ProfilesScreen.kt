@@ -65,6 +65,7 @@ import app.tuned.container
 import app.tuned.core.ProfileLock
 import app.tuned.data.Accent
 import app.tuned.data.db.ProfileEntity
+import app.tuned.diagnostics.launchSafely
 import app.tuned.ui.common.BackTopBar
 import app.tuned.ui.common.focusRing
 import app.tuned.ui.theme.swatch
@@ -72,7 +73,6 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.launch
 
 class ProfilesViewModel(
     app: Application,
@@ -93,7 +93,7 @@ class ProfilesViewModel(
     suspend fun switchTo(id: Long) = repo.switchTo(id)
 
     fun setAskAtStart(on: Boolean) {
-        viewModelScope.launch { container.settings.update { it.copy(askProfileAtStart = on) } }
+        viewModelScope.launchSafely("Profiles") { container.settings.update { it.copy(askProfileAtStart = on) } }
     }
 
     /** Creates or saves [profile]; [pin] is a new PIN, [clearPin] removes the old one. */
@@ -102,7 +102,7 @@ class ProfilesViewModel(
         pin: String?,
         clearPin: Boolean,
     ) {
-        viewModelScope.launch {
+        viewModelScope.launchSafely("Profiles") {
             val id =
                 if (profile.id == 0L) {
                     repo.create(profile.name, profile.colour, profile.kids)
@@ -118,7 +118,7 @@ class ProfilesViewModel(
     }
 
     fun delete(id: Long) {
-        viewModelScope.launch { repo.delete(id) }
+        viewModelScope.launchSafely("Profiles") { repo.delete(id) }
     }
 
     /** The PIN that guards [profile]: its own, or the parental PIN when leaving a kids profile. */
@@ -182,7 +182,7 @@ fun ProfilesScreen(
     val scope = rememberCoroutineScope()
 
     val pick: (ProfileEntity) -> Unit = { p ->
-        scope.launch {
+        scope.launchSafely("Profiles") {
             if (managing) {
                 val needsPin = p.pinHash != null && p.id != current?.id
                 if (needsPin) ask = PinAsk(p, ProfileLock.PROFILE, AfterPin.Edit) else editing = p
@@ -284,7 +284,7 @@ fun ProfilesScreen(
                     }
 
                     AfterPin.Switch -> {
-                        scope.launch {
+                        scope.launchSafely("Profiles") {
                             vm.switchTo(a.profile.id)
                             onPicked()
                         }

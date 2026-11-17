@@ -18,6 +18,7 @@ import app.tuned.data.db.ItemEntity
 import app.tuned.data.db.PlaylistWriter
 import app.tuned.data.db.ProgrammeEntity
 import app.tuned.data.db.TunedDatabase
+import app.tuned.diagnostics.attempt
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.sync.Mutex
@@ -52,8 +53,8 @@ data class SyncProgress(
 /**
  * Downloads the playlist and guide and swaps them into the database. Each file is first saved to disk by
  * [Downloader], which rides out slow and dropped connections, and is then read from disk in batches, so memory stays
- * flat. No batch holds the database for long: the playlist is replaced in place ([PlaylistWriter]) and the guide is
- * written beside the old one and swapped in at the end ([GuideWriter]), so browsing and search keep working on the
+ * flat. No batch holds the database for long: the playlist ([PlaylistWriter]) and the guide ([GuideWriter]) are
+ * written beside the old ones and brought in at the end, so browsing and search keep working on the
  * cache throughout a refresh. A failed refresh leaves the guide as it was, and the playlist's streams in place.
  */
 class SyncRepository(
@@ -73,7 +74,7 @@ class SyncRepository(
 
     suspend fun refreshAll(progress: (SyncProgress) -> Unit = {}): Result = lock.withLock {
         val items = refreshPlaylistLocked(progress)
-        val programmes = runCatching { refreshGuideLocked(progress) }.getOrElse { 0 } // a missing guide isn't fatal
+        val programmes = attempt(TAG_SYNC, "Guide refresh failed") { refreshGuideLocked(progress) }.getOrElse { 0 } // not fatal
         Result(items, programmes)
     }
 
@@ -94,7 +95,7 @@ class SyncRepository(
             }
         settings.update { it.copy(lastPlaylistSync = System.currentTimeMillis(), lastSyncError = "") }
         // Catch-up is a bonus: a server that doesn't answer leaves the last known channels as they were.
-        if (login.playlistUrl.isBlank()) runCatching { refreshCatchUp(login) }
+        if (login.playlistUrl.isBlank()) attempt("Sync", "Catch-up refresh failed") { refreshCatchUp(login) }
         return count
     }
 
@@ -170,24 +171,28 @@ class SyncRepository(
         input: InputStream,
         saved: (Int) -> Unit,
     ): Int {
-        // Written in place a batch at a time, so the lists and search keep working on the cache meanwhile.
+        // Written beside the cache and applied at the end, so the lists and search keep working on it meanwhile.
         val writer = PlaylistWriter(db)
         writer.begin()
-        val batch = ArrayList<ItemEntity>(BATCH)
-        for (entry in M3uParser.entries(input.bufferedReader())) {
-            val row = entry.toRow()
-            if (!writer.accept(row.id)) continue // the same stream listed twice
-            batch += row
-            if (batch.size == BATCH) {
-                writer.add(batch.toList())
-                batch.clear()
-                saved(writer.count)
+        try {
+            val batch = ArrayList<ItemEntity>(BATCH)
+            for (entry in M3uParser.entries(input.bufferedReader())) {
+                val row = entry.toRow()
+                if (!writer.accept(row.id)) continue // the same stream listed twice
+                batch += row
+                if (batch.size == BATCH) {
+                    writer.add(batch.toList())
+                    batch.clear()
+                    saved(writer.count)
+                }
             }
+            writer.add(batch)
+            // An empty answer changes nothing, so it never wipes a good cache.
+            if (writer.commit() == 0) throw IOException("The playlist was empty")
+            return writer.count
+        } finally {
+            writer.discard() // a no-op after a commit; after a failure, the cache stays as it was
         }
-        writer.add(batch)
-        // An empty answer changes nothing, so it never wipes a good cache.
-        if (writer.commit() == 0) throw IOException("The playlist was empty")
-        return writer.count
     }
 
     private suspend fun importGuide(
@@ -264,3 +269,5 @@ class SyncRepository(
         const val DAY = 24 * HOUR
     }
 }
+
+private const val TAG_SYNC = "Sync"

@@ -34,6 +34,9 @@ object Tuner {
     /** Region tags whose channels are in English. */
     val englishRegions = setOf("US", "UK", "CA", "EN", "AU", "IE", "NZ")
 
+    /** English channels tried before the rest (Melvin, 2026-11-17: "prioritize US and Canada"). */
+    val firstRegions = setOf("US", "CA")
+
     private val uhd = Regex("""\b(4K|UHD|2160P?)\b""", RegexOption.IGNORE_CASE)
     private val fhd = Regex("""\b(FHD|1080[PI]?)\b""", RegexOption.IGNORE_CASE)
     private val hd = Regex("""\b(HD|720P?)\b""", RegexOption.IGNORE_CASE)
@@ -81,16 +84,35 @@ object Tuner {
         else -> 1
     }
 
-    /** 1 for English, 0 for unknown, -1 for another language. */
+    /** 2 for US and Canada, 1 for other English, 0 for unknown, -1 for another language. */
     fun english(candidate: TuneCandidate): Int {
         val text = "${candidate.name} ${candidate.group}"
         return when {
             otherLanguage.containsMatchIn(text) -> -1
             candidate.region == null -> 0
+            candidate.region in firstRegions -> 2
             candidate.region in englishRegions -> 1
             else -> -1
         }
     }
+
+    /**
+     * The words a channel name or guide title must all contain, in any order, for an event search: "UFC 335" and
+     * "ufc335" both become `ufc`, `335`, so they find "US| UFC 335 PPV", "UFC335 Main Card" and "PPV 2: 335 UFC".
+     * Letters and digits are split because providers write event numbers both ways. At most [MAX_WORDS] (the
+     * longest, which narrow the most), and none for a blank search.
+     */
+    fun words(normalized: String): List<String> = normalized
+        .split(' ')
+        .flatMap { word -> letterOrDigitRun.findAll(word).map { it.value }.toList() }
+        .filter { it.isNotEmpty() }
+        .distinct()
+        .sortedByDescending { it.length }
+        .take(MAX_WORDS)
+
+    const val MAX_WORDS = 3
+
+    private val letterOrDigitRun = Regex("""\p{L}+|\p{N}+""")
 
     /** Best first. Stable, so equal channels keep the playlist's order. */
     fun rank(

@@ -24,7 +24,7 @@ import app.tuned.R
 import app.tuned.core.PinHash
 import app.tuned.core.PinThrottle
 import app.tuned.data.CredentialStore
-import kotlinx.coroutines.launch
+import app.tuned.diagnostics.launchSafely
 import java.security.MessageDigest
 
 /** What the PIN dialog is for. */
@@ -75,7 +75,7 @@ fun PinDialog(
     val scope = rememberCoroutineScope()
 
     val submit: () -> Unit = {
-        scope.launch {
+        scope.launchSafely("ParentalPin") {
             when (mode) {
                 PinMode.Create -> {
                     error =

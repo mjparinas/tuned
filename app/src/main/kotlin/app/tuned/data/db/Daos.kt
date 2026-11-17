@@ -61,13 +61,47 @@ private const val KIDS_ONLY =
         "searchName GLOB '*boomerang*'" +
         "))))"
 
+/** [KIDS_ONLY_I] for the per-show table, which has groups but no channel names. */
+private const val KIDS_ONLY_S =
+    "AND NOT ('kids' IN (:hidden) AND NOT (" +
+        "lower(s.groupName) GLOB '*kid*' OR " +
+        "lower(s.groupName) GLOB '*child*' OR " +
+        "lower(s.groupName) GLOB '*cartoon*' OR " +
+        "lower(s.groupName) GLOB '*family*' OR " +
+        "lower(s.groupName) GLOB '*junior*' OR " +
+        "lower(s.groupName) GLOB '*disney*' OR " +
+        "lower(s.groupName) GLOB '*nick*' OR " +
+        "lower(s.groupName) GLOB '*baby*' OR " +
+        "lower(s.groupName) GLOB '*animation*' OR " +
+        "lower(s.groupName) GLOB '*boomerang*'" +
+        "))"
+
+/** [KIDS_ONLY_S] for queries on the per-show table that don't name it. */
+private const val KIDS_ONLY_GROUPS =
+    "AND NOT ('kids' IN (:hidden) AND NOT (" +
+        "lower(groupName) GLOB '*kid*' OR " +
+        "lower(groupName) GLOB '*child*' OR " +
+        "lower(groupName) GLOB '*cartoon*' OR " +
+        "lower(groupName) GLOB '*family*' OR " +
+        "lower(groupName) GLOB '*junior*' OR " +
+        "lower(groupName) GLOB '*disney*' OR " +
+        "lower(groupName) GLOB '*nick*' OR " +
+        "lower(groupName) GLOB '*baby*' OR " +
+        "lower(groupName) GLOB '*animation*' OR " +
+        "lower(groupName) GLOB '*boomerang*'" +
+        "))"
+
 /**
  * Every list query takes the same filters: hidden regions, whether adult categories show, an optional category and
  * an optional search. Region NULL (no country found) always shows.
  */
 @Dao
 interface ItemDao {
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    /**
+     * An update, not a REPLACE, for a stream already cached: REPLACE deletes the old row without firing delete
+     * triggers, which would leave its words behind in the search index ([ItemFts]).
+     */
+    @Upsert
     suspend fun insertAll(items: List<ItemEntity>)
 
     @Query("DELETE FROM items")
@@ -75,6 +109,9 @@ interface ItemDao {
 
     @Query("SELECT id FROM items")
     suspend fun allIds(): List<Long>
+
+    @Query("SELECT EXISTS(SELECT 1 FROM items)")
+    suspend fun any(): Boolean
 
     @Query("DELETE FROM items WHERE id IN (:ids)")
     suspend fun deleteIds(ids: List<Long>)
@@ -104,41 +141,45 @@ interface ItemDao {
     @Query("SELECT tvgId, url FROM items WHERE kind = 0 AND tvgId IS NOT NULL")
     suspend fun liveLinks(): List<LiveLink>
 
+    /** Live TV in playlist order. Paged, so it reads only the rows on screen, straight down the (kind, sortOrder) index. */
     @Query(
-        """
-        SELECT i.id, i.name, i.logo, i.groupName, i.tvgId,
-            p.title AS nowTitle, p.start AS nowStart, p.stop AS nowStop,
-            (f.itemId IS NOT NULL) AS favourite
-        FROM items i
-        LEFT JOIN programmes p ON p.channelId = i.tvgId AND p.start <= :now AND p.stop > :now
-        LEFT JOIN favourites f ON f.itemId = i.id AND f.profileId = $ME
-        LEFT JOIN history h ON h.itemId = i.id AND h.profileId = $ME
-        WHERE i.kind = 0
-            AND (i.region IS NULL OR i.region NOT IN (:hidden)) AND ('g:' || i.kind || ':' || i.groupName) NOT IN (:hidden)
-            AND NOT ('scan:dead' IN (:hidden) AND i.id IN (SELECT itemId FROM channel_scan WHERE hidden = 1))
-            AND NOT ('placeholder' IN (:hidden) AND i.kind = 0
-                AND ((' ' || i.searchName) GLOB '* no event*' OR (' ' || i.searchName) GLOB '* no live event*'))
-            AND (:adult OR i.adult = 0)
-            $KIDS_ONLY_I
-            AND (:group IS NULL OR i.groupName = :group)
-            AND (:favouritesOnly = 0 OR f.itemId IS NOT NULL)
-            AND (:recentOnly = 0 OR h.itemId IS NOT NULL)
-            AND (:query = '' OR i.searchName LIKE '%' || :query || '%' OR i.tvgId IN (
-                -- An event search ("UFC") also finds the channels showing it now or within the hour.
-                SELECT channelId FROM programmes WHERE title LIKE '%' || :query || '%' AND stop > :now AND start < :now + 3600000
-            ))
-        GROUP BY i.id
-        ORDER BY CASE WHEN :recentOnly = 1 THEN h.watchedAt END DESC, CASE WHEN :favouritesOnly = 1 THEN f.position END, i.sortOrder
-        """,
+        "SELECT $CHANNEL_COLUMNS, 0 AS favourite FROM items i $NOW_JOIN WHERE $CHANNEL_FILTER ORDER BY i.sortOrder",
     )
     fun channels(
         now: Long,
         hidden: List<String>,
         adult: Boolean,
         group: String?,
-        favouritesOnly: Boolean,
-        recentOnly: Boolean,
         query: String,
+        match: String,
+    ): PagingSource<Int, ChannelWithNow>
+
+    /** Favourite channels, in their own order (Settings › Order favourites). */
+    @Query(
+        "SELECT $CHANNEL_COLUMNS, 1 AS favourite FROM items i JOIN favourites f ON f.itemId = i.id AND f.profileId = $ME $NOW_JOIN " +
+            "WHERE $CHANNEL_FILTER ORDER BY f.position",
+    )
+    fun favouriteChannels(
+        now: Long,
+        hidden: List<String>,
+        adult: Boolean,
+        group: String?,
+        query: String,
+        match: String,
+    ): PagingSource<Int, ChannelWithNow>
+
+    /** Channels watched lately, latest first. */
+    @Query(
+        "SELECT $CHANNEL_COLUMNS, 0 AS favourite FROM items i JOIN history h ON h.itemId = i.id AND h.profileId = $ME $NOW_JOIN " +
+            "WHERE $CHANNEL_FILTER ORDER BY h.watchedAt DESC",
+    )
+    fun recentChannels(
+        now: Long,
+        hidden: List<String>,
+        adult: Boolean,
+        group: String?,
+        query: String,
+        match: String,
     ): PagingSource<Int, ChannelWithNow>
 
     /** Movies or episodes started and not finished, last watched first, for the Continue Watching row. */
@@ -177,7 +218,7 @@ interface ItemDao {
             $KIDS_ONLY_I
             AND (:group IS NULL OR i.groupName = :group)
             AND (:favouritesOnly = 0 OR i.id IN (SELECT itemId FROM favourites WHERE profileId = $ME))
-            AND (:query = '' OR i.searchName LIKE '%' || :query || '%')
+            AND (:query = '' OR i.id IN (SELECT docid FROM items_fts WHERE items_fts MATCH :match))
         ORDER BY i.sortOrder
         """,
     )
@@ -188,6 +229,7 @@ interface ItemDao {
         group: String?,
         favouritesOnly: Boolean,
         query: String,
+        match: String,
     ): PagingSource<Int, ItemEntity>
 
     @Query(
@@ -206,7 +248,7 @@ interface ItemDao {
             $KIDS_ONLY_I
             AND (:group IS NULL OR i.groupName = :group)
             AND (:favouritesOnly = 0 OR i.id IN (SELECT itemId FROM favourites WHERE profileId = $ME))
-            AND (:query = '' OR i.searchName LIKE '%' || :query || '%')
+            AND (:query = '' OR i.id IN (SELECT docid FROM items_fts WHERE items_fts MATCH :match))
         GROUP BY showKey
         ORDER BY MIN(sortOrder)
         """,
@@ -217,6 +259,7 @@ interface ItemDao {
         group: String?,
         favouritesOnly: Boolean,
         query: String,
+        match: String,
     ): PagingSource<Int, ShowSummary>
 
     /** Search everywhere: the first few live channels for a search (names, or what's on now and within the hour). */
@@ -226,7 +269,9 @@ interface ItemDao {
             p.title AS nowTitle, p.start AS nowStart, p.stop AS nowStop,
             (f.itemId IS NOT NULL) AS favourite
         FROM items i
-        LEFT JOIN programmes p ON p.channelId = i.tvgId AND p.start <= :now AND p.stop > :now
+        LEFT JOIN programmes p ON p.rowId = (
+            SELECT rowId FROM programmes WHERE channelId = i.tvgId AND start <= :now AND stop > :now ORDER BY start DESC LIMIT 1
+        )
         LEFT JOIN favourites f ON f.itemId = i.id AND f.profileId = $ME
         WHERE i.kind = 0
             AND (i.region IS NULL OR i.region NOT IN (:hidden)) AND ('g:' || i.kind || ':' || i.groupName) NOT IN (:hidden)
@@ -235,16 +280,17 @@ interface ItemDao {
                 AND ((' ' || i.searchName) GLOB '* no event*' OR (' ' || i.searchName) GLOB '* no live event*'))
             AND (:adult OR i.adult = 0)
             $KIDS_ONLY_I
-            AND (i.searchName LIKE '%' || :query || '%' OR i.tvgId IN (
-                SELECT channelId FROM programmes WHERE title LIKE '%' || :query || '%' AND stop > :now AND start < :now + 3600000
+            AND (i.id IN (SELECT docid FROM items_fts WHERE items_fts MATCH :match) OR i.tvgId IN (
+                SELECT channelId FROM programmes
+                WHERE start > :now - 86400000 AND start < :now + 3600000 AND stop > :now AND title LIKE '%' || :query || '%'
             ))
-        GROUP BY i.id
         ORDER BY (f.itemId IS NULL), i.sortOrder
         LIMIT :limit
         """,
     )
     suspend fun searchChannels(
         query: String,
+        match: String,
         now: Long,
         hidden: List<String>,
         adult: Boolean,
@@ -254,7 +300,7 @@ interface ItemDao {
     @Query(
         """
         SELECT * FROM items i
-        WHERE i.kind = 1 AND i.searchName LIKE '%' || :query || '%'
+        WHERE i.kind = 1 AND i.id IN (SELECT docid FROM items_fts WHERE items_fts MATCH :match)
             AND (i.region IS NULL OR i.region NOT IN (:hidden)) AND ('g:' || i.kind || ':' || i.groupName) NOT IN (:hidden)
             AND NOT ('scan:dead' IN (:hidden) AND i.id IN (SELECT itemId FROM channel_scan WHERE hidden = 1))
             AND NOT ('placeholder' IN (:hidden) AND i.kind = 0
@@ -266,7 +312,7 @@ interface ItemDao {
         """,
     )
     suspend fun searchMovies(
-        query: String,
+        match: String,
         hidden: List<String>,
         adult: Boolean,
         limit: Int,
@@ -279,7 +325,7 @@ interface ItemDao {
                 AND i.id NOT IN (SELECT itemId FROM seen_episodes WHERE profileId = $ME)
                 THEN 1 ELSE 0 END) AS newEpisodes
         FROM items i
-        WHERE i.kind = 2 AND i.showKey IS NOT NULL AND i.searchName LIKE '%' || :query || '%'
+        WHERE i.kind = 2 AND i.showKey IS NOT NULL AND i.id IN (SELECT docid FROM items_fts WHERE items_fts MATCH :match)
             AND (i.region IS NULL OR i.region NOT IN (:hidden)) AND ('g:' || i.kind || ':' || i.groupName) NOT IN (:hidden)
             AND NOT ('scan:dead' IN (:hidden) AND i.id IN (SELECT itemId FROM channel_scan WHERE hidden = 1))
             AND NOT ('placeholder' IN (:hidden) AND i.kind = 0
@@ -292,7 +338,7 @@ interface ItemDao {
         """,
     )
     suspend fun searchShows(
-        query: String,
+        match: String,
         hidden: List<String>,
         adult: Boolean,
         limit: Int,
@@ -339,24 +385,30 @@ interface ItemDao {
     ): Flow<List<GroupCount>>
 
     /**
-     * Auto-tune's candidates: live channels whose name matches the search, or whose guide has a matching programme
-     * on now or starting within [to]. `title LIKE` ignores case for English letters, which is what event names use.
+     * Auto-tune's candidates: live channels whose name has every word of the search ([app.tuned.core.Tuner.words], in
+     * any order; an unused word is empty and matches anything), or whose guide has such a programme on now or starting
+     * within [to]. `LIKE` ignores case for English letters, which is what event names use.
+     * Channels hidden as dead or as "No event" placeholders come back marked `held`: the caller keeps the sports, PPV
+     * and event ones ([EventChannels][app.tuned.core.EventChannels]), since an empty slot can carry the next event.
      */
     @Query(
         """
         SELECT i.id, i.name, i.groupName, i.region,
-            (i.searchName LIKE '%' || :normalized || '%') AS nameMatch,
+            (i.searchName LIKE '%' || :w1 || '%' AND i.searchName LIKE '%' || :w2 || '%'
+                AND i.searchName LIKE '%' || :w3 || '%') AS nameMatch,
             (i.tvgId IN (
-                SELECT channelId FROM programmes WHERE title LIKE '%' || :query || '%' AND stop > :from AND start < :to
+                SELECT channelId FROM programmes
+                WHERE start > :from - 86400000 AND start < :to AND stop > :from AND title LIKE '%' || :w1 || '%'
+                    AND title LIKE '%' || :w2 || '%' AND title LIKE '%' || :w3 || '%'
             )) AS guideMatch,
-            h.okAt, h.deadAt, h.height
+            h.okAt, h.deadAt, h.height,
+            (('scan:dead' IN (:hidden) AND i.id IN (SELECT itemId FROM channel_scan WHERE hidden = 1))
+                OR ('placeholder' IN (:hidden)
+                    AND ((' ' || i.searchName) GLOB '* no event*' OR (' ' || i.searchName) GLOB '* no live event*'))) AS held
         FROM items i
         LEFT JOIN channel_health h ON h.itemId = i.id
         WHERE i.kind = 0
             AND (i.region IS NULL OR i.region NOT IN (:hidden)) AND ('g:' || i.kind || ':' || i.groupName) NOT IN (:hidden)
-            AND NOT ('scan:dead' IN (:hidden) AND i.id IN (SELECT itemId FROM channel_scan WHERE hidden = 1))
-            AND NOT ('placeholder' IN (:hidden) AND i.kind = 0
-                AND ((' ' || i.searchName) GLOB '* no event*' OR (' ' || i.searchName) GLOB '* no live event*'))
             AND (:adult OR i.adult = 0)
             $KIDS_ONLY_I
             AND (nameMatch OR guideMatch)
@@ -365,10 +417,40 @@ interface ItemDao {
         """,
     )
     suspend fun tuneCandidates(
-        query: String,
-        normalized: String,
+        w1: String,
+        w2: String,
+        w3: String,
         from: Long,
         to: Long,
+        hidden: List<String>,
+        adult: Boolean,
+    ): List<TuneRow>
+
+    /**
+     * Possible backup copies of a live channel: other live channels whose name has every word of the channel's
+     * [ChannelCopies][app.tuned.core.ChannelCopies] key, through the full-text index. The caller keeps only exact key
+     * matches. Hidden channels are left out like everywhere else.
+     */
+    @Query(
+        """
+        SELECT i.id, i.name, i.groupName, i.region, 1 AS nameMatch, 0 AS guideMatch, h.okAt, h.deadAt, h.height, 0 AS held
+        FROM items i
+        LEFT JOIN channel_health h ON h.itemId = i.id
+        WHERE i.kind = 0 AND i.id != :exclude
+            AND i.id IN (SELECT docid FROM items_fts WHERE items_fts MATCH :match)
+            AND (i.region IS NULL OR i.region NOT IN (:hidden)) AND ('g:' || i.kind || ':' || i.groupName) NOT IN (:hidden)
+            AND NOT ('scan:dead' IN (:hidden) AND i.id IN (SELECT itemId FROM channel_scan WHERE hidden = 1))
+            AND NOT ('placeholder' IN (:hidden) AND i.kind = 0
+                AND ((' ' || i.searchName) GLOB '* no event*' OR (' ' || i.searchName) GLOB '* no live event*'))
+            AND (:adult OR i.adult = 0)
+            $KIDS_ONLY_I
+        ORDER BY i.sortOrder
+        LIMIT 200
+        """,
+    )
+    suspend fun copyCandidates(
+        exclude: Long,
+        match: String,
         hidden: List<String>,
         adult: Boolean,
     ): List<TuneRow>
@@ -587,8 +669,11 @@ interface DownloadDao {
     @Query("SELECT * FROM downloads ORDER BY addedAt DESC")
     fun all(): Flow<List<DownloadEntity>>
 
-    /** Everything saved or on its way, newest first, with each item's artwork while it's still in the playlist. */
-    @Query("SELECT d.*, i.logo AS logo FROM downloads d LEFT JOIN items i ON i.id = d.itemId ORDER BY d.addedAt DESC")
+    /** Everything saved or on its way, newest first, with each item's artwork and show while it's still in the playlist. */
+    @Query(
+        "SELECT d.*, i.logo AS logo, i.showKey AS showKey, i.showName AS showName, i.season AS season, i.episode AS episode " +
+            "FROM downloads d LEFT JOIN items i ON i.id = d.itemId ORDER BY d.addedAt DESC",
+    )
     fun rows(): Flow<List<DownloadRow>>
 
     @Query("SELECT * FROM downloads WHERE state = 0 ORDER BY addedAt LIMIT 1")
@@ -694,6 +779,13 @@ interface ChannelScanDao {
     @Query("DELETE FROM channel_scan")
     suspend fun deleteAll()
 
+    /** Hidden channels with their names, for [app.tuned.data.ChannelScanner.releaseEventChannels]. */
+    @Query("SELECT s.itemId, i.name, i.groupName FROM channel_scan s JOIN items i ON i.id = s.itemId WHERE s.hidden = 1")
+    suspend fun hiddenNames(): List<HiddenScanRow>
+
+    @Query("UPDATE channel_scan SET hidden = 0 WHERE itemId IN (:ids)")
+    suspend fun unhide(ids: List<Long>)
+
     /** Channels that failed in at least one scan and still exist, hidden ones first, then the most recent. */
     @Query(
         """
@@ -705,3 +797,75 @@ interface ChannelScanDao {
     )
     fun report(): Flow<List<ScanReportRow>>
 }
+
+/** The Shows tab's per-show table ([ShowGroupEntity]). */
+@Dao
+interface ShowDao {
+    /**
+     * The Shows tab when nothing narrows it: grouped from [ShowGroupEntity], a few rows per show, instead of from
+     * every episode. New episodes are counted only for the shows on screen.
+     */
+    @Query(
+        """
+        SELECT s.showKey, MIN(s.showName) AS showName, MAX(s.logo) AS logo, MIN(s.groupName) AS groupName,
+            SUM(s.episodes) AS episodes,
+            CASE WHEN s.showKey IN (SELECT showKey FROM seen_episodes WHERE profileId = $ME) THEN (
+                SELECT COUNT(*) FROM items e
+                WHERE e.kind = 2 AND e.showKey = s.showKey AND e.id NOT IN (SELECT itemId FROM seen_episodes WHERE profileId = $ME)
+            ) ELSE 0 END AS newEpisodes
+        FROM show_groups s
+        WHERE (s.region IS NULL OR s.region NOT IN (:hidden)) AND ('g:2:' || s.groupName) NOT IN (:hidden)
+            AND (:adult OR s.adult = 0)
+            $KIDS_ONLY_S
+            AND (:group IS NULL OR s.groupName = :group)
+        GROUP BY s.showKey
+        ORDER BY MIN(s.sortOrder)
+        """,
+    )
+    fun showsTab(
+        hidden: List<String>,
+        adult: Boolean,
+        group: String?,
+    ): PagingSource<Int, ShowSummary>
+
+    @Query("DELETE FROM show_groups")
+    suspend fun deleteShowGroups()
+
+    /** [ItemDao.groups] for Shows, from the per-show table: the same counts without reading every episode. */
+    @Query(
+        """
+        SELECT groupName, SUM(episodes) AS count FROM show_groups
+        WHERE (region IS NULL OR region NOT IN (:hidden)) AND ('g:2:' || groupName) NOT IN (:hidden) AND (:adult OR adult = 0)
+            $KIDS_ONLY_GROUPS
+        GROUP BY groupName ORDER BY MIN(sortOrder)
+        """,
+    )
+    fun showGroupChips(
+        hidden: List<String>,
+        adult: Boolean,
+    ): Flow<List<GroupCount>>
+}
+
+/** What a Live TV row shows: the channel and what's on now. */
+private const val CHANNEL_COLUMNS =
+    "i.id, i.name, i.logo, i.groupName, i.tvgId, p.title AS nowTitle, p.start AS nowStart, p.stop AS nowStop"
+
+/**
+ * What's on now: the latest programme started on the channel, found through the (channelId, start) index. One row per
+ * channel by construction, so the lists need no GROUP BY, which made SQLite build and sort the whole list per page.
+ */
+private const val NOW_JOIN =
+    "LEFT JOIN programmes p ON p.rowId = (SELECT rowId FROM programmes WHERE channelId = i.tvgId AND start <= :now " +
+        "AND stop > :now ORDER BY start DESC LIMIT 1)"
+
+/** Hidden countries, groups, dead channels and empty event slots stay out; the group chip and the search narrow. */
+private const val CHANNEL_FILTER =
+    "i.kind = 0 AND (i.region IS NULL OR i.region NOT IN (:hidden)) AND ('g:0:' || i.groupName) NOT IN (:hidden) " +
+        "AND NOT ('scan:dead' IN (:hidden) AND i.id IN (SELECT itemId FROM channel_scan WHERE hidden = 1)) " +
+        "AND NOT ('placeholder' IN (:hidden) AND ((' ' || i.searchName) GLOB '* no event*' " +
+        "OR (' ' || i.searchName) GLOB '* no live event*')) " +
+        "AND (:adult OR i.adult = 0) $KIDS_ONLY_I AND (:group IS NULL OR i.groupName = :group) " +
+        "AND (:query = '' OR i.id IN (SELECT docid FROM items_fts WHERE items_fts MATCH :match) OR i.tvgId IN (" +
+        // An event search ("UFC") also finds the channels showing it now or within the hour.
+        "SELECT channelId FROM programmes WHERE start > :now - 86400000 AND start < :now + 3600000 AND stop > :now " +
+        "AND title LIKE '%' || :query || '%'))"

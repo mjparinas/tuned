@@ -1,6 +1,7 @@
 package app.tuned.data.db
 
 import androidx.room.withTransaction
+import androidx.sqlite.db.SupportSQLiteStatement
 
 /**
  * Writes a downloaded guide without holding the database while it does. A guide runs to hundreds of thousands of
@@ -58,6 +59,7 @@ class GuideWriter(
             )
         }
         discard()
+        Upkeep.optimize(db)
         return count
     }
 
@@ -72,44 +74,193 @@ class GuideWriter(
 }
 
 /**
- * Writes a downloaded playlist into the live table a batch at a time, without emptying it first. Every stream keeps
- * its stable id, so a batch replaces rows in place; the lists keep showing (and searching) the cache throughout, and
- * nothing waits on one long transaction. Streams the new playlist no longer has are removed at the end.
+ * Writes a downloaded playlist without touching the lists until it's all in. A playlist can run to hundreds of
+ * thousands of streams; written straight into the live table, every batch would make each open list and search start
+ * over, so on a big playlist they never finished while a refresh ran. Instead the new playlist goes into a side table
+ * that nothing reads, and [commit] then changes only the streams that differ: removed, renamed, moved or new. It does
+ * that a few thousand rows per transaction, so a search waits at most a moment, and each stream is always either its
+ * old self or its new self. The very first download has no cache to keep, so it fills the lists as it arrives.
  */
 class PlaylistWriter(
     private val db: TunedDatabase,
 ) {
-    private var stale: MutableSet<Long> = HashSet()
+    private val sql get() = db.openHelper.writableDatabase
     private val seen = HashSet<Long>()
+    private var direct = false
+    private var batches = 0
 
     suspend fun begin() {
-        stale = db.items().allIds().toHashSet()
         seen.clear()
+        batches = 0
+        discard()
+        direct = !db.items().any()
+        if (!direct) sql.execSQL("CREATE TABLE $NEXT ($SCHEMA)")
     }
 
     /** Adds a stream unless the playlist already listed it; returns false for a repeat. */
-    fun accept(id: Long): Boolean {
-        if (!seen.add(id)) return false
-        stale.remove(id)
-        return true
-    }
+    fun accept(id: Long): Boolean = seen.add(id)
 
     val count get() = seen.size
 
     suspend fun add(batch: List<ItemEntity>) {
-        if (batch.isNotEmpty()) db.items().insertAll(batch)
+        if (batch.isEmpty()) return
+        if (direct) {
+            db.items().insertAll(batch)
+            // The first download fills the lists as it goes; the Shows tab catches up every so often.
+            if (++batches % SHOWS_EVERY == 0) ShowGroups.rebuild(db)
+            return
+        }
+        db.withTransaction {
+            sql.compileStatement("INSERT OR REPLACE INTO $NEXT ($COLUMNS) VALUES (${COLUMN_LIST.joinToString { "?" }})").use { insert ->
+                for (item in batch) {
+                    insert.bind(item)
+                    insert.executeInsert()
+                    insert.clearBindings()
+                }
+            }
+        }
     }
 
-    /** Removes what the playlist dropped. An empty playlist changes nothing, so it can't wipe a good cache. */
+    /**
+     * Brings the live table in line with the new playlist and returns how many streams it holds. An empty playlist
+     * changes nothing, so a server that answers with nothing can't wipe a good cache.
+     */
     suspend fun commit(): Int {
-        if (seen.isEmpty()) return 0
-        stale.chunked(DELETE_CHUNK).forEach { db.items().deleteIds(it) }
-        stale = HashSet()
+        if (seen.isEmpty()) {
+            discard()
+            return 0
+        }
+        if (!direct) apply()
+        ShowGroups.rebuild(db)
+        Upkeep.optimize(db)
         return seen.size
     }
 
+    /** Changes only the streams that differ, a chunk per transaction. */
+    private suspend fun apply() {
+        // Which streams differ, worked out once, inside SQLite.
+        sql.execSQL("DROP TABLE IF EXISTS temp.$CHANGED")
+        sql.execSQL("CREATE TEMP TABLE $CHANGED (seq INTEGER PRIMARY KEY, id INTEGER NOT NULL)")
+        sql.execSQL("INSERT INTO $CHANGED (id) SELECT id FROM items WHERE id NOT IN (SELECT id FROM $NEXT)")
+        sql.execSQL("INSERT INTO $CHANGED (id) SELECT n.id FROM $NEXT n JOIN items i ON i.id = n.id WHERE NOT ($SAME)")
+        sql.execSQL("INSERT INTO $CHANGED (id) SELECT id FROM $NEXT WHERE id NOT IN (SELECT id FROM items)")
+        val total = sql.query("SELECT COUNT(*) FROM $CHANGED").use { if (it.moveToFirst()) it.getLong(0) else 0L }
+        var from = 1L
+        while (from <= total) {
+            val to = from + APPLY_CHUNK - 1
+            val chunk = "(SELECT id FROM $CHANGED WHERE seq BETWEEN $from AND $to)"
+            db.withTransaction {
+                sql.execSQL("DELETE FROM items WHERE id IN $chunk")
+                sql.execSQL("INSERT INTO items ($COLUMNS) SELECT $COLUMNS FROM $NEXT WHERE id IN $chunk")
+            }
+            from = to + 1
+        }
+        sql.execSQL("DROP TABLE IF EXISTS temp.$CHANGED")
+        discard()
+    }
+
+    /** Throws a half-written playlist away; the cache stays as it was. */
+    fun discard() {
+        sql.execSQL("DROP TABLE IF EXISTS $NEXT")
+    }
+
+    private fun SupportSQLiteStatement.bind(item: ItemEntity) {
+        bindLong(1, item.id)
+        bindLong(2, item.kind.toLong())
+        bindString(3, item.name)
+        bindString(4, item.searchName)
+        bindString(5, item.groupName)
+        bindText(6, item.region)
+        bindLong(7, if (item.adult) 1 else 0)
+        bindText(8, item.logo)
+        bindString(9, item.url)
+        bindText(10, item.tvgId)
+        bindText(11, item.showKey)
+        bindText(12, item.showName)
+        bindNumber(13, item.season)
+        bindNumber(14, item.episode)
+        bindLong(15, item.sortOrder.toLong())
+    }
+
+    private fun SupportSQLiteStatement.bindText(
+        index: Int,
+        value: String?,
+    ) = if (value == null) bindNull(index) else bindString(index, value)
+
+    private fun SupportSQLiteStatement.bindNumber(
+        index: Int,
+        value: Int?,
+    ) = if (value == null) bindNull(index) else bindLong(index, value.toLong())
+
     private companion object {
-        /** Under SQLite's limit on parameters in one statement. */
-        const val DELETE_CHUNK = 500
+        const val NEXT = "items_next"
+        const val CHANGED = "items_changed"
+
+        /** Small enough that a search waiting behind one is never kept long. */
+        const val APPLY_CHUNK = 2_000
+
+        /** Batches between Shows tab refreshes during a first download: every 25,000 streams or so. */
+        const val SHOWS_EVERY = 25
+
+        /** The columns of [ItemEntity], in the order [bind] fills them. */
+        val COLUMN_LIST =
+            listOf(
+                "id",
+                "kind",
+                "name",
+                "searchName",
+                "groupName",
+                "region",
+                "adult",
+                "logo",
+                "url",
+                "tvgId",
+                "showKey",
+                "showName",
+                "season",
+                "episode",
+                "sortOrder",
+            )
+        val COLUMNS = COLUMN_LIST.joinToString()
+        const val SCHEMA =
+            "id INTEGER NOT NULL PRIMARY KEY, kind INTEGER NOT NULL, name TEXT NOT NULL, searchName TEXT NOT NULL, " +
+                "groupName TEXT NOT NULL, region TEXT, adult INTEGER NOT NULL, logo TEXT, url TEXT NOT NULL, tvgId TEXT, " +
+                "showKey TEXT, showName TEXT, season INTEGER, episode INTEGER, sortOrder INTEGER NOT NULL"
+
+        /** A stream that came back exactly as it was. */
+        val SAME = COLUMN_LIST.drop(1).joinToString(" AND ") { "i.$it IS n.$it" }
+    }
+}
+
+/** Keeps the Shows tab's per-show table ([ShowGroupEntity]) in step with the playlist. */
+object ShowGroups {
+    const val COLUMNS = "showKey, groupName, region, adult, showName, logo, episodes, sortOrder"
+    const val SELECT =
+        "SELECT showKey, groupName, region, adult, COALESCE(MIN(showName), showKey), MAX(logo), COUNT(*), MIN(sortOrder) " +
+            "FROM items WHERE kind = 2 AND showKey IS NOT NULL GROUP BY showKey, groupName, region, adult"
+
+    /** Worked out beside the live table, then swapped in with one quick copy, so the Shows tab never waits long. */
+    suspend fun rebuild(db: TunedDatabase) {
+        val sql = db.openHelper.writableDatabase
+        sql.execSQL("DROP TABLE IF EXISTS temp.show_groups_next")
+        sql.execSQL("CREATE TEMP TABLE show_groups_next AS $SELECT")
+        db.withTransaction {
+            sql.execSQL("DELETE FROM show_groups")
+            sql.execSQL("INSERT INTO show_groups ($COLUMNS) SELECT * FROM temp.show_groups_next")
+        }
+        sql.execSQL("DROP TABLE IF EXISTS temp.show_groups_next")
+    }
+}
+
+/** Database housekeeping that keeps queries fast as the cache changes. */
+object Upkeep {
+    /**
+     * Lets SQLite refresh what it knows about the tables (`PRAGMA optimize`) after a big change, so it keeps picking
+     * the right index. Cheap: it only analyzes what changed enough to matter.
+     */
+    fun optimize(db: TunedDatabase) {
+        db.openHelper.writableDatabase
+            .query("PRAGMA optimize")
+            .use { it.moveToFirst() }
     }
 }

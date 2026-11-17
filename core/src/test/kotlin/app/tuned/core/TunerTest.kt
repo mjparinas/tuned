@@ -76,4 +76,28 @@ class TunerTest {
         assertEquals(3, Tuner.qualityFromName("TSN 1 FHD"))
         assertEquals(1, Tuner.qualityFromName("TSN 1"))
     }
+
+    @Test
+    fun usAndCanadaBeforeOtherEnglishThenOtherCountries() {
+        assertEquals(
+            listOf(3L, 4L, 2L, 5L, 1L),
+            order(
+                c(1, "FR| UFC 335 4K", region = "FR"),
+                c(2, "UK| UFC 335 4K", region = "UK"),
+                c(3, "US| UFC 335", region = "US"),
+                c(4, "CA| UFC 335 SD", region = "CA"),
+                c(5, "UFC 335 FHD"),
+            ),
+        )
+    }
+
+    @Test
+    fun eventWordsMatchInAnyOrderAndWithOrWithoutSpaces() {
+        assertEquals(listOf("ufc", "335"), Tuner.words(Search.normalize("UFC 335")))
+        assertEquals(listOf("ufc", "335"), Tuner.words(Search.normalize("ufc335")))
+        assertEquals(listOf("canelo", "boxing"), Tuner.words(Search.normalize("Canelo boxing canelo")))
+        assertEquals(3, Tuner.words("a bb ccc dddd").size)
+        assertEquals(listOf("dddd", "ccc", "bb"), Tuner.words("a bb ccc dddd"))
+        assertEquals(emptyList<String>(), Tuner.words(Search.normalize("  ")))
+    }
 }

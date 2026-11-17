@@ -3,10 +3,11 @@ package app.tuned.data.db
 import androidx.room.ColumnInfo
 import androidx.room.Embedded
 import androidx.room.Entity
+import androidx.room.Fts4
 import androidx.room.Index
 import androidx.room.PrimaryKey
 
-/** One stream from the playlist. Rows are replaced as a whole on every refresh, inside one transaction. */
+/** One stream from the playlist. Each refresh updates rows in place by their stable id ([PlaylistWriter]). */
 @Entity(
     tableName = "items",
     indices = [
@@ -35,6 +36,24 @@ data class ItemEntity(
     val sortOrder: Int,
 )
 
+/**
+ * One row per show and the group, country and adult flag its episodes are listed under, rebuilt from `items` after every
+ * playlist refresh ([ShowGroups]). The Shows tab groups these few thousand rows instead of every episode, which on a
+ * big playlist took a phone seconds per page.
+ */
+@Entity(tableName = "show_groups", indices = [Index("showKey"), Index("sortOrder")])
+data class ShowGroupEntity(
+    @PrimaryKey(autoGenerate = true) val rowId: Long = 0,
+    val showKey: String,
+    val groupName: String,
+    val region: String?,
+    val adult: Boolean,
+    val showName: String,
+    val logo: String?,
+    val episodes: Int,
+    val sortOrder: Int,
+)
+
 /** A film or episode saved for watching offline. Kept across playlist refreshes, like favourites. */
 @Entity(tableName = "downloads")
 data class DownloadEntity(
@@ -59,10 +78,17 @@ data class DownloadEntity(
     }
 }
 
-/** A download with the artwork of the film or episode it saves, for the Downloads page. */
+/**
+ * A download with the artwork of the film or episode it saves, and the show and season it belongs to, for the
+ * Downloads page. The extras are null once the item has left the playlist.
+ */
 data class DownloadRow(
     @Embedded val download: DownloadEntity,
     val logo: String?,
+    val showKey: String? = null,
+    val showName: String? = null,
+    val season: Int? = null,
+    val episode: Int? = null,
 )
 
 /**
@@ -104,7 +130,7 @@ data class LiveLink(
     val url: String,
 )
 
-@Entity(tableName = "programmes", indices = [Index(value = ["channelId", "start"]), Index(value = ["stop"])])
+@Entity(tableName = "programmes", indices = [Index(value = ["channelId", "start"]), Index(value = ["stop"]), Index(value = ["start"])])
 data class ProgrammeEntity(
     @PrimaryKey(autoGenerate = true) val rowId: Long = 0,
     val channelId: String,
@@ -182,6 +208,15 @@ data class TuneRow(
     val okAt: Long?,
     val deadAt: Long?,
     val height: Int?,
+    /** Hidden in the lists (dead in a scan, or a "No event" placeholder); auto-tune still tries event channels. */
+    val held: Boolean,
+)
+
+/** A channel a scan hid, with its name, for [ChannelScanDao.hiddenNames]. */
+data class HiddenScanRow(
+    val itemId: Long,
+    val name: String,
+    val groupName: String,
 )
 
 /** A live channel with what's on now (from the guide), for the Live TV list. */
@@ -297,4 +332,14 @@ data class ScanReportRow(
     val lastFailAt: Long,
     val reason: String?,
     val hidden: Boolean,
+)
+
+/**
+ * The full-text index over stream names that search runs on: whole words and the start of words ("top gu" finds
+ * "Top Gun"), straight from an index instead of reading every name. Room keeps it in step with `items` by triggers.
+ */
+@Fts4(contentEntity = ItemEntity::class)
+@Entity(tableName = "items_fts")
+data class ItemFts(
+    val searchName: String,
 )

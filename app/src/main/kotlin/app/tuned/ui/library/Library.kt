@@ -42,13 +42,13 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import app.tuned.R
 import app.tuned.container
 import app.tuned.data.db.WatchLaterEntity
+import app.tuned.diagnostics.launchSafely
 import app.tuned.ui.common.focusRing
 import coil3.compose.AsyncImage
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.launch
 
 /**
  * The person's own lists beyond favourites (Melvin, 2026-11-17): Watch later for films and shows, and marking films
@@ -62,12 +62,10 @@ class LibraryViewModel(
     val later: StateFlow<List<WatchLaterEntity>> =
         db.watchLater().all().stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
-    val laterKeys: StateFlow<Set<String>> =
-        db
-            .watchLater()
-            .keys()
-            .map { it.toSet() }
-            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptySet())
+    private val picks = app.container.picks
+
+    /** Shown changed the moment Watch later is tapped ([app.tuned.data.Picks]). */
+    val laterKeys: StateFlow<Set<String>> = picks.watchLater.value
 
     val watched: StateFlow<Set<Long>> =
         db
@@ -77,16 +75,14 @@ class LibraryViewModel(
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptySet())
 
     fun toggleLater(row: WatchLaterEntity) {
-        viewModelScope.launch {
-            if (row.key in laterKeys.value) db.watchLater().remove(row.key) else db.watchLater().add(row)
-        }
+        picks.setWatchLater(row, row.key !in laterKeys.value)
     }
 
     fun setWatched(
         ids: List<Long>,
         watched: Boolean,
     ) {
-        viewModelScope.launch { if (watched) db.library().markWatched(ids) else db.library().markUnwatched(ids) }
+        viewModelScope.launchSafely("Library") { if (watched) db.library().markWatched(ids) else db.library().markUnwatched(ids) }
     }
 
     companion object {

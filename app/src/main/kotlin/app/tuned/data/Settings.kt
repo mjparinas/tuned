@@ -1,10 +1,12 @@
 package app.tuned.data
 
 import android.content.Context
+import androidx.datastore.core.handlers.ReplaceFileCorruptionHandler
 import androidx.datastore.preferences.core.MutablePreferences
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.core.floatPreferencesKey
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
@@ -15,14 +17,17 @@ import app.tuned.core.ChannelScan
 import app.tuned.core.KidsContent
 import app.tuned.core.PinHash
 import app.tuned.core.Placeholders
+import app.tuned.diagnostics.AppLog
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
+import java.io.IOException
 
 enum class ThemeMode { SYSTEM, LIGHT, DARK }
 
@@ -93,6 +98,12 @@ data class AppSettings(
     val pullToRefresh: Boolean = false,
     /** Leave out live channels that failed in two channel scans (Settings › Channel health). */
     val hideDeadChannels: Boolean = true,
+    /** Hide a channel at once when it won't play while the internet and the service work (Settings › Channel health). */
+    val hideFailedOnPlay: Boolean = true,
+    /** When a live channel dies, switch to another copy of it, such as "ESPN FHD" for "ESPN HD" (Settings › Player). */
+    val backupCopies: Boolean = true,
+    /** Switch the display to the video's frame rate where the screen offers it (Settings › Player). */
+    val matchFrameRate: Boolean = true,
     /** Leave out empty event slots ("NO EVENT STREAMING"); see [Placeholders]. Melvin, 2026-11-17: hide them. */
     val hidePlaceholders: Boolean = true,
     val pictureInPicture: Boolean = true,
@@ -103,7 +114,7 @@ data class AppSettings(
     val videoFit: VideoFit = VideoFit.FIT,
     val controlsTimeoutMs: Int = 3_000,
     /** Auto-tune moves on when a channel shows no picture within this long. */
-    val tuneTimeoutMs: Int = 10_000,
+    val tuneTimeoutMs: Int = 8_000,
     /** Auto-tune skips channels below this picture height (0 takes any picture). */
     val tuneMinHeight: Int = 0,
     val seekBackMs: Long = 10_000,
@@ -131,6 +142,8 @@ data class AppSettings(
     val profileId: Long = 1,
     val kidsProfile: Boolean = false,
     val profileCount: Int = 1,
+    /** Settings › Developer: keep a detailed log and show the log viewer, for finding what went wrong. */
+    val developerMode: Boolean = false,
 )
 
 /** Hidden countries, hidden groups and the channel filters together: the one list every query filters by. */
@@ -144,7 +157,24 @@ fun AppSettings.hiddenKeys(): List<String> {
     return (hiddenRegions + hiddenGroups + filters).sorted()
 }
 
-private val Context.dataStore by preferencesDataStore(name = "settings")
+/** A damaged settings file starts over from the defaults instead of crashing every launch. */
+private val Context.dataStore by preferencesDataStore(
+    name = "settings",
+    corruptionHandler =
+        ReplaceFileCorruptionHandler { error ->
+            AppLog.e("Settings", "The settings file was damaged and has been reset", error)
+            emptyPreferences()
+        },
+)
+
+/** The stored settings; a file that can't be read reads as the defaults (and is logged) rather than crashing. */
+private val Context.storedPreferences: Flow<Preferences>
+    get() =
+        dataStore.data.catch { error ->
+            if (error !is IOException) throw error
+            AppLog.e("Settings", "Couldn't read the settings", error)
+            emit(emptyPreferences())
+        }
 
 /** Every setting in one DataStore. Screens read [settings] and write through [update]. */
 class SettingsRepository(
@@ -157,12 +187,12 @@ class SettingsRepository(
     private val adultUnlocked = MutableStateFlow(false)
 
     val settings: Flow<AppSettings> =
-        combine(context.dataStore.data.map(::read), adultUnlocked) { s, unlocked -> s.copy(showAdult = unlocked && !s.kidsProfile) }
+        combine(context.storedPreferences.map(::read), adultUnlocked) { s, unlocked -> s.copy(showAdult = unlocked && !s.kidsProfile) }
             .distinctUntilChanged()
 
     /** Whether a parental PIN has been set. */
     val hasAdultPin: Flow<Boolean> =
-        context.dataStore.data
+        context.storedPreferences
             .map { !it[K.adultPin].isNullOrEmpty() }
             .distinctUntilChanged()
 
@@ -182,7 +212,7 @@ class SettingsRepository(
 
     /** Whether [pin] is the parental PIN, without unlocking anything. */
     suspend fun checkAdultPin(pin: String): Boolean {
-        val stored = context.dataStore.data.first()[K.adultPin] ?: return false
+        val stored = context.storedPreferences.first()[K.adultPin] ?: return false
         return withContext(Dispatchers.Default) { PinHash.verify(pin, stored) }
     }
 
@@ -203,7 +233,10 @@ class SettingsRepository(
         }
     }
 
-    /** Every stored setting by its key, for a backup. Sync times and the open tab are left out: they belong to this phone. */
+    /**
+     * Every stored setting by its key, for a backup. Sync times and the open tab are left out: they belong to this phone.
+     * Reads the file directly, so a backup fails loudly rather than saving the defaults.
+     */
     suspend fun snapshot(): Map<String, Any> = context.dataStore.data
         .first()
         .asMap()
@@ -255,6 +288,9 @@ class SettingsRepository(
             autoPlayNext = p[K.autoPlayNext] ?: d.autoPlayNext,
             pullToRefresh = p[K.pullToRefresh] ?: d.pullToRefresh,
             hideDeadChannels = p[K.hideDeadChannels] ?: d.hideDeadChannels,
+            hideFailedOnPlay = p[K.hideFailedOnPlay] ?: d.hideFailedOnPlay,
+            backupCopies = p[K.backupCopies] ?: d.backupCopies,
+            matchFrameRate = p[K.matchFrameRate] ?: d.matchFrameRate,
             hidePlaceholders = p[K.hidePlaceholders] ?: d.hidePlaceholders,
             pictureInPicture = p[K.pictureInPicture] ?: d.pictureInPicture,
             playerGestures = p[K.playerGestures] ?: d.playerGestures,
@@ -295,6 +331,7 @@ class SettingsRepository(
             profileId = p[K.profileId] ?: d.profileId,
             kidsProfile = p[K.kidsProfile] ?: d.kidsProfile,
             profileCount = p[K.profileCount] ?: d.profileCount,
+            developerMode = p[K.developerMode] ?: d.developerMode,
         )
     }
 
@@ -321,6 +358,9 @@ class SettingsRepository(
         p[K.autoPlayNext] = s.autoPlayNext
         p[K.pullToRefresh] = s.pullToRefresh
         p[K.hideDeadChannels] = s.hideDeadChannels
+        p[K.hideFailedOnPlay] = s.hideFailedOnPlay
+        p[K.backupCopies] = s.backupCopies
+        p[K.matchFrameRate] = s.matchFrameRate
         p[K.hidePlaceholders] = s.hidePlaceholders
         p[K.pictureInPicture] = s.pictureInPicture
         p[K.playerGestures] = s.playerGestures
@@ -359,6 +399,7 @@ class SettingsRepository(
         p[K.profileId] = s.profileId
         p[K.kidsProfile] = s.kidsProfile
         p[K.profileCount] = s.profileCount
+        p[K.developerMode] = s.developerMode
     }
 
     private inline fun <reified E : Enum<E>> enumOr(
@@ -387,6 +428,9 @@ class SettingsRepository(
         val autoPlayNext = booleanPreferencesKey("auto_play_next")
         val pullToRefresh = booleanPreferencesKey("pull_to_refresh")
         val hideDeadChannels = booleanPreferencesKey("hide_dead_channels")
+        val hideFailedOnPlay = booleanPreferencesKey("hide_failed_on_play")
+        val backupCopies = booleanPreferencesKey("backup_copies")
+        val matchFrameRate = booleanPreferencesKey("match_frame_rate")
         val hidePlaceholders = booleanPreferencesKey("hide_placeholders")
         val pictureInPicture = booleanPreferencesKey("picture_in_picture")
         val playerGestures = booleanPreferencesKey("player_gestures")
@@ -424,6 +468,7 @@ class SettingsRepository(
         val profileId = longPreferencesKey("profile_id")
         val kidsProfile = booleanPreferencesKey("kids_profile")
         val profileCount = intPreferencesKey("profile_count")
+        val developerMode = booleanPreferencesKey("developer_mode")
     }
 
     private companion object {
@@ -434,6 +479,7 @@ class SettingsRepository(
                 K.lastSyncError.name,
                 K.lastTab.name,
                 K.serverTimezone.name,
+                K.developerMode.name,
                 // The profiles live in the database, which a backup doesn't hold.
                 K.profileId.name,
                 K.kidsProfile.name,

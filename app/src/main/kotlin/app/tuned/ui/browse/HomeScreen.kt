@@ -114,8 +114,12 @@ import app.tuned.data.db.ProfileEntity
 import app.tuned.data.db.ShowSummary
 import app.tuned.data.db.WatchLaterEntity
 import app.tuned.ui.SyncText
+import app.tuned.ui.common.ChannelRowSkeleton
+import app.tuned.ui.common.SKELETON_ROWS
 import app.tuned.ui.common.VoiceSearchButton
+import app.tuned.ui.common.firstLoad
 import app.tuned.ui.common.focusRing
+import app.tuned.ui.common.skeleton
 import app.tuned.ui.common.windowWidthDp
 import app.tuned.ui.library.LibraryViewModel
 import app.tuned.ui.library.watchLaterRow
@@ -444,6 +448,7 @@ private fun LiveList(
     onOpenGuide: (Long) -> Unit,
 ) {
     val channels = vm.channels.collectAsLazyPagingItems()
+    val favourites by vm.favouriteIds.collectAsStateWithLifecycle()
     val state = rememberLazyListState()
     LazyColumn(
         state = state,
@@ -451,17 +456,20 @@ private fun LiveList(
         contentPadding = PaddingValues(start = 12.dp, end = 12.dp, top = 4.dp, bottom = 16.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
+        if (channels.firstLoad) items(SKELETON_ROWS) { ChannelRowSkeleton() }
         items(count = channels.itemCount, key = channels.itemKey { it.id }) { index ->
             val channel = channels[index]
             if (channel == null) {
-                Spacer(Modifier.height(64.dp))
+                ChannelRowSkeleton()
             } else {
+                val favourite = channel.id in favourites
                 ChannelRow(
                     channel = channel,
+                    favourite = favourite,
                     showGuide = showGuide,
                     onPlay = { onPlay(channel.id) },
                     onGuide = { onOpenGuide(channel.id) },
-                    onToggleFavourite = { vm.toggleFavourite(channel.id, channel.favourite) },
+                    onToggleFavourite = { vm.toggleFavourite(channel.id, favourite) },
                 )
             }
         }
@@ -487,6 +495,7 @@ internal fun FavouriteButton(
 @Composable
 private fun ChannelRow(
     channel: ChannelWithNow,
+    favourite: Boolean,
     showGuide: Boolean,
     onPlay: () -> Unit,
     onGuide: () -> Unit,
@@ -541,7 +550,7 @@ private fun ChannelRow(
                     }
                 }
             }
-            FavouriteButton(channel.favourite, onToggleFavourite)
+            FavouriteButton(favourite, onToggleFavourite)
             if (channel.tvgId != null) {
                 IconButton(onClick = onGuide) {
                     Icon(Icons.AutoMirrored.Filled.List, contentDescription = stringResource(R.string.guide_open))
@@ -550,7 +559,7 @@ private fun ChannelRow(
         }
         DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
             DropdownMenuItem(
-                text = { Text(stringResource(if (channel.favourite) R.string.favourite_remove else R.string.favourite_add)) },
+                text = { Text(stringResource(if (favourite) R.string.favourite_remove else R.string.favourite_add)) },
                 onClick = {
                     menu = false
                     onToggleFavourite()
@@ -590,6 +599,7 @@ private fun MovieGrid(
     ) {
         continueWatching(vm, ContentKind.MOVIE, onPlay)
         watchLaterRow(shows = false, visible = { fullList(vm, ContentKind.MOVIE) }, onOpenMovie = onOpenMovie, onOpenShow = { _, _ -> })
+        if (movies.firstLoad) items(SKELETON_ROWS) { PosterPlaceholder() }
         items(count = movies.itemCount, key = movies.itemKey { it.id }) { index ->
             val movie: ItemEntity? = movies[index]
             if (movie == null) {
@@ -643,6 +653,7 @@ private fun ShowGrid(
     ) {
         continueWatching(vm, ContentKind.SERIES, onPlay)
         watchLaterRow(shows = true, visible = { fullList(vm, ContentKind.SERIES) }, onOpenMovie = {}, onOpenShow = onOpenShow)
+        if (shows.firstLoad) items(SKELETON_ROWS) { PosterPlaceholder() }
         items(count = shows.itemCount, key = shows.itemKey { it.showKey }) { index ->
             val show: ShowSummary? = shows[index]
             if (show == null) {
@@ -877,7 +888,7 @@ private fun PosterPlaceholder() {
             .fillMaxWidth()
             .aspectRatio(2f / 3f)
             .clip(RoundedCornerShape(10.dp))
-            .background(MaterialTheme.colorScheme.surfaceContainerHigh),
+            .skeleton(),
     )
 }
 

@@ -56,25 +56,28 @@ class ProfilesDbTest {
     fun kidsProfilesSeeKidsCategoriesOnly() = runTest {
         val items =
             listOf(
-                item(1, "US| KIDS", "Treehouse"),
-                item(2, "US | Entertainment", "US: Cartoon Network HD"),
-                item(3, "US | Entertainment", "US: Family Guy 24/7"),
-                item(4, "Sports", "TSN 1"),
+                item(1, "US| KIDS", "Treehouse TV"),
+                item(2, "US | Entertainment", "US: Cartoon Network TV"),
+                item(3, "US | Entertainment", "US: Family Guy TV"),
+                item(4, "Sports", "TSN TV"),
             )
         db.items().insertAll(items)
         val kids = listOf(KidsContent.HIDDEN_KEY)
 
-        val shown = db.items().searchChannels("", 0, kids, adult = false, limit = 10).map { it.id }
+        suspend fun search(hidden: List<String>) =
+            db.items().searchChannels("tv", Search.match("tv"), 0, hidden, adult = false, limit = 10).map { it.id }
+
+        val shown = search(kids)
         assertEquals(listOf(1L, 2L), shown)
         // The SQL and the Kotlin rule agree.
         assertEquals(items.filter { KidsContent.isKids(it.groupName, it.name, live = true) }.map { it.id }, shown)
-        assertEquals(listOf(1L, 2L, 3L, 4L), db.items().searchChannels("", 0, emptyList(), adult = false, limit = 10).map { it.id })
+        assertEquals(listOf(1L, 2L, 3L, 4L), search(emptyList()))
         assertEquals(listOf("US| KIDS"), db.items().groups(0, kids, adult = false).first().map { it.groupName })
     }
 
     @Test
     fun upgradeGivesEverythingToTheFirstProfileInTheShapeRoomExpects() {
-        val helper = openHelper(9) { old ->
+        val helper = openHelper(11) { old ->
             old.execSQL(
                 "CREATE TABLE `favourites` (`itemId` INTEGER NOT NULL, `addedAt` INTEGER NOT NULL, " +
                     "`position` INTEGER NOT NULL DEFAULT 0, PRIMARY KEY(`itemId`))",
@@ -97,7 +100,7 @@ class ProfilesDbTest {
         old.execSQL("INSERT INTO watch_later VALUES ('s:abc', NULL, 'abc', 'Show', NULL, 9)")
         old.execSQL("INSERT INTO seen_episodes VALUES (11, 'abc')")
 
-        TunedDatabase.MIGRATION_9_10.migrate(old)
+        TunedDatabase.MIGRATION_11_12.migrate(old)
 
         assertEquals(listOf("7|500|3|1"), rows(old, "SELECT itemId, addedAt, position, profileId FROM favourites"))
         assertEquals(listOf("8|1000|2000|50|1"), rows(old, "SELECT itemId, positionMs, durationMs, watchedAt, profileId FROM history"))
