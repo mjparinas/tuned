@@ -5,6 +5,7 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Transaction
 import androidx.room.Upsert
 import kotlinx.coroutines.flow.Flow
 
@@ -55,7 +56,7 @@ interface ItemDao {
                 SELECT channelId FROM programmes WHERE title LIKE '%' || :query || '%' AND stop > :now AND start < :now + 3600000
             ))
         GROUP BY i.id
-        ORDER BY CASE WHEN :recentOnly = 1 THEN h.watchedAt END DESC, i.sortOrder
+        ORDER BY CASE WHEN :recentOnly = 1 THEN h.watchedAt END DESC, CASE WHEN :favouritesOnly = 1 THEN f.position END, i.sortOrder
         """,
     )
     fun channels(
@@ -310,6 +311,29 @@ interface LibraryDao {
 
     @Query("SELECT EXISTS(SELECT 1 FROM favourites WHERE itemId = :itemId)")
     fun isFavourite(itemId: Long): Flow<Boolean>
+
+    /** Favourite channels in the order they're shown, for Settings › Order favourites. */
+    @Query(
+        """
+        SELECT i.id, i.name, i.logo FROM favourites f JOIN items i ON i.id = f.itemId
+        WHERE i.kind = 0
+        GROUP BY i.id
+        ORDER BY f.position, i.sortOrder
+        """,
+    )
+    fun favouriteChannels(): Flow<List<FavouriteRow>>
+
+    @Query("UPDATE favourites SET position = :position WHERE itemId = :itemId")
+    suspend fun setFavouritePosition(
+        itemId: Long,
+        position: Long,
+    )
+
+    /** Saves a new order: [ids] first to last. */
+    @Transaction
+    suspend fun reorderFavourites(ids: List<Long>) {
+        ids.forEachIndexed { i, id -> setFavouritePosition(id, i.toLong()) }
+    }
 
     @Upsert
     suspend fun saveProgress(history: HistoryEntity)
