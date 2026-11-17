@@ -72,7 +72,7 @@ class SyncRepository(
         val count =
             try {
                 download(url, "playlist", SyncProgress.Step.Playlist, progress) { input ->
-                    importPlaylist(input) { rows -> progress(SyncProgress(SyncProgress.Step.SavingPlaylist, rows)) }
+                    importPlaylist(input) { rows -> progress(SyncProgress(SyncProgress.Step.SavingPlaylist, rows.toLong())) }
                 }
             } catch (e: IOException) {
                 val message = XtreamUrls.redact(e.message ?: "Couldn't download the playlist", login.username, login.password)
@@ -89,7 +89,7 @@ class SyncRepository(
         val days = settings.settings.first().guideDays
         val count =
             download(url, "guide", SyncProgress.Step.Guide, progress) { input ->
-                importGuide(input, days) { rows -> progress(SyncProgress(SyncProgress.Step.SavingGuide, rows)) }
+                importGuide(input, days) { rows -> progress(SyncProgress(SyncProgress.Step.SavingGuide, rows.toLong())) }
             }
         settings.update { it.copy(lastGuideSync = System.currentTimeMillis()) }
         return count
