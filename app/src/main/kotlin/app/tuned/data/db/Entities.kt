@@ -133,4 +133,5 @@ data class FavouriteRow(
     val id: Long,
     val name: String,
     val logo: String?,
+    val tvgId: String?,
 )

@@ -72,5 +72,33 @@
         <receiver
             android:name=".updates.InstallResultReceiver"
             android:exported="false" />
+
+        <!-- Home screen widget: favourite channels with what's on now. -->
+        <receiver
+            android:name=".widget.FavouritesWidgetReceiver"
+            android:exported="true"
+            android:label="@string/widget_favourites">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_favourites" />
+        </receiver>
+
+        <!-- Quick-settings tile: straight back to the last channel. -->
+        <service
+            android:name=".widget.LastChannelTile"
+            android:exported="true"
+            android:icon="@drawable/ic_stat_tuned"
+            android:label="@string/tile_last_channel"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.service.quicksettings.TOGGLEABLE_TILE"
+                android:value="false" />
+        </service>
     </application>
 </manifest>
