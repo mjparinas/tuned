@@ -18,6 +18,7 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.ComponentActivity
+import androidx.annotation.OptIn
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
@@ -29,6 +30,7 @@ import androidx.media3.common.MediaMetadata
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.common.VideoSize
+import androidx.media3.common.util.UnstableApi
 import androidx.media3.datasource.okhttp.OkHttpDataSource
 import androidx.media3.exoplayer.DefaultLoadControl
 import androidx.media3.exoplayer.ExoPlayer
@@ -55,6 +57,8 @@ import kotlinx.coroutines.launch
  * settings menu for audio language and speed. Built on Views, not Compose, because PlayerView is Media3's own
  * tested surface and starts fastest.
  */
+// Media3's caption, track and buffer APIs are marked unstable; the version is pinned and Dependabot raises it with CI.
+@OptIn(UnstableApi::class)
 class PlayerActivity : ComponentActivity() {
     private var player: ExoPlayer? = null
     private lateinit var playerView: PlayerView

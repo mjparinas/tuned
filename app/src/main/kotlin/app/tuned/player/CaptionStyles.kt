@@ -1,6 +1,8 @@
 package app.tuned.player
 
 import android.graphics.Typeface
+import androidx.annotation.OptIn
+import androidx.media3.common.util.UnstableApi
 import androidx.media3.ui.CaptionStyleCompat
 import androidx.media3.ui.SubtitleView
 import app.tuned.data.CaptionEdge
@@ -8,6 +10,8 @@ import app.tuned.data.CaptionFont
 import app.tuned.data.CaptionStyle
 
 /** Applies Settings › Captions to Media3's subtitle view. */
+// Media3's caption, track and buffer APIs are marked unstable; the version is pinned and Dependabot raises it with CI.
+@OptIn(UnstableApi::class)
 object CaptionStyles {
     fun apply(
         view: SubtitleView,

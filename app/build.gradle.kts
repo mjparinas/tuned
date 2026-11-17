@@ -147,6 +147,7 @@ dependencies {
     testImplementation(kotlin("test-junit"))
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.robolectric)
+    testImplementation(libs.roborazzi)
     testImplementation(libs.roborazzi.compose)
     testImplementation(libs.roborazzi.junit)
     testImplementation(libs.androidx.compose.ui.test.junit4)

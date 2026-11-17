@@ -77,17 +77,17 @@ class Screenshots {
 
     @Test fun login() = shot("01-sign-in", ThemeMode.DARK, wait = "Sign in") { LoginScreen(onSignedIn = {}) }
 
-    @Test fun live() = shot("02-live-tv", ThemeMode.DARK, wait = "CBC News Network") { home(dark) }
+    @Test fun live() = shot("02-live-tv", ThemeMode.DARK, wait = "CBC News Network") { Home(dark) }
 
     @Test fun liveLight() = shot(
         "03-live-tv-light",
         ThemeMode.LIGHT,
         wait = "CBC News Network",
-    ) { home(dark.copy(theme = ThemeMode.LIGHT)) }
+    ) { Home(dark.copy(theme = ThemeMode.LIGHT)) }
 
-    @Test fun movies() = shot("04-movies", ThemeMode.DARK, wait = "Northern Lights") { home(dark.copy(startTab = StartTab.MOVIES)) }
+    @Test fun movies() = shot("04-movies", ThemeMode.DARK, wait = "Northern Lights") { Home(dark.copy(startTab = StartTab.MOVIES)) }
 
-    @Test fun shows() = shot("05-shows", ThemeMode.DARK, wait = "Harbour Town") { home(dark.copy(startTab = StartTab.SHOWS)) }
+    @Test fun shows() = shot("05-shows", ThemeMode.DARK, wait = "Harbour Town") { Home(dark.copy(startTab = StartTab.SHOWS)) }
 
     @Test fun show() = shot("06-show", ThemeMode.DARK, wait = "Harbour Town") {
         ShowScreen(showKey = Episodes.showKey("Harbour Town"), title = "Harbour Town", onPlay = {}, onBack = {})
@@ -108,7 +108,7 @@ class Screenshots {
     }
 
     @Composable
-    private fun home(settings: AppSettings) =
+    private fun Home(settings: AppSettings) =
         HomeScreen(settings, onPlay = {}, onOpenShow = { _, _ -> }, onOpenGuide = {}, onOpenSettings = {})
 
     private fun shot(
