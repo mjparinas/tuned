@@ -42,7 +42,12 @@ class MainActivity : ComponentActivity() {
         setContent {
             val s by settings.collectAsStateWithLifecycle()
             val current = s ?: return@setContent
-            TunedTheme(mode = current.theme, dynamicColour = current.dynamicColour, pureBlack = current.pureBlack) {
+            TunedTheme(
+                mode = current.theme,
+                dynamicColour = current.dynamicColour,
+                pureBlack = current.pureBlack,
+                accent = current.accent,
+            ) {
                 val nav = rememberNavController()
                 val play: (Long) -> Unit = { id -> PlayerActivity.start(this, id) }
                 NavHost(navController = nav, startDestination = if (signedIn) HomeRoute else LoginRoute) {

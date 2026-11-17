@@ -4,7 +4,7 @@ Melvin first chose **Google Play in-app updates** (2026-11-17), then **GitHub Re
 
 ## GitHub Releases (now)
 
-- `release.yml` runs on every promotion to `main` and by hand. It builds a signed APK and publishes a GitHub release tagged `v<version>-build.<run number>` (for example `v0.1.0-build.12`), with `tuned.apk` attached. The version name comes from `package.json` and the version code is the run number.
+- `release.yml` runs on every promotion to `main` and by hand. It builds a signed APK and publishes a GitHub release tagged `v<version>-build.<run number>` (for example `v0.1.0-build.12`), with `tuned.apk` attached. The version name is semver, bumped from the commits since the last release by `scripts/next-version.mjs` (Melvin, 2026-11-17): `feat:` titles bump the minor, everything else the patch, `!` or `BREAKING CHANGE` the major, and `package.json` is a floor for a hand bump. The version code is the run number, so each release is newer than the last for the updater.
 - On each start, a copy that Play didn't install asks GitHub for the latest release (`updates/GitHubUpdates.kt`). If its version code is higher, the APK downloads in the background, and a small "ready to install" bar appears on the home screen. One tap hands it to Android's installer, which asks to confirm. The first time, Android also asks to allow Tuned to install apps.
 - Android only installs the update if it is signed with the same key as the installed app, so a swapped download can't replace Tuned. **Keep the upload keystore safe**: without it, installed copies can never update again.
 - Settings › Advanced › Check for updates turns this off. Debug builds never check.

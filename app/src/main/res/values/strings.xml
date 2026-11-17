@@ -198,4 +198,12 @@
     <string name="filter_recent">Recent</string>
     <string name="continue_watching">Continue watching</string>
     <string name="continue_episode">%1$s · S%2$d E%3$d</string>
+    <string name="settings_accent">Accent colour</string>
+    <string name="accent_violet">Violet</string>
+    <string name="accent_blue">Blue</string>
+    <string name="accent_teal">Teal</string>
+    <string name="accent_green">Green</string>
+    <string name="accent_orange">Orange</string>
+    <string name="accent_pink">Pink</string>
+    <string name="accent_red">Red</string>
 </resources>
