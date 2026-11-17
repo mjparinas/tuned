@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_backup_copies">Switch to a backup copy</string>
+    <string name="settings_backup_copies_summary">When a channel stops working, play another copy of it from your list, such as ESPN FHD for ESPN HD</string>
+    <!-- %1$d: which copy is being tried; %2$d: how many copies there are. -->
+    <string name="player_trying_copy">Not working. Trying a backup copy (%1$d of %2$d)…</string>
+    <string name="player_copy_playing">Switched to %1$s</string>
+    <string name="player_no_copy_works">This channel and its backup copies aren\'t working right now</string>
+    <string name="health_hide_failed_on_play">Hide channels that won\'t play</string>
+    <string name="health_hide_failed_on_play_summary">When a channel won\'t load while your internet and the service are working (another channel plays fine), hide it right away. It comes back when a scan finds it working, or with Show again below.</string>
+    <string name="health_reason_playback">wouldn\'t play</string>
+</resources>
