@@ -272,7 +272,7 @@ fun DownloadsScreen(
                     }
                     if (library.movies.isNotEmpty()) {
                         item(key = "movies") { SectionTitle(stringResource(R.string.tab_movies)) }
-                        items(library.movies, key = { it.download.itemId }) { row -> SavedOrComing(row, vm, onPlay) }
+                        items(library.movies, key = { it.download.itemId }) { row -> SavedOrComing(row, info = null, vm = vm, onPlay = onPlay) }
                     }
                 }
             }
