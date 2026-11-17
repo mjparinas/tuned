@@ -183,6 +183,12 @@ class BrowseViewModel(
         }
     }
 
+    /** The poster badge's rating: from the device when seen before, otherwise one TMDB search (only with a key). */
+    suspend fun rating(
+        name: String,
+        tv: Boolean,
+    ): Double? = container.metadata.summary(name, tv)?.rating
+
     fun toggleFavourite(
         itemId: Long,
         favourite: Boolean,

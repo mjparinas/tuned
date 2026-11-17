@@ -38,6 +38,7 @@ import androidx.compose.material.icons.filled.Movie
 import androidx.compose.material.icons.filled.Radar
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.TravelExplore
 import androidx.compose.material.icons.filled.Tv
 import androidx.compose.material.icons.filled.VideoLibrary
@@ -63,6 +64,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -72,6 +74,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
@@ -464,13 +467,16 @@ private fun MovieGrid(
                 PosterPlaceholder()
             } else {
                 val favourite = movie.id in favourites
+                val rating by produceState<Double?>(null, movie.name) { value = vm.rating(movie.name, tv = false) }
+                // A tap opens the film's page; Play now is in the long-press menu for a straight start.
                 Poster(
                     title = movie.name,
                     image = movie.logo,
                     favourite = favourite,
-                    onClick = { onPlay(movie.id) },
+                    rating = rating,
+                    onClick = { onOpenMovie(movie.id) },
                     onToggleFavourite = { vm.toggleFavourite(movie.id, favourite) },
-                    onDetails = { onOpenMovie(movie.id) },
+                    onPlayNow = { onPlay(movie.id) },
                 )
             }
         }
@@ -498,9 +504,11 @@ private fun ShowGrid(
             if (show == null) {
                 PosterPlaceholder()
             } else {
+                val rating by produceState<Double?>(null, show.showName) { value = vm.rating(show.showName, tv = true) }
                 Poster(
                     title = show.showName,
                     image = show.logo,
+                    rating = rating,
                     subtitle = pluralEpisodes(show.episodes),
                     onClick = { onOpenShow(show.showKey, show.showName) },
                 )
@@ -585,10 +593,11 @@ fun Poster(
     subtitle: String? = null,
     favourite: Boolean = false,
     onToggleFavourite: (() -> Unit)? = null,
-    onDetails: (() -> Unit)? = null,
+    onPlayNow: (() -> Unit)? = null,
+    rating: Double? = null,
 ) {
     var menu by remember { mutableStateOf(false) }
-    val hasMenu = onToggleFavourite != null || onDetails != null
+    val hasMenu = onToggleFavourite != null || onPlayNow != null
     Column(
         Modifier
             .clip(RoundedCornerShape(10.dp))
@@ -606,6 +615,7 @@ fun Poster(
                         .clip(RoundedCornerShape(10.dp))
                         .background(MaterialTheme.colorScheme.surfaceContainerHigh),
             )
+            rating?.let { RatingBadge(it, Modifier.align(Alignment.BottomEnd).padding(6.dp)) }
             if (favourite) {
                 Icon(
                     Icons.Filled.Favorite,
@@ -616,12 +626,12 @@ fun Poster(
             }
             if (hasMenu) {
                 DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
-                    onDetails?.let { open ->
+                    onPlayNow?.let { play ->
                         DropdownMenuItem(
-                            text = { Text(stringResource(R.string.details)) },
+                            text = { Text(stringResource(R.string.play_now)) },
                             onClick = {
                                 menu = false
-                                open()
+                                play()
                             },
                         )
                     }
@@ -747,3 +757,26 @@ private fun RefreshBar(progress: SyncProgress) {
         SyncProgressBar(progress, Modifier.fillMaxWidth())
     }
 }
+
+/** The TMDB rating in the poster's corner, readable over any artwork. */
+@Composable
+private fun RatingBadge(
+    rating: Double,
+    modifier: Modifier = Modifier,
+) {
+    val locale = LocalConfiguration.current.locales[0]
+    Row(
+        modifier
+            .clip(RoundedCornerShape(6.dp))
+            .background(Color.Black.copy(alpha = 0.72f))
+            .padding(horizontal = 6.dp, vertical = 2.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(Icons.Filled.Star, null, Modifier.size(12.dp), tint = RATING_GOLD)
+        Spacer(Modifier.width(3.dp))
+        Text(String.format(locale, "%.1f", rating), style = MaterialTheme.typography.labelSmall, color = Color.White)
+    }
+}
+
+/** The usual star gold, which reads on the dark badge whatever the app's accent. */
+private val RATING_GOLD = Color(0xFFF5C518)

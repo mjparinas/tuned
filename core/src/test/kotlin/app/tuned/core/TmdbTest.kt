@@ -28,6 +28,18 @@ class TmdbTest {
     }
 
     @Test
+    fun detailsComeInOneCallAndRuntimeReadsNaturally() {
+        assertEquals(
+            "https://api.themoviedb.org/3/movie/603?append_to_response=videos,credits&api_key=abc",
+            Tmdb.details(603, tv = false, key = "abc"),
+        )
+        assertEquals("2h 16m", Tmdb.runtime(136))
+        assertEquals("48m", Tmdb.runtime(48))
+        assertEquals("2h", Tmdb.runtime(120))
+        assertNull(Tmdb.runtime(0))
+    }
+
+    @Test
     fun anOfficialYouTubeTrailerIsPreferred() {
         val videos =
             listOf(

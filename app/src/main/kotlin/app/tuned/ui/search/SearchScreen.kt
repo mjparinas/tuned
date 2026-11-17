@@ -110,6 +110,7 @@ fun SearchScreen(
     onBack: () -> Unit,
     onPlay: (Long) -> Unit,
     onOpenShow: (String, String) -> Unit,
+    onOpenMovie: (Long) -> Unit,
     onTune: (String) -> Unit,
     vm: SearchViewModel = viewModel(),
 ) {
@@ -181,7 +182,7 @@ fun SearchScreen(
             section(R.string.tab_live, r.channels) { c ->
                 ResultRow(c.name, c.nowTitle ?: c.groupName, c.logo) { onPlay(c.id) }
             }
-            section(R.string.tab_movies, r.movies) { m -> ResultRow(m.name, m.groupName, m.logo) { onPlay(m.id) } }
+            section(R.string.tab_movies, r.movies) { m -> ResultRow(m.name, m.groupName, m.logo) { onOpenMovie(m.id) } }
             section(R.string.tab_shows, r.shows) { s -> ResultRow(s.showName, s.groupName, s.logo) { onOpenShow(s.showKey, s.showName) } }
         }
     }

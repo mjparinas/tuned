@@ -1,7 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="details">Details</string>
     <string name="details_trailer">Trailer</string>
+    <string name="details_play">Play</string>
+    <string name="details_resume">Resume</string>
+    <string name="details_cast">Cast</string>
+    <string name="play_now">Play now</string>
     <string name="details_rating">%1$s/10</string>
     <string name="details_source">Details from The Movie Database (TMDB)</string>
     <string name="details_no_key">Add a TMDB key in Settings › Ratings to see ratings, summaries and trailers.</string>
