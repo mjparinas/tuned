@@ -4,6 +4,7 @@ plugins {
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.ksp)
+    alias(libs.plugins.room)
 }
 
 android {
@@ -79,6 +80,7 @@ android {
             if (project.hasProperty("screenshots")) {
                 test.filter.includeTestsMatching("app.tuned.screenshots.*")
                 test.systemProperty("roborazzi.test.record", "true")
+                test.testLogging.exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
                 test.systemProperty("roborazzi.record.filePathStrategy", "relativePathFromRoborazziContextOutputDirectory")
             } else {
                 test.exclude("app/tuned/screenshots/**")
@@ -96,8 +98,12 @@ kotlin {
     }
 }
 
+// Room's plugin writes each variant's schema separately, so debug and release builds don't race on one file.
+room {
+    schemaDirectory("$projectDir/schemas")
+}
+
 ksp {
-    arg("room.schemaLocation", "$projectDir/schemas")
     arg("room.generateKotlin", "true")
 }
 
