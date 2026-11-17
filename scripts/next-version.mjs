@@ -17,9 +17,9 @@ const compare = (a, b) => a[0] - b[0] || a[1] - b[1] || a[2] - b[2];
 
 export function bump(version, messages) {
     const [major, minor, patch] = parse(version);
-    const breaking = messages.some((m) => /^\w+(\([^)]*\))?!:/.test(m) || /BREAKING[ -]CHANGE/.test(m));
+    const breaking = messages.some((m) => /^\w+(\([^)]*\))?!:/m.test(m) || /BREAKING[ -]CHANGE/.test(m));
     if (breaking) return `${major + 1}.0.0`;
-    const feature = messages.some((m) => /^feat(\([^)]*\))?:/i.test(m));
+    const feature = messages.some((m) => /^feat(\([^)]*\))?:/im.test(m));
     if (feature) return `${major}.${minor + 1}.0`;
     return `${major}.${minor}.${patch + 1}`;
 }

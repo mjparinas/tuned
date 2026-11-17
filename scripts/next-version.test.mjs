@@ -12,3 +12,5 @@ test("a breaking change bumps the major", () => {
 test("the first release uses package.json", () => assert.equal(next("0.1.0", undefined, []), "0.1.0"));
 test("from the last release tag", () => assert.equal(next("0.1.0", "v0.1.0-build.1", ["feat: accent colours"]), "0.2.0"));
 test("a hand bump in package.json wins", () => assert.equal(next("1.0.0", "v0.3.0-build.9", ["fix: x"]), "1.0.0"));
+test("a merge commit counts its pull request title", () =>
+    assert.equal(bump("0.2.0", ["Merge pull request #12 from mjparinas/claude/cast\n\nfeat: cast to Chromecast"]), "0.3.0"));
