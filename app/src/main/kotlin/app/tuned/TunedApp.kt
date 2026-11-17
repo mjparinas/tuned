@@ -56,7 +56,7 @@ class AppContainer(
     val updates by lazy { GitHubUpdates(context, http) }
     val backup by lazy { BackupRepository(credentials, settings, db) }
     val reminders by lazy { Reminders(context) }
-    val metadata by lazy { MetadataRepository(http, settings) }
+    val metadata by lazy { MetadataRepository(http, settings, db.metadata()) }
 
     /** Forgets the login, the cached playlist and guide, and stops background refreshes. */
     suspend fun signOut() {
@@ -116,7 +116,10 @@ class TunedApp :
         )
     }
 
-    /** Logos and posters: memory plus a 256 MB disk cache, through the same OkHttp client as everything else. */
+    /**
+     * Logos, posters, backdrops and cast photos: memory plus a 512 MB disk cache in app storage (not the cache folder,
+     * which Android empties when space runs low), so artwork downloads once and then loads from the device.
+     */
     override fun newImageLoader(context: PlatformContext): ImageLoader = ImageLoader
         .Builder(context)
         .components { add(OkHttpNetworkFetcherFactory(callFactory = { container.http })) }
@@ -124,8 +127,8 @@ class TunedApp :
         .diskCache {
             DiskCache
                 .Builder()
-                .directory(context.cacheDir.resolve("images"))
-                .maxSizeBytes(256L * 1024 * 1024)
+                .directory(context.filesDir.resolve("images"))
+                .maxSizeBytes(512L * 1024 * 1024)
                 .build()
         }.crossfade(true)
         .build()

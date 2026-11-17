@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -33,6 +34,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -45,9 +47,11 @@ import app.tuned.container
 import app.tuned.data.db.HistoryEntity
 import app.tuned.data.db.ItemEntity
 import app.tuned.ui.common.BackTopBar
-import app.tuned.ui.details.DetailsText
+import app.tuned.ui.details.DetailsBody
 import app.tuned.ui.details.DetailsViewModel
+import app.tuned.ui.details.MetaLine
 import app.tuned.ui.details.TrailerButton
+import coil3.compose.AsyncImage
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -114,8 +118,22 @@ fun ShowScreen(
             LazyColumn(contentPadding = PaddingValues(vertical = 8.dp)) {
                 item(key = "details") {
                     Column(Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
-                        DetailsText(metadata, hasKey)
-                        metadata?.trailer?.let { TrailerButton(it) }
+                        metadata?.backdrop?.let { image ->
+                            AsyncImage(
+                                model = image,
+                                contentDescription = null,
+                                contentScale = ContentScale.Crop,
+                                modifier = Modifier.fillMaxWidth().aspectRatio(16f / 9f).clip(RoundedCornerShape(12.dp)),
+                            )
+                            Spacer(Modifier.height(12.dp))
+                        }
+                        MetaLine(metadata)
+                        metadata?.trailer?.let {
+                            Spacer(Modifier.height(12.dp))
+                            TrailerButton(it)
+                        }
+                        Spacer(Modifier.height(12.dp))
+                        DetailsBody(metadata, hasKey)
                     }
                 }
                 items(episodes.filter { season == null || (it.season ?: 1) == season }, key = { it.id }) { ep ->

@@ -381,3 +381,12 @@ interface CatchUpDao {
     @Query("SELECT days FROM catchup WHERE streamId = :streamId")
     fun days(streamId: String): Flow<Int?>
 }
+
+@Dao
+interface MetadataDao {
+    @Upsert
+    suspend fun upsert(row: MetadataEntity)
+
+    @Query("SELECT * FROM metadata WHERE cacheKey = :cacheKey")
+    suspend fun get(cacheKey: String): MetadataEntity?
+}

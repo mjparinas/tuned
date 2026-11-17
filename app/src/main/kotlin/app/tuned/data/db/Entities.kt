@@ -34,6 +34,32 @@ data class ItemEntity(
     val sortOrder: Int,
 )
 
+/**
+ * What TMDB said about a film or show, kept on the device so details and ratings load without the network.
+ * [full] is false when only the search answer (rating, summary, artwork) is known, true once the details page has
+ * also fetched genres, runtime, cast and trailer. A row with [found] false remembers that nothing matched.
+ */
+@Entity(tableName = "metadata")
+data class MetadataEntity(
+    @PrimaryKey val cacheKey: String,
+    val found: Boolean,
+    val full: Boolean,
+    val tmdbId: Long,
+    val title: String,
+    val year: String?,
+    val overview: String?,
+    val rating: Double?,
+    val poster: String?,
+    val backdrop: String?,
+    /** Comma-separated. */
+    val genres: String,
+    val runtime: String?,
+    /** One person per line: name, character and photo link, tab-separated. */
+    val cast: String,
+    val trailer: String?,
+    val fetchedAt: Long,
+)
+
 /** A live channel that keeps recordings (Xtream `tv_archive`), by its stream id; replaced on every playlist refresh. */
 @Entity(tableName = "catchup")
 data class CatchUpEntity(

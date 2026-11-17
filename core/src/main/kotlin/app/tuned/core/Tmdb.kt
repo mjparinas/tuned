@@ -9,6 +9,8 @@ import java.net.URLEncoder
 object Tmdb {
     private const val API = "https://api.themoviedb.org/3"
     const val IMAGES = "https://image.tmdb.org/t/p/w500"
+    const val BACKDROPS = "https://image.tmdb.org/t/p/w1280"
+    const val PROFILES = "https://image.tmdb.org/t/p/w185"
 
     /** What to search for: the title without the provider's tags, and the year when the name has one. */
     data class Query(
@@ -60,6 +62,27 @@ object Tmdb {
         tv: Boolean,
         key: String,
     ): String = "$API/${if (tv) "tv" else "movie"}/$id/videos?${apiKey(key).removePrefix("&")}"
+
+    /** Everything for the details page in one answer: genres, runtime, trailers and cast. */
+    fun details(
+        id: Long,
+        tv: Boolean,
+        key: String,
+    ): String = "$API/${if (tv) "tv" else "movie"}/$id?append_to_response=videos,credits${apiKey(key)}"
+
+    /** "1h 52m", or "48m" under an hour; null when unknown. */
+    fun runtime(minutes: Int?): String? {
+        if (minutes == null || minutes <= 0) return null
+        val h = minutes / 60
+        val m = minutes % 60
+        return if (h == 0) {
+            "${m}m"
+        } else if (m == 0) {
+            "${h}h"
+        } else {
+            "${h}h ${m}m"
+        }
+    }
 
     /** The YouTube trailer to offer: an official trailer first, then any trailer, then a teaser. */
     fun trailer(videos: List<Video>): String? {

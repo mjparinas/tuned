@@ -105,6 +105,7 @@ class MainActivity : ComponentActivity() {
                     onBack = { nav.popBackStack() },
                     onPlay = play,
                     onOpenShow = { key, title -> nav.navigate(ShowRoute(key, title)) },
+                    onOpenMovie = { id -> nav.navigate(MovieRoute(id)) },
                     onTune = tune,
                 )
             }
