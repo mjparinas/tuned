@@ -72,7 +72,7 @@ class ChannelHealthViewModel(
     }
 
     fun setHideFailedOnPlay(on: Boolean) {
-        viewModelScope.launch { container.settings.update { it.copy(hideFailedOnPlay = on) } }
+        viewModelScope.launchSafely("ChannelHealth") { container.settings.update { it.copy(hideFailedOnPlay = on) } }
     }
 
     fun setHidePlaceholders(on: Boolean) {
