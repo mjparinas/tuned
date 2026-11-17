@@ -126,7 +126,7 @@ class ShowViewModel(
         val key = seasonKey(tmdbId, season)
         if (!askedSeasons.add(key)) return
         val metadata = getApplication<Application>().container.metadata
-        viewModelScope.launch {
+        viewModelScope.launchSafely("Show") {
             metadata.cachedSeason(tmdbId, season)?.let { found -> seasonInfo.value += key to found }
             metadata.season(tmdbId, season)?.let { found -> seasonInfo.value += key to found }
         }
