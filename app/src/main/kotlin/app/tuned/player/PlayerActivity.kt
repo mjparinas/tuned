@@ -317,6 +317,7 @@ class PlayerActivity : ComponentActivity() {
     private fun updateOverlay(item: ItemEntity) {
         titleView.text = item.name
         subtitleView.text = item.groupName
+        if (ContentKind.fromCode(item.kind) == ContentKind.LIVE) rememberChannel(item.id)
         val tvgId = item.tvgId ?: return
         if (ContentKind.fromCode(item.kind) != ContentKind.LIVE) return
         lifecycleScope.launch {
@@ -336,6 +337,13 @@ class PlayerActivity : ComponentActivity() {
         val h = container.db.library().progress(id) ?: return C.TIME_UNSET
         val nearlyDone = h.durationMs > 0 && h.positionMs > h.durationMs * 0.95
         return if (h.positionMs > 30_000 && !nearlyDone) h.positionMs else C.TIME_UNSET
+    }
+
+    /** Live channels go into history too (no position), for the Recent filter on Live TV. */
+    private fun rememberChannel(id: Long) {
+        container.appScope.launch {
+            container.db.library().saveProgress(HistoryEntity(id, 0, 0, System.currentTimeMillis()))
+        }
     }
 
     private suspend fun saveProgressEvery(exo: ExoPlayer) {
