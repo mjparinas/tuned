@@ -348,6 +348,11 @@ fun SettingsScreen(
                 stringResource(R.string.settings_backup_copies_summary),
             ) { on -> vm.update { it.copy(backupCopies = on) } }
             SwitchRow(
+                stringResource(R.string.settings_match_frame_rate),
+                settings.matchFrameRate,
+                stringResource(R.string.settings_match_frame_rate_summary),
+            ) { on -> vm.update { it.copy(matchFrameRate = on) } }
+            SwitchRow(
                 stringResource(R.string.settings_landscape),
                 settings.landscapePlayback,
             ) { on -> vm.update { it.copy(landscapePlayback = on) } }
