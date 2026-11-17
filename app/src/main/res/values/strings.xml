@@ -233,4 +233,8 @@
     <string name="accent_orange">Orange</string>
     <string name="accent_pink">Pink</string>
     <string name="accent_red">Red</string>
+    <string name="search_everything">Search everything</string>
+    <string name="search_nothing">Nothing found for \"%1$s\"</string>
+    <string name="voice_search">Search by voice</string>
+    <string name="voice_prompt">Say a channel, film, show or event</string>
 </resources>
