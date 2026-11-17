@@ -205,4 +205,12 @@
     <string name="gesture_forward">+ %1$d s</string>
     <string name="player_reconnecting">Reconnecting…</string>
     <string name="player_reconnecting_try">Reconnecting… (%1$d of %2$d)</string>
+    <string name="settings_accent">Accent colour</string>
+    <string name="accent_violet">Violet</string>
+    <string name="accent_blue">Blue</string>
+    <string name="accent_teal">Teal</string>
+    <string name="accent_green">Green</string>
+    <string name="accent_orange">Orange</string>
+    <string name="accent_pink">Pink</string>
+    <string name="accent_red">Red</string>
 </resources>

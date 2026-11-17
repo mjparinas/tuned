@@ -5,7 +5,8 @@ name: Release
 #   - builds a signed APK and publishes it as a GitHub release tagged v<version>-build.<run number>. Installed
 #     copies find it and offer to update (docs/decisions/updates.md);
 #   - builds a signed App Bundle and, once PLAY_SERVICE_ACCOUNT_JSON exists, uploads it to the Play internal track.
-# Version name comes from package.json, version code from the run number. Skips itself with a notice until the
+# Version name: the last release's version, bumped by the commits since (scripts/next-version.mjs); version code: the
+# run number, so every release is newer than the last for the in-app updater. Skips itself with a notice until the
 # signing secrets exist.
 
 on:
@@ -33,11 +34,14 @@ jobs:
         run: echo "::notice::ANDROID_KEYSTORE_B64 is not set, so the Android release is skipped."
       - uses: actions/checkout@v7
         if: env.HAS_KEY == 'true'
+        with:
+          fetch-depth: 0 # the tags and history, to work out the next version
       - uses: ./.github/actions/setup-android
         if: env.HAS_KEY == 'true'
       - id: v
         if: env.HAS_KEY == 'true'
-        run: echo "version=$(node -p "require('./package.json').version")" >> "$GITHUB_OUTPUT"
+        # Semver from the commits since the last release: feat -> minor, anything else -> patch, ! -> major.
+        run: echo "version=$(node scripts/next-version.mjs)" >> "$GITHUB_OUTPUT"
       - name: Signed APK and app bundle
         if: env.HAS_KEY == 'true'
         env:
