@@ -25,7 +25,6 @@ import java.util.concurrent.TimeUnit
 import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
-import kotlin.test.assertTrue
 
 /**
  * The whole GitHub path, from asking for the latest release to an APK ready to install, against a local server that
@@ -189,7 +188,9 @@ class GitHubUpdatesTest {
         val updates = updates(installed120)
 
         val job = launch(Dispatchers.Default) { updates.check() }
-        while (updates.state.value !is GitHubUpdates.State.Checking) Thread.sleep(5)
+        // Cancel while GitHub is answering, as when the screen closes mid-check.
+        while (paths.isEmpty()) Thread.sleep(5)
+        assertIs<GitHubUpdates.State.Checking>(updates.state.value)
         job.cancelAndJoin()
 
         // Before: the screen that started it closed, the check stopped, and "Checking" stayed for good, so the
@@ -197,6 +198,6 @@ class GitHubUpdatesTest {
         assertIs<GitHubUpdates.State.Idle>(updates.state.value)
         // And the next chance asks again at once, rather than in an hour.
         assertEquals(GitHubUpdates.Outcome.READY, updates.check())
-        assertTrue(paths.count { it.endsWith("/releases/latest") } == 2)
+        assertEquals(2, paths.count { it.endsWith("/releases/latest") })
     }
 }
