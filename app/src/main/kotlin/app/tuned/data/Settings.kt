@@ -124,6 +124,8 @@ data class AppSettings(
     /** The person's own TMDB key (v3 key or v4 read token) for ratings and trailers; blank turns them off. */
     val tmdbKey: String = "",
     val showGuideInList: Boolean = true,
+    /** Live TV as a grid guide (channels down the side, time across the top) instead of a list. */
+    val liveGrid: Boolean = false,
     /** Look for a newer release on GitHub at start (copies from Play update through Play either way). */
     val checkUpdates: Boolean = true,
     val captions: CaptionStyle = CaptionStyle(),
@@ -273,6 +275,7 @@ class SettingsRepository(
             userAgent = p[K.userAgent] ?: d.userAgent,
             tmdbKey = p[K.tmdbKey] ?: d.tmdbKey,
             showGuideInList = p[K.showGuideInList] ?: d.showGuideInList,
+            liveGrid = p[K.liveGrid] ?: d.liveGrid,
             checkUpdates = p[K.checkUpdates] ?: d.checkUpdates,
             captions =
                 CaptionStyle(
@@ -339,6 +342,7 @@ class SettingsRepository(
         p[K.userAgent] = s.userAgent
         p[K.tmdbKey] = s.tmdbKey
         p[K.showGuideInList] = s.showGuideInList
+        p[K.liveGrid] = s.liveGrid
         p[K.checkUpdates] = s.checkUpdates
         val c = s.captions
         p[K.ccEnabled] = c.enabled
@@ -405,6 +409,7 @@ class SettingsRepository(
         val userAgent = stringPreferencesKey("user_agent")
         val tmdbKey = stringPreferencesKey("tmdb_key")
         val showGuideInList = booleanPreferencesKey("show_guide_in_list")
+        val liveGrid = booleanPreferencesKey("live_grid")
         val checkUpdates = booleanPreferencesKey("check_updates")
         val ccEnabled = booleanPreferencesKey("cc_enabled")
         val ccLanguage = stringPreferencesKey("cc_language")

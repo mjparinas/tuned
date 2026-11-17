@@ -380,6 +380,14 @@ interface ProgrammeDao {
         now: Long,
     ): List<ProgrammeEntity>
 
+    /** A channel's programmes on at any point from [from] to [to], for one block of the grid guide. */
+    @Query("SELECT * FROM programmes WHERE channelId = :channelId AND start < :to AND stop > :from ORDER BY start")
+    suspend fun between(
+        channelId: String,
+        from: Long,
+        to: Long,
+    ): List<ProgrammeEntity>
+
     /** What's on now on each of [channelIds], for the player's mini guide. */
     @Query("SELECT * FROM programmes WHERE channelId IN (:channelIds) AND start <= :now AND stop > :now")
     suspend fun onNow(
@@ -481,6 +489,10 @@ interface CatchUpDao {
 
     @Query("SELECT * FROM catchup")
     suspend fun all(): List<CatchUpEntity>
+
+    /** The longest catch-up any channel offers, so the grid guide scrolls back that far. */
+    @Query("SELECT MAX(days) FROM catchup")
+    suspend fun maxDays(): Int?
 
     @Query("SELECT days FROM catchup WHERE streamId = :streamId")
     fun days(streamId: String): Flow<Int?>

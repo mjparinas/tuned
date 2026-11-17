@@ -255,6 +255,11 @@ fun SettingsScreen(
                 stringResource(R.string.settings_guide_in_list),
                 settings.showGuideInList,
             ) { on -> vm.update { it.copy(showGuideInList = on) } }
+            SwitchRow(
+                stringResource(R.string.settings_live_grid),
+                settings.liveGrid,
+                summary = stringResource(R.string.settings_live_grid_summary),
+            ) { on -> vm.update { it.copy(liveGrid = on) } }
             ChoiceRow(
                 stringResource(R.string.settings_start_tab),
                 StartTab.entries,
