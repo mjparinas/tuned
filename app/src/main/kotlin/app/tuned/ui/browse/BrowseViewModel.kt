@@ -167,7 +167,7 @@ class BrowseViewModel(
         val season = row.season ?: return
         val episode = row.episode ?: return
         if (!askedNames.add(row.id)) return
-        viewModelScope.launch {
+        viewModelScope.launchSafely("BrowseViewModel") {
             val info = container.metadata.cachedEpisode(show, season, episode) ?: container.metadata.episode(show, season, episode)
             info?.name?.let { name -> episodeNames.value += row.id to name }
         }
