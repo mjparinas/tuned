@@ -128,9 +128,14 @@ class Screenshots {
     ) {
         compose.setContent { TunedTheme(mode = theme) { content() } }
         before()
-        compose.waitUntil(10_000) { compose.onAllNodes(hasText(wait, substring = true)).fetchSemanticsNodes().isNotEmpty() }
+        val shown =
+            runCatching {
+                compose.waitUntil(10_000) { compose.onAllNodes(hasText(wait, substring = true)).fetchSemanticsNodes().isNotEmpty() }
+            }
         compose.waitForIdle()
+        // Captured either way, so a failure can be seen.
         compose.onRoot().captureRoboImage("$name.png")
+        shown.getOrThrow()
     }
 
     private suspend fun seed() {

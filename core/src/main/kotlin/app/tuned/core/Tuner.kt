@@ -41,10 +41,28 @@ object Tuner {
 
     /** Language words in a name or category that say a channel isn't English, whatever its country tag. */
     private val otherLanguage =
-        Regex(
-            """\b(FRENCH|FRANÇAIS|FRANCAIS|ESPAÑOL|ESPANOL|SPANISH|LATINO|ARABIC|DEUTSCH|GERMAN|ITALIANO|PORTUGU[EÊ]S|POLSKI|TÜRK|TURK|HINDI|URDU|DUBBED|DUB)\b""",
-            RegexOption.IGNORE_CASE,
-        )
+        listOf(
+            "FRENCH",
+            "FRANÇAIS",
+            "FRANCAIS",
+            "ESPAÑOL",
+            "ESPANOL",
+            "SPANISH",
+            "LATINO",
+            "ARABIC",
+            "DEUTSCH",
+            "GERMAN",
+            "ITALIANO",
+            "PORTUGUES",
+            "PORTUGUÊS",
+            "POLSKI",
+            "TÜRK",
+            "TURK",
+            "HINDI",
+            "URDU",
+            "DUBBED",
+            "DUB",
+        ).joinToString("|", prefix = "\\b(", postfix = ")\\b").toRegex(RegexOption.IGNORE_CASE)
 
     /** 3 for 4K, 2 for full HD, 1 for HD or unknown, 0 for SD; the measured height wins over the name. */
     fun quality(candidate: TuneCandidate): Int = when {
