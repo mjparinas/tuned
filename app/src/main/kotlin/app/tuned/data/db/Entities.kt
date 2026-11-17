@@ -94,6 +94,20 @@ data class ChannelWithNow(
     @ColumnInfo(name = "favourite") val favourite: Boolean,
 )
 
+/** A movie or episode to pick up where it was left. */
+data class ContinueRow(
+    val id: Long,
+    val name: String,
+    val logo: String?,
+    val showName: String?,
+    val season: Int?,
+    val episode: Int?,
+    val positionMs: Long,
+    val durationMs: Long,
+) {
+    val fraction: Float get() = if (durationMs > 0) (positionMs.toFloat() / durationMs).coerceIn(0f, 1f) else 0f
+}
+
 data class ShowSummary(
     val showKey: String,
     val showName: String,
