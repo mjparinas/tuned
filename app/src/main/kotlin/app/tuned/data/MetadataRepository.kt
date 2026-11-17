@@ -4,6 +4,7 @@ import app.tuned.core.MetadataCache
 import app.tuned.core.Tmdb
 import app.tuned.data.db.MetadataDao
 import app.tuned.data.db.MetadataEntity
+import app.tuned.data.db.TmdbSeasonEntity
 import app.tuned.diagnostics.launchSafely
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -28,8 +29,22 @@ data class CastMember(
     val id: Long? = null,
 )
 
+/** One episode as The Movie Database describes it. */
+@Serializable
+data class EpisodeInfo(
+    val number: Int,
+    val name: String?,
+    val overview: String?,
+    /** "22m", or null when unknown. */
+    val runtime: String?,
+    /** A screenshot from the episode, or null when TMDB has none. */
+    val still: String?,
+)
+
 /** A film or show as The Movie Database describes it. */
 data class Metadata(
+    /** TMDB's id, for asking about a show's seasons. */
+    val tmdbId: Long,
     val title: String,
     val year: String?,
     val overview: String?,
@@ -210,9 +225,94 @@ class MetadataRepository(
         )
     }
 
+    /** A season's episodes the device already has, by episode number, without asking the network. */
+    suspend fun cachedSeason(
+        tmdbId: Long,
+        season: Int,
+    ): Map<Int, EpisodeInfo>? = dao.season(seasonKey(tmdbId, season))?.toEpisodes()
+
+    /**
+     * A season's episodes by number: names, summaries, runtimes and screenshots, in one request, cached. A season
+     * still airing gains episodes, so answers are refreshed after a week. Offline or failing, what the device had.
+     */
+    suspend fun season(
+        tmdbId: Long,
+        season: Int,
+    ): Map<Int, EpisodeInfo>? {
+        val key = seasonKey(tmdbId, season)
+        return locks.getOrPut(key) { Mutex() }.withLock {
+            val row = dao.season(key)
+            val now = System.currentTimeMillis()
+            if (row != null && now - row.fetchedAt < if (row.found) KEEP_SEASON_MS else MetadataCache.KEEP_MISSING_MS) {
+                return@withLock row.toEpisodes()
+            }
+            val apiKey =
+                settings.settings
+                    .first()
+                    .tmdbKey
+                    .trim()
+            // Offline, or without a key: what the device has, and nothing asked.
+            if (apiKey.isEmpty() || !online()) return@withLock row?.toEpisodes()
+            val fresh =
+                try {
+                    withContext(Dispatchers.IO) { downloadSeason(key, tmdbId, season, apiKey) }
+                } catch (_: IOException) {
+                    null
+                } catch (_: SerializationException) {
+                    null
+                } ?: return@withLock row?.toEpisodes()
+            dao.upsertSeason(fresh)
+            fresh.toEpisodes()
+        }
+    }
+
+    private fun downloadSeason(
+        cacheKey: String,
+        tmdbId: Long,
+        season: Int,
+        key: String,
+    ): TmdbSeasonEntity {
+        val now = System.currentTimeMillis()
+        val answer =
+            try {
+                get<Season>(Tmdb.season(tmdbId, season, key), key)
+            } catch (_: NotFound) {
+                // The provider numbers a season TMDB doesn't have (specials, or a different split): remember that.
+                return TmdbSeasonEntity(cacheKey, false, "", now)
+            }
+        val episodes =
+            answer.episodes.map { e ->
+                EpisodeInfo(
+                    number = e.episodeNumber,
+                    name = e.name?.takeIf { it.isNotBlank() },
+                    overview = e.overview?.takeIf { it.isNotBlank() },
+                    runtime = Tmdb.runtime(e.runtime),
+                    still = e.stillPath?.let { Tmdb.STILLS + it },
+                )
+            }
+        return TmdbSeasonEntity(cacheKey, true, json.encodeToString(episodes), now)
+    }
+
+    private fun TmdbSeasonEntity.toEpisodes(): Map<Int, EpisodeInfo>? {
+        if (!found) return null
+        return try {
+            json.decodeFromString<List<EpisodeInfo>>(episodes).associateBy { it.number }
+        } catch (_: SerializationException) {
+            null
+        } catch (_: IllegalArgumentException) {
+            null
+        }
+    }
+
+    private fun seasonKey(
+        tmdbId: Long,
+        season: Int,
+    ) = "$tmdbId|$season"
+
     private fun String.clean() = replace('\t', ' ').replace('\n', ' ')
 
     private fun MetadataEntity.toMetadata() = Metadata(
+        tmdbId = tmdbId,
         title = title,
         year = year,
         overview = overview,
@@ -245,10 +345,28 @@ class MetadataRepository(
                 .apply { if (Tmdb.isToken(key)) header("Authorization", "Bearer $key") }
                 .build()
         http.newCall(request).execute().use { response ->
+            if (response.code == HTTP_NOT_FOUND) throw NotFound()
             if (!response.isSuccessful) throw IOException("TMDB answered ${response.code}")
             return json.decodeFromString(response.body.string())
         }
     }
+
+    /** TMDB has nothing at that link: an answer, not a failure. */
+    private class NotFound : IOException("TMDB answered 404")
+
+    @Serializable
+    private data class Season(
+        val episodes: List<SeasonEpisode> = emptyList(),
+    )
+
+    @Serializable
+    private data class SeasonEpisode(
+        @SerialName("episode_number") val episodeNumber: Int,
+        val name: String? = null,
+        val overview: String? = null,
+        val runtime: Int? = null,
+        @SerialName("still_path") val stillPath: String? = null,
+    )
 
     @Serializable
     private data class Results<T>(
@@ -308,5 +426,9 @@ class MetadataRepository(
         const val MIN_VOTES = 10
         const val MAX_CAST = 15
         const val TAG = "Metadata"
+
+        /** A season still airing gains episodes, so its answer is kept fresh for a week. */
+        const val KEEP_SEASON_MS = 7L * 24 * 3_600_000
+        const val HTTP_NOT_FOUND = 404
     }
 }

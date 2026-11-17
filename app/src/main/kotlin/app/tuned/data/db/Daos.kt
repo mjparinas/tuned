@@ -553,6 +553,12 @@ interface MetadataDao {
 
     @Query("SELECT * FROM metadata WHERE cacheKey = :cacheKey")
     suspend fun get(cacheKey: String): MetadataEntity?
+
+    @Upsert
+    suspend fun upsertSeason(row: TmdbSeasonEntity)
+
+    @Query("SELECT * FROM tmdb_seasons WHERE cacheKey = :cacheKey")
+    suspend fun season(cacheKey: String): TmdbSeasonEntity?
 }
 
 @Dao

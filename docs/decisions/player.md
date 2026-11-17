@@ -52,6 +52,8 @@ Melvin asked for auto-reconnect and player gestures. Both are on by default and 
 
 **Kept on the device** (Melvin, 2026-11-17). Every TMDB answer is saved in the database (`metadata` table): the search answer for a poster's rating, and the full details once a page is opened. A page or badge seen once loads from the device, works offline, and is asked again only after a month (a week for "not found"). Artwork (posters, backdrops, cast photos, logos) goes through Coil's 512 MB disk cache in app storage rather than the cache folder, so Android doesn't empty it when space is low.
 
+**Episode screenshots** (Melvin, 2026-11-17: "For the show like the Simpsons, are there screenshots of the episode?"). Each episode row on a show's page shows TMDB's screenshot at 16:9 beside its TMDB name ("Kamp Krusty", not the provider's "EN - The Simpsons (1989) S04 E01"), runtime and a two-line summary, with the watched check and download button as before and the progress bar along the screenshot's bottom. Only the season on screen is asked for, one request per season, saved in `tmdb_seasons` and refreshed after a week (a season still airing gains episodes). A plain tile stands in while a screenshot loads and when TMDB has none, so rows never jump. Episodes match by season and episode number; without a match the row keeps the provider's name without its language tag. The season's "Download season" and "Mark season watched" sit in a flow row, so the second moves to its own line rather than squeezing.
+
 ## Backup copies (2026-11-17)
 
 From the app audit, Melvin picked "backup streams per channel". Providers list one channel several times ("ESPN", "US| ESPN HD", "US| ESPN FHD", "ESPN (Backup)"), and when one copy dies another usually works.
