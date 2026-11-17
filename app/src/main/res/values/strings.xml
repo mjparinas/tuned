@@ -19,7 +19,10 @@
     <string name="login_playlist_url_help">Overrides the server login when filled in</string>
     <string name="login_guide_url">Guide (XMLTV) link</string>
     <string name="login_sign_in">Sign in</string>
-    <string name="login_downloading">Downloading your channels. This takes a moment the first time only.</string>
+    <string name="login_downloading">Downloading your channels. Big playlists can take a few minutes the first time; it keeps going if you leave the app.</string>
+    <string name="login_checking">Checking your login…</string>
+    <string name="login_wrong">The server didn\'t accept that username and password.</string>
+    <string name="first_run_change_login">Change login</string>
     <string name="login_privacy">Your login is encrypted on this device and stays until you sign out.</string>
 
     <string name="tab_live">Live TV</string>
@@ -49,6 +52,9 @@
 
     <string name="sync_channel">Refreshing channels</string>
     <string name="sync_running">Refreshing channels and guide</string>
+    <string name="sync_size_of">%1$s of %2$s</string>
+    <string name="sync_downloading_playlist">Downloading channels · %1$s</string>
+    <string name="sync_downloading_guide">Downloading the guide · %1$s</string>
 
     <string name="settings_account">Account</string>
     <string name="settings_refresh_now">Refresh now</string>
@@ -152,6 +158,14 @@
     <string name="edge_raised">Raised</string>
     <string name="edge_depressed">Depressed</string>
 
+    <plurals name="sync_saving_playlist">
+        <item quantity="one">Saving channels · %1$s item</item>
+        <item quantity="other">Saving channels · %1$s items</item>
+    </plurals>
+    <plurals name="sync_saving_guide">
+        <item quantity="one">Saving the guide · %1$s programme</item>
+        <item quantity="other">Saving the guide · %1$s programmes</item>
+    </plurals>
     <plurals name="episodes">
         <item quantity="one">%1$d episode</item>
         <item quantity="other">%1$d episodes</item>

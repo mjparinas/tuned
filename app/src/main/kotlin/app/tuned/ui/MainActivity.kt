@@ -59,6 +59,7 @@ class MainActivity : ComponentActivity() {
                             onOpenGuide = { id -> nav.navigate(GuideRoute(id)) },
                             onOpenSettings = { nav.navigate(SettingsRoute) },
                             onTune = { query -> PlayerActivity.tune(this@MainActivity, query) },
+                            onSignedOut = { nav.navigate(LoginRoute) { popUpTo(0) { inclusive = true } } },
                         )
                     }
                     composable<ShowRoute> { entry ->
