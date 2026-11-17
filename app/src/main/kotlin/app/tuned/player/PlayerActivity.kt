@@ -37,9 +37,11 @@ import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
+import androidx.media3.common.Tracks
 import androidx.media3.common.VideoSize
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.DefaultLoadControl
+import androidx.media3.exoplayer.DefaultRenderersFactory
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import androidx.media3.exoplayer.trackselection.DefaultTrackSelector
@@ -122,6 +124,10 @@ class PlayerActivity : FragmentActivity() {
         )
     }
     private lateinit var statusView: TextView
+    private val audioCheck by lazy {
+        AudioCheck { codec -> Toast.makeText(this, getString(R.string.player_no_sound, codec), Toast.LENGTH_LONG).show() }
+    }
+    private val frameRate by lazy { FrameRateMatch(this) { settings.matchFrameRate && cast?.casting != true } }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -453,8 +459,10 @@ class PlayerActivity : FragmentActivity() {
                         .setTrackTypeDisabled(C.TRACK_TYPE_TEXT, !captions.enabled),
                 )
             }
+        // If a device's first decoder for a format fails to start, try its next one instead of giving up.
+        val renderers = DefaultRenderersFactory(this).setEnableDecoderFallback(true)
         return ExoPlayer
-            .Builder(this)
+            .Builder(this, renderers)
             .setMediaSourceFactory(DefaultMediaSourceFactory(http, extractors).setSubtitleParserFactory(subtitleTiming.parsers))
             .setLoadControl(load)
             .setTrackSelector(selector)
@@ -550,7 +558,12 @@ class PlayerActivity : FragmentActivity() {
             if (!live || !backups.takeOver(p.currentMediaItem?.mediaId?.toLongOrNull(), onNone = sayError)) sayError()
         }
 
+        override fun onTracksChanged(tracks: Tracks) {
+            player?.let { audioCheck.onTracks(it, tracks) }
+        }
+
         override fun onVideoSizeChanged(videoSize: VideoSize) {
+            frameRate.onVideo(player?.videoFormat?.frameRate)
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) setPictureInPictureParams(pipParams())
         }
 

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_match_frame_rate">Match frame rate</string>
+    <string name="settings_match_frame_rate_summary">Switch the TV to the video\'s frame rate, such as 50 Hz for sport, so motion doesn\'t judder. The screen may go dark for a moment when it switches.</string>
+    <!-- %1$s: the audio format, such as "Dolby Digital (AC-3)". -->
+    <string name="player_no_sound">No sound: this device can\'t play this channel\'s %1$s audio</string>
+</resources>
