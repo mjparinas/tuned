@@ -1,6 +1,38 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- The app icon as one drawable (rounded square), for the sign-in screen. -->
-<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
-    <item android:drawable="@drawable/ic_brand_mark_shape" />
-    <item android:drawable="@drawable/ic_launcher_foreground" />
-</layer-list>
+<!-- The app icon as one vector (rounded square), for the sign-in screen. Compose's painterResource only takes vectors and bitmaps. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path android:pathData="M28,0h52a28,28 0,0 1,28 28v52a28,28 0,0 1,-28 28h-52a28,28 0,0 1,-28 -28v-52a28,28 0,0 1,28 -28z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:type="linear"
+                android:startX="0"
+                android:startY="0"
+                android:endX="108"
+                android:endY="108"
+                android:startColor="#FF8466FF"
+                android:centerColor="#FF6D4AFF"
+                android:endColor="#FF3B1FB8" />
+        </aapt:attr>
+    </path>
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:strokeColor="#FFFFFFFF"
+        android:strokeWidth="6"
+        android:strokeLineJoin="round"
+        android:pathData="M35,41L35,67L54,54Z" />
+    <path
+        android:strokeColor="#FF5FF5DA"
+        android:strokeWidth="5"
+        android:strokeLineCap="round"
+        android:pathData="M63.79,47.11A9,9 0,0 1,63.79 60.89" />
+    <path
+        android:strokeColor="#FF5FF5DA"
+        android:strokeWidth="5"
+        android:strokeLineCap="round"
+        android:pathData="M68.93,40.98A17,17 0,0 1,68.93 67.02" />
+</vector>
