@@ -181,6 +181,11 @@ fun SettingsScreen(
                 lastSync(settings),
                 onClick = vm::refreshNow,
             )
+            SwitchRow(
+                stringResource(R.string.settings_pull_to_refresh),
+                settings.pullToRefresh,
+                stringResource(R.string.settings_pull_to_refresh_summary),
+            ) { on -> vm.update { it.copy(pullToRefresh = on) } }
             BackupRows()
             SettingRow(stringResource(R.string.settings_sign_out), stringResource(R.string.settings_sign_out_summary), onClick = {
                 confirmSignOut =
