@@ -13,7 +13,9 @@ import app.tuned.core.XmltvParser
 import app.tuned.core.XtreamAccount
 import app.tuned.core.XtreamUrls
 import app.tuned.data.db.CatchUpEntity
+import app.tuned.data.db.GuideWriter
 import app.tuned.data.db.ItemEntity
+import app.tuned.data.db.PlaylistWriter
 import app.tuned.data.db.ProgrammeEntity
 import app.tuned.data.db.TunedDatabase
 import kotlinx.coroutines.Dispatchers
@@ -49,9 +51,10 @@ data class SyncProgress(
 
 /**
  * Downloads the playlist and guide and swaps them into the database. Each file is first saved to disk by
- * [Downloader], which rides out slow and dropped connections, and is then read from disk into batched inserts
- * inside one transaction, so memory stays flat and the lists keep showing the old data (WAL) until the new data is
- * complete. A failed refresh leaves the cache exactly as it was.
+ * [Downloader], which rides out slow and dropped connections, and is then read from disk in batches, so memory stays
+ * flat. No batch holds the database for long: the playlist is replaced in place ([PlaylistWriter]) and the guide is
+ * written beside the old one and swapped in at the end ([GuideWriter]), so browsing and search keep working on the
+ * cache throughout a refresh. A failed refresh leaves the guide as it was, and the playlist's streams in place.
  */
 class SyncRepository(
     private val db: TunedDatabase,
@@ -167,27 +170,24 @@ class SyncRepository(
         input: InputStream,
         saved: (Int) -> Unit,
     ): Int {
-        var count = 0
-        db.withTransaction {
-            db.items().deleteAll()
-            val batch = ArrayList<ItemEntity>(BATCH)
-            val seen = HashSet<Long>()
-            for (entry in M3uParser.entries(input.bufferedReader())) {
-                val row = entry.toRow()
-                if (!seen.add(row.id)) continue // the same stream listed twice
-                batch += row
-                if (batch.size == BATCH) {
-                    db.items().insertAll(batch.toList())
-                    batch.clear()
-                    saved(seen.size)
-                }
+        // Written in place a batch at a time, so the lists and search keep working on the cache meanwhile.
+        val writer = PlaylistWriter(db)
+        writer.begin()
+        val batch = ArrayList<ItemEntity>(BATCH)
+        for (entry in M3uParser.entries(input.bufferedReader())) {
+            val row = entry.toRow()
+            if (!writer.accept(row.id)) continue // the same stream listed twice
+            batch += row
+            if (batch.size == BATCH) {
+                writer.add(batch.toList())
+                batch.clear()
+                saved(writer.count)
             }
-            if (batch.isNotEmpty()) db.items().insertAll(batch)
-            count = seen.size
-            // Throwing rolls the transaction back, so an empty answer never wipes a good cache.
-            if (count == 0) throw IOException("The playlist was empty")
         }
-        return count
+        writer.add(batch)
+        // An empty answer changes nothing, so it never wipes a good cache.
+        if (writer.commit() == 0) throw IOException("The playlist was empty")
+        return writer.count
     }
 
     private suspend fun importGuide(
@@ -209,12 +209,14 @@ class SyncRepository(
             }
         }
         val until = now + days * DAY
-        var count = 0
-        db.withTransaction {
-            db.programmes().deleteAll()
+        // Written beside the old guide and swapped in at the end, so searching and browsing never wait on it.
+        val writer = GuideWriter(db)
+        writer.begin()
+        try {
             val parser = Xml.newPullParser()
             parser.setInput(input, null)
             val batch = ArrayList<ProgrammeEntity>(BATCH)
+            var count = 0
             for (p in XmltvParser.programmes(
                 parser,
             ) { id, start, stop -> stop > (pastFrom[id] ?: from) && start < until && id in wanted }) {
@@ -222,14 +224,16 @@ class SyncRepository(
                     ProgrammeEntity(channelId = p.channelId, start = p.start, stop = p.stop, title = p.title, description = p.description)
                 count++
                 if (batch.size == BATCH) {
-                    db.programmes().insertAll(batch.toList())
+                    writer.add(batch.toList())
                     batch.clear()
                     saved(count)
                 }
             }
-            if (batch.isNotEmpty()) db.programmes().insertAll(batch)
+            writer.add(batch)
+            return writer.commit()
+        } finally {
+            writer.discard() // a no-op after a commit; after a failure, the old guide stays
         }
-        return count
     }
 
     private fun PlaylistEntry.toRow(): ItemEntity {

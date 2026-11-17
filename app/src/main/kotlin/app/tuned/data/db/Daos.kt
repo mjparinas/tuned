@@ -21,6 +21,12 @@ interface ItemDao {
     @Query("DELETE FROM items")
     suspend fun deleteAll()
 
+    @Query("SELECT id FROM items")
+    suspend fun allIds(): List<Long>
+
+    @Query("DELETE FROM items WHERE id IN (:ids)")
+    suspend fun deleteIds(ids: List<Long>)
+
     @Query("SELECT COUNT(*) FROM items")
     suspend fun count(): Int
 
