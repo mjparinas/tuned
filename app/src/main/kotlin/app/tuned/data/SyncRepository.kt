@@ -52,8 +52,8 @@ data class SyncProgress(
 /**
  * Downloads the playlist and guide and swaps them into the database. Each file is first saved to disk by
  * [Downloader], which rides out slow and dropped connections, and is then read from disk in batches, so memory stays
- * flat. No batch holds the database for long: the playlist is replaced in place ([PlaylistWriter]) and the guide is
- * written beside the old one and swapped in at the end ([GuideWriter]), so browsing and search keep working on the
+ * flat. No batch holds the database for long: the playlist ([PlaylistWriter]) and the guide ([GuideWriter]) are
+ * written beside the old ones and brought in at the end, so browsing and search keep working on the
  * cache throughout a refresh. A failed refresh leaves the guide as it was, and the playlist's streams in place.
  */
 class SyncRepository(
@@ -170,24 +170,28 @@ class SyncRepository(
         input: InputStream,
         saved: (Int) -> Unit,
     ): Int {
-        // Written in place a batch at a time, so the lists and search keep working on the cache meanwhile.
+        // Written beside the cache and applied at the end, so the lists and search keep working on it meanwhile.
         val writer = PlaylistWriter(db)
         writer.begin()
-        val batch = ArrayList<ItemEntity>(BATCH)
-        for (entry in M3uParser.entries(input.bufferedReader())) {
-            val row = entry.toRow()
-            if (!writer.accept(row.id)) continue // the same stream listed twice
-            batch += row
-            if (batch.size == BATCH) {
-                writer.add(batch.toList())
-                batch.clear()
-                saved(writer.count)
+        try {
+            val batch = ArrayList<ItemEntity>(BATCH)
+            for (entry in M3uParser.entries(input.bufferedReader())) {
+                val row = entry.toRow()
+                if (!writer.accept(row.id)) continue // the same stream listed twice
+                batch += row
+                if (batch.size == BATCH) {
+                    writer.add(batch.toList())
+                    batch.clear()
+                    saved(writer.count)
+                }
             }
+            writer.add(batch)
+            // An empty answer changes nothing, so it never wipes a good cache.
+            if (writer.commit() == 0) throw IOException("The playlist was empty")
+            return writer.count
+        } finally {
+            writer.discard() // a no-op after a commit; after a failure, the cache stays as it was
         }
-        writer.add(batch)
-        // An empty answer changes nothing, so it never wipes a good cache.
-        if (writer.commit() == 0) throw IOException("The playlist was empty")
-        return writer.count
     }
 
     private suspend fun importGuide(

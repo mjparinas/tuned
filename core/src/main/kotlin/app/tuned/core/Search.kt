@@ -13,4 +13,11 @@ object Search {
         .lowercase()
         .replace(nonWord, " ")
         .trim()
+
+    /**
+     * The full-text query for [text]: every word, each also matching longer words that start with it, all required.
+     * "top gu" becomes `top* gu*`. Normalized text has only letters, digits and single spaces, so nothing needs
+     * escaping, and FTS operators (which are upper case) can't appear.
+     */
+    fun match(text: String): String = normalize(text).split(' ').filter { it.isNotEmpty() }.joinToString(" ") { "$it*" }
 }

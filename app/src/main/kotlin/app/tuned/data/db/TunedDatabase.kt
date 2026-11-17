@@ -20,8 +20,9 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         WatchLaterEntity::class,
         SeenEpisodeEntity::class,
         ChannelScanEntity::class,
+        ItemFts::class,
     ],
-    version = 9,
+    version = 10,
     exportSchema = true,
 )
 abstract class TunedDatabase : RoomDatabase() {
@@ -58,6 +59,7 @@ abstract class TunedDatabase : RoomDatabase() {
                 MIGRATION_6_7,
                 MIGRATION_7_8,
                 MIGRATION_8_9,
+                MIGRATION_9_10,
             ).build()
 
         /** Adds auto-tune's channel health. */
@@ -150,5 +152,29 @@ abstract class TunedDatabase : RoomDatabase() {
                     )
                 }
             }
+
+        /**
+         * Search's full-text index over names (the same table and triggers Room creates for [ItemFts]), filled from the
+         * cached playlist, and an index on programme start times for "on now" guide searches.
+         */
+        val MIGRATION_9_10 =
+            object : Migration(9, 10) {
+                override fun migrate(db: SupportSQLiteDatabase) {
+                    db.execSQL("CREATE VIRTUAL TABLE IF NOT EXISTS `items_fts` USING FTS4(`searchName` TEXT NOT NULL, content=`items`)")
+                    for ((name, sql) in ftsTriggers) db.execSQL("CREATE TRIGGER IF NOT EXISTS room_fts_content_sync_items_fts_$name $sql")
+                    db.execSQL("INSERT INTO `items_fts`(`items_fts`) VALUES('rebuild')")
+                    db.execSQL("CREATE INDEX IF NOT EXISTS `index_programmes_start` ON `programmes` (`start`)")
+                }
+            }
+
+        private val ftsTriggers =
+            listOf(
+                "BEFORE_UPDATE" to "BEFORE UPDATE ON `items` BEGIN DELETE FROM `items_fts` WHERE `docid`=OLD.`rowid`; END",
+                "BEFORE_DELETE" to "BEFORE DELETE ON `items` BEGIN DELETE FROM `items_fts` WHERE `docid`=OLD.`rowid`; END",
+                "AFTER_UPDATE" to
+                    "AFTER UPDATE ON `items` BEGIN INSERT INTO `items_fts`(`docid`, `searchName`) VALUES (NEW.`rowid`, NEW.`searchName`); END",
+                "AFTER_INSERT" to
+                    "AFTER INSERT ON `items` BEGIN INSERT INTO `items_fts`(`docid`, `searchName`) VALUES (NEW.`rowid`, NEW.`searchName`); END",
+            )
     }
 }
