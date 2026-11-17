@@ -128,7 +128,11 @@ private fun ScanCard(
         if (progress != null) {
             val (done, total) = progress
             Text(
-                if (total > 0) stringResource(R.string.scan_progress, done, total) else stringResource(R.string.health_starting),
+                if (total > 0) {
+                    pluralStringResource(R.plurals.scan_progress, total, done, total)
+                } else {
+                    stringResource(R.string.health_starting)
+                },
                 style = MaterialTheme.typography.titleSmall,
             )
             if (total > 0) {
@@ -154,7 +158,12 @@ private fun LastScan(s: ChannelScanner.Summary) {
     val ago = DateUtils.getRelativeTimeSpanString(s.finishedAt).toString()
     Text(stringResource(R.string.health_last_scan, ago), style = MaterialTheme.typography.titleSmall)
     Text(
-        stringResource(R.string.health_counts, s.working, s.failed, s.unsure),
+        stringResource(
+            R.string.health_counts,
+            pluralStringResource(R.plurals.health_working, s.working, s.working),
+            pluralStringResource(R.plurals.health_failed, s.failed, s.failed),
+            pluralStringResource(R.plurals.health_unsure, s.unsure, s.unsure),
+        ),
         style = MaterialTheme.typography.bodyMedium,
     )
     val stopped =

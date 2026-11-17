@@ -79,7 +79,7 @@ class ScanWorker(
             .Builder(context, CHANNEL)
             .setSmallIcon(R.drawable.ic_stat_tuned)
             .setContentTitle(context.getString(R.string.scan_running))
-            .apply { if (total > 0) setContentText(context.getString(R.string.scan_progress, done, total)) }
+            .apply { if (total > 0) setContentText(context.resources.getQuantityString(R.plurals.scan_progress, total, done, total)) }
             .setProgress(total, done, total == 0)
             .setOngoing(true)
             .setSilent(true)

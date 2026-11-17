@@ -8,8 +8,20 @@
     <string name="health_starting">Starting the scan…</string>
     <string name="health_while_scanning">The scan pauses while you watch something, so only one stream is ever open.</string>
     <string name="health_last_scan">Last scan %1$s</string>
-    <!-- %1$d working, %2$d failed, %3$d couldn't be judged. -->
-    <string name="health_counts">%1$d working · %2$d failed · %3$d not judged</string>
+    <!-- %1$s, %2$s, %3$s: "120 working", "8 failed", "2 not judged". -->
+    <string name="health_counts">%1$s · %2$s · %3$s</string>
+    <plurals name="health_working">
+        <item quantity="one">%1$d working</item>
+        <item quantity="other">%1$d working</item>
+    </plurals>
+    <plurals name="health_failed">
+        <item quantity="one">%1$d failed</item>
+        <item quantity="other">%1$d failed</item>
+    </plurals>
+    <plurals name="health_unsure">
+        <item quantity="one">%1$d not judged</item>
+        <item quantity="other">%1$d not judged</item>
+    </plurals>
     <string name="health_stopped_internet">The scan stopped because the internet was down. No channels were blamed for it.</string>
     <string name="health_stopped_server">The scan stopped because the server wasn\'t sending any streams. No channels were blamed for it.</string>
     <string name="health_stopped_busy">The scan stopped because your account was using all its connections, probably on another device. Try again later.</string>
@@ -34,5 +46,8 @@
     <string name="health_reason_account">refused by the account</string>
     <string name="scan_channel">Channel scan</string>
     <string name="scan_running">Scanning channels</string>
-    <string name="scan_progress">%1$d of %2$d channels</string>
+    <plurals name="scan_progress">
+        <item quantity="one">%1$d of %2$d channel</item>
+        <item quantity="other">%1$d of %2$d channels</item>
+    </plurals>
 </resources>
