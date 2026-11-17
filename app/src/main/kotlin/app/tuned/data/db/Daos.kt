@@ -132,6 +132,70 @@ interface ItemDao {
         query: String,
     ): PagingSource<Int, ShowSummary>
 
+    /** Search everywhere: the first few live channels for a search (names, or what's on now and within the hour). */
+    @Query(
+        """
+        SELECT i.id, i.name, i.logo, i.groupName, i.tvgId,
+            p.title AS nowTitle, p.start AS nowStart, p.stop AS nowStop,
+            (f.itemId IS NOT NULL) AS favourite
+        FROM items i
+        LEFT JOIN programmes p ON p.channelId = i.tvgId AND p.start <= :now AND p.stop > :now
+        LEFT JOIN favourites f ON f.itemId = i.id
+        WHERE i.kind = 0
+            AND (i.region IS NULL OR i.region NOT IN (:hidden))
+            AND (:adult OR i.adult = 0)
+            AND (i.searchName LIKE '%' || :query || '%' OR i.tvgId IN (
+                SELECT channelId FROM programmes WHERE title LIKE '%' || :query || '%' AND stop > :now AND start < :now + 3600000
+            ))
+        GROUP BY i.id
+        ORDER BY (f.itemId IS NULL), i.sortOrder
+        LIMIT :limit
+        """,
+    )
+    suspend fun searchChannels(
+        query: String,
+        now: Long,
+        hidden: List<String>,
+        adult: Boolean,
+        limit: Int,
+    ): List<ChannelWithNow>
+
+    @Query(
+        """
+        SELECT * FROM items i
+        WHERE i.kind = 1 AND i.searchName LIKE '%' || :query || '%'
+            AND (i.region IS NULL OR i.region NOT IN (:hidden))
+            AND (:adult OR i.adult = 0)
+        ORDER BY i.sortOrder
+        LIMIT :limit
+        """,
+    )
+    suspend fun searchMovies(
+        query: String,
+        hidden: List<String>,
+        adult: Boolean,
+        limit: Int,
+    ): List<ItemEntity>
+
+    @Query(
+        """
+        SELECT showKey, MIN(showName) AS showName, MAX(logo) AS logo, MIN(groupName) AS groupName, COUNT(*) AS episodes
+        FROM items i
+        WHERE i.kind = 2 AND i.showKey IS NOT NULL AND i.searchName LIKE '%' || :query || '%'
+            AND (i.region IS NULL OR i.region NOT IN (:hidden))
+            AND (:adult OR i.adult = 0)
+        GROUP BY showKey
+        ORDER BY MIN(sortOrder)
+        LIMIT :limit
+        """,
+    )
+    suspend fun searchShows(
+        query: String,
+        hidden: List<String>,
+        adult: Boolean,
+        limit: Int,
+    ): List<ShowSummary>
+
     @Query("SELECT * FROM items WHERE kind = 2 AND showKey = :showKey ORDER BY season, episode, sortOrder")
     fun episodes(showKey: String): Flow<List<ItemEntity>>
 

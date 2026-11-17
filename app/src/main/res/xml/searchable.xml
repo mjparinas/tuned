@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Lets the system, Android TV and the Assistant send searches to Tuned (MainActivity opens Search everything). -->
+<searchable xmlns:android="http://schemas.android.com/apk/res/android"
+    android:label="@string/app_name"
+    android:hint="@string/search_everything"
+    android:voiceSearchMode="showVoiceSearchButton|launchRecognizer" />

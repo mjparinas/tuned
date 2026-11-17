@@ -73,6 +73,8 @@ data class AppSettings(
     val showAdult: Boolean = false,
     val playlistRefreshHours: Int = 12,
     val guideRefreshHours: Int = 6,
+    /** How long before a programme starts its reminder goes off. */
+    val reminderLeadMinutes: Int = 5,
     val guideDays: Int = 3,
     val unmeteredOnly: Boolean = false,
     val buffer: BufferMode = BufferMode.BALANCED,
@@ -80,6 +82,8 @@ data class AppSettings(
     val resumePlayback: Boolean = true,
     val autoPlayNext: Boolean = true,
     val pictureInPicture: Boolean = true,
+    val playerGestures: Boolean = true,
+    val autoReconnect: Boolean = true,
     val landscapePlayback: Boolean = true,
     val controlsTimeoutMs: Int = 3_000,
     /** Auto-tune moves on when a channel shows no picture within this long. */
@@ -157,6 +161,7 @@ class SettingsRepository(
             hiddenRegions = p[K.hiddenRegions] ?: d.hiddenRegions,
             playlistRefreshHours = p[K.playlistRefreshHours] ?: d.playlistRefreshHours,
             guideRefreshHours = p[K.guideRefreshHours] ?: d.guideRefreshHours,
+            reminderLeadMinutes = p[K.reminderLeadMinutes] ?: d.reminderLeadMinutes,
             guideDays = p[K.guideDays] ?: d.guideDays,
             unmeteredOnly = p[K.unmeteredOnly] ?: d.unmeteredOnly,
             buffer = enumOr(p[K.buffer], d.buffer),
@@ -164,6 +169,8 @@ class SettingsRepository(
             resumePlayback = p[K.resumePlayback] ?: d.resumePlayback,
             autoPlayNext = p[K.autoPlayNext] ?: d.autoPlayNext,
             pictureInPicture = p[K.pictureInPicture] ?: d.pictureInPicture,
+            playerGestures = p[K.playerGestures] ?: d.playerGestures,
+            autoReconnect = p[K.autoReconnect] ?: d.autoReconnect,
             landscapePlayback = p[K.landscapePlayback] ?: d.landscapePlayback,
             controlsTimeoutMs = p[K.controlsTimeoutMs] ?: d.controlsTimeoutMs,
             tuneTimeoutMs = p[K.tuneTimeoutMs] ?: d.tuneTimeoutMs,
@@ -208,6 +215,7 @@ class SettingsRepository(
         p[K.hiddenRegions] = s.hiddenRegions
         p[K.playlistRefreshHours] = s.playlistRefreshHours
         p[K.guideRefreshHours] = s.guideRefreshHours
+        p[K.reminderLeadMinutes] = s.reminderLeadMinutes
         p[K.guideDays] = s.guideDays
         p[K.unmeteredOnly] = s.unmeteredOnly
         p[K.buffer] = s.buffer.name
@@ -215,6 +223,8 @@ class SettingsRepository(
         p[K.resumePlayback] = s.resumePlayback
         p[K.autoPlayNext] = s.autoPlayNext
         p[K.pictureInPicture] = s.pictureInPicture
+        p[K.playerGestures] = s.playerGestures
+        p[K.autoReconnect] = s.autoReconnect
         p[K.landscapePlayback] = s.landscapePlayback
         p[K.controlsTimeoutMs] = s.controlsTimeoutMs
         p[K.tuneTimeoutMs] = s.tuneTimeoutMs
@@ -259,6 +269,7 @@ class SettingsRepository(
         val adultPin = stringPreferencesKey("adult_pin")
         val playlistRefreshHours = intPreferencesKey("playlist_refresh_hours")
         val guideRefreshHours = intPreferencesKey("guide_refresh_hours")
+        val reminderLeadMinutes = intPreferencesKey("reminder_lead_minutes")
         val guideDays = intPreferencesKey("guide_days")
         val unmeteredOnly = booleanPreferencesKey("unmetered_only")
         val buffer = stringPreferencesKey("buffer")
@@ -266,6 +277,8 @@ class SettingsRepository(
         val resumePlayback = booleanPreferencesKey("resume_playback")
         val autoPlayNext = booleanPreferencesKey("auto_play_next")
         val pictureInPicture = booleanPreferencesKey("picture_in_picture")
+        val playerGestures = booleanPreferencesKey("player_gestures")
+        val autoReconnect = booleanPreferencesKey("auto_reconnect")
         val landscapePlayback = booleanPreferencesKey("landscape_playback")
         val controlsTimeoutMs = intPreferencesKey("controls_timeout_ms")
         val tuneTimeoutMs = intPreferencesKey("tune_timeout_ms")

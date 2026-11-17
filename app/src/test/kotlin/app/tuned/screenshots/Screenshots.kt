@@ -116,8 +116,11 @@ class Screenshots {
     }
 
     @Composable
-    private fun Home(settings: AppSettings) =
-        HomeScreen(settings, onPlay = {}, onOpenShow = { _, _ -> }, onOpenGuide = {}, onOpenSettings = {}, onTune = {}, onSignedOut = {})
+    private fun Home(settings: AppSettings) = HomeScreen(settings, onPlay = {}, onOpenShow = {
+        _,
+        _,
+        ->
+    }, onOpenGuide = {}, onOpenSettings = {}, onOpenSearch = {}, onTune = {}, onSignedOut = {})
 
     private fun shot(
         name: String,

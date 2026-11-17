@@ -22,3 +22,7 @@ import kotlinx.serialization.Serializable
 @Serializable data object RegionSettingsRoute
 
 @Serializable data object FavouriteOrderRoute
+
+@Serializable data class SearchRoute(
+    val query: String = "",
+)
