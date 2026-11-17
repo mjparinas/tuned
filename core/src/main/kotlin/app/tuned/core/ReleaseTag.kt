@@ -44,13 +44,44 @@ object ReleaseTag {
     /** How often Tuned looks for a new release on its own: each time it comes to the front, at most once an hour. */
     const val CHECK_EVERY_MS = 3_600_000L
 
+    /** After a check that failed (offline, GitHub slow), the next time Tuned comes to the front tries again this soon. */
+    const val RETRY_AFTER_MS = 300_000L
+
     /**
      * Whether to ask GitHub now. A check the person asked for always goes; otherwise once [CHECK_EVERY_MS] has passed
-     * since the last one (or the clock went backwards).
+     * since the last one, or [RETRY_AFTER_MS] when the last one [failed], or the clock went backwards.
      */
     fun checkDue(
         lastCheckMs: Long,
         nowMs: Long,
         force: Boolean,
-    ): Boolean = force || lastCheckMs == 0L || nowMs - lastCheckMs >= CHECK_EVERY_MS || nowMs < lastCheckMs
+        failed: Boolean = false,
+    ): Boolean {
+        val every = if (failed) RETRY_AFTER_MS else CHECK_EVERY_MS
+        return force || lastCheckMs == 0L || nowMs - lastCheckMs >= every || nowMs < lastCheckMs
+    }
+
+    /** What GitHub says about its latest release, as far as updating goes. */
+    data class Release(
+        val tag: String,
+        val draft: Boolean,
+        val prerelease: Boolean,
+        val apks: List<String>,
+    )
+
+    /**
+     * The APK to download from [release] for a copy whose version code is [installedCode], or null when there's
+     * nothing to update to. release.yml attaches `tuned.apk`; any other APK is a fallback.
+     */
+    fun apkToInstall(
+        release: Release,
+        installedCode: Int,
+    ): String? {
+        if (release.draft || release.prerelease || !isNewer(release.tag, installedCode)) return null
+        val apks = release.apks.filter { it.endsWith(".apk", ignoreCase = true) }
+        return apks.firstOrNull { it == APK } ?: apks.firstOrNull()
+    }
+
+    /** The APK release.yml attaches to every release. */
+    const val APK = "tuned.apk"
 }

@@ -9,6 +9,8 @@ import android.provider.Settings
 import androidx.core.net.toUri
 import app.tuned.BuildConfig
 import app.tuned.core.ReleaseTag
+import app.tuned.data.Downloader
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -17,12 +19,12 @@ import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import java.io.File
 import java.io.IOException
+import java.security.MessageDigest
 
 /**
  * Updates from GitHub Releases (Melvin, 2026-11-17: "create github releases for now"). release.yml publishes a
@@ -34,6 +36,11 @@ import java.io.IOException
 class GitHubUpdates(
     private val context: Context,
     private val http: OkHttpClient,
+    /** Tests point these at a local server and an older installed copy. */
+    private val api: String = "https://api.github.com",
+    private val installedCode: Int = BuildConfig.VERSION_CODE,
+    private val enabled: Boolean = !BuildConfig.DEBUG,
+    private val downloader: Downloader = Downloader(http),
 ) {
     sealed interface State {
         data object Idle : State
@@ -59,6 +66,8 @@ class GitHubUpdates(
 
     @Volatile private var lastCheck = 0L
 
+    @Volatile private var lastFailed = false
+
     @Serializable
     private data class Release(
         @SerialName("tag_name") val tag: String,
@@ -72,38 +81,47 @@ class GitHubUpdates(
         val name: String,
         val size: Long,
         @SerialName("browser_download_url") val url: String,
+        /** `sha256:<hex>`; GitHub lists it for assets uploaded since mid-2025. */
+        val digest: String? = null,
     )
 
     /**
      * Checks GitHub and downloads a newer APK if there is one. On its own (app brought to the front, background
-     * refresh) it asks at most once an hour; [force] (the Settings button) always asks. Never throws: a failed check
-     * just tries again next time.
+     * refresh) it asks at most once an hour, or a few minutes after a failed check; [force] (the Settings button)
+     * always asks. Never throws, and always leaves [state] Idle or Ready, so the Settings button can't get stuck on
+     * "Checking". A bad answer or a network error, whatever its type, must not crash Tuned, so any failure is
+     * "try again later".
      */
+    @Suppress("TooGenericExceptionCaught") // see above: every failure is FAILED, never a crash
+
     suspend fun check(force: Boolean = false): Outcome = checking.withLock {
-        if (BuildConfig.DEBUG) return@withLock Outcome.UP_TO_DATE
+        if (!enabled) return@withLock Outcome.UP_TO_DATE
         if (_state.value is State.Ready) return@withLock Outcome.READY
         val now = System.currentTimeMillis()
-        if (!ReleaseTag.checkDue(lastCheck, now, force)) return@withLock Outcome.UP_TO_DATE
+        if (!ReleaseTag.checkDue(lastCheck, now, force, lastFailed)) return@withLock Outcome.UP_TO_DATE
         lastCheck = now
         _state.value = State.Checking
         val outcome =
             try {
-                withContext(Dispatchers.IO) { fetch() }
-            } catch (_: IOException) {
+                fetch()
+            } catch (e: CancellationException) {
+                // Cut short, not answered: the next chance asks again straight away.
+                lastCheck = 0L
+                throw e
+            } catch (_: Exception) {
                 Outcome.FAILED
-            } catch (_: SerializationException) {
-                Outcome.FAILED
-            } catch (_: IllegalArgumentException) {
-                Outcome.FAILED
+            } finally {
+                if (_state.value is State.Checking) _state.value = State.Idle
             }
-        if (_state.value is State.Checking) _state.value = State.Idle
+        lastFailed = outcome == Outcome.FAILED
         outcome
     }
 
-    private fun fetch(): Outcome {
-        val release = latest() ?: return Outcome.FAILED
-        if (release.draft || release.prerelease || !ReleaseTag.isNewer(release.tag, BuildConfig.VERSION_CODE)) return Outcome.UP_TO_DATE
-        val asset = release.assets.firstOrNull { it.name.endsWith(".apk") } ?: return Outcome.UP_TO_DATE
+    private suspend fun fetch(): Outcome {
+        val release = withContext(Dispatchers.IO) { latest() } ?: return Outcome.FAILED
+        val info = ReleaseTag.Release(release.tag, release.draft, release.prerelease, release.assets.map { it.name })
+        val name = ReleaseTag.apkToInstall(info, installedCode) ?: return Outcome.UP_TO_DATE
+        val asset = release.assets.first { it.name == name }
         val apk = download(asset, ReleaseTag.versionCode(release.tag) ?: 0)
         _state.value = State.Ready(ReleaseTag.versionName(release.tag) ?: release.tag, apk)
         return Outcome.READY
@@ -126,7 +144,7 @@ class GitHubUpdates(
         val request =
             Request
                 .Builder()
-                .url("https://api.github.com/repos/$REPO/releases/latest")
+                .url("$api/repos/$REPO/releases/latest")
                 .header("Accept", "application/vnd.github+json")
                 .build()
         return http.newCall(request).execute().use { response ->
@@ -134,21 +152,42 @@ class GitHubUpdates(
         }
     }
 
-    private fun download(
+    /**
+     * Downloads the APK, resuming over dropped connections ([Downloader]). A copy already downloaded is reused, and
+     * anything but the exact size (and checksum, when GitHub lists one) is thrown away, so a cut-short or damaged file
+     * is never offered.
+     */
+    private suspend fun download(
         asset: Asset,
         code: Int,
     ): File {
         val dir = File(context.cacheDir, "updates").apply { mkdirs() }
         val apk = File(dir, "tuned-$code.apk")
-        if (apk.length() == asset.size) return apk
+        if (apk.length() == asset.size && matches(apk, asset.digest)) return apk
         dir.listFiles()?.forEach { it.delete() }
-        val partial = File(dir, "download.tmp")
-        val ok =
-            http.newCall(Request.Builder().url(asset.url).build()).execute().use { response ->
-                response.isSuccessful && partial.outputStream().use { out -> response.body.byteStream().copyTo(out) } == asset.size
-            }
-        if (!ok || !partial.renameTo(apk)) throw IOException("The update download failed or was incomplete")
+        downloader.download(asset.url, apk)
+        if (apk.length() != asset.size || !matches(apk, asset.digest)) {
+            apk.delete()
+            throw IOException("The update download was incomplete or damaged")
+        }
         return apk
+    }
+
+    private fun matches(
+        file: File,
+        digest: String?,
+    ): Boolean {
+        val want = digest?.takeIf { it.startsWith(SHA256) }?.removePrefix(SHA256)?.lowercase() ?: return true
+        val sha = MessageDigest.getInstance("SHA-256")
+        file.inputStream().use { input ->
+            val buffer = ByteArray(BUFFER)
+            while (true) {
+                val n = input.read(buffer)
+                if (n < 0) break
+                sha.update(buffer, 0, n)
+            }
+        }
+        return sha.digest().joinToString("") { (it.toInt() and 0xff).toString(16).padStart(2, '0') } == want
     }
 
     /**
@@ -187,6 +226,8 @@ class GitHubUpdates(
 
     companion object {
         const val REPO = "mjparinas/tuned"
+        private const val SHA256 = "sha256:"
+        private const val BUFFER = 64 * 1024
         private const val PLAY_STORE = "com.android.vending"
     }
 }
