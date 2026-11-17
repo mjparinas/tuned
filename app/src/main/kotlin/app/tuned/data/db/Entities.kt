@@ -49,6 +49,8 @@ data class ProgrammeEntity(
 data class FavouriteEntity(
     @PrimaryKey val itemId: Long,
     val addedAt: Long,
+    /** Where it sits in the Favourites list (Settings › Order favourites); new ones go to the end. */
+    @ColumnInfo(defaultValue = "0") val position: Long = addedAt,
 )
 
 @Entity(tableName = "history", indices = [Index(value = ["watchedAt"])])
@@ -124,4 +126,11 @@ data class GroupCount(
 data class RegionCount(
     val region: String,
     val count: Int,
+)
+
+/** A favourite channel in Settings › Order favourites. */
+data class FavouriteRow(
+    val id: Long,
+    val name: String,
+    val logo: String?,
 )

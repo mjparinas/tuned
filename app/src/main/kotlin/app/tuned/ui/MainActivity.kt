@@ -24,6 +24,7 @@ import app.tuned.ui.guide.GuideScreen
 import app.tuned.ui.login.LoginScreen
 import app.tuned.ui.search.SearchScreen
 import app.tuned.ui.settings.CaptionSettingsScreen
+import app.tuned.ui.settings.FavouriteOrderScreen
 import app.tuned.ui.settings.RegionSettingsScreen
 import app.tuned.ui.settings.SettingsScreen
 import app.tuned.ui.shows.ShowScreen
@@ -118,6 +119,7 @@ class MainActivity : ComponentActivity() {
                     onBack = { nav.popBackStack() },
                     onOpenCaptions = { nav.navigate(CaptionSettingsRoute) },
                     onOpenRegions = { nav.navigate(RegionSettingsRoute) },
+                    onOpenFavouriteOrder = { nav.navigate(FavouriteOrderRoute) },
                     onSignedOut = {
                         nav.navigate(LoginRoute) { popUpTo(0) { inclusive = true } }
                     },
@@ -126,6 +128,7 @@ class MainActivity : ComponentActivity() {
             composable<CaptionSettingsRoute> {
                 CaptionSettingsScreen(settings = current, onBack = { nav.popBackStack() })
             }
+            composable<FavouriteOrderRoute> { FavouriteOrderScreen(onBack = { nav.popBackStack() }) }
             composable<RegionSettingsRoute> {
                 RegionSettingsScreen(settings = current, onBack = { nav.popBackStack() })
             }

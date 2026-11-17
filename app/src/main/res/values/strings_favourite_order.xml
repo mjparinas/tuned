@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_favourite_order">Order favourites</string>
+    <string name="settings_favourite_order_summary">Choose the order of your favourite channels</string>
+    <string name="favourite_order_empty">No favourite channels yet. Tap the heart on a channel to add it.</string>
+    <string name="move_up">Move %1$s up</string>
+    <string name="move_down">Move %1$s down</string>
+</resources>
