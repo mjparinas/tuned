@@ -1,6 +1,7 @@
 package app.tuned.ui.browse
 
 import android.widget.Toast
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -13,6 +14,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -67,8 +69,10 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.material3.VerticalDivider
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -96,6 +100,7 @@ import androidx.paging.compose.itemKey
 import app.tuned.R
 import app.tuned.container
 import app.tuned.core.ContentKind
+import app.tuned.core.ScreenLayout
 import app.tuned.data.AppSettings
 import app.tuned.data.StartTab
 import app.tuned.data.SyncProgress
@@ -107,20 +112,21 @@ import app.tuned.data.db.WatchLaterEntity
 import app.tuned.ui.SyncText
 import app.tuned.ui.common.VoiceSearchButton
 import app.tuned.ui.common.focusRing
+import app.tuned.ui.common.windowWidthDp
 import app.tuned.ui.library.LibraryViewModel
 import app.tuned.ui.library.watchLaterRow
 import app.tuned.ui.offline.DownloadsViewModel
 import app.tuned.updates.GitHubUpdates
 import coil3.compose.AsyncImage
 
-private data class Tab(
+internal data class Tab(
     val kind: ContentKind,
     val label: Int,
     val icon: ImageVector,
     val search: Int,
 )
 
-private val tabs =
+internal val tabs =
     listOf(
         Tab(ContentKind.LIVE, R.string.tab_live, Icons.Filled.Tv, R.string.search_live),
         Tab(ContentKind.MOVIE, R.string.tab_movies, Icons.Filled.Movie, R.string.search_movies),
@@ -155,78 +161,113 @@ fun HomeScreen(
     val lastError by vm.lastError.collectAsStateWithLifecycle()
     val progress by vm.progress.collectAsStateWithLifecycle()
     val liveSearch by vm.search(ContentKind.LIVE).collectAsStateWithLifecycle()
-
-    Scaffold(
-        floatingActionButton = {
-            // Auto-tune: with a search on Live TV (a channel or an event, say "UFC"), find one that works and play it.
-            if (tab.kind == ContentKind.LIVE && liveSearch.isNotBlank()) {
-                ExtendedFloatingActionButton(
-                    onClick = { onTune(liveSearch.trim()) },
-                    icon = { Icon(Icons.Filled.Radar, contentDescription = null) },
-                    text = { Text(stringResource(R.string.tune_button)) },
-                )
+    val widthDp = windowWidthDp()
+    val rail = ScreenLayout.rail(widthDp)
+    val panes = ScreenLayout.panes(widthDp)
+    // On a wide screen a film, show or guide opens beside the list; on anything narrower it opens full screen.
+    var detail by rememberSaveable(stateSaver = Detail.saver) { mutableStateOf<Detail?>(null) }
+    LaunchedEffect(panes) {
+        // Folded, rotated or put in split screen with a pane open: carry on with that page full screen.
+        val open = detail
+        if (!panes && open != null) {
+            detail = null
+            when (open.kind) {
+                Detail.Kind.MOVIE -> onOpenMovie(open.id)
+                Detail.Kind.SHOW -> onOpenShow(open.showKey, open.title)
+                Detail.Kind.GUIDE -> onOpenGuide(open.id)
             }
-        },
-        topBar = {
-            val search = vm.search(tab.kind)
-            val text by search.collectAsStateWithLifecycle()
-            SearchBarRow(
-                text = text,
-                hint = stringResource(tab.search),
-                onChange = { search.value = it },
-                onOpenSearch = onOpenSearch,
-                onOpenSettings = onOpenSettings,
-            )
-        },
-        bottomBar = {
-            NavigationBar {
-                tabs.forEachIndexed { index, t ->
-                    NavigationBarItem(
-                        selected = index == selected,
-                        onClick = {
-                            selected = index
-                            vm.rememberTab(index)
-                        },
-                        icon = { Icon(t.icon, contentDescription = null) },
-                        label = { Text(stringResource(t.label)) },
+        }
+    }
+    BackHandler(enabled = detail != null) { detail = null }
+    val openShow: (String, String) -> Unit = if (panes) { key, title -> detail = Detail.show(key, title) } else onOpenShow
+    val openMovie: (Long) -> Unit = if (panes) { id -> detail = Detail.movie(id) } else onOpenMovie
+    val openGuide: (Long) -> Unit = if (panes) { id -> detail = Detail.guide(id) } else onOpenGuide
+    val select: (Int) -> Unit = { index ->
+        selected = index
+        vm.rememberTab(index)
+    }
+
+    Row(Modifier.fillMaxSize()) {
+        if (rail) HomeRail(selected, select, onOpenDownloads)
+        Scaffold(
+            modifier = Modifier.weight(1 - ScreenLayout.DETAIL_FRACTION),
+            floatingActionButton = {
+                // Auto-tune: with a search on Live TV (a channel or an event, say "UFC"), find one that works and play it.
+                if (tab.kind == ContentKind.LIVE && liveSearch.isNotBlank()) {
+                    ExtendedFloatingActionButton(
+                        onClick = { onTune(liveSearch.trim()) },
+                        icon = { Icon(Icons.Filled.Radar, contentDescription = null) },
+                        text = { Text(stringResource(R.string.tune_button)) },
                     )
                 }
-                DownloadsNavItem(onOpenDownloads)
-            }
-        },
-    ) { padding ->
-        Column(Modifier.padding(padding).fillMaxSize()) {
-            if (empty == true) {
-                FirstRun(
-                    refreshing = refreshing,
-                    progress = progress,
-                    error = lastError,
-                    onRetry = vm::refresh,
-                    onChangeLogin = { vm.signOut(onSignedOut) },
+            },
+            topBar = {
+                val search = vm.search(tab.kind)
+                val text by search.collectAsStateWithLifecycle()
+                SearchBarRow(
+                    text = text,
+                    hint = stringResource(tab.search),
+                    onChange = { search.value = it },
+                    onOpenSearch = onOpenSearch,
+                    onOpenSettings = onOpenSettings,
                 )
-                return@Column
-            }
-            progress?.let { RefreshBar(it) }
-            UpdateBanner()
-            CategoryChips(vm, tab.kind)
-            val lists: @Composable () -> Unit = {
-                when (tab.kind) {
-                    ContentKind.LIVE -> LiveList(vm, settings.showGuideInList, onPlay, onOpenGuide)
-                    ContentKind.MOVIE -> MovieGrid(vm, onPlay, onOpenMovie)
-                    ContentKind.SERIES -> ShowGrid(vm, onOpenShow, onPlay)
+            },
+            bottomBar = {
+                if (!rail) {
+                    NavigationBar {
+                        tabs.forEachIndexed { index, t ->
+                            NavigationBarItem(
+                                selected = index == selected,
+                                onClick = { select(index) },
+                                icon = { Icon(t.icon, contentDescription = null) },
+                                label = { Text(stringResource(t.label)) },
+                            )
+                        }
+                        DownloadsNavItem(onOpenDownloads)
+                    }
+                }
+            },
+        ) { padding ->
+            Column(Modifier.padding(padding).fillMaxSize()) {
+                if (empty == true) {
+                    FirstRun(
+                        refreshing = refreshing,
+                        progress = progress,
+                        error = lastError,
+                        onRetry = vm::refresh,
+                        onChangeLogin = { vm.signOut(onSignedOut) },
+                    )
+                    return@Column
+                }
+                progress?.let { RefreshBar(it) }
+                UpdateBanner()
+                CategoryChips(vm, tab.kind)
+                val lists: @Composable () -> Unit = {
+                    when (tab.kind) {
+                        ContentKind.LIVE -> LiveList(vm, settings.showGuideInList, onPlay, openGuide)
+                        ContentKind.MOVIE -> MovieGrid(vm, onPlay, openMovie)
+                        ContentKind.SERIES -> ShowGrid(vm, openShow, onPlay)
+                    }
+                }
+                // Pull to refresh is a setting, off by default; Settings › Refresh now always works.
+                if (settings.pullToRefresh) {
+                    PullToRefreshBox(
+                        isRefreshing = refreshing && progress == null,
+                        onRefresh = vm::refresh,
+                        modifier = Modifier.fillMaxSize(),
+                    ) {
+                        lists()
+                    }
+                } else {
+                    Box(Modifier.fillMaxSize()) { lists() }
                 }
             }
-            // Pull to refresh is a setting, off by default; Settings › Refresh now always works.
-            if (settings.pullToRefresh) {
-                PullToRefreshBox(
-                    isRefreshing = refreshing && progress == null,
-                    onRefresh = vm::refresh,
-                    modifier = Modifier.fillMaxSize(),
-                ) {
-                    lists()
-                }
-            } else {
-                Box(Modifier.fillMaxSize()) { lists() }
+        }
+        val open = detail
+        if (panes && open != null) {
+            VerticalDivider()
+            Box(Modifier.weight(ScreenLayout.DETAIL_FRACTION).fillMaxHeight()) {
+                DetailPane(open, onPlay = onPlay, onClose = { detail = null })
             }
         }
     }
@@ -508,7 +549,7 @@ private fun MovieGrid(
     val watched by library.watched.collectAsStateWithLifecycle()
     val later by library.laterKeys.collectAsStateWithLifecycle()
     LazyVerticalGrid(
-        columns = GridCells.Adaptive(minSize = 112.dp),
+        columns = GridCells.Adaptive(minSize = ScreenLayout.posterMinDp(windowWidthDp()).dp),
         state = rememberLazyGridState(),
         contentPadding = PaddingValues(12.dp),
         horizontalArrangement = Arrangement.spacedBy(10.dp),
@@ -561,7 +602,7 @@ private fun ShowGrid(
     val library: LibraryViewModel = viewModel()
     val later by library.laterKeys.collectAsStateWithLifecycle()
     LazyVerticalGrid(
-        columns = GridCells.Adaptive(minSize = 112.dp),
+        columns = GridCells.Adaptive(minSize = ScreenLayout.posterMinDp(windowWidthDp()).dp),
         state = rememberLazyGridState(),
         contentPadding = PaddingValues(12.dp),
         horizontalArrangement = Arrangement.spacedBy(10.dp),
@@ -915,19 +956,20 @@ private val RATING_GOLD = Color(0xFFF5C518)
 
 /** Downloads, beside the three sections: opens its own page, with a badge while anything is still to download. */
 @Composable
-private fun RowScope.DownloadsNavItem(
-    onClick: () -> Unit,
-    downloads: DownloadsViewModel = viewModel(),
-) {
-    val pending by downloads.pending.collectAsStateWithLifecycle()
+private fun RowScope.DownloadsNavItem(onClick: () -> Unit) {
     NavigationBarItem(
         selected = false,
         onClick = onClick,
-        icon = {
-            BadgedBox(badge = { if (pending > 0) Badge { Text("$pending") } }) {
-                Icon(Icons.Filled.DownloadForOffline, contentDescription = null)
-            }
-        },
+        icon = { DownloadsIcon() },
         label = { Text(stringResource(R.string.downloads)) },
     )
+}
+
+/** The downloads icon, with how many are still to come. */
+@Composable
+internal fun DownloadsIcon(downloads: DownloadsViewModel = viewModel()) {
+    val pending by downloads.pending.collectAsStateWithLifecycle()
+    BadgedBox(badge = { if (pending > 0) Badge { Text("$pending") } }) {
+        Icon(Icons.Filled.DownloadForOffline, contentDescription = null)
+    }
 }
