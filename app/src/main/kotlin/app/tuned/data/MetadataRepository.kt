@@ -164,8 +164,7 @@ class MetadataRepository(
                             c.character.orEmpty().clean(),
                             c.profilePath?.let { Tmdb.PROFILES + it }.orEmpty(),
                             c.id?.toString().orEmpty(),
-                        )
-                            .joinToString("\t")
+                        ).joinToString("\t")
                     },
             trailer = Tmdb.trailer(videos),
             fetchedAt = now,
