@@ -79,6 +79,20 @@ class PlayerActivity : FragmentActivity() {
     private var progressJob: Job? = null
     private var liveRetries = 0
     private var gestures: PlayerGestures? = null
+    private val skipIntro by lazy {
+        SkipIntro(
+            activity = this,
+            player = { player?.takeIf { cast?.casting != true } },
+            current = {
+                player
+                    ?.currentMediaItem
+                    ?.mediaId
+                    ?.toLongOrNull()
+                    ?.let { id -> queue.firstOrNull { it.id == id } }
+            },
+            lengthMs = { settings.skipIntroMs },
+        )
+    }
     private val levelBars by lazy { LevelBars(this) }
     private lateinit var tools: PlayerTools
     private var cast: CastControl? = null
@@ -192,6 +206,7 @@ class PlayerActivity : FragmentActivity() {
             FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT, Gravity.CENTER),
         )
         tools.attach(root)
+        skipIntro.attach(root)
         levelBars.attach(root)
         // The title shows and hides with the controls, so a tap reveals everything and the video is otherwise bare.
         playerView.setControllerVisibilityListener(
@@ -425,7 +440,10 @@ class PlayerActivity : FragmentActivity() {
                 true,
             ).setHandleAudioBecomingNoisy(true)
             .build()
-            .apply { addListener(listener(live)) }
+            .apply {
+                addListener(listener(live))
+                addListener(skipIntro.listener)
+            }
     }
 
     private fun listener(live: Boolean) = object : Player.Listener {

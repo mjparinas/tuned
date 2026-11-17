@@ -101,6 +101,8 @@ data class AppSettings(
     val tuneMinHeight: Int = 0,
     val seekBackMs: Long = 10_000,
     val seekForwardMs: Long = 30_000,
+    /** How far "Skip intro" jumps on a show it hasn't learned yet; 0 hides the button. */
+    val skipIntroMs: Long = 85_000,
     val userAgent: String = "",
     /** The person's own TMDB key (v3 key or v4 read token) for ratings and trailers; blank turns them off. */
     val tmdbKey: String = "",
@@ -220,6 +222,7 @@ class SettingsRepository(
             tuneMinHeight = p[K.tuneMinHeight] ?: d.tuneMinHeight,
             seekBackMs = p[K.seekBackMs] ?: d.seekBackMs,
             seekForwardMs = p[K.seekForwardMs] ?: d.seekForwardMs,
+            skipIntroMs = p[K.skipIntroMs] ?: d.skipIntroMs,
             userAgent = p[K.userAgent] ?: d.userAgent,
             tmdbKey = p[K.tmdbKey] ?: d.tmdbKey,
             showGuideInList = p[K.showGuideInList] ?: d.showGuideInList,
@@ -279,6 +282,7 @@ class SettingsRepository(
         p[K.tuneMinHeight] = s.tuneMinHeight
         p[K.seekBackMs] = s.seekBackMs
         p[K.seekForwardMs] = s.seekForwardMs
+        p[K.skipIntroMs] = s.skipIntroMs
         p[K.userAgent] = s.userAgent
         p[K.tmdbKey] = s.tmdbKey
         p[K.showGuideInList] = s.showGuideInList
@@ -338,6 +342,7 @@ class SettingsRepository(
         val tuneMinHeight = intPreferencesKey("tune_min_height")
         val seekBackMs = longPreferencesKey("seek_back_ms")
         val seekForwardMs = longPreferencesKey("seek_forward_ms")
+        val skipIntroMs = longPreferencesKey("skip_intro_ms")
         val userAgent = stringPreferencesKey("user_agent")
         val tmdbKey = stringPreferencesKey("tmdb_key")
         val showGuideInList = booleanPreferencesKey("show_guide_in_list")
