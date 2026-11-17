@@ -2,6 +2,7 @@ package app.tuned.ui.browse
 
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -21,6 +22,8 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.GridItemSpan
+import androidx.compose.foundation.lazy.grid.LazyGridScope
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.lazy.items
@@ -30,6 +33,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Movie
 import androidx.compose.material.icons.filled.Radar
 import androidx.compose.material.icons.filled.Search
@@ -84,6 +88,7 @@ import app.tuned.data.AppSettings
 import app.tuned.data.StartTab
 import app.tuned.data.SyncProgress
 import app.tuned.data.db.ChannelWithNow
+import app.tuned.data.db.ContinueRow
 import app.tuned.data.db.ItemEntity
 import app.tuned.data.db.ShowSummary
 import app.tuned.ui.SyncText
@@ -180,7 +185,7 @@ fun HomeScreen(
                 when (tab.kind) {
                     ContentKind.LIVE -> LiveList(vm, settings.showGuideInList, onPlay, onOpenGuide)
                     ContentKind.MOVIE -> MovieGrid(vm, onPlay)
-                    ContentKind.SERIES -> ShowGrid(vm, onOpenShow)
+                    ContentKind.SERIES -> ShowGrid(vm, onOpenShow, onPlay)
                 }
             }
         }
@@ -277,6 +282,16 @@ private fun CategoryChips(
                 leadingIcon = { Icon(Icons.Filled.Favorite, contentDescription = null, modifier = Modifier.size(16.dp)) },
                 label = { Text(stringResource(R.string.filter_favourites)) },
             )
+        }
+        if (kind == ContentKind.LIVE) {
+            item(key = "recent") {
+                FilterChip(
+                    selected = filter == Filter.Recent,
+                    onClick = { filterFlow.value = if (filter == Filter.Recent) Filter.All else Filter.Recent },
+                    leadingIcon = { Icon(Icons.Filled.History, contentDescription = null, modifier = Modifier.size(16.dp)) },
+                    label = { Text(stringResource(R.string.filter_recent)) },
+                )
+            }
         }
         items(groups, key = { "g:" + it.groupName }) { g ->
             val on = filter == Filter.Group(g.groupName)
@@ -425,6 +440,7 @@ private fun MovieGrid(
         verticalArrangement = Arrangement.spacedBy(14.dp),
         modifier = Modifier.fillMaxSize(),
     ) {
+        continueWatching(vm, ContentKind.MOVIE, onPlay)
         items(count = movies.itemCount, key = movies.itemKey { it.id }) { index ->
             val movie: ItemEntity? = movies[index]
             if (movie == null) {
@@ -447,6 +463,7 @@ private fun MovieGrid(
 private fun ShowGrid(
     vm: BrowseViewModel,
     onOpenShow: (String, String) -> Unit,
+    onPlay: (Long) -> Unit,
 ) {
     val shows = vm.shows.collectAsLazyPagingItems()
     LazyVerticalGrid(
@@ -457,6 +474,7 @@ private fun ShowGrid(
         verticalArrangement = Arrangement.spacedBy(14.dp),
         modifier = Modifier.fillMaxSize(),
     ) {
+        continueWatching(vm, ContentKind.SERIES, onPlay)
         items(count = shows.itemCount, key = shows.itemKey { it.showKey }) { index ->
             val show: ShowSummary? = shows[index]
             if (show == null) {
@@ -470,6 +488,70 @@ private fun ShowGrid(
                 )
             }
         }
+    }
+}
+
+/**
+ * Continue Watching: a row across the top of Movies or Shows with what was started and not finished. Shows only on
+ * the full list (no category, favourites or search), so it never pushes a search result down.
+ */
+private fun LazyGridScope.continueWatching(
+    vm: BrowseViewModel,
+    kind: ContentKind,
+    onPlay: (Long) -> Unit,
+) {
+    item(key = "continue", span = { GridItemSpan(maxLineSpan) }, contentType = "continue") {
+        val rows by vm.continueWatching(kind).collectAsStateWithLifecycle()
+        val filter by vm.filter(kind).collectAsStateWithLifecycle()
+        val search by vm.search(kind).collectAsStateWithLifecycle()
+        if (rows.isEmpty() || filter != Filter.All || search.isNotBlank()) return@item
+        Column {
+            Text(
+                stringResource(R.string.continue_watching),
+                style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier.padding(bottom = 8.dp),
+            )
+            LazyRow(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                items(rows, key = { it.id }) { row -> ContinueCard(row, onClick = { onPlay(row.id) }) }
+            }
+            Spacer(Modifier.height(6.dp))
+        }
+    }
+}
+
+@Composable
+private fun ContinueCard(
+    row: ContinueRow,
+    onClick: () -> Unit,
+) {
+    val title =
+        if (row.showName != null && row.season != null && row.episode != null) {
+            stringResource(R.string.continue_episode, row.showName, row.season, row.episode)
+        } else {
+            row.name
+        }
+    Column(Modifier.width(132.dp).clip(RoundedCornerShape(12.dp)).clickable(onClick = onClick)) {
+        Box(
+            Modifier
+                .fillMaxWidth()
+                .aspectRatio(2f / 3f)
+                .clip(RoundedCornerShape(12.dp))
+                .background(MaterialTheme.colorScheme.surfaceContainerHigh),
+        ) {
+            AsyncImage(model = row.logo, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
+            LinearProgressIndicator(
+                progress = { row.fraction },
+                modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth().height(4.dp),
+                drawStopIndicator = {},
+            )
+        }
+        Text(
+            title,
+            style = MaterialTheme.typography.bodySmall,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.padding(top = 6.dp),
+        )
     }
 }
 

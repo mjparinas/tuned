@@ -2,6 +2,9 @@ package app.tuned
 
 import android.app.Application
 import android.content.Context
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.ProcessLifecycleOwner
 import app.tuned.data.CredentialStore
 import app.tuned.data.SettingsRepository
 import app.tuned.data.SyncRepository
@@ -18,7 +21,9 @@ import coil3.memory.MemoryCache
 import coil3.network.okhttp.OkHttpNetworkFetcherFactory
 import coil3.request.crossfade
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.map
@@ -54,6 +59,7 @@ class AppContainer(
         db.items().deleteAll()
         db.programmes().deleteAll()
         settings.update { it.copy(lastPlaylistSync = 0, lastGuideSync = 0, lastSyncError = "") }
+        settings.lockAdult() // the PIN stays: it guards the device, not one login
     }
 }
 
@@ -66,6 +72,7 @@ class TunedApp :
     override fun onCreate() {
         super.onCreate()
         container = AppContainer(this)
+        lockAdultWhenAway()
         // Re-plan background refreshes whenever their settings change (not on every launch).
         container.appScope.launch {
             container.settings.settings
@@ -76,6 +83,30 @@ class TunedApp :
                     if (container.credentials.load() != null) container.scheduler.schedule(playlist, guide, unmetered)
                 }
         }
+    }
+
+    /** Adult categories lock again five minutes after the app leaves the screen (a PIN unlock is for one sitting). */
+    private fun lockAdultWhenAway() {
+        var pending: Job? = null
+        ProcessLifecycleOwner.get().lifecycle.addObserver(
+            LifecycleEventObserver { _, event ->
+                when (event) {
+                    Lifecycle.Event.ON_STOP -> {
+                        pending =
+                            container.appScope.launch {
+                                delay(ADULT_RELOCK_MS)
+                                container.settings.lockAdult()
+                            }
+                    }
+
+                    Lifecycle.Event.ON_START -> {
+                        pending?.cancel()
+                    }
+
+                    else -> {}
+                }
+            },
+        )
     }
 
     /** Logos and posters: memory plus a 256 MB disk cache, through the same OkHttp client as everything else. */
@@ -92,5 +123,7 @@ class TunedApp :
         }.crossfade(true)
         .build()
 }
+
+private const val ADULT_RELOCK_MS = 5 * 60_000L
 
 val Context.container: AppContainer get() = (applicationContext as TunedApp).container
