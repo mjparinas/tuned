@@ -97,6 +97,7 @@ class MainActivity : ComponentActivity() {
                     onOpenMovie = { id -> nav.navigate(MovieRoute(id)) },
                     onOpenSettings = { nav.navigate(SettingsRoute) },
                     onOpenSearch = { nav.navigate(SearchRoute()) },
+                    onOpenDownloads = { nav.navigate(DownloadsRoute) },
                     onTune = tune,
                     onSignedOut = { nav.navigate(LoginRoute) { popUpTo(0) { inclusive = true } } },
                 )

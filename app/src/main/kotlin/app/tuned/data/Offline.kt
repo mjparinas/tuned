@@ -27,8 +27,24 @@ class Offline(
     private val work get() = WorkManager.getInstance(context)
 
     val all = db.downloads().all()
+    val rows = db.downloads().rows()
 
     suspend fun add(item: ItemEntity) {
+        queue(item, System.currentTimeMillis())
+        start()
+    }
+
+    /** A whole season, saved in episode order, one at a time like any other download. Ones already saved stay. */
+    suspend fun addAll(items: List<ItemEntity>) {
+        val now = System.currentTimeMillis()
+        items.forEachIndexed { index, item -> if (db.downloads().get(item.id) == null) queue(item, now + index) }
+        start()
+    }
+
+    private suspend fun queue(
+        item: ItemEntity,
+        addedAt: Long,
+    ) {
         val ext =
             item.url
                 .substringBefore('?')
@@ -36,11 +52,20 @@ class Offline(
                 .substringAfterLast('.', "mp4")
                 .take(MAX_EXT)
         val file = File(dir, "${item.id}.$ext")
-        db.downloads().upsert(DownloadEntity(item.id, item.name, item.url, file.path, addedAt = System.currentTimeMillis()))
-        start()
+        db.downloads().upsert(DownloadEntity(item.id, item.name, item.url, file.path, addedAt = addedAt))
     }
 
-    /** Try a failed download again. */
+    /** Holds one download back; the rest carry on. */
+    suspend fun hold(itemId: Long) {
+        val running = db.downloads().next()?.itemId == itemId
+        db.downloads().state(itemId, DownloadEntity.PAUSED)
+        if (running) {
+            work.cancelUniqueWork(OfflineWorker.NAME)
+            start()
+        }
+    }
+
+    /** Carry on with a held or failed download. */
     suspend fun retry(itemId: Long) {
         db.downloads().state(itemId, DownloadEntity.QUEUED)
         start()
