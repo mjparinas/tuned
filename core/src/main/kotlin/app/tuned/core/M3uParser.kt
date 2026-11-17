@@ -24,6 +24,7 @@ object M3uParser {
     fun entries(reader: BufferedReader): Sequence<PlaylistEntry> = sequence {
         var pending: ExtInf? = null
         var extGroup: String? = null
+        val headers = LinkedHashMap<String, String>()
         var count = 0
         while (true) {
             val raw = reader.readLine() ?: break
@@ -36,6 +37,11 @@ object M3uParser {
                 line.startsWith("#EXTINF", ignoreCase = true) -> {
                     pending = parseExtInf(line)
                     extGroup = null
+                    headers.clear()
+                }
+
+                line.startsWith("#EXTVLCOPT:", ignoreCase = true) -> {
+                    StreamLink.vlcOption(line)?.let { (name, value) -> headers[name] = value }
                 }
 
                 line.startsWith("#EXTGRP:", ignoreCase = true) -> {
@@ -47,11 +53,15 @@ object M3uParser {
                 }
 
                 else -> {
-                    val info = pending ?: ExtInf(title = line.substringAfterLast('/'), attributes = emptyMap())
-                    yield(toEntry(info, extGroup, line, count))
+                    // Headers from #EXTVLCOPT lines and from Kodi's "link|User-Agent=…" form, kept in Kodi's form.
+                    val parts = StreamLink.split(line)
+                    val link = StreamLink.join(parts.url, headers + parts.headers)
+                    val info = pending ?: ExtInf(title = parts.url.substringAfterLast('/'), attributes = emptyMap())
+                    yield(toEntry(info, extGroup, link, count))
                     count++
                     pending = null
                     extGroup = null
+                    headers.clear()
                 }
             }
         }
@@ -110,7 +120,7 @@ object M3uParser {
         order: Int,
     ): PlaylistEntry {
         val a = info.attributes
-        val name = info.title.ifBlank { a["tvg-name"].orEmpty() }.ifBlank { url.substringAfterLast('/') }
+        val name = info.title.ifBlank { a["tvg-name"].orEmpty() }.ifBlank { StreamLink.address(url).substringAfterLast('/') }
         val group = a["group-title"]?.takeIf { it.isNotBlank() } ?: extGroup?.takeIf { it.isNotBlank() } ?: "Uncategorized"
         val kind = Classifier.kind(url, group)
         return PlaylistEntry(

@@ -141,6 +141,12 @@ data class CatchUpEntity(
     val days: Int,
 )
 
+/** A stream's id and link, to match it with what the Xtream API says about its stream id. */
+data class ItemUrl(
+    val id: Long,
+    val url: String,
+)
+
 /** A live channel's guide id and link, to match it with its catch-up days. */
 data class LiveLink(
     val tvgId: String,

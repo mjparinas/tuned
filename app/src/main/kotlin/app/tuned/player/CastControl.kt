@@ -9,6 +9,7 @@ import androidx.mediarouter.app.MediaRouteButton
 import androidx.mediarouter.media.MediaRouteSelector
 import app.tuned.R
 import app.tuned.core.CastMedia
+import app.tuned.core.StreamLink
 import app.tuned.data.db.ItemEntity
 import app.tuned.diagnostics.attempt
 import app.tuned.ui.MainActivity
@@ -150,7 +151,7 @@ class CastControl(
     ) {
         if (dlna.active) return dlna.load(item, live, positionMs)
         val client = session?.remoteMediaClient ?: return
-        val media = CastMedia.forCast(item.url, live)
+        val media = CastMedia.forCast(StreamLink.address(item.url), live) // a Chromecast takes no extra headers
         val metadata =
             MediaMetadata(if (live) MediaMetadata.MEDIA_TYPE_GENERIC else MediaMetadata.MEDIA_TYPE_MOVIE).apply {
                 putString(MediaMetadata.KEY_TITLE, item.name)
