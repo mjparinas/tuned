@@ -39,7 +39,6 @@ import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.common.VideoSize
 import androidx.media3.common.util.UnstableApi
-import androidx.media3.datasource.okhttp.OkHttpDataSource
 import androidx.media3.exoplayer.DefaultLoadControl
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
@@ -398,10 +397,8 @@ class PlayerActivity : FragmentActivity() {
     }
 
     private fun buildPlayer(live: Boolean): ExoPlayer {
-        val http =
-            OkHttpDataSource
-                .Factory(container.http)
-                .setUserAgent(settings.userAgent.ifBlank { "Tuned/${BuildConfig.VERSION_NAME}" })
+        // Streams over OkHttp, saved downloads from the device.
+        val http = PlayerSources.factory(this, container.http, settings.userAgent.ifBlank { "Tuned/${BuildConfig.VERSION_NAME}" })
         // TS streams from IPTV servers often start on a non-IDR frame; these flags start them sooner.
         val extractors =
             DefaultExtractorsFactory().setTsExtractorFlags(
