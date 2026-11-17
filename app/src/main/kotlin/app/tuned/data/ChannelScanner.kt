@@ -8,8 +8,8 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import app.tuned.BuildConfig
 import app.tuned.core.ChannelScan
-import app.tuned.core.EventChannels
 import app.tuned.core.ChannelScan.Failure
+import app.tuned.core.EventChannels
 import app.tuned.core.Placeholders
 import app.tuned.core.ScanEngine
 import app.tuned.data.db.ChannelScanEntity
