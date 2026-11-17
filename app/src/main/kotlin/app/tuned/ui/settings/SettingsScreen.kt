@@ -2,6 +2,7 @@ package app.tuned.ui.settings
 
 import android.app.Application
 import android.os.Build
+import android.os.SystemClock
 import android.text.format.DateUtils
 import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
@@ -47,6 +48,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import app.tuned.BuildConfig
@@ -60,7 +62,15 @@ import app.tuned.data.StartTab
 import app.tuned.data.ThemeMode
 import app.tuned.ui.common.BackTopBar
 import app.tuned.ui.theme.swatch
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import java.security.MessageDigest
+
+enum class PinResult { Ok, Wrong, TooMany }
+
+private const val MAX_WRONG = 5
+private const val WAIT_MS = 30_000L
 
 class SettingsViewModel(
     app: Application,
@@ -69,6 +79,36 @@ class SettingsViewModel(
 
     fun update(change: (AppSettings) -> AppSettings) {
         viewModelScope.launch { container.settings.update(change) }
+    }
+
+    val hasPin = container.settings.hasAdultPin.stateIn(viewModelScope, SharingStarted.Eagerly, false)
+    private var wrongTries = 0
+    private var lockedUntil = 0L
+
+    suspend fun setPin(pin: String) = container.settings.setAdultPin(pin)
+
+    /** Five wrong PINs in a row wait 30 seconds before the next try, so guessing all 10,000 takes days. */
+    suspend fun unlock(pin: String): PinResult {
+        if (SystemClock.elapsedRealtime() < lockedUntil) return PinResult.TooMany
+        if (container.settings.unlockAdult(pin)) {
+            wrongTries = 0
+            return PinResult.Ok
+        }
+        if (++wrongTries >= MAX_WRONG) {
+            wrongTries = 0
+            lockedUntil = SystemClock.elapsedRealtime() + WAIT_MS
+            return PinResult.TooMany
+        }
+        return PinResult.Wrong
+    }
+
+    fun lockAdult() = container.settings.lockAdult()
+
+    /** "Forgot PIN": the account password (or, for a playlist link login, the link) proves it's the account holder. */
+    fun matchesLogin(secret: String): Boolean {
+        val login = container.credentials.load() ?: return false
+        val expected = login.password.ifEmpty { login.playlistUrl }
+        return expected.isNotEmpty() && MessageDigest.isEqual(secret.toByteArray(), expected.toByteArray())
     }
 
     fun server(): String = container.credentials
@@ -151,13 +191,23 @@ fun SettingsScreen(
                 onClick = onOpenRegions,
                 trailing = { Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null) },
             )
+            val hasPin by vm.hasPin.collectAsStateWithLifecycle()
+            var pinDialog by remember { mutableStateOf<PinMode?>(null) }
             SwitchRow(
                 stringResource(R.string.settings_show_adult),
                 settings.showAdult,
-                stringResource(R.string.settings_show_adult_summary),
+                stringResource(if (hasPin) R.string.settings_show_adult_summary else R.string.settings_show_adult_summary_no_pin),
             ) { on ->
-                vm.update { it.copy(showAdult = on) }
+                if (on) pinDialog = if (hasPin) PinMode.Unlock else PinMode.Create else vm.lockAdult()
             }
+            if (hasPin && settings.showAdult) {
+                SettingRow(
+                    stringResource(R.string.settings_change_pin),
+                    stringResource(R.string.settings_change_pin_summary),
+                    onClick = { pinDialog = PinMode.Create },
+                )
+            }
+            pinDialog?.let { mode -> PinDialog(mode, vm, onDone = { pinDialog = null }) }
             SwitchRow(
                 stringResource(R.string.settings_guide_in_list),
                 settings.showGuideInList,
