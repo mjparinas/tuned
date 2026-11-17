@@ -38,7 +38,13 @@ class SeasonMetadataTest {
                         .host(server.hostName)
                         .port(server.port)
                         .build()
-                chain.proceed(chain.request().newBuilder().url(url).build())
+                chain.proceed(
+                    chain
+                        .request()
+                        .newBuilder()
+                        .url(url)
+                        .build(),
+                )
             }.build()
     private val settings = SettingsRepository(context)
     private val repo = MetadataRepository(http, settings, db.metadata())
