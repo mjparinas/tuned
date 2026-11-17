@@ -23,3 +23,7 @@ The same screen shows the last scan's counts (working, failed, not judged) and, 
 ## One connection at a time
 
 The scan never looks at a channel while the player is open or a download runs. A look in progress is cut off the moment either starts, and the scan carries on after. The account call is not a stream. What scans find is stored in `channel_scan` (Room v9). Switching to a different playlist clears it, and signing out stops a running scan.
+
+## Empty event channels
+
+Melvin, 2026-11-17: "Can you hide all these no event streaming links somehow". Providers keep hundreds of pay-per-view and event slots in the playlist between events, named like "- NO EVENT STREAMING - | 8K EXCLUSIVE | SE: PLAY+ PPV 43". A switch in Channel health, **Hide empty event channels** (on by default), leaves out live channels whose name says "no event" or "no live event" (`core/Placeholders.kt`, the same rule in SQL in `ItemDao`) from Live TV, search, auto-tune and the scan. It goes by the name alone, so a slot shows again as soon as a playlist refresh brings it under a real event's name. No scan is needed and nothing is stored.
