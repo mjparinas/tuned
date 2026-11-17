@@ -10,6 +10,13 @@
     <!-- Updates from GitHub Releases (docs/decisions/updates.md). A Play build would drop this: Play doesn't allow it. -->
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
 
+    <!-- The phone's speech recogniser, for the mic in search (package visibility, Android 11+). -->
+    <queries>
+        <intent>
+            <action android:name="android.speech.action.RECOGNIZE_SPEECH" />
+        </intent>
+    </queries>
+
     <application
         android:name=".TunedApp"
         android:allowBackup="false"
@@ -28,11 +35,23 @@
             android:name=".ui.MainActivity"
             android:exported="true"
             android:theme="@style/Theme.Tuned.Starting"
+            android:launchMode="singleTop"
             android:windowSoftInputMode="adjustResize">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+            <!-- Search: the system search box, a TV remote's search button, and "search for UFC on Tuned" (Assistant). -->
+            <intent-filter>
+                <action android:name="android.intent.action.SEARCH" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="com.google.android.gms.actions.SEARCH_ACTION" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+            <meta-data
+                android:name="android.app.searchable"
+                android:resource="@xml/searchable" />
         </activity>
 
         <activity

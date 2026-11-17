@@ -34,6 +34,7 @@ import androidx.compose.material.icons.filled.Movie
 import androidx.compose.material.icons.filled.Radar
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.TravelExplore
 import androidx.compose.material.icons.filled.Tv
 import androidx.compose.material.icons.filled.VideoLibrary
 import androidx.compose.material3.Button
@@ -87,6 +88,7 @@ import app.tuned.data.db.ChannelWithNow
 import app.tuned.data.db.ItemEntity
 import app.tuned.data.db.ShowSummary
 import app.tuned.ui.SyncText
+import app.tuned.ui.common.VoiceSearchButton
 import app.tuned.updates.GitHubUpdates
 import coil3.compose.AsyncImage
 
@@ -111,6 +113,7 @@ fun HomeScreen(
     onOpenShow: (String, String) -> Unit,
     onOpenGuide: (Long) -> Unit,
     onOpenSettings: () -> Unit,
+    onOpenSearch: () -> Unit,
     onTune: (String) -> Unit,
     onSignedOut: () -> Unit,
     vm: BrowseViewModel = viewModel(),
@@ -144,7 +147,13 @@ fun HomeScreen(
         topBar = {
             val search = vm.search(tab.kind)
             val text by search.collectAsStateWithLifecycle()
-            SearchBarRow(text = text, hint = stringResource(tab.search), onChange = { search.value = it }, onOpenSettings = onOpenSettings)
+            SearchBarRow(
+                text = text,
+                hint = stringResource(tab.search),
+                onChange = { search.value = it },
+                onOpenSearch = onOpenSearch,
+                onOpenSettings = onOpenSettings,
+            )
         },
         bottomBar = {
             NavigationBar {
@@ -215,6 +224,7 @@ private fun SearchBarRow(
     text: String,
     hint: String,
     onChange: (String) -> Unit,
+    onOpenSearch: () -> Unit,
     onOpenSettings: () -> Unit,
 ) {
     Surface(color = MaterialTheme.colorScheme.surface) {
@@ -235,6 +245,8 @@ private fun SearchBarRow(
                         IconButton(onClick = { onChange("") }) {
                             Icon(Icons.Filled.Close, contentDescription = stringResource(R.string.search_clear))
                         }
+                    } else {
+                        VoiceSearchButton(onResult = onChange)
                     }
                 },
                 singleLine = true,
@@ -246,6 +258,9 @@ private fun SearchBarRow(
                     ),
                 modifier = Modifier.weight(1f).height(52.dp),
             )
+            IconButton(onClick = onOpenSearch) {
+                Icon(Icons.Filled.TravelExplore, contentDescription = stringResource(R.string.search_everything))
+            }
             IconButton(onClick = onOpenSettings) {
                 Icon(Icons.Filled.Settings, contentDescription = stringResource(R.string.settings))
             }
