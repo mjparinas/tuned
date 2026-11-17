@@ -4,7 +4,7 @@
 
 **Modules.** `:core` is plain Kotlin with no Android dependency: parsers and rules, tested on the JVM in seconds. `:app` is the Android app.
 
-**Data flow.** Sign-in saves the login (encrypted) and downloads the playlist and guide once in the foreground. `SyncRepository` streams each download straight into Room inside one transaction; the screens read Room through Paging, so they never wait on the network. WorkManager refreshes both in the background on their own schedules.
+**Data flow.** Sign-in saves the login (encrypted) and downloads the playlist and guide once in the foreground. `SyncRepository` streams each download into Room in short batches, so nothing waits on a refresh; the screens read Room through Paging, so they never wait on the network. WorkManager refreshes both in the background on their own schedules.
 
 **No dependency injection framework.** One `AppContainer` built in `TunedApp` holds the database, OkHttp client, settings, login store and scheduler, created lazily. The app is small enough that Hilt would add build time and start-up cost for nothing.
 

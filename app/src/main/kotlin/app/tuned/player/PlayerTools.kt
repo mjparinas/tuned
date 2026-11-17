@@ -35,8 +35,8 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 
 /**
- * The buttons at the top right of the player, shown with the controls: channels (live), aspect, quality, stream info
- * and screen lock. Each stays out of the way until asked for, as everything in the player does.
+ * The buttons at the top right of the player, shown with the controls: channels (live), aspect, quality, subtitle timing,
+ * stream info and screen lock. Each stays out of the way until asked for, as everything in the player does.
  */
 @OptIn(UnstableApi::class)
 class PlayerTools(
@@ -53,10 +53,12 @@ class PlayerTools(
         val touch: () -> View.OnTouchListener?,
         val say: (String) -> Unit,
         val onFitChanged: (VideoFit) -> Unit,
+        val subtitles: SubtitleTiming,
+        val casting: () -> Boolean,
     )
 
     private val density = activity.resources.displayMetrics.density
-    private val guide = MiniGuide(activity, hooks.player, hooks.queue)
+    private val guide = MiniGuide(activity, hooks.player, hooks.queue, beside = listOf(playerView, overlay), onClosed = { syncBack() })
     private val guideButton = button(R.drawable.ic_player_guide, R.string.player_guide) { toggleGuide() }
     private val unlockButton =
         button(R.drawable.ic_player_lock, R.string.player_unlock) { unlock() }.apply {
@@ -98,6 +100,7 @@ class PlayerTools(
             addView(guideButton)
             addView(button(R.drawable.ic_player_aspect, R.string.player_fit) { nextFit() })
             addView(button(R.drawable.ic_player_quality, R.string.player_quality) { pickQuality() })
+            addView(button(R.drawable.ic_player_subtitle_timing, R.string.subtitle_timing) { pickSubtitleTiming() })
             addView(button(R.drawable.ic_player_info, R.string.player_info) { toggleInfo() })
             addView(button(R.drawable.ic_player_lock, R.string.player_lock) { lock() })
         }
@@ -110,9 +113,14 @@ class PlayerTools(
     /** Adds the panels (guide, info, unlock) over the video. */
     fun attach(root: FrameLayout) {
         root.addView(
-            guide.view,
-            FrameLayout.LayoutParams((320 * density).toInt(), ViewGroup.LayoutParams.MATCH_PARENT, Gravity.END),
+            guide.scrim,
+            FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT),
         )
+        root.addView(
+            guide.view,
+            FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.MATCH_PARENT, Gravity.END),
+        )
+        guide.place()
         root.addView(
             info,
             FrameLayout
@@ -147,6 +155,9 @@ class PlayerTools(
                 VideoFit.STRETCH -> AspectRatioFrameLayout.RESIZE_MODE_FILL
             }
     }
+
+    /** Rotation, folding or split screen: the guide moves beside or over the video to suit. */
+    fun onScreenChanged() = guide.place()
 
     /** Picture-in-picture: nothing but the video. */
     fun hidePanels() {
@@ -329,6 +340,15 @@ class PlayerTools(
     private fun Format.bitrateOrAverage(): Int = if (bitrate != Format.NO_VALUE) bitrate else averageBitrate
 
     // ---- Quality: the stream's own renditions (HLS variants); most single-rendition TS channels have just one.
+
+    private fun pickSubtitleTiming() {
+        val p = hooks.player() ?: return
+        if (hooks.casting()) {
+            hooks.say(activity.getString(R.string.subtitle_timing_not_casting))
+        } else {
+            hooks.subtitles.pick(activity, p, hooks.say)
+        }
+    }
 
     private fun pickQuality() {
         val p = hooks.player() ?: return

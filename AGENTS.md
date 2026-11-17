@@ -41,7 +41,7 @@ Kotlin, Jetpack Compose with Material 3, Navigation Compose (type-safe routes), 
 
 - `ci.yml` on every pull request and push to `main` and `staging`: formatting (Prettier, ktlint), lint and static analysis (detekt, Android Lint), unit tests, and the Android build (debug APK uploaded as an artifact to install and try, plus an unsigned release build so R8 problems show up here). **"CI passed"** is the one required check. A tree that already passed, or a Markdown-only change after a passing commit, skips the work.
 - `promote-staging.yml`: `main` is production and every pull request targets `staging`. At 09:00 UTC each night it promotes staging to main when "CI passed" is green (a direct merge, so it needs no repository setting), then merges main back into staging. Run it by hand to ship sooner.
-- `release.yml`: on every promotion and on demand, a signed APK published as a **GitHub release** (`v<version>-build.<run>`), which installed copies offer to update to; plus a signed App Bundle for the Play **internal** track once its secret exists ([updates](docs/decisions/updates.md)). The version is semver, bumped automatically from the commits since the last release (`scripts/next-version.mjs`; `package.json` is a floor), and the version code is the run number. Skips with a notice until its secrets exist.
+- `release.yml`: on every promotion and on demand, a signed APK published as a **GitHub release** (`v<version>`, no build number), which installed copies offer to update to; plus a signed App Bundle for the Play **internal** track once its secret exists ([updates](docs/decisions/updates.md)). The version is semver, bumped automatically from the commits since the last release (`scripts/next-version.mjs`; `package.json` is a floor), and the version code comes from it (1.2.3 is 1002003). Skips with a notice until its secrets exist.
 - Secrets: `ANDROID_KEYSTORE_B64` (base64 upload keystore, alias `upload`), `ANDROID_KEYSTORE_PASSWORD`, `PLAY_SERVICE_ACCOUNT_JSON`, optional `PROMOTE_TOKEN`. The first upload must be done by hand in Play Console before the API can upload.
 - **Pull request titles follow Conventional Commits**, because the squashed title decides the next version (Melvin, 2026-11-17: "Auto bump semver versions with each update"): `feat: …` bumps the minor, `fix: …` and anything else the patch, `feat!: …` or a `BREAKING CHANGE:` line the major.
 - Dependabot targets `staging` weekly: Gradle (minor and patch grouped), npm, GitHub Actions.
@@ -53,6 +53,8 @@ One file per topic in `docs/decisions/`, A to Z. Add a line when you add a topic
 - [Architecture](docs/decisions/architecture.md): native Kotlin over Capacitor, modules, data flow.
 - [Auto-tune](docs/decisions/auto-tune.md): finding a working English stream for a live event, one connection at a time.
 - [Branding](docs/decisions/branding.md): name, icon, colours, themes.
+- [Channel scan](docs/decisions/channel-scan.md): finding dead channels without blaming them for the internet or the server.
+- [Large screens](docs/decisions/large-screens.md): navigation rail, list and detail panes, the guide beside the player on tablets.
 - [Offline downloads](docs/decisions/offline.md): saving films and episodes, one connection at a time.
 - [Playlist and guide](docs/decisions/playlist.md): Xtream URLs, how streams are sorted, countries, refresh.
 - [Player](docs/decisions/player.md): Media3 setup, controls, captions, audio, picture-in-picture.

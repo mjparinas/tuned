@@ -1,5 +1,7 @@
 package app.tuned.ui.browse
 
+import android.widget.Toast
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -12,6 +14,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -29,12 +32,15 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.DownloadForOffline
 import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Movie
 import androidx.compose.material.icons.filled.Radar
@@ -44,6 +50,7 @@ import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.TravelExplore
 import androidx.compose.material.icons.filled.Tv
 import androidx.compose.material.icons.filled.VideoLibrary
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Button
@@ -63,8 +70,10 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.material3.VerticalDivider
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -92,6 +101,7 @@ import androidx.paging.compose.itemKey
 import app.tuned.R
 import app.tuned.container
 import app.tuned.core.ContentKind
+import app.tuned.core.ScreenLayout
 import app.tuned.data.AppSettings
 import app.tuned.data.StartTab
 import app.tuned.data.SyncProgress
@@ -99,21 +109,25 @@ import app.tuned.data.db.ChannelWithNow
 import app.tuned.data.db.ContinueRow
 import app.tuned.data.db.ItemEntity
 import app.tuned.data.db.ShowSummary
+import app.tuned.data.db.WatchLaterEntity
 import app.tuned.ui.SyncText
 import app.tuned.ui.common.VoiceSearchButton
 import app.tuned.ui.common.focusRing
+import app.tuned.ui.common.windowWidthDp
+import app.tuned.ui.library.LibraryViewModel
+import app.tuned.ui.library.watchLaterRow
 import app.tuned.ui.offline.DownloadsViewModel
 import app.tuned.updates.GitHubUpdates
 import coil3.compose.AsyncImage
 
-private data class Tab(
+internal data class Tab(
     val kind: ContentKind,
     val label: Int,
     val icon: ImageVector,
     val search: Int,
 )
 
-private val tabs =
+internal val tabs =
     listOf(
         Tab(ContentKind.LIVE, R.string.tab_live, Icons.Filled.Tv, R.string.search_live),
         Tab(ContentKind.MOVIE, R.string.tab_movies, Icons.Filled.Movie, R.string.search_movies),
@@ -148,66 +162,113 @@ fun HomeScreen(
     val lastError by vm.lastError.collectAsStateWithLifecycle()
     val progress by vm.progress.collectAsStateWithLifecycle()
     val liveSearch by vm.search(ContentKind.LIVE).collectAsStateWithLifecycle()
-
-    Scaffold(
-        floatingActionButton = {
-            // Auto-tune: with a search on Live TV (a channel or an event, say "UFC"), find one that works and play it.
-            if (tab.kind == ContentKind.LIVE && liveSearch.isNotBlank()) {
-                ExtendedFloatingActionButton(
-                    onClick = { onTune(liveSearch.trim()) },
-                    icon = { Icon(Icons.Filled.Radar, contentDescription = null) },
-                    text = { Text(stringResource(R.string.tune_button)) },
-                )
+    val widthDp = windowWidthDp()
+    val rail = ScreenLayout.rail(widthDp)
+    val panes = ScreenLayout.panes(widthDp)
+    // On a wide screen a film, show or guide opens beside the list; on anything narrower it opens full screen.
+    var detail by rememberSaveable(stateSaver = Detail.saver) { mutableStateOf<Detail?>(null) }
+    LaunchedEffect(panes) {
+        // Folded, rotated or put in split screen with a pane open: carry on with that page full screen.
+        val open = detail
+        if (!panes && open != null) {
+            detail = null
+            when (open.kind) {
+                Detail.Kind.MOVIE -> onOpenMovie(open.id)
+                Detail.Kind.SHOW -> onOpenShow(open.showKey, open.title)
+                Detail.Kind.GUIDE -> onOpenGuide(open.id)
             }
-        },
-        topBar = {
-            val search = vm.search(tab.kind)
-            val text by search.collectAsStateWithLifecycle()
-            SearchBarRow(
-                text = text,
-                hint = stringResource(tab.search),
-                onChange = { search.value = it },
-                onOpenSearch = onOpenSearch,
-                onOpenSettings = onOpenSettings,
-            )
-        },
-        bottomBar = {
-            NavigationBar {
-                tabs.forEachIndexed { index, t ->
-                    NavigationBarItem(
-                        selected = index == selected,
-                        onClick = {
-                            selected = index
-                            vm.rememberTab(index)
-                        },
-                        icon = { Icon(t.icon, contentDescription = null) },
-                        label = { Text(stringResource(t.label)) },
+        }
+    }
+    BackHandler(enabled = detail != null) { detail = null }
+    val openShow: (String, String) -> Unit = if (panes) { key, title -> detail = Detail.show(key, title) } else onOpenShow
+    val openMovie: (Long) -> Unit = if (panes) { id -> detail = Detail.movie(id) } else onOpenMovie
+    val openGuide: (Long) -> Unit = if (panes) { id -> detail = Detail.guide(id) } else onOpenGuide
+    val select: (Int) -> Unit = { index ->
+        selected = index
+        vm.rememberTab(index)
+    }
+
+    Row(Modifier.fillMaxSize()) {
+        if (rail) HomeRail(selected, select, onOpenDownloads)
+        Scaffold(
+            modifier = Modifier.weight(1 - ScreenLayout.DETAIL_FRACTION),
+            floatingActionButton = {
+                // Auto-tune: with a search on Live TV (a channel or an event, say "UFC"), find one that works and play it.
+                if (tab.kind == ContentKind.LIVE && liveSearch.isNotBlank()) {
+                    ExtendedFloatingActionButton(
+                        onClick = { onTune(liveSearch.trim()) },
+                        icon = { Icon(Icons.Filled.Radar, contentDescription = null) },
+                        text = { Text(stringResource(R.string.tune_button)) },
                     )
                 }
-                DownloadsNavItem(onOpenDownloads)
-            }
-        },
-    ) { padding ->
-        Column(Modifier.padding(padding).fillMaxSize()) {
-            if (empty == true) {
-                FirstRun(
-                    refreshing = refreshing,
-                    progress = progress,
-                    error = lastError,
-                    onRetry = vm::refresh,
-                    onChangeLogin = { vm.signOut(onSignedOut) },
+            },
+            topBar = {
+                val search = vm.search(tab.kind)
+                val text by search.collectAsStateWithLifecycle()
+                SearchBarRow(
+                    text = text,
+                    hint = stringResource(tab.search),
+                    onChange = { search.value = it },
+                    onOpenSearch = onOpenSearch,
+                    onOpenSettings = onOpenSettings,
                 )
-                return@Column
-            }
-            progress?.let { RefreshBar(it) }
-            UpdateBanner()
-            CategoryChips(vm, tab.kind)
-            PullToRefreshBox(isRefreshing = refreshing && progress == null, onRefresh = vm::refresh, modifier = Modifier.fillMaxSize()) {
-                when (tab.kind) {
-                    ContentKind.LIVE -> LiveList(vm, settings.showGuideInList, onPlay, onOpenGuide)
-                    ContentKind.MOVIE -> MovieGrid(vm, onPlay, onOpenMovie)
-                    ContentKind.SERIES -> ShowGrid(vm, onOpenShow, onPlay)
+            },
+            bottomBar = {
+                if (!rail) {
+                    NavigationBar {
+                        tabs.forEachIndexed { index, t ->
+                            NavigationBarItem(
+                                selected = index == selected,
+                                onClick = { select(index) },
+                                icon = { Icon(t.icon, contentDescription = null) },
+                                label = { Text(stringResource(t.label)) },
+                            )
+                        }
+                        DownloadsNavItem(onOpenDownloads)
+                    }
                 }
+            },
+        ) { padding ->
+            Column(Modifier.padding(padding).fillMaxSize()) {
+                if (empty == true) {
+                    FirstRun(
+                        refreshing = refreshing,
+                        progress = progress,
+                        error = lastError,
+                        onRetry = vm::refresh,
+                        onChangeLogin = { vm.signOut(onSignedOut) },
+                    )
+                    return@Column
+                }
+                progress?.let { RefreshBar(it) }
+                UpdateBanner()
+                CategoryChips(vm, tab.kind)
+                val lists: @Composable () -> Unit = {
+                    when (tab.kind) {
+                        ContentKind.LIVE -> LiveList(vm, settings.showGuideInList, onPlay, openGuide)
+                        ContentKind.MOVIE -> MovieGrid(vm, onPlay, openMovie)
+                        ContentKind.SERIES -> ShowGrid(vm, openShow, onPlay)
+                    }
+                }
+                // Pull to refresh is a setting, off by default; Settings › Refresh now always works.
+                if (settings.pullToRefresh) {
+                    PullToRefreshBox(
+                        isRefreshing = refreshing && progress == null,
+                        onRefresh = vm::refresh,
+                        modifier = Modifier.fillMaxSize(),
+                    ) {
+                        lists()
+                    }
+                } else {
+                    Box(Modifier.fillMaxSize()) { lists() }
+                }
+            }
+        }
+        val open = detail
+        if (panes && open != null) {
+            VerticalDivider()
+            Box(Modifier.weight(ScreenLayout.DETAIL_FRACTION).fillMaxHeight()) {
+                DetailPane(open, onPlay = onPlay, onClose = { detail = null })
             }
         }
     }
@@ -322,10 +383,34 @@ private fun CategoryChips(
         }
         items(groups, key = { "g:" + it.groupName }) { g ->
             val on = filter == Filter.Group(g.groupName)
+            val context = LocalContext.current
+            val hiddenMessage = stringResource(R.string.group_hidden, g.groupName)
             FilterChip(
                 selected = on,
                 onClick = { filterFlow.value = if (on) Filter.All else Filter.Group(g.groupName) },
                 label = { Text(g.groupName) },
+                // The chosen group can be hidden from here; Settings › Hidden groups brings it back.
+                trailingIcon =
+                    if (on) {
+                        {
+                            Icon(
+                                Icons.Filled.VisibilityOff,
+                                contentDescription = stringResource(R.string.group_hide),
+                                modifier =
+                                    Modifier.size(18.dp).clickable {
+                                        vm.hideGroup(kind, g.groupName)
+                                        Toast
+                                            .makeText(
+                                                context,
+                                                hiddenMessage,
+                                                Toast.LENGTH_LONG,
+                                            ).show()
+                                    },
+                            )
+                        }
+                    } else {
+                        null
+                    },
             )
         }
     }
@@ -364,6 +449,21 @@ private fun LiveList(
     }
 }
 
+/** One tap to favourite a channel or take it off: a filled heart in the accent colour when it is a favourite. */
+@Composable
+internal fun FavouriteButton(
+    favourite: Boolean,
+    onToggle: () -> Unit,
+) {
+    IconButton(onClick = onToggle) {
+        if (favourite) {
+            Icon(Icons.Filled.Favorite, stringResource(R.string.favourite_remove), tint = MaterialTheme.colorScheme.primary)
+        } else {
+            Icon(Icons.Filled.FavoriteBorder, stringResource(R.string.favourite_add))
+        }
+    }
+}
+
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun ChannelRow(
@@ -395,10 +495,6 @@ private fun ChannelRow(
                         overflow = TextOverflow.Ellipsis,
                         modifier = Modifier.weight(1f, fill = false),
                     )
-                    if (channel.favourite) {
-                        Spacer(Modifier.width(6.dp))
-                        Icon(Icons.Filled.Favorite, null, Modifier.size(14.dp), tint = MaterialTheme.colorScheme.primary)
-                    }
                 }
                 val now = channel.nowTitle
                 if (showGuide && now != null) {
@@ -426,6 +522,7 @@ private fun ChannelRow(
                     }
                 }
             }
+            FavouriteButton(channel.favourite, onToggleFavourite)
             if (channel.tvgId != null) {
                 IconButton(onClick = onGuide) {
                     Icon(Icons.AutoMirrored.Filled.List, contentDescription = stringResource(R.string.guide_open))
@@ -461,8 +558,11 @@ private fun MovieGrid(
 ) {
     val movies = vm.movies.collectAsLazyPagingItems()
     val favourites by vm.favouriteIds.collectAsStateWithLifecycle()
+    val library: LibraryViewModel = viewModel()
+    val watched by library.watched.collectAsStateWithLifecycle()
+    val later by library.laterKeys.collectAsStateWithLifecycle()
     LazyVerticalGrid(
-        columns = GridCells.Adaptive(minSize = 112.dp),
+        columns = GridCells.Adaptive(minSize = ScreenLayout.posterMinDp(windowWidthDp()).dp),
         state = rememberLazyGridState(),
         contentPadding = PaddingValues(12.dp),
         horizontalArrangement = Arrangement.spacedBy(10.dp),
@@ -470,6 +570,7 @@ private fun MovieGrid(
         modifier = Modifier.fillMaxSize(),
     ) {
         continueWatching(vm, ContentKind.MOVIE, onPlay)
+        watchLaterRow(shows = false, visible = { fullList(vm, ContentKind.MOVIE) }, onOpenMovie = onOpenMovie, onOpenShow = { _, _ -> })
         items(count = movies.itemCount, key = movies.itemKey { it.id }) { index ->
             val movie: ItemEntity? = movies[index]
             if (movie == null) {
@@ -478,14 +579,26 @@ private fun MovieGrid(
                 val favourite = movie.id in favourites
                 val rating by produceState<Double?>(null, movie.name) { value = vm.rating(movie.name, tv = false) }
                 // A tap opens the film's page; Play now is in the long-press menu for a straight start.
+                val done = movie.id in watched
+                val saved = WatchLaterEntity.movieKey(movie.id) in later
                 Poster(
                     title = movie.name,
                     image = movie.logo,
                     favourite = favourite,
                     rating = rating,
+                    watched = done,
                     onClick = { onOpenMovie(movie.id) },
                     onToggleFavourite = { vm.toggleFavourite(movie.id, favourite) },
                     onPlayNow = { onPlay(movie.id) },
+                    extraMenu =
+                        listOf(
+                            stringResource(if (saved) R.string.watch_later_remove else R.string.watch_later_add) to {
+                                library.toggleLater(LibraryViewModel.movie(movie.id, movie.name, movie.logo))
+                            },
+                            stringResource(if (done) R.string.mark_unwatched else R.string.mark_watched) to {
+                                library.setWatched(listOf(movie.id), !done)
+                            },
+                        ),
                 )
             }
         }
@@ -499,8 +612,10 @@ private fun ShowGrid(
     onPlay: (Long) -> Unit,
 ) {
     val shows = vm.shows.collectAsLazyPagingItems()
+    val library: LibraryViewModel = viewModel()
+    val later by library.laterKeys.collectAsStateWithLifecycle()
     LazyVerticalGrid(
-        columns = GridCells.Adaptive(minSize = 112.dp),
+        columns = GridCells.Adaptive(minSize = ScreenLayout.posterMinDp(windowWidthDp()).dp),
         state = rememberLazyGridState(),
         contentPadding = PaddingValues(12.dp),
         horizontalArrangement = Arrangement.spacedBy(10.dp),
@@ -508,6 +623,7 @@ private fun ShowGrid(
         modifier = Modifier.fillMaxSize(),
     ) {
         continueWatching(vm, ContentKind.SERIES, onPlay)
+        watchLaterRow(shows = true, visible = { fullList(vm, ContentKind.SERIES) }, onOpenMovie = {}, onOpenShow = onOpenShow)
         items(count = shows.itemCount, key = shows.itemKey { it.showKey }) { index ->
             val show: ShowSummary? = shows[index]
             if (show == null) {
@@ -518,8 +634,29 @@ private fun ShowGrid(
                     title = show.showName,
                     image = show.logo,
                     rating = rating,
-                    subtitle = pluralEpisodes(show.episodes),
+                    subtitle =
+                        if (show.newEpisodes > 0) {
+                            stringResource(
+                                R.string.episodes_with_new,
+                                pluralEpisodes(show.episodes),
+                                pluralStringResource(R.plurals.new_episodes, show.newEpisodes, show.newEpisodes),
+                            )
+                        } else {
+                            pluralEpisodes(show.episodes)
+                        },
                     onClick = { onOpenShow(show.showKey, show.showName) },
+                    extraMenu =
+                        listOf(
+                            stringResource(
+                                if (WatchLaterEntity.showKey(show.showKey) in
+                                    later
+                                ) {
+                                    R.string.watch_later_remove
+                                } else {
+                                    R.string.watch_later_add
+                                },
+                            ) to { library.toggleLater(LibraryViewModel.show(show.showKey, show.showName, show.logo)) },
+                        ),
                 )
             }
         }
@@ -537,9 +674,7 @@ private fun LazyGridScope.continueWatching(
 ) {
     item(key = "continue", span = { GridItemSpan(maxLineSpan) }, contentType = "continue") {
         val rows by vm.continueWatching(kind).collectAsStateWithLifecycle()
-        val filter by vm.filter(kind).collectAsStateWithLifecycle()
-        val search by vm.search(kind).collectAsStateWithLifecycle()
-        if (rows.isEmpty() || filter != Filter.All || search.isNotBlank()) return@item
+        if (rows.isEmpty() || !fullList(vm, kind)) return@item
         Column {
             Text(
                 stringResource(R.string.continue_watching),
@@ -552,6 +687,17 @@ private fun LazyGridScope.continueWatching(
             Spacer(Modifier.height(6.dp))
         }
     }
+}
+
+/** True on the whole list: no category, favourites or search, where the rows across the top belong. */
+@Composable
+private fun fullList(
+    vm: BrowseViewModel,
+    kind: ContentKind,
+): Boolean {
+    val filter by vm.filter(kind).collectAsStateWithLifecycle()
+    val search by vm.search(kind).collectAsStateWithLifecycle()
+    return filter == Filter.All && search.isBlank()
 }
 
 @Composable
@@ -610,9 +756,12 @@ fun Poster(
     onToggleFavourite: (() -> Unit)? = null,
     onPlayNow: (() -> Unit)? = null,
     rating: Double? = null,
+    watched: Boolean = false,
+    /** More long-press menu entries: label and action. */
+    extraMenu: List<Pair<String, () -> Unit>> = emptyList(),
 ) {
     var menu by remember { mutableStateOf(false) }
-    val hasMenu = onToggleFavourite != null || onPlayNow != null
+    val hasMenu = onToggleFavourite != null || onPlayNow != null || extraMenu.isNotEmpty()
     Column(
         Modifier
             .clip(RoundedCornerShape(10.dp))
@@ -640,6 +789,18 @@ fun Poster(
                     tint = MaterialTheme.colorScheme.primary,
                 )
             }
+            if (watched) {
+                Icon(
+                    Icons.Filled.CheckCircle,
+                    stringResource(R.string.watched),
+                    Modifier
+                        .align(Alignment.TopStart)
+                        .padding(6.dp)
+                        .size(20.dp)
+                        .background(Color.Black.copy(alpha = 0.55f), CircleShape),
+                    tint = Color.White,
+                )
+            }
             if (hasMenu) {
                 DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
                     onPlayNow?.let { play ->
@@ -657,6 +818,15 @@ fun Poster(
                             onClick = {
                                 menu = false
                                 toggle()
+                            },
+                        )
+                    }
+                    extraMenu.forEach { (label, action) ->
+                        DropdownMenuItem(
+                            text = { Text(label) },
+                            onClick = {
+                                menu = false
+                                action()
                             },
                         )
                     }
@@ -799,19 +969,20 @@ private val RATING_GOLD = Color(0xFFF5C518)
 
 /** Downloads, beside the three sections: opens its own page, with a badge while anything is still to download. */
 @Composable
-private fun RowScope.DownloadsNavItem(
-    onClick: () -> Unit,
-    downloads: DownloadsViewModel = viewModel(),
-) {
-    val pending by downloads.pending.collectAsStateWithLifecycle()
+private fun RowScope.DownloadsNavItem(onClick: () -> Unit) {
     NavigationBarItem(
         selected = false,
         onClick = onClick,
-        icon = {
-            BadgedBox(badge = { if (pending > 0) Badge { Text("$pending") } }) {
-                Icon(Icons.Filled.DownloadForOffline, contentDescription = null)
-            }
-        },
+        icon = { DownloadsIcon() },
         label = { Text(stringResource(R.string.downloads)) },
     )
+}
+
+/** The downloads icon, with how many are still to come. */
+@Composable
+internal fun DownloadsIcon(downloads: DownloadsViewModel = viewModel()) {
+    val pending by downloads.pending.collectAsStateWithLifecycle()
+    BadgedBox(badge = { if (pending > 0) Badge { Text("$pending") } }) {
+        Icon(Icons.Filled.DownloadForOffline, contentDescription = null)
+    }
 }

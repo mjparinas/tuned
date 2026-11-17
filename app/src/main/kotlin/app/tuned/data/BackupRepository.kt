@@ -3,7 +3,9 @@ package app.tuned.data
 import app.tuned.core.BackupCrypto
 import app.tuned.data.db.FavouriteEntity
 import app.tuned.data.db.TunedDatabase
+import app.tuned.data.db.WatchLaterEntity
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
@@ -33,6 +35,17 @@ class BackupRepository(
         val login: Login? = null,
         val settings: Map<String, JsonElement> = emptyMap(),
         val favourites: List<Favourite> = emptyList(),
+        val watchLater: List<Later> = emptyList(),
+    )
+
+    @Serializable
+    private data class Later(
+        val key: String,
+        val itemId: Long? = null,
+        val showKey: String? = null,
+        val title: String,
+        val image: String? = null,
+        val addedAt: Long,
     )
 
     @Serializable
@@ -63,6 +76,12 @@ class BackupRepository(
                 login = credentials.load()?.let { Login(it.server, it.username, it.password, it.playlistUrl, it.guideUrl) },
                 settings = settings.snapshot().mapValues { (_, v) -> encode(v) },
                 favourites = db.library().allFavourites().map { Favourite(it.itemId, it.addedAt, it.position) },
+                watchLater =
+                    db
+                        .watchLater()
+                        .all()
+                        .first()
+                        .map { Later(it.key, it.itemId, it.showKey, it.title, it.image, it.addedAt) },
             )
         BackupCrypto.seal(json.encodeToString(Contents.serializer(), contents).toByteArray(), passphrase)
     }
@@ -78,6 +97,7 @@ class BackupRepository(
                 .getOrElse { throw BackupCrypto.NotABackup() }
         settings.restore(contents.settings.mapNotNull { (k, v) -> decode(v)?.let { k to it } }.toMap())
         contents.favourites.forEach { db.library().addFavourite(FavouriteEntity(it.itemId, it.addedAt, it.position)) }
+        contents.watchLater.forEach { db.watchLater().add(WatchLaterEntity(it.key, it.itemId, it.showKey, it.title, it.image, it.addedAt)) }
         contents.login?.let {
             val login = Credentials(it.server, it.username, it.password, it.playlistUrl, it.guideUrl)
             credentials.save(login)

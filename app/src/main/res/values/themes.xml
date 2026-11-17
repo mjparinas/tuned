@@ -12,8 +12,14 @@
         <item name="postSplashScreenTheme">@style/Theme.Tuned</item>
     </style>
 
-    <style name="Theme.Tuned.Player" parent="android:Theme.Material.NoActionBar.Fullscreen">
+    <!--
+        AppCompat, not the platform theme: tapping the cast button opens the media router's device picker, a dialog
+        built from the activity's own theme, and it crashes on a theme without AppCompat's colours.
+    -->
+    <style name="Theme.Tuned.Player" parent="Theme.AppCompat.NoActionBar">
         <item name="android:windowBackground">@android:color/black</item>
+        <item name="android:windowFullscreen">true</item>
+        <item name="android:windowContentOverlay">@null</item>
     </style>
 
     <!-- MediaRouteButton (the cast button) needs an AppCompat theme around it; the player itself doesn't use AppCompat. -->

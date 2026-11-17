@@ -5,7 +5,10 @@ import android.content.Context
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.ProcessLifecycleOwner
+import androidx.work.WorkInfo
+import androidx.work.WorkManager
 import app.tuned.data.BackupRepository
+import app.tuned.data.ChannelScanner
 import app.tuned.data.CredentialStore
 import app.tuned.data.Credentials
 import app.tuned.data.MetadataRepository
@@ -15,7 +18,9 @@ import app.tuned.data.SyncRepository
 import app.tuned.data.TuneRepository
 import app.tuned.data.db.TunedDatabase
 import app.tuned.updates.GitHubUpdates
+import app.tuned.work.OfflineWorker
 import app.tuned.work.Reminders
+import app.tuned.work.ScanWorker
 import app.tuned.work.SyncScheduler
 import coil3.ImageLoader
 import coil3.PlatformContext
@@ -29,10 +34,15 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import okhttp3.OkHttpClient
 import java.util.concurrent.TimeUnit
@@ -62,6 +72,19 @@ class AppContainer(
     val offline by lazy { Offline(context, db, settings) }
     val metadata by lazy { MetadataRepository(http, settings, db.metadata()) }
 
+    /** True while the player is open; downloads and channel scans hold back so only one stream is ever open. */
+    val playerOpen = MutableStateFlow(false)
+    private val streamBusy: StateFlow<Boolean> by lazy {
+        val downloading =
+            WorkManager
+                .getInstance(context)
+                .getWorkInfosForUniqueWorkFlow(OfflineWorker.NAME)
+                .map { infos -> infos.any { it.state == WorkInfo.State.RUNNING } }
+        combine(playerOpen, downloading) { open, down -> open || down }.stateIn(appScope, SharingStarted.Eagerly, false)
+    }
+    val channelScan by lazy { ChannelScanner(context, db, http, credentials, settings, streamBusy) }
+    val scanControl by lazy { ScanWorker.Control(context) }
+
     /**
      * Makes [login] the one in use and remembers it among the saved playlists. A different playlist's channels and
      * guide are cleared first, so the lists never mix two providers, then everything is downloaded afresh.
@@ -75,6 +98,7 @@ class AppContainer(
             db.items().deleteAll()
             db.programmes().deleteAll()
             db.catchUp().deleteAll()
+            db.channelScan().deleteAll()
             settings.update { it.copy(lastPlaylistSync = 0, lastGuideSync = 0) }
         }
         settings.update { it.copy(lastSyncError = "") }
@@ -86,6 +110,7 @@ class AppContainer(
     /** Forgets the login, the cached playlist and guide, and stops background refreshes. */
     suspend fun signOut() {
         scheduler.cancelAll()
+        scanControl.stop()
         reminders.cancelAll()
         credentials.clear()
         db.items().deleteAll()

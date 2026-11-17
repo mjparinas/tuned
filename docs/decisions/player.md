@@ -14,6 +14,10 @@
 
 **Captions** (Melvin, 2026-11-17: "customizing CC controls in the settings"). Settings › Captions sets on or off, language, size, font, bold, text colour, edge style and colour, background colour and opacity, distance from the bottom, and whether to ignore the stream's own styling. A live preview shows the result. The CC button changes captions for the current video only.
 
+**Subtitle timing** (Melvin, 2026-11-17). A toolbar button moves the captions earlier or later in steps of 0.1 s and 1 s, up to 30 s either way, for files whose captions don't match the voices. Media3 reads captions as the stream loads, so a `SubtitleParser.Factory` wrapper adds the offset to every cue, and changing it reloads the stream at the same spot (the old connection closes first, so there is still only one). The offset lasts until the player closes, because a bad match belongs to one file. It works on captions Media3 parses (SRT, WebVTT, SSA, TTML, including those inside MKV, MP4 and HLS); CEA-608 captions carried inside a live TS stream aren't moved. It is unavailable while casting, where the TV draws the captions.
+
+**Skip intro** (Melvin, 2026-11-17). IPTV servers don't say where an episode's intro is, so a "Skip intro" button shows at the bottom right during the first part of each episode and jumps ahead by Settings › Player › Skip intro button (85 s by default; Off hides it). Tuned also learns each show: a skip forward by hand near the start (from the first 4 minutes, by 10 s or more, landing within the first 6) is saved as that show's intro, and taps of skip-forward a few seconds apart add up to one. From then on the button shows from 15 s before that intro starts until it ends, and jumps to its end. The learned intros live in their own small DataStore (`IntroStore`), outside settings and backups. Only episodes get the button, and not while casting.
+
 **Audio language.** Settings › Playback › Preferred audio language; the player picks a matching track when the stream has one, and the settings menu switches tracks while watching.
 
 **Start speed.** TS streams use the extractor flags that allow non-IDR key frames and detect access units, so live channels start sooner. Buffering has three modes (Fast start, Balanced, Smooth). OkHttp is the data source, shared with the rest of the app, with an optional custom user agent.
@@ -37,6 +41,8 @@ Melvin asked for auto-reconnect and player gestures. Both are on by default and 
   - a single tap still shows the controls.
 
   Brightness goes back to the system's when the player closes.
+
+  While brightness or volume changes, a thin bar with its icon shows at that edge, brightness on the left and volume on the right, and fades out shortly after the finger lifts (`LevelBars`; Melvin, 2026-11-17: "subtle bars on the left and right side with a brightness and sound icon" instead of text in the middle). The volume icon turns to muted at zero. The bars read out the percentage to screen readers.
 
 - **Reconnect.** A dropped live stream, or a network error on a film or episode, is retried up to five times with a growing pause, and "Reconnecting… (2 of 5)" shows meanwhile. The count resets once it plays again. When the phone's connection comes back (`ConnectivityManager` default network), a stopped stream starts again by itself, and `prepare()` keeps a film's position. It still uses one connection at a time, never a second stream.
 

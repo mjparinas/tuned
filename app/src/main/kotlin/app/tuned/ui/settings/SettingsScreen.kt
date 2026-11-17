@@ -149,6 +149,8 @@ fun SettingsScreen(
     onBack: () -> Unit,
     onOpenCaptions: () -> Unit,
     onOpenRegions: () -> Unit,
+    onOpenHiddenGroups: () -> Unit,
+    onOpenChannelHealth: () -> Unit,
     onOpenFavouriteOrder: () -> Unit,
     onOpenDownloads: () -> Unit,
     onSignedOut: () -> Unit,
@@ -180,6 +182,11 @@ fun SettingsScreen(
                 lastSync(settings),
                 onClick = vm::refreshNow,
             )
+            SwitchRow(
+                stringResource(R.string.settings_pull_to_refresh),
+                settings.pullToRefresh,
+                stringResource(R.string.settings_pull_to_refresh_summary),
+            ) { on -> vm.update { it.copy(pullToRefresh = on) } }
             BackupRows()
             SettingRow(stringResource(R.string.settings_sign_out), stringResource(R.string.settings_sign_out_summary), onClick = {
                 confirmSignOut =
@@ -195,6 +202,22 @@ fun SettingsScreen(
                     pluralStringResource(R.plurals.countries_hidden, settings.hiddenRegions.size, settings.hiddenRegions.size)
                 },
                 onClick = onOpenRegions,
+                trailing = { Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null) },
+            )
+            SettingRow(
+                stringResource(R.string.settings_hidden_groups),
+                if (settings.hiddenGroups.isEmpty()) {
+                    stringResource(R.string.settings_hidden_groups_none)
+                } else {
+                    pluralStringResource(R.plurals.groups_hidden, settings.hiddenGroups.size, settings.hiddenGroups.size)
+                },
+                onClick = onOpenHiddenGroups,
+                trailing = { Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null) },
+            )
+            SettingRow(
+                stringResource(R.string.health_title),
+                stringResource(R.string.settings_channel_health_summary),
+                onClick = onOpenChannelHealth,
                 trailing = { Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null) },
             )
             SettingRow(
@@ -339,6 +362,18 @@ fun SettingsScreen(
                 settings.seekForwardMs,
                 label = { ms -> pluralStringResource(R.plurals.seconds, (ms / 1000).toInt(), (ms / 1000).toInt()) },
             ) { ms -> vm.update { it.copy(seekForwardMs = ms) } }
+            ChoiceRow(
+                stringResource(R.string.settings_skip_intro),
+                listOf(0L, 30_000L, 60_000L, 85_000L, 90_000L, 120_000L),
+                settings.skipIntroMs,
+                label = { ms ->
+                    if (ms == 0L) {
+                        stringResource(R.string.settings_skip_intro_off)
+                    } else {
+                        pluralStringResource(R.plurals.seconds, (ms / 1000).toInt(), (ms / 1000).toInt())
+                    }
+                },
+            ) { ms -> vm.update { it.copy(skipIntroMs = ms) } }
             SettingRow(stringResource(R.string.settings_clear_history), onClick = vm::clearHistory)
 
             SectionHeader(stringResource(R.string.settings_tune))
@@ -424,6 +459,7 @@ fun SettingsScreen(
                 settings.checkUpdates,
                 stringResource(R.string.settings_check_updates_summary),
             ) { on -> vm.update { it.copy(checkUpdates = on) } }
+            UpdateCheckRow()
             HorizontalDivider(Modifier.padding(top = 16.dp))
             Text(
                 stringResource(R.string.settings_version, BuildConfig.VERSION_NAME, BuildConfig.VERSION_CODE),

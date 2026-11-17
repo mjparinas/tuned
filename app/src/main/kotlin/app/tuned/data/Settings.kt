@@ -11,7 +11,9 @@ import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
+import app.tuned.core.ChannelScan
 import app.tuned.core.PinHash
+import app.tuned.core.Placeholders
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -73,6 +75,8 @@ data class AppSettings(
     val startTab: StartTab = StartTab.LIVE,
     val lastTab: Int = 0,
     val hiddenRegions: Set<String> = emptySet(),
+    /** Hidden groups, as [app.tuned.core.HiddenGroups] keys. */
+    val hiddenGroups: Set<String> = emptySet(),
     val showAdult: Boolean = false,
     val playlistRefreshHours: Int = 12,
     val guideRefreshHours: Int = 6,
@@ -84,6 +88,12 @@ data class AppSettings(
     val audioLanguage: String = "",
     val resumePlayback: Boolean = true,
     val autoPlayNext: Boolean = true,
+    /** Pull down on a list to refresh the playlist (Melvin, 2026-11-17: off, so a scroll never starts a download). */
+    val pullToRefresh: Boolean = false,
+    /** Leave out live channels that failed in two channel scans (Settings › Channel health). */
+    val hideDeadChannels: Boolean = true,
+    /** Leave out empty event slots ("NO EVENT STREAMING"); see [Placeholders]. Melvin, 2026-11-17: hide them. */
+    val hidePlaceholders: Boolean = true,
     val pictureInPicture: Boolean = true,
     val playerGestures: Boolean = true,
     val autoReconnect: Boolean = true,
@@ -97,6 +107,8 @@ data class AppSettings(
     val tuneMinHeight: Int = 0,
     val seekBackMs: Long = 10_000,
     val seekForwardMs: Long = 30_000,
+    /** How far "Skip intro" jumps on a show it hasn't learned yet; 0 hides the button. */
+    val skipIntroMs: Long = 85_000,
     val userAgent: String = "",
     /** The person's own TMDB key (v3 key or v4 read token) for ratings and trailers; blank turns them off. */
     val tmdbKey: String = "",
@@ -110,6 +122,12 @@ data class AppSettings(
     /** The Xtream server's time zone, read at each refresh; catch-up links are in its local time. */
     val serverTimezone: String = "",
 )
+
+/** Hidden countries, hidden groups and the channel filters together: the one list every query filters by. */
+fun AppSettings.hiddenKeys(): List<String> {
+    val filters = listOfNotNull(ChannelScan.HIDDEN_KEY.takeIf { hideDeadChannels }, Placeholders.HIDDEN_KEY.takeIf { hidePlaceholders })
+    return (hiddenRegions + hiddenGroups + filters).sorted()
+}
 
 private val Context.dataStore by preferencesDataStore(name = "settings")
 
@@ -192,6 +210,7 @@ class SettingsRepository(
             startTab = enumOr(p[K.startTab], d.startTab),
             lastTab = p[K.lastTab] ?: d.lastTab,
             hiddenRegions = p[K.hiddenRegions] ?: d.hiddenRegions,
+            hiddenGroups = p[K.hiddenGroups] ?: d.hiddenGroups,
             playlistRefreshHours = p[K.playlistRefreshHours] ?: d.playlistRefreshHours,
             guideRefreshHours = p[K.guideRefreshHours] ?: d.guideRefreshHours,
             reminderLeadMinutes = p[K.reminderLeadMinutes] ?: d.reminderLeadMinutes,
@@ -201,6 +220,9 @@ class SettingsRepository(
             audioLanguage = p[K.audioLanguage] ?: d.audioLanguage,
             resumePlayback = p[K.resumePlayback] ?: d.resumePlayback,
             autoPlayNext = p[K.autoPlayNext] ?: d.autoPlayNext,
+            pullToRefresh = p[K.pullToRefresh] ?: d.pullToRefresh,
+            hideDeadChannels = p[K.hideDeadChannels] ?: d.hideDeadChannels,
+            hidePlaceholders = p[K.hidePlaceholders] ?: d.hidePlaceholders,
             pictureInPicture = p[K.pictureInPicture] ?: d.pictureInPicture,
             playerGestures = p[K.playerGestures] ?: d.playerGestures,
             autoReconnect = p[K.autoReconnect] ?: d.autoReconnect,
@@ -211,6 +233,7 @@ class SettingsRepository(
             tuneMinHeight = p[K.tuneMinHeight] ?: d.tuneMinHeight,
             seekBackMs = p[K.seekBackMs] ?: d.seekBackMs,
             seekForwardMs = p[K.seekForwardMs] ?: d.seekForwardMs,
+            skipIntroMs = p[K.skipIntroMs] ?: d.skipIntroMs,
             userAgent = p[K.userAgent] ?: d.userAgent,
             tmdbKey = p[K.tmdbKey] ?: d.tmdbKey,
             showGuideInList = p[K.showGuideInList] ?: d.showGuideInList,
@@ -249,6 +272,7 @@ class SettingsRepository(
         p[K.startTab] = s.startTab.name
         p[K.lastTab] = s.lastTab
         p[K.hiddenRegions] = s.hiddenRegions
+        p[K.hiddenGroups] = s.hiddenGroups
         p[K.playlistRefreshHours] = s.playlistRefreshHours
         p[K.guideRefreshHours] = s.guideRefreshHours
         p[K.reminderLeadMinutes] = s.reminderLeadMinutes
@@ -258,6 +282,9 @@ class SettingsRepository(
         p[K.audioLanguage] = s.audioLanguage
         p[K.resumePlayback] = s.resumePlayback
         p[K.autoPlayNext] = s.autoPlayNext
+        p[K.pullToRefresh] = s.pullToRefresh
+        p[K.hideDeadChannels] = s.hideDeadChannels
+        p[K.hidePlaceholders] = s.hidePlaceholders
         p[K.pictureInPicture] = s.pictureInPicture
         p[K.playerGestures] = s.playerGestures
         p[K.autoReconnect] = s.autoReconnect
@@ -268,6 +295,7 @@ class SettingsRepository(
         p[K.tuneMinHeight] = s.tuneMinHeight
         p[K.seekBackMs] = s.seekBackMs
         p[K.seekForwardMs] = s.seekForwardMs
+        p[K.skipIntroMs] = s.skipIntroMs
         p[K.userAgent] = s.userAgent
         p[K.tmdbKey] = s.tmdbKey
         p[K.showGuideInList] = s.showGuideInList
@@ -305,6 +333,7 @@ class SettingsRepository(
         val startTab = stringPreferencesKey("start_tab")
         val lastTab = intPreferencesKey("last_tab")
         val hiddenRegions = stringSetPreferencesKey("hidden_regions")
+        val hiddenGroups = stringSetPreferencesKey("hidden_groups")
         val adultPin = stringPreferencesKey("adult_pin")
         val playlistRefreshHours = intPreferencesKey("playlist_refresh_hours")
         val guideRefreshHours = intPreferencesKey("guide_refresh_hours")
@@ -315,6 +344,9 @@ class SettingsRepository(
         val audioLanguage = stringPreferencesKey("audio_language")
         val resumePlayback = booleanPreferencesKey("resume_playback")
         val autoPlayNext = booleanPreferencesKey("auto_play_next")
+        val pullToRefresh = booleanPreferencesKey("pull_to_refresh")
+        val hideDeadChannels = booleanPreferencesKey("hide_dead_channels")
+        val hidePlaceholders = booleanPreferencesKey("hide_placeholders")
         val pictureInPicture = booleanPreferencesKey("picture_in_picture")
         val playerGestures = booleanPreferencesKey("player_gestures")
         val autoReconnect = booleanPreferencesKey("auto_reconnect")
@@ -325,6 +357,7 @@ class SettingsRepository(
         val tuneMinHeight = intPreferencesKey("tune_min_height")
         val seekBackMs = longPreferencesKey("seek_back_ms")
         val seekForwardMs = longPreferencesKey("seek_forward_ms")
+        val skipIntroMs = longPreferencesKey("skip_intro_ms")
         val userAgent = stringPreferencesKey("user_agent")
         val tmdbKey = stringPreferencesKey("tmdb_key")
         val showGuideInList = booleanPreferencesKey("show_guide_in_list")

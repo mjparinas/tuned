@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_hidden_groups">Hidden groups</string>
+    <string name="settings_hidden_groups_none">No groups hidden</string>
+    <plurals name="groups_hidden">
+        <item quantity="one">%1$d group hidden</item>
+        <item quantity="other">%1$d groups hidden</item>
+    </plurals>
+    <string name="hidden_groups_help">Turn a group off to hide it from its section, search and channel flipping. To hide one from the home screen, pick its chip and tap the eye.</string>
+    <string name="group_hide">Hide this group</string>
+    <string name="group_hidden">%1$s hidden. Bring it back in Settings › Hidden groups.</string>
+</resources>

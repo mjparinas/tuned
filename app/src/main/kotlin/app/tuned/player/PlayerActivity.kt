@@ -54,6 +54,7 @@ import app.tuned.core.ContentKind
 import app.tuned.data.AppSettings
 import app.tuned.data.db.HistoryEntity
 import app.tuned.data.db.ItemEntity
+import app.tuned.data.hiddenKeys
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
@@ -78,15 +79,32 @@ class PlayerActivity : FragmentActivity() {
     private var progressJob: Job? = null
     private var liveRetries = 0
     private var gestures: PlayerGestures? = null
+    private val skipIntro by lazy {
+        SkipIntro(
+            activity = this,
+            player = { player?.takeIf { cast?.casting != true } },
+            current = {
+                player
+                    ?.currentMediaItem
+                    ?.mediaId
+                    ?.toLongOrNull()
+                    ?.let { id -> queue.firstOrNull { it.id == id } }
+            },
+            lengthMs = { settings.skipIntroMs },
+        )
+    }
+    private val levelBars by lazy { LevelBars(this) }
     private lateinit var tools: PlayerTools
     private var cast: CastControl? = null
+    private val subtitleTiming = SubtitleTiming()
     private var reconnect: ConnectivityManager.NetworkCallback? = null
     private var autoTune: AutoTune? = null
     private lateinit var statusView: TextView
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        // One connection to the provider at a time: downloads wait while anything plays.
+        // One connection to the provider at a time: downloads and channel scans wait while anything plays.
+        container.playerOpen.value = true
         container.offline.pause()
         buildViews()
         hideSystemBars()
@@ -189,6 +207,8 @@ class PlayerActivity : FragmentActivity() {
             FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT, Gravity.CENTER),
         )
         tools.attach(root)
+        skipIntro.attach(root)
+        levelBars.attach(root)
         // The title shows and hides with the controls, so a tap reveals everything and the video is otherwise bare.
         playerView.setControllerVisibilityListener(
             PlayerView.ControllerVisibilityListener { visibility ->
@@ -225,6 +245,8 @@ class PlayerActivity : FragmentActivity() {
                         touch = { gestures },
                         say = ::flash,
                         onFitChanged = { fit -> lifecycleScope.launch { container.settings.update { it.copy(videoFit = fit) } } },
+                        subtitles = subtitleTiming,
+                        casting = { cast?.casting == true },
                     ),
             )
         overlay.addView(tools.toolbar)
@@ -253,8 +275,7 @@ class PlayerActivity : FragmentActivity() {
                     }
                 },
                 onChannel = { next -> player?.let { p -> if (next) p.seekToNextMediaItem() else p.seekToPreviousMediaItem() } },
-                say = { text -> showStatus(text) },
-                quiet = { flash(null) },
+                bars = levelBars,
             )
         gestures = g
         playerView.setOnTouchListener(g)
@@ -304,7 +325,7 @@ class PlayerActivity : FragmentActivity() {
     private suspend fun siblings(item: ItemEntity): List<ItemEntity> {
         val items = container.db.items()
         return when (ContentKind.fromCode(item.kind)) {
-            ContentKind.LIVE -> items.channelsInGroup(item.groupName, settings.hiddenRegions.toList(), settings.showAdult)
+            ContentKind.LIVE -> items.channelsInGroup(item.groupName, settings.hiddenKeys(), settings.showAdult)
             ContentKind.SERIES -> item.showKey?.let { items.episodesNow(it) }.orEmpty()
             ContentKind.MOVIE -> emptyList()
         }.ifEmpty { listOf(item) }
@@ -406,7 +427,7 @@ class PlayerActivity : FragmentActivity() {
             }
         return ExoPlayer
             .Builder(this)
-            .setMediaSourceFactory(DefaultMediaSourceFactory(http, extractors))
+            .setMediaSourceFactory(DefaultMediaSourceFactory(http, extractors).setSubtitleParserFactory(subtitleTiming.parsers))
             .setLoadControl(load)
             .setTrackSelector(selector)
             .setSeekBackIncrementMs(settings.seekBackMs)
@@ -420,7 +441,10 @@ class PlayerActivity : FragmentActivity() {
                 true,
             ).setHandleAudioBecomingNoisy(true)
             .build()
-            .apply { addListener(listener(live)) }
+            .apply {
+                addListener(listener(live))
+                addListener(skipIntro.listener)
+            }
     }
 
     private fun listener(live: Boolean) = object : Player.Listener {
@@ -604,6 +628,12 @@ class PlayerActivity : FragmentActivity() {
         }
     }
 
+    // The player handles rotation itself (configChanges in the manifest), so the guide is placed again here.
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+        tools.onScreenChanged()
+    }
+
     override fun onPictureInPictureModeChanged(
         isInPictureInPictureMode: Boolean,
         newConfig: Configuration,
@@ -653,6 +683,7 @@ class PlayerActivity : FragmentActivity() {
         reconnect?.let { cb -> runCatching { getSystemService(ConnectivityManager::class.java)?.unregisterNetworkCallback(cb) } }
         player?.release()
         player = null
+        container.playerOpen.value = false
         super.onDestroy()
     }
 

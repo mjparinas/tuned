@@ -58,6 +58,8 @@
 
     <string name="settings_account">Account</string>
     <string name="settings_refresh_now">Refresh now</string>
+    <string name="settings_pull_to_refresh">Pull down to refresh</string>
+    <string name="settings_pull_to_refresh_summary">Pulling down on a list downloads the playlist and guide again</string>
     <string name="settings_last_synced">Updated %1$s</string>
     <string name="settings_never_synced">Not updated yet</string>
     <string name="settings_last_error">Last refresh failed: %1$s</string>
@@ -66,9 +68,9 @@
     <string name="settings_sign_out_confirm">This removes your login and the downloaded channels and guide from this device. Favourites stay.</string>
 
     <string name="settings_content">Content</string>
-    <string name="settings_countries">Countries</string>
+    <string name="settings_countries">Countries and languages</string>
     <string name="settings_countries_none_hidden">Showing every country</string>
-    <string name="regions_help">Turn a country off to hide its channels, movies and shows everywhere, search included.</string>
+    <string name="regions_help">Turn a language or country off to hide its channels, movies and shows everywhere, search included. A language covers the countries that speak it, so English covers US, UK, Canada and the rest.</string>
     <string name="regions_show_all">Show all</string>
     <string name="regions_hide_all">Hide all</string>
     <string name="settings_show_adult">Show adult categories</string>
@@ -210,8 +212,8 @@
     <string name="update_ready">Tuned %1$s is ready to install</string>
     <string name="update_install">Install</string>
     <string name="update_failed">The update didn’t install. Tuned will try again next time.</string>
-    <string name="settings_check_updates">Check for updates</string>
-    <string name="settings_check_updates_summary">Download new versions from GitHub when Tuned opens</string>
+    <string name="settings_check_updates">Look for updates automatically</string>
+    <string name="settings_check_updates_summary">Check GitHub for new versions when Tuned opens (at most hourly) and during background refreshes</string>
     <string name="settings_gestures">Gestures</string>
     <string name="settings_gestures_summary">Drag left for brightness, right for volume. Double-tap the sides to skip. Swipe to change channel.</string>
     <string name="settings_reconnect">Reconnect automatically</string>

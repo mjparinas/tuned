@@ -21,6 +21,12 @@ interface ItemDao {
     @Query("DELETE FROM items")
     suspend fun deleteAll()
 
+    @Query("SELECT id FROM items")
+    suspend fun allIds(): List<Long>
+
+    @Query("DELETE FROM items WHERE id IN (:ids)")
+    suspend fun deleteIds(ids: List<Long>)
+
     @Query("SELECT COUNT(*) FROM items")
     suspend fun count(): Int
 
@@ -53,7 +59,10 @@ interface ItemDao {
         LEFT JOIN favourites f ON f.itemId = i.id
         LEFT JOIN history h ON h.itemId = i.id
         WHERE i.kind = 0
-            AND (i.region IS NULL OR i.region NOT IN (:hidden))
+            AND (i.region IS NULL OR i.region NOT IN (:hidden)) AND ('g:' || i.kind || ':' || i.groupName) NOT IN (:hidden)
+            AND NOT ('scan:dead' IN (:hidden) AND i.id IN (SELECT itemId FROM channel_scan WHERE hidden = 1))
+            AND NOT ('placeholder' IN (:hidden) AND i.kind = 0
+                AND ((' ' || i.searchName) GLOB '* no event*' OR (' ' || i.searchName) GLOB '* no live event*'))
             AND (:adult OR i.adult = 0)
             AND (:group IS NULL OR i.groupName = :group)
             AND (:favouritesOnly = 0 OR f.itemId IS NOT NULL)
@@ -83,7 +92,10 @@ interface ItemDao {
         FROM history h
         JOIN items i ON i.id = h.itemId
         WHERE i.kind = :kind
-            AND (i.region IS NULL OR i.region NOT IN (:hidden))
+            AND (i.region IS NULL OR i.region NOT IN (:hidden)) AND ('g:' || i.kind || ':' || i.groupName) NOT IN (:hidden)
+            AND NOT ('scan:dead' IN (:hidden) AND i.id IN (SELECT itemId FROM channel_scan WHERE hidden = 1))
+            AND NOT ('placeholder' IN (:hidden) AND i.kind = 0
+                AND ((' ' || i.searchName) GLOB '* no event*' OR (' ' || i.searchName) GLOB '* no live event*'))
             AND (:adult OR i.adult = 0)
             AND h.durationMs > 0 AND h.positionMs > 30000 AND h.positionMs < h.durationMs * 95 / 100
         ORDER BY h.watchedAt DESC
@@ -100,7 +112,10 @@ interface ItemDao {
         """
         SELECT * FROM items i
         WHERE i.kind = :kind
-            AND (i.region IS NULL OR i.region NOT IN (:hidden))
+            AND (i.region IS NULL OR i.region NOT IN (:hidden)) AND ('g:' || i.kind || ':' || i.groupName) NOT IN (:hidden)
+            AND NOT ('scan:dead' IN (:hidden) AND i.id IN (SELECT itemId FROM channel_scan WHERE hidden = 1))
+            AND NOT ('placeholder' IN (:hidden) AND i.kind = 0
+                AND ((' ' || i.searchName) GLOB '* no event*' OR (' ' || i.searchName) GLOB '* no live event*'))
             AND (:adult OR i.adult = 0)
             AND (:group IS NULL OR i.groupName = :group)
             AND (:favouritesOnly = 0 OR i.id IN (SELECT itemId FROM favourites))
@@ -119,10 +134,15 @@ interface ItemDao {
 
     @Query(
         """
-        SELECT showKey, MIN(showName) AS showName, MAX(logo) AS logo, MIN(groupName) AS groupName, COUNT(*) AS episodes
+        SELECT showKey, MIN(showName) AS showName, MAX(logo) AS logo, MIN(groupName) AS groupName, COUNT(*) AS episodes,
+            SUM(CASE WHEN i.showKey IN (SELECT showKey FROM seen_episodes) AND i.id NOT IN (SELECT itemId FROM seen_episodes)
+                THEN 1 ELSE 0 END) AS newEpisodes
         FROM items i
         WHERE i.kind = 2 AND i.showKey IS NOT NULL
-            AND (i.region IS NULL OR i.region NOT IN (:hidden))
+            AND (i.region IS NULL OR i.region NOT IN (:hidden)) AND ('g:' || i.kind || ':' || i.groupName) NOT IN (:hidden)
+            AND NOT ('scan:dead' IN (:hidden) AND i.id IN (SELECT itemId FROM channel_scan WHERE hidden = 1))
+            AND NOT ('placeholder' IN (:hidden) AND i.kind = 0
+                AND ((' ' || i.searchName) GLOB '* no event*' OR (' ' || i.searchName) GLOB '* no live event*'))
             AND (:adult OR i.adult = 0)
             AND (:group IS NULL OR i.groupName = :group)
             AND (:favouritesOnly = 0 OR i.id IN (SELECT itemId FROM favourites))
@@ -149,7 +169,10 @@ interface ItemDao {
         LEFT JOIN programmes p ON p.channelId = i.tvgId AND p.start <= :now AND p.stop > :now
         LEFT JOIN favourites f ON f.itemId = i.id
         WHERE i.kind = 0
-            AND (i.region IS NULL OR i.region NOT IN (:hidden))
+            AND (i.region IS NULL OR i.region NOT IN (:hidden)) AND ('g:' || i.kind || ':' || i.groupName) NOT IN (:hidden)
+            AND NOT ('scan:dead' IN (:hidden) AND i.id IN (SELECT itemId FROM channel_scan WHERE hidden = 1))
+            AND NOT ('placeholder' IN (:hidden) AND i.kind = 0
+                AND ((' ' || i.searchName) GLOB '* no event*' OR (' ' || i.searchName) GLOB '* no live event*'))
             AND (:adult OR i.adult = 0)
             AND (i.searchName LIKE '%' || :query || '%' OR i.tvgId IN (
                 SELECT channelId FROM programmes WHERE title LIKE '%' || :query || '%' AND stop > :now AND start < :now + 3600000
@@ -171,7 +194,10 @@ interface ItemDao {
         """
         SELECT * FROM items i
         WHERE i.kind = 1 AND i.searchName LIKE '%' || :query || '%'
-            AND (i.region IS NULL OR i.region NOT IN (:hidden))
+            AND (i.region IS NULL OR i.region NOT IN (:hidden)) AND ('g:' || i.kind || ':' || i.groupName) NOT IN (:hidden)
+            AND NOT ('scan:dead' IN (:hidden) AND i.id IN (SELECT itemId FROM channel_scan WHERE hidden = 1))
+            AND NOT ('placeholder' IN (:hidden) AND i.kind = 0
+                AND ((' ' || i.searchName) GLOB '* no event*' OR (' ' || i.searchName) GLOB '* no live event*'))
             AND (:adult OR i.adult = 0)
         ORDER BY i.sortOrder
         LIMIT :limit
@@ -186,10 +212,15 @@ interface ItemDao {
 
     @Query(
         """
-        SELECT showKey, MIN(showName) AS showName, MAX(logo) AS logo, MIN(groupName) AS groupName, COUNT(*) AS episodes
+        SELECT showKey, MIN(showName) AS showName, MAX(logo) AS logo, MIN(groupName) AS groupName, COUNT(*) AS episodes,
+            SUM(CASE WHEN i.showKey IN (SELECT showKey FROM seen_episodes) AND i.id NOT IN (SELECT itemId FROM seen_episodes)
+                THEN 1 ELSE 0 END) AS newEpisodes
         FROM items i
         WHERE i.kind = 2 AND i.showKey IS NOT NULL AND i.searchName LIKE '%' || :query || '%'
-            AND (i.region IS NULL OR i.region NOT IN (:hidden))
+            AND (i.region IS NULL OR i.region NOT IN (:hidden)) AND ('g:' || i.kind || ':' || i.groupName) NOT IN (:hidden)
+            AND NOT ('scan:dead' IN (:hidden) AND i.id IN (SELECT itemId FROM channel_scan WHERE hidden = 1))
+            AND NOT ('placeholder' IN (:hidden) AND i.kind = 0
+                AND ((' ' || i.searchName) GLOB '* no event*' OR (' ' || i.searchName) GLOB '* no live event*'))
             AND (:adult OR i.adult = 0)
         GROUP BY showKey
         ORDER BY MIN(sortOrder)
@@ -212,7 +243,10 @@ interface ItemDao {
     @Query(
         """
         SELECT * FROM items
-        WHERE kind = 0 AND groupName = :group AND (region IS NULL OR region NOT IN (:hidden)) AND (:adult OR adult = 0)
+        WHERE kind = 0 AND groupName = :group AND (region IS NULL OR region NOT IN (:hidden)) AND ('g:' || kind || ':' || groupName) NOT IN (:hidden)
+            AND NOT ('scan:dead' IN (:hidden) AND id IN (SELECT itemId FROM channel_scan WHERE hidden = 1)) AND (:adult OR adult = 0)
+            AND NOT ('placeholder' IN (:hidden) AND kind = 0
+                AND ((' ' || searchName) GLOB '* no event*' OR (' ' || searchName) GLOB '* no live event*'))
         ORDER BY sortOrder
         """,
     )
@@ -225,7 +259,10 @@ interface ItemDao {
     @Query(
         """
         SELECT groupName, COUNT(*) AS count FROM items
-        WHERE kind = :kind AND (region IS NULL OR region NOT IN (:hidden)) AND (:adult OR adult = 0)
+        WHERE kind = :kind AND (region IS NULL OR region NOT IN (:hidden)) AND ('g:' || kind || ':' || groupName) NOT IN (:hidden)
+            AND NOT ('scan:dead' IN (:hidden) AND id IN (SELECT itemId FROM channel_scan WHERE hidden = 1)) AND (:adult OR adult = 0)
+            AND NOT ('placeholder' IN (:hidden) AND kind = 0
+                AND ((' ' || searchName) GLOB '* no event*' OR (' ' || searchName) GLOB '* no live event*'))
         GROUP BY groupName ORDER BY MIN(sortOrder)
         """,
     )
@@ -250,7 +287,10 @@ interface ItemDao {
         FROM items i
         LEFT JOIN channel_health h ON h.itemId = i.id
         WHERE i.kind = 0
-            AND (i.region IS NULL OR i.region NOT IN (:hidden))
+            AND (i.region IS NULL OR i.region NOT IN (:hidden)) AND ('g:' || i.kind || ':' || i.groupName) NOT IN (:hidden)
+            AND NOT ('scan:dead' IN (:hidden) AND i.id IN (SELECT itemId FROM channel_scan WHERE hidden = 1))
+            AND NOT ('placeholder' IN (:hidden) AND i.kind = 0
+                AND ((' ' || i.searchName) GLOB '* no event*' OR (' ' || i.searchName) GLOB '* no live event*'))
             AND (:adult OR i.adult = 0)
             AND (nameMatch OR guideMatch)
         ORDER BY i.sortOrder
@@ -357,6 +397,24 @@ interface LibraryDao {
     @Query("DELETE FROM history")
     suspend fun clearHistory()
 
+    /** Films and episodes counted as watched: played to the end, or marked by hand. */
+    @Query("SELECT itemId FROM history WHERE durationMs > 0 AND positionMs >= durationMs * 92 / 100")
+    fun watchedIds(): Flow<List<Long>>
+
+    /** Marks [ids] watched without playing them: a finished entry, so they leave Continue Watching too. */
+    @Transaction
+    suspend fun markWatched(ids: List<Long>) {
+        val now = System.currentTimeMillis()
+        for (id in ids) {
+            val length = progress(id)?.durationMs?.takeIf { it > 0 } ?: 1
+            saveProgress(HistoryEntity(id, positionMs = length, durationMs = length, watchedAt = now))
+        }
+    }
+
+    /** Back to unwatched: forgets where they got to. */
+    @Query("DELETE FROM history WHERE itemId IN (:ids)")
+    suspend fun markUnwatched(ids: List<Long>)
+
     @Query("DELETE FROM favourites")
     suspend fun clearFavourites()
 
@@ -427,4 +485,78 @@ interface MetadataDao {
 
     @Query("SELECT * FROM metadata WHERE cacheKey = :cacheKey")
     suspend fun get(cacheKey: String): MetadataEntity?
+}
+
+@Dao
+interface WatchLaterDao {
+    @Upsert
+    suspend fun add(row: WatchLaterEntity)
+
+    @Query("DELETE FROM watch_later WHERE `key` = :key")
+    suspend fun remove(key: String)
+
+    @Query("SELECT * FROM watch_later ORDER BY addedAt DESC")
+    fun all(): Flow<List<WatchLaterEntity>>
+
+    @Query("SELECT `key` FROM watch_later")
+    fun keys(): Flow<List<String>>
+}
+
+@Dao
+interface SeenEpisodeDao {
+    @Query("SELECT itemId FROM seen_episodes WHERE showKey = :showKey")
+    suspend fun seen(showKey: String): List<Long>
+
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    suspend fun add(rows: List<SeenEpisodeEntity>)
+}
+
+@Dao
+interface ChannelScanDao {
+    /** The live channels a scan looks at: those not hidden by country or group, in list order. */
+    @Query(
+        """
+        SELECT id FROM items
+        WHERE kind = 0 AND (region IS NULL OR region NOT IN (:hidden)) AND ('g:' || kind || ':' || groupName) NOT IN (:hidden)
+            AND NOT ('placeholder' IN (:hidden)
+                AND ((' ' || searchName) GLOB '* no event*' OR (' ' || searchName) GLOB '* no live event*'))
+            AND (:adult OR adult = 0)
+        ORDER BY sortOrder
+        """,
+    )
+    suspend fun channels(
+        hidden: List<String>,
+        adult: Boolean,
+    ): List<Long>
+
+    /** The channel that played most recently, in a scan or in the player, to compare failures against. */
+    @Query(
+        """
+        SELECT itemId FROM (
+            SELECT itemId, lastOkAt AS at FROM channel_scan WHERE lastOkAt > 0
+            UNION ALL SELECT itemId, okAt AS at FROM channel_health WHERE okAt > 0
+        ) WHERE itemId IN (SELECT id FROM items WHERE kind = 0) ORDER BY at DESC LIMIT 1
+        """,
+    )
+    suspend fun knownGood(): Long?
+
+    @Query("SELECT * FROM channel_scan WHERE itemId = :itemId")
+    suspend fun get(itemId: Long): ChannelScanEntity?
+
+    @Upsert
+    suspend fun save(row: ChannelScanEntity)
+
+    @Query("DELETE FROM channel_scan")
+    suspend fun deleteAll()
+
+    /** Channels that failed in at least one scan and still exist, hidden ones first, then the most recent. */
+    @Query(
+        """
+        SELECT s.itemId, i.name, i.logo, i.groupName, s.failures, s.lastFailAt, s.reason, s.hidden
+        FROM channel_scan s JOIN items i ON i.id = s.itemId
+        WHERE s.failures > 0
+        ORDER BY s.hidden DESC, s.lastFailAt DESC
+        """,
+    )
+    fun report(): Flow<List<ScanReportRow>>
 }

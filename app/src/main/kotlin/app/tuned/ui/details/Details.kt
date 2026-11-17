@@ -64,9 +64,13 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import app.tuned.R
 import app.tuned.container
+import app.tuned.core.Titles
 import app.tuned.data.CastMember
 import app.tuned.data.Metadata
 import app.tuned.data.db.ItemEntity
+import app.tuned.ui.library.LibraryViewModel
+import app.tuned.ui.library.WatchLaterButton
+import app.tuned.ui.library.WatchedButton
 import app.tuned.ui.offline.DownloadButton
 import coil3.compose.AsyncImage
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -132,56 +136,63 @@ fun MovieScreen(
     val details by vm.details.collectAsStateWithLifecycle()
     val hasKey by vm.hasKey.collectAsStateWithLifecycle()
     val resumable by vm.resumable.collectAsStateWithLifecycle()
-    Column(
-        Modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
-            .verticalScroll(rememberScrollState())
-            .navigationBarsPadding(),
-    ) {
-        Backdrop(details?.backdrop ?: details?.poster ?: item?.logo, onBack)
-        Row(Modifier.padding(horizontal = 20.dp).offset(y = (-72).dp)) {
-            AsyncImage(
-                model = details?.poster ?: item?.logo,
-                contentDescription = null,
-                contentScale = ContentScale.Crop,
-                modifier =
-                    Modifier
-                        .width(112.dp)
-                        .aspectRatio(2f / 3f)
-                        .shadow(12.dp, RoundedCornerShape(12.dp))
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(MaterialTheme.colorScheme.surfaceContainerHigh),
-            )
-            Spacer(Modifier.width(16.dp))
-            Column(Modifier.padding(top = 56.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                Text(
-                    details?.title ?: item?.name.orEmpty(),
-                    style = MaterialTheme.typography.headlineSmall,
-                    fontWeight = FontWeight.Bold,
-                    maxLines = 3,
-                    overflow = TextOverflow.Ellipsis,
-                )
-                MetaLine(details)
-            }
-        }
+    // A Surface, not just a background colour: it also sets the text and icon colour for the theme. Without it the
+    // title and the icon buttons fell back to black, unreadable in dark mode.
+    Surface(color = MaterialTheme.colorScheme.background, modifier = Modifier.fillMaxSize()) {
         Column(
-            Modifier.padding(horizontal = 20.dp).offset(y = (-56).dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
+            Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .navigationBarsPadding(),
         ) {
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
-                Button(
-                    onClick = { onPlay(itemId) },
-                    contentPadding = PaddingValues(horizontal = 28.dp, vertical = 12.dp),
-                ) {
-                    Icon(Icons.Filled.PlayArrow, null)
-                    Spacer(Modifier.width(8.dp))
-                    Text(stringResource(if (resumable) R.string.details_resume else R.string.details_play))
+            Backdrop(details?.backdrop ?: details?.poster ?: item?.logo, onBack)
+            Row(Modifier.padding(horizontal = 20.dp).offset(y = (-72).dp)) {
+                AsyncImage(
+                    model = details?.poster ?: item?.logo,
+                    contentDescription = null,
+                    contentScale = ContentScale.Crop,
+                    modifier =
+                        Modifier
+                            .width(112.dp)
+                            .aspectRatio(2f / 3f)
+                            .shadow(12.dp, RoundedCornerShape(12.dp))
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(MaterialTheme.colorScheme.surfaceContainerHigh),
+                )
+                Spacer(Modifier.width(16.dp))
+                Column(Modifier.padding(top = 56.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Text(
+                        details?.title ?: Titles.display(item?.name.orEmpty()),
+                        style = MaterialTheme.typography.headlineSmall,
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 3,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                    MetaLine(details)
                 }
-                details?.trailer?.let { TrailerButton(it) }
-                item?.let { DownloadButton(it) }
             }
-            DetailsBody(details, hasKey)
+            Column(
+                Modifier.padding(horizontal = 20.dp).offset(y = (-56).dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+            ) {
+                Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Button(
+                        onClick = { onPlay(itemId) },
+                        contentPadding = PaddingValues(horizontal = 28.dp, vertical = 12.dp),
+                    ) {
+                        Icon(Icons.Filled.PlayArrow, null)
+                        Spacer(Modifier.width(8.dp))
+                        Text(stringResource(if (resumable) R.string.details_resume else R.string.details_play))
+                    }
+                    details?.trailer?.let { TrailerButton(it) }
+                    item?.let {
+                        DownloadButton(it)
+                        WatchLaterButton(LibraryViewModel.movie(it.id, it.name, it.logo))
+                        WatchedButton(it.id)
+                    }
+                }
+                DetailsBody(details, hasKey)
+            }
         }
     }
 }

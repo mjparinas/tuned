@@ -186,6 +186,8 @@ data class ShowSummary(
     val logo: String?,
     val groupName: String,
     val episodes: Int,
+    /** Episodes added since the show was last opened; 0 for a show never opened (see [SeenEpisodeEntity]). */
+    val newEpisodes: Int,
 )
 
 data class GroupCount(
@@ -204,4 +206,62 @@ data class FavouriteRow(
     val name: String,
     val logo: String?,
     val tvgId: String?,
+)
+
+/**
+ * A film or a show saved to watch later (Melvin, 2026-11-17). [key] is `m:<item id>` for a film or `s:<show key>` for a
+ * show. The title and artwork are kept here, so the list shows without looking anything up.
+ */
+@Entity(tableName = "watch_later")
+data class WatchLaterEntity(
+    @PrimaryKey val key: String,
+    val itemId: Long?,
+    val showKey: String?,
+    val title: String,
+    val image: String?,
+    val addedAt: Long,
+) {
+    companion object {
+        fun movieKey(itemId: Long) = "m:$itemId"
+
+        fun showKey(showKey: String) = "s:$showKey"
+    }
+}
+
+/**
+ * An episode that was in the list the last time its show was opened (Melvin, 2026-11-17: "new episodes"). Episodes of
+ * an opened show that aren't here arrived since, and show as new. Ids are stable across refreshes, so this survives them.
+ */
+@Entity(tableName = "seen_episodes", indices = [Index("showKey")])
+data class SeenEpisodeEntity(
+    @PrimaryKey val itemId: Long,
+    val showKey: String,
+)
+
+/**
+ * What channel scans found for a live channel ([app.tuned.core.ChannelScan.Record]). [hidden] is stored, not worked
+ * out, so the lists can leave hidden channels out in SQL.
+ */
+@Entity(tableName = "channel_scan")
+data class ChannelScanEntity(
+    @PrimaryKey val itemId: Long,
+    val failures: Int,
+    val firstFailAt: Long,
+    val lastFailAt: Long,
+    val lastOkAt: Long,
+    val reason: String?,
+    val kept: Boolean,
+    val hidden: Boolean,
+)
+
+/** A row of the channel health report: the channel and what scans found. */
+data class ScanReportRow(
+    val itemId: Long,
+    val name: String,
+    val logo: String?,
+    val groupName: String,
+    val failures: Int,
+    val lastFailAt: Long,
+    val reason: String?,
+    val hidden: Boolean,
 )
