@@ -2,6 +2,7 @@ package app.tuned
 
 import android.app.Application
 import android.content.Context
+import android.os.StrictMode
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.ProcessLifecycleOwner
@@ -102,6 +103,7 @@ class AppContainer(
         if (previous != null && !previous.samePlaylist(login)) {
             reminders.cancelAll()
             db.items().deleteAll()
+            db.shows().deleteShowGroups()
             db.programmes().deleteAll()
             db.catchUp().deleteAll()
             db.channelScan().deleteAll()
@@ -135,6 +137,23 @@ class TunedApp :
     override fun onCreate() {
         super.onCreate()
         CrashReporter.install(this)
+        // Debug builds log any disk or network work on the main thread, so a slip that would stutter shows up early.
+        if (BuildConfig.DEBUG) {
+            StrictMode.setThreadPolicy(
+                StrictMode.ThreadPolicy
+                    .Builder()
+                    .detectAll()
+                    .penaltyLog()
+                    .build(),
+            )
+            StrictMode.setVmPolicy(
+                StrictMode.VmPolicy
+                    .Builder()
+                    .detectLeakedClosableObjects()
+                    .penaltyLog()
+                    .build(),
+            )
+        }
         container = AppContainer(this)
         lockAdultWhenAway()
         container.appScope.launch {
