@@ -6,6 +6,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
@@ -16,6 +17,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
 import app.tuned.container
+import app.tuned.data.AppSettings
 import app.tuned.player.PlayerActivity
 import app.tuned.ui.browse.HomeScreen
 import app.tuned.ui.guide.GuideScreen
@@ -57,67 +59,75 @@ class MainActivity : ComponentActivity() {
                 pureBlack = current.pureBlack,
                 accent = current.accent,
             ) {
-                val nav = rememberNavController()
-                val play: (Long) -> Unit = { id -> PlayerActivity.start(this, id) }
-                val tune: (String) -> Unit = { query -> PlayerActivity.tune(this@MainActivity, query) }
-                val pending by incomingSearch.collectAsStateWithLifecycle()
-                LaunchedEffect(pending) {
-                    val query = pending ?: return@LaunchedEffect
-                    if (container.credentials.load() != null) nav.navigate(SearchRoute(query)) { launchSingleTop = true }
-                    incomingSearch.value = null
-                }
-                NavHost(navController = nav, startDestination = if (signedIn) HomeRoute else LoginRoute) {
-                    composable<LoginRoute> {
-                        LoginScreen(onSignedIn = {
-                            nav.navigate(HomeRoute) { popUpTo<LoginRoute> { inclusive = true } }
-                        })
-                    }
-                    composable<HomeRoute> {
-                        HomeScreen(
-                            settings = current,
-                            onPlay = play,
-                            onOpenShow = { key, title -> nav.navigate(ShowRoute(key, title)) },
-                            onOpenGuide = { id -> nav.navigate(GuideRoute(id)) },
-                            onOpenSettings = { nav.navigate(SettingsRoute) },
-                            onOpenSearch = { nav.navigate(SearchRoute()) },
-                            onTune = tune,
-                            onSignedOut = { nav.navigate(LoginRoute) { popUpTo(0) { inclusive = true } } },
-                        )
-                    }
-                    composable<SearchRoute> { entry ->
-                        SearchScreen(
-                            initialQuery = entry.toRoute<SearchRoute>().query,
-                            onBack = { nav.popBackStack() },
-                            onPlay = play,
-                            onOpenShow = { key, title -> nav.navigate(ShowRoute(key, title)) },
-                            onTune = tune,
-                        )
-                    }
-                    composable<ShowRoute> { entry ->
-                        val route = entry.toRoute<ShowRoute>()
-                        ShowScreen(showKey = route.showKey, title = route.title, onPlay = play, onBack = { nav.popBackStack() })
-                    }
-                    composable<GuideRoute> { entry ->
-                        GuideScreen(itemId = entry.toRoute<GuideRoute>().itemId, onPlay = play, onBack = { nav.popBackStack() })
-                    }
-                    composable<SettingsRoute> {
-                        SettingsScreen(
-                            settings = current,
-                            onBack = { nav.popBackStack() },
-                            onOpenCaptions = { nav.navigate(CaptionSettingsRoute) },
-                            onOpenRegions = { nav.navigate(RegionSettingsRoute) },
-                            onSignedOut = {
-                                nav.navigate(LoginRoute) { popUpTo(0) { inclusive = true } }
-                            },
-                        )
-                    }
-                    composable<CaptionSettingsRoute> {
-                        CaptionSettingsScreen(settings = current, onBack = { nav.popBackStack() })
-                    }
-                    composable<RegionSettingsRoute> {
-                        RegionSettingsScreen(settings = current, onBack = { nav.popBackStack() })
-                    }
-                }
+                Navigation(current, signedIn)
+            }
+        }
+    }
+
+    @Composable
+    private fun Navigation(
+        current: AppSettings,
+        signedIn: Boolean,
+    ) {
+        val nav = rememberNavController()
+        val play: (Long) -> Unit = { id -> PlayerActivity.start(this, id) }
+        val tune: (String) -> Unit = { query -> PlayerActivity.tune(this@MainActivity, query) }
+        val pending by incomingSearch.collectAsStateWithLifecycle()
+        LaunchedEffect(pending) {
+            val query = pending ?: return@LaunchedEffect
+            if (container.credentials.load() != null) nav.navigate(SearchRoute(query)) { launchSingleTop = true }
+            incomingSearch.value = null
+        }
+        NavHost(navController = nav, startDestination = if (signedIn) HomeRoute else LoginRoute) {
+            composable<LoginRoute> {
+                LoginScreen(onSignedIn = {
+                    nav.navigate(HomeRoute) { popUpTo<LoginRoute> { inclusive = true } }
+                })
+            }
+            composable<HomeRoute> {
+                HomeScreen(
+                    settings = current,
+                    onPlay = play,
+                    onOpenShow = { key, title -> nav.navigate(ShowRoute(key, title)) },
+                    onOpenGuide = { id -> nav.navigate(GuideRoute(id)) },
+                    onOpenSettings = { nav.navigate(SettingsRoute) },
+                    onOpenSearch = { nav.navigate(SearchRoute()) },
+                    onTune = tune,
+                    onSignedOut = { nav.navigate(LoginRoute) { popUpTo(0) { inclusive = true } } },
+                )
+            }
+            composable<SearchRoute> { entry ->
+                SearchScreen(
+                    initialQuery = entry.toRoute<SearchRoute>().query,
+                    onBack = { nav.popBackStack() },
+                    onPlay = play,
+                    onOpenShow = { key, title -> nav.navigate(ShowRoute(key, title)) },
+                    onTune = tune,
+                )
+            }
+            composable<ShowRoute> { entry ->
+                val route = entry.toRoute<ShowRoute>()
+                ShowScreen(showKey = route.showKey, title = route.title, onPlay = play, onBack = { nav.popBackStack() })
+            }
+            composable<GuideRoute> { entry ->
+                GuideScreen(itemId = entry.toRoute<GuideRoute>().itemId, onPlay = play, onBack = { nav.popBackStack() })
+            }
+            composable<SettingsRoute> {
+                SettingsScreen(
+                    settings = current,
+                    onBack = { nav.popBackStack() },
+                    onOpenCaptions = { nav.navigate(CaptionSettingsRoute) },
+                    onOpenRegions = { nav.navigate(RegionSettingsRoute) },
+                    onSignedOut = {
+                        nav.navigate(LoginRoute) { popUpTo(0) { inclusive = true } }
+                    },
+                )
+            }
+            composable<CaptionSettingsRoute> {
+                CaptionSettingsScreen(settings = current, onBack = { nav.popBackStack() })
+            }
+            composable<RegionSettingsRoute> {
+                RegionSettingsScreen(settings = current, onBack = { nav.popBackStack() })
             }
         }
     }

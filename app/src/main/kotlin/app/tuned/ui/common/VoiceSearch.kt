@@ -22,6 +22,7 @@ import app.tuned.R
 @Composable
 fun VoiceSearchButton(onResult: (String) -> Unit) {
     val context = LocalContext.current
+    val prompt = stringResource(R.string.voice_prompt)
     val intent =
         remember {
             Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH)
@@ -40,7 +41,7 @@ fun VoiceSearchButton(onResult: (String) -> Unit) {
                     ?.trim()
             if (!text.isNullOrEmpty()) onResult(text)
         }
-    IconButton(onClick = { launcher.launch(intent.putExtra(RecognizerIntent.EXTRA_PROMPT, context.getString(R.string.voice_prompt))) }) {
+    IconButton(onClick = { launcher.launch(intent.putExtra(RecognizerIntent.EXTRA_PROMPT, prompt)) }) {
         Icon(Icons.Filled.Mic, contentDescription = stringResource(R.string.voice_search))
     }
 }
