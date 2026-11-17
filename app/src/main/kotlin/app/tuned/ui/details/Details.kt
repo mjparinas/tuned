@@ -67,6 +67,9 @@ import app.tuned.container
 import app.tuned.data.CastMember
 import app.tuned.data.Metadata
 import app.tuned.data.db.ItemEntity
+import app.tuned.ui.library.LibraryViewModel
+import app.tuned.ui.library.WatchLaterButton
+import app.tuned.ui.library.WatchedButton
 import app.tuned.ui.offline.DownloadButton
 import coil3.compose.AsyncImage
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -179,7 +182,11 @@ fun MovieScreen(
                     Text(stringResource(if (resumable) R.string.details_resume else R.string.details_play))
                 }
                 details?.trailer?.let { TrailerButton(it) }
-                item?.let { DownloadButton(it) }
+                item?.let {
+                    DownloadButton(it)
+                    WatchLaterButton(LibraryViewModel.movie(it.id, it.name, it.logo))
+                    WatchedButton(it.id)
+                }
             }
             DetailsBody(details, hasKey)
         }

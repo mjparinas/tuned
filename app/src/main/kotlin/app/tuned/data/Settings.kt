@@ -86,6 +86,8 @@ data class AppSettings(
     val audioLanguage: String = "",
     val resumePlayback: Boolean = true,
     val autoPlayNext: Boolean = true,
+    /** Pull down on a list to refresh the playlist (Melvin, 2026-11-17: off, so a scroll never starts a download). */
+    val pullToRefresh: Boolean = false,
     val pictureInPicture: Boolean = true,
     val playerGestures: Boolean = true,
     val autoReconnect: Boolean = true,
@@ -209,6 +211,7 @@ class SettingsRepository(
             audioLanguage = p[K.audioLanguage] ?: d.audioLanguage,
             resumePlayback = p[K.resumePlayback] ?: d.resumePlayback,
             autoPlayNext = p[K.autoPlayNext] ?: d.autoPlayNext,
+            pullToRefresh = p[K.pullToRefresh] ?: d.pullToRefresh,
             pictureInPicture = p[K.pictureInPicture] ?: d.pictureInPicture,
             playerGestures = p[K.playerGestures] ?: d.playerGestures,
             autoReconnect = p[K.autoReconnect] ?: d.autoReconnect,
@@ -268,6 +271,7 @@ class SettingsRepository(
         p[K.audioLanguage] = s.audioLanguage
         p[K.resumePlayback] = s.resumePlayback
         p[K.autoPlayNext] = s.autoPlayNext
+        p[K.pullToRefresh] = s.pullToRefresh
         p[K.pictureInPicture] = s.pictureInPicture
         p[K.playerGestures] = s.playerGestures
         p[K.autoReconnect] = s.autoReconnect
@@ -327,6 +331,7 @@ class SettingsRepository(
         val audioLanguage = stringPreferencesKey("audio_language")
         val resumePlayback = booleanPreferencesKey("resume_playback")
         val autoPlayNext = booleanPreferencesKey("auto_play_next")
+        val pullToRefresh = booleanPreferencesKey("pull_to_refresh")
         val pictureInPicture = booleanPreferencesKey("picture_in_picture")
         val playerGestures = booleanPreferencesKey("player_gestures")
         val autoReconnect = booleanPreferencesKey("auto_reconnect")

@@ -30,9 +30,11 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.DownloadForOffline
 import androidx.compose.material.icons.filled.Favorite
@@ -101,9 +103,12 @@ import app.tuned.data.db.ChannelWithNow
 import app.tuned.data.db.ContinueRow
 import app.tuned.data.db.ItemEntity
 import app.tuned.data.db.ShowSummary
+import app.tuned.data.db.WatchLaterEntity
 import app.tuned.ui.SyncText
 import app.tuned.ui.common.VoiceSearchButton
 import app.tuned.ui.common.focusRing
+import app.tuned.ui.library.LibraryViewModel
+import app.tuned.ui.library.watchLaterRow
 import app.tuned.ui.offline.DownloadsViewModel
 import app.tuned.updates.GitHubUpdates
 import coil3.compose.AsyncImage
@@ -204,12 +209,24 @@ fun HomeScreen(
             progress?.let { RefreshBar(it) }
             UpdateBanner()
             CategoryChips(vm, tab.kind)
-            PullToRefreshBox(isRefreshing = refreshing && progress == null, onRefresh = vm::refresh, modifier = Modifier.fillMaxSize()) {
+            val lists: @Composable () -> Unit = {
                 when (tab.kind) {
                     ContentKind.LIVE -> LiveList(vm, settings.showGuideInList, onPlay, onOpenGuide)
                     ContentKind.MOVIE -> MovieGrid(vm, onPlay, onOpenMovie)
                     ContentKind.SERIES -> ShowGrid(vm, onOpenShow, onPlay)
                 }
+            }
+            // Pull to refresh is a setting, off by default; Settings › Refresh now always works.
+            if (settings.pullToRefresh) {
+                PullToRefreshBox(
+                    isRefreshing = refreshing && progress == null,
+                    onRefresh = vm::refresh,
+                    modifier = Modifier.fillMaxSize(),
+                ) {
+                    lists()
+                }
+            } else {
+                Box(Modifier.fillMaxSize()) { lists() }
             }
         }
     }
@@ -487,6 +504,9 @@ private fun MovieGrid(
 ) {
     val movies = vm.movies.collectAsLazyPagingItems()
     val favourites by vm.favouriteIds.collectAsStateWithLifecycle()
+    val library: LibraryViewModel = viewModel()
+    val watched by library.watched.collectAsStateWithLifecycle()
+    val later by library.laterKeys.collectAsStateWithLifecycle()
     LazyVerticalGrid(
         columns = GridCells.Adaptive(minSize = 112.dp),
         state = rememberLazyGridState(),
@@ -496,6 +516,7 @@ private fun MovieGrid(
         modifier = Modifier.fillMaxSize(),
     ) {
         continueWatching(vm, ContentKind.MOVIE, onPlay)
+        watchLaterRow(shows = false, visible = { fullList(vm, ContentKind.MOVIE) }, onOpenMovie = onOpenMovie, onOpenShow = { _, _ -> })
         items(count = movies.itemCount, key = movies.itemKey { it.id }) { index ->
             val movie: ItemEntity? = movies[index]
             if (movie == null) {
@@ -504,14 +525,26 @@ private fun MovieGrid(
                 val favourite = movie.id in favourites
                 val rating by produceState<Double?>(null, movie.name) { value = vm.rating(movie.name, tv = false) }
                 // A tap opens the film's page; Play now is in the long-press menu for a straight start.
+                val done = movie.id in watched
+                val saved = WatchLaterEntity.movieKey(movie.id) in later
                 Poster(
                     title = movie.name,
                     image = movie.logo,
                     favourite = favourite,
                     rating = rating,
+                    watched = done,
                     onClick = { onOpenMovie(movie.id) },
                     onToggleFavourite = { vm.toggleFavourite(movie.id, favourite) },
                     onPlayNow = { onPlay(movie.id) },
+                    extraMenu =
+                        listOf(
+                            stringResource(if (saved) R.string.watch_later_remove else R.string.watch_later_add) to {
+                                library.toggleLater(LibraryViewModel.movie(movie.id, movie.name, movie.logo))
+                            },
+                            stringResource(if (done) R.string.mark_unwatched else R.string.mark_watched) to {
+                                library.setWatched(listOf(movie.id), !done)
+                            },
+                        ),
                 )
             }
         }
@@ -525,6 +558,8 @@ private fun ShowGrid(
     onPlay: (Long) -> Unit,
 ) {
     val shows = vm.shows.collectAsLazyPagingItems()
+    val library: LibraryViewModel = viewModel()
+    val later by library.laterKeys.collectAsStateWithLifecycle()
     LazyVerticalGrid(
         columns = GridCells.Adaptive(minSize = 112.dp),
         state = rememberLazyGridState(),
@@ -534,6 +569,7 @@ private fun ShowGrid(
         modifier = Modifier.fillMaxSize(),
     ) {
         continueWatching(vm, ContentKind.SERIES, onPlay)
+        watchLaterRow(shows = true, visible = { fullList(vm, ContentKind.SERIES) }, onOpenMovie = {}, onOpenShow = onOpenShow)
         items(count = shows.itemCount, key = shows.itemKey { it.showKey }) { index ->
             val show: ShowSummary? = shows[index]
             if (show == null) {
@@ -544,8 +580,29 @@ private fun ShowGrid(
                     title = show.showName,
                     image = show.logo,
                     rating = rating,
-                    subtitle = pluralEpisodes(show.episodes),
+                    subtitle =
+                        if (show.newEpisodes > 0) {
+                            stringResource(
+                                R.string.episodes_with_new,
+                                pluralEpisodes(show.episodes),
+                                pluralStringResource(R.plurals.new_episodes, show.newEpisodes, show.newEpisodes),
+                            )
+                        } else {
+                            pluralEpisodes(show.episodes)
+                        },
                     onClick = { onOpenShow(show.showKey, show.showName) },
+                    extraMenu =
+                        listOf(
+                            stringResource(
+                                if (WatchLaterEntity.showKey(show.showKey) in
+                                    later
+                                ) {
+                                    R.string.watch_later_remove
+                                } else {
+                                    R.string.watch_later_add
+                                },
+                            ) to { library.toggleLater(LibraryViewModel.show(show.showKey, show.showName, show.logo)) },
+                        ),
                 )
             }
         }
@@ -563,9 +620,7 @@ private fun LazyGridScope.continueWatching(
 ) {
     item(key = "continue", span = { GridItemSpan(maxLineSpan) }, contentType = "continue") {
         val rows by vm.continueWatching(kind).collectAsStateWithLifecycle()
-        val filter by vm.filter(kind).collectAsStateWithLifecycle()
-        val search by vm.search(kind).collectAsStateWithLifecycle()
-        if (rows.isEmpty() || filter != Filter.All || search.isNotBlank()) return@item
+        if (rows.isEmpty() || !fullList(vm, kind)) return@item
         Column {
             Text(
                 stringResource(R.string.continue_watching),
@@ -578,6 +633,17 @@ private fun LazyGridScope.continueWatching(
             Spacer(Modifier.height(6.dp))
         }
     }
+}
+
+/** True on the whole list: no category, favourites or search, where the rows across the top belong. */
+@Composable
+private fun fullList(
+    vm: BrowseViewModel,
+    kind: ContentKind,
+): Boolean {
+    val filter by vm.filter(kind).collectAsStateWithLifecycle()
+    val search by vm.search(kind).collectAsStateWithLifecycle()
+    return filter == Filter.All && search.isBlank()
 }
 
 @Composable
@@ -636,9 +702,12 @@ fun Poster(
     onToggleFavourite: (() -> Unit)? = null,
     onPlayNow: (() -> Unit)? = null,
     rating: Double? = null,
+    watched: Boolean = false,
+    /** More long-press menu entries: label and action. */
+    extraMenu: List<Pair<String, () -> Unit>> = emptyList(),
 ) {
     var menu by remember { mutableStateOf(false) }
-    val hasMenu = onToggleFavourite != null || onPlayNow != null
+    val hasMenu = onToggleFavourite != null || onPlayNow != null || extraMenu.isNotEmpty()
     Column(
         Modifier
             .clip(RoundedCornerShape(10.dp))
@@ -666,6 +735,18 @@ fun Poster(
                     tint = MaterialTheme.colorScheme.primary,
                 )
             }
+            if (watched) {
+                Icon(
+                    Icons.Filled.CheckCircle,
+                    stringResource(R.string.watched),
+                    Modifier
+                        .align(Alignment.TopStart)
+                        .padding(6.dp)
+                        .size(20.dp)
+                        .background(Color.Black.copy(alpha = 0.55f), CircleShape),
+                    tint = Color.White,
+                )
+            }
             if (hasMenu) {
                 DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
                     onPlayNow?.let { play ->
@@ -683,6 +764,15 @@ fun Poster(
                             onClick = {
                                 menu = false
                                 toggle()
+                            },
+                        )
+                    }
+                    extraMenu.forEach { (label, action) ->
+                        DropdownMenuItem(
+                            text = { Text(label) },
+                            onClick = {
+                                menu = false
+                                action()
                             },
                         )
                     }

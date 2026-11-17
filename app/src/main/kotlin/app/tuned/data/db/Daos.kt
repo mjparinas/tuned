@@ -119,7 +119,9 @@ interface ItemDao {
 
     @Query(
         """
-        SELECT showKey, MIN(showName) AS showName, MAX(logo) AS logo, MIN(groupName) AS groupName, COUNT(*) AS episodes
+        SELECT showKey, MIN(showName) AS showName, MAX(logo) AS logo, MIN(groupName) AS groupName, COUNT(*) AS episodes,
+            SUM(CASE WHEN i.showKey IN (SELECT showKey FROM seen_episodes) AND i.id NOT IN (SELECT itemId FROM seen_episodes)
+                THEN 1 ELSE 0 END) AS newEpisodes
         FROM items i
         WHERE i.kind = 2 AND i.showKey IS NOT NULL
             AND (i.region IS NULL OR i.region NOT IN (:hidden)) AND ('g:' || i.kind || ':' || i.groupName) NOT IN (:hidden)
@@ -186,7 +188,9 @@ interface ItemDao {
 
     @Query(
         """
-        SELECT showKey, MIN(showName) AS showName, MAX(logo) AS logo, MIN(groupName) AS groupName, COUNT(*) AS episodes
+        SELECT showKey, MIN(showName) AS showName, MAX(logo) AS logo, MIN(groupName) AS groupName, COUNT(*) AS episodes,
+            SUM(CASE WHEN i.showKey IN (SELECT showKey FROM seen_episodes) AND i.id NOT IN (SELECT itemId FROM seen_episodes)
+                THEN 1 ELSE 0 END) AS newEpisodes
         FROM items i
         WHERE i.kind = 2 AND i.showKey IS NOT NULL AND i.searchName LIKE '%' || :query || '%'
             AND (i.region IS NULL OR i.region NOT IN (:hidden)) AND ('g:' || i.kind || ':' || i.groupName) NOT IN (:hidden)
@@ -357,6 +361,24 @@ interface LibraryDao {
     @Query("DELETE FROM history")
     suspend fun clearHistory()
 
+    /** Films and episodes counted as watched: played to the end, or marked by hand. */
+    @Query("SELECT itemId FROM history WHERE durationMs > 0 AND positionMs >= durationMs * 92 / 100")
+    fun watchedIds(): Flow<List<Long>>
+
+    /** Marks [ids] watched without playing them: a finished entry, so they leave Continue Watching too. */
+    @Transaction
+    suspend fun markWatched(ids: List<Long>) {
+        val now = System.currentTimeMillis()
+        for (id in ids) {
+            val length = progress(id)?.durationMs?.takeIf { it > 0 } ?: 1
+            saveProgress(HistoryEntity(id, positionMs = length, durationMs = length, watchedAt = now))
+        }
+    }
+
+    /** Back to unwatched: forgets where they got to. */
+    @Query("DELETE FROM history WHERE itemId IN (:ids)")
+    suspend fun markUnwatched(ids: List<Long>)
+
     @Query("DELETE FROM favourites")
     suspend fun clearFavourites()
 
@@ -427,4 +449,28 @@ interface MetadataDao {
 
     @Query("SELECT * FROM metadata WHERE cacheKey = :cacheKey")
     suspend fun get(cacheKey: String): MetadataEntity?
+}
+
+@Dao
+interface WatchLaterDao {
+    @Upsert
+    suspend fun add(row: WatchLaterEntity)
+
+    @Query("DELETE FROM watch_later WHERE `key` = :key")
+    suspend fun remove(key: String)
+
+    @Query("SELECT * FROM watch_later ORDER BY addedAt DESC")
+    fun all(): Flow<List<WatchLaterEntity>>
+
+    @Query("SELECT `key` FROM watch_later")
+    fun keys(): Flow<List<String>>
+}
+
+@Dao
+interface SeenEpisodeDao {
+    @Query("SELECT itemId FROM seen_episodes WHERE showKey = :showKey")
+    suspend fun seen(showKey: String): List<Long>
+
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    suspend fun add(rows: List<SeenEpisodeEntity>)
 }

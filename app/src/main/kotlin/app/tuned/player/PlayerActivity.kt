@@ -93,6 +93,7 @@ class PlayerActivity : FragmentActivity() {
             lengthMs = { settings.skipIntroMs },
         )
     }
+    private val levelBars by lazy { LevelBars(this) }
     private lateinit var tools: PlayerTools
     private var cast: CastControl? = null
     private val subtitleTiming = SubtitleTiming()
@@ -206,6 +207,7 @@ class PlayerActivity : FragmentActivity() {
         )
         tools.attach(root)
         skipIntro.attach(root)
+        levelBars.attach(root)
         // The title shows and hides with the controls, so a tap reveals everything and the video is otherwise bare.
         playerView.setControllerVisibilityListener(
             PlayerView.ControllerVisibilityListener { visibility ->
@@ -272,8 +274,7 @@ class PlayerActivity : FragmentActivity() {
                     }
                 },
                 onChannel = { next -> player?.let { p -> if (next) p.seekToNextMediaItem() else p.seekToPreviousMediaItem() } },
-                say = { text -> showStatus(text) },
-                quiet = { flash(null) },
+                bars = levelBars,
             )
         gestures = g
         playerView.setOnTouchListener(g)
