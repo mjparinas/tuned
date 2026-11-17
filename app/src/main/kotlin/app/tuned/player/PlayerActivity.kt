@@ -23,6 +23,7 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
 import androidx.annotation.OptIn
+import androidx.core.net.toUri
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
@@ -56,6 +57,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import java.io.File
 
 /**
  * Full-screen playback. Nothing on screen but the video until a tap shows the standard Media3 controls: play and
@@ -83,6 +85,8 @@ class PlayerActivity : FragmentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // One connection to the provider at a time: downloads wait while anything plays.
+        container.offline.pause()
         buildViews()
         hideSystemBars()
         lifecycleScope.launch {
@@ -348,7 +352,9 @@ class PlayerActivity : FragmentActivity() {
         playerView.setShowRewindButton(!live)
         CaptionStyles.apply(requireNotNull(playerView.subtitleView), settings.captions)
 
-        val mediaItems = queue.map { it.toMediaItem() }
+        // Saved films and episodes play from the device.
+        val local = container.offline.files(queue.map { it.id })
+        val mediaItems = queue.map { it.toMediaItem(local[it.id]) }
         val index = queue.indexOfFirst { it.id == item.id }.coerceAtLeast(0)
         val resumeAt = if (!live && settings.resumePlayback) resumePosition(item.id) else C.TIME_UNSET
         exo.setMediaItems(mediaItems, index, resumeAt)
@@ -541,10 +547,10 @@ class PlayerActivity : FragmentActivity() {
 
     private fun live(): Boolean = queue.firstOrNull()?.kind == ContentKind.LIVE.code
 
-    private fun ItemEntity.toMediaItem(): MediaItem = MediaItem
+    private fun ItemEntity.toMediaItem(file: File?): MediaItem = MediaItem
         .Builder()
         .setMediaId(id.toString())
-        .setUri(url)
+        .setUri(file?.toUri() ?: url.toUri())
         .setMediaMetadata(MediaMetadata.Builder().setTitle(name).build())
         .build()
 
@@ -638,6 +644,7 @@ class PlayerActivity : FragmentActivity() {
         gestures?.release()
         tools.release()
         cast?.release()
+        container.appScope.launch { container.offline.start() }
         reconnect?.let { cb -> runCatching { getSystemService(ConnectivityManager::class.java)?.unregisterNetworkCallback(cb) } }
         player?.release()
         player = null

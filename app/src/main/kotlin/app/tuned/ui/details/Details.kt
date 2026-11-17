@@ -67,6 +67,7 @@ import app.tuned.container
 import app.tuned.data.CastMember
 import app.tuned.data.Metadata
 import app.tuned.data.db.ItemEntity
+import app.tuned.ui.offline.DownloadButton
 import coil3.compose.AsyncImage
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
@@ -168,7 +169,7 @@ fun MovieScreen(
             Modifier.padding(horizontal = 20.dp).offset(y = (-56).dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
                 Button(
                     onClick = { onPlay(itemId) },
                     contentPadding = PaddingValues(horizontal = 28.dp, vertical = 12.dp),
@@ -178,6 +179,7 @@ fun MovieScreen(
                     Text(stringResource(if (resumable) R.string.details_resume else R.string.details_play))
                 }
                 details?.trailer?.let { TrailerButton(it) }
+                item?.let { DownloadButton(it) }
             }
             DetailsBody(details, hasKey)
         }

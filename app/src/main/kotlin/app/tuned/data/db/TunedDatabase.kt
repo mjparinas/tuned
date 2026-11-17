@@ -16,8 +16,9 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         ChannelHealthEntity::class,
         CatchUpEntity::class,
         MetadataEntity::class,
+        DownloadEntity::class,
     ],
-    version = 5,
+    version = 6,
     exportSchema = true,
 )
 abstract class TunedDatabase : RoomDatabase() {
@@ -31,13 +32,15 @@ abstract class TunedDatabase : RoomDatabase() {
 
     abstract fun metadata(): MetadataDao
 
+    abstract fun downloads(): DownloadDao
+
     companion object {
         fun create(context: Context): TunedDatabase = Room
             .databaseBuilder(context, TunedDatabase::class.java, "tuned.db")
             // WAL: the lists keep reading the old playlist while a refresh writes the new one.
             .setJournalMode(JournalMode.WRITE_AHEAD_LOGGING)
             // Favourites, progress and channel health are the person's own, so every version change keeps them.
-            .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)
+            .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6)
             .build()
 
         /** Adds auto-tune's channel health. */
@@ -80,6 +83,18 @@ abstract class TunedDatabase : RoomDatabase() {
                             "`overview` TEXT, `rating` REAL, `poster` TEXT, `backdrop` TEXT, `genres` TEXT NOT NULL, " +
                             "`runtime` TEXT, `cast` TEXT NOT NULL, `trailer` TEXT, `fetchedAt` INTEGER NOT NULL, " +
                             "PRIMARY KEY(`cacheKey`))",
+                    )
+                }
+            }
+
+        /** Adds offline downloads. */
+        val MIGRATION_5_6 =
+            object : Migration(5, 6) {
+                override fun migrate(db: SupportSQLiteDatabase) {
+                    db.execSQL(
+                        "CREATE TABLE IF NOT EXISTS `downloads` (`itemId` INTEGER NOT NULL, `name` TEXT NOT NULL, `url` TEXT NOT NULL, " +
+                            "`path` TEXT NOT NULL, `bytes` INTEGER NOT NULL, `total` INTEGER NOT NULL, `state` INTEGER NOT NULL, " +
+                            "`addedAt` INTEGER NOT NULL, PRIMARY KEY(`itemId`))",
                     )
                 }
             }

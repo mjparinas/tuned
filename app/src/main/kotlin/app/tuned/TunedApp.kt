@@ -9,6 +9,7 @@ import app.tuned.data.BackupRepository
 import app.tuned.data.CredentialStore
 import app.tuned.data.Credentials
 import app.tuned.data.MetadataRepository
+import app.tuned.data.Offline
 import app.tuned.data.SettingsRepository
 import app.tuned.data.SyncRepository
 import app.tuned.data.TuneRepository
@@ -58,6 +59,7 @@ class AppContainer(
     val updates by lazy { GitHubUpdates(context, http) }
     val backup by lazy { BackupRepository(credentials, settings, db) }
     val reminders by lazy { Reminders(context) }
+    val offline by lazy { Offline(context, db, settings) }
     val metadata by lazy { MetadataRepository(http, settings, db.metadata()) }
 
     /**
