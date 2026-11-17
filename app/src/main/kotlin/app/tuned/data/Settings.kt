@@ -17,6 +17,9 @@ import kotlinx.coroutines.flow.map
 
 enum class ThemeMode { SYSTEM, LIGHT, DARK }
 
+/** The colour of buttons, switches and highlights; violet is the brand colour (docs/decisions/branding.md). */
+enum class Accent { VIOLET, BLUE, TEAL, GREEN, ORANGE, PINK, RED }
+
 enum class StartTab { LIVE, MOVIES, SHOWS, LAST }
 
 /** How much video to hold before and during playback: quick starts or fewer stalls. */
@@ -57,6 +60,7 @@ data class AppSettings(
     val theme: ThemeMode = ThemeMode.SYSTEM,
     val dynamicColour: Boolean = false,
     val pureBlack: Boolean = false,
+    val accent: Accent = Accent.VIOLET,
     val startTab: StartTab = StartTab.LIVE,
     val lastTab: Int = 0,
     val hiddenRegions: Set<String> = emptySet(),
@@ -111,6 +115,7 @@ class SettingsRepository(
             theme = enumOr(p[K.theme], d.theme),
             dynamicColour = p[K.dynamicColour] ?: d.dynamicColour,
             pureBlack = p[K.pureBlack] ?: d.pureBlack,
+            accent = enumOr(p[K.accent], d.accent),
             startTab = enumOr(p[K.startTab], d.startTab),
             lastTab = p[K.lastTab] ?: d.lastTab,
             hiddenRegions = p[K.hiddenRegions] ?: d.hiddenRegions,
@@ -162,6 +167,7 @@ class SettingsRepository(
         p[K.theme] = s.theme.name
         p[K.dynamicColour] = s.dynamicColour
         p[K.pureBlack] = s.pureBlack
+        p[K.accent] = s.accent.name
         p[K.startTab] = s.startTab.name
         p[K.lastTab] = s.lastTab
         p[K.hiddenRegions] = s.hiddenRegions
@@ -212,6 +218,7 @@ class SettingsRepository(
         val theme = stringPreferencesKey("theme")
         val dynamicColour = booleanPreferencesKey("dynamic_colour")
         val pureBlack = booleanPreferencesKey("pure_black")
+        val accent = stringPreferencesKey("accent")
         val startTab = stringPreferencesKey("start_tab")
         val lastTab = intPreferencesKey("last_tab")
         val hiddenRegions = stringSetPreferencesKey("hidden_regions")
