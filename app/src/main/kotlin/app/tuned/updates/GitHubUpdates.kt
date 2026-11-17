@@ -99,12 +99,11 @@ class GitHubUpdates(
         if (apk.length() == asset.size) return apk
         dir.listFiles()?.forEach { it.delete() }
         val partial = File(dir, "download.tmp")
-        http.newCall(Request.Builder().url(asset.url).build()).execute().use { response ->
-            if (!response.isSuccessful) throw IOException("Update download failed: HTTP ${response.code}")
-            partial.outputStream().use { out -> response.body.byteStream().copyTo(out) }
-        }
-        if (partial.length() != asset.size) throw IOException("Update download was incomplete")
-        if (!partial.renameTo(apk)) throw IOException("Couldn't save the update")
+        val ok =
+            http.newCall(Request.Builder().url(asset.url).build()).execute().use { response ->
+                response.isSuccessful && partial.outputStream().use { out -> response.body.byteStream().copyTo(out) } == asset.size
+            }
+        if (!ok || !partial.renameTo(apk)) throw IOException("The update download failed or was incomplete")
         return apk
     }
 
