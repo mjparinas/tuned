@@ -10,9 +10,9 @@ import android.widget.TextView
 import androidx.activity.ComponentActivity
 import androidx.lifecycle.lifecycleScope
 import app.tuned.R
+import app.tuned.diagnostics.launchSafely
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 
 /**
  * Auto-tune's "Next stream" button (Melvin, 2026-11-17: "there should be a go to the next one button that keeps going
@@ -75,7 +75,7 @@ internal class TuneNext(
     fun flash() {
         flashJob?.cancel()
         flashJob =
-            activity.lifecycleScope.launch {
+            activity.lifecycleScope.launchSafely("TuneNext") {
                 button.visibility = if (hasNext()) View.VISIBLE else View.GONE
                 delay(FLASH_MS)
                 flashJob = null
