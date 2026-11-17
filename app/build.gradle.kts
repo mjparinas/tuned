@@ -125,6 +125,8 @@ dependencies {
     implementation(libs.coil.network.okhttp)
     implementation(libs.androidx.profileinstaller)
     implementation(libs.play.app.update)
+    // Play's update library pulls in an old Fragment; 1.3+ is needed for the activity result API it uses.
+    implementation(libs.androidx.fragment)
 
     testImplementation(libs.junit)
     testImplementation(kotlin("test-junit"))
