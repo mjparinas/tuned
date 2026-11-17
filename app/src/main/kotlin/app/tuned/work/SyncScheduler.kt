@@ -74,13 +74,11 @@ class SyncScheduler(
     }
 
     /** True while any refresh runs, for the progress bar on the lists. */
-    val refreshing: Flow<Boolean> =
+    val refreshing: Flow<Boolean> by lazy {
         work.getWorkInfosFlow(WorkQuery.fromUniqueWorkNames(NOW, PLAYLIST, GUIDE)).map { infos ->
-            infos.any {
-                it.state ==
-                    WorkInfo.State.RUNNING
-            }
+            infos.any { it.state == WorkInfo.State.RUNNING }
         }
+    }
 
     fun cancelAll() {
         work.cancelUniqueWork(NOW)
