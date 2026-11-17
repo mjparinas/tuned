@@ -58,7 +58,7 @@ class PlayerTools(
     )
 
     private val density = activity.resources.displayMetrics.density
-    private val guide = MiniGuide(activity, hooks.player, hooks.queue, beside = listOf(playerView, overlay))
+    private val guide = MiniGuide(activity, hooks.player, hooks.queue, beside = listOf(playerView, overlay), onClosed = { syncBack() })
     private val guideButton = button(R.drawable.ic_player_guide, R.string.player_guide) { toggleGuide() }
     private val unlockButton =
         button(R.drawable.ic_player_lock, R.string.player_unlock) { unlock() }.apply {
@@ -112,6 +112,10 @@ class PlayerTools(
 
     /** Adds the panels (guide, info, unlock) over the video. */
     fun attach(root: FrameLayout) {
+        root.addView(
+            guide.scrim,
+            FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT),
+        )
         root.addView(
             guide.view,
             FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.MATCH_PARENT, Gravity.END),

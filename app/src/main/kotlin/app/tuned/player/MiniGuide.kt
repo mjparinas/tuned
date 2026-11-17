@@ -4,9 +4,12 @@ import android.app.Activity
 import android.graphics.Color
 import android.graphics.Typeface
 import android.text.TextUtils
+import android.util.TypedValue
+import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
 import android.widget.BaseAdapter
+import android.widget.ImageButton
 import android.widget.LinearLayout
 import android.widget.ListView
 import android.widget.TextView
@@ -14,6 +17,7 @@ import androidx.annotation.OptIn
 import androidx.core.view.isVisible
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
+import app.tuned.R
 import app.tuned.container
 import app.tuned.core.ScreenLayout
 import app.tuned.data.db.ItemEntity
@@ -31,17 +35,16 @@ class MiniGuide(
     private val player: () -> ExoPlayer?,
     private val queue: () -> List<ItemEntity>,
     private val beside: List<View>,
+    private val onClosed: () -> Unit,
 ) {
     private val density get() = activity.resources.displayMetrics.density
     private var channels: List<ItemEntity> = emptyList()
     private var onNow: Map<String, String> = emptyMap()
     private val adapter = Adapter()
 
-    val view: ListView =
+    private val list: ListView =
         ListView(activity).apply {
-            setBackgroundColor(0xE6101014.toInt())
             divider = null
-            visibility = View.GONE
             adapter = this@MiniGuide.adapter
             setOnItemClickListener { _, _, position, _ ->
                 player()?.let { p ->
@@ -50,6 +53,51 @@ class MiniGuide(
                 }
                 close()
             }
+        }
+
+    /** "Channels" with a close button, so it's plain how to put the guide away (back and a tap beside it work too). */
+    private val header: LinearLayout =
+        LinearLayout(activity).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+            val pad = (12 * density).toInt()
+            setPadding(pad * 2, pad / 2, pad / 2, pad / 2)
+            addView(
+                TextView(activity).apply {
+                    text = activity.getString(R.string.player_guide)
+                    textSize = 18f
+                    setTextColor(Color.WHITE)
+                    setTypeface(typeface, Typeface.BOLD)
+                },
+                LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f),
+            )
+            addView(
+                ImageButton(activity).apply {
+                    setImageResource(R.drawable.ic_player_close)
+                    contentDescription = activity.getString(R.string.player_guide_close)
+                    val ripple = TypedValue()
+                    activity.theme.resolveAttribute(android.R.attr.selectableItemBackgroundBorderless, ripple, true)
+                    setBackgroundResource(ripple.resourceId)
+                    setPadding(pad, pad, pad, pad)
+                    setOnClickListener { close() }
+                },
+            )
+        }
+
+    val view: LinearLayout =
+        LinearLayout(activity).apply {
+            orientation = LinearLayout.VERTICAL
+            setBackgroundColor(0xE6101014.toInt())
+            visibility = View.GONE
+            addView(header)
+            addView(list, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f))
+        }
+
+    /** Covers the video beside the guide while it slides over it: a tap there puts the guide away. */
+    val scrim: View =
+        View(activity).apply {
+            visibility = View.GONE
+            setOnClickListener { close() }
         }
 
     val isOpen get() = view.isVisible
@@ -61,8 +109,8 @@ class MiniGuide(
         view.visibility = View.VISIBLE
         place()
         val current = player()?.currentMediaItemIndex ?: 0
-        view.setSelection((current - 2).coerceAtLeast(0))
-        view.requestFocus()
+        list.setSelection((current - 2).coerceAtLeast(0))
+        list.requestFocus()
         scope.launch {
             val ids = channels.mapNotNull { it.tvgId }.distinct()
             val now = System.currentTimeMillis()
@@ -74,8 +122,10 @@ class MiniGuide(
     }
 
     fun close() {
+        if (!isOpen) return
         view.visibility = View.GONE
         place()
+        onClosed()
     }
 
     /** Sizes the guide for the screen, and makes room for it beside the video when there is room; again on rotation. */
@@ -88,6 +138,7 @@ class MiniGuide(
             params.width = width
             view.layoutParams = params
         }
+        scrim.visibility = if (isOpen && !docked) View.VISIBLE else View.GONE
         for (v in beside) {
             val p = v.layoutParams as? ViewGroup.MarginLayoutParams ?: continue
             val end = if (docked) width else 0

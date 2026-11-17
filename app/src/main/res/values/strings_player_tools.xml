@@ -16,6 +16,7 @@
     <string name="player_quality_auto">Auto</string>
     <string name="player_quality_only_one">This stream has one quality</string>
     <string name="player_guide">Channels</string>
+    <string name="player_guide_close">Close channels</string>
     <plurals name="player_audio_channels">
         <item quantity="one">%d channel</item>
         <item quantity="other">%d channels</item>
