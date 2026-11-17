@@ -42,6 +42,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -58,6 +59,7 @@ import app.tuned.data.db.ItemEntity
 import app.tuned.data.db.ProgrammeEntity
 import app.tuned.player.PlayerActivity
 import app.tuned.ui.common.BackTopBar
+import app.tuned.ui.common.focusRing
 import app.tuned.work.Reminders
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -252,7 +254,8 @@ fun GuideScreen(
                                     } else {
                                         Modifier
                                     },
-                                ).clickable(enabled = onNow || replay) { if (onNow) onPlay(itemId) else watchAgain() }
+                                ).focusRing(RectangleShape, MaterialTheme.colorScheme.primary)
+                                .clickable(enabled = onNow || replay) { if (onNow) onPlay(itemId) else watchAgain() }
                                 .padding(horizontal = 16.dp, vertical = 10.dp),
                     ) {
                         Text(

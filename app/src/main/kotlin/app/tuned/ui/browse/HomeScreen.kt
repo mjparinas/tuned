@@ -97,6 +97,7 @@ import app.tuned.data.db.ItemEntity
 import app.tuned.data.db.ShowSummary
 import app.tuned.ui.SyncText
 import app.tuned.ui.common.VoiceSearchButton
+import app.tuned.ui.common.focusRing
 import app.tuned.updates.GitHubUpdates
 import coil3.compose.AsyncImage
 
@@ -371,6 +372,7 @@ private fun ChannelRow(
         Row(
             Modifier
                 .fillMaxWidth()
+                .focusRing(MaterialTheme.shapes.medium, MaterialTheme.colorScheme.primary)
                 .combinedClickable(onClick = onPlay, onLongClick = { menu = true })
                 .padding(start = 10.dp, end = 4.dp, top = 10.dp, bottom = 10.dp),
             verticalAlignment = Alignment.CenterVertically,
@@ -556,7 +558,13 @@ private fun ContinueCard(
         } else {
             row.name
         }
-    Column(Modifier.width(132.dp).clip(RoundedCornerShape(12.dp)).clickable(onClick = onClick)) {
+    Column(
+        Modifier
+            .width(132.dp)
+            .clip(RoundedCornerShape(12.dp))
+            .focusRing(RoundedCornerShape(12.dp), MaterialTheme.colorScheme.primary)
+            .clickable(onClick = onClick),
+    ) {
         Box(
             Modifier
                 .fillMaxWidth()
@@ -601,6 +609,7 @@ fun Poster(
     Column(
         Modifier
             .clip(RoundedCornerShape(10.dp))
+            .focusRing(RoundedCornerShape(10.dp), MaterialTheme.colorScheme.primary)
             .combinedClickable(onClick = onClick, onLongClick = if (hasMenu) ({ menu = true }) else null),
     ) {
         Box {

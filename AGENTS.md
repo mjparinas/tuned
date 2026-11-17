@@ -58,4 +58,5 @@ One file per topic in `docs/decisions/`, A to Z. Add a line when you add a topic
 - [Player](docs/decisions/player.md): Media3 setup, controls, captions, audio, picture-in-picture.
 - [Security](docs/decisions/security.md): login storage, cleartext HTTP, backups.
 - [Speed](docs/decisions/speed.md): what keeps the app fast, and the budget.
+- [TV](docs/decisions/tv.md): Android TV launcher, focus outlines, remote keys in the player.
 - [Updates](docs/decisions/updates.md): Play in-app updates.

@@ -15,6 +15,7 @@ import android.os.Bundle
 import android.util.Rational
 import android.util.TypedValue
 import android.view.Gravity
+import android.view.KeyEvent
 import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
@@ -193,6 +194,9 @@ class PlayerActivity : FragmentActivity() {
         )
         setContentView(root)
     }
+
+    /** TV remote buttons go to the tools first; see [PlayerTools.onKey]. */
+    override fun dispatchKeyEvent(event: KeyEvent): Boolean = tools.onKey(event) || super.dispatchKeyEvent(event)
 
     private fun backButton() = ImageButton(this).apply {
         setImageResource(R.drawable.ic_arrow_back)

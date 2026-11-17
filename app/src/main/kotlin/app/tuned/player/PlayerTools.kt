@@ -5,6 +5,7 @@ import android.app.AlertDialog
 import android.graphics.Color
 import android.util.TypedValue
 import android.view.Gravity
+import android.view.KeyEvent
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
@@ -25,6 +26,7 @@ import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.AspectRatioFrameLayout
 import androidx.media3.ui.PlayerView
 import app.tuned.R
+import app.tuned.core.RemoteKeys
 import app.tuned.data.VideoFit
 import app.tuned.data.db.ItemEntity
 import kotlinx.coroutines.Job
@@ -153,6 +155,60 @@ class PlayerTools(
         infoJob?.cancel()
         unlockButton.visibility = View.GONE
         syncBack()
+    }
+
+    /**
+     * TV remotes ([RemoteKeys]): channel up and down, the guide and info buttons, and the arrows while the controls are
+     * hidden. True when the key was used here; both the press and the release are taken, so Media3 doesn't also show
+     * its controls for it. Nothing changes while the screen is locked, and while the guide is open only the guide
+     * and menu buttons (which close it) are taken; the arrows move through its list.
+     */
+    fun onKey(event: KeyEvent): Boolean {
+        val guideKey = event.keyCode == RemoteKeys.GUIDE || event.keyCode == RemoteKeys.MENU
+        if (locked || (guide.isOpen && !guideKey)) return false
+        val action = RemoteKeys.action(event.keyCode, hooks.isLive(), playerView.isControllerFullyVisible)
+        if (action == RemoteKeys.Action.NONE) return false
+        val seek = action == RemoteKeys.Action.SEEK_FORWARD || action == RemoteKeys.Action.SEEK_BACK
+        // Holding an arrow keeps skipping; holding a channel button changes channel once.
+        if (event.action == KeyEvent.ACTION_DOWN && (event.repeatCount == 0 || seek)) perform(action)
+        return true
+    }
+
+    private fun perform(action: RemoteKeys.Action) {
+        val player = hooks.player()
+        when (action) {
+            RemoteKeys.Action.NEXT_CHANNEL -> {
+                player?.seekToNextMediaItem()
+            }
+
+            RemoteKeys.Action.PREVIOUS_CHANNEL -> {
+                player?.seekToPreviousMediaItem()
+            }
+
+            RemoteKeys.Action.SEEK_FORWARD -> {
+                player?.let {
+                    it.seekForward()
+                    hooks.say(activity.getString(R.string.gesture_forward, (it.seekForwardIncrement / MS_PER_S).toInt()))
+                }
+            }
+
+            RemoteKeys.Action.SEEK_BACK -> {
+                player?.let {
+                    it.seekBack()
+                    hooks.say(activity.getString(R.string.gesture_back, (it.seekBackIncrement / MS_PER_S).toInt()))
+                }
+            }
+
+            RemoteKeys.Action.GUIDE -> {
+                if (hooks.queue().size > 1) toggleGuide()
+            }
+
+            RemoteKeys.Action.INFO -> {
+                toggleInfo()
+            }
+
+            RemoteKeys.Action.NONE -> {}
+        }
     }
 
     fun release() {
@@ -327,5 +383,6 @@ class PlayerTools(
 
     private companion object {
         const val UNLOCK_SHOWN_MS = 3_000L
+        const val MS_PER_S = 1_000L
     }
 }

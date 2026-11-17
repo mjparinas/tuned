@@ -34,6 +34,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
@@ -47,6 +48,7 @@ import app.tuned.container
 import app.tuned.data.db.HistoryEntity
 import app.tuned.data.db.ItemEntity
 import app.tuned.ui.common.BackTopBar
+import app.tuned.ui.common.focusRing
 import app.tuned.ui.details.DetailsBody
 import app.tuned.ui.details.DetailsViewModel
 import app.tuned.ui.details.MetaLine
@@ -153,7 +155,11 @@ private fun EpisodeRow(
 ) {
     val watched = history != null && history.durationMs > 0 && history.positionMs > history.durationMs * 0.92
     Row(
-        Modifier.fillMaxWidth().clickable(onClick = onClick).padding(horizontal = 16.dp, vertical = 12.dp),
+        Modifier
+            .fillMaxWidth()
+            .focusRing(RectangleShape, MaterialTheme.colorScheme.primary)
+            .clickable(onClick = onClick)
+            .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Icon(
