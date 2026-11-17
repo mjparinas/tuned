@@ -11,6 +11,7 @@ import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
+import app.tuned.core.ChannelScan
 import app.tuned.core.PinHash
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -88,6 +89,8 @@ data class AppSettings(
     val autoPlayNext: Boolean = true,
     /** Pull down on a list to refresh the playlist (Melvin, 2026-11-17: off, so a scroll never starts a download). */
     val pullToRefresh: Boolean = false,
+    /** Leave out live channels that failed in two channel scans (Settings › Channel health). */
+    val hideDeadChannels: Boolean = true,
     val pictureInPicture: Boolean = true,
     val playerGestures: Boolean = true,
     val autoReconnect: Boolean = true,
@@ -118,7 +121,8 @@ data class AppSettings(
 )
 
 /** Hidden countries and hidden groups together: the one list every query filters by. */
-fun AppSettings.hiddenKeys(): List<String> = (hiddenRegions + hiddenGroups).sorted()
+fun AppSettings.hiddenKeys(): List<String> =
+    (hiddenRegions + hiddenGroups + if (hideDeadChannels) setOf(ChannelScan.HIDDEN_KEY) else emptySet()).sorted()
 
 private val Context.dataStore by preferencesDataStore(name = "settings")
 
@@ -212,6 +216,7 @@ class SettingsRepository(
             resumePlayback = p[K.resumePlayback] ?: d.resumePlayback,
             autoPlayNext = p[K.autoPlayNext] ?: d.autoPlayNext,
             pullToRefresh = p[K.pullToRefresh] ?: d.pullToRefresh,
+            hideDeadChannels = p[K.hideDeadChannels] ?: d.hideDeadChannels,
             pictureInPicture = p[K.pictureInPicture] ?: d.pictureInPicture,
             playerGestures = p[K.playerGestures] ?: d.playerGestures,
             autoReconnect = p[K.autoReconnect] ?: d.autoReconnect,
@@ -272,6 +277,7 @@ class SettingsRepository(
         p[K.resumePlayback] = s.resumePlayback
         p[K.autoPlayNext] = s.autoPlayNext
         p[K.pullToRefresh] = s.pullToRefresh
+        p[K.hideDeadChannels] = s.hideDeadChannels
         p[K.pictureInPicture] = s.pictureInPicture
         p[K.playerGestures] = s.playerGestures
         p[K.autoReconnect] = s.autoReconnect
@@ -332,6 +338,7 @@ class SettingsRepository(
         val resumePlayback = booleanPreferencesKey("resume_playback")
         val autoPlayNext = booleanPreferencesKey("auto_play_next")
         val pullToRefresh = booleanPreferencesKey("pull_to_refresh")
+        val hideDeadChannels = booleanPreferencesKey("hide_dead_channels")
         val pictureInPicture = booleanPreferencesKey("picture_in_picture")
         val playerGestures = booleanPreferencesKey("player_gestures")
         val autoReconnect = booleanPreferencesKey("auto_reconnect")

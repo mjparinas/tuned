@@ -237,3 +237,31 @@ data class SeenEpisodeEntity(
     @PrimaryKey val itemId: Long,
     val showKey: String,
 )
+
+/**
+ * What channel scans found for a live channel ([app.tuned.core.ChannelScan.Record]). [hidden] is stored, not worked
+ * out, so the lists can leave hidden channels out in SQL.
+ */
+@Entity(tableName = "channel_scan")
+data class ChannelScanEntity(
+    @PrimaryKey val itemId: Long,
+    val failures: Int,
+    val firstFailAt: Long,
+    val lastFailAt: Long,
+    val lastOkAt: Long,
+    val reason: String?,
+    val kept: Boolean,
+    val hidden: Boolean,
+)
+
+/** A row of the channel health report: the channel and what scans found. */
+data class ScanReportRow(
+    val itemId: Long,
+    val name: String,
+    val logo: String?,
+    val groupName: String,
+    val failures: Int,
+    val lastFailAt: Long,
+    val reason: String?,
+    val hidden: Boolean,
+)

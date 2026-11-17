@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="health_title">Channel health</string>
+    <string name="settings_channel_health_summary">Scan every channel and hide the ones that keep failing</string>
+    <string name="health_help">A scan tries every live channel, one at a time, the way an old TV scanned for stations. If the internet drops or the server stops answering, the scan waits or stops instead of blaming channels. A channel is hidden only after failing in two scans at least six hours apart, and comes back as soon as a scan finds it working.</string>
+    <string name="health_scan_now">Scan channels</string>
+    <string name="health_stop">Stop scan</string>
+    <string name="health_starting">Starting the scan…</string>
+    <string name="health_while_scanning">The scan pauses while you watch something, so only one stream is ever open.</string>
+    <string name="health_last_scan">Last scan %1$s</string>
+    <!-- %1$s, %2$s, %3$s: "120 working", "8 failed", "2 not judged". -->
+    <string name="health_counts">%1$s · %2$s · %3$s</string>
+    <plurals name="health_working">
+        <item quantity="one">%1$d working</item>
+        <item quantity="other">%1$d working</item>
+    </plurals>
+    <plurals name="health_failed">
+        <item quantity="one">%1$d failed</item>
+        <item quantity="other">%1$d failed</item>
+    </plurals>
+    <plurals name="health_unsure">
+        <item quantity="one">%1$d not judged</item>
+        <item quantity="other">%1$d not judged</item>
+    </plurals>
+    <string name="health_stopped_internet">The scan stopped because the internet was down. No channels were blamed for it.</string>
+    <string name="health_stopped_server">The scan stopped because the server wasn\'t sending any streams. No channels were blamed for it.</string>
+    <string name="health_stopped_busy">The scan stopped because your account was using all its connections, probably on another device. Try again later.</string>
+    <string name="health_hide_dead">Hide channels that keep failing</string>
+    <string name="health_hide_dead_summary">Turn off to show every channel, including the ones scans hid</string>
+    <plurals name="health_hidden">
+        <item quantity="one">%1$d hidden channel</item>
+        <item quantity="other">%1$d hidden channels</item>
+    </plurals>
+    <plurals name="health_once">
+        <item quantity="one">%1$d channel failed but is still shown</item>
+        <item quantity="other">%1$d channels failed but are still shown</item>
+    </plurals>
+    <!-- %1$s: the group; %2$s: why it failed; %3$s: when, such as "2 hours ago". -->
+    <string name="health_row">%1$s · %2$s · %3$s</string>
+    <string name="health_show_again">Show again</string>
+    <string name="health_reason_http">the server said it\'s not available</string>
+    <string name="health_reason_no_data">no picture arrived</string>
+    <string name="health_reason_not_video">an error page instead of video</string>
+    <string name="health_reason_timeout">no answer in time</string>
+    <string name="health_reason_connection">couldn\'t connect</string>
+    <string name="health_reason_account">refused by the account</string>
+    <string name="scan_channel">Channel scan</string>
+    <string name="scan_running">Scanning channels</string>
+    <plurals name="scan_progress">
+        <item quantity="one">%1$d of %2$d channel</item>
+        <item quantity="other">%1$d of %2$d channels</item>
+    </plurals>
+</resources>
