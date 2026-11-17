@@ -13,6 +13,7 @@ import app.tuned.core.Search
 import app.tuned.data.AppSettings
 import app.tuned.data.SyncProgress
 import app.tuned.data.db.ChannelWithNow
+import app.tuned.data.db.ContinueRow
 import app.tuned.data.db.FavouriteEntity
 import app.tuned.data.db.GroupCount
 import app.tuned.data.db.ItemEntity
@@ -38,6 +39,9 @@ sealed interface Filter {
     data object All : Filter
 
     data object Favourites : Filter
+
+    /** Live TV: the channels watched lately, most recent first. */
+    data object Recent : Filter
 
     data class Group(
         val name: String,
@@ -91,7 +95,15 @@ class BrowseViewModel(
         query(ContentKind.LIVE)
             .flatMapLatest { q ->
                 Pager(config) {
-                    items.channels(q.now, q.hidden, q.adult, (q.filter as? Filter.Group)?.name, q.filter == Filter.Favourites, q.search)
+                    items.channels(
+                        q.now,
+                        q.hidden,
+                        q.adult,
+                        (q.filter as? Filter.Group)?.name,
+                        q.filter == Filter.Favourites,
+                        q.filter == Filter.Recent,
+                        q.search,
+                    )
                 }.flow
             }.cachedIn(viewModelScope)
 
@@ -117,6 +129,17 @@ class BrowseViewModel(
                     items.shows(q.hidden, q.adult, (q.filter as? Filter.Group)?.name, q.filter == Filter.Favourites, q.search)
                 }.flow
             }.cachedIn(viewModelScope)
+
+    private val continueFlows = mutableMapOf<ContentKind, StateFlow<List<ContinueRow>>>()
+
+    /** Continue Watching for Movies (kind MOVIE) or Shows (episodes, kind SERIES). */
+    fun continueWatching(kind: ContentKind): StateFlow<List<ContinueRow>> = continueFlows.getOrPut(kind) {
+        settings
+            .map { it?.hiddenRegions?.sorted().orEmpty() to (it?.showAdult ?: false) }
+            .distinctUntilChanged()
+            .flatMapLatest { (hidden, adult) -> items.continueWatching(kind.code, hidden, adult) }
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+    }
 
     private val groupFlows = mutableMapOf<ContentKind, StateFlow<List<GroupCount>>>()
 

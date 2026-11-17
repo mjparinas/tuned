@@ -195,4 +195,7 @@
     <string name="update_failed">The update didn’t install. Tuned will try again next time.</string>
     <string name="settings_check_updates">Check for updates</string>
     <string name="settings_check_updates_summary">Download new versions from GitHub when Tuned opens</string>
+    <string name="filter_recent">Recent</string>
+    <string name="continue_watching">Continue watching</string>
+    <string name="continue_episode">%1$s · S%2$d E%3$d</string>
 </resources>

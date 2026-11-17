@@ -43,17 +43,19 @@ interface ItemDao {
         FROM items i
         LEFT JOIN programmes p ON p.channelId = i.tvgId AND p.start <= :now AND p.stop > :now
         LEFT JOIN favourites f ON f.itemId = i.id
+        LEFT JOIN history h ON h.itemId = i.id
         WHERE i.kind = 0
             AND (i.region IS NULL OR i.region NOT IN (:hidden))
             AND (:adult OR i.adult = 0)
             AND (:group IS NULL OR i.groupName = :group)
             AND (:favouritesOnly = 0 OR f.itemId IS NOT NULL)
+            AND (:recentOnly = 0 OR h.itemId IS NOT NULL)
             AND (:query = '' OR i.searchName LIKE '%' || :query || '%' OR i.tvgId IN (
                 -- An event search ("UFC") also finds the channels showing it now or within the hour.
                 SELECT channelId FROM programmes WHERE title LIKE '%' || :query || '%' AND stop > :now AND start < :now + 3600000
             ))
         GROUP BY i.id
-        ORDER BY i.sortOrder
+        ORDER BY CASE WHEN :recentOnly = 1 THEN h.watchedAt END DESC, i.sortOrder
         """,
     )
     fun channels(
@@ -62,8 +64,29 @@ interface ItemDao {
         adult: Boolean,
         group: String?,
         favouritesOnly: Boolean,
+        recentOnly: Boolean,
         query: String,
     ): PagingSource<Int, ChannelWithNow>
+
+    /** Movies or episodes started and not finished, last watched first, for the Continue Watching row. */
+    @Query(
+        """
+        SELECT i.id, i.name, i.logo, i.showName, i.season, i.episode, h.positionMs, h.durationMs
+        FROM history h
+        JOIN items i ON i.id = h.itemId
+        WHERE i.kind = :kind
+            AND (i.region IS NULL OR i.region NOT IN (:hidden))
+            AND (:adult OR i.adult = 0)
+            AND h.durationMs > 0 AND h.positionMs > 30000 AND h.positionMs < h.durationMs * 95 / 100
+        ORDER BY h.watchedAt DESC
+        LIMIT 20
+        """,
+    )
+    fun continueWatching(
+        kind: Int,
+        hidden: List<String>,
+        adult: Boolean,
+    ): Flow<List<ContinueRow>>
 
     @Query(
         """
