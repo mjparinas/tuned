@@ -116,6 +116,9 @@ object Regions {
 
     fun displayName(region: String): String = names[region] ?: region
 
+    /** A tag providers use for a country or language, such as US, UK, EN or USA. */
+    fun isKnown(tag: String): Boolean = normalize(tag.uppercase()) in names
+
     private fun prefix(text: String): String? {
         val parts =
             text

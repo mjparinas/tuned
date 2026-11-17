@@ -342,6 +342,11 @@ fun SettingsScreen(
                 stringResource(R.string.settings_reconnect_summary),
             ) { on -> vm.update { it.copy(autoReconnect = on) } }
             SwitchRow(
+                stringResource(R.string.settings_backup_copies),
+                settings.backupCopies,
+                stringResource(R.string.settings_backup_copies_summary),
+            ) { on -> vm.update { it.copy(backupCopies = on) } }
+            SwitchRow(
                 stringResource(R.string.settings_landscape),
                 settings.landscapePlayback,
             ) { on -> vm.update { it.copy(landscapePlayback = on) } }

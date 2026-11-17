@@ -1,8 +1,6 @@
 package app.tuned.data
 
 import android.content.Context
-import android.net.ConnectivityManager
-import android.net.NetworkCapabilities
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
@@ -13,8 +11,6 @@ import app.tuned.core.ChannelScan
 import app.tuned.core.ChannelScan.Failure
 import app.tuned.core.Placeholders
 import app.tuned.core.ScanEngine
-import app.tuned.core.XtreamAccount
-import app.tuned.core.XtreamUrls
 import app.tuned.data.db.ChannelScanEntity
 import app.tuned.data.db.TunedDatabase
 import kotlinx.coroutines.Dispatchers
@@ -72,6 +68,8 @@ class ChannelScanner(
             )
         }
 
+    private val check by lazy { ServiceCheck(context, client, credentials) }
+
     private val client by lazy {
         http
             .newBuilder()
@@ -100,6 +98,26 @@ class ChannelScanner(
         return result
     }
 
+    /**
+     * The player found that [itemId] won't play while the internet and the service work ([ChannelScan.blameOnPlay]):
+     * hide it now, unless the person chose to keep it. A scan that finds it working brings it back.
+     */
+    suspend fun hideAfterPlayFailure(itemId: Long) {
+        val record = ChannelScan.afterPlayFailure(db.channelScan().get(itemId)?.toRecord(), System.currentTimeMillis())
+        db.channelScan().save(record.toEntity(itemId))
+    }
+
+    /** Is it the channel, or the internet or the service? See [ServiceCheck]. */
+    suspend fun channelToBlame(anotherChannelPlayed: Boolean): Boolean {
+        if (!anotherChannelPlayed || !check.internetUp()) return false
+        val agent =
+            settings.settings
+                .first()
+                .userAgent
+                .ifBlank { "Tuned/${BuildConfig.VERSION_NAME}" }
+        return ChannelScan.blameOnPlay(true, check.server(agent), anotherChannelPlayed = true)
+    }
+
     /** "Show again" in the report: the channel comes back and scans never hide it again. */
     suspend fun keep(itemId: Long) {
         val record = ChannelScan.keep(db.channelScan().get(itemId)?.toRecord())
@@ -122,30 +140,11 @@ class ChannelScanner(
             }
         }
 
-        override suspend fun internetUp(): Boolean {
-            val cm = context.getSystemService(ConnectivityManager::class.java) ?: return true
-            val caps = cm.getNetworkCapabilities(cm.activeNetwork) ?: return false
-            return caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED)
-        }
+        override suspend fun internetUp(): Boolean = check.internetUp()
 
         override suspend fun server(): ScanEngine.Server {
-            val login = credentials.load() ?: return ScanEngine.Server.DOWN
-            if (login.playlistUrl.isNotBlank()) return ScanEngine.Server.UNKNOWN // a plain M3U has no account call
             busy.first { !it }
-            return withContext(Dispatchers.IO) {
-                try {
-                    client.newCall(request(XtreamUrls.account(login.server, login.username, login.password))).execute().use { r ->
-                        val body = r.body.string().take(MAX_ACCOUNT_ANSWER)
-                        when {
-                            !r.isSuccessful || XtreamAccount.accepted(body) == false -> ScanEngine.Server.DOWN
-                            XtreamAccount.connectionsFull(body) == true -> ScanEngine.Server.BUSY
-                            else -> ScanEngine.Server.UP
-                        }
-                    }
-                } catch (_: IOException) {
-                    ScanEngine.Server.DOWN
-                }
-            }
+            return check.server(agent)
         }
 
         override suspend fun pause(ms: Long) = delay(ms)
@@ -269,6 +268,5 @@ class ChannelScanner(
 
     private companion object {
         const val MAX_DEPTH = 2
-        const val MAX_ACCOUNT_ANSWER = 64 * 1024
     }
 }

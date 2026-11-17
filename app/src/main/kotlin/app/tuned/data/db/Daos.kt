@@ -324,6 +324,34 @@ interface ItemDao {
         adult: Boolean,
     ): List<TuneRow>
 
+    /**
+     * Possible backup copies of a live channel: other live channels whose name has every word of the channel's
+     * [ChannelCopies][app.tuned.core.ChannelCopies] key, through the full-text index. The caller keeps only exact key
+     * matches. Hidden channels are left out like everywhere else.
+     */
+    @Query(
+        """
+        SELECT i.id, i.name, i.groupName, i.region, 1 AS nameMatch, 0 AS guideMatch, h.okAt, h.deadAt, h.height
+        FROM items i
+        LEFT JOIN channel_health h ON h.itemId = i.id
+        WHERE i.kind = 0 AND i.id != :exclude
+            AND i.id IN (SELECT docid FROM items_fts WHERE items_fts MATCH :match)
+            AND (i.region IS NULL OR i.region NOT IN (:hidden)) AND ('g:' || i.kind || ':' || i.groupName) NOT IN (:hidden)
+            AND NOT ('scan:dead' IN (:hidden) AND i.id IN (SELECT itemId FROM channel_scan WHERE hidden = 1))
+            AND NOT ('placeholder' IN (:hidden) AND i.kind = 0
+                AND ((' ' || i.searchName) GLOB '* no event*' OR (' ' || i.searchName) GLOB '* no live event*'))
+            AND (:adult OR i.adult = 0)
+        ORDER BY i.sortOrder
+        LIMIT 200
+        """,
+    )
+    suspend fun copyCandidates(
+        exclude: Long,
+        match: String,
+        hidden: List<String>,
+        adult: Boolean,
+    ): List<TuneRow>
+
     @Query("SELECT region, COUNT(*) AS count FROM items WHERE region IS NOT NULL GROUP BY region ORDER BY count DESC")
     fun regions(): Flow<List<RegionCount>>
 }

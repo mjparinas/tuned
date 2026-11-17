@@ -39,7 +39,6 @@ import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.common.VideoSize
 import androidx.media3.common.util.UnstableApi
-import androidx.media3.datasource.okhttp.OkHttpDataSource
 import androidx.media3.exoplayer.DefaultLoadControl
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
@@ -102,6 +101,29 @@ class PlayerActivity : FragmentActivity() {
     private val subtitleTiming = SubtitleTiming()
     private var reconnect: ConnectivityManager.NetworkCallback? = null
     private var autoTune: AutoTune? = null
+
+    /** The current channel has drawn a picture since it started (a channel that never did gets one retry, not five). */
+    private var pictured = false
+
+    /** Backup copies and hiding channels that won't play; see [Backups]. */
+    private val backups by lazy {
+        Backups(
+            context = this,
+            scope = lifecycleScope,
+            container = container,
+            hooks =
+                Backups.Hooks(
+                    settings = { settings },
+                    queue = { queue },
+                    setQueue = { queue = it },
+                    mediaItem = { it.toMediaItem(null) },
+                    showing = ::updateOverlay,
+                    status = { text -> if (text == null) statusView.visibility = View.GONE else showStatus(text) },
+                    flash = ::flash,
+                    casting = { cast?.casting == true },
+                ),
+        )
+    }
     private lateinit var statusView: TextView
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -301,7 +323,7 @@ class PlayerActivity : FragmentActivity() {
         flashJob =
             lifecycleScope.launchSafely("Player") {
                 delay(FLASH_MS)
-                if (autoTune?.searching != true) statusView.visibility = View.GONE
+                if (autoTune?.searching != true && !backups.searching) statusView.visibility = View.GONE
             }
     }
 
@@ -362,6 +384,7 @@ class PlayerActivity : FragmentActivity() {
                     if (position != null) statusView.text = getString(R.string.tune_trying, position, queue.size)
                 },
                 onGiveUp = { Toast.makeText(this, getString(R.string.tune_none, query), Toast.LENGTH_LONG).show() },
+                onDead = backups::channelFailed,
             )
         autoTune = tuner
         start(queue.first())
@@ -401,13 +424,12 @@ class PlayerActivity : FragmentActivity() {
         }
         updateOverlay(queue[index])
         if (!live) progressJob = lifecycleScope.launchSafely("Player") { saveProgressEvery(exo) }
+        if (live && autoTune == null && item.id != CatchUpLinks.ID) backups.attach(exo)
     }
 
     private fun buildPlayer(live: Boolean): ExoPlayer {
-        val http =
-            OkHttpDataSource
-                .Factory(container.http)
-                .setUserAgent(settings.userAgent.ifBlank { "Tuned/${BuildConfig.VERSION_NAME}" })
+        // Streams over OkHttp, saved downloads from the device.
+        val http = PlayerSources.factory(this, container.http, settings.userAgent.ifBlank { "Tuned/${BuildConfig.VERSION_NAME}" })
         // TS streams from IPTV servers often start on a non-IDR frame; these flags start them sooner.
         val extractors =
             DefaultExtractorsFactory().setTsExtractorFlags(
@@ -463,6 +485,20 @@ class PlayerActivity : FragmentActivity() {
             updateOverlay(item)
             if (cast?.casting == true) cast?.load(item, live, 0)
             liveRetries = 0
+            pictured = false
+            // Flipping to another channel ends the search for a copy of the last one.
+            backups.onChannelChanged(id)
+        }
+
+        override fun onRenderedFirstFrame() {
+            player
+                ?.currentMediaItem
+                ?.mediaId
+                ?.toLongOrNull()
+                ?.let {
+                    pictured = true
+                    backups.pictureShown(it)
+                }
         }
 
         override fun onPlaybackStateChanged(playbackState: Int) {
@@ -479,6 +515,10 @@ class PlayerActivity : FragmentActivity() {
                 tuner.failCurrent()
                 return
             }
+            if (backups.searching) {
+                backups.failCurrent()
+                return
+            }
             if (error.errorCode == PlaybackException.ERROR_CODE_BEHIND_LIVE_WINDOW) {
                 p.seekToDefaultPosition()
                 p.prepare()
@@ -488,9 +528,11 @@ class PlayerActivity : FragmentActivity() {
             // episode picks up where it was (prepare keeps the position).
             val network =
                 error.errorCode in PlaybackException.ERROR_CODE_IO_UNSPECIFIED..PlaybackException.ERROR_CODE_IO_READ_POSITION_OUT_OF_RANGE
-            if (settings.autoReconnect && (live || network) && liveRetries < MAX_RETRIES) {
+            // A live channel that never showed a picture gets one retry before its backup copies are tried, for speed.
+            val tries = backups.retries(fresh = live && !pictured, usual = MAX_RETRIES)
+            if (settings.autoReconnect && (live || network) && liveRetries < tries) {
                 liveRetries++
-                flash(getString(R.string.player_reconnecting_try, liveRetries, MAX_RETRIES))
+                flash(getString(R.string.player_reconnecting_try, liveRetries, tries))
                 lifecycleScope.launchSafely("Player") {
                     delay(1_500L * liveRetries)
                     p.prepare()
@@ -502,7 +544,11 @@ class PlayerActivity : FragmentActivity() {
                 tuner.failCurrent()
                 return
             }
-            Toast.makeText(this@PlayerActivity, getString(R.string.player_error, error.errorCodeName), Toast.LENGTH_LONG).show()
+            // A live channel that died for good: play a backup copy of it if there is one.
+            val sayError = {
+                Toast.makeText(this@PlayerActivity, getString(R.string.player_error, error.errorCodeName), Toast.LENGTH_LONG).show()
+            }
+            if (!live || !backups.takeOver(p.currentMediaItem?.mediaId?.toLongOrNull(), onNone = sayError)) sayError()
         }
 
         override fun onVideoSizeChanged(videoSize: VideoSize) {
@@ -683,6 +729,7 @@ class PlayerActivity : FragmentActivity() {
     override fun onDestroy() {
         progressJob?.cancel()
         autoTune?.release()
+        backups.release()
         gestures?.release()
         tools.release()
         cast?.release()
