@@ -657,8 +657,10 @@ class PlayerActivity : FragmentActivity() {
         override fun pause() {
             when {
                 cast?.casting == true -> cast?.pause()
+
                 // A live channel pauses into the copy kept on the device, so it can carry on, rewind or catch up.
                 live() && timeshift.shift(exo) -> Unit
+
                 else -> super.pause()
             }
         }

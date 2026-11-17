@@ -85,22 +85,21 @@ internal class LiveBuffer(
         dir.deleteRecursively()
     }
 
-    private fun newSegmenter() =
-        TsSegmenter(
-            sink =
-                object : TsSegmenter.Sink {
-                    override fun write(
-                        bytes: ByteArray,
-                        offset: Int,
-                        length: Int,
-                    ) {
-                        val stream = out ?: FileOutputStream(File(dir, "$sequence.ts")).also { out = it }
-                        stream.write(bytes, offset, length)
-                    }
+    private fun newSegmenter() = TsSegmenter(
+        sink =
+            object : TsSegmenter.Sink {
+                override fun write(
+                    bytes: ByteArray,
+                    offset: Int,
+                    length: Int,
+                ) {
+                    val stream = out ?: FileOutputStream(File(dir, "$sequence.ts")).also { out = it }
+                    stream.write(bytes, offset, length)
+                }
 
-                    override fun cut(seconds: Double) = finishPiece(seconds)
-                },
-        )
+                override fun cut(seconds: Double) = finishPiece(seconds)
+            },
+    )
 
     private fun finishPiece(seconds: Double) {
         val stream = out ?: return

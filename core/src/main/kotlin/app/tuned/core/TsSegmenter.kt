@@ -90,18 +90,7 @@ class TsSegmenter(
         } else if (pid == pmtPid && payloadStart) {
             pmt = p
         }
-        val adaptation = (p[3].toInt() shr 4) and 0x3
-        var randomAccess = false
-        var pcr = -1L
-        if ((adaptation == 2 || adaptation == 3) && (p[4].toInt() and 0xFF) > 0) {
-            val flags = p[5].toInt() and 0xFF
-            randomAccess = flags and 0x40 != 0
-            if (flags and 0x10 != 0 && (p[4].toInt() and 0xFF) >= PCR_FIELD) pcr = pcrOf(p)
-        }
-        if (pcr >= 0) {
-            if (startPcr < 0 || pcr < lastPcr - WRAP_GUARD) startPcr = pcr
-            lastPcr = pcr
-        }
+        val randomAccess = readAdaptation(p)
         val seconds = pending
         if (pieceHasData && seconds >= targetSeconds && (randomAccess || seconds >= targetSeconds * 2)) {
             sink.cut(seconds)
@@ -115,6 +104,19 @@ class TsSegmenter(
             pieceHasData = true
         }
         sink.write(p, 0, PACKET)
+    }
+
+    /** Notes the packet's clock (PCR), if it carries one; true when it starts a key frame (random access). */
+    private fun readAdaptation(p: ByteArray): Boolean {
+        val adaptation = (p[3].toInt() shr 4) and 0x3
+        if ((adaptation != 2 && adaptation != 3) || (p[4].toInt() and 0xFF) == 0) return false
+        val flags = p[5].toInt() and 0xFF
+        if (flags and 0x10 != 0 && (p[4].toInt() and 0xFF) >= PCR_FIELD) {
+            val pcr = pcrOf(p)
+            if (startPcr < 0 || pcr < lastPcr - WRAP_GUARD) startPcr = pcr
+            lastPcr = pcr
+        }
+        return flags and 0x40 != 0
     }
 
     /** The PMT's PID from the first programme in a PAT packet, or -1. */
