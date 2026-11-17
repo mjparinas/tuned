@@ -28,7 +28,7 @@ import java.util.concurrent.TimeUnit
 
 /** Everything the app shares, built once and on first use (nothing heavy runs before the first frame). */
 class AppContainer(
-    context: Context,
+    private val context: Context,
 ) {
     val appScope = CoroutineScope(SupervisorJob())
     val settings = SettingsRepository(context)
@@ -42,10 +42,19 @@ class AppContainer(
             .retryOnConnectionFailure(true)
             .build()
     }
-    val sync by lazy { SyncRepository(db, http, credentials, settings) }
+    val sync by lazy { SyncRepository(db, http, credentials, settings, context.noBackupFilesDir.resolve("sync")) }
     val tune by lazy { TuneRepository(db, settings) }
     val scheduler = SyncScheduler(context)
     val updates by lazy { GitHubUpdates(context, http) }
+
+    /** Forgets the login, the cached playlist and guide, and stops background refreshes. */
+    suspend fun signOut() {
+        scheduler.cancelAll()
+        credentials.clear()
+        db.items().deleteAll()
+        db.programmes().deleteAll()
+        settings.update { it.copy(lastPlaylistSync = 0, lastGuideSync = 0, lastSyncError = "") }
+    }
 }
 
 class TunedApp :

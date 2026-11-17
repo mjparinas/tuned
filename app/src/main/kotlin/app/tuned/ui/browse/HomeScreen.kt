@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -36,7 +37,6 @@ import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Tv
 import androidx.compose.material.icons.filled.VideoLibrary
 import androidx.compose.material3.Button
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExtendedFloatingActionButton
@@ -70,6 +70,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -81,9 +82,11 @@ import app.tuned.container
 import app.tuned.core.ContentKind
 import app.tuned.data.AppSettings
 import app.tuned.data.StartTab
+import app.tuned.data.SyncProgress
 import app.tuned.data.db.ChannelWithNow
 import app.tuned.data.db.ItemEntity
 import app.tuned.data.db.ShowSummary
+import app.tuned.ui.SyncText
 import app.tuned.updates.GitHubUpdates
 import coil3.compose.AsyncImage
 
@@ -109,6 +112,7 @@ fun HomeScreen(
     onOpenGuide: (Long) -> Unit,
     onOpenSettings: () -> Unit,
     onTune: (String) -> Unit,
+    onSignedOut: () -> Unit,
     vm: BrowseViewModel = viewModel(),
 ) {
     val start =
@@ -123,6 +127,7 @@ fun HomeScreen(
     val empty by vm.empty.collectAsStateWithLifecycle()
     val refreshing by vm.refreshing.collectAsStateWithLifecycle()
     val lastError by vm.lastError.collectAsStateWithLifecycle()
+    val progress by vm.progress.collectAsStateWithLifecycle()
     val liveSearch by vm.search(ContentKind.LIVE).collectAsStateWithLifecycle()
 
     Scaffold(
@@ -159,12 +164,19 @@ fun HomeScreen(
     ) { padding ->
         Column(Modifier.padding(padding).fillMaxSize()) {
             if (empty == true) {
-                FirstRun(refreshing = refreshing, error = lastError, onRetry = vm::refresh)
+                FirstRun(
+                    refreshing = refreshing,
+                    progress = progress,
+                    error = lastError,
+                    onRetry = vm::refresh,
+                    onChangeLogin = { vm.signOut(onSignedOut) },
+                )
                 return@Column
             }
+            progress?.let { RefreshBar(it) }
             UpdateBanner()
             CategoryChips(vm, tab.kind)
-            PullToRefreshBox(isRefreshing = refreshing, onRefresh = vm::refresh, modifier = Modifier.fillMaxSize()) {
+            PullToRefreshBox(isRefreshing = refreshing && progress == null, onRefresh = vm::refresh, modifier = Modifier.fillMaxSize()) {
                 when (tab.kind) {
                     ContentKind.LIVE -> LiveList(vm, settings.showGuideInList, onPlay, onOpenGuide)
                     ContentKind.MOVIE -> MovieGrid(vm, onPlay)
@@ -557,8 +569,10 @@ fun Logo(
 @Composable
 private fun FirstRun(
     refreshing: Boolean,
+    progress: SyncProgress?,
     error: String,
     onRetry: () -> Unit,
+    onChangeLogin: () -> Unit,
 ) {
     Column(
         Modifier.fillMaxSize().padding(32.dp),
@@ -566,15 +580,57 @@ private fun FirstRun(
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         if (refreshing || error.isBlank()) {
-            CircularProgressIndicator()
+            Text(stringResource(R.string.first_run_loading), style = MaterialTheme.typography.titleMedium)
             Spacer(Modifier.height(16.dp))
-            Text(stringResource(R.string.first_run_loading), style = MaterialTheme.typography.bodyLarge)
+            SyncProgressBar(progress, Modifier.fillMaxWidth().widthIn(max = 420.dp))
+            Spacer(Modifier.height(12.dp))
+            Text(
+                progress?.let { SyncText.describe(LocalContext.current, it) } ?: stringResource(R.string.login_downloading),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center,
+            )
         } else {
             Text(stringResource(R.string.first_run_failed), style = MaterialTheme.typography.titleMedium)
             Spacer(Modifier.height(8.dp))
-            Text(error, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(
+                error,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center,
+            )
             Spacer(Modifier.height(16.dp))
             Button(onClick = onRetry) { Text(stringResource(R.string.retry)) }
+            TextButton(onClick = onChangeLogin) { Text(stringResource(R.string.first_run_change_login)) }
         }
+    }
+}
+
+/** Determinate while the size is known, otherwise the moving bar. */
+@Composable
+private fun SyncProgressBar(
+    progress: SyncProgress?,
+    modifier: Modifier = Modifier,
+) {
+    val fraction = progress?.fraction
+    val shaped = modifier.height(6.dp).clip(RoundedCornerShape(3.dp))
+    if (fraction != null) {
+        LinearProgressIndicator(progress = { fraction }, modifier = shaped, drawStopIndicator = {})
+    } else {
+        LinearProgressIndicator(modifier = shaped)
+    }
+}
+
+/** A thin bar and one line above the lists while a refresh downloads, so a slow server is never a mystery. */
+@Composable
+private fun RefreshBar(progress: SyncProgress) {
+    Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp)) {
+        Text(
+            SyncText.describe(LocalContext.current, progress),
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Spacer(Modifier.height(4.dp))
+        SyncProgressBar(progress, Modifier.fillMaxWidth())
     }
 }

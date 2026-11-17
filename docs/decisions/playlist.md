@@ -10,7 +10,16 @@
 
 **Adult categories** are hidden by default (Settings › Content › Show adult categories).
 
-**Caching.** Each refresh streams the download into Room in batches of 1,000 inside one transaction. The old data stays visible until the new data commits (WAL), and a failed or empty download rolls back, so the cache is never left half-written or emptied. Favourites and watch history are keyed by a stable id (the stream id from the URL, the section and the name), so they survive refreshes and a change of login.
+**Downloading (2026-11-17, after v0.1.0 failed to sign in with "Software caused connection abort").** Melvin's provider serves playlists of about 400 MB from slow servers. So each file is first saved to disk by `Downloader` and only then read into the database:
+
+- Timeouts are long (30 s to connect, 3 minutes between bytes), since slow panels can take minutes to start answering.
+- A dropped connection is retried with backoff (2 s up to 30 s). Only attempts that make no progress count, and it gives up after six in a row.
+- It resumes with HTTP Range only when the server names a validator (ETag or Last-Modified, sent back as If-Range), so a changed file is never stitched onto an old one. Otherwise it starts over.
+- The body is saved as sent (gzip stays gzip) and unzipped while reading.
+- The refresh runs in a WorkManager worker that is promoted to a foreground service, so it keeps going when the screen turns off or another app comes forward. The connection abort came from Android cutting a long download that ran in the sign-in screen.
+- Sign-in now only checks the login with `player_api.php` (a small answer) and then opens the app. The first screen shows a progress bar (MB of MB, then items saved), as does the notification. A thin bar above the lists shows later refreshes.
+
+**Caching.** Each refresh reads the downloaded file into Room in batches of 1,000 inside one transaction. The old data stays visible until the new data commits (WAL), and a failed or empty download rolls back, so the cache is never left half-written or emptied. Favourites and watch history are keyed by a stable id (the stream id from the URL, the section and the name), so they survive refreshes and a change of login.
 
 **Guide.** Only programmes for channels in the playlist, from an hour ago to _Guide days to keep_ ahead (3 by default), are stored. Gzipped guides are unwrapped by their magic bytes.
 

@@ -13,6 +13,7 @@ import androidx.work.WorkInfo
 import androidx.work.WorkManager
 import androidx.work.WorkQuery
 import androidx.work.workDataOf
+import app.tuned.data.SyncProgress
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import java.util.concurrent.TimeUnit
@@ -62,21 +63,39 @@ class SyncScheduler(
         work.enqueueUniquePeriodicWork(name, ExistingPeriodicWorkPolicy.UPDATE, request)
     }
 
-    /** Refresh now (first sign-in, pull to refresh, Settings). Expedited, so it starts at once. */
-    fun refreshNow(guideOnly: Boolean = false) {
+    /**
+     * Refresh now (pull to refresh, Settings, and the first download after sign-in). Expedited, so it starts at once,
+     * and the worker runs as a foreground service so a long download survives leaving the app. [first] replaces any
+     * refresh already queued (a new login) and reports a failure at once instead of retrying later.
+     */
+    fun refreshNow(
+        guideOnly: Boolean = false,
+        first: Boolean = false,
+    ) {
         val request =
             OneTimeWorkRequestBuilder<SyncWorker>()
                 .setExpedited(OutOfQuotaPolicy.RUN_AS_NON_EXPEDITED_WORK_REQUEST)
                 .setConstraints(Constraints.Builder().setRequiredNetworkType(NetworkType.CONNECTED).build())
-                .setInputData(workDataOf(SyncWorker.KEY_MODE to if (guideOnly) SyncWorker.MODE_GUIDE else SyncWorker.MODE_ALL))
-                .build()
-        work.enqueueUniqueWork(NOW, ExistingWorkPolicy.KEEP, request)
+                .setInputData(
+                    workDataOf(
+                        SyncWorker.KEY_MODE to if (guideOnly) SyncWorker.MODE_GUIDE else SyncWorker.MODE_ALL,
+                        SyncWorker.KEY_FIRST to first,
+                    ),
+                ).build()
+        work.enqueueUniqueWork(NOW, if (first) ExistingWorkPolicy.REPLACE else ExistingWorkPolicy.KEEP, request)
     }
 
     /** True while any refresh runs, for the progress bar on the lists. */
     val refreshing: Flow<Boolean> by lazy {
         work.getWorkInfosFlow(WorkQuery.fromUniqueWorkNames(NOW, PLAYLIST, GUIDE)).map { infos ->
             infos.any { it.state == WorkInfo.State.RUNNING }
+        }
+    }
+
+    /** What the running refresh is doing, for the progress bars; null when none runs or it hasn't reported yet. */
+    val progress: Flow<SyncProgress?> by lazy {
+        work.getWorkInfosFlow(WorkQuery.fromUniqueWorkNames(NOW, PLAYLIST, GUIDE)).map { infos ->
+            infos.firstOrNull { it.state == WorkInfo.State.RUNNING }?.let { SyncWorker.progressOf(it.progress) }
         }
     }
 
