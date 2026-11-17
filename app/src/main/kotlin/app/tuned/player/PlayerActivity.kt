@@ -409,9 +409,15 @@ class PlayerActivity : FragmentActivity() {
         exo.setMediaItems(mediaItems, index, resumeAt)
         exo.pauseAtEndOfMediaItems = kind == ContentKind.SERIES && !settings.autoPlayNext
         val castNow = cast?.takeIf { it.casting }
+        // Every connection on the account is in use on another device: opening one more could go over the limit, so
+        // wait for the person to press play (Settings › Account shows the same numbers).
+        val full = if (castNow == null) container.account.fullElsewhere() else null
         if (castNow != null) {
             // Already casting: this goes to the TV, and the phone opens no stream of its own.
             castNow.load(queue[index], live, resumeAt)
+        } else if (full != null) {
+            showStatus(getString(R.string.account_full_wait, full.activeConnections ?: 0, full.maxConnections ?: 0))
+            playerView.showController()
         } else {
             exo.prepare()
             exo.playWhenReady = true
@@ -581,7 +587,22 @@ class PlayerActivity : FragmentActivity() {
         }
 
         override fun play() {
-            if (cast?.casting == true) cast?.play() else super.play()
+            when {
+                cast?.casting == true -> {
+                    cast?.play()
+                }
+
+                playbackState == Player.STATE_IDLE -> {
+                    // Held because the account was full, or stopped: pressing play starts it.
+                    statusView.visibility = View.GONE
+                    super.prepare()
+                    super.play()
+                }
+
+                else -> {
+                    super.play()
+                }
+            }
         }
 
         override fun pause() {
@@ -730,6 +751,7 @@ class PlayerActivity : FragmentActivity() {
         reconnect?.let { cb -> runCatching { getSystemService(ConnectivityManager::class.java)?.unregisterNetworkCallback(cb) } }
         player?.release()
         player = null
+        container.account.noStreamSince = System.currentTimeMillis()
         container.playerOpen.value = false
         super.onDestroy()
     }

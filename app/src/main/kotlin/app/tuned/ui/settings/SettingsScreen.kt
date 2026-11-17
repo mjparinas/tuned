@@ -176,6 +176,7 @@ fun SettingsScreen(
             SectionHeader(stringResource(R.string.settings_account))
             SettingRow(stringResource(R.string.login_server), vm.server(), onClick = { editServer = true })
             SettingRow(stringResource(R.string.login_username), vm.username())
+            AccountStatusRows()
             PlaylistsRow(onAdd = onAddPlaylist, onSwitched = onSwitchedPlaylist)
             SettingRow(
                 stringResource(R.string.settings_refresh_now),
