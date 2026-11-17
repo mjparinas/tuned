@@ -14,6 +14,8 @@
 
 **Captions** (Melvin, 2026-11-17: "customizing CC controls in the settings"). Settings › Captions sets on or off, language, size, font, bold, text colour, edge style and colour, background colour and opacity, distance from the bottom, and whether to ignore the stream's own styling. A live preview shows the result. The CC button changes captions for the current video only.
 
+**Subtitle timing** (Melvin, 2026-11-17). A toolbar button moves the captions earlier or later in steps of 0.1 s and 1 s, up to 30 s either way, for files whose captions don't match the voices. Media3 reads captions as the stream loads, so a `SubtitleParser.Factory` wrapper adds the offset to every cue, and changing it reloads the stream at the same spot (the old connection closes first, so there is still only one). The offset lasts until the player closes, because a bad match belongs to one file. It works on captions Media3 parses (SRT, WebVTT, SSA, TTML, including those inside MKV, MP4 and HLS); CEA-608 captions carried inside a live TS stream aren't moved. It is unavailable while casting, where the TV draws the captions.
+
 **Audio language.** Settings › Playback › Preferred audio language; the player picks a matching track when the stream has one, and the settings menu switches tracks while watching.
 
 **Start speed.** TS streams use the extractor flags that allow non-IDR key frames and detect access units, so live channels start sooner. Buffering has three modes (Fast start, Balanced, Smooth). OkHttp is the data source, shared with the rest of the app, with an optional custom user agent.

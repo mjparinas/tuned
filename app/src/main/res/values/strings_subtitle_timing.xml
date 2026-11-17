@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="subtitle_timing">Subtitle timing</string>
+    <string name="subtitle_timing_none">Turn on subtitles first</string>
+    <string name="subtitle_timing_not_casting">Subtitle timing isn\'t available while casting</string>
+    <string name="subtitle_timing_later">Subtitles %1$s s later</string>
+    <string name="subtitle_timing_earlier">Subtitles %1$s s earlier</string>
+    <string name="subtitle_timing_in_sync">No change</string>
+    <string name="subtitle_timing_back_big">−1 s</string>
+    <string name="subtitle_timing_back_small">−0.1 s</string>
+    <string name="subtitle_timing_on_small">+0.1 s</string>
+    <string name="subtitle_timing_on_big">+1 s</string>
+    <string name="subtitle_timing_reset">Reset</string>
+    <string name="subtitle_timing_done">Done</string>
+</resources>
