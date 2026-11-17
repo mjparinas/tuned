@@ -92,6 +92,10 @@ data class AppSettings(
     val pullToRefresh: Boolean = false,
     /** Leave out live channels that failed in two channel scans (Settings › Channel health). */
     val hideDeadChannels: Boolean = true,
+    /** Hide a channel at once when it won't play while the internet and the service work (Settings › Channel health). */
+    val hideFailedOnPlay: Boolean = true,
+    /** When a live channel dies, switch to another copy of it, such as "ESPN FHD" for "ESPN HD" (Settings › Player). */
+    val backupCopies: Boolean = true,
     /** Leave out empty event slots ("NO EVENT STREAMING"); see [Placeholders]. Melvin, 2026-11-17: hide them. */
     val hidePlaceholders: Boolean = true,
     val pictureInPicture: Boolean = true,
@@ -222,6 +226,8 @@ class SettingsRepository(
             autoPlayNext = p[K.autoPlayNext] ?: d.autoPlayNext,
             pullToRefresh = p[K.pullToRefresh] ?: d.pullToRefresh,
             hideDeadChannels = p[K.hideDeadChannels] ?: d.hideDeadChannels,
+            hideFailedOnPlay = p[K.hideFailedOnPlay] ?: d.hideFailedOnPlay,
+            backupCopies = p[K.backupCopies] ?: d.backupCopies,
             hidePlaceholders = p[K.hidePlaceholders] ?: d.hidePlaceholders,
             pictureInPicture = p[K.pictureInPicture] ?: d.pictureInPicture,
             playerGestures = p[K.playerGestures] ?: d.playerGestures,
@@ -284,6 +290,8 @@ class SettingsRepository(
         p[K.autoPlayNext] = s.autoPlayNext
         p[K.pullToRefresh] = s.pullToRefresh
         p[K.hideDeadChannels] = s.hideDeadChannels
+        p[K.hideFailedOnPlay] = s.hideFailedOnPlay
+        p[K.backupCopies] = s.backupCopies
         p[K.hidePlaceholders] = s.hidePlaceholders
         p[K.pictureInPicture] = s.pictureInPicture
         p[K.playerGestures] = s.playerGestures
@@ -346,6 +354,8 @@ class SettingsRepository(
         val autoPlayNext = booleanPreferencesKey("auto_play_next")
         val pullToRefresh = booleanPreferencesKey("pull_to_refresh")
         val hideDeadChannels = booleanPreferencesKey("hide_dead_channels")
+        val hideFailedOnPlay = booleanPreferencesKey("hide_failed_on_play")
+        val backupCopies = booleanPreferencesKey("backup_copies")
         val hidePlaceholders = booleanPreferencesKey("hide_placeholders")
         val pictureInPicture = booleanPreferencesKey("picture_in_picture")
         val playerGestures = booleanPreferencesKey("player_gestures")

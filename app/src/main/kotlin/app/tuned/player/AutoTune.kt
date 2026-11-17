@@ -25,6 +25,8 @@ internal class AutoTune(
     private val onStatus: (Int?) -> Unit,
     /** Every channel failed. */
     private val onGiveUp: () -> Unit,
+    /** A channel failed to play (to hide it if the internet and the service were fine). */
+    private val onDead: (Long) -> Unit = {},
 ) : Player.Listener {
     lateinit var player: Player
     private var probe: Job? = null
@@ -63,6 +65,7 @@ internal class AutoTune(
         val id = currentId() ?: return
         probe?.cancel()
         scope.launch { tune.failed(id) }
+        onDead(id)
         next()
     }
 

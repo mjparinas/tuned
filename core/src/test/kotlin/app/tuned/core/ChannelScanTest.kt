@@ -84,4 +84,26 @@ class ChannelScanTest {
         assertEquals(2, later.failures)
         assertFalse(later.hidden)
     }
+
+    @Test
+    fun aChannelIsBlamedInThePlayerOnlyWhenEverythingElseWorks() {
+        val up = ScanEngine.Server.UP
+        assertTrue(ChannelScan.blameOnPlay(internetUp = true, server = up, anotherChannelPlayed = true))
+        assertTrue(ChannelScan.blameOnPlay(internetUp = true, server = ScanEngine.Server.UNKNOWN, anotherChannelPlayed = true))
+        assertFalse(ChannelScan.blameOnPlay(internetUp = false, server = up, anotherChannelPlayed = true))
+        assertFalse(ChannelScan.blameOnPlay(internetUp = true, server = ScanEngine.Server.DOWN, anotherChannelPlayed = true))
+        assertFalse(ChannelScan.blameOnPlay(internetUp = true, server = ScanEngine.Server.BUSY, anotherChannelPlayed = true))
+        assertFalse(ChannelScan.blameOnPlay(internetUp = true, server = up, anotherChannelPlayed = false))
+    }
+
+    @Test
+    fun aConfirmedPlayerFailureHidesAtOnceUnlessKept() {
+        val hidden = ChannelScan.afterPlayFailure(null, 1_000)
+        assertTrue(hidden.hidden)
+        assertEquals(Failure.PLAYBACK, hidden.reason)
+        val kept = ChannelScan.afterPlayFailure(ChannelScan.keep(null), 1_000)
+        assertFalse(kept.hidden)
+        // A scan that finds it working brings it back.
+        assertFalse(ChannelScan.afterOk(hidden, 2_000).hidden)
+    }
 }
