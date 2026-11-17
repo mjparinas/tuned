@@ -126,17 +126,7 @@ class PlayerActivity : ComponentActivity() {
             }
         val density = resources.displayMetrics.density
         // Back sits with the title, so it shows whenever the controls do (system back and gestures work too).
-        val back =
-            ImageButton(this).apply {
-                setImageResource(R.drawable.ic_arrow_back)
-                contentDescription = getString(R.string.back)
-                val ripple = TypedValue()
-                theme.resolveAttribute(android.R.attr.selectableItemBackgroundBorderless, ripple, true)
-                setBackgroundResource(ripple.resourceId)
-                val pad = (12 * density).toInt()
-                setPadding(pad, pad, pad, pad)
-                setOnClickListener { onBackPressedDispatcher.onBackPressed() }
-            }
+        val back = backButton()
         val titles =
             LinearLayout(this).apply {
                 orientation = LinearLayout.VERTICAL
@@ -158,22 +148,7 @@ class PlayerActivity : ComponentActivity() {
                 )
                 gravity = Gravity.CENTER_VERTICAL
             }
-        tools =
-            PlayerTools(
-                activity = this,
-                playerView = playerView,
-                overlay = overlay,
-                hooks =
-                    PlayerTools.Hooks(
-                        player = { player },
-                        queue = { queue },
-                        isLive = ::live,
-                        touch = { gestures },
-                        say = ::flash,
-                        onFitChanged = { fit -> lifecycleScope.launch { container.settings.update { it.copy(videoFit = fit) } } },
-                    ),
-            )
-        overlay.addView(tools.toolbar)
+        setUpTools()
         statusView =
             TextView(this).apply {
                 setTextColor(Color.WHITE)
@@ -202,6 +177,37 @@ class PlayerActivity : ComponentActivity() {
             },
         )
         setContentView(root)
+    }
+
+    private fun backButton() = ImageButton(this).apply {
+        setImageResource(R.drawable.ic_arrow_back)
+        contentDescription = getString(R.string.back)
+        val ripple = TypedValue()
+        theme.resolveAttribute(android.R.attr.selectableItemBackgroundBorderless, ripple, true)
+        setBackgroundResource(ripple.resourceId)
+        val pad = (12 * resources.displayMetrics.density).toInt()
+        setPadding(pad, pad, pad, pad)
+        setOnClickListener { onBackPressedDispatcher.onBackPressed() }
+    }
+
+    /** The buttons at the top right (channels, aspect, quality, info, lock); see [PlayerTools]. */
+    private fun setUpTools() {
+        tools =
+            PlayerTools(
+                activity = this,
+                playerView = playerView,
+                overlay = overlay,
+                hooks =
+                    PlayerTools.Hooks(
+                        player = { player },
+                        queue = { queue },
+                        isLive = ::live,
+                        touch = { gestures },
+                        say = ::flash,
+                        onFitChanged = { fit -> lifecycleScope.launch { container.settings.update { it.copy(videoFit = fit) } } },
+                    ),
+            )
+        overlay.addView(tools.toolbar)
     }
 
     @SuppressLint("ClickableViewAccessibility") // PlayerGestures calls performClick on every tap

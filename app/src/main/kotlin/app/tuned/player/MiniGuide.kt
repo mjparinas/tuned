@@ -11,6 +11,7 @@ import android.widget.LinearLayout
 import android.widget.ListView
 import android.widget.TextView
 import androidx.annotation.OptIn
+import androidx.core.view.isVisible
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
 import app.tuned.container
@@ -48,7 +49,7 @@ class MiniGuide(
             }
         }
 
-    val isOpen get() = view.visibility == View.VISIBLE
+    val isOpen get() = view.isVisible
 
     fun open(scope: CoroutineScope) {
         channels = queue()
