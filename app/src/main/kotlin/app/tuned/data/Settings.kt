@@ -113,7 +113,7 @@ data class AppSettings(
     val videoFit: VideoFit = VideoFit.FIT,
     val controlsTimeoutMs: Int = 3_000,
     /** Auto-tune moves on when a channel shows no picture within this long. */
-    val tuneTimeoutMs: Int = 10_000,
+    val tuneTimeoutMs: Int = 8_000,
     /** Auto-tune skips channels below this picture height (0 takes any picture). */
     val tuneMinHeight: Int = 0,
     val seekBackMs: Long = 10_000,

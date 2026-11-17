@@ -35,6 +35,8 @@ class PeopleRepository(
     private val http: OkHttpClient,
     private val settings: SettingsRepository,
     private val dao: MetadataDao,
+    /** False while the device is offline: the cached page is shown and TMDB isn't asked. */
+    private val online: () -> Boolean = { true },
 ) {
     private val json = Json { ignoreUnknownKeys = true }
 
@@ -45,7 +47,7 @@ class PeopleRepository(
     suspend fun load(id: Long): Person? {
         val row = dao.get(cacheKey(id))
         if (row != null && System.currentTimeMillis() - row.fetchedAt < KEEP_MS) return row.takeIf { it.found }?.toPerson()
-        val key = apiKey() ?: return row?.toPerson()
+        val key = apiKey()?.takeIf { online() } ?: return row?.takeIf { it.found }?.toPerson()
         val fresh = fetch { download(id, key) } ?: return row?.takeIf { it.found }?.toPerson()
         dao.upsert(fresh)
         return fresh.toPerson()
@@ -53,7 +55,7 @@ class PeopleRepository(
 
     /** TMDB's id for someone in a cast saved before ids were kept: the first person of that name. */
     suspend fun idFor(name: String): Long? {
-        val key = apiKey() ?: return null
+        val key = apiKey()?.takeIf { online() } ?: return null
         return fetch { get<Results<Found>>(Tmdb.searchPerson(name, key), key).results.firstOrNull()?.id }
     }
 

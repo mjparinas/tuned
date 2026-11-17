@@ -103,6 +103,13 @@ class PlayerActivity : FragmentActivity() {
     private val subtitleTiming = SubtitleTiming()
     private var reconnect: ConnectivityManager.NetworkCallback? = null
     private var autoTune: AutoTune? = null
+    private val tuneNext by lazy {
+        TuneNext(
+            activity = this,
+            hasNext = { autoTune != null && player?.hasNextMediaItem() == true },
+            onNext = { player?.seekToNextMediaItem() },
+        )
+    }
 
     /** The current channel has drawn a picture since it started (a channel that never did gets one retry, not five). */
     private var pictured = false
@@ -240,12 +247,14 @@ class PlayerActivity : FragmentActivity() {
         )
         tools.attach(root)
         skipIntro.attach(root)
+        tuneNext.attach(root)
         levelBars.attach(root)
         // The title shows and hides with the controls, so a tap reveals everything and the video is otherwise bare.
         playerView.setControllerVisibilityListener(
             PlayerView.ControllerVisibilityListener { visibility ->
                 overlay.visibility = visibility
                 tools.onControls(visibility)
+                tuneNext.onControls(visibility)
             },
         )
         setContentView(root)
@@ -388,6 +397,7 @@ class PlayerActivity : FragmentActivity() {
                 onStatus = { position ->
                     statusView.visibility = if (position == null) View.GONE else View.VISIBLE
                     if (position != null) statusView.text = getString(R.string.tune_trying, position, queue.size)
+                    if (position == null) tuneNext.flash()
                 },
                 onGiveUp = { Toast.makeText(this, getString(R.string.tune_none, query), Toast.LENGTH_LONG).show() },
                 onDead = backups::channelFailed,
@@ -415,6 +425,12 @@ class PlayerActivity : FragmentActivity() {
 
         // Saved films and episodes play from the device.
         val local = container.offline.files(queue.map { it.id })
+        // Offline with a saved episode: next and previous keep to the saved ones, which are all that can play.
+        if (item.id in local && !container.connectivity.onlineNow()) {
+            queue = queue.filter { it.id in local }
+            playerView.setShowNextButton(queue.size > 1)
+            playerView.setShowPreviousButton(queue.size > 1)
+        }
         val mediaItems = queue.map { it.toMediaItem(local[it.id]) }
         val index = queue.indexOfFirst { it.id == item.id }.coerceAtLeast(0)
         val resumeAt = if (!live && settings.resumePlayback) resumePosition(item.id) else C.TIME_UNSET
@@ -422,8 +438,9 @@ class PlayerActivity : FragmentActivity() {
         exo.pauseAtEndOfMediaItems = kind == ContentKind.SERIES && !settings.autoPlayNext
         val castNow = cast?.takeIf { it.casting }
         // Every connection on the account is in use on another device: opening one more could go over the limit, so
-        // wait for the person to press play (Settings › Account shows the same numbers).
-        val full = if (castNow == null) container.account.fullElsewhere() else null
+        // wait for the person to press play (Settings › Account shows the same numbers). A saved file opens no
+        // connection, so it never waits.
+        val full = if (castNow == null && queue[index].id !in local) container.account.fullElsewhere() else null
         if (castNow != null) {
             // Already casting: this goes to the TV, and the phone opens no stream of its own.
             castNow.load(queue[index], live, resumeAt)

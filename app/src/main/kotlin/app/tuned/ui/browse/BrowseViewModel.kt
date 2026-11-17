@@ -67,7 +67,7 @@ class BrowseViewModel(
 
     init {
         // The account's status (connections in use, expiry), so the player and Settings never wait for it.
-        viewModelScope.launch { container.account.refreshIfOld() }
+        viewModelScope.launchSafely("BrowseViewModel") { container.account.refreshIfOld() }
     }
 
     private val filters = mutableMapOf<ContentKind, MutableStateFlow<Filter>>()
