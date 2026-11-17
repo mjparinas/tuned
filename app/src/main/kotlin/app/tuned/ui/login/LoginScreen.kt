@@ -51,13 +51,14 @@ import app.tuned.container
 import app.tuned.core.XtreamAccount
 import app.tuned.core.XtreamUrls
 import app.tuned.data.Credentials
+import app.tuned.diagnostics.AppLog
+import app.tuned.diagnostics.launchSafely
 import app.tuned.ui.settings.RestoreButton
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import okhttp3.Request
 import java.io.IOException
@@ -88,25 +89,35 @@ class LoginViewModel(
     ) {
         if (state.value.busy) return
         state.update { State(busy = true) }
-        viewModelScope.launch {
-            val login = credentials.copy(server = XtreamUrls.normalizeServer(credentials.server))
-            val error =
-                if (login.playlistUrl.isBlank()) {
-                    try {
-                        if (check(login) == false) app.getString(R.string.login_wrong) else null
-                    } catch (e: IOException) {
-                        XtreamUrls.redact(e.message ?: e.javaClass.simpleName, login.username, login.password)
+        viewModelScope.launchSafely("Login") {
+            try {
+                val login = credentials.copy(server = XtreamUrls.normalizeServer(credentials.server))
+                val error =
+                    if (login.playlistUrl.isBlank()) {
+                        try {
+                            if (check(login) == false) app.getString(R.string.login_wrong) else null
+                        } catch (e: IOException) {
+                            AppLog.w("Login", "Couldn't check the login", e)
+                            XtreamUrls.redact(e.message ?: e.javaClass.simpleName, login.username, login.password)
+                        } catch (e: IllegalArgumentException) {
+                            // OkHttp refuses an address it can't parse ("my server", "http://").
+                            AppLog.w("Login", "Not a server address", e)
+                            app.getString(R.string.login_bad_server)
+                        }
+                    } else {
+                        null
                     }
-                } else {
-                    null
+                if (error != null) {
+                    state.update { State(error = error) }
+                    return@launchSafely
                 }
-            if (error != null) {
-                state.update { State(error = error) }
-                return@launch
+                container.useLogin(login)
+                state.update { State() }
+                onDone()
+            } finally {
+                // Whatever went wrong (and was logged), the button never stays stuck on "Signing in".
+                if (state.value.busy) state.update { State(error = app.getString(R.string.login_failed)) }
             }
-            container.useLogin(login)
-            state.update { State() }
-            onDone()
         }
     }
 

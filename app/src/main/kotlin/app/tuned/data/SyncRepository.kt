@@ -18,6 +18,7 @@ import app.tuned.data.db.ItemEntity
 import app.tuned.data.db.PlaylistWriter
 import app.tuned.data.db.ProgrammeEntity
 import app.tuned.data.db.TunedDatabase
+import app.tuned.diagnostics.attempt
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.sync.Mutex
@@ -73,7 +74,7 @@ class SyncRepository(
 
     suspend fun refreshAll(progress: (SyncProgress) -> Unit = {}): Result = lock.withLock {
         val items = refreshPlaylistLocked(progress)
-        val programmes = runCatching { refreshGuideLocked(progress) }.getOrElse { 0 } // a missing guide isn't fatal
+        val programmes = attempt(TAG_SYNC, "Guide refresh failed") { refreshGuideLocked(progress) }.getOrElse { 0 } // not fatal
         Result(items, programmes)
     }
 
@@ -94,7 +95,7 @@ class SyncRepository(
             }
         settings.update { it.copy(lastPlaylistSync = System.currentTimeMillis(), lastSyncError = "") }
         // Catch-up is a bonus: a server that doesn't answer leaves the last known channels as they were.
-        if (login.playlistUrl.isBlank()) runCatching { refreshCatchUp(login) }
+        if (login.playlistUrl.isBlank()) attempt("Sync", "Catch-up refresh failed") { refreshCatchUp(login) }
         return count
     }
 
@@ -268,3 +269,5 @@ class SyncRepository(
         const val DAY = 24 * HOUR
     }
 }
+
+private const val TAG_SYNC = "Sync"

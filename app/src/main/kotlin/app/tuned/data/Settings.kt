@@ -1,10 +1,12 @@
 package app.tuned.data
 
 import android.content.Context
+import androidx.datastore.core.handlers.ReplaceFileCorruptionHandler
 import androidx.datastore.preferences.core.MutablePreferences
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.core.floatPreferencesKey
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
@@ -14,14 +16,17 @@ import androidx.datastore.preferences.preferencesDataStore
 import app.tuned.core.ChannelScan
 import app.tuned.core.PinHash
 import app.tuned.core.Placeholders
+import app.tuned.diagnostics.AppLog
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
+import java.io.IOException
 
 enum class ThemeMode { SYSTEM, LIGHT, DARK }
 
@@ -125,6 +130,8 @@ data class AppSettings(
     val lastSyncError: String = "",
     /** The Xtream server's time zone, read at each refresh; catch-up links are in its local time. */
     val serverTimezone: String = "",
+    /** Settings › Developer: keep a detailed log and show the log viewer, for finding what went wrong. */
+    val developerMode: Boolean = false,
 )
 
 /** Hidden countries, hidden groups and the channel filters together: the one list every query filters by. */
@@ -133,7 +140,24 @@ fun AppSettings.hiddenKeys(): List<String> {
     return (hiddenRegions + hiddenGroups + filters).sorted()
 }
 
-private val Context.dataStore by preferencesDataStore(name = "settings")
+/** A damaged settings file starts over from the defaults instead of crashing every launch. */
+private val Context.dataStore by preferencesDataStore(
+    name = "settings",
+    corruptionHandler =
+        ReplaceFileCorruptionHandler { error ->
+            AppLog.e("Settings", "The settings file was damaged and has been reset", error)
+            emptyPreferences()
+        },
+)
+
+/** The stored settings; a file that can't be read reads as the defaults (and is logged) rather than crashing. */
+private val Context.storedPreferences: Flow<Preferences>
+    get() =
+        dataStore.data.catch { error ->
+            if (error !is IOException) throw error
+            AppLog.e("Settings", "Couldn't read the settings", error)
+            emit(emptyPreferences())
+        }
 
 /** Every setting in one DataStore. Screens read [settings] and write through [update]. */
 class SettingsRepository(
@@ -146,12 +170,12 @@ class SettingsRepository(
     private val adultUnlocked = MutableStateFlow(false)
 
     val settings: Flow<AppSettings> =
-        combine(context.dataStore.data.map(::read), adultUnlocked) { s, unlocked -> s.copy(showAdult = unlocked) }
+        combine(context.storedPreferences.map(::read), adultUnlocked) { s, unlocked -> s.copy(showAdult = unlocked) }
             .distinctUntilChanged()
 
     /** Whether a parental PIN has been set. */
     val hasAdultPin: Flow<Boolean> =
-        context.dataStore.data
+        context.storedPreferences
             .map { !it[K.adultPin].isNullOrEmpty() }
             .distinctUntilChanged()
 
@@ -164,7 +188,7 @@ class SettingsRepository(
 
     /** Unlocks adult categories when [pin] matches. */
     suspend fun unlockAdult(pin: String): Boolean {
-        val stored = context.dataStore.data.first()[K.adultPin] ?: return false
+        val stored = context.storedPreferences.first()[K.adultPin] ?: return false
         val ok = withContext(Dispatchers.Default) { PinHash.verify(pin, stored) }
         if (ok) adultUnlocked.value = true
         return ok
@@ -174,7 +198,10 @@ class SettingsRepository(
         adultUnlocked.value = false
     }
 
-    /** Every stored setting by its key, for a backup. Sync times and the open tab are left out: they belong to this phone. */
+    /**
+     * Every stored setting by its key, for a backup. Sync times and the open tab are left out: they belong to this phone.
+     * Reads the file directly, so a backup fails loudly rather than saving the defaults.
+     */
     suspend fun snapshot(): Map<String, Any> = context.dataStore.data
         .first()
         .asMap()
@@ -264,6 +291,7 @@ class SettingsRepository(
             lastGuideSync = p[K.lastGuideSync] ?: d.lastGuideSync,
             lastSyncError = p[K.lastSyncError] ?: d.lastSyncError,
             serverTimezone = p[K.serverTimezone] ?: d.serverTimezone,
+            developerMode = p[K.developerMode] ?: d.developerMode,
         )
     }
 
@@ -326,6 +354,7 @@ class SettingsRepository(
         p[K.lastGuideSync] = s.lastGuideSync
         p[K.lastSyncError] = s.lastSyncError
         p[K.serverTimezone] = s.serverTimezone
+        p[K.developerMode] = s.developerMode
     }
 
     private inline fun <reified E : Enum<E>> enumOr(
@@ -389,9 +418,18 @@ class SettingsRepository(
         val lastGuideSync = longPreferencesKey("last_guide_sync")
         val lastSyncError = stringPreferencesKey("last_sync_error")
         val serverTimezone = stringPreferencesKey("server_timezone")
+        val developerMode = booleanPreferencesKey("developer_mode")
     }
 
     private companion object {
-        val DEVICE_ONLY = setOf(K.lastPlaylistSync.name, K.lastGuideSync.name, K.lastSyncError.name, K.lastTab.name, K.serverTimezone.name)
+        val DEVICE_ONLY =
+            setOf(
+                K.lastPlaylistSync.name,
+                K.lastGuideSync.name,
+                K.lastSyncError.name,
+                K.lastTab.name,
+                K.serverTimezone.name,
+                K.developerMode.name,
+            )
     }
 }

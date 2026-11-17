@@ -7,6 +7,7 @@ import android.content.pm.PackageInstaller
 import android.os.Build
 import android.widget.Toast
 import app.tuned.R
+import app.tuned.diagnostics.startActivitySafely
 
 /** Android's answer to an update install: show its confirm screen, or say why it failed. */
 class InstallResultReceiver : BroadcastReceiver() {
@@ -23,7 +24,7 @@ class InstallResultReceiver : BroadcastReceiver() {
                         @Suppress("DEPRECATION") // the typed overload only exists from Android 13
                         intent.getParcelableExtra(Intent.EXTRA_INTENT)
                     }
-                confirm?.let { context.startActivity(it.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
+                confirm?.let { context.startActivitySafely(it.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK), "Updates") }
             }
 
             PackageInstaller.STATUS_SUCCESS -> {

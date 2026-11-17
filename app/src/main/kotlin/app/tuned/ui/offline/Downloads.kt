@@ -66,6 +66,7 @@ import app.tuned.container
 import app.tuned.data.db.DownloadEntity
 import app.tuned.data.db.DownloadRow
 import app.tuned.data.db.ItemEntity
+import app.tuned.diagnostics.launchSafely
 import app.tuned.ui.common.BackTopBar
 import app.tuned.ui.common.focusRing
 import coil3.compose.AsyncImage
@@ -73,7 +74,6 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.launch
 
 class DownloadsViewModel(
     app: Application,
@@ -95,23 +95,23 @@ class DownloadsViewModel(
             }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyMap())
 
     fun add(item: ItemEntity) {
-        viewModelScope.launch { offline.add(item) }
+        viewModelScope.launchSafely("Downloads") { offline.add(item) }
     }
 
     fun addAll(items: List<ItemEntity>) {
-        viewModelScope.launch { offline.addAll(items) }
+        viewModelScope.launchSafely("Downloads") { offline.addAll(items) }
     }
 
     fun hold(itemId: Long) {
-        viewModelScope.launch { offline.hold(itemId) }
+        viewModelScope.launchSafely("Downloads") { offline.hold(itemId) }
     }
 
     fun remove(itemId: Long) {
-        viewModelScope.launch { offline.remove(itemId) }
+        viewModelScope.launchSafely("Downloads") { offline.remove(itemId) }
     }
 
     fun retry(itemId: Long) {
-        viewModelScope.launch { offline.retry(itemId) }
+        viewModelScope.launchSafely("Downloads") { offline.retry(itemId) }
     }
 }
 

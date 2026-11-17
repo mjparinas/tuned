@@ -22,7 +22,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import app.tuned.R
 import app.tuned.core.PinHash
-import kotlinx.coroutines.launch
+import app.tuned.diagnostics.launchSafely
 
 /** What the PIN dialog is for. */
 enum class PinMode { Create, Unlock, Forgot }
@@ -44,7 +44,7 @@ fun PinDialog(
     val scope = rememberCoroutineScope()
 
     val submit: () -> Unit = {
-        scope.launch {
+        scope.launchSafely("ParentalPin") {
             when (mode) {
                 PinMode.Create -> {
                     error =
