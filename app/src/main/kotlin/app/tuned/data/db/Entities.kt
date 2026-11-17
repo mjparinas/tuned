@@ -1,6 +1,7 @@
 package app.tuned.data.db
 
 import androidx.room.ColumnInfo
+import androidx.room.Embedded
 import androidx.room.Entity
 import androidx.room.Index
 import androidx.room.PrimaryKey
@@ -52,8 +53,17 @@ data class DownloadEntity(
         const val QUEUED = 0
         const val DONE = 1
         const val FAILED = 2
+
+        /** Held back by the person; skipped until they resume it. */
+        const val PAUSED = 3
     }
 }
+
+/** A download with the artwork of the film or episode it saves, for the Downloads page. */
+data class DownloadRow(
+    @Embedded val download: DownloadEntity,
+    val logo: String?,
+)
 
 /**
  * What TMDB said about a film or show, kept on the device so details and ratings load without the network.

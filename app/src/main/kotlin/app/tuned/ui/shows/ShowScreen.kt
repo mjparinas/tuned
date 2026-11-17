@@ -2,6 +2,7 @@ package app.tuned.ui.shows
 
 import android.app.Application
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -54,6 +55,7 @@ import app.tuned.ui.details.DetailsViewModel
 import app.tuned.ui.details.MetaLine
 import app.tuned.ui.details.TrailerButton
 import app.tuned.ui.offline.DownloadButton
+import app.tuned.ui.offline.SeasonDownloadButton
 import coil3.compose.AsyncImage
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -139,7 +141,11 @@ fun ShowScreen(
                         DetailsBody(metadata, hasKey)
                     }
                 }
-                items(episodes.filter { season == null || (it.season ?: 1) == season }, key = { it.id }) { ep ->
+                val shown = episodes.filter { season == null || (it.season ?: 1) == season }
+                item(key = "season-download") {
+                    Box(Modifier.padding(horizontal = 16.dp, vertical = 4.dp)) { SeasonDownloadButton(shown) }
+                }
+                items(shown, key = { it.id }) { ep ->
                     EpisodeRow(ep, progress[ep.id], onClick = { onPlay(ep.id) })
                 }
             }

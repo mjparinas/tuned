@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
@@ -32,6 +33,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.DownloadForOffline
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Movie
@@ -42,6 +44,8 @@ import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.TravelExplore
 import androidx.compose.material.icons.filled.Tv
 import androidx.compose.material.icons.filled.VideoLibrary
+import androidx.compose.material3.Badge
+import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -98,6 +102,7 @@ import app.tuned.data.db.ShowSummary
 import app.tuned.ui.SyncText
 import app.tuned.ui.common.VoiceSearchButton
 import app.tuned.ui.common.focusRing
+import app.tuned.ui.offline.DownloadsViewModel
 import app.tuned.updates.GitHubUpdates
 import coil3.compose.AsyncImage
 
@@ -124,6 +129,7 @@ fun HomeScreen(
     onOpenMovie: (Long) -> Unit,
     onOpenSettings: () -> Unit,
     onOpenSearch: () -> Unit,
+    onOpenDownloads: () -> Unit,
     onTune: (String) -> Unit,
     onSignedOut: () -> Unit,
     vm: BrowseViewModel = viewModel(),
@@ -178,6 +184,7 @@ fun HomeScreen(
                         label = { Text(stringResource(t.label)) },
                     )
                 }
+                DownloadsNavItem(onOpenDownloads)
             }
         },
     ) { padding ->
@@ -789,3 +796,22 @@ private fun RatingBadge(
 
 /** The usual star gold, which reads on the dark badge whatever the app's accent. */
 private val RATING_GOLD = Color(0xFFF5C518)
+
+/** Downloads, beside the three sections: opens its own page, with a badge while anything is still to download. */
+@Composable
+private fun RowScope.DownloadsNavItem(
+    onClick: () -> Unit,
+    downloads: DownloadsViewModel = viewModel(),
+) {
+    val pending by downloads.pending.collectAsStateWithLifecycle()
+    NavigationBarItem(
+        selected = false,
+        onClick = onClick,
+        icon = {
+            BadgedBox(badge = { if (pending > 0) Badge { Text("$pending") } }) {
+                Icon(Icons.Filled.DownloadForOffline, contentDescription = null)
+            }
+        },
+        label = { Text(stringResource(R.string.downloads)) },
+    )
+}
