@@ -31,7 +31,7 @@ Kotlin, Jetpack Compose with Material 3, Navigation Compose (type-safe routes), 
 - **One stream connection, ever** (Melvin, 2026-11-17: "i dont want to get banned"). The player, auto-tune, backup copies, channel scans and downloads share one connection: the old stream closes before the next opens, nothing prefetches, and there is no multi-view or live preview ([scope](docs/decisions/scope.md)).
 - **Saved before streamed.** Anything downloaded plays from the device, never the stream ([offline](docs/decisions/offline.md)). TMDB art and details come from the device's cache first and the network only for what's missing ([player](docs/decisions/player.md)).
 - **Real names over numbers.** Show an episode's TMDB name where there is one, rather than "S1 E1" (Melvin, 2026-11-17).
-- **Never picture-in-picture or a sleep timer** (Melvin, 2026-11-17: "Never implement or suggest picture-in-picture or a sleep timer again"). Don't build or propose them ([scope](docs/decisions/scope.md)).
+- **No second video on screen, and no sleep timer** (Melvin, 2026-11-17). Android's picture-in-picture, the one stream shrinking to a small window when you leave the app, stays. A second channel inset over the first is banned because it is a second stream. Don't build or propose a sleep timer ([scope](docs/decisions/scope.md)).
 - **English is Canadian English** (as in Liftsmith): colour, favourite, behaviour, centre, cancelled, but -ize (organize). Code identifiers stay as they are.
 
 ## Code conventions
