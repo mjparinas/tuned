@@ -286,6 +286,13 @@ interface ProgrammeDao {
         now: Long,
     ): List<ProgrammeEntity>
 
+    /** What's on now on each of [channelIds], for the player's mini guide. */
+    @Query("SELECT * FROM programmes WHERE channelId IN (:channelIds) AND start <= :now AND stop > :now")
+    suspend fun onNow(
+        channelIds: List<String>,
+        now: Long,
+    ): List<ProgrammeEntity>
+
     @Query("SELECT COUNT(*) FROM programmes")
     suspend fun count(): Int
 }

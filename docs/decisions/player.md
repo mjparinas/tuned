@@ -4,6 +4,14 @@
 
 **Controls.** Play and pause, seek bar and skip back and forward (on-demand only; lengths in Settings), previous and next (the next channel in the same category for live, the next episode for shows), the CC button, and the settings menu with audio track and speed.
 
+**Player tools** (Melvin, 2026-11-17). Buttons at the top right, shown with the controls:
+
+- **Channels** (live, when the category has more than one): the category's channels down the right with what's on now; picking one switches on the same connection.
+- **Aspect**: Fit, Zoom to fill (crops) and Stretch, in turn. The last choice is remembered.
+- **Quality**: the stream's own renditions plus Auto. Most IPTV channels are a single TS rendition, so it says so instead of opening an empty list.
+- **Stream info**: resolution, frame rate, codecs, bitrate when the stream says, audio channels and language, and the buffer, refreshed every second.
+- **Lock**: ignores every touch and back, so a pocket or a child can't change anything. A tap shows the unlock button for three seconds.
+
 **Captions** (Melvin, 2026-11-17: "customizing CC controls in the settings"). Settings › Captions sets on or off, language, size, font, bold, text colour, edge style and colour, background colour and opacity, distance from the bottom, and whether to ignore the stream's own styling. A live preview shows the result. The CC button changes captions for the current video only.
 
 **Audio language.** Settings › Playback › Preferred audio language; the player picks a matching track when the stream has one, and the settings menu switches tracks while watching.
