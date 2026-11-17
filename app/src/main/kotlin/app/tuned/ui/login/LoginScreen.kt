@@ -51,6 +51,7 @@ import app.tuned.container
 import app.tuned.core.XtreamAccount
 import app.tuned.core.XtreamUrls
 import app.tuned.data.Credentials
+import app.tuned.ui.settings.RestoreButton
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -264,6 +265,7 @@ fun LoginScreen(
                     Text(stringResource(R.string.login_sign_in))
                 }
             }
+            RestoreButton(onRestoredLogin = onSignedIn)
             if (state.busy) {
                 Text(
                     stringResource(R.string.login_checking),

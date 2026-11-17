@@ -5,6 +5,7 @@ import android.content.Context
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.ProcessLifecycleOwner
+import app.tuned.data.BackupRepository
 import app.tuned.data.CredentialStore
 import app.tuned.data.SettingsRepository
 import app.tuned.data.SyncRepository
@@ -52,6 +53,7 @@ class AppContainer(
     val tune by lazy { TuneRepository(db, settings) }
     val scheduler = SyncScheduler(context)
     val updates by lazy { GitHubUpdates(context, http) }
+    val backup by lazy { BackupRepository(credentials, settings, db) }
     val reminders by lazy { Reminders(context) }
 
     /** Forgets the login, the cached playlist and guide, and stops background refreshes. */
