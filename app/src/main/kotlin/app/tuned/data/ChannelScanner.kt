@@ -11,6 +11,7 @@ import app.tuned.core.ChannelScan
 import app.tuned.core.ChannelScan.Failure
 import app.tuned.core.EventChannels
 import app.tuned.core.Placeholders
+import app.tuned.core.RoundTheClock
 import app.tuned.core.ScanEngine
 import app.tuned.data.db.ChannelScanEntity
 import app.tuned.data.db.TunedDatabase
@@ -85,7 +86,12 @@ class ChannelScanner(
         releaseEventChannels()
         val s = settings.settings.first()
         // Hidden-by-scan channels are scanned too (to bring them back); empty event slots never play, so they aren't.
-        val hidden = (s.hiddenRegions + s.hiddenGroups).toList() + listOfNotNull(Placeholders.HIDDEN_KEY.takeIf { s.hidePlaceholders })
+        val hidden =
+            (s.hiddenRegions + s.hiddenGroups).toList() +
+                listOfNotNull(
+                    Placeholders.HIDDEN_KEY.takeIf { s.hidePlaceholders },
+                    RoundTheClock.HIDDEN_KEY.takeIf { s.hide247 },
+                )
         val channels = db.channelScan().channels(hidden, s.showAdult)
         val agent = s.userAgent.ifBlank { "Tuned/${BuildConfig.VERSION_NAME}" }
         val result = ScanEngine(DeviceIo(agent, progress)).run(channels, db.channelScan().knownGood())
