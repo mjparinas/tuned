@@ -184,6 +184,7 @@ class PlayerActivity : FragmentActivity() {
             keepMinutes = { settings.liveRewindMinutes },
         )
     }
+
     private val recorder by lazy {
         LiveRecorder(
             this,
@@ -200,6 +201,11 @@ class PlayerActivity : FragmentActivity() {
             ),
         )
     }
+
+    private val trakt by lazy {
+        TraktScrobbler(container.trakt, container.appScope) { player?.let { queue.getOrNull(it.currentMediaItemIndex) } }
+    }
+
     private val frameRate by lazy { FrameRateMatch(this) { settings.matchFrameRate && cast?.casting != true } }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -493,6 +499,7 @@ class PlayerActivity : FragmentActivity() {
         val live = kind == ContentKind.LIVE
         val exo = buildPlayer(live)
         player = exo
+        trakt.attach(exo)
         playerView.player = ViewPlayer(exo)
         playerView.setControllerShowTimeoutMs(settings.controlsTimeoutMs)
         playerView.setShowNextButton(queue.size > 1)
@@ -844,6 +851,7 @@ class PlayerActivity : FragmentActivity() {
 
     override fun onDestroy() {
         progressJob?.cancel()
+        trakt.release()
         autoTune?.release()
         backups.release()
         recorder.release()

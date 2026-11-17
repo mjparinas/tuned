@@ -21,6 +21,7 @@ import app.tuned.data.SavedArtwork
 import app.tuned.data.SettingsRepository
 import app.tuned.data.SubtitleRepository
 import app.tuned.data.SyncRepository
+import app.tuned.data.TraktAccount
 import app.tuned.data.TuneRepository
 import app.tuned.data.db.TunedDatabase
 import app.tuned.diagnostics.loggingHandler
@@ -72,6 +73,7 @@ class AppContainer(
     val connectivity by lazy { Connectivity(context, appScope) }
     val metadata by lazy { MetadataRepository(http, BuildConfig.TMDB_API_KEY, db.metadata(), appScope, connectivity::onlineNow) }
     val savedArtwork by lazy { SavedArtwork(context, db, metadata) }
+    val trakt by lazy { TraktAccount(context, http) }
     val people by lazy { PeopleRepository(http, BuildConfig.TMDB_API_KEY, db.metadata(), connectivity::onlineNow) }
     val profiles by lazy { ProfileRepository(db, settings) }
     val subtitles by lazy { SubtitleRepository(http, settings, credentials, metadata, context.filesDir.resolve("subtitles")) }

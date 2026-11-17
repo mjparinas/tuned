@@ -6,7 +6,7 @@ Melvin: "go through settings and figure out how to improve and reduce the comple
 
 The first Settings screen is a short list of pages, each with an icon and a line saying what's inside, so a person finds a setting by its area instead of scrolling past sixty rows:
 
-- **Playlists and account**: playlists, the account's status, backup and restore, sign out.
+- **Playlists and account**: playlists, the account's status, backup and restore, Trakt (only in builds with its keys), sign out.
 - **Profiles and parental controls**: profiles, adult categories and the parental PIN.
 - **Channels and lists**: start screen, starting on the last channel, the guide in the list, the grid guide, channel numbers, favourite order, and what's hidden (countries, groups, 24/7 channels).
 - **Guide and refresh**: refresh now, when the playlist and guide download, pull to refresh, Wi-Fi only, guide days, guide fixes and reminders.
