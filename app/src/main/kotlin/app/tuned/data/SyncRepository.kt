@@ -145,7 +145,7 @@ class SyncRepository(
         if (streamIds.isEmpty()) return
         val ids =
             db
-                .items()
+                .catchUp()
                 .liveUrls()
                 .filter { CatchUp.streamId(it.url) in streamIds }
                 .map { it.id }
