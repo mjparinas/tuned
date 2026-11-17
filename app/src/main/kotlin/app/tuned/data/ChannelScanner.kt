@@ -8,6 +8,7 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import app.tuned.BuildConfig
 import app.tuned.core.ChannelScan
+import app.tuned.core.EventChannels
 import app.tuned.core.ChannelScan.Failure
 import app.tuned.core.Placeholders
 import app.tuned.core.ScanEngine
@@ -81,6 +82,7 @@ class ChannelScanner(
     }
 
     suspend fun scan(progress: (done: Int, total: Int) -> Unit): ScanEngine.Result {
+        releaseEventChannels()
         val s = settings.settings.first()
         // Hidden-by-scan channels are scanned too (to bring them back); empty event slots never play, so they aren't.
         val hidden = (s.hiddenRegions + s.hiddenGroups).toList() + listOfNotNull(Placeholders.HIDDEN_KEY.takeIf { s.hidePlaceholders })
@@ -104,7 +106,7 @@ class ChannelScanner(
      */
     suspend fun hideAfterPlayFailure(itemId: Long) {
         val record = ChannelScan.afterPlayFailure(db.channelScan().get(itemId)?.toRecord(), System.currentTimeMillis())
-        db.channelScan().save(record.toEntity(itemId))
+        save(itemId, record)
     }
 
     /** Is it the channel, or the internet or the service? See [ServiceCheck]. */
@@ -121,7 +123,31 @@ class ChannelScanner(
     /** "Show again" in the report: the channel comes back and scans never hide it again. */
     suspend fun keep(itemId: Long) {
         val record = ChannelScan.keep(db.channelScan().get(itemId)?.toRecord())
-        db.channelScan().save(record.toEntity(itemId))
+        save(itemId, record)
+    }
+
+    /**
+     * Brings back sports, PPV and event channels hidden before they were exempt ([EventChannels]), or that a playlist
+     * refresh has since renamed into one. Cheap: it reads only the hidden rows.
+     */
+    suspend fun releaseEventChannels() {
+        val ids =
+            db
+                .channelScan()
+                .hiddenNames()
+                .filter { EventChannels.matches(it.name, it.groupName) }
+                .map { it.itemId }
+        if (ids.isNotEmpty()) db.channelScan().unhide(ids)
+    }
+
+    /** Saves what a scan or the player found. Sports, PPV and event channels are never hidden ([EventChannels]). */
+    private suspend fun save(
+        itemId: Long,
+        record: ChannelScan.Record,
+    ) {
+        val item = db.items().get(itemId)
+        val exempt = item != null && EventChannels.matches(item.name, item.groupName)
+        db.channelScan().save(record.toEntity(itemId).let { if (exempt) it.copy(hidden = false) else it })
     }
 
     private inner class DeviceIo(
@@ -151,7 +177,7 @@ class ChannelScanner(
 
         override suspend fun recordOk(id: Long) {
             val record = ChannelScan.afterOk(db.channelScan().get(id)?.toRecord(), now())
-            db.channelScan().save(record.toEntity(id))
+            save(id, record)
         }
 
         override suspend fun recordFailure(
@@ -159,7 +185,7 @@ class ChannelScanner(
             failure: Failure,
         ) {
             val record = ChannelScan.afterFailure(db.channelScan().get(id)?.toRecord(), failure, now())
-            db.channelScan().save(record.toEntity(id))
+            save(id, record)
         }
 
         override fun progress(

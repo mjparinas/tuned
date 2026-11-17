@@ -292,6 +292,8 @@ interface ItemDao {
     /**
      * Auto-tune's candidates: live channels whose name matches the search, or whose guide has a matching programme
      * on now or starting within [to]. `title LIKE` ignores case for English letters, which is what event names use.
+     * Channels hidden as dead or as "No event" placeholders come back marked `held`: the caller keeps the sports, PPV
+     * and event ones ([EventChannels][app.tuned.core.EventChannels]), since an empty slot can carry the next event.
      */
     @Query(
         """
@@ -301,14 +303,14 @@ interface ItemDao {
                 SELECT channelId FROM programmes
                 WHERE start > :from - 86400000 AND start < :to AND stop > :from AND title LIKE '%' || :query || '%'
             )) AS guideMatch,
-            h.okAt, h.deadAt, h.height
+            h.okAt, h.deadAt, h.height,
+            (('scan:dead' IN (:hidden) AND i.id IN (SELECT itemId FROM channel_scan WHERE hidden = 1))
+                OR ('placeholder' IN (:hidden)
+                    AND ((' ' || i.searchName) GLOB '* no event*' OR (' ' || i.searchName) GLOB '* no live event*'))) AS held
         FROM items i
         LEFT JOIN channel_health h ON h.itemId = i.id
         WHERE i.kind = 0
             AND (i.region IS NULL OR i.region NOT IN (:hidden)) AND ('g:' || i.kind || ':' || i.groupName) NOT IN (:hidden)
-            AND NOT ('scan:dead' IN (:hidden) AND i.id IN (SELECT itemId FROM channel_scan WHERE hidden = 1))
-            AND NOT ('placeholder' IN (:hidden) AND i.kind = 0
-                AND ((' ' || i.searchName) GLOB '* no event*' OR (' ' || i.searchName) GLOB '* no live event*'))
             AND (:adult OR i.adult = 0)
             AND (nameMatch OR guideMatch)
         ORDER BY i.sortOrder
@@ -331,7 +333,7 @@ interface ItemDao {
      */
     @Query(
         """
-        SELECT i.id, i.name, i.groupName, i.region, 1 AS nameMatch, 0 AS guideMatch, h.okAt, h.deadAt, h.height
+        SELECT i.id, i.name, i.groupName, i.region, 1 AS nameMatch, 0 AS guideMatch, h.okAt, h.deadAt, h.height, 0 AS held
         FROM items i
         LEFT JOIN channel_health h ON h.itemId = i.id
         WHERE i.kind = 0 AND i.id != :exclude
@@ -597,6 +599,13 @@ interface ChannelScanDao {
 
     @Query("DELETE FROM channel_scan")
     suspend fun deleteAll()
+
+    /** Hidden channels with their names, for [app.tuned.data.ChannelScanner.releaseEventChannels]. */
+    @Query("SELECT s.itemId, i.name, i.groupName FROM channel_scan s JOIN items i ON i.id = s.itemId WHERE s.hidden = 1")
+    suspend fun hiddenNames(): List<HiddenScanRow>
+
+    @Query("UPDATE channel_scan SET hidden = 0 WHERE itemId IN (:ids)")
+    suspend fun unhide(ids: List<Long>)
 
     /** Channels that failed in at least one scan and still exist, hidden ones first, then the most recent. */
     @Query(

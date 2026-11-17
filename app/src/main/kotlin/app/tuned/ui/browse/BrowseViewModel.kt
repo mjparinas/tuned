@@ -68,6 +68,8 @@ class BrowseViewModel(
     init {
         // The account's status (connections in use, expiry), so the player and Settings never wait for it.
         viewModelScope.launch { container.account.refreshIfOld() }
+        // Sports, PPV and event channels are never hidden as dead: bring back any hidden before that rule, or renamed since.
+        viewModelScope.launch { container.channelScan.releaseEventChannels() }
     }
 
     private val filters = mutableMapOf<ContentKind, MutableStateFlow<Filter>>()
