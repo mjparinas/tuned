@@ -32,6 +32,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -48,7 +49,6 @@ import app.tuned.ui.common.BackTopBar
 import coil3.compose.AsyncImage
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
-import java.util.Locale
 
 /** The TMDB details for one film or show: loading, found, or nothing to show. */
 class DetailsViewModel(
@@ -133,6 +133,7 @@ fun DetailsText(
     hasKey: Boolean,
     modifier: Modifier = Modifier,
 ) {
+    val locale = LocalConfiguration.current.locales[0]
     Column(modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         if (details == null) {
             if (!hasKey) {
@@ -149,7 +150,7 @@ fun DetailsText(
                 Icon(Icons.Filled.Star, null, tint = MaterialTheme.colorScheme.primary)
                 Spacer(Modifier.width(4.dp))
                 Text(
-                    stringResource(R.string.details_rating, String.format(Locale.getDefault(), "%.1f", rating)),
+                    stringResource(R.string.details_rating, String.format(locale, "%.1f", rating)),
                     style = MaterialTheme.typography.titleMedium,
                 )
                 Spacer(Modifier.width(16.dp))
