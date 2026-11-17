@@ -1,0 +1,163 @@
+package app.tuned.ui.browse
+
+import android.app.Application
+import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.viewModelScope
+import androidx.paging.Pager
+import androidx.paging.PagingConfig
+import androidx.paging.PagingData
+import androidx.paging.cachedIn
+import app.tuned.container
+import app.tuned.core.ContentKind
+import app.tuned.core.Search
+import app.tuned.data.AppSettings
+import app.tuned.data.db.ChannelWithNow
+import app.tuned.data.db.FavouriteEntity
+import app.tuned.data.db.GroupCount
+import app.tuned.data.db.ItemEntity
+import app.tuned.data.db.ShowSummary
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
+
+/** What a list shows: a category, favourites only, or everything. */
+sealed interface Filter {
+    data object All : Filter
+
+    data object Favourites : Filter
+
+    data class Group(
+        val name: String,
+    ) : Filter
+}
+
+private data class Query(
+    val hidden: List<String>,
+    val adult: Boolean,
+    val filter: Filter,
+    val search: String,
+    val now: Long,
+)
+
+/** One per section. Lists are paged straight from Room, so 50,000 movies scroll as fast as 50. */
+@OptIn(ExperimentalCoroutinesApi::class, FlowPreview::class)
+class BrowseViewModel(
+    app: Application,
+) : AndroidViewModel(app) {
+    private val container = app.container
+    private val items = container.db.items()
+
+    private val filters = mutableMapOf<ContentKind, MutableStateFlow<Filter>>()
+    private val searches = mutableMapOf<ContentKind, MutableStateFlow<String>>()
+
+    fun filter(kind: ContentKind): MutableStateFlow<Filter> = filters.getOrPut(kind) { MutableStateFlow(Filter.All) }
+
+    fun search(kind: ContentKind): MutableStateFlow<String> = searches.getOrPut(kind) { MutableStateFlow("") }
+
+    private val settings: StateFlow<AppSettings?> = container.settings.settings.stateIn(viewModelScope, SharingStarted.Eagerly, null)
+
+    /** The guide's "now" moves on; re-read it every five minutes so "on now" stays true. */
+    private val clock: Flow<Long> =
+        flow {
+            while (true) {
+                emit(System.currentTimeMillis())
+                delay(5 * 60_000L)
+            }
+        }
+
+    private fun query(kind: ContentKind): Flow<Query> = combine(
+        settings.map { it?.hiddenRegions?.sorted() to (it?.showAdult ?: false) }.distinctUntilChanged(),
+        filter(kind),
+        search(kind).debounce(200).map { Search.normalize(it) }.distinctUntilChanged(),
+        if (kind == ContentKind.LIVE) clock else flow { emit(0L) },
+    ) { (hidden, adult), filter, search, now -> Query(hidden.orEmpty(), adult, filter, search, now) }
+
+    private val config = PagingConfig(pageSize = 60, prefetchDistance = 60, enablePlaceholders = true, initialLoadSize = 120)
+
+    val channels: Flow<PagingData<ChannelWithNow>> =
+        query(ContentKind.LIVE)
+            .flatMapLatest { q ->
+                Pager(config) {
+                    items.channels(q.now, q.hidden, q.adult, (q.filter as? Filter.Group)?.name, q.filter == Filter.Favourites, q.search)
+                }.flow
+            }.cachedIn(viewModelScope)
+
+    val movies: Flow<PagingData<ItemEntity>> =
+        query(ContentKind.MOVIE)
+            .flatMapLatest { q ->
+                Pager(config) {
+                    items.items(
+                        ContentKind.MOVIE.code,
+                        q.hidden,
+                        q.adult,
+                        (q.filter as? Filter.Group)?.name,
+                        q.filter == Filter.Favourites,
+                        q.search,
+                    )
+                }.flow
+            }.cachedIn(viewModelScope)
+
+    val shows: Flow<PagingData<ShowSummary>> =
+        query(ContentKind.SERIES)
+            .flatMapLatest { q ->
+                Pager(config) {
+                    items.shows(q.hidden, q.adult, (q.filter as? Filter.Group)?.name, q.filter == Filter.Favourites, q.search)
+                }.flow
+            }.cachedIn(viewModelScope)
+
+    private val groupFlows = mutableMapOf<ContentKind, StateFlow<List<GroupCount>>>()
+
+    fun groups(kind: ContentKind): StateFlow<List<GroupCount>> = groupFlows.getOrPut(kind) {
+        settings
+            .map { it?.hiddenRegions?.sorted().orEmpty() to (it?.showAdult ?: false) }
+            .distinctUntilChanged()
+            .flatMapLatest { (hidden, adult) -> items.groups(kind.code, hidden, adult) }
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+    }
+
+    val refreshing = container.scheduler.refreshing.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), false)
+
+    /** Nothing cached yet (first run, or the first download is still going). */
+    val empty: StateFlow<Boolean?> =
+        items
+            .countFlow()
+            .map { it == 0 }
+            .stateIn(viewModelScope, SharingStarted.Eagerly, null)
+
+    val favouriteIds: StateFlow<Set<Long>> =
+        container.db
+            .library()
+            .favouriteIds()
+            .map { it.toHashSet() }
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptySet())
+
+    val lastError = settings.map { it?.lastSyncError.orEmpty() }.stateIn(viewModelScope, SharingStarted.Eagerly, "")
+
+    fun refresh() = container.scheduler.refreshNow()
+
+    fun toggleFavourite(
+        itemId: Long,
+        favourite: Boolean,
+    ) {
+        viewModelScope.launch {
+            val library = container.db.library()
+            if (favourite) library.removeFavourite(itemId) else library.addFavourite(FavouriteEntity(itemId, System.currentTimeMillis()))
+        }
+    }
+
+    fun rememberTab(index: Int) {
+        viewModelScope.launch { container.settings.update { it.copy(lastTab = index) } }
+    }
+}

@@ -1,0 +1,532 @@
+package app.tuned.ui.browse
+
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.background
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.List
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.Movie
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Tv
+import androidx.compose.material.icons.filled.VideoLibrary
+import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.paging.compose.collectAsLazyPagingItems
+import androidx.paging.compose.itemKey
+import app.tuned.R
+import app.tuned.core.ContentKind
+import app.tuned.data.AppSettings
+import app.tuned.data.StartTab
+import app.tuned.data.db.ChannelWithNow
+import app.tuned.data.db.ItemEntity
+import app.tuned.data.db.ShowSummary
+import coil3.compose.AsyncImage
+
+private data class Tab(
+    val kind: ContentKind,
+    val label: Int,
+    val icon: ImageVector,
+    val search: Int,
+)
+
+private val tabs =
+    listOf(
+        Tab(ContentKind.LIVE, R.string.tab_live, Icons.Filled.Tv, R.string.search_live),
+        Tab(ContentKind.MOVIE, R.string.tab_movies, Icons.Filled.Movie, R.string.search_movies),
+        Tab(ContentKind.SERIES, R.string.tab_shows, Icons.Filled.VideoLibrary, R.string.search_shows),
+    )
+
+@Composable
+fun HomeScreen(
+    settings: AppSettings,
+    onPlay: (Long) -> Unit,
+    onOpenShow: (String, String) -> Unit,
+    onOpenGuide: (Long) -> Unit,
+    onOpenSettings: () -> Unit,
+    vm: BrowseViewModel = viewModel(),
+) {
+    val start =
+        when (settings.startTab) {
+            StartTab.LIVE -> 0
+            StartTab.MOVIES -> 1
+            StartTab.SHOWS -> 2
+            StartTab.LAST -> settings.lastTab.coerceIn(0, 2)
+        }
+    var selected by rememberSaveable { mutableIntStateOf(start) }
+    val tab = tabs[selected]
+    val empty by vm.empty.collectAsStateWithLifecycle()
+    val refreshing by vm.refreshing.collectAsStateWithLifecycle()
+    val lastError by vm.lastError.collectAsStateWithLifecycle()
+
+    Scaffold(
+        topBar = {
+            val search = vm.search(tab.kind)
+            val text by search.collectAsStateWithLifecycle()
+            SearchBarRow(text = text, hint = stringResource(tab.search), onChange = { search.value = it }, onOpenSettings = onOpenSettings)
+        },
+        bottomBar = {
+            NavigationBar {
+                tabs.forEachIndexed { index, t ->
+                    NavigationBarItem(
+                        selected = index == selected,
+                        onClick = {
+                            selected = index
+                            vm.rememberTab(index)
+                        },
+                        icon = { Icon(t.icon, contentDescription = null) },
+                        label = { Text(stringResource(t.label)) },
+                    )
+                }
+            }
+        },
+    ) { padding ->
+        Column(Modifier.padding(padding).fillMaxSize()) {
+            if (empty == true) {
+                FirstRun(refreshing = refreshing, error = lastError, onRetry = vm::refresh)
+                return@Column
+            }
+            CategoryChips(vm, tab.kind)
+            PullToRefreshBox(isRefreshing = refreshing, onRefresh = vm::refresh, modifier = Modifier.fillMaxSize()) {
+                when (tab.kind) {
+                    ContentKind.LIVE -> LiveList(vm, settings.showGuideInList, onPlay, onOpenGuide)
+                    ContentKind.MOVIE -> MovieGrid(vm, onPlay)
+                    ContentKind.SERIES -> ShowGrid(vm, onOpenShow)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun SearchBarRow(
+    text: String,
+    hint: String,
+    onChange: (String) -> Unit,
+    onOpenSettings: () -> Unit,
+) {
+    Surface(color = MaterialTheme.colorScheme.surface) {
+        Row(
+            Modifier
+                .fillMaxWidth()
+                .statusBarsPadding()
+                .padding(start = 12.dp, end = 4.dp, top = 8.dp, bottom = 4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            TextField(
+                value = text,
+                onValueChange = onChange,
+                placeholder = { Text(hint) },
+                leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
+                trailingIcon = {
+                    if (text.isNotEmpty()) {
+                        IconButton(onClick = { onChange("") }) {
+                            Icon(Icons.Filled.Close, contentDescription = stringResource(R.string.search_clear))
+                        }
+                    }
+                },
+                singleLine = true,
+                shape = RoundedCornerShape(28.dp),
+                colors =
+                    TextFieldDefaults.colors(
+                        focusedIndicatorColor = Color.Transparent,
+                        unfocusedIndicatorColor = Color.Transparent,
+                    ),
+                modifier = Modifier.weight(1f).height(52.dp),
+            )
+            IconButton(onClick = onOpenSettings) {
+                Icon(Icons.Filled.Settings, contentDescription = stringResource(R.string.settings))
+            }
+        }
+    }
+}
+
+@Composable
+private fun CategoryChips(
+    vm: BrowseViewModel,
+    kind: ContentKind,
+) {
+    val groups by vm.groups(kind).collectAsStateWithLifecycle()
+    val filterFlow = vm.filter(kind)
+    val filter by filterFlow.collectAsStateWithLifecycle()
+    LazyRow(
+        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        item(key = "all") {
+            FilterChip(selected = filter == Filter.All, onClick = {
+                filterFlow.value = Filter.All
+            }, label = { Text(stringResource(R.string.filter_all)) })
+        }
+        item(key = "fav") {
+            FilterChip(
+                selected = filter == Filter.Favourites,
+                onClick = { filterFlow.value = Filter.Favourites },
+                leadingIcon = { Icon(Icons.Filled.Favorite, contentDescription = null, modifier = Modifier.size(16.dp)) },
+                label = { Text(stringResource(R.string.filter_favourites)) },
+            )
+        }
+        items(groups, key = { "g:" + it.groupName }) { g ->
+            val on = filter == Filter.Group(g.groupName)
+            FilterChip(
+                selected = on,
+                onClick = { filterFlow.value = if (on) Filter.All else Filter.Group(g.groupName) },
+                label = { Text(g.groupName) },
+            )
+        }
+    }
+}
+
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+private fun LiveList(
+    vm: BrowseViewModel,
+    showGuide: Boolean,
+    onPlay: (Long) -> Unit,
+    onOpenGuide: (Long) -> Unit,
+) {
+    val channels = vm.channels.collectAsLazyPagingItems()
+    val state = rememberLazyListState()
+    LazyColumn(state = state, modifier = Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 16.dp)) {
+        items(count = channels.itemCount, key = channels.itemKey { it.id }) { index ->
+            val channel = channels[index]
+            if (channel == null) {
+                Spacer(Modifier.height(64.dp))
+            } else {
+                ChannelRow(
+                    channel = channel,
+                    showGuide = showGuide,
+                    onPlay = { onPlay(channel.id) },
+                    onGuide = { onOpenGuide(channel.id) },
+                    onToggleFavourite = { vm.toggleFavourite(channel.id, channel.favourite) },
+                )
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+private fun ChannelRow(
+    channel: ChannelWithNow,
+    showGuide: Boolean,
+    onPlay: () -> Unit,
+    onGuide: () -> Unit,
+    onToggleFavourite: () -> Unit,
+) {
+    var menu by remember { mutableStateOf(false) }
+    Box {
+        Row(
+            Modifier
+                .fillMaxWidth()
+                .combinedClickable(onClick = onPlay, onLongClick = { menu = true })
+                .padding(horizontal = 16.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Logo(channel.logo, Modifier.size(width = 64.dp, height = 44.dp))
+            Spacer(Modifier.width(14.dp))
+            Column(Modifier.weight(1f)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        channel.name,
+                        style = MaterialTheme.typography.titleSmall,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f, fill = false),
+                    )
+                    if (channel.favourite) {
+                        Spacer(Modifier.width(6.dp))
+                        Icon(Icons.Filled.Favorite, null, Modifier.size(14.dp), tint = MaterialTheme.colorScheme.primary)
+                    }
+                }
+                val now = channel.nowTitle
+                if (showGuide && now != null) {
+                    Text(
+                        now,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                    val start = channel.nowStart ?: 0
+                    val stop = channel.nowStop ?: 0
+                    if (stop > start) {
+                        val progress = ((System.currentTimeMillis() - start).toFloat() / (stop - start)).coerceIn(0f, 1f)
+                        LinearProgressIndicator(
+                            progress = { progress },
+                            modifier =
+                                Modifier
+                                    .padding(top = 4.dp)
+                                    .fillMaxWidth(0.6f)
+                                    .height(3.dp)
+                                    .clip(RoundedCornerShape(2.dp)),
+                            drawStopIndicator = {},
+                        )
+                    }
+                }
+            }
+            if (channel.tvgId != null) {
+                IconButton(onClick = onGuide) {
+                    Icon(Icons.AutoMirrored.Filled.List, contentDescription = stringResource(R.string.guide_open))
+                }
+            }
+        }
+        DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
+            DropdownMenuItem(
+                text = { Text(stringResource(if (channel.favourite) R.string.favourite_remove else R.string.favourite_add)) },
+                onClick = {
+                    menu = false
+                    onToggleFavourite()
+                },
+            )
+            if (channel.tvgId != null) {
+                DropdownMenuItem(
+                    text = { Text(stringResource(R.string.guide_open)) },
+                    onClick = {
+                        menu = false
+                        onGuide()
+                    },
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun MovieGrid(
+    vm: BrowseViewModel,
+    onPlay: (Long) -> Unit,
+) {
+    val movies = vm.movies.collectAsLazyPagingItems()
+    val favourites by vm.favouriteIds.collectAsStateWithLifecycle()
+    LazyVerticalGrid(
+        columns = GridCells.Adaptive(minSize = 112.dp),
+        state = rememberLazyGridState(),
+        contentPadding = PaddingValues(12.dp),
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+        verticalArrangement = Arrangement.spacedBy(14.dp),
+        modifier = Modifier.fillMaxSize(),
+    ) {
+        items(count = movies.itemCount, key = movies.itemKey { it.id }) { index ->
+            val movie: ItemEntity? = movies[index]
+            if (movie == null) {
+                PosterPlaceholder()
+            } else {
+                val favourite = movie.id in favourites
+                Poster(
+                    title = movie.name,
+                    image = movie.logo,
+                    favourite = favourite,
+                    onClick = { onPlay(movie.id) },
+                    onToggleFavourite = { vm.toggleFavourite(movie.id, favourite) },
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun ShowGrid(
+    vm: BrowseViewModel,
+    onOpenShow: (String, String) -> Unit,
+) {
+    val shows = vm.shows.collectAsLazyPagingItems()
+    LazyVerticalGrid(
+        columns = GridCells.Adaptive(minSize = 112.dp),
+        state = rememberLazyGridState(),
+        contentPadding = PaddingValues(12.dp),
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+        verticalArrangement = Arrangement.spacedBy(14.dp),
+        modifier = Modifier.fillMaxSize(),
+    ) {
+        items(count = shows.itemCount, key = shows.itemKey { it.showKey }) { index ->
+            val show: ShowSummary? = shows[index]
+            if (show == null) {
+                PosterPlaceholder()
+            } else {
+                Poster(
+                    title = show.showName,
+                    image = show.logo,
+                    subtitle = pluralEpisodes(show.episodes),
+                    onClick = { onOpenShow(show.showKey, show.showName) },
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun pluralEpisodes(count: Int): String = pluralStringResource(R.plurals.episodes, count, count)
+
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+fun Poster(
+    title: String,
+    image: String?,
+    onClick: () -> Unit,
+    subtitle: String? = null,
+    favourite: Boolean = false,
+    onToggleFavourite: (() -> Unit)? = null,
+) {
+    var menu by remember { mutableStateOf(false) }
+    Column(
+        Modifier
+            .clip(RoundedCornerShape(10.dp))
+            .combinedClickable(onClick = onClick, onLongClick = onToggleFavourite?.let { { menu = true } }),
+    ) {
+        Box {
+            AsyncImage(
+                model = image,
+                contentDescription = null,
+                contentScale = ContentScale.Crop,
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .aspectRatio(2f / 3f)
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(MaterialTheme.colorScheme.surfaceContainerHigh),
+            )
+            if (favourite) {
+                Icon(
+                    Icons.Filled.Favorite,
+                    null,
+                    Modifier.align(Alignment.TopEnd).padding(6.dp).size(18.dp),
+                    tint = MaterialTheme.colorScheme.primary,
+                )
+            }
+            if (onToggleFavourite != null) {
+                DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
+                    DropdownMenuItem(
+                        text = { Text(stringResource(if (favourite) R.string.favourite_remove else R.string.favourite_add)) },
+                        onClick = {
+                            menu = false
+                            onToggleFavourite()
+                        },
+                    )
+                }
+            }
+        }
+        Text(
+            title,
+            style = MaterialTheme.typography.bodySmall,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.padding(top = 6.dp, start = 2.dp, end = 2.dp),
+        )
+        if (subtitle != null) {
+            Text(
+                subtitle,
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(horizontal = 2.dp),
+            )
+        }
+    }
+}
+
+@Composable
+private fun PosterPlaceholder() {
+    Box(
+        Modifier
+            .fillMaxWidth()
+            .aspectRatio(2f / 3f)
+            .clip(RoundedCornerShape(10.dp))
+            .background(MaterialTheme.colorScheme.surfaceContainerHigh),
+    )
+}
+
+@Composable
+fun Logo(
+    url: String?,
+    modifier: Modifier = Modifier,
+) {
+    AsyncImage(
+        model = url,
+        contentDescription = null,
+        contentScale = ContentScale.Fit,
+        modifier = modifier.clip(RoundedCornerShape(8.dp)).background(MaterialTheme.colorScheme.surfaceContainerHigh).padding(4.dp),
+    )
+}
+
+@Composable
+private fun FirstRun(
+    refreshing: Boolean,
+    error: String,
+    onRetry: () -> Unit,
+) {
+    Column(
+        Modifier.fillMaxSize().padding(32.dp),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        if (refreshing || error.isBlank()) {
+            CircularProgressIndicator()
+            Spacer(Modifier.height(16.dp))
+            Text(stringResource(R.string.first_run_loading), style = MaterialTheme.typography.bodyLarge)
+        } else {
+            Text(stringResource(R.string.first_run_failed), style = MaterialTheme.typography.titleMedium)
+            Spacer(Modifier.height(8.dp))
+            Text(error, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Spacer(Modifier.height(16.dp))
+            Button(onClick = onRetry) { Text(stringResource(R.string.retry)) }
+        }
+    }
+}

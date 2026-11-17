@@ -1,0 +1,27 @@
+package app.tuned.core
+
+/** Reads the show, season and episode out of a series entry's title. */
+object Episodes {
+    // "Show S01 E02", "Show S01E02 - Title", "Show.S1.E2", "Show 1x02".
+    private val sxe = Regex("""^(.*?)[\s._\-|:]*\bS(\d{1,3})[\s._]*E(\d{1,4})\b""", RegexOption.IGNORE_CASE)
+    private val nxn = Regex("""^(.*?)[\s._\-|:]*\b(\d{1,2})x(\d{1,3})\b""", RegexOption.IGNORE_CASE)
+    private val trailingJunk = Regex("""[\s._\-|:(\[]+$""")
+
+    fun parse(
+        title: String,
+        group: String,
+    ): EpisodeInfo {
+        val match = sxe.find(title) ?: nxn.find(title)
+        if (match != null) {
+            val show = clean(match.groupValues[1]).ifBlank { group }
+            return EpisodeInfo(show, match.groupValues[2].toInt(), match.groupValues[3].toInt())
+        }
+        // No numbering: the title is the show, so it still lists (as one episode) instead of vanishing.
+        return EpisodeInfo(clean(title).ifBlank { group }, 1, 1)
+    }
+
+    /** A stable key for grouping episodes into one show, whatever the capitals and punctuation. */
+    fun showKey(showName: String): String = Search.normalize(showName)
+
+    private fun clean(name: String): String = name.replace('.', ' ').replace(trailingJunk, "").trim()
+}
