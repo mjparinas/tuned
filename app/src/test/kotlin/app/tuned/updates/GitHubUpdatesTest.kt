@@ -124,7 +124,7 @@ class GitHubUpdatesTest {
         .build()
 
     @Test
-    fun anOlderCopyFindsDownloadsAndOffersTheNewRelease() = runBlocking {
+    fun anOlderCopyFindsDownloadsAndOffersTheNewRelease() = runBlocking<Unit> {
         serve({ json(release("v1.2.1")) })
         val updates = updates(installed120)
 
@@ -137,7 +137,7 @@ class GitHubUpdatesTest {
     }
 
     @Test
-    fun theRealLatestReleaseIsNotOfferedToTheSameVersion() = runBlocking {
+    fun theRealLatestReleaseIsNotOfferedToTheSameVersion() = runBlocking<Unit> {
         serve({ json(release("v1.2.0")) })
         val updates = updates(installed120)
 
@@ -147,13 +147,13 @@ class GitHubUpdatesTest {
     }
 
     @Test
-    fun aCopyFromTheOldBuildTagsIsOfferedThePlainRelease() = runBlocking {
+    fun aCopyFromTheOldBuildTagsIsOfferedThePlainRelease() = runBlocking<Unit> {
         serve({ json(release("v1.2.0")) })
         assertEquals(GitHubUpdates.Outcome.READY, updates(installedCode = 4).check())
     }
 
     @Test
-    fun aDroppedDownloadPicksUpAgain() = runBlocking {
+    fun aDroppedDownloadPicksUpAgain() = runBlocking<Unit> {
         serve({ json(release("v1.3.0")) }, dropApkTimes = 2)
         val updates = updates(installed120)
 
@@ -162,7 +162,7 @@ class GitHubUpdatesTest {
     }
 
     @Test
-    fun aDamagedDownloadIsNeverOffered() = runBlocking {
+    fun aDamagedDownloadIsNeverOffered() = runBlocking<Unit> {
         serve({ json(release("v1.2.1", digest = "sha256:${"0".repeat(64)}")) })
         val updates = updates(installed120)
 
@@ -171,7 +171,7 @@ class GitHubUpdatesTest {
     }
 
     @Test
-    fun githubTroubleSaysCouldNotCheckAndLeavesTheButtonWorking() = runBlocking {
+    fun githubTroubleSaysCouldNotCheckAndLeavesTheButtonWorking() = runBlocking<Unit> {
         val answers = ArrayDeque(listOf(MockResponse.Builder().code(403).build(), json("{\"message\":")))
         serve({ answers.removeFirstOrNull() ?: json(release("v1.2.1")) })
         val updates = updates(installed120)
@@ -184,7 +184,7 @@ class GitHubUpdatesTest {
     }
 
     @Test
-    fun aCheckCutShortDoesNotLeaveSettingsStuckOnChecking() = runBlocking {
+    fun aCheckCutShortDoesNotLeaveSettingsStuckOnChecking() = runBlocking<Unit> {
         serve({ json(release("v1.2.1")).newBuilder().headersDelay(2, TimeUnit.SECONDS).build() })
         val updates = updates(installed120)
 
