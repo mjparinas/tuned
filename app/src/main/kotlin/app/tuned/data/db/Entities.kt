@@ -87,6 +87,8 @@ data class DownloadRow(
     val logo: String?,
     val showKey: String? = null,
     val showName: String? = null,
+    /** The show's poster, as on the Shows tab. */
+    val showLogo: String? = null,
     val season: Int? = null,
     val episode: Int? = null,
 )
