@@ -36,11 +36,11 @@ import app.tuned.core.ScanEngine
 import app.tuned.data.AppSettings
 import app.tuned.data.ChannelScanner
 import app.tuned.data.db.ScanReportRow
+import app.tuned.diagnostics.launchSafely
 import app.tuned.ui.common.BackTopBar
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.launch
 
 class ChannelHealthViewModel(
     app: Application,
@@ -64,19 +64,19 @@ class ChannelHealthViewModel(
     fun stop() = container.scanControl.stop()
 
     fun keep(itemId: Long) {
-        viewModelScope.launch { container.channelScan.keep(itemId) }
+        viewModelScope.launchSafely("ChannelHealth") { container.channelScan.keep(itemId) }
     }
 
     fun setHideDead(on: Boolean) {
-        viewModelScope.launch { container.settings.update { it.copy(hideDeadChannels = on) } }
+        viewModelScope.launchSafely("ChannelHealth") { container.settings.update { it.copy(hideDeadChannels = on) } }
     }
 
     fun setHideFailedOnPlay(on: Boolean) {
-        viewModelScope.launch { container.settings.update { it.copy(hideFailedOnPlay = on) } }
+        viewModelScope.launchSafely("ChannelHealth") { container.settings.update { it.copy(hideFailedOnPlay = on) } }
     }
 
     fun setHidePlaceholders(on: Boolean) {
-        viewModelScope.launch { container.settings.update { it.copy(hidePlaceholders = on) } }
+        viewModelScope.launchSafely("ChannelHealth") { container.settings.update { it.copy(hidePlaceholders = on) } }
     }
 }
 

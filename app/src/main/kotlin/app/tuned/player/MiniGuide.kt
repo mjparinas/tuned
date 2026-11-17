@@ -21,8 +21,8 @@ import app.tuned.R
 import app.tuned.container
 import app.tuned.core.ScreenLayout
 import app.tuned.data.db.ItemEntity
+import app.tuned.diagnostics.launchSafely
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.launch
 
 /**
  * The channels in the current category, down the right of the video, each with what's on now. Picking one switches to
@@ -111,7 +111,7 @@ class MiniGuide(
         val current = player()?.currentMediaItemIndex ?: 0
         list.setSelection((current - 2).coerceAtLeast(0))
         list.requestFocus()
-        scope.launch {
+        scope.launchSafely("MiniGuide") {
             val ids = channels.mapNotNull { it.tvgId }.distinct()
             val now = System.currentTimeMillis()
             val programmes = activity.container.db.programmes()

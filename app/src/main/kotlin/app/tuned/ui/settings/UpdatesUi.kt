@@ -14,8 +14,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.tuned.BuildConfig
 import app.tuned.R
 import app.tuned.container
+import app.tuned.diagnostics.launchSafely
 import app.tuned.updates.GitHubUpdates
-import kotlinx.coroutines.launch
 
 /**
  * Settings › Check for updates: asks GitHub now, whatever the automatic setting, and says what it found. When a new
@@ -41,7 +41,7 @@ fun UpdateCheckRow() {
     SettingRow(
         stringResource(R.string.settings_check_now),
         summary,
-        onClick = { if (state !is GitHubUpdates.State.Checking) scope.launch { outcome = updates.check(force = true) } },
+        onClick = { if (state !is GitHubUpdates.State.Checking) scope.launchSafely("Updates") { outcome = updates.check(force = true) } },
         trailing =
             ready?.let {
                 { TextButton(onClick = { updates.install(context) }) { Text(stringResource(R.string.update_install)) } }

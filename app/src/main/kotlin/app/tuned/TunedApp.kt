@@ -20,6 +20,9 @@ import app.tuned.data.SettingsRepository
 import app.tuned.data.SyncRepository
 import app.tuned.data.TuneRepository
 import app.tuned.data.db.TunedDatabase
+import app.tuned.diagnostics.AppLog
+import app.tuned.diagnostics.CrashReporter
+import app.tuned.diagnostics.loggingHandler
 import app.tuned.updates.GitHubUpdates
 import app.tuned.work.OfflineWorker
 import app.tuned.work.Reminders
@@ -54,7 +57,8 @@ import java.util.concurrent.TimeUnit
 class AppContainer(
     private val context: Context,
 ) {
-    val appScope = CoroutineScope(SupervisorJob())
+    /** A failure in background work is logged (Settings › Developer › Logs), never a crash. */
+    val appScope = CoroutineScope(SupervisorJob() + loggingHandler("App"))
     val settings = SettingsRepository(context)
     val credentials = CredentialStore(context)
     val db by lazy { TunedDatabase.create(context) }
@@ -136,6 +140,7 @@ class TunedApp :
 
     override fun onCreate() {
         super.onCreate()
+        CrashReporter.install(this)
         // Debug builds log any disk or network work on the main thread, so a slip that would stutter shows up early.
         if (BuildConfig.DEBUG) {
             StrictMode.setThreadPolicy(
@@ -155,6 +160,12 @@ class TunedApp :
         }
         container = AppContainer(this)
         lockAdultWhenAway()
+        container.appScope.launch {
+            container.settings.settings
+                .map { it.developerMode }
+                .distinctUntilChanged()
+                .collect { AppLog.verbose = it }
+        }
         // Re-plan background refreshes whenever their settings change (not on every launch).
         container.appScope.launch {
             container.settings.settings

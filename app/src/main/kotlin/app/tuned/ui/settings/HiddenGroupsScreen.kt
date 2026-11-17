@@ -25,6 +25,7 @@ import app.tuned.core.ContentKind
 import app.tuned.core.HiddenGroups
 import app.tuned.data.AppSettings
 import app.tuned.data.db.GroupCount
+import app.tuned.diagnostics.launchSafely
 import app.tuned.ui.common.BackTopBar
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -34,7 +35,6 @@ import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.launch
 
 class HiddenGroupsViewModel(
     app: Application,
@@ -68,7 +68,7 @@ class HiddenGroupsViewModel(
             }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyMap())
 
     fun setHidden(hidden: Set<String>) {
-        viewModelScope.launch { container.settings.update { it.copy(hiddenGroups = hidden) } }
+        viewModelScope.launchSafely("HiddenGroups") { container.settings.update { it.copy(hiddenGroups = hidden) } }
     }
 }
 

@@ -15,6 +15,9 @@ import app.tuned.R
 import app.tuned.container
 import app.tuned.data.Downloader
 import app.tuned.data.db.DownloadEntity
+import app.tuned.diagnostics.AppLog
+import app.tuned.diagnostics.attempt
+import app.tuned.diagnostics.logFailures
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import java.io.File
@@ -27,7 +30,9 @@ class OfflineWorker(
 ) : CoroutineWorker(context, params) {
     private var lastReport = 0L
 
-    override suspend fun doWork(): Result {
+    override suspend fun doWork(): Result = logFailures(TAG, failed = { Result.failure() }) { download() }
+
+    private suspend fun download(): Result {
         val container = applicationContext.container
         val dao = container.db.downloads()
         val downloader = Downloader(container.http)
@@ -36,7 +41,7 @@ class OfflineWorker(
                 .first()
                 .userAgent
         // A film is large; as a foreground service the download carries on with the screen off.
-        runCatching { setForeground(foregroundInfo(null)) }
+        attempt(TAG, "Couldn't run as a foreground service") { setForeground(foregroundInfo(null)) }
         while (true) {
             val row = dao.next() ?: return Result.success()
             try {
@@ -44,7 +49,12 @@ class OfflineWorker(
                 val size = File(row.path).length()
                 dao.progress(row.itemId, size, size)
                 dao.state(row.itemId, DownloadEntity.DONE)
-            } catch (_: IOException) {
+            } catch (e: IOException) {
+                AppLog.w(TAG, "Download failed: ${row.name}", e)
+                dao.state(row.itemId, DownloadEntity.FAILED)
+            } catch (e: IllegalArgumentException) {
+                // Not a usable address: marked failed so the queue moves on instead of trying it forever.
+                AppLog.w(TAG, "Can't download ${row.name}", e)
                 dao.state(row.itemId, DownloadEntity.FAILED)
             }
         }
@@ -96,6 +106,7 @@ class OfflineWorker(
 
     companion object {
         const val NAME = "offline"
+        private const val TAG = "Downloads"
         private const val CHANNEL = "downloads"
         private const val NOTIFICATION_ID = 8
         private const val REPORT_EVERY_MS = 500L

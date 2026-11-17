@@ -31,8 +31,8 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import app.tuned.R
 import app.tuned.container
 import app.tuned.data.Credentials
+import app.tuned.diagnostics.launchSafely
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.launch
 
 class PlaylistsViewModel(
     app: Application,
@@ -45,7 +45,7 @@ class PlaylistsViewModel(
         login: Credentials,
         onDone: () -> Unit,
     ) {
-        viewModelScope.launch {
+        viewModelScope.launchSafely("Playlists") {
             container.useLogin(login)
             current.value = login
             onDone()

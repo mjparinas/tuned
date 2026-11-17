@@ -27,11 +27,11 @@ import app.tuned.core.RegionLanguages
 import app.tuned.core.Regions
 import app.tuned.data.AppSettings
 import app.tuned.data.db.RegionCount
+import app.tuned.diagnostics.launchSafely
 import app.tuned.ui.common.BackTopBar
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.launch
 
 class RegionViewModel(
     app: Application,
@@ -45,7 +45,7 @@ class RegionViewModel(
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
     fun setHidden(hidden: Set<String>) {
-        viewModelScope.launch { container.settings.update { it.copy(hiddenRegions = hidden) } }
+        viewModelScope.launchSafely("RegionSettings") { container.settings.update { it.copy(hiddenRegions = hidden) } }
     }
 }
 

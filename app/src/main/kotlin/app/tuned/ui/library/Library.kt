@@ -42,13 +42,13 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import app.tuned.R
 import app.tuned.container
 import app.tuned.data.db.WatchLaterEntity
+import app.tuned.diagnostics.launchSafely
 import app.tuned.ui.common.focusRing
 import coil3.compose.AsyncImage
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.launch
 
 /**
  * The person's own lists beyond favourites (Melvin, 2026-11-17): Watch later for films and shows, and marking films
@@ -82,7 +82,7 @@ class LibraryViewModel(
         ids: List<Long>,
         watched: Boolean,
     ) {
-        viewModelScope.launch { if (watched) db.library().markWatched(ids) else db.library().markUnwatched(ids) }
+        viewModelScope.launchSafely("Library") { if (watched) db.library().markWatched(ids) else db.library().markUnwatched(ids) }
     }
 
     companion object {
