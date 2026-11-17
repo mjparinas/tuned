@@ -10,7 +10,6 @@ import android.view.WindowManager
 import androidx.annotation.OptIn
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.ui.PlayerView
-import app.tuned.R
 import kotlin.math.abs
 import kotlin.math.roundToInt
 
@@ -21,7 +20,7 @@ import kotlin.math.roundToInt
  * - swipe left or right to change channel (live TV);
  * - a single tap still shows or hides the controls.
  *
- * Feedback appears in [say] (the centre label) and fades with [quiet].
+ * Brightness and volume show as bars at the screen's edges ([LevelBars]), which fade once the finger lifts.
  */
 @OptIn(UnstableApi::class)
 class PlayerGestures(
@@ -30,8 +29,7 @@ class PlayerGestures(
     private val isLive: () -> Boolean,
     private val onSeek: (forward: Boolean) -> Unit,
     private val onChannel: (next: Boolean) -> Unit,
-    private val say: (String) -> Unit,
-    private val quiet: () -> Unit,
+    private val bars: LevelBars,
 ) : View.OnTouchListener {
     private val audio = activity.getSystemService(Context.AUDIO_SERVICE) as AudioManager
     private var mode = Mode.None
@@ -105,7 +103,7 @@ class PlayerGestures(
     ): Boolean {
         val handled = detector.onTouchEvent(event)
         if (event.actionMasked == MotionEvent.ACTION_UP || event.actionMasked == MotionEvent.ACTION_CANCEL) {
-            if (mode != Mode.None) quiet()
+            if (mode != Mode.None) bars.hide()
             mode = Mode.None
             if (event.actionMasked == MotionEvent.ACTION_UP) v.performClick()
         }
@@ -121,7 +119,7 @@ class PlayerGestures(
         val attrs = activity.window.attributes
         attrs.screenBrightness = level.coerceAtLeast(MIN_BRIGHTNESS)
         activity.window.attributes = attrs
-        say(activity.getString(R.string.gesture_brightness, (level * PERCENT).roundToInt()))
+        bars.showBrightness(level)
     }
 
     private fun volume(): Float {
@@ -132,7 +130,7 @@ class PlayerGestures(
     private fun setVolume(level: Float) {
         val max = audio.getStreamMaxVolume(AudioManager.STREAM_MUSIC)
         audio.setStreamVolume(AudioManager.STREAM_MUSIC, (level * max).roundToInt(), 0)
-        say(activity.getString(R.string.gesture_volume, (level * PERCENT).roundToInt()))
+        bars.showVolume(level)
     }
 
     /** Hands brightness back to the system when the player closes. */
@@ -145,7 +143,6 @@ class PlayerGestures(
     private companion object {
         const val THIRDS = 3
         const val FLING_FRACTION = 4
-        const val PERCENT = 100
         const val DEFAULT_BRIGHTNESS = 0.5f
         const val MIN_BRIGHTNESS = 0.01f
     }

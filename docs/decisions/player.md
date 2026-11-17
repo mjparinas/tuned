@@ -38,6 +38,8 @@ Melvin asked for auto-reconnect and player gestures. Both are on by default and 
 
   Brightness goes back to the system's when the player closes.
 
+  While brightness or volume changes, a thin bar with its icon shows at that edge, brightness on the left and volume on the right, and fades out shortly after the finger lifts (`LevelBars`; Melvin, 2026-11-17: "subtle bars on the left and right side with a brightness and sound icon" instead of text in the middle). The volume icon turns to muted at zero. The bars read out the percentage to screen readers.
+
 - **Reconnect.** A dropped live stream, or a network error on a film or episode, is retried up to five times with a growing pause, and "Reconnecting… (2 of 5)" shows meanwhile. The count resets once it plays again. When the phone's connection comes back (`ConnectivityManager` default network), a stopped stream starts again by itself, and `prepare()` keeps a film's position. It still uses one connection at a time, never a second stream.
 
 **Ratings and trailers** (2026-11-17). From The Movie Database, with the person's own free key in Settings › Ratings (a v3 key or a v4 read token; it is never committed, and it rides in the encrypted backup with the other settings). Titles are cleaned of the provider's tags (`EN -`, `4K`, `[FHD]`) and the year is used when the name has one. Without a key nothing is asked and the page says where to add one.
