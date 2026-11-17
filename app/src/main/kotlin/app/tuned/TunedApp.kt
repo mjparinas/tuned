@@ -6,6 +6,7 @@ import app.tuned.data.CredentialStore
 import app.tuned.data.SettingsRepository
 import app.tuned.data.SyncRepository
 import app.tuned.data.db.TunedDatabase
+import app.tuned.updates.GitHubUpdates
 import app.tuned.work.SyncScheduler
 import coil3.ImageLoader
 import coil3.PlatformContext
@@ -42,6 +43,7 @@ class AppContainer(
     }
     val sync by lazy { SyncRepository(db, http, credentials, settings) }
     val scheduler = SyncScheduler(context)
+    val updates by lazy { GitHubUpdates(context, http) }
 }
 
 class TunedApp :
