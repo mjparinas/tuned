@@ -48,6 +48,8 @@ class Reminders(
         title: String,
         start: Long,
         leadMinutes: Int,
+        /** For a Live Events alert: tapping it auto-tunes this title instead of opening one channel. */
+        tuneQuery: String? = null,
     ) {
         val at = start - TimeUnit.MINUTES.toMillis(leadMinutes.toLong())
         val delay = (at - System.currentTimeMillis()).coerceAtLeast(0)
@@ -63,6 +65,7 @@ class Reminders(
                         ReminderWorker.CHANNEL_NAME to channelName,
                         ReminderWorker.TITLE to title,
                         ReminderWorker.START to start,
+                        ReminderWorker.TUNE to tuneQuery,
                     ),
                 ).build()
         work.enqueueUniqueWork(NAME + key, ExistingWorkPolicy.REPLACE, request)
@@ -101,6 +104,7 @@ class ReminderWorker(
         val channelName = inputData.getString(CHANNEL_NAME).orEmpty()
         val title = inputData.getString(TITLE).orEmpty()
         val start = inputData.getLong(START, 0)
+        val tune = inputData.getString(TUNE)
         if (start + LATE_MS < System.currentTimeMillis()) return Result.success() // long over; say nothing
         val ctx = applicationContext
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
@@ -116,15 +120,16 @@ class ReminderWorker(
             PendingIntent.getActivity(
                 ctx,
                 channelId.hashCode(),
-                PlayerActivity.intent(ctx, channelId),
+                if (tune != null) PlayerActivity.tuneIntent(ctx, tune) else PlayerActivity.intent(ctx, channelId),
                 PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
             )
+        val text = if (tune != null) ctx.getString(R.string.reminder_event_text) else ctx.getString(R.string.reminder_text, channelName)
         val notification =
             NotificationCompat
                 .Builder(ctx, CHANNEL)
                 .setSmallIcon(R.drawable.ic_stat_tuned)
                 .setContentTitle(title)
-                .setContentText(ctx.getString(R.string.reminder_text, channelName))
+                .setContentText(text)
                 .setWhen(start)
                 .setShowWhen(true)
                 .setCategory(NotificationCompat.CATEGORY_REMINDER)
@@ -140,6 +145,7 @@ class ReminderWorker(
         const val CHANNEL_NAME = "channel_name"
         const val TITLE = "title"
         const val START = "start"
+        const val TUNE = "tune"
         private const val CHANNEL = "reminders"
         private const val LATE_MS = 30 * 60_000L
     }

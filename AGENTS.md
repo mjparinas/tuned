@@ -73,6 +73,7 @@ One file per topic in `docs/decisions/`, A to Z. Add a line when you add a topic
 - [Channel scan](docs/decisions/channel-scan.md): finding dead channels without blaming them for the internet or the server.
 - [Diagnostics](docs/decisions/diagnostics.md): crash reports, `launchSafely` and `attempt`, the developer log, keeping logins out of it.
 - [Large screens](docs/decisions/large-screens.md): navigation rail, list and detail panes, the guide beside the player on tablets.
+- [Live events](docs/decisions/events.md): today's games and fights from the guide, Tune, following and alerts.
 - [Offline downloads](docs/decisions/offline.md): saving films and episodes, one connection at a time.
 - [People](docs/decisions/people.md): actor filmography pages, oldest first, with what is in the playlist marked.
 - [Playlist and guide](docs/decisions/playlist.md): Xtream URLs, how streams are sorted, countries and adult categories across providers, refresh.
