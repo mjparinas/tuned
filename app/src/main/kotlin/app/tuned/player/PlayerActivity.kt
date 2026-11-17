@@ -847,13 +847,13 @@ class PlayerActivity : FragmentActivity() {
             )
         }
 
-        /** Auto-tune: find a working channel showing [query] (a channel name or an event in the guide) and play it. */
         /** Auto-tune: find a working stream for [query] (a channel or an event) and play it. */
         fun tuneIntent(
             context: Context,
             query: String,
         ): Intent = Intent(context, PlayerActivity::class.java).putExtra(EXTRA_TUNE, query)
 
+        /** Auto-tune: find a working channel showing [query] (a channel name or an event in the guide) and play it. */
         fun tune(
             context: Context,
             query: String,
