@@ -757,8 +757,10 @@ private fun ContinueCard(
     val title =
         when {
             row.showName != null && episodeName != null -> stringResource(R.string.continue_episode_named, row.showName, episodeName)
+
             row.showName != null && row.season != null && row.episode != null ->
                 stringResource(R.string.continue_episode, row.showName, row.season, row.episode)
+
             else -> row.name
         }
     Column(

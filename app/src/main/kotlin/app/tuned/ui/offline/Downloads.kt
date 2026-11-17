@@ -437,7 +437,12 @@ private fun DownloadRowItem(
             contentAlignment = Alignment.Center,
         ) {
             Icon(Icons.Filled.Movie, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
-            AsyncImage(model = info?.still ?: row.logo, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
+            AsyncImage(
+                model = info?.still ?: row.logo,
+                contentDescription = null,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.fillMaxSize(),
+            )
             if (onClick != null) {
                 Icon(
                     Icons.Filled.PlayCircle,
