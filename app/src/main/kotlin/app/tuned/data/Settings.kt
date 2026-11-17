@@ -90,6 +90,8 @@ data class AppSettings(
     /** How long before a programme starts its reminder goes off. */
     val reminderLeadMinutes: Int = 5,
     val guideDays: Int = 3,
+    /** Moves the whole guide, for one that runs early or late (Settings › Guide). */
+    val guideOffsetMinutes: Int = 0,
     val unmeteredOnly: Boolean = false,
     val buffer: BufferMode = BufferMode.BALANCED,
     val audioLanguage: String = "",
@@ -255,6 +257,7 @@ class SettingsRepository(
             guideRefreshHours = p[K.guideRefreshHours] ?: d.guideRefreshHours,
             reminderLeadMinutes = p[K.reminderLeadMinutes] ?: d.reminderLeadMinutes,
             guideDays = p[K.guideDays] ?: d.guideDays,
+            guideOffsetMinutes = p[K.guideOffsetMinutes] ?: d.guideOffsetMinutes,
             unmeteredOnly = p[K.unmeteredOnly] ?: d.unmeteredOnly,
             buffer = enumOr(p[K.buffer], d.buffer),
             audioLanguage = p[K.audioLanguage] ?: d.audioLanguage,
@@ -324,6 +327,7 @@ class SettingsRepository(
         p[K.guideRefreshHours] = s.guideRefreshHours
         p[K.reminderLeadMinutes] = s.reminderLeadMinutes
         p[K.guideDays] = s.guideDays
+        p[K.guideOffsetMinutes] = s.guideOffsetMinutes
         p[K.unmeteredOnly] = s.unmeteredOnly
         p[K.buffer] = s.buffer.name
         p[K.audioLanguage] = s.audioLanguage
@@ -393,6 +397,7 @@ class SettingsRepository(
         val guideRefreshHours = intPreferencesKey("guide_refresh_hours")
         val reminderLeadMinutes = intPreferencesKey("reminder_lead_minutes")
         val guideDays = intPreferencesKey("guide_days")
+        val guideOffsetMinutes = intPreferencesKey("guide_offset_minutes")
         val unmeteredOnly = booleanPreferencesKey("unmetered_only")
         val buffer = stringPreferencesKey("buffer")
         val audioLanguage = stringPreferencesKey("audio_language")

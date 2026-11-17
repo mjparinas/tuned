@@ -22,6 +22,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.EditCalendar
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Notifications
@@ -175,9 +176,15 @@ fun GuideScreen(
         }
     }
 
+    var fixing by remember { mutableStateOf(false) }
+    channel?.takeIf { fixing }?.let { c -> GuideFixDialog(c, onDismiss = { fixing = false }, onSaved = vm::reload) }
+
     Scaffold(
         topBar = {
             BackTopBar(channel?.name.orEmpty(), onBack) {
+                IconButton(onClick = { fixing = true }, enabled = channel != null) {
+                    Icon(Icons.Filled.EditCalendar, contentDescription = stringResource(R.string.guide_fix_title))
+                }
                 IconButton(onClick = vm::toggleFavourite) {
                     Icon(
                         if (favourite) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,

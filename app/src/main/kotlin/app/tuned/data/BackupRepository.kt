@@ -55,6 +55,7 @@ class BackupRepository(
         val password: String,
         val playlistUrl: String = "",
         val guideUrl: String = "",
+        val extraGuides: List<String> = emptyList(),
     )
 
     @Serializable
@@ -73,7 +74,7 @@ class BackupRepository(
     suspend fun export(passphrase: CharArray): ByteArray = withContext(Dispatchers.IO) {
         val contents =
             Contents(
-                login = credentials.load()?.let { Login(it.server, it.username, it.password, it.playlistUrl, it.guideUrl) },
+                login = credentials.load()?.let { Login(it.server, it.username, it.password, it.playlistUrl, it.guideUrl, it.extraGuides) },
                 settings = settings.snapshot().mapValues { (_, v) -> encode(v) },
                 favourites = db.library().allFavourites().map { Favourite(it.itemId, it.addedAt, it.position) },
                 watchLater =
@@ -99,7 +100,7 @@ class BackupRepository(
         contents.favourites.forEach { db.library().addFavourite(FavouriteEntity(it.itemId, it.addedAt, it.position)) }
         contents.watchLater.forEach { db.watchLater().add(WatchLaterEntity(it.key, it.itemId, it.showKey, it.title, it.image, it.addedAt)) }
         contents.login?.let {
-            val login = Credentials(it.server, it.username, it.password, it.playlistUrl, it.guideUrl)
+            val login = Credentials(it.server, it.username, it.password, it.playlistUrl, it.guideUrl, it.extraGuides)
             credentials.save(login)
             credentials.remember(login)
         }

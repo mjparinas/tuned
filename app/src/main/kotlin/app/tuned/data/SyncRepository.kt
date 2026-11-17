@@ -1,22 +1,20 @@
 package app.tuned.data
 
-import android.util.Xml
 import androidx.room.withTransaction
 import app.tuned.core.CatchUp
 import app.tuned.core.Episodes
+import app.tuned.core.GuideFixes
 import app.tuned.core.M3uParser
 import app.tuned.core.PlaylistEntry
 import app.tuned.core.Search
 import app.tuned.core.StableId
 import app.tuned.core.Streams
-import app.tuned.core.XmltvParser
 import app.tuned.core.XtreamAccount
 import app.tuned.core.XtreamUrls
 import app.tuned.data.db.CatchUpEntity
 import app.tuned.data.db.GuideWriter
 import app.tuned.data.db.ItemEntity
 import app.tuned.data.db.PlaylistWriter
-import app.tuned.data.db.ProgrammeEntity
 import app.tuned.data.db.TunedDatabase
 import app.tuned.diagnostics.attempt
 import kotlinx.coroutines.Dispatchers
@@ -93,6 +91,8 @@ class SyncRepository(
                 settings.update { it.copy(lastSyncError = message) }
                 throw IOException(message, e)
             }
+        // Channels with their own guide fix keep it across the new playlist.
+        db.guideFixes().reapply()
         settings.update { it.copy(lastPlaylistSync = System.currentTimeMillis(), lastSyncError = "") }
         // Catch-up is a bonus: a server that doesn't answer leaves the last known channels as they were.
         if (login.playlistUrl.isBlank()) attempt("Sync", "Catch-up refresh failed") { refreshCatchUp(login) }
@@ -140,14 +140,40 @@ class SyncRepository(
     private suspend fun refreshGuideLocked(progress: (SyncProgress) -> Unit): Int {
         val login = credentials.load() ?: throw IOException("Not signed in")
         val url = login.guideUrl.ifBlank { XtreamUrls.guide(login.server, login.username, login.password) }
-        val days = settings.settings.first().guideDays
+        val s = settings.settings.first()
+        val import = GuideImport(db, s.guideDays, s.guideOffsetMinutes)
+        val saved = { rows: Int -> progress(SyncProgress(SyncProgress.Step.SavingGuide, rows.toLong())) }
         val count =
-            download(url, "guide", SyncProgress.Step.Guide, progress) { input ->
-                importGuide(input, days) { rows -> progress(SyncProgress(SyncProgress.Step.SavingGuide, rows.toLong())) }
+            try {
+                if (!import.begin()) return 0
+                download(url, "guide", SyncProgress.Step.Guide, progress) { input -> import.read(input, saved) }
+                // Extra guide links only fill gaps; one that fails leaves the rest of the guide as it is.
+                for (extra in login.extraGuides) {
+                    attempt(TAG_SYNC, "An extra guide failed") {
+                        download(extra, "guide", SyncProgress.Step.Guide, progress) { input -> import.read(input, saved) }
+                    }
+                }
+                import.commit()
+            } finally {
+                import.discard() // a no-op after a commit; after a failure, the old guide stays
             }
         settings.update { it.copy(lastGuideSync = System.currentTimeMillis()) }
         return count
     }
+
+    /**
+     * Moves the whole guide by a new offset (Settings › Guide) at once, under the refresh lock so a refresh running
+     * meanwhile can't apply it twice.
+     */
+    suspend fun setGuideOffset(minutes: Int) = lock.withLock {
+        val old = settings.settings.first().guideOffsetMinutes
+        if (old == minutes) return@withLock
+        db.guideFixes().shiftAll((minutes - old) * GuideFixes.MINUTE)
+        settings.update { it.copy(guideOffsetMinutes = minutes) }
+    }
+
+    /** Runs [block] while no refresh is writing the guide, for [GuideFixRepository]. */
+    suspend fun <T> whileIdle(block: suspend () -> T): T = lock.withLock { block() }
 
     /** Saves [url] to disk (resuming and retrying as needed), then hands the unzipped file to [read] and deletes it. */
     private suspend fun <T> download(
@@ -195,52 +221,6 @@ class SyncRepository(
         }
     }
 
-    private suspend fun importGuide(
-        input: InputStream,
-        days: Int,
-        saved: (Int) -> Unit,
-    ): Int {
-        val wanted = db.items().liveTvgIds().toHashSet()
-        if (wanted.isEmpty()) return 0
-        val now = System.currentTimeMillis()
-        val from = now - HOUR
-        // Channels with catch-up keep their past programmes for as long as the server keeps the recordings.
-        val archive = db.catchUp().all().associate { it.streamId to it.days }
-        val pastFrom = HashMap<String, Long>()
-        if (archive.isNotEmpty()) {
-            for (link in db.items().liveLinks()) {
-                val days = CatchUp.streamId(link.url)?.let(archive::get) ?: continue
-                pastFrom.merge(link.tvgId, CatchUp.keepFrom(now, days), ::minOf)
-            }
-        }
-        val until = now + days * DAY
-        // Written beside the old guide and swapped in at the end, so searching and browsing never wait on it.
-        val writer = GuideWriter(db)
-        writer.begin()
-        try {
-            val parser = Xml.newPullParser()
-            parser.setInput(input, null)
-            val batch = ArrayList<ProgrammeEntity>(BATCH)
-            var count = 0
-            for (p in XmltvParser.programmes(
-                parser,
-            ) { id, start, stop -> stop > (pastFrom[id] ?: from) && start < until && id in wanted }) {
-                batch +=
-                    ProgrammeEntity(channelId = p.channelId, start = p.start, stop = p.stop, title = p.title, description = p.description)
-                count++
-                if (batch.size == BATCH) {
-                    writer.add(batch.toList())
-                    batch.clear()
-                    saved(count)
-                }
-            }
-            writer.add(batch)
-            return writer.commit()
-        } finally {
-            writer.discard() // a no-op after a commit; after a failure, the old guide stays
-        }
-    }
-
     private fun PlaylistEntry.toRow(): ItemEntity {
         val ep = episode
         return ItemEntity(
@@ -265,8 +245,6 @@ class SyncRepository(
     private companion object {
         const val BATCH = 1_000
         const val MAX_ACCOUNT_ANSWER = 64_000
-        const val HOUR = 3_600_000L
-        const val DAY = 24 * HOUR
     }
 }
 
