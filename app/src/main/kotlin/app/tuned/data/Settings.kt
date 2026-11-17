@@ -76,6 +76,8 @@ data class AppSettings(
     val seekForwardMs: Long = 30_000,
     val userAgent: String = "",
     val showGuideInList: Boolean = true,
+    /** Look for a newer release on GitHub at start (copies from Play update through Play either way). */
+    val checkUpdates: Boolean = true,
     val captions: CaptionStyle = CaptionStyle(),
     val lastPlaylistSync: Long = 0,
     val lastGuideSync: Long = 0,
@@ -124,6 +126,7 @@ class SettingsRepository(
             seekForwardMs = p[K.seekForwardMs] ?: d.seekForwardMs,
             userAgent = p[K.userAgent] ?: d.userAgent,
             showGuideInList = p[K.showGuideInList] ?: d.showGuideInList,
+            checkUpdates = p[K.checkUpdates] ?: d.checkUpdates,
             captions =
                 CaptionStyle(
                     enabled = p[K.ccEnabled] ?: c.enabled,
@@ -172,6 +175,7 @@ class SettingsRepository(
         p[K.seekForwardMs] = s.seekForwardMs
         p[K.userAgent] = s.userAgent
         p[K.showGuideInList] = s.showGuideInList
+        p[K.checkUpdates] = s.checkUpdates
         val c = s.captions
         p[K.ccEnabled] = c.enabled
         p[K.ccLanguage] = c.language
@@ -219,6 +223,7 @@ class SettingsRepository(
         val seekForwardMs = longPreferencesKey("seek_forward_ms")
         val userAgent = stringPreferencesKey("user_agent")
         val showGuideInList = booleanPreferencesKey("show_guide_in_list")
+        val checkUpdates = booleanPreferencesKey("check_updates")
         val ccEnabled = booleanPreferencesKey("cc_enabled")
         val ccLanguage = stringPreferencesKey("cc_language")
         val ccScale = floatPreferencesKey("cc_scale")

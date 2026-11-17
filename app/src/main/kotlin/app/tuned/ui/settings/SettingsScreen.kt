@@ -270,6 +270,11 @@ fun SettingsScreen(
                     vm.update { it.copy(userAgent = ua.trim()) }
                 }
             }
+            SwitchRow(
+                stringResource(R.string.settings_check_updates),
+                settings.checkUpdates,
+                stringResource(R.string.settings_check_updates_summary),
+            ) { on -> vm.update { it.copy(checkUpdates = on) } }
             HorizontalDivider(Modifier.padding(top = 16.dp))
             Text(
                 stringResource(R.string.settings_version, BuildConfig.VERSION_NAME, BuildConfig.VERSION_CODE),

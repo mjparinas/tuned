@@ -7,6 +7,8 @@
     <!-- Expedited refreshes run as a short foreground service on Android 11 and older. -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
+    <!-- Updates from GitHub Releases (docs/decisions/updates.md). A Play build would drop this: Play doesn't allow it. -->
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
 
     <application
         android:name=".TunedApp"
@@ -47,5 +49,8 @@
             android:name="androidx.work.impl.foreground.SystemForegroundService"
             android:foregroundServiceType="dataSync"
             tools:node="merge" />
+        <receiver
+            android:name=".updates.InstallResultReceiver"
+            android:exported="false" />
     </application>
 </manifest>

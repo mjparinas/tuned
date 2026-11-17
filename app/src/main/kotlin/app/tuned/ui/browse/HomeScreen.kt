@@ -48,6 +48,7 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
@@ -64,6 +65,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
@@ -73,12 +75,14 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.paging.compose.collectAsLazyPagingItems
 import androidx.paging.compose.itemKey
 import app.tuned.R
+import app.tuned.container
 import app.tuned.core.ContentKind
 import app.tuned.data.AppSettings
 import app.tuned.data.StartTab
 import app.tuned.data.db.ChannelWithNow
 import app.tuned.data.db.ItemEntity
 import app.tuned.data.db.ShowSummary
+import app.tuned.updates.GitHubUpdates
 import coil3.compose.AsyncImage
 
 private data class Tab(
@@ -144,6 +148,7 @@ fun HomeScreen(
                 FirstRun(refreshing = refreshing, error = lastError, onRetry = vm::refresh)
                 return@Column
             }
+            UpdateBanner()
             CategoryChips(vm, tab.kind)
             PullToRefreshBox(isRefreshing = refreshing, onRefresh = vm::refresh, modifier = Modifier.fillMaxSize()) {
                 when (tab.kind) {
@@ -152,6 +157,29 @@ fun HomeScreen(
                     ContentKind.SERIES -> ShowGrid(vm, onOpenShow)
                 }
             }
+        }
+    }
+}
+
+/** A newer Tuned was downloaded from GitHub: one tap installs it. Nothing shows otherwise. */
+@Composable
+private fun UpdateBanner() {
+    val context = LocalContext.current
+    val updates = context.container.updates
+    val state by updates.state.collectAsStateWithLifecycle()
+    val ready = state as? GitHubUpdates.State.Ready ?: return
+    Surface(
+        color = MaterialTheme.colorScheme.primaryContainer,
+        shape = RoundedCornerShape(16.dp),
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp),
+    ) {
+        Row(Modifier.padding(start = 16.dp, end = 8.dp, top = 4.dp, bottom = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                stringResource(R.string.update_ready, ready.versionName),
+                style = MaterialTheme.typography.bodyMedium,
+                modifier = Modifier.weight(1f),
+            )
+            TextButton(onClick = { updates.install(context) }) { Text(stringResource(R.string.update_install)) }
         }
     }
 }
