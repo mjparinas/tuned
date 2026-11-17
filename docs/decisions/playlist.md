@@ -8,6 +8,8 @@
 
 **Countries** (Melvin, 2026-11-17: "toggle controls in the settings that allow you to hide certain countries' content"). Providers seldom fill `tvg-country`, so the region comes from the category prefix: `US| News`, `UK: Sport`, `|CA| Kids`, `[FR] Cinéma`, `4K | US Movies` (quality tags are skipped). Settings › Countries lists every region found, with how many streams each has; turning one off hides it in every list and search. Streams with no region always show. _To revisit once we've seen the real eros4k playlist's categories._
 
+**Hidden groups** (Melvin, 2026-11-17: "hiding channel groups"). On the home screen, picking a group's chip shows an eye on it that hides the group; Settings › Hidden groups lists every group in Live TV, Movies and Shows with a switch to bring any back. A hidden group stays out of lists, search, auto-tune and channel flipping. Keys name the section (`g:<kind>:<group>`), so a Movies "Action" and a Shows "Action" are separate. They travel in the same query parameter as hidden countries, so no query needed a second list.
+
 **Adult categories** are hidden by default (Settings › Content › Show adult categories).
 
 **Downloading (2026-11-17, after v0.1.0 failed to sign in with "Software caused connection abort").** Melvin's provider serves playlists of about 400 MB from slow servers. So each file is first saved to disk by `Downloader` and only then read into the database:

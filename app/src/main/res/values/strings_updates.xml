@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_check_now">Check for updates</string>
+    <string name="update_checking">Checking GitHub…</string>
+    <string name="update_up_to_date">Tuned %1$s is up to date</string>
+    <string name="update_check_failed">Couldn’t reach GitHub. Try again in a moment.</string>
+    <string name="update_channel">Updates</string>
+    <string name="update_notification_text">Open Tuned and tap Install</string>
+</resources>

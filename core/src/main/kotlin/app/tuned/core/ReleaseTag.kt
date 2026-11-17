@@ -25,4 +25,17 @@ object ReleaseTag {
         tag: String,
         installedCode: Int,
     ): Boolean = (versionCode(tag) ?: 0) > installedCode
+
+    /** How often Tuned looks for a new release on its own: each time it comes to the front, at most once an hour. */
+    const val CHECK_EVERY_MS = 3_600_000L
+
+    /**
+     * Whether to ask GitHub now. A check the person asked for always goes; otherwise once [CHECK_EVERY_MS] has passed
+     * since the last one (or the clock went backwards).
+     */
+    fun checkDue(
+        lastCheckMs: Long,
+        nowMs: Long,
+        force: Boolean,
+    ): Boolean = force || lastCheckMs == 0L || nowMs - lastCheckMs >= CHECK_EVERY_MS || nowMs < lastCheckMs
 }

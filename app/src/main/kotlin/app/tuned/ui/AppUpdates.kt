@@ -1,6 +1,5 @@
 package app.tuned.ui
 
-import android.os.Build
 import androidx.activity.ComponentActivity
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.IntentSenderRequest
@@ -20,6 +19,9 @@ import kotlinx.coroutines.launch
  * Keeps Tuned current. Copies installed from Play update through Play; every other copy (GitHub Releases, for
  * now) through [app.tuned.updates.GitHubUpdates].
  *
+ * GitHub: checked each time Tuned comes to the front (at most hourly, see [app.tuned.core.ReleaseTag.checkDue]) and
+ * after background refreshes, so a copy left running still hears about a new release.
+ *
  * Play: keeps Tuned current through Google Play (Melvin, 2026-11-17: "auto android updates whenever a new version has
  * been uploaded"). On every start it asks Play; a newer build installs straight away (immediate update), or, where
  * Play only allows a flexible one, downloads in the background and restarts into it when ready. Builds that
@@ -38,18 +40,8 @@ class AppUpdates(
         }
 
     /** Who installed this copy: Play's updates only work for copies Play installed. */
-    private val fromPlay: Boolean =
-        runCatching {
-            val name = activity.packageName
-            val installer =
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                    activity.packageManager.getInstallSourceInfo(name).installingPackageName
-                } else {
-                    @Suppress("DEPRECATION") // the replacement only exists from Android 11
-                    activity.packageManager.getInstallerPackageName(name)
-                }
-            installer == PLAY_STORE
-        }.getOrDefault(false)
+    private val fromPlay: Boolean = activity.container.updates.fromPlay()
+    private var askedPlay = false
 
     fun check() {
         if (!fromPlay) {
@@ -64,6 +56,9 @@ class AppUpdates(
             }
             return
         }
+        // Play is asked once per screen; it keeps its own update going from there.
+        if (askedPlay) return
+        askedPlay = true
         manager.registerListener(listener)
         manager.appUpdateInfo.addOnSuccessListener { info ->
             if (info.updateAvailability() != UpdateAvailability.UPDATE_AVAILABLE) return@addOnSuccessListener
@@ -95,9 +90,5 @@ class AppUpdates(
 
     fun stop() {
         manager.unregisterListener(listener)
-    }
-
-    private companion object {
-        const val PLAY_STORE = "com.android.vending"
     }
 }

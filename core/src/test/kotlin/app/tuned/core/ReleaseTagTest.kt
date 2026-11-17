@@ -28,4 +28,15 @@ class ReleaseTagTest {
         assertNull(ReleaseTag.versionCode("nightly"))
         assertFalse(ReleaseTag.isNewer("v1.0.0", installedCode = 1))
     }
+
+    @Test
+    fun checksAgainWhileTheAppStaysOpen() {
+        val hour = ReleaseTag.CHECK_EVERY_MS
+        // The bug: a copy left running never looked again. Coming back after an hour must check.
+        assertTrue(ReleaseTag.checkDue(lastCheckMs = 1_000, nowMs = 1_000 + hour, force = false))
+        assertTrue(ReleaseTag.checkDue(lastCheckMs = 0, nowMs = 5, force = false))
+        assertFalse(ReleaseTag.checkDue(lastCheckMs = 1_000, nowMs = 1_000 + hour - 1, force = false))
+        assertTrue(ReleaseTag.checkDue(lastCheckMs = 1_000, nowMs = 1_001, force = true))
+        assertTrue(ReleaseTag.checkDue(lastCheckMs = 5_000, nowMs = 1_000, force = false))
+    }
 }

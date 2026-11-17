@@ -53,7 +53,7 @@ interface ItemDao {
         LEFT JOIN favourites f ON f.itemId = i.id
         LEFT JOIN history h ON h.itemId = i.id
         WHERE i.kind = 0
-            AND (i.region IS NULL OR i.region NOT IN (:hidden))
+            AND (i.region IS NULL OR i.region NOT IN (:hidden)) AND ('g:' || i.kind || ':' || i.groupName) NOT IN (:hidden)
             AND (:adult OR i.adult = 0)
             AND (:group IS NULL OR i.groupName = :group)
             AND (:favouritesOnly = 0 OR f.itemId IS NOT NULL)
@@ -83,7 +83,7 @@ interface ItemDao {
         FROM history h
         JOIN items i ON i.id = h.itemId
         WHERE i.kind = :kind
-            AND (i.region IS NULL OR i.region NOT IN (:hidden))
+            AND (i.region IS NULL OR i.region NOT IN (:hidden)) AND ('g:' || i.kind || ':' || i.groupName) NOT IN (:hidden)
             AND (:adult OR i.adult = 0)
             AND h.durationMs > 0 AND h.positionMs > 30000 AND h.positionMs < h.durationMs * 95 / 100
         ORDER BY h.watchedAt DESC
@@ -100,7 +100,7 @@ interface ItemDao {
         """
         SELECT * FROM items i
         WHERE i.kind = :kind
-            AND (i.region IS NULL OR i.region NOT IN (:hidden))
+            AND (i.region IS NULL OR i.region NOT IN (:hidden)) AND ('g:' || i.kind || ':' || i.groupName) NOT IN (:hidden)
             AND (:adult OR i.adult = 0)
             AND (:group IS NULL OR i.groupName = :group)
             AND (:favouritesOnly = 0 OR i.id IN (SELECT itemId FROM favourites))
@@ -122,7 +122,7 @@ interface ItemDao {
         SELECT showKey, MIN(showName) AS showName, MAX(logo) AS logo, MIN(groupName) AS groupName, COUNT(*) AS episodes
         FROM items i
         WHERE i.kind = 2 AND i.showKey IS NOT NULL
-            AND (i.region IS NULL OR i.region NOT IN (:hidden))
+            AND (i.region IS NULL OR i.region NOT IN (:hidden)) AND ('g:' || i.kind || ':' || i.groupName) NOT IN (:hidden)
             AND (:adult OR i.adult = 0)
             AND (:group IS NULL OR i.groupName = :group)
             AND (:favouritesOnly = 0 OR i.id IN (SELECT itemId FROM favourites))
@@ -149,7 +149,7 @@ interface ItemDao {
         LEFT JOIN programmes p ON p.channelId = i.tvgId AND p.start <= :now AND p.stop > :now
         LEFT JOIN favourites f ON f.itemId = i.id
         WHERE i.kind = 0
-            AND (i.region IS NULL OR i.region NOT IN (:hidden))
+            AND (i.region IS NULL OR i.region NOT IN (:hidden)) AND ('g:' || i.kind || ':' || i.groupName) NOT IN (:hidden)
             AND (:adult OR i.adult = 0)
             AND (i.searchName LIKE '%' || :query || '%' OR i.tvgId IN (
                 SELECT channelId FROM programmes WHERE title LIKE '%' || :query || '%' AND stop > :now AND start < :now + 3600000
@@ -171,7 +171,7 @@ interface ItemDao {
         """
         SELECT * FROM items i
         WHERE i.kind = 1 AND i.searchName LIKE '%' || :query || '%'
-            AND (i.region IS NULL OR i.region NOT IN (:hidden))
+            AND (i.region IS NULL OR i.region NOT IN (:hidden)) AND ('g:' || i.kind || ':' || i.groupName) NOT IN (:hidden)
             AND (:adult OR i.adult = 0)
         ORDER BY i.sortOrder
         LIMIT :limit
@@ -189,7 +189,7 @@ interface ItemDao {
         SELECT showKey, MIN(showName) AS showName, MAX(logo) AS logo, MIN(groupName) AS groupName, COUNT(*) AS episodes
         FROM items i
         WHERE i.kind = 2 AND i.showKey IS NOT NULL AND i.searchName LIKE '%' || :query || '%'
-            AND (i.region IS NULL OR i.region NOT IN (:hidden))
+            AND (i.region IS NULL OR i.region NOT IN (:hidden)) AND ('g:' || i.kind || ':' || i.groupName) NOT IN (:hidden)
             AND (:adult OR i.adult = 0)
         GROUP BY showKey
         ORDER BY MIN(sortOrder)
@@ -212,7 +212,7 @@ interface ItemDao {
     @Query(
         """
         SELECT * FROM items
-        WHERE kind = 0 AND groupName = :group AND (region IS NULL OR region NOT IN (:hidden)) AND (:adult OR adult = 0)
+        WHERE kind = 0 AND groupName = :group AND (region IS NULL OR region NOT IN (:hidden)) AND ('g:' || kind || ':' || groupName) NOT IN (:hidden) AND (:adult OR adult = 0)
         ORDER BY sortOrder
         """,
     )
@@ -225,7 +225,7 @@ interface ItemDao {
     @Query(
         """
         SELECT groupName, COUNT(*) AS count FROM items
-        WHERE kind = :kind AND (region IS NULL OR region NOT IN (:hidden)) AND (:adult OR adult = 0)
+        WHERE kind = :kind AND (region IS NULL OR region NOT IN (:hidden)) AND ('g:' || kind || ':' || groupName) NOT IN (:hidden) AND (:adult OR adult = 0)
         GROUP BY groupName ORDER BY MIN(sortOrder)
         """,
     )
@@ -250,7 +250,7 @@ interface ItemDao {
         FROM items i
         LEFT JOIN channel_health h ON h.itemId = i.id
         WHERE i.kind = 0
-            AND (i.region IS NULL OR i.region NOT IN (:hidden))
+            AND (i.region IS NULL OR i.region NOT IN (:hidden)) AND ('g:' || i.kind || ':' || i.groupName) NOT IN (:hidden)
             AND (:adult OR i.adult = 0)
             AND (nameMatch OR guideMatch)
         ORDER BY i.sortOrder

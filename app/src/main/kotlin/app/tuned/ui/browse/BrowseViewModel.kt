@@ -9,6 +9,7 @@ import androidx.paging.PagingData
 import androidx.paging.cachedIn
 import app.tuned.container
 import app.tuned.core.ContentKind
+import app.tuned.core.HiddenGroups
 import app.tuned.core.Search
 import app.tuned.data.AppSettings
 import app.tuned.data.SyncProgress
@@ -18,6 +19,7 @@ import app.tuned.data.db.FavouriteEntity
 import app.tuned.data.db.GroupCount
 import app.tuned.data.db.ItemEntity
 import app.tuned.data.db.ShowSummary
+import app.tuned.data.hiddenKeys
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.delay
@@ -83,7 +85,7 @@ class BrowseViewModel(
         }
 
     private fun query(kind: ContentKind): Flow<Query> = combine(
-        settings.map { it?.hiddenRegions?.sorted() to (it?.showAdult ?: false) }.distinctUntilChanged(),
+        settings.map { it?.hiddenKeys() to (it?.showAdult ?: false) }.distinctUntilChanged(),
         filter(kind),
         search(kind).debounce(200).map { Search.normalize(it) }.distinctUntilChanged(),
         if (kind == ContentKind.LIVE) clock else flow { emit(0L) },
@@ -135,7 +137,7 @@ class BrowseViewModel(
     /** Continue Watching for Movies (kind MOVIE) or Shows (episodes, kind SERIES). */
     fun continueWatching(kind: ContentKind): StateFlow<List<ContinueRow>> = continueFlows.getOrPut(kind) {
         settings
-            .map { it?.hiddenRegions?.sorted().orEmpty() to (it?.showAdult ?: false) }
+            .map { it?.hiddenKeys().orEmpty() to (it?.showAdult ?: false) }
             .distinctUntilChanged()
             .flatMapLatest { (hidden, adult) -> items.continueWatching(kind.code, hidden, adult) }
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
@@ -145,7 +147,7 @@ class BrowseViewModel(
 
     fun groups(kind: ContentKind): StateFlow<List<GroupCount>> = groupFlows.getOrPut(kind) {
         settings
-            .map { it?.hiddenRegions?.sorted().orEmpty() to (it?.showAdult ?: false) }
+            .map { it?.hiddenKeys().orEmpty() to (it?.showAdult ?: false) }
             .distinctUntilChanged()
             .flatMapLatest { (hidden, adult) -> items.groups(kind.code, hidden, adult) }
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
@@ -196,6 +198,17 @@ class BrowseViewModel(
         viewModelScope.launch {
             val library = container.db.library()
             if (favourite) library.removeFavourite(itemId) else library.addFavourite(FavouriteEntity(itemId, System.currentTimeMillis()))
+        }
+    }
+
+    /** Hides a group from its section everywhere; Settings › Hidden groups brings it back. */
+    fun hideGroup(
+        kind: ContentKind,
+        group: String,
+    ) {
+        filter(kind).value = Filter.All
+        viewModelScope.launch {
+            container.settings.update { it.copy(hiddenGroups = it.hiddenGroups + HiddenGroups.key(kind.code, group)) }
         }
     }
 

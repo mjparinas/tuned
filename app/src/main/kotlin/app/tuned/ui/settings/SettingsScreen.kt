@@ -149,6 +149,7 @@ fun SettingsScreen(
     onBack: () -> Unit,
     onOpenCaptions: () -> Unit,
     onOpenRegions: () -> Unit,
+    onOpenHiddenGroups: () -> Unit,
     onOpenFavouriteOrder: () -> Unit,
     onOpenDownloads: () -> Unit,
     onSignedOut: () -> Unit,
@@ -195,6 +196,16 @@ fun SettingsScreen(
                     pluralStringResource(R.plurals.countries_hidden, settings.hiddenRegions.size, settings.hiddenRegions.size)
                 },
                 onClick = onOpenRegions,
+                trailing = { Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null) },
+            )
+            SettingRow(
+                stringResource(R.string.settings_hidden_groups),
+                if (settings.hiddenGroups.isEmpty()) {
+                    stringResource(R.string.settings_hidden_groups_none)
+                } else {
+                    pluralStringResource(R.plurals.groups_hidden, settings.hiddenGroups.size, settings.hiddenGroups.size)
+                },
+                onClick = onOpenHiddenGroups,
                 trailing = { Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null) },
             )
             SettingRow(
@@ -424,6 +435,7 @@ fun SettingsScreen(
                 settings.checkUpdates,
                 stringResource(R.string.settings_check_updates_summary),
             ) { on -> vm.update { it.copy(checkUpdates = on) } }
+            UpdateCheckRow()
             HorizontalDivider(Modifier.padding(top = 16.dp))
             Text(
                 stringResource(R.string.settings_version, BuildConfig.VERSION_NAME, BuildConfig.VERSION_CODE),
