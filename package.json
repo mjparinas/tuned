@@ -5,7 +5,8 @@
   "description": "Tuned: a fast, quiet IPTV player for Android. Node is only here for Prettier; the app is Kotlin (Gradle).",
   "scripts": {
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "test": "node --test scripts/*.test.mjs"
   },
   "devDependencies": {
     "prettier": "3.10.1"
