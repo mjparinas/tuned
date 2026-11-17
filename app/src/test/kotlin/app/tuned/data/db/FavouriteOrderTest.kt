@@ -60,7 +60,8 @@ class FavouriteOrderTest {
                         object : SupportSQLiteOpenHelper.Callback(2) {
                             override fun onCreate(db: androidx.sqlite.db.SupportSQLiteDatabase) {
                                 db.execSQL(
-                                    "CREATE TABLE `favourites` (`itemId` INTEGER NOT NULL, `addedAt` INTEGER NOT NULL, PRIMARY KEY(`itemId`))",
+                                    "CREATE TABLE `favourites` (`itemId` INTEGER NOT NULL, `addedAt` INTEGER NOT NULL, " +
+                                        "PRIMARY KEY(`itemId`))",
                                 )
                             }
 
