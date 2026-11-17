@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="player_open_with">Open in another player</string>
+    <string name="player_open_with_none">No other video player is installed</string>
+</resources>
