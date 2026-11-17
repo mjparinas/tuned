@@ -25,6 +25,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -44,6 +45,9 @@ import app.tuned.container
 import app.tuned.data.db.HistoryEntity
 import app.tuned.data.db.ItemEntity
 import app.tuned.ui.common.BackTopBar
+import app.tuned.ui.details.DetailsText
+import app.tuned.ui.details.DetailsViewModel
+import app.tuned.ui.details.TrailerButton
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -82,8 +86,12 @@ fun ShowScreen(
     onPlay: (Long) -> Unit,
     onBack: () -> Unit,
     vm: ShowViewModel = viewModel(),
+    details: DetailsViewModel = viewModel(),
 ) {
     vm.load(showKey)
+    LaunchedEffect(title) { details.load(title, tv = true) }
+    val metadata by details.details.collectAsStateWithLifecycle()
+    val hasKey by details.hasKey.collectAsStateWithLifecycle()
     val episodes by vm.episodes.collectAsStateWithLifecycle()
     val progress by vm.progress.collectAsStateWithLifecycle()
     val seasons = episodes.map { it.season ?: 1 }.distinct().sorted()
@@ -104,6 +112,12 @@ fun ShowScreen(
                 }
             }
             LazyColumn(contentPadding = PaddingValues(vertical = 8.dp)) {
+                item(key = "details") {
+                    Column(Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
+                        DetailsText(metadata, hasKey)
+                        metadata?.trailer?.let { TrailerButton(it) }
+                    }
+                }
                 items(episodes.filter { season == null || (it.season ?: 1) == season }, key = { it.id }) { ep ->
                     EpisodeRow(ep, progress[ep.id], onClick = { onPlay(ep.id) })
                 }

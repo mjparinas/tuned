@@ -117,6 +117,7 @@ fun HomeScreen(
     onPlay: (Long) -> Unit,
     onOpenShow: (String, String) -> Unit,
     onOpenGuide: (Long) -> Unit,
+    onOpenMovie: (Long) -> Unit,
     onOpenSettings: () -> Unit,
     onOpenSearch: () -> Unit,
     onTune: (String) -> Unit,
@@ -193,7 +194,7 @@ fun HomeScreen(
             PullToRefreshBox(isRefreshing = refreshing && progress == null, onRefresh = vm::refresh, modifier = Modifier.fillMaxSize()) {
                 when (tab.kind) {
                     ContentKind.LIVE -> LiveList(vm, settings.showGuideInList, onPlay, onOpenGuide)
-                    ContentKind.MOVIE -> MovieGrid(vm, onPlay)
+                    ContentKind.MOVIE -> MovieGrid(vm, onPlay, onOpenMovie)
                     ContentKind.SERIES -> ShowGrid(vm, onOpenShow, onPlay)
                 }
             }
@@ -444,6 +445,7 @@ private fun ChannelRow(
 private fun MovieGrid(
     vm: BrowseViewModel,
     onPlay: (Long) -> Unit,
+    onOpenMovie: (Long) -> Unit,
 ) {
     val movies = vm.movies.collectAsLazyPagingItems()
     val favourites by vm.favouriteIds.collectAsStateWithLifecycle()
@@ -468,6 +470,7 @@ private fun MovieGrid(
                     favourite = favourite,
                     onClick = { onPlay(movie.id) },
                     onToggleFavourite = { vm.toggleFavourite(movie.id, favourite) },
+                    onDetails = { onOpenMovie(movie.id) },
                 )
             }
         }
@@ -582,12 +585,14 @@ fun Poster(
     subtitle: String? = null,
     favourite: Boolean = false,
     onToggleFavourite: (() -> Unit)? = null,
+    onDetails: (() -> Unit)? = null,
 ) {
     var menu by remember { mutableStateOf(false) }
+    val hasMenu = onToggleFavourite != null || onDetails != null
     Column(
         Modifier
             .clip(RoundedCornerShape(10.dp))
-            .combinedClickable(onClick = onClick, onLongClick = onToggleFavourite?.let { { menu = true } }),
+            .combinedClickable(onClick = onClick, onLongClick = if (hasMenu) ({ menu = true }) else null),
     ) {
         Box {
             AsyncImage(
@@ -609,15 +614,26 @@ fun Poster(
                     tint = MaterialTheme.colorScheme.primary,
                 )
             }
-            if (onToggleFavourite != null) {
+            if (hasMenu) {
                 DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
-                    DropdownMenuItem(
-                        text = { Text(stringResource(if (favourite) R.string.favourite_remove else R.string.favourite_add)) },
-                        onClick = {
-                            menu = false
-                            onToggleFavourite()
-                        },
-                    )
+                    onDetails?.let { open ->
+                        DropdownMenuItem(
+                            text = { Text(stringResource(R.string.details)) },
+                            onClick = {
+                                menu = false
+                                open()
+                            },
+                        )
+                    }
+                    onToggleFavourite?.let { toggle ->
+                        DropdownMenuItem(
+                            text = { Text(stringResource(if (favourite) R.string.favourite_remove else R.string.favourite_add)) },
+                            onClick = {
+                                menu = false
+                                toggle()
+                            },
+                        )
+                    }
                 }
             }
         }
