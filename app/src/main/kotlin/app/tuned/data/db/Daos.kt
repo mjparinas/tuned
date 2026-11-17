@@ -61,6 +61,8 @@ interface ItemDao {
         WHERE i.kind = 0
             AND (i.region IS NULL OR i.region NOT IN (:hidden)) AND ('g:' || i.kind || ':' || i.groupName) NOT IN (:hidden)
             AND NOT ('scan:dead' IN (:hidden) AND i.id IN (SELECT itemId FROM channel_scan WHERE hidden = 1))
+            AND NOT ('placeholder' IN (:hidden) AND i.kind = 0
+                AND ((' ' || i.searchName) GLOB '* no event*' OR (' ' || i.searchName) GLOB '* no live event*'))
             AND (:adult OR i.adult = 0)
             AND (:group IS NULL OR i.groupName = :group)
             AND (:favouritesOnly = 0 OR f.itemId IS NOT NULL)
@@ -92,6 +94,8 @@ interface ItemDao {
         WHERE i.kind = :kind
             AND (i.region IS NULL OR i.region NOT IN (:hidden)) AND ('g:' || i.kind || ':' || i.groupName) NOT IN (:hidden)
             AND NOT ('scan:dead' IN (:hidden) AND i.id IN (SELECT itemId FROM channel_scan WHERE hidden = 1))
+            AND NOT ('placeholder' IN (:hidden) AND i.kind = 0
+                AND ((' ' || i.searchName) GLOB '* no event*' OR (' ' || i.searchName) GLOB '* no live event*'))
             AND (:adult OR i.adult = 0)
             AND h.durationMs > 0 AND h.positionMs > 30000 AND h.positionMs < h.durationMs * 95 / 100
         ORDER BY h.watchedAt DESC
@@ -110,6 +114,8 @@ interface ItemDao {
         WHERE i.kind = :kind
             AND (i.region IS NULL OR i.region NOT IN (:hidden)) AND ('g:' || i.kind || ':' || i.groupName) NOT IN (:hidden)
             AND NOT ('scan:dead' IN (:hidden) AND i.id IN (SELECT itemId FROM channel_scan WHERE hidden = 1))
+            AND NOT ('placeholder' IN (:hidden) AND i.kind = 0
+                AND ((' ' || i.searchName) GLOB '* no event*' OR (' ' || i.searchName) GLOB '* no live event*'))
             AND (:adult OR i.adult = 0)
             AND (:group IS NULL OR i.groupName = :group)
             AND (:favouritesOnly = 0 OR i.id IN (SELECT itemId FROM favourites))
@@ -135,6 +141,8 @@ interface ItemDao {
         WHERE i.kind = 2 AND i.showKey IS NOT NULL
             AND (i.region IS NULL OR i.region NOT IN (:hidden)) AND ('g:' || i.kind || ':' || i.groupName) NOT IN (:hidden)
             AND NOT ('scan:dead' IN (:hidden) AND i.id IN (SELECT itemId FROM channel_scan WHERE hidden = 1))
+            AND NOT ('placeholder' IN (:hidden) AND i.kind = 0
+                AND ((' ' || i.searchName) GLOB '* no event*' OR (' ' || i.searchName) GLOB '* no live event*'))
             AND (:adult OR i.adult = 0)
             AND (:group IS NULL OR i.groupName = :group)
             AND (:favouritesOnly = 0 OR i.id IN (SELECT itemId FROM favourites))
@@ -163,6 +171,8 @@ interface ItemDao {
         WHERE i.kind = 0
             AND (i.region IS NULL OR i.region NOT IN (:hidden)) AND ('g:' || i.kind || ':' || i.groupName) NOT IN (:hidden)
             AND NOT ('scan:dead' IN (:hidden) AND i.id IN (SELECT itemId FROM channel_scan WHERE hidden = 1))
+            AND NOT ('placeholder' IN (:hidden) AND i.kind = 0
+                AND ((' ' || i.searchName) GLOB '* no event*' OR (' ' || i.searchName) GLOB '* no live event*'))
             AND (:adult OR i.adult = 0)
             AND (i.searchName LIKE '%' || :query || '%' OR i.tvgId IN (
                 SELECT channelId FROM programmes WHERE title LIKE '%' || :query || '%' AND stop > :now AND start < :now + 3600000
@@ -186,6 +196,8 @@ interface ItemDao {
         WHERE i.kind = 1 AND i.searchName LIKE '%' || :query || '%'
             AND (i.region IS NULL OR i.region NOT IN (:hidden)) AND ('g:' || i.kind || ':' || i.groupName) NOT IN (:hidden)
             AND NOT ('scan:dead' IN (:hidden) AND i.id IN (SELECT itemId FROM channel_scan WHERE hidden = 1))
+            AND NOT ('placeholder' IN (:hidden) AND i.kind = 0
+                AND ((' ' || i.searchName) GLOB '* no event*' OR (' ' || i.searchName) GLOB '* no live event*'))
             AND (:adult OR i.adult = 0)
         ORDER BY i.sortOrder
         LIMIT :limit
@@ -207,6 +219,8 @@ interface ItemDao {
         WHERE i.kind = 2 AND i.showKey IS NOT NULL AND i.searchName LIKE '%' || :query || '%'
             AND (i.region IS NULL OR i.region NOT IN (:hidden)) AND ('g:' || i.kind || ':' || i.groupName) NOT IN (:hidden)
             AND NOT ('scan:dead' IN (:hidden) AND i.id IN (SELECT itemId FROM channel_scan WHERE hidden = 1))
+            AND NOT ('placeholder' IN (:hidden) AND i.kind = 0
+                AND ((' ' || i.searchName) GLOB '* no event*' OR (' ' || i.searchName) GLOB '* no live event*'))
             AND (:adult OR i.adult = 0)
         GROUP BY showKey
         ORDER BY MIN(sortOrder)
@@ -231,6 +245,8 @@ interface ItemDao {
         SELECT * FROM items
         WHERE kind = 0 AND groupName = :group AND (region IS NULL OR region NOT IN (:hidden)) AND ('g:' || kind || ':' || groupName) NOT IN (:hidden)
             AND NOT ('scan:dead' IN (:hidden) AND id IN (SELECT itemId FROM channel_scan WHERE hidden = 1)) AND (:adult OR adult = 0)
+            AND NOT ('placeholder' IN (:hidden) AND kind = 0
+                AND ((' ' || searchName) GLOB '* no event*' OR (' ' || searchName) GLOB '* no live event*'))
         ORDER BY sortOrder
         """,
     )
@@ -245,6 +261,8 @@ interface ItemDao {
         SELECT groupName, COUNT(*) AS count FROM items
         WHERE kind = :kind AND (region IS NULL OR region NOT IN (:hidden)) AND ('g:' || kind || ':' || groupName) NOT IN (:hidden)
             AND NOT ('scan:dead' IN (:hidden) AND id IN (SELECT itemId FROM channel_scan WHERE hidden = 1)) AND (:adult OR adult = 0)
+            AND NOT ('placeholder' IN (:hidden) AND kind = 0
+                AND ((' ' || searchName) GLOB '* no event*' OR (' ' || searchName) GLOB '* no live event*'))
         GROUP BY groupName ORDER BY MIN(sortOrder)
         """,
     )
@@ -271,6 +289,8 @@ interface ItemDao {
         WHERE i.kind = 0
             AND (i.region IS NULL OR i.region NOT IN (:hidden)) AND ('g:' || i.kind || ':' || i.groupName) NOT IN (:hidden)
             AND NOT ('scan:dead' IN (:hidden) AND i.id IN (SELECT itemId FROM channel_scan WHERE hidden = 1))
+            AND NOT ('placeholder' IN (:hidden) AND i.kind = 0
+                AND ((' ' || i.searchName) GLOB '* no event*' OR (' ' || i.searchName) GLOB '* no live event*'))
             AND (:adult OR i.adult = 0)
             AND (nameMatch OR guideMatch)
         ORDER BY i.sortOrder
@@ -498,6 +518,8 @@ interface ChannelScanDao {
         """
         SELECT id FROM items
         WHERE kind = 0 AND (region IS NULL OR region NOT IN (:hidden)) AND ('g:' || kind || ':' || groupName) NOT IN (:hidden)
+            AND NOT ('placeholder' IN (:hidden)
+                AND ((' ' || searchName) GLOB '* no event*' OR (' ' || searchName) GLOB '* no live event*'))
             AND (:adult OR adult = 0)
         ORDER BY sortOrder
         """,

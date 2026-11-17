@@ -26,6 +26,8 @@
     <string name="health_stopped_server">The scan stopped because the server wasn\'t sending any streams. No channels were blamed for it.</string>
     <string name="health_stopped_busy">The scan stopped because your account was using all its connections, probably on another device. Try again later.</string>
     <string name="health_hide_dead">Hide channels that keep failing</string>
+    <string name="health_hide_placeholders">Hide empty event channels</string>
+    <string name="health_hide_placeholders_summary">Leaves out slots named like “No event streaming” until the provider names a real event</string>
     <string name="health_hide_dead_summary">Turn off to show every channel, including the ones scans hid</string>
     <plurals name="health_hidden">
         <item quantity="one">%1$d hidden channel</item>

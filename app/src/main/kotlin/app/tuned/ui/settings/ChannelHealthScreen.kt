@@ -70,6 +70,10 @@ class ChannelHealthViewModel(
     fun setHideDead(on: Boolean) {
         viewModelScope.launch { container.settings.update { it.copy(hideDeadChannels = on) } }
     }
+
+    fun setHidePlaceholders(on: Boolean) {
+        viewModelScope.launch { container.settings.update { it.copy(hidePlaceholders = on) } }
+    }
 }
 
 /**
@@ -99,6 +103,13 @@ fun ChannelHealthScreen(
                     settings.hideDeadChannels,
                     stringResource(R.string.health_hide_dead_summary),
                 ) { on -> vm.setHideDead(on) }
+            }
+            item {
+                SwitchRow(
+                    stringResource(R.string.health_hide_placeholders),
+                    settings.hidePlaceholders,
+                    stringResource(R.string.health_hide_placeholders_summary),
+                ) { on -> vm.setHidePlaceholders(on) }
             }
             if (hidden.isNotEmpty()) {
                 item { SectionHeader(pluralStringResource(R.plurals.health_hidden, hidden.size, hidden.size)) }

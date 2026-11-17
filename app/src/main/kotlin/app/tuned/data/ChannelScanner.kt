@@ -11,6 +11,7 @@ import androidx.datastore.preferences.preferencesDataStore
 import app.tuned.BuildConfig
 import app.tuned.core.ChannelScan
 import app.tuned.core.ChannelScan.Failure
+import app.tuned.core.Placeholders
 import app.tuned.core.ScanEngine
 import app.tuned.core.XtreamAccount
 import app.tuned.core.XtreamUrls
@@ -83,7 +84,8 @@ class ChannelScanner(
 
     suspend fun scan(progress: (done: Int, total: Int) -> Unit): ScanEngine.Result {
         val s = settings.settings.first()
-        val hidden = (s.hiddenRegions + s.hiddenGroups).toList()
+        // Hidden-by-scan channels are scanned too (to bring them back); empty event slots never play, so they aren't.
+        val hidden = (s.hiddenRegions + s.hiddenGroups).toList() + listOfNotNull(Placeholders.HIDDEN_KEY.takeIf { s.hidePlaceholders })
         val channels = db.channelScan().channels(hidden, s.showAdult)
         val agent = s.userAgent.ifBlank { "Tuned/${BuildConfig.VERSION_NAME}" }
         val result = ScanEngine(DeviceIo(agent, progress)).run(channels, db.channelScan().knownGood())
