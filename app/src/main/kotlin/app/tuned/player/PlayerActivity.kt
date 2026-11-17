@@ -628,6 +628,12 @@ class PlayerActivity : FragmentActivity() {
         }
     }
 
+    // The player handles rotation itself (configChanges in the manifest), so the guide is placed again here.
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+        tools.onScreenChanged()
+    }
+
     override fun onPictureInPictureModeChanged(
         isInPictureInPictureMode: Boolean,
         newConfig: Configuration,

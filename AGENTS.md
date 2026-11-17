@@ -54,6 +54,7 @@ One file per topic in `docs/decisions/`, A to Z. Add a line when you add a topic
 - [Auto-tune](docs/decisions/auto-tune.md): finding a working English stream for a live event, one connection at a time.
 - [Branding](docs/decisions/branding.md): name, icon, colours, themes.
 - [Channel scan](docs/decisions/channel-scan.md): finding dead channels without blaming them for the internet or the server.
+- [Large screens](docs/decisions/large-screens.md): navigation rail, list and detail panes, the guide beside the player on tablets.
 - [Offline downloads](docs/decisions/offline.md): saving films and episodes, one connection at a time.
 - [Playlist and guide](docs/decisions/playlist.md): Xtream URLs, how streams are sorted, countries, refresh.
 - [Player](docs/decisions/player.md): Media3 setup, controls, captions, audio, picture-in-picture.

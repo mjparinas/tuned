@@ -15,21 +15,24 @@ import androidx.core.view.isVisible
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
 import app.tuned.container
+import app.tuned.core.ScreenLayout
 import app.tuned.data.db.ItemEntity
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
 /**
  * The channels in the current category, down the right of the video, each with what's on now. Picking one switches to
- * it on the same connection (the player only ever holds one stream).
+ * it on the same connection (the player only ever holds one stream). On a tablet in landscape the guide sits beside
+ * the video, which shrinks to make room ([ScreenLayout.guideBesideVideo]); elsewhere it slides over the video.
  */
 @OptIn(UnstableApi::class)
 class MiniGuide(
     private val activity: Activity,
     private val player: () -> ExoPlayer?,
     private val queue: () -> List<ItemEntity>,
+    private val beside: List<View>,
 ) {
-    private val density = activity.resources.displayMetrics.density
+    private val density get() = activity.resources.displayMetrics.density
     private var channels: List<ItemEntity> = emptyList()
     private var onNow: Map<String, String> = emptyMap()
     private val adapter = Adapter()
@@ -56,6 +59,7 @@ class MiniGuide(
         onNow = emptyMap()
         adapter.notifyDataSetChanged()
         view.visibility = View.VISIBLE
+        place()
         val current = player()?.currentMediaItemIndex ?: 0
         view.setSelection((current - 2).coerceAtLeast(0))
         view.requestFocus()
@@ -71,6 +75,27 @@ class MiniGuide(
 
     fun close() {
         view.visibility = View.GONE
+        place()
+    }
+
+    /** Sizes the guide for the screen, and makes room for it beside the video when there is room; again on rotation. */
+    fun place() {
+        val params = view.layoutParams ?: return
+        val config = activity.resources.configuration
+        val docked = isOpen && ScreenLayout.guideBesideVideo(config.screenWidthDp, config.screenHeightDp)
+        val width = ((if (docked) ScreenLayout.GUIDE_PANE_DP else OVERLAY_DP) * density).toInt()
+        if (params.width != width) {
+            params.width = width
+            view.layoutParams = params
+        }
+        for (v in beside) {
+            val p = v.layoutParams as? ViewGroup.MarginLayoutParams ?: continue
+            val end = if (docked) width else 0
+            if (p.marginEnd != end) {
+                p.marginEnd = end
+                v.layoutParams = p
+            }
+        }
     }
 
     private inner class Adapter : BaseAdapter() {
@@ -123,6 +148,7 @@ class MiniGuide(
 
     private companion object {
         const val CHUNK = 500
+        const val OVERLAY_DP = 320
 
         /** A light violet that reads on the dark panel whatever the app's accent. */
         val PLAYING_COLOUR = 0xFFB9A8FF.toInt()

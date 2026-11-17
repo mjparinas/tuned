@@ -58,7 +58,7 @@ class PlayerTools(
     )
 
     private val density = activity.resources.displayMetrics.density
-    private val guide = MiniGuide(activity, hooks.player, hooks.queue)
+    private val guide = MiniGuide(activity, hooks.player, hooks.queue, beside = listOf(playerView, overlay))
     private val guideButton = button(R.drawable.ic_player_guide, R.string.player_guide) { toggleGuide() }
     private val unlockButton =
         button(R.drawable.ic_player_lock, R.string.player_unlock) { unlock() }.apply {
@@ -114,8 +114,9 @@ class PlayerTools(
     fun attach(root: FrameLayout) {
         root.addView(
             guide.view,
-            FrameLayout.LayoutParams((320 * density).toInt(), ViewGroup.LayoutParams.MATCH_PARENT, Gravity.END),
+            FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.MATCH_PARENT, Gravity.END),
         )
+        guide.place()
         root.addView(
             info,
             FrameLayout
@@ -150,6 +151,9 @@ class PlayerTools(
                 VideoFit.STRETCH -> AspectRatioFrameLayout.RESIZE_MODE_FILL
             }
     }
+
+    /** Rotation, folding or split screen: the guide moves beside or over the video to suit. */
+    fun onScreenChanged() = guide.place()
 
     /** Picture-in-picture: nothing but the video. */
     fun hidePanels() {
