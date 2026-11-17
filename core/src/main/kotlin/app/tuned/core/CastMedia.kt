@@ -20,8 +20,8 @@ object CastMedia {
         val clean = url.substringBefore('?')
         if (live) {
             xtreamLive.matchEntire(clean)?.let { m ->
-                val (host, _, user, pass, id) = m.destructured
-                return Media("$host/live/$user/$pass/$id.m3u8", HLS)
+                val g = m.groupValues
+                return Media("${g[1]}/live/${g[3]}/${g[4]}/${g[5]}.m3u8", HLS)
             }
         }
         return Media(url, mimeFor(clean))

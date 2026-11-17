@@ -210,7 +210,14 @@ class PlayerActivity : FragmentActivity() {
                     ),
             )
         overlay.addView(tools.toolbar)
-        cast = CastControl(this, onStart = ::castStarted, onEnd = ::castEnded).also { c -> c.button?.let(tools::addButton) }
+        cast =
+            CastControl(
+                activity = this,
+                player = { player },
+                current = { player?.let { queue.getOrNull(it.currentMediaItemIndex) } },
+                isLive = ::live,
+                onStatus = { text -> if (text == null) statusView.visibility = View.GONE else showStatus(text) },
+            ).also { c -> c.button?.let(tools::addButton) }
     }
 
     @SuppressLint("ClickableViewAccessibility") // PlayerGestures calls performClick on every tap
@@ -473,22 +480,6 @@ class PlayerActivity : FragmentActivity() {
                     next?.let { getString(R.string.player_next, it.title) },
                 ).joinToString("  ·  ").ifBlank { item.groupName }
         }
-    }
-
-    /** The TV takes over: the phone lets go of its stream so the provider sees a single connection. */
-    private fun castStarted(device: String) {
-        val exo = player ?: return
-        queue.getOrNull(exo.currentMediaItemIndex)?.let { cast?.load(it, live(), exo.currentPosition) }
-        exo.stop()
-        showStatus(getString(R.string.cast_playing_on, device))
-    }
-
-    private fun castEnded(positionMs: Long) {
-        statusView.visibility = View.GONE
-        val exo = player ?: return
-        if (!live() && positionMs > 0) exo.seekTo(positionMs)
-        exo.prepare()
-        exo.play()
     }
 
     /** What the on-screen controls drive: the phone's player, or the TV's play and pause while casting. */

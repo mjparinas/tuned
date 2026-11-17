@@ -1,10 +1,12 @@
 package app.tuned.player
 
 import android.content.Context
-import android.net.Uri
 import android.view.ContextThemeWrapper
+import androidx.core.net.toUri
 import androidx.fragment.app.FragmentActivity
+import androidx.media3.exoplayer.ExoPlayer
 import androidx.mediarouter.app.MediaRouteButton
+import app.tuned.R
 import app.tuned.core.CastMedia
 import app.tuned.data.db.ItemEntity
 import app.tuned.ui.MainActivity
@@ -29,9 +31,12 @@ import com.google.android.gms.common.images.WebImage
  * the cast picks the stream back up on the phone. Phones without Google Play services simply get no cast button.
  */
 class CastControl(
-    activity: FragmentActivity,
-    private val onStart: (device: String) -> Unit,
-    private val onEnd: (positionMs: Long) -> Unit,
+    private val activity: FragmentActivity,
+    private val player: () -> ExoPlayer?,
+    private val current: () -> ItemEntity?,
+    private val isLive: () -> Boolean,
+    /** Shows a lasting note over the video ("Playing on Living Room TV"), or hides it with null. */
+    private val onStatus: (String?) -> Unit,
 ) {
     @Suppress("DEPRECATION") // the Task-based replacement needs an executor and a callback for the same result
     private val context: CastContext? = runCatching { CastContext.getSharedInstance(activity) }.getOrNull()
@@ -41,7 +46,7 @@ class CastControl(
     /** The standard cast button, or null without Play services. */
     val button: MediaRouteButton? =
         context?.let {
-            MediaRouteButton(ContextThemeWrapper(activity, androidx.mediarouter.R.style.Theme_MediaRouter)).also { button ->
+            MediaRouteButton(ContextThemeWrapper(activity, R.style.Theme_Tuned_CastButton)).also { button ->
                 CastButtonFactory.setUpMediaRouteButton(activity.applicationContext, button)
             }
         }
@@ -102,14 +107,23 @@ class CastControl(
             ?.let { session = it }
     }
 
+    /** The TV takes over: the phone lets go of its stream so the provider sees a single connection. */
     private fun started(s: CastSession) {
         session = s
-        onStart(s.castDevice?.friendlyName.orEmpty())
+        val exo = player() ?: return
+        current()?.let { load(it, isLive(), exo.currentPosition) }
+        exo.stop()
+        onStatus(activity.getString(R.string.cast_playing_on, s.castDevice?.friendlyName.orEmpty()))
     }
 
+    /** Back on the phone, from where the TV was for films and episodes. */
     private fun ended() {
         session = null
-        onEnd(lastPositionMs)
+        onStatus(null)
+        val exo = player() ?: return
+        if (!isLive() && lastPositionMs > 0) exo.seekTo(lastPositionMs)
+        exo.prepare()
+        exo.play()
     }
 
     /** Plays [item] on the TV, from [positionMs] for films and episodes. */
@@ -124,7 +138,7 @@ class CastControl(
             MediaMetadata(if (live) MediaMetadata.MEDIA_TYPE_GENERIC else MediaMetadata.MEDIA_TYPE_MOVIE).apply {
                 putString(MediaMetadata.KEY_TITLE, item.name)
                 putString(MediaMetadata.KEY_SUBTITLE, item.groupName)
-                item.logo?.let { addImage(WebImage(Uri.parse(it))) }
+                item.logo?.let { addImage(WebImage(it.toUri())) }
             }
         val info =
             MediaInfo
