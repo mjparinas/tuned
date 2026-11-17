@@ -40,6 +40,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.AndroidViewModel
@@ -50,6 +51,7 @@ import app.tuned.R
 import app.tuned.container
 import app.tuned.data.db.HistoryEntity
 import app.tuned.data.db.ItemEntity
+import app.tuned.data.db.SeenEpisodeEntity
 import app.tuned.ui.common.BackTopBar
 import app.tuned.ui.common.focusRing
 import app.tuned.ui.details.DetailsBody
@@ -65,9 +67,11 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class ShowViewModel(
@@ -76,8 +80,21 @@ class ShowViewModel(
     private val db = app.container.db
     private val key = MutableStateFlow<String?>(null)
 
+    private val freshIds = MutableStateFlow<Set<Long>>(emptySet())
+
+    /** Episodes that arrived since the show was last opened, worked out once as it opens; then they all count as seen. */
+    val fresh: StateFlow<Set<Long>> = freshIds
+
     fun load(showKey: String) {
+        if (key.value == showKey) return
         key.value = showKey
+        viewModelScope.launch {
+            val list = db.items().episodes(showKey).first { it.isNotEmpty() }
+            val seen = db.seenEpisodes().seen(showKey).toSet()
+            // A show opened for the first time has nothing new: everything is simply there.
+            freshIds.value = if (seen.isEmpty()) emptySet() else list.map { it.id }.filterNot { it in seen }.toSet()
+            db.seenEpisodes().add(list.map { SeenEpisodeEntity(it.id, showKey) })
+        }
     }
 
     val episodes: StateFlow<List<ItemEntity>> =
@@ -108,6 +125,7 @@ fun ShowScreen(
     val hasKey by details.hasKey.collectAsStateWithLifecycle()
     val episodes by vm.episodes.collectAsStateWithLifecycle()
     val progress by vm.progress.collectAsStateWithLifecycle()
+    val fresh by vm.fresh.collectAsStateWithLifecycle()
     val seasons = episodes.map { it.season ?: 1 }.distinct().sorted()
     var selected by rememberSaveable { mutableIntStateOf(0) }
     val season = seasons.getOrNull(selected.coerceAtMost((seasons.size - 1).coerceAtLeast(0)))
@@ -167,6 +185,7 @@ fun ShowScreen(
                     EpisodeRow(
                         ep,
                         progress[ep.id],
+                        isNew = ep.id in fresh,
                         onClick = { onPlay(ep.id) },
                         onToggleWatched = { done -> library.setWatched(listOf(ep.id), done) },
                     )
@@ -180,6 +199,7 @@ fun ShowScreen(
 private fun EpisodeRow(
     episode: ItemEntity,
     history: HistoryEntity?,
+    isNew: Boolean,
     onClick: () -> Unit,
     onToggleWatched: (Boolean) -> Unit,
 ) {
@@ -202,11 +222,22 @@ private fun EpisodeRow(
         }
         Spacer(Modifier.width(4.dp))
         Column(Modifier.weight(1f)) {
-            Text(
-                stringResource(R.string.episode_label, episode.episode ?: 1),
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    stringResource(R.string.episode_label, episode.episode ?: 1),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                if (isNew) {
+                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        stringResource(R.string.episode_new),
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary,
+                    )
+                }
+            }
             Text(episode.name, style = MaterialTheme.typography.bodyLarge, maxLines = 2, overflow = TextOverflow.Ellipsis)
             if (history != null && !watched && history.durationMs > 0) {
                 Spacer(Modifier.height(6.dp))

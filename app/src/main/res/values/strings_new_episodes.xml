@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="episode_new">New</string>
+    <!-- %1$s: "12 episodes"; %2$s: "2 new". -->
+    <string name="episodes_with_new">%1$s · %2$s</string>
+    <plurals name="new_episodes">
+        <item quantity="one">%1$d new</item>
+        <item quantity="other">%1$d new</item>
+    </plurals>
+</resources>
