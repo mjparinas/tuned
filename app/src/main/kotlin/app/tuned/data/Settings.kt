@@ -148,6 +148,30 @@ class SettingsRepository(
         adultUnlocked.value = false
     }
 
+    /** Every stored setting by its key, for a backup. Sync times and the open tab are left out: they belong to this phone. */
+    suspend fun snapshot(): Map<String, Any> = context.dataStore.data
+        .first()
+        .asMap()
+        .mapKeys { it.key.name }
+        .filterKeys { it !in DEVICE_ONLY }
+
+    /** Puts back what [snapshot] saved; values of a type the app doesn't store are skipped. */
+    @Suppress("UNCHECKED_CAST") // a Set read back from a backup only ever holds the strings it was saved with
+    suspend fun restore(values: Map<String, Any>) {
+        context.dataStore.edit { prefs ->
+            for ((name, value) in values.filterKeys { it !in DEVICE_ONLY }) {
+                when (value) {
+                    is Boolean -> prefs[booleanPreferencesKey(name)] = value
+                    is Int -> prefs[intPreferencesKey(name)] = value
+                    is Long -> prefs[longPreferencesKey(name)] = value
+                    is Float -> prefs[floatPreferencesKey(name)] = value
+                    is String -> prefs[stringPreferencesKey(name)] = value
+                    is Set<*> -> prefs[stringSetPreferencesKey(name)] = value as Set<String>
+                }
+            }
+        }
+    }
+
     suspend fun update(change: (AppSettings) -> AppSettings) {
         context.dataStore.edit { prefs -> write(prefs, change(read(prefs))) }
     }
@@ -312,5 +336,9 @@ class SettingsRepository(
         val lastPlaylistSync = longPreferencesKey("last_playlist_sync")
         val lastGuideSync = longPreferencesKey("last_guide_sync")
         val lastSyncError = stringPreferencesKey("last_sync_error")
+    }
+
+    private companion object {
+        val DEVICE_ONLY = setOf(K.lastPlaylistSync.name, K.lastGuideSync.name, K.lastSyncError.name, K.lastTab.name)
     }
 }

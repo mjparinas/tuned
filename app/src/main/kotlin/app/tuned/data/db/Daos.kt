@@ -306,6 +306,9 @@ interface LibraryDao {
     @Query("DELETE FROM favourites WHERE itemId = :itemId")
     suspend fun removeFavourite(itemId: Long)
 
+    @Query("SELECT * FROM favourites")
+    suspend fun allFavourites(): List<FavouriteEntity>
+
     @Query("SELECT itemId FROM favourites")
     fun favouriteIds(): Flow<List<Long>>
 
