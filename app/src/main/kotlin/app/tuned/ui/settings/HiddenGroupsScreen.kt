@@ -56,7 +56,7 @@ class HiddenGroupsViewModel(
                             if (kind ==
                                 ContentKind.SERIES
                             ) {
-                                items.showGroupChips(regions, adult)
+                                container.db.shows().showGroupChips(regions, adult)
                             } else {
                                 items.groups(kind.code, regions, adult)
                             }

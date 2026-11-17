@@ -173,35 +173,6 @@ interface ItemDao {
         match: String,
     ): PagingSource<Int, ShowSummary>
 
-    /**
-     * The Shows tab when nothing narrows it: grouped from [ShowGroupEntity], a few rows per show, instead of from
-     * every episode. New episodes are counted only for the shows on screen.
-     */
-    @Query(
-        """
-        SELECT s.showKey, MIN(s.showName) AS showName, MAX(s.logo) AS logo, MIN(s.groupName) AS groupName,
-            SUM(s.episodes) AS episodes,
-            CASE WHEN s.showKey IN (SELECT showKey FROM seen_episodes) THEN (
-                SELECT COUNT(*) FROM items e
-                WHERE e.kind = 2 AND e.showKey = s.showKey AND e.id NOT IN (SELECT itemId FROM seen_episodes)
-            ) ELSE 0 END AS newEpisodes
-        FROM show_groups s
-        WHERE (s.region IS NULL OR s.region NOT IN (:hidden)) AND ('g:2:' || s.groupName) NOT IN (:hidden)
-            AND (:adult OR s.adult = 0)
-            AND (:group IS NULL OR s.groupName = :group)
-        GROUP BY s.showKey
-        ORDER BY MIN(s.sortOrder)
-        """,
-    )
-    fun showsTab(
-        hidden: List<String>,
-        adult: Boolean,
-        group: String?,
-    ): PagingSource<Int, ShowSummary>
-
-    @Query("DELETE FROM show_groups")
-    suspend fun deleteShowGroups()
-
     /** Search everywhere: the first few live channels for a search (names, or what's on now and within the hour). */
     @Query(
         """
@@ -314,19 +285,6 @@ interface ItemDao {
     )
     fun groups(
         kind: Int,
-        hidden: List<String>,
-        adult: Boolean,
-    ): Flow<List<GroupCount>>
-
-    /** [groups] for Shows, from the per-show table: the same counts without reading every episode. */
-    @Query(
-        """
-        SELECT groupName, SUM(episodes) AS count FROM show_groups
-        WHERE (region IS NULL OR region NOT IN (:hidden)) AND ('g:2:' || groupName) NOT IN (:hidden) AND (:adult OR adult = 0)
-        GROUP BY groupName ORDER BY MIN(sortOrder)
-        """,
-    )
-    fun showGroupChips(
         hidden: List<String>,
         adult: Boolean,
     ): Flow<List<GroupCount>>
@@ -619,6 +577,52 @@ interface ChannelScanDao {
         """,
     )
     fun report(): Flow<List<ScanReportRow>>
+}
+
+/** The Shows tab's per-show table ([ShowGroupEntity]). */
+@Dao
+interface ShowDao {
+    /**
+     * The Shows tab when nothing narrows it: grouped from [ShowGroupEntity], a few rows per show, instead of from
+     * every episode. New episodes are counted only for the shows on screen.
+     */
+    @Query(
+        """
+        SELECT s.showKey, MIN(s.showName) AS showName, MAX(s.logo) AS logo, MIN(s.groupName) AS groupName,
+            SUM(s.episodes) AS episodes,
+            CASE WHEN s.showKey IN (SELECT showKey FROM seen_episodes) THEN (
+                SELECT COUNT(*) FROM items e
+                WHERE e.kind = 2 AND e.showKey = s.showKey AND e.id NOT IN (SELECT itemId FROM seen_episodes)
+            ) ELSE 0 END AS newEpisodes
+        FROM show_groups s
+        WHERE (s.region IS NULL OR s.region NOT IN (:hidden)) AND ('g:2:' || s.groupName) NOT IN (:hidden)
+            AND (:adult OR s.adult = 0)
+            AND (:group IS NULL OR s.groupName = :group)
+        GROUP BY s.showKey
+        ORDER BY MIN(s.sortOrder)
+        """,
+    )
+    fun showsTab(
+        hidden: List<String>,
+        adult: Boolean,
+        group: String?,
+    ): PagingSource<Int, ShowSummary>
+
+    @Query("DELETE FROM show_groups")
+    suspend fun deleteShowGroups()
+
+    /** [ItemDao.groups] for Shows, from the per-show table: the same counts without reading every episode. */
+    @Query(
+        """
+        SELECT groupName, SUM(episodes) AS count FROM show_groups
+        WHERE (region IS NULL OR region NOT IN (:hidden)) AND ('g:2:' || groupName) NOT IN (:hidden) AND (:adult OR adult = 0)
+        GROUP BY groupName ORDER BY MIN(sortOrder)
+        """,
+    )
+    fun showGroupChips(
+        hidden: List<String>,
+        adult: Boolean,
+    ): Flow<List<GroupCount>>
 }
 
 /** What a Live TV row shows: the channel and what's on now. */

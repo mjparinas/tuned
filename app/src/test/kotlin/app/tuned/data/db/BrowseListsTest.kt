@@ -81,14 +81,14 @@ class BrowseListsTest {
         writer.add(rows)
         writer.commit()
 
-        val all = db.items().showsTab(emptyList(), adult = false, group = null).all()
+        val all = db.shows().showsTab(emptyList(), adult = false, group = null).all()
         assertEquals(listOf("The Simpsons" to 2, "Bluey" to 1), all.map { it.showName to it.episodes })
 
-        val withoutKids = db.items().showsTab(listOf("g:2:Kids"), adult = false, group = null).all()
+        val withoutKids = db.shows().showsTab(listOf("g:2:Kids"), adult = false, group = null).all()
         assertEquals(listOf("The Simpsons"), withoutKids.map { it.showName })
         assertEquals(
             listOf("Cartoons" to 2, "Kids" to 1),
-            db.items().showGroupChips(emptyList(), false).first().map {
+            db.shows().showGroupChips(emptyList(), false).first().map {
                 it.groupName to
                     it.count
             },
@@ -106,7 +106,7 @@ class BrowseListsTest {
         assertEquals(
             listOf("Bluey"),
             db
-                .items()
+                .shows()
                 .showsTab(emptyList(), false, null)
                 .all()
                 .map { it.showName },

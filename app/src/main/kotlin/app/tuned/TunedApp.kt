@@ -99,7 +99,7 @@ class AppContainer(
         if (previous != null && !previous.samePlaylist(login)) {
             reminders.cancelAll()
             db.items().deleteAll()
-            db.items().deleteShowGroups()
+            db.shows().deleteShowGroups()
             db.programmes().deleteAll()
             db.catchUp().deleteAll()
             db.channelScan().deleteAll()

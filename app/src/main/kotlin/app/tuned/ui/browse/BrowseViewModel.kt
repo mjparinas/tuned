@@ -129,7 +129,7 @@ class BrowseViewModel(
                     val group = (q.filter as? Filter.Group)?.name
                     // Browsing reads the per-show table; a search or Favourites narrows the episodes themselves.
                     if (q.search.isEmpty() && q.filter != Filter.Favourites) {
-                        items.showsTab(q.hidden, q.adult, group)
+                        container.db.shows().showsTab(q.hidden, q.adult, group)
                     } else {
                         items.shows(q.hidden, q.adult, group, q.filter == Filter.Favourites, q.search, Search.match(q.search))
                     }
@@ -154,7 +154,13 @@ class BrowseViewModel(
             .map { it?.hiddenKeys().orEmpty() to (it?.showAdult ?: false) }
             .distinctUntilChanged()
             .flatMapLatest { (hidden, adult) ->
-                if (kind == ContentKind.SERIES) items.showGroupChips(hidden, adult) else items.groups(kind.code, hidden, adult)
+                if (kind ==
+                    ContentKind.SERIES
+                ) {
+                    container.db.shows().showGroupChips(hidden, adult)
+                } else {
+                    items.groups(kind.code, hidden, adult)
+                }
             }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
     }
 
