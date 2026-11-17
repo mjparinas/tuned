@@ -41,6 +41,7 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.DownloadForOffline
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
+import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Movie
 import androidx.compose.material.icons.filled.Radar
@@ -105,6 +106,7 @@ import app.tuned.container
 import app.tuned.core.ContentKind
 import app.tuned.core.ScreenLayout
 import app.tuned.data.AppSettings
+import app.tuned.data.CastMember
 import app.tuned.data.StartTab
 import app.tuned.data.SyncProgress
 import app.tuned.data.db.ChannelWithNow
@@ -121,6 +123,7 @@ import app.tuned.ui.common.firstLoad
 import app.tuned.ui.common.focusRing
 import app.tuned.ui.common.skeleton
 import app.tuned.ui.common.windowWidthDp
+import app.tuned.ui.guide.GuideGridView
 import app.tuned.ui.library.LibraryViewModel
 import app.tuned.ui.library.watchLaterRow
 import app.tuned.ui.offline.DownloadsViewModel
@@ -149,6 +152,7 @@ fun HomeScreen(
     onOpenShow: (String, String) -> Unit,
     onOpenGuide: (Long) -> Unit,
     onOpenMovie: (Long) -> Unit,
+    onOpenPerson: (CastMember) -> Unit,
     onOpenSettings: () -> Unit,
     onOpenProfiles: () -> Unit,
     onOpenSearch: () -> Unit,
@@ -219,6 +223,8 @@ fun HomeScreen(
                     text = text,
                     hint = stringResource(tab.search),
                     onChange = { search.value = it },
+                    grid = if (tab.kind == ContentKind.LIVE) settings.liveGrid else null,
+                    onToggleGrid = { vm.setLiveGrid(!settings.liveGrid) },
                     onOpenSearch = onOpenSearch,
                     // A kids profile has no way into Settings; switching profile (with a PIN) is the way out.
                     onOpenSettings = onOpenSettings.takeUnless { settings.kidsProfile },
@@ -258,7 +264,7 @@ fun HomeScreen(
                 CategoryChips(vm, tab.kind)
                 val lists: @Composable () -> Unit = {
                     when (tab.kind) {
-                        ContentKind.LIVE -> LiveList(vm, settings.showGuideInList, onPlay, openGuide)
+                        ContentKind.LIVE -> LiveTab(vm, settings, onPlay, openGuide)
                         ContentKind.MOVIE -> MovieGrid(vm, onPlay, openMovie)
                         ContentKind.SERIES -> ShowGrid(vm, openShow, onPlay)
                     }
@@ -281,7 +287,7 @@ fun HomeScreen(
         if (panes && open != null) {
             VerticalDivider()
             Box(Modifier.weight(ScreenLayout.DETAIL_FRACTION).fillMaxHeight()) {
-                DetailPane(open, onPlay = onPlay, onClose = { detail = null })
+                DetailPane(open, onPlay = onPlay, onClose = { detail = null }, onOpenPerson = onOpenPerson)
             }
         }
     }
@@ -315,6 +321,8 @@ private fun SearchBarRow(
     text: String,
     hint: String,
     onChange: (String) -> Unit,
+    grid: Boolean?,
+    onToggleGrid: () -> Unit,
     onOpenSearch: () -> Unit,
     onOpenSettings: (() -> Unit)?,
     profile: ProfileEntity?,
@@ -352,6 +360,15 @@ private fun SearchBarRow(
                     ),
                 modifier = Modifier.weight(1f).height(52.dp),
             )
+            // Live TV only: switch between the channel list and the grid guide.
+            if (grid != null) {
+                IconButton(onClick = onToggleGrid) {
+                    Icon(
+                        if (grid) Icons.AutoMirrored.Filled.List else Icons.Filled.GridView,
+                        contentDescription = stringResource(if (grid) R.string.grid_hide else R.string.grid_show),
+                    )
+                }
+            }
             IconButton(onClick = onOpenSearch) {
                 Icon(Icons.Filled.TravelExplore, contentDescription = stringResource(R.string.search_everything))
             }
@@ -436,6 +453,21 @@ private fun CategoryChips(
                     },
             )
         }
+    }
+}
+
+/** Live TV as the channel list, or as the grid guide when that's switched on. */
+@Composable
+private fun LiveTab(
+    vm: BrowseViewModel,
+    settings: AppSettings,
+    onPlay: (Long) -> Unit,
+    onOpenGuide: (Long) -> Unit,
+) {
+    if (settings.liveGrid) {
+        GuideGridView(vm.channels.collectAsLazyPagingItems(), settings.guideDays, onPlay, onOpenGuide)
+    } else {
+        LiveList(vm, settings.showGuideInList, onPlay, onOpenGuide)
     }
 }
 

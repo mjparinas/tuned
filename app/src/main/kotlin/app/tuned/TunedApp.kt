@@ -16,6 +16,7 @@ import app.tuned.data.CredentialStore
 import app.tuned.data.Credentials
 import app.tuned.data.MetadataRepository
 import app.tuned.data.Offline
+import app.tuned.data.PeopleRepository
 import app.tuned.data.Picks
 import app.tuned.data.ProfileRepository
 import app.tuned.data.SavedArtwork
@@ -85,6 +86,7 @@ class AppContainer(
     val connectivity by lazy { Connectivity(context, appScope) }
     val metadata by lazy { MetadataRepository(http, settings, db.metadata(), appScope, connectivity::onlineNow) }
     val savedArtwork by lazy { SavedArtwork(context, db, metadata) }
+    val people by lazy { PeopleRepository(http, settings, db.metadata(), connectivity::onlineNow) }
     val profiles by lazy { ProfileRepository(db, settings) }
 
     /** True while the player is open; downloads and channel scans hold back so only one stream is ever open. */

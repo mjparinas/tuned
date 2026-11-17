@@ -104,6 +104,8 @@ data class AppSettings(
     val backupCopies: Boolean = true,
     /** Switch the display to the video's frame rate where the screen offers it (Settings › Player). */
     val matchFrameRate: Boolean = true,
+    /** Minutes of a live channel kept on the device to pause and rewind; 0 turns it off (Settings › Player). */
+    val liveRewindMinutes: Int = 30,
     /** Leave out empty event slots ("NO EVENT STREAMING"); see [Placeholders]. Melvin, 2026-11-17: hide them. */
     val hidePlaceholders: Boolean = true,
     val pictureInPicture: Boolean = true,
@@ -125,6 +127,8 @@ data class AppSettings(
     /** The person's own TMDB key (v3 key or v4 read token) for ratings and trailers; blank turns them off. */
     val tmdbKey: String = "",
     val showGuideInList: Boolean = true,
+    /** Live TV as a grid guide (channels down the side, time across the top) instead of a list. */
+    val liveGrid: Boolean = false,
     /** Look for a newer release on GitHub at start (copies from Play update through Play either way). */
     val checkUpdates: Boolean = true,
     val captions: CaptionStyle = CaptionStyle(),
@@ -291,6 +295,7 @@ class SettingsRepository(
             hideFailedOnPlay = p[K.hideFailedOnPlay] ?: d.hideFailedOnPlay,
             backupCopies = p[K.backupCopies] ?: d.backupCopies,
             matchFrameRate = p[K.matchFrameRate] ?: d.matchFrameRate,
+            liveRewindMinutes = p[K.liveRewindMinutes] ?: d.liveRewindMinutes,
             hidePlaceholders = p[K.hidePlaceholders] ?: d.hidePlaceholders,
             pictureInPicture = p[K.pictureInPicture] ?: d.pictureInPicture,
             playerGestures = p[K.playerGestures] ?: d.playerGestures,
@@ -306,6 +311,7 @@ class SettingsRepository(
             userAgent = p[K.userAgent] ?: d.userAgent,
             tmdbKey = p[K.tmdbKey] ?: d.tmdbKey,
             showGuideInList = p[K.showGuideInList] ?: d.showGuideInList,
+            liveGrid = p[K.liveGrid] ?: d.liveGrid,
             checkUpdates = p[K.checkUpdates] ?: d.checkUpdates,
             captions =
                 CaptionStyle(
@@ -361,6 +367,7 @@ class SettingsRepository(
         p[K.hideFailedOnPlay] = s.hideFailedOnPlay
         p[K.backupCopies] = s.backupCopies
         p[K.matchFrameRate] = s.matchFrameRate
+        p[K.liveRewindMinutes] = s.liveRewindMinutes
         p[K.hidePlaceholders] = s.hidePlaceholders
         p[K.pictureInPicture] = s.pictureInPicture
         p[K.playerGestures] = s.playerGestures
@@ -376,6 +383,7 @@ class SettingsRepository(
         p[K.userAgent] = s.userAgent
         p[K.tmdbKey] = s.tmdbKey
         p[K.showGuideInList] = s.showGuideInList
+        p[K.liveGrid] = s.liveGrid
         p[K.checkUpdates] = s.checkUpdates
         val c = s.captions
         p[K.ccEnabled] = c.enabled
@@ -431,6 +439,7 @@ class SettingsRepository(
         val hideFailedOnPlay = booleanPreferencesKey("hide_failed_on_play")
         val backupCopies = booleanPreferencesKey("backup_copies")
         val matchFrameRate = booleanPreferencesKey("match_frame_rate")
+        val liveRewindMinutes = intPreferencesKey("live_rewind_minutes")
         val hidePlaceholders = booleanPreferencesKey("hide_placeholders")
         val pictureInPicture = booleanPreferencesKey("picture_in_picture")
         val playerGestures = booleanPreferencesKey("player_gestures")
@@ -446,6 +455,7 @@ class SettingsRepository(
         val userAgent = stringPreferencesKey("user_agent")
         val tmdbKey = stringPreferencesKey("tmdb_key")
         val showGuideInList = booleanPreferencesKey("show_guide_in_list")
+        val liveGrid = booleanPreferencesKey("live_grid")
         val checkUpdates = booleanPreferencesKey("check_updates")
         val ccEnabled = booleanPreferencesKey("cc_enabled")
         val ccLanguage = stringPreferencesKey("cc_language")

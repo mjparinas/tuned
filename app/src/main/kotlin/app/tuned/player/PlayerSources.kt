@@ -19,5 +19,7 @@ object PlayerSources {
         context: Context,
         http: OkHttpClient,
         userAgent: String,
-    ): DataSource.Factory = DefaultDataSource.Factory(context, OkHttpDataSource.Factory(http).setUserAgent(userAgent))
+        /** Wraps the network source, for the live rewind copy ([LiveTimeshift.factory]). */
+        network: (DataSource.Factory) -> DataSource.Factory = { it },
+    ): DataSource.Factory = DefaultDataSource.Factory(context, network(OkHttpDataSource.Factory(http).setUserAgent(userAgent)))
 }

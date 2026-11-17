@@ -483,6 +483,14 @@ interface ProgrammeDao {
         now: Long,
     ): List<ProgrammeEntity>
 
+    /** A channel's programmes on at any point from [from] to [to], for one block of the grid guide. */
+    @Query("SELECT * FROM programmes WHERE channelId = :channelId AND start < :to AND stop > :from ORDER BY start")
+    suspend fun between(
+        channelId: String,
+        from: Long,
+        to: Long,
+    ): List<ProgrammeEntity>
+
     /** What's on now on each of [channelIds], for the player's mini guide. */
     @Query("SELECT * FROM programmes WHERE channelId IN (:channelIds) AND start <= :now AND stop > :now")
     suspend fun onNow(
@@ -648,6 +656,10 @@ interface CatchUpDao {
     @Query("SELECT * FROM catchup")
     suspend fun all(): List<CatchUpEntity>
 
+    /** The longest catch-up any channel offers, so the grid guide scrolls back that far. */
+    @Query("SELECT MAX(days) FROM catchup")
+    suspend fun maxDays(): Int?
+
     @Query("SELECT days FROM catchup WHERE streamId = :streamId")
     fun days(streamId: String): Flow<Int?>
 }
@@ -671,7 +683,8 @@ interface DownloadDao {
 
     /** Everything saved or on its way, newest first, with each item's artwork and show while it's still in the playlist. */
     @Query(
-        "SELECT d.*, i.logo AS logo, i.showKey AS showKey, i.showName AS showName, i.season AS season, i.episode AS episode " +
+        "SELECT d.*, i.logo AS logo, i.showKey AS showKey, i.showName AS showName, i.season AS season, i.episode AS episode, " +
+            "(SELECT g.logo FROM show_groups g WHERE g.showKey = i.showKey AND g.logo IS NOT NULL LIMIT 1) AS showLogo " +
             "FROM downloads d LEFT JOIN items i ON i.id = d.itemId ORDER BY d.addedAt DESC",
     )
     fun rows(): Flow<List<DownloadRow>>

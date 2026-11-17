@@ -35,6 +35,7 @@ import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 
 /** What a list shows: a category, favourites only, or everything. */
 sealed interface Filter {
@@ -225,6 +226,11 @@ class BrowseViewModel(
         viewModelScope.launchSafely("BrowseViewModel") {
             container.settings.update { it.copy(hiddenGroups = it.hiddenGroups + HiddenGroups.key(kind.code, group)) }
         }
+    }
+
+    /** Live TV as the grid guide or the list; remembered, and also in Settings. */
+    fun setLiveGrid(on: Boolean) {
+        viewModelScope.launchSafely("BrowseViewModel") { container.settings.update { it.copy(liveGrid = on) } }
     }
 
     fun rememberTab(index: Int) {
