@@ -546,11 +546,16 @@ class PlayerActivity : ComponentActivity() {
         private const val MAX_RETRIES = 5
         private const val FLASH_MS = 900L
 
+        fun intent(
+            context: Context,
+            itemId: Long,
+        ): Intent = Intent(context, PlayerActivity::class.java).putExtra(EXTRA_ID, itemId)
+
         fun start(
             context: Context,
             itemId: Long,
         ) {
-            context.startActivity(Intent(context, PlayerActivity::class.java).putExtra(EXTRA_ID, itemId))
+            context.startActivity(intent(context, itemId))
         }
 
         /** Auto-tune: find a working channel showing [query] (a channel name or an event in the guide) and play it. */

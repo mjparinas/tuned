@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="reminder_channel">Programme reminders</string>
+    <string name="reminder_text">On %1$s</string>
+    <string name="remind_me">Remind me</string>
+    <string name="reminder_cancel">Cancel reminder</string>
+    <string name="settings_reminder_lead">Remind me before a programme</string>
+    <string name="reminder_at_start">When it starts</string>
+    <plurals name="minutes_before">
+        <item quantity="one">%d minute before</item>
+        <item quantity="other">%d minutes before</item>
+    </plurals>
+</resources>
