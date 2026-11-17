@@ -25,6 +25,4 @@
 
 **Background refresh.** WorkManager, periodic, with a network and not on low battery (optionally Wi-Fi only): channels and movies every 12 hours, the guide every 6, both editable (or off). Pull to refresh and Settings › Refresh now run it at once.
 
-## Guide reminders (2026-11-17)
-
-A bell on each upcoming programme in a channel's guide sets a reminder, a few minutes before it starts (Settings › Background, default 5 minutes). Each reminder is a WorkManager job tagged with the channel and start time, so it survives restarts and needs no table; tapping the notification plays the channel. Android 13 and later ask for the notification permission the first time a bell is tapped, and a "no" leaves the reminder unset. A reminder more than 30 minutes late says nothing, and signing out cancels them all.
+**Guide reminders** (2026-11-17). A bell on each upcoming programme in a channel's guide sets a reminder, a few minutes before it starts (Settings › Background, default 5 minutes). Each reminder is a WorkManager job tagged with the channel and start time, so it survives restarts and needs no table; tapping the notification plays the channel. Android 13 and later ask for the notification permission the first time a bell is tapped, and a "no" leaves the reminder unset. A reminder more than 30 minutes late says nothing, and signing out cancels them all.
