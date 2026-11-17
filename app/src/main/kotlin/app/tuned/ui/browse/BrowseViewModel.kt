@@ -153,8 +153,9 @@ class BrowseViewModel(
         settings
             .map { it?.hiddenKeys().orEmpty() to (it?.showAdult ?: false) }
             .distinctUntilChanged()
-            .flatMapLatest { (hidden, adult) -> items.groups(kind.code, hidden, adult) }
-            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+            .flatMapLatest { (hidden, adult) ->
+                if (kind == ContentKind.SERIES) items.showGroupChips(hidden, adult) else items.groups(kind.code, hidden, adult)
+            }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
     }
 
     val refreshing = container.scheduler.refreshing.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), false)

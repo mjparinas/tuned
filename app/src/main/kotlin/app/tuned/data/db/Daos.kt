@@ -318,6 +318,19 @@ interface ItemDao {
         adult: Boolean,
     ): Flow<List<GroupCount>>
 
+    /** [groups] for Shows, from the per-show table: the same counts without reading every episode. */
+    @Query(
+        """
+        SELECT groupName, SUM(episodes) AS count FROM show_groups
+        WHERE (region IS NULL OR region NOT IN (:hidden)) AND ('g:2:' || groupName) NOT IN (:hidden) AND (:adult OR adult = 0)
+        GROUP BY groupName ORDER BY MIN(sortOrder)
+        """,
+    )
+    fun showGroupChips(
+        hidden: List<String>,
+        adult: Boolean,
+    ): Flow<List<GroupCount>>
+
     /**
      * Auto-tune's candidates: live channels whose name matches the search, or whose guide has a matching programme
      * on now or starting within [to]. `title LIKE` ignores case for English letters, which is what event names use.

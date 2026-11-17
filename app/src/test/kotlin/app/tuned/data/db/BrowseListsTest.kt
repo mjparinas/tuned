@@ -5,6 +5,7 @@ import androidx.paging.PagingSource
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import app.tuned.core.Search
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Test
@@ -85,6 +86,13 @@ class BrowseListsTest {
 
         val withoutKids = db.items().showsTab(listOf("g:2:Kids"), adult = false, group = null).all()
         assertEquals(listOf("The Simpsons"), withoutKids.map { it.showName })
+        assertEquals(
+            listOf("Cartoons" to 2, "Kids" to 1),
+            db.items().showGroupChips(emptyList(), false).first().map {
+                it.groupName to
+                    it.count
+            },
+        )
     }
 
     @Test
