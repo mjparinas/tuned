@@ -488,10 +488,14 @@ class PlayerActivity : FragmentActivity() {
         }
 
         override fun onRenderedFirstFrame() {
-            player?.currentMediaItem?.mediaId?.toLongOrNull()?.let {
-                pictured = true
-                backups.pictureShown(it)
-            }
+            player
+                ?.currentMediaItem
+                ?.mediaId
+                ?.toLongOrNull()
+                ?.let {
+                    pictured = true
+                    backups.pictureShown(it)
+                }
         }
 
         override fun onPlaybackStateChanged(playbackState: Int) {

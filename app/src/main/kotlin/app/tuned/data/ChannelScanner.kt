@@ -110,7 +110,11 @@ class ChannelScanner(
     /** Is it the channel, or the internet or the service? See [ServiceCheck]. */
     suspend fun channelToBlame(anotherChannelPlayed: Boolean): Boolean {
         if (!anotherChannelPlayed || !check.internetUp()) return false
-        val agent = settings.settings.first().userAgent.ifBlank { "Tuned/${BuildConfig.VERSION_NAME}" }
+        val agent =
+            settings.settings
+                .first()
+                .userAgent
+                .ifBlank { "Tuned/${BuildConfig.VERSION_NAME}" }
         return ChannelScan.blameOnPlay(true, check.server(agent), anotherChannelPlayed = true)
     }
 

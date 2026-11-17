@@ -13,7 +13,16 @@ class ChannelCopiesTest {
         val espn = ChannelCopies.key("ESPN")
         assertEquals("espn", espn)
         val copies =
-            listOf("US| ESPN HD", "US| ESPN FHD", "|US| ESPN 4K", "[US] ESPN (Backup)", "ESPN ᴴᴰ", "US: ESPN 1080p 60fps", "ESPN (B)", "ESPN HEVC")
+            listOf(
+                "US| ESPN HD",
+                "US| ESPN FHD",
+                "|US| ESPN 4K",
+                "[US] ESPN (Backup)",
+                "ESPN ᴴᴰ",
+                "US: ESPN 1080p 60fps",
+                "ESPN (B)",
+                "ESPN HEVC",
+            )
         for (name in copies) {
             assertEquals(espn, ChannelCopies.key(name), name)
         }
