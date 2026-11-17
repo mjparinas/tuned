@@ -4,6 +4,7 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageInstaller
+import android.os.Build
 import android.provider.Settings
 import androidx.core.net.toUri
 import app.tuned.BuildConfig
@@ -11,9 +12,12 @@ import app.tuned.core.ReleaseTag
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -34,6 +38,9 @@ class GitHubUpdates(
     sealed interface State {
         data object Idle : State
 
+        /** Asking GitHub, or downloading the new APK. */
+        data object Checking : State
+
         data class Ready(
             val versionName: String,
             val apk: File,
@@ -44,6 +51,13 @@ class GitHubUpdates(
     val state: StateFlow<State> = _state
 
     private val json = Json { ignoreUnknownKeys = true }
+
+    /** What a check found, for Settings › Check for updates. */
+    enum class Outcome { UP_TO_DATE, READY, FAILED }
+
+    private val checking = Mutex()
+
+    @Volatile private var lastCheck = 0L
 
     @Serializable
     private data class Release(
@@ -60,23 +74,53 @@ class GitHubUpdates(
         @SerialName("browser_download_url") val url: String,
     )
 
-    /** Checks GitHub and downloads a newer APK if there is one. Returns true when an update is ready to install. */
-    suspend fun check(): Boolean = withContext(Dispatchers.IO) {
-        if (BuildConfig.DEBUG) return@withContext false
-        try {
-            val release = latest() ?: return@withContext false
-            if (release.draft || release.prerelease || !ReleaseTag.isNewer(release.tag, BuildConfig.VERSION_CODE)) {
-                return@withContext false
+    /**
+     * Checks GitHub and downloads a newer APK if there is one. On its own (app brought to the front, background
+     * refresh) it asks at most once an hour; [force] (the Settings button) always asks. Never throws: a failed check
+     * just tries again next time.
+     */
+    suspend fun check(force: Boolean = false): Outcome = checking.withLock {
+        if (BuildConfig.DEBUG) return@withLock Outcome.UP_TO_DATE
+        if (_state.value is State.Ready) return@withLock Outcome.READY
+        val now = System.currentTimeMillis()
+        if (!ReleaseTag.checkDue(lastCheck, now, force)) return@withLock Outcome.UP_TO_DATE
+        lastCheck = now
+        _state.value = State.Checking
+        val outcome =
+            try {
+                withContext(Dispatchers.IO) { fetch() }
+            } catch (_: IOException) {
+                Outcome.FAILED
+            } catch (_: SerializationException) {
+                Outcome.FAILED
+            } catch (_: IllegalArgumentException) {
+                Outcome.FAILED
             }
-            val asset = release.assets.firstOrNull { it.name.endsWith(".apk") } ?: return@withContext false
-            val apk = download(asset, ReleaseTag.versionCode(release.tag) ?: 0)
-            _state.value = State.Ready(ReleaseTag.versionName(release.tag) ?: release.tag, apk)
-            true
-        } catch (_: IOException) {
-            // Offline or GitHub unreachable: try again next time.
-            false
-        }
+        if (_state.value is State.Checking) _state.value = State.Idle
+        outcome
     }
+
+    private fun fetch(): Outcome {
+        val release = latest() ?: return Outcome.FAILED
+        if (release.draft || release.prerelease || !ReleaseTag.isNewer(release.tag, BuildConfig.VERSION_CODE)) return Outcome.UP_TO_DATE
+        val asset = release.assets.firstOrNull { it.name.endsWith(".apk") } ?: return Outcome.UP_TO_DATE
+        val apk = download(asset, ReleaseTag.versionCode(release.tag) ?: 0)
+        _state.value = State.Ready(ReleaseTag.versionName(release.tag) ?: release.tag, apk)
+        return Outcome.READY
+    }
+
+    /** Copies installed from Play update through Play ([app.tuned.ui.AppUpdates]), never from here. */
+    fun fromPlay(): Boolean = runCatching {
+        val name = context.packageName
+        val installer =
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                context.packageManager.getInstallSourceInfo(name).installingPackageName
+            } else {
+                @Suppress("DEPRECATION") // the replacement only exists from Android 11
+                context.packageManager.getInstallerPackageName(name)
+            }
+        installer == PLAY_STORE
+    }.getOrDefault(false)
 
     private fun latest(): Release? {
         val request =
@@ -143,5 +187,6 @@ class GitHubUpdates(
 
     companion object {
         const val REPO = "mjparinas/tuned"
+        private const val PLAY_STORE = "com.android.vending"
     }
 }

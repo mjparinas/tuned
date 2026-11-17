@@ -45,7 +45,6 @@ class MainActivity : ComponentActivity() {
         val splash = installSplashScreen()
         super.onCreate(savedInstanceState)
         updates = AppUpdates(this)
-        if (savedInstanceState == null) updates.check()
         enableEdgeToEdge()
         val settings = container.settings.settings.stateIn(lifecycleScope, SharingStarted.Eagerly, null)
         // Hold the splash only until settings load (a few ms), so the first frame already has the right theme.
@@ -164,6 +163,8 @@ class MainActivity : ComponentActivity() {
 
     override fun onResume() {
         super.onResume()
+        // Every time Tuned comes to the front, not only on a cold start: a copy left open for days still updates.
+        updates.check()
         updates.resume()
     }
 

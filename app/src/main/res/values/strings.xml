@@ -210,8 +210,8 @@
     <string name="update_ready">Tuned %1$s is ready to install</string>
     <string name="update_install">Install</string>
     <string name="update_failed">The update didn’t install. Tuned will try again next time.</string>
-    <string name="settings_check_updates">Check for updates</string>
-    <string name="settings_check_updates_summary">Download new versions from GitHub when Tuned opens</string>
+    <string name="settings_check_updates">Look for updates automatically</string>
+    <string name="settings_check_updates_summary">Check GitHub for new versions when Tuned opens (at most hourly) and during background refreshes</string>
     <string name="settings_gestures">Gestures</string>
     <string name="settings_gestures_summary">Drag left for brightness, right for volume. Double-tap the sides to skip. Swipe to change channel.</string>
     <string name="settings_reconnect">Reconnect automatically</string>

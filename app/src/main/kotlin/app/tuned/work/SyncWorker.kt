@@ -18,6 +18,7 @@ import app.tuned.R
 import app.tuned.container
 import app.tuned.data.SyncProgress
 import app.tuned.ui.SyncText
+import app.tuned.updates.UpdateNotice
 import app.tuned.widget.FavouritesWidget
 import java.io.IOException
 
@@ -51,6 +52,8 @@ class SyncWorker(
             }
             // New guide data: the widget's "on now" lines move on too.
             runCatching { FavouritesWidget().updateAll(applicationContext) }
+            // A copy left running for days still hears about a new release.
+            UpdateNotice.checkInBackground(applicationContext)
             Result.success()
         } catch (_: IOException) {
             // The download already retried with backoff; the first sign-in reports at once instead of waiting for more.
