@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -42,6 +43,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -173,8 +175,9 @@ fun DownloadsScreen(
 ) {
     val rows by vm.page.collectAsStateWithLifecycle()
     val context = LocalContext.current
-    val active = rows.filter { it.download.state != DownloadEntity.DONE }.sortedBy { it.download.addedAt }
-    val ready = rows.filter { it.download.state == DownloadEntity.DONE }
+    val active = remember(rows) { groupDownloads(rows.filter { it.download.state != DownloadEntity.DONE }, queueOrder = true) }
+    val ready = remember(rows) { groupDownloads(rows.filter { it.download.state == DownloadEntity.DONE }, queueOrder = false) }
+    val readyBytes = remember(rows) { rows.filter { it.download.state == DownloadEntity.DONE }.sumOf { it.download.bytes } }
     Scaffold(topBar = { BackTopBar(stringResource(R.string.downloads), onBack) }) { padding ->
         if (rows.isEmpty()) {
             EmptyDownloads(Modifier.padding(padding))
@@ -183,7 +186,7 @@ fun DownloadsScreen(
         LazyColumn(Modifier.padding(padding).fillMaxSize(), contentPadding = PaddingValues(bottom = 16.dp)) {
             if (active.isNotEmpty()) {
                 item(key = "active") { SectionTitle(stringResource(R.string.downloads_section_active)) }
-                items(active, key = { it.download.itemId }) { row ->
+                groups(active, "active") { row ->
                     DownloadRowItem(row, onClick = null) {
                         ActiveActions(row.download, vm)
                     }
@@ -191,10 +194,10 @@ fun DownloadsScreen(
             }
             if (ready.isNotEmpty()) {
                 item(key = "ready") {
-                    val size = Formatter.formatShortFileSize(context, ready.sumOf { it.download.bytes })
+                    val size = Formatter.formatShortFileSize(context, readyBytes)
                     SectionTitle(stringResource(R.string.downloads_section_ready), stringResource(R.string.downloads_storage, size))
                 }
-                items(ready, key = { it.download.itemId }) { row ->
+                groups(ready, "ready") { row ->
                     DownloadRowItem(row, onClick = { onPlay(row.download.itemId) }) {
                         IconButton(onClick = { vm.remove(row.download.itemId) }) {
                             Icon(Icons.Filled.Delete, contentDescription = stringResource(R.string.download_remove))
@@ -204,6 +207,75 @@ fun DownloadsScreen(
             }
         }
     }
+}
+
+/** Each show under its name, then each season, then its episodes; films under their own heading. */
+private fun LazyListScope.groups(
+    groups: List<DownloadGroup>,
+    section: String,
+    row: @Composable (DownloadRow) -> Unit,
+) {
+    groups.forEach { group ->
+        when (group) {
+            is DownloadGroup.Show -> {
+                item(key = "$section:${group.key}") {
+                    GroupTitle(group.name, group.seasons.flatMap { it.rows })
+                }
+                group.seasons.forEach { season ->
+                    season.number?.let { number ->
+                        item(key = "$section:${group.key}:s$number") {
+                            SeasonTitle(stringResource(R.string.season, number), season.rows)
+                        }
+                    }
+                    items(season.rows, key = { "$section:${it.download.itemId}" }) { row(it) }
+                }
+            }
+
+            is DownloadGroup.Movies -> {
+                item(key = "$section:${group.key}") { GroupTitle(stringResource(R.string.tab_movies), group.rows) }
+                items(group.rows, key = { "$section:${it.download.itemId}" }) { row(it) }
+            }
+        }
+    }
+}
+
+/** A show's or the films' heading, with how many it holds. */
+@Composable
+private fun GroupTitle(
+    title: String,
+    rows: List<DownloadRow>,
+) {
+    Row(Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 4.dp), verticalAlignment = Alignment.Bottom) {
+        Text(
+            title,
+            style = MaterialTheme.typography.titleSmall,
+            color = MaterialTheme.colorScheme.primary,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.weight(1f),
+        )
+        Text(sizeOf(rows), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    }
+}
+
+@Composable
+private fun SeasonTitle(
+    title: String,
+    rows: List<DownloadRow>,
+) {
+    Text(
+        listOf(title, pluralStringResource(R.plurals.episodes, rows.size, rows.size)).joinToString(" · "),
+        style = MaterialTheme.typography.labelLarge,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 2.dp),
+    )
+}
+
+/** Space a group takes once saved; nothing while it's still downloading. */
+@Composable
+private fun sizeOf(rows: List<DownloadRow>): String {
+    val done = rows.filter { it.download.state == DownloadEntity.DONE }
+    return if (done.isEmpty()) "" else Formatter.formatShortFileSize(LocalContext.current, done.sumOf { it.download.bytes })
 }
 
 @Composable
@@ -271,7 +343,8 @@ private fun DownloadRowItem(
         }
         Spacer(Modifier.width(14.dp))
         Column(Modifier.weight(1f)) {
-            Text(d.name, style = MaterialTheme.typography.bodyLarge, maxLines = 2, overflow = TextOverflow.Ellipsis)
+            val title = row.episode?.takeIf { row.showKey != null }?.let { stringResource(R.string.episode_label, it) } ?: d.name
+            Text(title, style = MaterialTheme.typography.bodyLarge, maxLines = 2, overflow = TextOverflow.Ellipsis)
             Text(status(d), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             if (d.state == DownloadEntity.QUEUED || d.state == DownloadEntity.PAUSED) {
                 Spacer(Modifier.height(6.dp))

@@ -475,8 +475,11 @@ interface DownloadDao {
     @Query("SELECT * FROM downloads ORDER BY addedAt DESC")
     fun all(): Flow<List<DownloadEntity>>
 
-    /** Everything saved or on its way, newest first, with each item's artwork while it's still in the playlist. */
-    @Query("SELECT d.*, i.logo AS logo FROM downloads d LEFT JOIN items i ON i.id = d.itemId ORDER BY d.addedAt DESC")
+    /** Everything saved or on its way, newest first, with each item's artwork and show while it's still in the playlist. */
+    @Query(
+        "SELECT d.*, i.logo AS logo, i.showKey AS showKey, i.showName AS showName, i.season AS season, i.episode AS episode " +
+            "FROM downloads d LEFT JOIN items i ON i.id = d.itemId ORDER BY d.addedAt DESC",
+    )
     fun rows(): Flow<List<DownloadRow>>
 
     @Query("SELECT * FROM downloads WHERE state = 0 ORDER BY addedAt LIMIT 1")

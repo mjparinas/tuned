@@ -78,10 +78,17 @@ data class DownloadEntity(
     }
 }
 
-/** A download with the artwork of the film or episode it saves, for the Downloads page. */
+/**
+ * A download with the artwork of the film or episode it saves, and the show and season it belongs to, for the
+ * Downloads page. The extras are null once the item has left the playlist.
+ */
 data class DownloadRow(
     @Embedded val download: DownloadEntity,
     val logo: String?,
+    val showKey: String? = null,
+    val showName: String? = null,
+    val season: Int? = null,
+    val episode: Int? = null,
 )
 
 /**
