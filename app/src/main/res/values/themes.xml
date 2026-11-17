@@ -15,4 +15,7 @@
     <style name="Theme.Tuned.Player" parent="android:Theme.Material.NoActionBar.Fullscreen">
         <item name="android:windowBackground">@android:color/black</item>
     </style>
+
+    <!-- MediaRouteButton (the cast button) needs an AppCompat theme around it; the player itself doesn't use AppCompat. -->
+    <style name="Theme.Tuned.CastButton" parent="Theme.AppCompat.NoActionBar" />
 </resources>

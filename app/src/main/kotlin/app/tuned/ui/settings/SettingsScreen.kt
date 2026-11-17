@@ -176,6 +176,7 @@ fun SettingsScreen(
                 lastSync(settings),
                 onClick = vm::refreshNow,
             )
+            BackupRows()
             SettingRow(stringResource(R.string.settings_sign_out), stringResource(R.string.settings_sign_out_summary), onClick = {
                 confirmSignOut =
                     true
