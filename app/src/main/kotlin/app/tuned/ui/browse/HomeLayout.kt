@@ -14,6 +14,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import app.tuned.R
+import app.tuned.data.CastMember
 import app.tuned.ui.details.MovieScreen
 import app.tuned.ui.guide.GuideScreen
 import app.tuned.ui.shows.ShowScreen
@@ -85,11 +86,18 @@ internal fun DetailPane(
     detail: Detail,
     onPlay: (Long) -> Unit,
     onClose: () -> Unit,
+    onOpenPerson: (CastMember) -> Unit,
 ) {
     key(detail) {
         when (detail.kind) {
             Detail.Kind.MOVIE -> {
-                MovieScreen(itemId = detail.id, onPlay = onPlay, onBack = onClose, vm = viewModel(key = "pane:movie:${detail.id}"))
+                MovieScreen(
+                    itemId = detail.id,
+                    onPlay = onPlay,
+                    onBack = onClose,
+                    onOpenPerson = onOpenPerson,
+                    vm = viewModel(key = "pane:movie:${detail.id}"),
+                )
             }
 
             Detail.Kind.SHOW -> {
@@ -98,6 +106,7 @@ internal fun DetailPane(
                     title = detail.title,
                     onPlay = onPlay,
                     onBack = onClose,
+                    onOpenPerson = onOpenPerson,
                     vm = viewModel(key = "pane:show:${detail.showKey}"),
                     details = viewModel(key = "pane:details:${detail.showKey}"),
                 )

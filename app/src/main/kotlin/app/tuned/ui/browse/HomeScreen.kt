@@ -104,6 +104,7 @@ import app.tuned.container
 import app.tuned.core.ContentKind
 import app.tuned.core.ScreenLayout
 import app.tuned.data.AppSettings
+import app.tuned.data.CastMember
 import app.tuned.data.StartTab
 import app.tuned.data.SyncProgress
 import app.tuned.data.db.ChannelWithNow
@@ -147,6 +148,7 @@ fun HomeScreen(
     onOpenShow: (String, String) -> Unit,
     onOpenGuide: (Long) -> Unit,
     onOpenMovie: (Long) -> Unit,
+    onOpenPerson: (CastMember) -> Unit,
     onOpenSettings: () -> Unit,
     onOpenSearch: () -> Unit,
     onOpenDownloads: () -> Unit,
@@ -276,7 +278,7 @@ fun HomeScreen(
         if (panes && open != null) {
             VerticalDivider()
             Box(Modifier.weight(ScreenLayout.DETAIL_FRACTION).fillMaxHeight()) {
-                DetailPane(open, onPlay = onPlay, onClose = { detail = null })
+                DetailPane(open, onPlay = onPlay, onClose = { detail = null }, onOpenPerson = onOpenPerson)
             }
         }
     }
