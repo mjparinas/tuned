@@ -74,6 +74,7 @@ class PlayerActivity : ComponentActivity() {
     private var progressJob: Job? = null
     private var liveRetries = 0
     private var gestures: PlayerGestures? = null
+    private lateinit var tools: PlayerTools
     private var reconnect: ConnectivityManager.NetworkCallback? = null
     private var autoTune: AutoTune? = null
     private lateinit var statusView: TextView
@@ -85,6 +86,7 @@ class PlayerActivity : ComponentActivity() {
         lifecycleScope.launch {
             settings = container.settings.settings.first()
             if (settings.landscapePlayback) requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
+            tools.applyFit(settings.videoFit)
             if (settings.playerGestures) setUpGestures()
             if (settings.autoReconnect) reconnectWhenOnline()
             val query = intent.getStringExtra(EXTRA_TUNE)
@@ -124,17 +126,7 @@ class PlayerActivity : ComponentActivity() {
             }
         val density = resources.displayMetrics.density
         // Back sits with the title, so it shows whenever the controls do (system back and gestures work too).
-        val back =
-            ImageButton(this).apply {
-                setImageResource(R.drawable.ic_arrow_back)
-                contentDescription = getString(R.string.back)
-                val ripple = TypedValue()
-                theme.resolveAttribute(android.R.attr.selectableItemBackgroundBorderless, ripple, true)
-                setBackgroundResource(ripple.resourceId)
-                val pad = (12 * density).toInt()
-                setPadding(pad, pad, pad, pad)
-                setOnClickListener { onBackPressedDispatcher.onBackPressed() }
-            }
+        val back = backButton()
         val titles =
             LinearLayout(this).apply {
                 orientation = LinearLayout.VERTICAL
@@ -156,6 +148,7 @@ class PlayerActivity : ComponentActivity() {
                 )
                 gravity = Gravity.CENTER_VERTICAL
             }
+        setUpTools()
         statusView =
             TextView(this).apply {
                 setTextColor(Color.WHITE)
@@ -175,13 +168,46 @@ class PlayerActivity : ComponentActivity() {
             statusView,
             FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT, Gravity.CENTER),
         )
+        tools.attach(root)
         // The title shows and hides with the controls, so a tap reveals everything and the video is otherwise bare.
         playerView.setControllerVisibilityListener(
             PlayerView.ControllerVisibilityListener { visibility ->
                 overlay.visibility = visibility
+                tools.onControls(visibility)
             },
         )
         setContentView(root)
+    }
+
+    private fun backButton() = ImageButton(this).apply {
+        setImageResource(R.drawable.ic_arrow_back)
+        contentDescription = getString(R.string.back)
+        val ripple = TypedValue()
+        theme.resolveAttribute(android.R.attr.selectableItemBackgroundBorderless, ripple, true)
+        setBackgroundResource(ripple.resourceId)
+        val pad = (12 * resources.displayMetrics.density).toInt()
+        setPadding(pad, pad, pad, pad)
+        setOnClickListener { onBackPressedDispatcher.onBackPressed() }
+    }
+
+    /** The buttons at the top right (channels, aspect, quality, info, lock); see [PlayerTools]. */
+    private fun setUpTools() {
+        tools =
+            PlayerTools(
+                activity = this,
+                playerView = playerView,
+                overlay = overlay,
+                hooks =
+                    PlayerTools.Hooks(
+                        player = { player },
+                        queue = { queue },
+                        isLive = ::live,
+                        touch = { gestures },
+                        say = ::flash,
+                        onFitChanged = { fit -> lifecycleScope.launch { container.settings.update { it.copy(videoFit = fit) } } },
+                    ),
+            )
+        overlay.addView(tools.toolbar)
     }
 
     @SuppressLint("ClickableViewAccessibility") // PlayerGestures calls performClick on every tap
@@ -524,10 +550,11 @@ class PlayerActivity : ComponentActivity() {
         newConfig: Configuration,
     ) {
         super.onPictureInPictureModeChanged(isInPictureInPictureMode, newConfig)
-        playerView.useController = !isInPictureInPictureMode
+        playerView.useController = !isInPictureInPictureMode && !tools.locked
         if (isInPictureInPictureMode) {
             playerView.hideController()
             overlay.visibility = View.GONE
+            tools.hidePanels()
         }
     }
 
@@ -561,6 +588,7 @@ class PlayerActivity : ComponentActivity() {
         progressJob?.cancel()
         autoTune?.release()
         gestures?.release()
+        tools.release()
         reconnect?.let { cb -> runCatching { getSystemService(ConnectivityManager::class.java)?.unregisterNetworkCallback(cb) } }
         player?.release()
         player = null

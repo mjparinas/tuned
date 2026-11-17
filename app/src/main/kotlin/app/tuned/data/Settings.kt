@@ -26,6 +26,9 @@ enum class ThemeMode { SYSTEM, LIGHT, DARK }
 /** The colour of buttons, switches and highlights; violet is the brand colour (docs/decisions/branding.md). */
 enum class Accent { VIOLET, BLUE, TEAL, GREEN, ORANGE, PINK, RED }
 
+/** How the picture fills the screen: whole picture with bars, cropped to fill, or stretched. */
+enum class VideoFit { FIT, ZOOM, STRETCH }
+
 enum class StartTab { LIVE, MOVIES, SHOWS, LAST }
 
 /** How much video to hold before and during playback: quick starts or fewer stalls. */
@@ -85,6 +88,8 @@ data class AppSettings(
     val playerGestures: Boolean = true,
     val autoReconnect: Boolean = true,
     val landscapePlayback: Boolean = true,
+    /** The player's aspect button; the last choice sticks. */
+    val videoFit: VideoFit = VideoFit.FIT,
     val controlsTimeoutMs: Int = 3_000,
     /** Auto-tune moves on when a channel shows no picture within this long. */
     val tuneTimeoutMs: Int = 10_000,
@@ -196,6 +201,7 @@ class SettingsRepository(
             playerGestures = p[K.playerGestures] ?: d.playerGestures,
             autoReconnect = p[K.autoReconnect] ?: d.autoReconnect,
             landscapePlayback = p[K.landscapePlayback] ?: d.landscapePlayback,
+            videoFit = enumOr(p[K.videoFit], d.videoFit),
             controlsTimeoutMs = p[K.controlsTimeoutMs] ?: d.controlsTimeoutMs,
             tuneTimeoutMs = p[K.tuneTimeoutMs] ?: d.tuneTimeoutMs,
             tuneMinHeight = p[K.tuneMinHeight] ?: d.tuneMinHeight,
@@ -250,6 +256,7 @@ class SettingsRepository(
         p[K.playerGestures] = s.playerGestures
         p[K.autoReconnect] = s.autoReconnect
         p[K.landscapePlayback] = s.landscapePlayback
+        p[K.videoFit] = s.videoFit.name
         p[K.controlsTimeoutMs] = s.controlsTimeoutMs
         p[K.tuneTimeoutMs] = s.tuneTimeoutMs
         p[K.tuneMinHeight] = s.tuneMinHeight
@@ -304,6 +311,7 @@ class SettingsRepository(
         val playerGestures = booleanPreferencesKey("player_gestures")
         val autoReconnect = booleanPreferencesKey("auto_reconnect")
         val landscapePlayback = booleanPreferencesKey("landscape_playback")
+        val videoFit = stringPreferencesKey("video_fit")
         val controlsTimeoutMs = intPreferencesKey("controls_timeout_ms")
         val tuneTimeoutMs = intPreferencesKey("tune_timeout_ms")
         val tuneMinHeight = intPreferencesKey("tune_min_height")
