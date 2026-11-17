@@ -57,7 +57,6 @@ import kotlinx.coroutines.launch
  * settings menu for audio language and speed. Built on Views, not Compose, because PlayerView is Media3's own
  * tested surface and starts fastest.
  */
-// Media3's caption, track and buffer APIs are marked unstable; the version is pinned and Dependabot raises it with CI.
 @OptIn(UnstableApi::class)
 class PlayerActivity : ComponentActivity() {
     private var player: ExoPlayer? = null

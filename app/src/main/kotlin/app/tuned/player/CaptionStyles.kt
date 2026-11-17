@@ -10,7 +10,6 @@ import app.tuned.data.CaptionFont
 import app.tuned.data.CaptionStyle
 
 /** Applies Settings › Captions to Media3's subtitle view. */
-// Media3's caption, track and buffer APIs are marked unstable; the version is pinned and Dependabot raises it with CI.
 @OptIn(UnstableApi::class)
 object CaptionStyles {
     fun apply(
