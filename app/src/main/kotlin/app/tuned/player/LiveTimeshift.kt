@@ -53,9 +53,11 @@ internal class LiveTimeshift(
 
     val enabled: Boolean get() = keepMinutes() > 0
 
-    /** Wraps the player's network data source for live channels so the stream is kept as it plays. */
+    /**
+     * Wraps the player's network data source for live channels so the stream is kept as it plays. With pause and
+     * rewind off it still passes through, keeping nothing, so the channel can be recorded ([LiveRecorder]).
+     */
     fun factory(upstream: DataSource.Factory): DataSource.Factory {
-        if (!enabled) return upstream
         buffer?.release()
         val b = LiveBuffer(File(context.cacheDir, DIR), keepMinutes() * MINUTE_MS, MAX_BYTES).also { buffer = it }
         return DataSource.Factory { b.Tee(upstream.createDataSource(), beforeOpen = ::stopRecorder) }
@@ -167,6 +169,9 @@ internal class LiveTimeshift(
         call?.cancel()
         call = null
     }
+
+    /** The live channel's stream as it arrives, while the player is on it, live or paused; null for HLS, files or catch-up. */
+    fun stream(uri: Uri?): LiveBuffer? = buffer?.takeIf { uri != null && (it.source == uri || uri == Uri.fromFile(it.playlist)) }
 
     fun release() {
         stopRecorder()

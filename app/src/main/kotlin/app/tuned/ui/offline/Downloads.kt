@@ -70,23 +70,36 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import app.tuned.R
 import app.tuned.container
 import app.tuned.data.EpisodeInfo
+import app.tuned.data.Recordings.Recording
 import app.tuned.data.db.DownloadEntity
 import app.tuned.data.db.DownloadRow
 import app.tuned.data.db.ItemEntity
 import app.tuned.diagnostics.launchSafely
+import app.tuned.player.PlayerActivity
 import app.tuned.ui.common.BackTopBar
 import app.tuned.ui.common.focusRing
 import coil3.compose.AsyncImage
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.withContext
 
 class DownloadsViewModel(
     app: Application,
 ) : AndroidViewModel(app) {
     private val offline = app.container.offline
+    private val recordingStore = app.container.recordings
+
+    /** Recordings of live channels ([app.tuned.player.LiveRecorder]), newest first. */
+    val recordings: StateFlow<List<Recording>> =
+        recordingStore.all.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
+    fun deleteRecording(r: Recording) {
+        viewModelScope.launchSafely("Downloads") { withContext(Dispatchers.IO) { recordingStore.delete(r) } }
+    }
 
     val page: StateFlow<List<DownloadRow>> = offline.rows.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
@@ -207,6 +220,8 @@ fun DownloadsScreen(
     vm: DownloadsViewModel = viewModel(),
 ) {
     val rows by vm.page.collectAsStateWithLifecycle()
+    val recorded by vm.recordings.collectAsStateWithLifecycle()
+    val context = LocalContext.current
     val library = remember(rows) { DownloadLibrary.of(rows) }
     var showKey by rememberSaveable { mutableStateOf<String?>(null) }
     var season by rememberSaveable { mutableStateOf<Int?>(null) }
@@ -232,7 +247,7 @@ fun DownloadsScreen(
             else -> stringResource(R.string.downloads)
         }
     Scaffold(topBar = { BackTopBar(title, if (show != null) up else onBack) }) { padding ->
-        if (rows.isEmpty()) {
+        if (rows.isEmpty() && recorded.isEmpty()) {
             EmptyDownloads(Modifier.padding(padding))
             return@Scaffold
         }
@@ -276,6 +291,15 @@ fun DownloadsScreen(
                             SavedOrComing(row, info = null, vm = vm, onPlay = onPlay)
                         }
                     }
+                    recordings(
+                        recorded,
+                        title = {
+                            val size = Formatter.formatShortFileSize(context, recorded.sumOf { it.bytes })
+                            SectionTitle(stringResource(R.string.recordings_section_size, size))
+                        },
+                        onPlay = { PlayerActivity.recording(context, it.id) },
+                        onDelete = vm::deleteRecording,
+                    )
                 }
             }
         }

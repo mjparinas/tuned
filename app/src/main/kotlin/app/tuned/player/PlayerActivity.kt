@@ -184,6 +184,22 @@ class PlayerActivity : FragmentActivity() {
             keepMinutes = { settings.liveRewindMinutes },
         )
     }
+    private val recorder by lazy {
+        LiveRecorder(
+            this,
+            LiveRecorder.Hooks(
+                channel = {
+                    player
+                        ?.let { queue.getOrNull(it.currentMediaItemIndex) }
+                        ?.takeIf { it.kind == ContentKind.LIVE.code && it.id != CatchUpLinks.ID }
+                },
+                uri = { player?.currentMediaItem?.localConfiguration?.uri },
+                stream = timeshift::stream,
+                casting = { cast?.casting == true },
+                say = ::flash,
+            ),
+        )
+    }
     private val frameRate by lazy { FrameRateMatch(this) { settings.matchFrameRate && cast?.casting != true } }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -208,12 +224,21 @@ class PlayerActivity : FragmentActivity() {
             val id = intent.getLongExtra(EXTRA_ID, 0)
             val channel = container.db.items().get(id)
             val catchUpStart = intent.getLongExtra(EXTRA_FROM, 0)
+            val recording = intent.getLongExtra(EXTRA_RECORDING, 0)
             val item =
-                if (channel != null && catchUpStart > 0) {
-                    val title = intent.getStringExtra(EXTRA_TITLE).orEmpty()
-                    CatchUpLinks.item(container, channel, title, catchUpStart, intent.getLongExtra(EXTRA_UNTIL, 0))
-                } else {
-                    channel
+                when {
+                    recording != 0L -> {
+                        container.recordings.get(recording)?.let(container.recordings::item)
+                    }
+
+                    channel != null && catchUpStart > 0 -> {
+                        val title = intent.getStringExtra(EXTRA_TITLE).orEmpty()
+                        CatchUpLinks.item(container, channel, title, catchUpStart, intent.getLongExtra(EXTRA_UNTIL, 0))
+                    }
+
+                    else -> {
+                        channel
+                    }
                 }
             if (item == null) {
                 finish()
@@ -293,6 +318,7 @@ class PlayerActivity : FragmentActivity() {
             FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT, Gravity.CENTER),
         )
         tools.attach(root)
+        recorder.attach(root)
         skipIntro.attach(root)
         tuneNext.attach(root)
         levelBars.attach(root)
@@ -301,6 +327,7 @@ class PlayerActivity : FragmentActivity() {
             PlayerView.ControllerVisibilityListener { visibility ->
                 overlay.visibility = visibility
                 tools.onControls(visibility)
+                recorder.onControls(visibility)
                 tuneNext.onControls(visibility)
             },
         )
@@ -351,6 +378,7 @@ class PlayerActivity : FragmentActivity() {
                 savedFile = { id -> savedFiles[id] },
                 onStatus = { text -> if (text == null) statusView.visibility = View.GONE else showStatus(text) },
             ).also { c -> tools.addButton(c.button) }
+        tools.addButton(recorder.button)
     }
 
     @SuppressLint("ClickableViewAccessibility") // PlayerGestures calls performClick on every tap
@@ -492,7 +520,8 @@ class PlayerActivity : FragmentActivity() {
         // Every connection on the account is in use on another device: opening one more could go over the limit, so
         // wait for the person to press play (Settings › Account shows the same numbers). A saved file opens no
         // connection, so it never waits.
-        val full = if (castNow == null && queue[index].id !in local) container.account.fullElsewhere() else null
+        val onDevice = queue[index].id in local || queue[index].url.startsWith("file:")
+        val full = if (castNow == null && !onDevice) container.account.fullElsewhere() else null
         if (castNow != null) {
             // Already casting: this goes to the TV, and the phone opens no stream of its own.
             castNow.load(queue[index], live, resumeAt)
@@ -773,6 +802,7 @@ class PlayerActivity : FragmentActivity() {
     ) {
         super.onPictureInPictureModeChanged(isInPictureInPictureMode, newConfig)
         playerView.useController = !isInPictureInPictureMode && !tools.locked
+        recorder.hideMark(isInPictureInPictureMode)
         if (isInPictureInPictureMode) {
             playerView.hideController()
             overlay.visibility = View.GONE
@@ -811,6 +841,7 @@ class PlayerActivity : FragmentActivity() {
         progressJob?.cancel()
         autoTune?.release()
         backups.release()
+        recorder.release()
         timeshift.release()
         gestures?.release()
         tools.release()
@@ -831,6 +862,7 @@ class PlayerActivity : FragmentActivity() {
         private const val EXTRA_FROM = "catchup_from"
         private const val EXTRA_UNTIL = "catchup_until"
         private const val EXTRA_TITLE = "catchup_title"
+        private const val EXTRA_RECORDING = "recording"
         private const val MAX_RETRIES = 5
         private const val FLASH_MS = 900L
 
@@ -844,6 +876,14 @@ class PlayerActivity : FragmentActivity() {
             itemId: Long,
         ) {
             context.startActivity(intent(context, itemId))
+        }
+
+        /** A recording of a live channel ([app.tuned.data.Recordings]), from the device. */
+        fun recording(
+            context: Context,
+            id: Long,
+        ) {
+            context.startActivity(Intent(context, PlayerActivity::class.java).putExtra(EXTRA_RECORDING, id))
         }
 
         /** Catch-up: the recording of [title] on channel [itemId], from [from] to [until]. */

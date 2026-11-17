@@ -84,3 +84,16 @@ Melvin: "Can you add pause and scrub live TV support?" Live channels arrive as o
 - **Pausing** switches the channel's spot in the list to the playlist on the device, at the picture on screen (the player's buffer is ahead of it), paused. From then on the usual controls work: play, rewind and fast-forward buttons, the seek bar, and fast-forwarding to the end catches up to live. Playback speed is held at 1×, so Media3 doesn't creep back to the live edge by itself. Pausing longer than what's kept lands at the oldest piece still there.
 - **One connection.** When it plays from the device, a recorder carries on receiving the channel, reconnecting if it drops (a new connection marks a discontinuity in the playlist). The player's stream and the recorder share one permit: the recorder opens only after the player's stream has closed, and switching channel stops the recorder before the next channel opens. Moving to another channel puts the live link back in its spot.
 - Not for HLS channels (`.m3u8`), which have their own window, catch-up recordings, which can seek already, or while casting.
+
+## Recording (2026-11-17)
+
+From the app audit, Melvin picked recording, with the rule that it records only the channel being watched, on the one connection.
+
+- **Record** sits with the player tools on live TV channels. It saves the stream the player is already receiving (`player/LiveRecorder`, fed by `LiveBuffer`), so recording never opens a connection of its own and can't record a different channel. The file starts at the first whole TS packet (`core/TsAlign`, with tests), so it opens cleanly anywhere. Pausing live TV keeps recording, since the same stream carries on arriving.
+- A small "REC" mark stays at the top left while it runs, even with the controls hidden, and leaves picture-in-picture alone.
+- It stops on the button, a channel change (including a switch to a backup copy), closing the player, or when the device has less than 500 MB free. Each stop says "Recording saved to Downloads".
+- Recordings are `.ts` files with a small `.json` beside them in app-specific storage (`data/Recordings`), not a table: they belong to the device and outlive a playlist refresh, a playlist switch or signing out. One the app never finished (Android closed it, or a crash) is kept at the length it reached.
+- They are listed under **Recordings** on the Downloads page, newest first, with the show from the guide, channel, start, length and size. A tap plays the file like a film (seek bar, no resume, no next and previous), offline too, and never waits on the "every connection in use" hold. The bin deletes it.
+- Pause and rewind no longer has to be on: with it off the stream still passes through `LiveBuffer`, keeping nothing, so Record works either way.
+- Not done: scheduled recordings. Recording something not being watched would need a second connection, or would stop whatever is playing, so it's left out.
+- Not recorded: live channels sent as HLS (`.m3u8`), catch-up and casting; the button doesn't show for them.
