@@ -16,6 +16,7 @@ import app.tuned.data.SyncProgress
 import app.tuned.data.db.ChannelWithNow
 import app.tuned.data.db.ContinueRow
 import app.tuned.data.db.GroupCount
+import app.tuned.data.db.ItemDao
 import app.tuned.data.db.ItemEntity
 import app.tuned.data.db.ShowSummary
 import app.tuned.data.hiddenKeys
@@ -101,8 +102,11 @@ class BrowseViewModel(
                         q.hidden,
                         q.adult,
                         (q.filter as? Filter.Group)?.name,
-                        q.filter == Filter.Favourites,
-                        q.filter == Filter.Recent,
+                        when (q.filter) {
+                            Filter.Favourites -> ItemDao.ONLY_FAVOURITES
+                            Filter.Recent -> ItemDao.ONLY_RECENT
+                            else -> 0
+                        },
                         q.search,
                         Search.match(q.search),
                     )

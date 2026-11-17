@@ -207,7 +207,7 @@ class PlaylistWriter(
                 "sortOrder",
             )
         val COLUMNS = COLUMN_LIST.joinToString()
-        val SCHEMA =
+        const val SCHEMA =
             "id INTEGER NOT NULL PRIMARY KEY, kind INTEGER NOT NULL, name TEXT NOT NULL, searchName TEXT NOT NULL, " +
                 "groupName TEXT NOT NULL, region TEXT, adult INTEGER NOT NULL, logo TEXT, url TEXT NOT NULL, tvgId TEXT, " +
                 "showKey TEXT, showName TEXT, season INTEGER, episode INTEGER, sortOrder INTEGER NOT NULL"

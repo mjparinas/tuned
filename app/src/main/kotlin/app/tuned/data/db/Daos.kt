@@ -72,15 +72,15 @@ interface ItemDao {
                 AND ((' ' || i.searchName) GLOB '* no event*' OR (' ' || i.searchName) GLOB '* no live event*'))
             AND (:adult OR i.adult = 0)
             AND (:group IS NULL OR i.groupName = :group)
-            AND (:favouritesOnly = 0 OR f.itemId IS NOT NULL)
-            AND (:recentOnly = 0 OR h.itemId IS NOT NULL)
+            AND (:only != 1 OR f.itemId IS NOT NULL)
+            AND (:only != 2 OR h.itemId IS NOT NULL)
             AND (:query = '' OR i.id IN (SELECT docid FROM items_fts WHERE items_fts MATCH :match) OR i.tvgId IN (
                 -- An event search ("UFC") also finds the channels showing it now or within the hour.
                 SELECT channelId FROM programmes
                 WHERE start > :now - 86400000 AND start < :now + 3600000 AND stop > :now AND title LIKE '%' || :query || '%'
             ))
         GROUP BY i.id
-        ORDER BY CASE WHEN :recentOnly = 1 THEN h.watchedAt END DESC, CASE WHEN :favouritesOnly = 1 THEN f.position END, i.sortOrder
+        ORDER BY CASE WHEN :only = 2 THEN h.watchedAt END DESC, CASE WHEN :only = 1 THEN f.position END, i.sortOrder
         """,
     )
     fun channels(
@@ -88,8 +88,8 @@ interface ItemDao {
         hidden: List<String>,
         adult: Boolean,
         group: String?,
-        favouritesOnly: Boolean,
-        recentOnly: Boolean,
+        /** 0 for every channel, [ONLY_FAVOURITES] or [ONLY_RECENT]. */
+        only: Int,
         query: String,
         match: String,
     ): PagingSource<Int, ChannelWithNow>
@@ -322,6 +322,11 @@ interface ItemDao {
 
     @Query("SELECT region, COUNT(*) AS count FROM items WHERE region IS NOT NULL GROUP BY region ORDER BY count DESC")
     fun regions(): Flow<List<RegionCount>>
+
+    companion object {
+        const val ONLY_FAVOURITES = 1
+        const val ONLY_RECENT = 2
+    }
 }
 
 @Dao

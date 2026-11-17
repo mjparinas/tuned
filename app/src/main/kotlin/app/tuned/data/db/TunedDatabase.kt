@@ -167,14 +167,14 @@ abstract class TunedDatabase : RoomDatabase() {
                 }
             }
 
+        private const val FTS_INSERT = "INSERT INTO `items_fts`(`docid`, `searchName`) VALUES (NEW.`rowid`, NEW.`searchName`); END"
+
         private val ftsTriggers =
             listOf(
                 "BEFORE_UPDATE" to "BEFORE UPDATE ON `items` BEGIN DELETE FROM `items_fts` WHERE `docid`=OLD.`rowid`; END",
                 "BEFORE_DELETE" to "BEFORE DELETE ON `items` BEGIN DELETE FROM `items_fts` WHERE `docid`=OLD.`rowid`; END",
-                "AFTER_UPDATE" to
-                    "AFTER UPDATE ON `items` BEGIN INSERT INTO `items_fts`(`docid`, `searchName`) VALUES (NEW.`rowid`, NEW.`searchName`); END",
-                "AFTER_INSERT" to
-                    "AFTER INSERT ON `items` BEGIN INSERT INTO `items_fts`(`docid`, `searchName`) VALUES (NEW.`rowid`, NEW.`searchName`); END",
+                "AFTER_UPDATE" to "AFTER UPDATE ON `items` BEGIN $FTS_INSERT",
+                "AFTER_INSERT" to "AFTER INSERT ON `items` BEGIN $FTS_INSERT",
             )
     }
 }
