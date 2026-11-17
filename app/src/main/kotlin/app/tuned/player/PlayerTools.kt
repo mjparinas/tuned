@@ -35,8 +35,9 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 
 /**
- * The buttons at the top right of the player, shown with the controls: channels (live), aspect, quality, subtitle timing,
- * stream info and screen lock. Each stays out of the way until asked for, as everything in the player does.
+ * The buttons at the top right of the player, shown with the controls: channels (live), aspect, quality, subtitle
+ * search (with an OpenSubtitles key), subtitle timing, stream info and screen lock. Each stays out of the way until
+ * asked for, as everything in the player does.
  */
 @OptIn(UnstableApi::class)
 class PlayerTools(
@@ -55,11 +56,16 @@ class PlayerTools(
         val onFitChanged: (VideoFit) -> Unit,
         val subtitles: SubtitleTiming,
         val casting: () -> Boolean,
+        val subtitleSearch: SubtitleSearch,
     )
 
     private val density = activity.resources.displayMetrics.density
     private val guide = MiniGuide(activity, hooks.player, hooks.queue, beside = listOf(playerView, overlay), onClosed = { syncBack() })
     private val guideButton = button(R.drawable.ic_player_guide, R.string.player_guide) { toggleGuide() }
+    private val subtitleSearchButton =
+        button(R.drawable.ic_player_subtitle_search, R.string.subtitle_search) { hooks.subtitleSearch.pick() }.apply {
+            visibility = View.GONE
+        }
     private val unlockButton =
         button(R.drawable.ic_player_lock, R.string.player_unlock) { unlock() }.apply {
             visibility = View.GONE
@@ -100,6 +106,7 @@ class PlayerTools(
             addView(guideButton)
             addView(button(R.drawable.ic_player_aspect, R.string.player_fit) { nextFit() })
             addView(button(R.drawable.ic_player_quality, R.string.player_quality) { pickQuality() })
+            addView(subtitleSearchButton)
             addView(button(R.drawable.ic_player_subtitle_timing, R.string.subtitle_timing) { pickSubtitleTiming() })
             addView(button(R.drawable.ic_player_info, R.string.player_info) { toggleInfo() })
             addView(button(R.drawable.ic_player_lock, R.string.player_lock) { lock() })
@@ -143,6 +150,7 @@ class PlayerTools(
     fun onControls(visibility: Int) {
         if (visibility == View.VISIBLE) {
             guideButton.visibility = if (hooks.isLive() && hooks.queue().size > 1) View.VISIBLE else View.GONE
+            subtitleSearchButton.visibility = hooks.subtitleSearch.visibility()
         }
     }
 

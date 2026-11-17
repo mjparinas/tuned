@@ -34,6 +34,12 @@ data class Credentials(
             }
 }
 
+/** An OpenSubtitles.com sign-in. */
+data class SubtitleAccount(
+    val username: String,
+    val password: String,
+)
+
 /**
  * Keeps the login until the person signs out (Melvin, 2026-11-17). The values are encrypted with an AES-GCM key
  * that lives in the Android Keystore and never leaves it, so a copied preferences file is useless on its own.
@@ -87,6 +93,32 @@ class CredentialStore(
 
     fun forget(credentials: Credentials) = write(saved().filterNot { it.samePlaylist(credentials) })
 
+    /**
+     * The optional OpenSubtitles.com account (Settings › Subtitles), which raises the daily download limit. Kept
+     * encrypted like the login, and forgotten on sign-out with it.
+     */
+    fun subtitleAccount(): SubtitleAccount? {
+        val blob = prefs.getString(KEY_SUBTITLES, null) ?: return null
+        return attempt(TAG, "Couldn't read the OpenSubtitles account") {
+            val parts = decrypt(blob).split(SEP).map { String(Base64.decode(it, Base64.NO_WRAP)) }
+            SubtitleAccount(parts[0], parts[1])
+        }.getOrNull()
+    }
+
+    fun saveSubtitleAccount(account: SubtitleAccount?) {
+        prefs.edit {
+            if (account == null) {
+                remove(KEY_SUBTITLES)
+            } else {
+                val plain =
+                    listOf(account.username, account.password).joinToString(SEP) {
+                        Base64.encodeToString(it.toByteArray(), Base64.NO_WRAP)
+                    }
+                putString(KEY_SUBTITLES, encrypt(plain))
+            }
+        }
+    }
+
     private fun write(list: List<Credentials>) {
         prefs.edit { putString(KEY_SAVED, encrypt(list.joinToString(LINE, transform = ::encode))) }
     }
@@ -136,6 +168,7 @@ class CredentialStore(
         const val IV_BYTES = 12
         const val KEY_BLOB = "blob"
         const val KEY_SAVED = "saved"
+        const val KEY_SUBTITLES = "opensubtitles"
         const val LINE = "\n"
         const val SEP = ":"
     }

@@ -123,6 +123,10 @@ data class AppSettings(
     val userAgent: String = "",
     /** The person's own TMDB key (v3 key or v4 read token) for ratings and trailers; blank turns them off. */
     val tmdbKey: String = "",
+    /** The person's own OpenSubtitles.com API key for subtitle search; blank hides it. */
+    val openSubtitlesKey: String = "",
+    /** With captions on, a film or episode with no subtitles of its own fetches the best match by itself. */
+    val autoSubtitles: Boolean = true,
     val showGuideInList: Boolean = true,
     /** Look for a newer release on GitHub at start (copies from Play update through Play either way). */
     val checkUpdates: Boolean = true,
@@ -272,6 +276,8 @@ class SettingsRepository(
             skipIntroMs = p[K.skipIntroMs] ?: d.skipIntroMs,
             userAgent = p[K.userAgent] ?: d.userAgent,
             tmdbKey = p[K.tmdbKey] ?: d.tmdbKey,
+            openSubtitlesKey = p[K.openSubtitlesKey] ?: d.openSubtitlesKey,
+            autoSubtitles = p[K.autoSubtitles] ?: d.autoSubtitles,
             showGuideInList = p[K.showGuideInList] ?: d.showGuideInList,
             checkUpdates = p[K.checkUpdates] ?: d.checkUpdates,
             captions =
@@ -338,6 +344,8 @@ class SettingsRepository(
         p[K.skipIntroMs] = s.skipIntroMs
         p[K.userAgent] = s.userAgent
         p[K.tmdbKey] = s.tmdbKey
+        p[K.openSubtitlesKey] = s.openSubtitlesKey
+        p[K.autoSubtitles] = s.autoSubtitles
         p[K.showGuideInList] = s.showGuideInList
         p[K.checkUpdates] = s.checkUpdates
         val c = s.captions
@@ -404,6 +412,8 @@ class SettingsRepository(
         val skipIntroMs = longPreferencesKey("skip_intro_ms")
         val userAgent = stringPreferencesKey("user_agent")
         val tmdbKey = stringPreferencesKey("tmdb_key")
+        val openSubtitlesKey = stringPreferencesKey("opensubtitles_key")
+        val autoSubtitles = booleanPreferencesKey("auto_subtitles")
         val showGuideInList = booleanPreferencesKey("show_guide_in_list")
         val checkUpdates = booleanPreferencesKey("check_updates")
         val ccEnabled = booleanPreferencesKey("cc_enabled")

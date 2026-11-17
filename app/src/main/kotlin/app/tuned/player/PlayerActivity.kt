@@ -101,6 +101,23 @@ class PlayerActivity : FragmentActivity() {
     private lateinit var tools: PlayerTools
     private var cast: CastControl? = null
     private val subtitleTiming = SubtitleTiming()
+    private val subtitleSearch by lazy {
+        SubtitleSearch(
+            activity = this,
+            repository = container.subtitles,
+            player = { player },
+            current = {
+                player
+                    ?.currentMediaItem
+                    ?.mediaId
+                    ?.toLongOrNull()
+                    ?.let { id -> queue.firstOrNull { it.id == id } }
+            },
+            settings = { settings },
+            casting = { cast?.casting == true },
+            say = ::flash,
+        )
+    }
     private var reconnect: ConnectivityManager.NetworkCallback? = null
     private var autoTune: AutoTune? = null
 
@@ -146,6 +163,7 @@ class PlayerActivity : FragmentActivity() {
             tools.applyFit(settings.videoFit)
             if (settings.playerGestures) setUpGestures()
             if (settings.autoReconnect) reconnectWhenOnline()
+            subtitleSearch.refresh()
             val query = intent.getStringExtra(EXTRA_TUNE)
             if (query != null) {
                 startTune(query)
@@ -281,6 +299,7 @@ class PlayerActivity : FragmentActivity() {
                         },
                         subtitles = subtitleTiming,
                         casting = { cast?.casting == true },
+                        subtitleSearch = subtitleSearch,
                     ),
             )
         overlay.addView(tools.toolbar)
@@ -415,9 +434,19 @@ class PlayerActivity : FragmentActivity() {
 
         // Saved films and episodes play from the device.
         val local = container.offline.files(queue.map { it.id })
-        val mediaItems = queue.map { it.toMediaItem(local[it.id]) }
+        // Subtitles fetched from OpenSubtitles before come back with their film, with no download.
+        val subtitles = if (live) emptyMap() else container.subtitles.saved(queue.map { it.id })
+        val mediaItems = queue.map { it.toMediaItem(local[it.id], subtitles[it.id]) }
         val index = queue.indexOfFirst { it.id == item.id }.coerceAtLeast(0)
         val resumeAt = if (!live && settings.resumePlayback) resumePosition(item.id) else C.TIME_UNSET
+        subtitles[queue[index].id]?.let { file ->
+            exo.trackSelectionParameters =
+                exo.trackSelectionParameters
+                    .buildUpon()
+                    .setTrackTypeDisabled(C.TRACK_TYPE_TEXT, false)
+                    .setPreferredTextLanguage(SubtitleSearch.languageOf(file))
+                    .build()
+        }
         exo.setMediaItems(mediaItems, index, resumeAt)
         exo.pauseAtEndOfMediaItems = kind == ContentKind.SERIES && !settings.autoPlayNext
         val castNow = cast?.takeIf { it.casting }
@@ -486,6 +515,7 @@ class PlayerActivity : FragmentActivity() {
             .apply {
                 addListener(listener(live))
                 addListener(skipIntro.listener)
+                addListener(subtitleSearch.listener)
             }
     }
 
@@ -663,11 +693,15 @@ class PlayerActivity : FragmentActivity() {
 
     private fun live(): Boolean = queue.firstOrNull()?.kind == ContentKind.LIVE.code
 
-    private fun ItemEntity.toMediaItem(file: File?): MediaItem = MediaItem
+    private fun ItemEntity.toMediaItem(
+        file: File?,
+        subtitles: File?,
+    ): MediaItem = MediaItem
         .Builder()
         .setMediaId(id.toString())
         .setUri(file?.toUri() ?: url.toUri())
         .setMediaMetadata(MediaMetadata.Builder().setTitle(name).build())
+        .apply { subtitles?.let { setSubtitleConfigurations(listOf(SubtitleSearch.track(it, SubtitleSearch.languageOf(it)))) } }
         .build()
 
     private fun hideSystemBars() {

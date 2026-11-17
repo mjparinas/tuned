@@ -60,6 +60,12 @@ class MetadataRepository(
         .tmdbKey
         .isNotBlank()
 
+    /** The TMDB id the device already knows for [name], without asking the network (subtitle search matches by it). */
+    suspend fun knownId(
+        name: String,
+        tv: Boolean,
+    ): Long? = dao.get(cacheKey(name, tv))?.takeIf { it.found && it.tmdbId > 0 }?.tmdbId
+
     /** What the device already knows, without asking the network. */
     suspend fun cached(
         name: String,

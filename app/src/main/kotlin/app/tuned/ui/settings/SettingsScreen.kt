@@ -453,6 +453,7 @@ fun SettingsScreen(
                     vm.update { it.copy(tmdbKey = key.trim()) }
                 }
             }
+            SubtitleSettings(settings, vm::update)
 
             SectionHeader(stringResource(R.string.settings_advanced))
             var editUa by remember { mutableStateOf(false) }

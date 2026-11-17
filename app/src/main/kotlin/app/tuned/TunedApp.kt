@@ -17,6 +17,7 @@ import app.tuned.data.MetadataRepository
 import app.tuned.data.Offline
 import app.tuned.data.Picks
 import app.tuned.data.SettingsRepository
+import app.tuned.data.SubtitleRepository
 import app.tuned.data.SyncRepository
 import app.tuned.data.TuneRepository
 import app.tuned.data.db.TunedDatabase
@@ -79,6 +80,7 @@ class AppContainer(
     val offline by lazy { Offline(context, db, settings) }
     val picks by lazy { Picks(db, appScope) }
     val metadata by lazy { MetadataRepository(http, settings, db.metadata()) }
+    val subtitles by lazy { SubtitleRepository(http, settings, credentials, metadata, context.filesDir.resolve("subtitles")) }
 
     /** True while the player is open; downloads and channel scans hold back so only one stream is ever open. */
     val playerOpen = MutableStateFlow(false)
