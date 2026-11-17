@@ -58,6 +58,9 @@ android {
         warningsAsErrors = true
         abortOnError = true
         checkDependencies = true
+        // Every finding in the job log too, not only in the uploaded HTML report.
+        textReport = true
+        textOutput = file("stdout")
         // Versions are Dependabot's job (weekly, grouped); a newer release on Maven must not fail an unrelated change.
         disable += setOf("GradleDependency", "NewerVersionAvailable", "AndroidGradlePluginVersion", "OldTargetApi")
         // IPTV servers stream over plain HTTP (docs/decisions/security.md).
@@ -70,6 +73,18 @@ android {
 
     testOptions {
         unitTests.isReturnDefaultValues = true
+        unitTests.isIncludeAndroidResources = true
+        unitTests.all { test ->
+            // Screenshots (./gradlew :app:testDebugUnitTest -Pscreenshots) render every screen with sample data into
+            // app/build/outputs/roborazzi. They are slow, so ordinary test runs skip them.
+            if (project.hasProperty("screenshots")) {
+                test.filter.includeTestsMatching("app.tuned.screenshots.*")
+                test.systemProperty("roborazzi.test.record", "true")
+                test.systemProperty("roborazzi.record.filePathStrategy", "relativePathFromRoborazziContextOutputDirectory")
+            } else {
+                test.exclude("app/tuned/screenshots/**")
+            }
+        }
     }
 }
 
@@ -128,7 +143,15 @@ dependencies {
     // Play's update library pulls in an old Fragment; 1.3+ is needed for the activity result API it uses.
     implementation(libs.androidx.fragment)
 
+    testImplementation(platform(libs.androidx.compose.bom))
     testImplementation(libs.junit)
     testImplementation(kotlin("test-junit"))
     testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(libs.robolectric)
+    testImplementation(libs.roborazzi.compose)
+    testImplementation(libs.roborazzi.junit)
+    testImplementation(libs.androidx.compose.ui.test.junit4)
+    testImplementation(libs.androidx.work.testing)
+    testImplementation(libs.coil.test)
+    debugImplementation(libs.androidx.compose.ui.test.manifest)
 }

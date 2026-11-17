@@ -24,7 +24,8 @@ import java.util.concurrent.TimeUnit
 class SyncScheduler(
     context: Context,
 ) {
-    private val work = WorkManager.getInstance(context)
+    // Looked up on first use, so WorkManager doesn't start before the first frame.
+    private val work by lazy { WorkManager.getInstance(context) }
 
     fun schedule(
         playlistHours: Int,

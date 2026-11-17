@@ -1,6 +1,7 @@
 package app.tuned.ui.settings
 
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
 import app.tuned.R
 import java.util.Locale
@@ -12,5 +13,7 @@ val languageCodes = listOf("", "en", "fr", "es", "de", "it", "pt", "ar", "hi", "
 fun languageName(code: String): String = if (code.isBlank()) {
     stringResource(R.string.language_default)
 } else {
-    Locale.forLanguageTag(code).getDisplayLanguage(Locale.getDefault()).replaceFirstChar { it.titlecase(Locale.getDefault()) }
+    // Read through the configuration, so the names follow a change of the device language.
+    val locale = LocalConfiguration.current.locales[0]
+    Locale.forLanguageTag(code).getDisplayLanguage(locale).replaceFirstChar { it.titlecase(locale) }
 }
