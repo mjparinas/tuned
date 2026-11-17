@@ -3,10 +3,11 @@ package app.tuned.data.db
 import androidx.room.ColumnInfo
 import androidx.room.Embedded
 import androidx.room.Entity
+import androidx.room.Fts4
 import androidx.room.Index
 import androidx.room.PrimaryKey
 
-/** One stream from the playlist. Rows are replaced as a whole on every refresh, inside one transaction. */
+/** One stream from the playlist. Each refresh updates rows in place by their stable id ([PlaylistWriter]). */
 @Entity(
     tableName = "items",
     indices = [
@@ -104,7 +105,7 @@ data class LiveLink(
     val url: String,
 )
 
-@Entity(tableName = "programmes", indices = [Index(value = ["channelId", "start"]), Index(value = ["stop"])])
+@Entity(tableName = "programmes", indices = [Index(value = ["channelId", "start"]), Index(value = ["stop"]), Index(value = ["start"])])
 data class ProgrammeEntity(
     @PrimaryKey(autoGenerate = true) val rowId: Long = 0,
     val channelId: String,
@@ -264,4 +265,14 @@ data class ScanReportRow(
     val lastFailAt: Long,
     val reason: String?,
     val hidden: Boolean,
+)
+
+/**
+ * The full-text index over stream names that search runs on: whole words and the start of words ("top gu" finds
+ * "Top Gun"), straight from an index instead of reading every name. Room keeps it in step with `items` by triggers.
+ */
+@Fts4(contentEntity = ItemEntity::class)
+@Entity(tableName = "items_fts")
+data class ItemFts(
+    val searchName: String,
 )

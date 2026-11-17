@@ -32,7 +32,10 @@ class PlaceholderFilterTest {
             ),
         )
 
-        suspend fun search(hidden: List<String>) = db.items().searchChannels("ppv", 0, hidden, adult = false, limit = 10).map { it.id }
+        suspend fun search(hidden: List<String>) =
+            db.items().searchChannels("ppv", Search.match("ppv"), 0, hidden, adult = false, limit = 10).map {
+                it.id
+            }
 
         assertEquals(listOf(2L), search(listOf(Placeholders.HIDDEN_KEY)))
         assertEquals(listOf(1L, 2L), search(emptyList()))

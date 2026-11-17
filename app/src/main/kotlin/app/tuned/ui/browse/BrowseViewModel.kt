@@ -15,8 +15,8 @@ import app.tuned.data.AppSettings
 import app.tuned.data.SyncProgress
 import app.tuned.data.db.ChannelWithNow
 import app.tuned.data.db.ContinueRow
-import app.tuned.data.db.FavouriteEntity
 import app.tuned.data.db.GroupCount
+import app.tuned.data.db.ItemDao
 import app.tuned.data.db.ItemEntity
 import app.tuned.data.db.ShowSummary
 import app.tuned.data.hiddenKeys
@@ -102,9 +102,13 @@ class BrowseViewModel(
                         q.hidden,
                         q.adult,
                         (q.filter as? Filter.Group)?.name,
-                        q.filter == Filter.Favourites,
-                        q.filter == Filter.Recent,
+                        when (q.filter) {
+                            Filter.Favourites -> ItemDao.ONLY_FAVOURITES
+                            Filter.Recent -> ItemDao.ONLY_RECENT
+                            else -> 0
+                        },
                         q.search,
+                        Search.match(q.search),
                     )
                 }.flow
             }.cachedIn(viewModelScope)
@@ -120,6 +124,7 @@ class BrowseViewModel(
                         (q.filter as? Filter.Group)?.name,
                         q.filter == Filter.Favourites,
                         q.search,
+                        Search.match(q.search),
                     )
                 }.flow
             }.cachedIn(viewModelScope)
@@ -128,7 +133,14 @@ class BrowseViewModel(
         query(ContentKind.SERIES)
             .flatMapLatest { q ->
                 Pager(config) {
-                    items.shows(q.hidden, q.adult, (q.filter as? Filter.Group)?.name, q.filter == Filter.Favourites, q.search)
+                    items.shows(
+                        q.hidden,
+                        q.adult,
+                        (q.filter as? Filter.Group)?.name,
+                        q.filter == Filter.Favourites,
+                        q.search,
+                        Search.match(q.search),
+                    )
                 }.flow
             }.cachedIn(viewModelScope)
 
@@ -166,12 +178,8 @@ class BrowseViewModel(
             .map { it == 0 }
             .stateIn(viewModelScope, SharingStarted.Eagerly, null)
 
-    val favouriteIds: StateFlow<Set<Long>> =
-        container.db
-            .library()
-            .favouriteIds()
-            .map { it.toHashSet() }
-            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptySet())
+    /** Shown changed the moment a heart is tapped ([app.tuned.data.Picks]). */
+    val favouriteIds: StateFlow<Set<Long>> = container.picks.favourites.value
 
     val lastError = settings.map { it?.lastSyncError.orEmpty() }.stateIn(viewModelScope, SharingStarted.Eagerly, "")
 
@@ -195,10 +203,7 @@ class BrowseViewModel(
         itemId: Long,
         favourite: Boolean,
     ) {
-        viewModelScope.launch {
-            val library = container.db.library()
-            if (favourite) library.removeFavourite(itemId) else library.addFavourite(FavouriteEntity(itemId, System.currentTimeMillis()))
-        }
+        container.picks.setFavourite(itemId, !favourite)
     }
 
     /** Hides a group from its section everywhere; Settings › Hidden groups brings it back. */

@@ -13,6 +13,7 @@ import app.tuned.data.CredentialStore
 import app.tuned.data.Credentials
 import app.tuned.data.MetadataRepository
 import app.tuned.data.Offline
+import app.tuned.data.Picks
 import app.tuned.data.SettingsRepository
 import app.tuned.data.SyncRepository
 import app.tuned.data.TuneRepository
@@ -70,6 +71,7 @@ class AppContainer(
     val backup by lazy { BackupRepository(credentials, settings, db) }
     val reminders by lazy { Reminders(context) }
     val offline by lazy { Offline(context, db, settings) }
+    val picks by lazy { Picks(db, appScope) }
     val metadata by lazy { MetadataRepository(http, settings, db.metadata()) }
 
     /** True while the player is open; downloads and channel scans hold back so only one stream is ever open. */

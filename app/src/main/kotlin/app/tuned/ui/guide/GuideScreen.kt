@@ -54,7 +54,6 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import app.tuned.R
 import app.tuned.container
 import app.tuned.core.CatchUp
-import app.tuned.data.db.FavouriteEntity
 import app.tuned.data.db.ItemEntity
 import app.tuned.data.db.ProgrammeEntity
 import app.tuned.player.PlayerActivity
@@ -103,10 +102,10 @@ class GuideViewModel(
                 c.tvgId?.let { db.programmes().upcoming(it, from, if (days > 0) LIMIT_WITH_PAST else LIMIT) } ?: emptyFlow()
             }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
+    private val picks = app.container.picks
+
     val favourite: StateFlow<Boolean> =
-        channel
-            .filterNotNull()
-            .flatMapLatest { db.library().isFavourite(it.id) }
+        combine(channel.filterNotNull(), picks.favourites.value) { c, ids -> c.id in ids }
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), false)
 
     private val reminders = app.container.reminders
@@ -134,15 +133,7 @@ class GuideViewModel(
 
     fun toggleFavourite() {
         val c = channel.value ?: return
-        viewModelScope.launch {
-            if (favourite.value) {
-                db.library().removeFavourite(
-                    c.id,
-                )
-            } else {
-                db.library().addFavourite(FavouriteEntity(c.id, System.currentTimeMillis()))
-            }
-        }
+        picks.setFavourite(c.id, !favourite.value)
     }
 }
 

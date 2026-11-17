@@ -52,7 +52,6 @@ import app.tuned.container
 import app.tuned.core.Search
 import app.tuned.core.Titles
 import app.tuned.data.db.ChannelWithNow
-import app.tuned.data.db.FavouriteEntity
 import app.tuned.data.db.ItemEntity
 import app.tuned.data.db.ShowSummary
 import app.tuned.data.hiddenKeys
@@ -62,15 +61,15 @@ import app.tuned.ui.common.VoiceSearchButton
 import app.tuned.ui.common.focusRing
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.mapLatest
 import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.launch
 
 /** One search across Live TV, Movies and Shows, typed or spoken (also what the Assistant and TV remote open). */
 @OptIn(ExperimentalCoroutinesApi::class, FlowPreview::class)
@@ -99,30 +98,25 @@ class SearchViewModel(
                     null
                 } else {
                     val items = container.db.items()
-                    Results(
-                        channels = items.searchChannels(text, System.currentTimeMillis(), hidden, adult, LIMIT),
-                        movies = items.searchMovies(text, hidden, adult, LIMIT),
-                        shows = items.searchShows(text, hidden, adult, LIMIT),
-                    )
+                    val match = Search.match(text)
+                    // The three lists are separate reads, so they run side by side on the database's reader connections.
+                    coroutineScope {
+                        val channels = async { items.searchChannels(text, match, System.currentTimeMillis(), hidden, adult, LIMIT) }
+                        val movies = async { items.searchMovies(match, hidden, adult, LIMIT) }
+                        val shows = async { items.searchShows(match, hidden, adult, LIMIT) }
+                        Results(channels.await(), movies.await(), shows.await())
+                    }
                 }
             }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
     /** Which channels are favourites, live, so a heart fills the moment it's tapped. */
-    val favourites =
-        container.db
-            .library()
-            .favouriteIds()
-            .map { it.toHashSet() }
-            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptySet())
+    val favourites = container.picks.favourites.value
 
     fun toggleFavourite(
         itemId: Long,
         favourite: Boolean,
     ) {
-        viewModelScope.launch {
-            val library = container.db.library()
-            if (favourite) library.removeFavourite(itemId) else library.addFavourite(FavouriteEntity(itemId, System.currentTimeMillis()))
-        }
+        container.picks.setFavourite(itemId, !favourite)
     }
 
     private companion object {

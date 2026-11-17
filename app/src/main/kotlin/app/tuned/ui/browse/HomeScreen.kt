@@ -425,6 +425,7 @@ private fun LiveList(
     onOpenGuide: (Long) -> Unit,
 ) {
     val channels = vm.channels.collectAsLazyPagingItems()
+    val favourites by vm.favouriteIds.collectAsStateWithLifecycle()
     val state = rememberLazyListState()
     LazyColumn(
         state = state,
@@ -437,12 +438,14 @@ private fun LiveList(
             if (channel == null) {
                 Spacer(Modifier.height(64.dp))
             } else {
+                val favourite = channel.id in favourites
                 ChannelRow(
                     channel = channel,
+                    favourite = favourite,
                     showGuide = showGuide,
                     onPlay = { onPlay(channel.id) },
                     onGuide = { onOpenGuide(channel.id) },
-                    onToggleFavourite = { vm.toggleFavourite(channel.id, channel.favourite) },
+                    onToggleFavourite = { vm.toggleFavourite(channel.id, favourite) },
                 )
             }
         }
@@ -468,6 +471,7 @@ internal fun FavouriteButton(
 @Composable
 private fun ChannelRow(
     channel: ChannelWithNow,
+    favourite: Boolean,
     showGuide: Boolean,
     onPlay: () -> Unit,
     onGuide: () -> Unit,
@@ -522,7 +526,7 @@ private fun ChannelRow(
                     }
                 }
             }
-            FavouriteButton(channel.favourite, onToggleFavourite)
+            FavouriteButton(favourite, onToggleFavourite)
             if (channel.tvgId != null) {
                 IconButton(onClick = onGuide) {
                     Icon(Icons.AutoMirrored.Filled.List, contentDescription = stringResource(R.string.guide_open))
@@ -531,7 +535,7 @@ private fun ChannelRow(
         }
         DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
             DropdownMenuItem(
-                text = { Text(stringResource(if (channel.favourite) R.string.favourite_remove else R.string.favourite_add)) },
+                text = { Text(stringResource(if (favourite) R.string.favourite_remove else R.string.favourite_add)) },
                 onClick = {
                     menu = false
                     onToggleFavourite()

@@ -15,7 +15,11 @@ import kotlinx.coroutines.flow.Flow
  */
 @Dao
 interface ItemDao {
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    /**
+     * An update, not a REPLACE, for a stream already cached: REPLACE deletes the old row without firing delete
+     * triggers, which would leave its words behind in the search index ([ItemFts]).
+     */
+    @Upsert
     suspend fun insertAll(items: List<ItemEntity>)
 
     @Query("DELETE FROM items")
@@ -23,6 +27,9 @@ interface ItemDao {
 
     @Query("SELECT id FROM items")
     suspend fun allIds(): List<Long>
+
+    @Query("SELECT EXISTS(SELECT 1 FROM items)")
+    suspend fun any(): Boolean
 
     @Query("DELETE FROM items WHERE id IN (:ids)")
     suspend fun deleteIds(ids: List<Long>)
@@ -65,14 +72,15 @@ interface ItemDao {
                 AND ((' ' || i.searchName) GLOB '* no event*' OR (' ' || i.searchName) GLOB '* no live event*'))
             AND (:adult OR i.adult = 0)
             AND (:group IS NULL OR i.groupName = :group)
-            AND (:favouritesOnly = 0 OR f.itemId IS NOT NULL)
-            AND (:recentOnly = 0 OR h.itemId IS NOT NULL)
-            AND (:query = '' OR i.searchName LIKE '%' || :query || '%' OR i.tvgId IN (
+            AND (:only != 1 OR f.itemId IS NOT NULL)
+            AND (:only != 2 OR h.itemId IS NOT NULL)
+            AND (:query = '' OR i.id IN (SELECT docid FROM items_fts WHERE items_fts MATCH :match) OR i.tvgId IN (
                 -- An event search ("UFC") also finds the channels showing it now or within the hour.
-                SELECT channelId FROM programmes WHERE title LIKE '%' || :query || '%' AND stop > :now AND start < :now + 3600000
+                SELECT channelId FROM programmes
+                WHERE start > :now - 86400000 AND start < :now + 3600000 AND stop > :now AND title LIKE '%' || :query || '%'
             ))
         GROUP BY i.id
-        ORDER BY CASE WHEN :recentOnly = 1 THEN h.watchedAt END DESC, CASE WHEN :favouritesOnly = 1 THEN f.position END, i.sortOrder
+        ORDER BY CASE WHEN :only = 2 THEN h.watchedAt END DESC, CASE WHEN :only = 1 THEN f.position END, i.sortOrder
         """,
     )
     fun channels(
@@ -80,9 +88,10 @@ interface ItemDao {
         hidden: List<String>,
         adult: Boolean,
         group: String?,
-        favouritesOnly: Boolean,
-        recentOnly: Boolean,
+        /** 0 for every channel, [ONLY_FAVOURITES] or [ONLY_RECENT]. */
+        only: Int,
         query: String,
+        match: String,
     ): PagingSource<Int, ChannelWithNow>
 
     /** Movies or episodes started and not finished, last watched first, for the Continue Watching row. */
@@ -119,7 +128,7 @@ interface ItemDao {
             AND (:adult OR i.adult = 0)
             AND (:group IS NULL OR i.groupName = :group)
             AND (:favouritesOnly = 0 OR i.id IN (SELECT itemId FROM favourites))
-            AND (:query = '' OR i.searchName LIKE '%' || :query || '%')
+            AND (:query = '' OR i.id IN (SELECT docid FROM items_fts WHERE items_fts MATCH :match))
         ORDER BY i.sortOrder
         """,
     )
@@ -130,6 +139,7 @@ interface ItemDao {
         group: String?,
         favouritesOnly: Boolean,
         query: String,
+        match: String,
     ): PagingSource<Int, ItemEntity>
 
     @Query(
@@ -146,7 +156,7 @@ interface ItemDao {
             AND (:adult OR i.adult = 0)
             AND (:group IS NULL OR i.groupName = :group)
             AND (:favouritesOnly = 0 OR i.id IN (SELECT itemId FROM favourites))
-            AND (:query = '' OR i.searchName LIKE '%' || :query || '%')
+            AND (:query = '' OR i.id IN (SELECT docid FROM items_fts WHERE items_fts MATCH :match))
         GROUP BY showKey
         ORDER BY MIN(sortOrder)
         """,
@@ -157,6 +167,7 @@ interface ItemDao {
         group: String?,
         favouritesOnly: Boolean,
         query: String,
+        match: String,
     ): PagingSource<Int, ShowSummary>
 
     /** Search everywhere: the first few live channels for a search (names, or what's on now and within the hour). */
@@ -174,8 +185,9 @@ interface ItemDao {
             AND NOT ('placeholder' IN (:hidden) AND i.kind = 0
                 AND ((' ' || i.searchName) GLOB '* no event*' OR (' ' || i.searchName) GLOB '* no live event*'))
             AND (:adult OR i.adult = 0)
-            AND (i.searchName LIKE '%' || :query || '%' OR i.tvgId IN (
-                SELECT channelId FROM programmes WHERE title LIKE '%' || :query || '%' AND stop > :now AND start < :now + 3600000
+            AND (i.id IN (SELECT docid FROM items_fts WHERE items_fts MATCH :match) OR i.tvgId IN (
+                SELECT channelId FROM programmes
+                WHERE start > :now - 86400000 AND start < :now + 3600000 AND stop > :now AND title LIKE '%' || :query || '%'
             ))
         GROUP BY i.id
         ORDER BY (f.itemId IS NULL), i.sortOrder
@@ -184,6 +196,7 @@ interface ItemDao {
     )
     suspend fun searchChannels(
         query: String,
+        match: String,
         now: Long,
         hidden: List<String>,
         adult: Boolean,
@@ -193,7 +206,7 @@ interface ItemDao {
     @Query(
         """
         SELECT * FROM items i
-        WHERE i.kind = 1 AND i.searchName LIKE '%' || :query || '%'
+        WHERE i.kind = 1 AND i.id IN (SELECT docid FROM items_fts WHERE items_fts MATCH :match)
             AND (i.region IS NULL OR i.region NOT IN (:hidden)) AND ('g:' || i.kind || ':' || i.groupName) NOT IN (:hidden)
             AND NOT ('scan:dead' IN (:hidden) AND i.id IN (SELECT itemId FROM channel_scan WHERE hidden = 1))
             AND NOT ('placeholder' IN (:hidden) AND i.kind = 0
@@ -204,7 +217,7 @@ interface ItemDao {
         """,
     )
     suspend fun searchMovies(
-        query: String,
+        match: String,
         hidden: List<String>,
         adult: Boolean,
         limit: Int,
@@ -216,7 +229,7 @@ interface ItemDao {
             SUM(CASE WHEN i.showKey IN (SELECT showKey FROM seen_episodes) AND i.id NOT IN (SELECT itemId FROM seen_episodes)
                 THEN 1 ELSE 0 END) AS newEpisodes
         FROM items i
-        WHERE i.kind = 2 AND i.showKey IS NOT NULL AND i.searchName LIKE '%' || :query || '%'
+        WHERE i.kind = 2 AND i.showKey IS NOT NULL AND i.id IN (SELECT docid FROM items_fts WHERE items_fts MATCH :match)
             AND (i.region IS NULL OR i.region NOT IN (:hidden)) AND ('g:' || i.kind || ':' || i.groupName) NOT IN (:hidden)
             AND NOT ('scan:dead' IN (:hidden) AND i.id IN (SELECT itemId FROM channel_scan WHERE hidden = 1))
             AND NOT ('placeholder' IN (:hidden) AND i.kind = 0
@@ -228,7 +241,7 @@ interface ItemDao {
         """,
     )
     suspend fun searchShows(
-        query: String,
+        match: String,
         hidden: List<String>,
         adult: Boolean,
         limit: Int,
@@ -281,7 +294,8 @@ interface ItemDao {
         SELECT i.id, i.name, i.groupName, i.region,
             (i.searchName LIKE '%' || :normalized || '%') AS nameMatch,
             (i.tvgId IN (
-                SELECT channelId FROM programmes WHERE title LIKE '%' || :query || '%' AND stop > :from AND start < :to
+                SELECT channelId FROM programmes
+                WHERE start > :from - 86400000 AND start < :to AND stop > :from AND title LIKE '%' || :query || '%'
             )) AS guideMatch,
             h.okAt, h.deadAt, h.height
         FROM items i
@@ -308,6 +322,11 @@ interface ItemDao {
 
     @Query("SELECT region, COUNT(*) AS count FROM items WHERE region IS NOT NULL GROUP BY region ORDER BY count DESC")
     fun regions(): Flow<List<RegionCount>>
+
+    companion object {
+        const val ONLY_FAVOURITES = 1
+        const val ONLY_RECENT = 2
+    }
 }
 
 @Dao
