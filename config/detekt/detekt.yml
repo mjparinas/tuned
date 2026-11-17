@@ -1,0 +1,46 @@
+# Builds on detekt's defaults (buildUponDefaultConfig). Only the rules that fight Compose or ktlint are changed here.
+naming:
+  # A screen and its ViewModel live in one file on purpose: they change together.
+  MatchingDeclarationName:
+    active: false
+  FunctionNaming:
+    ignoreAnnotated: ["Composable"]
+  TopLevelPropertyNaming:
+    constantPattern: "[A-Z][A-Za-z0-9_]*"
+complexity:
+  ComplexCondition:
+    threshold: 6
+  LongMethod:
+    threshold: 80
+    ignoreAnnotated: ["Composable"]
+  LongParameterList:
+    functionThreshold: 8
+    constructorThreshold: 10
+    ignoreDefaultParameters: true
+    ignoreAnnotated: ["Composable"]
+  CyclomaticComplexMethod:
+    threshold: 20
+    ignoreAnnotated: ["Composable"]
+  TooManyFunctions:
+    thresholdInFiles: 30
+    thresholdInClasses: 30
+    thresholdInInterfaces: 30
+    thresholdInObjects: 30
+  NestedBlockDepth:
+    threshold: 5
+style:
+  MagicNumber:
+    active: false
+  MaxLineLength:
+    maxLineLength: 140
+  WildcardImport:
+    active: true
+  ReturnCount:
+    max: 6
+    excludeGuardClauses: true
+  UnusedPrivateMember:
+    ignoreAnnotated: ["Preview"]
+  ForbiddenComment:
+    active: false
+  LoopWithTooManyJumpStatements:
+    maxJumpCount: 3

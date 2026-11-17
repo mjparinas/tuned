@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- IPTV servers (eros4k.ddns.net included) serve playlists and streams over plain HTTP on any host, so cleartext
+     has to be allowed everywhere. The login never leaves the device except to that server. See docs/decisions/security.md. -->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="true">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+</network-security-config>

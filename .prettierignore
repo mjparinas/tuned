@@ -1,0 +1,10 @@
+# Kotlin, Gradle and Android XML are ktlint's and Android Lint's; generated and vendored files are left alone.
+**/build/
+.gradle/
+node_modules/
+package-lock.json
+app/schemas/
+*.kt
+*.kts
+*.xml
+gradle/wrapper/

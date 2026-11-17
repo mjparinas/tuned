@@ -1,0 +1,14 @@
+name: Set up Tuned
+description: Java 21 and Gradle with its caches (dependencies, wrapper, build cache), shared by every Gradle job.
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-java@v6
+      with:
+        distribution: temurin
+        java-version: 21
+    # Caches ~/.gradle (dependencies, wrapper, configuration and build caches) keyed on the build files. Only runs
+    # on main and staging write the cache, so pull requests read it without filling it with one-off entries.
+    - uses: gradle/actions/setup-gradle@v6
+      with:
+        cache-read-only: ${{ github.ref != 'refs/heads/main' && github.ref != 'refs/heads/staging' }}
