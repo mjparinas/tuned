@@ -179,6 +179,15 @@ data class TuneRow(
     val okAt: Long?,
     val deadAt: Long?,
     val height: Int?,
+    /** Hidden in the lists (dead in a scan, or a "No event" placeholder); auto-tune still tries event channels. */
+    val held: Boolean,
+)
+
+/** A channel a scan hid, with its name, for [ChannelScanDao.hiddenNames]. */
+data class HiddenScanRow(
+    val itemId: Long,
+    val name: String,
+    val groupName: String,
 )
 
 /** A live channel with what's on now (from the guide), for the Live TV list. */

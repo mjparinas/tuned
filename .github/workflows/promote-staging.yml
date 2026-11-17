@@ -1,18 +1,17 @@
 name: Promote staging
 
 # Copied from Liftsmith (Melvin, 2026-11-17: same dev tooling). Pull requests merge into `staging`; this job lands
-# them on `main` once a night, which starts Release (a Play internal build that installed copies update to). It
+# them on `main` when run by hand, which starts Release (a Play internal build that installed copies update to). It
 # promotes only when CI passed on staging's latest commit, and merges `main` back into `staging` afterwards.
-# Run it by hand from the Actions tab (Run workflow) to ship sooner.
+# Run it from the Actions tab (Run workflow) once Melvin says to release.
 #
 # No setup needed while `main` is unprotected: the job merges staging into main directly. If `main` later requires
 # pull requests, turn on Settings > Actions > General > "Allow GitHub Actions to create and approve pull requests", or
 # add a repository secret PROMOTE_TOKEN (fine-grained, Contents and Pull requests write on this repository). A merge made with GITHUB_TOKEN doesn't fire release.yml's `push` trigger, so without
 # PROMOTE_TOKEN the job dispatches Release itself.
 
+# No nightly schedule (Melvin, 2026-11-17): every production release needs his go-ahead, so this runs only by hand.
 on:
-  schedule:
-    - cron: "0 9 * * *" # 09:00 UTC, about 1-2 am Pacific
   workflow_dispatch:
 
 permissions:
@@ -109,7 +108,7 @@ jobs:
               const open = await github.rest.pulls.list({ owner, repo, state: 'open', head: `${owner}:staging`, base: 'main' });
               const pr = open.data[0] ?? (await github.rest.pulls.create({
                 owner, repo, head: 'staging', base: 'main', title,
-                body: 'Opened by the nightly "Promote staging" workflow after CI passed on staging.',
+                body: 'Opened by the "Promote staging" workflow after CI passed on staging.',
               })).data;
               const merged = await github.rest.pulls.merge({ owner, repo, pull_number: pr.number, merge_method: 'merge', sha: staging, commit_title: title });
               core.notice(`Merged pull request #${pr.number}; main is now ${merged.data.sha.slice(0, 7)}.`);
