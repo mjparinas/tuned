@@ -436,7 +436,12 @@ private fun ProgrammeCell(
             past -> colours.surfaceContainerLow
             else -> colours.surfaceContainerHigh
         }
-    val text = if (past) colours.onSurfaceVariant else if (onNow) colours.onPrimaryContainer else colours.onSurface
+    val text =
+        when {
+            past -> colours.onSurfaceVariant
+            onNow -> colours.onPrimaryContainer
+            else -> colours.onSurface
+        }
     Box(
         Modifier
             .offset { IntOffset(x(), 0) }

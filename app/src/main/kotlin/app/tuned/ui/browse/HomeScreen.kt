@@ -253,12 +253,7 @@ fun HomeScreen(
                 CategoryChips(vm, tab.kind)
                 val lists: @Composable () -> Unit = {
                     when (tab.kind) {
-                        ContentKind.LIVE ->
-                            if (settings.liveGrid) {
-                                GuideGridView(vm.channels.collectAsLazyPagingItems(), settings.guideDays, onPlay, openGuide)
-                            } else {
-                                LiveList(vm, settings.showGuideInList, onPlay, openGuide)
-                            }
+                        ContentKind.LIVE -> LiveTab(vm, settings, onPlay, openGuide)
                         ContentKind.MOVIE -> MovieGrid(vm, onPlay, openMovie)
                         ContentKind.SERIES -> ShowGrid(vm, openShow, onPlay)
                     }
@@ -437,6 +432,21 @@ private fun CategoryChips(
                     },
             )
         }
+    }
+}
+
+/** Live TV as the channel list, or as the grid guide when that's switched on. */
+@Composable
+private fun LiveTab(
+    vm: BrowseViewModel,
+    settings: AppSettings,
+    onPlay: (Long) -> Unit,
+    onOpenGuide: (Long) -> Unit,
+) {
+    if (settings.liveGrid) {
+        GuideGridView(vm.channels.collectAsLazyPagingItems(), settings.guideDays, onPlay, onOpenGuide)
+    } else {
+        LiveList(vm, settings.showGuideInList, onPlay, onOpenGuide)
     }
 }
 
