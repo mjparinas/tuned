@@ -127,12 +127,10 @@ fun HomeScreen(
         floatingActionButton = {
             // Auto-tune: with a search on Live TV (a channel or an event, say "UFC"), find one that works and play it.
             if (tab.kind == ContentKind.LIVE && liveSearch.isNotBlank()) {
-                val description = stringResource(R.string.tune_button_description)
                 ExtendedFloatingActionButton(
                     onClick = { onTune(liveSearch.trim()) },
                     icon = { Icon(Icons.Filled.Radar, contentDescription = null) },
                     text = { Text(stringResource(R.string.tune_button)) },
-                    modifier = Modifier.semantics { contentDescription = description },
                 )
             }
         },
