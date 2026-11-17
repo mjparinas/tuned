@@ -18,7 +18,19 @@ data class Credentials(
     /** Optional overrides for plain M3U providers (no Xtream login). Blank means "use the Xtream URL". */
     val playlistUrl: String = "",
     val guideUrl: String = "",
-)
+) {
+    /** Same provider and account: switching between these keeps the cached channels. */
+    fun samePlaylist(other: Credentials) = server == other.server && username == other.username && playlistUrl == other.playlistUrl
+
+    /** How the playlist is listed in Settings: the account and server, or the link's host. */
+    val label: String
+        get() =
+            if (playlistUrl.isNotBlank()) {
+                playlistUrl.substringAfter("://").substringBefore('/').substringBefore('?')
+            } else {
+                "$username @ ${server.substringAfter("://")}"
+            }
+}
 
 /**
  * Keeps the login until the person signs out (Melvin, 2026-11-17). The values are encrypted with an AES-GCM key
@@ -45,9 +57,29 @@ class CredentialStore(
         cached = credentials
     }
 
+    /** Signing out forgets every saved playlist too. */
     fun clear() {
         prefs.edit { clear() }
         cached = null
+    }
+
+    /** Every playlist signed in to on this device, oldest first, kept encrypted like the login in use. */
+    fun saved(): List<Credentials> {
+        val blob = prefs.getString(KEY_SAVED, null) ?: return listOfNotNull(load())
+        val all = runCatching { decrypt(blob).split(LINE).filter { it.isNotEmpty() }.map(::decode) }.getOrDefault(emptyList())
+        return all.ifEmpty { listOfNotNull(load()) }
+    }
+
+    /** Adds [credentials] to the saved playlists, or updates the one for the same account. */
+    fun remember(credentials: Credentials) {
+        val others = saved().filterNot { it.samePlaylist(credentials) }
+        write(others + credentials)
+    }
+
+    fun forget(credentials: Credentials) = write(saved().filterNot { it.samePlaylist(credentials) })
+
+    private fun write(list: List<Credentials>) {
+        prefs.edit { putString(KEY_SAVED, encrypt(list.joinToString(LINE, transform = ::encode))) }
     }
 
     private fun encode(c: Credentials): String = listOf(c.server, c.username, c.password, c.playlistUrl, c.guideUrl)
@@ -93,6 +125,8 @@ class CredentialStore(
         const val TRANSFORMATION = "AES/GCM/NoPadding"
         const val IV_BYTES = 12
         const val KEY_BLOB = "blob"
+        const val KEY_SAVED = "saved"
+        const val LINE = "\n"
         const val SEP = ":"
     }
 }

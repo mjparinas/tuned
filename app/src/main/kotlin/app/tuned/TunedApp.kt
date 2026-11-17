@@ -7,6 +7,7 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.ProcessLifecycleOwner
 import app.tuned.data.BackupRepository
 import app.tuned.data.CredentialStore
+import app.tuned.data.Credentials
 import app.tuned.data.MetadataRepository
 import app.tuned.data.SettingsRepository
 import app.tuned.data.SyncRepository
@@ -29,6 +30,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.drop
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import okhttp3.OkHttpClient
@@ -57,6 +59,27 @@ class AppContainer(
     val backup by lazy { BackupRepository(credentials, settings, db) }
     val reminders by lazy { Reminders(context) }
     val metadata by lazy { MetadataRepository(http, settings) }
+
+    /**
+     * Makes [login] the one in use and remembers it among the saved playlists. A different playlist's channels and
+     * guide are cleared first, so the lists never mix two providers, then everything is downloaded afresh.
+     */
+    suspend fun useLogin(login: Credentials) {
+        val previous = credentials.load()
+        credentials.save(login)
+        credentials.remember(login)
+        if (previous != null && !previous.samePlaylist(login)) {
+            reminders.cancelAll()
+            db.items().deleteAll()
+            db.programmes().deleteAll()
+            db.catchUp().deleteAll()
+            settings.update { it.copy(lastPlaylistSync = 0, lastGuideSync = 0) }
+        }
+        settings.update { it.copy(lastSyncError = "") }
+        scheduler.refreshNow(first = true)
+        val s = settings.settings.first()
+        scheduler.schedule(s.playlistRefreshHours, s.guideRefreshHours, s.unmeteredOnly)
+    }
 
     /** Forgets the login, the cached playlist and guide, and stops background refreshes. */
     suspend fun signOut() {

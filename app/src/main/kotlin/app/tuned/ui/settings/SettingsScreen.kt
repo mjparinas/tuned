@@ -151,6 +151,8 @@ fun SettingsScreen(
     onOpenRegions: () -> Unit,
     onOpenFavouriteOrder: () -> Unit,
     onSignedOut: () -> Unit,
+    onAddPlaylist: () -> Unit,
+    onSwitchedPlaylist: () -> Unit,
     vm: SettingsViewModel = viewModel(),
 ) {
     var editServer by remember { mutableStateOf(false) }
@@ -171,6 +173,7 @@ fun SettingsScreen(
             SectionHeader(stringResource(R.string.settings_account))
             SettingRow(stringResource(R.string.login_server), vm.server(), onClick = { editServer = true })
             SettingRow(stringResource(R.string.login_username), vm.username())
+            PlaylistsRow(onAdd = onAddPlaylist, onSwitched = onSwitchedPlaylist)
             SettingRow(
                 stringResource(R.string.settings_refresh_now),
                 lastSync(settings),
