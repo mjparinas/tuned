@@ -34,6 +34,7 @@ import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 
 /** What a list shows: a category, favourites only, or everything. */
 sealed interface Filter {
@@ -68,6 +69,8 @@ class BrowseViewModel(
     init {
         // The account's status (connections in use, expiry), so the player and Settings never wait for it.
         viewModelScope.launchSafely("BrowseViewModel") { container.account.refreshIfOld() }
+        // Sports, PPV and event channels are never hidden as dead: bring back any hidden before that rule, or renamed since.
+        viewModelScope.launchSafely("BrowseViewModel") { container.channelScan.releaseEventChannels() }
     }
 
     private val filters = mutableMapOf<ContentKind, MutableStateFlow<Filter>>()
@@ -219,6 +222,11 @@ class BrowseViewModel(
         viewModelScope.launchSafely("BrowseViewModel") {
             container.settings.update { it.copy(hiddenGroups = it.hiddenGroups + HiddenGroups.key(kind.code, group)) }
         }
+    }
+
+    /** Live TV as the grid guide or the list; remembered, and also in Settings. */
+    fun setLiveGrid(on: Boolean) {
+        viewModelScope.launchSafely("BrowseViewModel") { container.settings.update { it.copy(liveGrid = on) } }
     }
 
     fun rememberTab(index: Int) {

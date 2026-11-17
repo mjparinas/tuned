@@ -28,7 +28,7 @@
 
 **Cast** (Chromecast, 2026-11-17). The cast button sits with the player tools. Casting uses the default media receiver. When a cast starts the phone stops its own stream, so the provider only ever sees one connection, and the TV plays the channel. Next, previous, swipes and the mini guide change the channel on the TV, and the play and pause buttons control the TV. Ending the cast resumes on the phone, at the same point for films and episodes. The default receiver can't play raw MPEG-TS, so Xtream live links are sent as the same channel's `.m3u8`; films in formats the receiver lacks (MKV, for example) may not play. DLNA and UPnP TVs (2026-11-17) appear in the same picker, found with an SSDP search on the local network while the player is open; phones without Google Play services list only those. A DLNA TV is sent the link as it is (most play MPEG-TS and MP4), with the same one-connection rule. A TV that can't seek starts films from the beginning.
 
-**Picture-in-picture** when leaving the app while playing (Settings, on by default). Leaving without it ends playback.
+**Picture-in-picture** when leaving the app while playing (Settings, on by default). Leaving without it ends playback. It is the same single stream in a small window, which Melvin keeps (2026-11-17: leaving the app with the picture still showing "is okay"). A second channel inset over the video is ruled out, because it would be a second stream ([scope](scope.md)).
 
 ## Gestures and reconnecting (2026-11-17)
 

@@ -111,7 +111,10 @@ data class MetadataEntity(
     /** Comma-separated. */
     val genres: String,
     val runtime: String?,
-    /** One person per line: name, character and photo link, tab-separated. */
+    /**
+     * One person per line: name, character, photo link and TMDB person id, tab-separated. A person's own row
+     * ("person|<id>", see PeopleRepository) keeps their credits here as JSON instead.
+     */
     val cast: String,
     val trailer: String?,
     val fetchedAt: Long,
@@ -177,6 +180,15 @@ data class TuneRow(
     val okAt: Long?,
     val deadAt: Long?,
     val height: Int?,
+    /** Hidden in the lists (dead in a scan, or a "No event" placeholder); auto-tune still tries event channels. */
+    val held: Boolean,
+)
+
+/** A channel a scan hid, with its name, for [ChannelScanDao.hiddenNames]. */
+data class HiddenScanRow(
+    val itemId: Long,
+    val name: String,
+    val groupName: String,
 )
 
 /** A live channel with what's on now (from the guide), for the Live TV list. */

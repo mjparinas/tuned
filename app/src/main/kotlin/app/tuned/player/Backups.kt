@@ -9,8 +9,8 @@ import app.tuned.R
 import app.tuned.core.ChannelScan
 import app.tuned.data.AppSettings
 import app.tuned.data.db.ItemEntity
+import app.tuned.diagnostics.launchSafely
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.launch
 
 /**
  * What the player does when a live channel won't play (Melvin, 2026-11-17):
@@ -102,7 +102,7 @@ internal class Backups(
         val f = failover ?: return false
         if (id == null || hooks.casting()) return false
         channelFailed(id)
-        scope.launch { if (!f.begin(id)) onNone() }
+        scope.launchSafely("Backups") { if (!f.begin(id)) onNone() }
         return true
     }
 
@@ -111,11 +111,11 @@ internal class Backups(
         player: ExoPlayer,
         id: Long,
     ) {
-        scope.launch {
-            val copy = container.db.items().get(id) ?: return@launch
+        scope.launchSafely("Backups") {
+            val copy = container.db.items().get(id) ?: return@launchSafely
             val index = player.currentMediaItemIndex
             val queue = hooks.queue()
-            if (index !in queue.indices) return@launch
+            if (index !in queue.indices) return@launchSafely
             hooks.setQueue(queue.toMutableList().also { it[index] = copy })
             player.stop() // the old stream closes before the copy opens
             player.replaceMediaItem(index, hooks.mediaItem(copy))
@@ -144,7 +144,7 @@ internal class Backups(
     }
 
     private fun blame(ids: List<Long>) {
-        container.appScope.launch {
+        container.appScope.launchSafely("Backups") {
             if (container.channelScan.channelToBlame(anotherChannelPlayed = true)) {
                 ids.forEach { container.channelScan.hideAfterPlayFailure(it) }
             }
