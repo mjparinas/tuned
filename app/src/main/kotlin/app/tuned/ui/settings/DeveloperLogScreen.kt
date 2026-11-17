@@ -58,7 +58,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.conflate
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
@@ -79,7 +78,7 @@ class DeveloperLogViewModel(
     private val crashes = MutableStateFlow<List<CrashReport>>(emptyList())
 
     val log: StateFlow<DeveloperLog> =
-        combine(crashes, AppLog.changes.conflate().map { AppLog.snapshot().asReversed() }) { c, lines -> DeveloperLog(c, lines) }
+        combine(crashes, AppLog.changes.map { AppLog.snapshot().asReversed() }) { c, lines -> DeveloperLog(c, lines) }
             .flowOn(Dispatchers.Default)
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), DeveloperLog())
 
