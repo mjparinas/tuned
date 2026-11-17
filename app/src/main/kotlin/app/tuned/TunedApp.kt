@@ -8,6 +8,7 @@ import app.tuned.data.SyncRepository
 import app.tuned.data.TuneRepository
 import app.tuned.data.db.TunedDatabase
 import app.tuned.updates.GitHubUpdates
+import app.tuned.work.Reminders
 import app.tuned.work.SyncScheduler
 import coil3.ImageLoader
 import coil3.PlatformContext
@@ -46,10 +47,12 @@ class AppContainer(
     val tune by lazy { TuneRepository(db, settings) }
     val scheduler = SyncScheduler(context)
     val updates by lazy { GitHubUpdates(context, http) }
+    val reminders by lazy { Reminders(context) }
 
     /** Forgets the login, the cached playlist and guide, and stops background refreshes. */
     suspend fun signOut() {
         scheduler.cancelAll()
+        reminders.cancelAll()
         credentials.clear()
         db.items().deleteAll()
         db.programmes().deleteAll()
