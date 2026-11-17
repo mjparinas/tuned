@@ -2,7 +2,7 @@ package app.tuned.ui.shows
 
 import android.app.Application
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -18,14 +18,16 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.PrimaryScrollableTabRow
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -54,6 +56,8 @@ import app.tuned.ui.details.DetailsBody
 import app.tuned.ui.details.DetailsViewModel
 import app.tuned.ui.details.MetaLine
 import app.tuned.ui.details.TrailerButton
+import app.tuned.ui.library.LibraryViewModel
+import app.tuned.ui.library.WatchLaterButton
 import app.tuned.ui.offline.DownloadButton
 import app.tuned.ui.offline.SeasonDownloadButton
 import coil3.compose.AsyncImage
@@ -96,6 +100,7 @@ fun ShowScreen(
     onBack: () -> Unit,
     vm: ShowViewModel = viewModel(),
     details: DetailsViewModel = viewModel(),
+    library: LibraryViewModel = viewModel(),
 ) {
     vm.load(showKey)
     LaunchedEffect(title) { details.load(title, tv = true) }
@@ -133,20 +138,38 @@ fun ShowScreen(
                             Spacer(Modifier.height(12.dp))
                         }
                         MetaLine(metadata)
-                        metadata?.trailer?.let {
-                            Spacer(Modifier.height(12.dp))
-                            TrailerButton(it)
+                        Spacer(Modifier.height(12.dp))
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            metadata?.trailer?.let { TrailerButton(it) }
+                            WatchLaterButton(LibraryViewModel.show(showKey, title, metadata?.poster ?: episodes.firstOrNull()?.logo))
                         }
                         Spacer(Modifier.height(12.dp))
                         DetailsBody(metadata, hasKey)
                     }
                 }
                 val shown = episodes.filter { season == null || (it.season ?: 1) == season }
-                item(key = "season-download") {
-                    Box(Modifier.padding(horizontal = 16.dp, vertical = 4.dp)) { SeasonDownloadButton(shown) }
+                item(key = "season-actions") {
+                    val allWatched = shown.isNotEmpty() && shown.all { progress[it.id].isWatched() }
+                    Row(
+                        Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        SeasonDownloadButton(shown)
+                        if (shown.isNotEmpty()) {
+                            TextButton(onClick = { library.setWatched(shown.map { it.id }, !allWatched) }) {
+                                Text(stringResource(if (allWatched) R.string.mark_season_unwatched else R.string.mark_season_watched))
+                            }
+                        }
+                    }
                 }
                 items(shown, key = { it.id }) { ep ->
-                    EpisodeRow(ep, progress[ep.id], onClick = { onPlay(ep.id) })
+                    EpisodeRow(
+                        ep,
+                        progress[ep.id],
+                        onClick = { onPlay(ep.id) },
+                        onToggleWatched = { done -> library.setWatched(listOf(ep.id), done) },
+                    )
                 }
             }
         }
@@ -158,8 +181,9 @@ private fun EpisodeRow(
     episode: ItemEntity,
     history: HistoryEntity?,
     onClick: () -> Unit,
+    onToggleWatched: (Boolean) -> Unit,
 ) {
-    val watched = history != null && history.durationMs > 0 && history.positionMs > history.durationMs * 0.92
+    val watched = history.isWatched()
     Row(
         Modifier
             .fillMaxWidth()
@@ -168,12 +192,15 @@ private fun EpisodeRow(
             .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Icon(
-            if (watched) Icons.Filled.CheckCircle else Icons.Filled.PlayArrow,
-            contentDescription = null,
-            tint = if (watched) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.primary,
-        )
-        Spacer(Modifier.width(16.dp))
+        // The check marks the episode watched or unwatched by hand; the rest of the row plays it.
+        IconButton(onClick = { onToggleWatched(!watched) }) {
+            Icon(
+                if (watched) Icons.Filled.CheckCircle else Icons.Outlined.CheckCircle,
+                contentDescription = stringResource(if (watched) R.string.mark_unwatched else R.string.mark_watched),
+                tint = if (watched) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.outline,
+            )
+        }
+        Spacer(Modifier.width(4.dp))
         Column(Modifier.weight(1f)) {
             Text(
                 stringResource(R.string.episode_label, episode.episode ?: 1),
@@ -193,3 +220,8 @@ private fun EpisodeRow(
         DownloadButton(episode)
     }
 }
+
+/** Played to the end (92%), or marked watched by hand. */
+private fun HistoryEntity?.isWatched(): Boolean = this != null && durationMs > 0 && positionMs >= durationMs * WATCHED_PERCENT / 100
+
+private const val WATCHED_PERCENT = 92

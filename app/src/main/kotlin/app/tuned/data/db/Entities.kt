@@ -205,3 +205,23 @@ data class FavouriteRow(
     val logo: String?,
     val tvgId: String?,
 )
+
+/**
+ * A film or a show saved to watch later (Melvin, 2026-11-17). [key] is `m:<item id>` for a film or `s:<show key>` for a
+ * show. The title and artwork are kept here, so the list shows without looking anything up.
+ */
+@Entity(tableName = "watch_later")
+data class WatchLaterEntity(
+    @PrimaryKey val key: String,
+    val itemId: Long?,
+    val showKey: String?,
+    val title: String,
+    val image: String?,
+    val addedAt: Long,
+) {
+    companion object {
+        fun movieKey(itemId: Long) = "m:$itemId"
+
+        fun showKey(showKey: String) = "s:$showKey"
+    }
+}

@@ -357,6 +357,24 @@ interface LibraryDao {
     @Query("DELETE FROM history")
     suspend fun clearHistory()
 
+    /** Films and episodes counted as watched: played to the end, or marked by hand. */
+    @Query("SELECT itemId FROM history WHERE durationMs > 0 AND positionMs >= durationMs * 92 / 100")
+    fun watchedIds(): Flow<List<Long>>
+
+    /** Marks [ids] watched without playing them: a finished entry, so they leave Continue Watching too. */
+    @Transaction
+    suspend fun markWatched(ids: List<Long>) {
+        val now = System.currentTimeMillis()
+        for (id in ids) {
+            val length = progress(id)?.durationMs?.takeIf { it > 0 } ?: 1
+            saveProgress(HistoryEntity(id, positionMs = length, durationMs = length, watchedAt = now))
+        }
+    }
+
+    /** Back to unwatched: forgets where they got to. */
+    @Query("DELETE FROM history WHERE itemId IN (:ids)")
+    suspend fun markUnwatched(ids: List<Long>)
+
     @Query("DELETE FROM favourites")
     suspend fun clearFavourites()
 
@@ -427,4 +445,19 @@ interface MetadataDao {
 
     @Query("SELECT * FROM metadata WHERE cacheKey = :cacheKey")
     suspend fun get(cacheKey: String): MetadataEntity?
+}
+
+@Dao
+interface WatchLaterDao {
+    @Upsert
+    suspend fun add(row: WatchLaterEntity)
+
+    @Query("DELETE FROM watch_later WHERE `key` = :key")
+    suspend fun remove(key: String)
+
+    @Query("SELECT * FROM watch_later ORDER BY addedAt DESC")
+    fun all(): Flow<List<WatchLaterEntity>>
+
+    @Query("SELECT `key` FROM watch_later")
+    fun keys(): Flow<List<String>>
 }
