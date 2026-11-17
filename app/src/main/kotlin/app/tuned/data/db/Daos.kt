@@ -29,6 +29,9 @@ interface ItemDao {
     @Query("SELECT * FROM items WHERE id = :id")
     suspend fun get(id: Long): ItemEntity?
 
+    @Query("SELECT * FROM items WHERE id IN (:ids)")
+    suspend fun getAll(ids: List<Long>): List<ItemEntity>
+
     @Query("SELECT DISTINCT tvgId FROM items WHERE kind = 0 AND tvgId IS NOT NULL")
     suspend fun liveTvgIds(): List<String>
 
@@ -45,7 +48,10 @@ interface ItemDao {
             AND (:adult OR i.adult = 0)
             AND (:group IS NULL OR i.groupName = :group)
             AND (:favouritesOnly = 0 OR f.itemId IS NOT NULL)
-            AND (:query = '' OR i.searchName LIKE '%' || :query || '%')
+            AND (:query = '' OR i.searchName LIKE '%' || :query || '%' OR i.tvgId IN (
+                -- An event search ("UFC") also finds the channels showing it now or within the hour.
+                SELECT channelId FROM programmes WHERE title LIKE '%' || :query || '%' AND stop > :now AND start < :now + 3600000
+            ))
         GROUP BY i.id
         ORDER BY i.sortOrder
         """,
@@ -134,6 +140,37 @@ interface ItemDao {
         adult: Boolean,
     ): Flow<List<GroupCount>>
 
+    /**
+     * Auto-tune's candidates: live channels whose name matches the search, or whose guide has a matching programme
+     * on now or starting within [to]. `title LIKE` ignores case for English letters, which is what event names use.
+     */
+    @Query(
+        """
+        SELECT i.id, i.name, i.groupName, i.region,
+            (i.searchName LIKE '%' || :normalized || '%') AS nameMatch,
+            (i.tvgId IN (
+                SELECT channelId FROM programmes WHERE title LIKE '%' || :query || '%' AND stop > :from AND start < :to
+            )) AS guideMatch,
+            h.okAt, h.deadAt, h.height
+        FROM items i
+        LEFT JOIN channel_health h ON h.itemId = i.id
+        WHERE i.kind = 0
+            AND (i.region IS NULL OR i.region NOT IN (:hidden))
+            AND (:adult OR i.adult = 0)
+            AND (nameMatch OR guideMatch)
+        ORDER BY i.sortOrder
+        LIMIT 500
+        """,
+    )
+    suspend fun tuneCandidates(
+        query: String,
+        normalized: String,
+        from: Long,
+        to: Long,
+        hidden: List<String>,
+        adult: Boolean,
+    ): List<TuneRow>
+
     @Query("SELECT region, COUNT(*) AS count FROM items WHERE region IS NOT NULL GROUP BY region ORDER BY count DESC")
     fun regions(): Flow<List<RegionCount>>
 }
@@ -194,4 +231,10 @@ interface LibraryDao {
 
     @Query("DELETE FROM favourites")
     suspend fun clearFavourites()
+
+    @Query("SELECT * FROM channel_health WHERE itemId = :itemId")
+    suspend fun health(itemId: Long): ChannelHealthEntity?
+
+    @Upsert
+    suspend fun saveHealth(health: ChannelHealthEntity)
 }

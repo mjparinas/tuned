@@ -30,6 +30,7 @@ import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Movie
+import androidx.compose.material.icons.filled.Radar
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Tv
@@ -38,6 +39,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -66,6 +68,8 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -102,6 +106,7 @@ fun HomeScreen(
     onOpenShow: (String, String) -> Unit,
     onOpenGuide: (Long) -> Unit,
     onOpenSettings: () -> Unit,
+    onTune: (String) -> Unit,
     vm: BrowseViewModel = viewModel(),
 ) {
     val start =
@@ -116,8 +121,21 @@ fun HomeScreen(
     val empty by vm.empty.collectAsStateWithLifecycle()
     val refreshing by vm.refreshing.collectAsStateWithLifecycle()
     val lastError by vm.lastError.collectAsStateWithLifecycle()
+    val liveSearch by vm.search(ContentKind.LIVE).collectAsStateWithLifecycle()
 
     Scaffold(
+        floatingActionButton = {
+            // Auto-tune: with a search on Live TV (a channel or an event, say "UFC"), find one that works and play it.
+            if (tab.kind == ContentKind.LIVE && liveSearch.isNotBlank()) {
+                val description = stringResource(R.string.tune_button_description)
+                ExtendedFloatingActionButton(
+                    onClick = { onTune(liveSearch.trim()) },
+                    icon = { Icon(Icons.Filled.Radar, contentDescription = null) },
+                    text = { Text(stringResource(R.string.tune_button)) },
+                    modifier = Modifier.semantics { contentDescription = description },
+                )
+            }
+        },
         topBar = {
             val search = vm.search(tab.kind)
             val text by search.collectAsStateWithLifecycle()

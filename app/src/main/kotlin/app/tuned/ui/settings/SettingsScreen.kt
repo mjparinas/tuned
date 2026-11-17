@@ -234,6 +234,28 @@ fun SettingsScreen(
             ) { ms -> vm.update { it.copy(seekForwardMs = ms) } }
             SettingRow(stringResource(R.string.settings_clear_history), onClick = vm::clearHistory)
 
+            SectionHeader(stringResource(R.string.settings_tune))
+            ChoiceRow(
+                stringResource(R.string.settings_tune_timeout),
+                listOf(6_000, 10_000, 15_000, 20_000),
+                settings.tuneTimeoutMs,
+                label = { ms -> pluralStringResource(R.plurals.seconds, ms / 1000, ms / 1000) },
+            ) { ms -> vm.update { it.copy(tuneTimeoutMs = ms) } }
+            ChoiceRow(
+                stringResource(R.string.settings_tune_quality),
+                listOf(0, 540, 720, 1080),
+                settings.tuneMinHeight,
+                label = { h ->
+                    if (h ==
+                        0
+                    ) {
+                        stringResource(R.string.tune_quality_any)
+                    } else {
+                        stringResource(R.string.tune_quality_at_least, h)
+                    }
+                },
+            ) { h -> vm.update { it.copy(tuneMinHeight = h) } }
+
             SectionHeader(stringResource(R.string.settings_appearance))
             ChoiceRow(
                 stringResource(R.string.settings_theme),
