@@ -10,6 +10,8 @@ import androidx.core.net.toUri
 import app.tuned.BuildConfig
 import app.tuned.core.ReleaseTag
 import app.tuned.data.Downloader
+import app.tuned.diagnostics.AppLog
+import app.tuned.diagnostics.startActivitySafely
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -198,18 +200,35 @@ class GitHubUpdates(
         val ready = _state.value as? State.Ready ?: return
         val packages = activity.packageManager
         if (!packages.canRequestPackageInstalls()) {
-            activity.startActivity(
+            activity.startActivitySafely(
                 Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES, "package:${activity.packageName}".toUri())
                     .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
+                TAG,
             )
             return
         }
         val installer = packages.packageInstaller
         val params = PackageInstaller.SessionParams(PackageInstaller.SessionParams.MODE_FULL_INSTALL)
-        val id = installer.createSession(params)
+        try {
+            commit(activity, installer, installer.createSession(params), ready.apk)
+        } catch (e: IOException) {
+            // Out of space, or the downloaded file went missing: the next check downloads it again.
+            AppLog.w(TAG, "Couldn't hand the update to the installer", e)
+            _state.value = State.Idle
+        } catch (e: SecurityException) {
+            AppLog.w(TAG, "The installer refused the update", e)
+        }
+    }
+
+    private fun commit(
+        activity: Context,
+        installer: PackageInstaller,
+        id: Int,
+        apk: File,
+    ) {
         installer.openSession(id).use { session ->
-            session.openWrite("tuned.apk", 0, ready.apk.length()).use { out ->
-                ready.apk.inputStream().use { it.copyTo(out) }
+            session.openWrite("tuned.apk", 0, apk.length()).use { out ->
+                apk.inputStream().use { it.copyTo(out) }
                 session.fsync(out)
             }
             val result =
@@ -226,6 +245,7 @@ class GitHubUpdates(
 
     companion object {
         const val REPO = "mjparinas/tuned"
+        private const val TAG = "Updates"
         private const val SHA256 = "sha256:"
         private const val BUFFER = 64 * 1024
         private const val PLAY_STORE = "com.android.vending"

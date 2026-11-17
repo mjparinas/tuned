@@ -13,13 +13,13 @@ import androidx.mediarouter.media.MediaRouteSelector
 import androidx.mediarouter.media.MediaRouter
 import app.tuned.container
 import app.tuned.core.Dlna
+import app.tuned.diagnostics.launchSafely
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -47,7 +47,7 @@ class DlnaRouteProvider(
         discovery?.cancel()
         discovery =
             if (request?.selector?.hasControlCategory(CATEGORY) == true) {
-                scope.launch {
+                scope.launchSafely("DlnaRouteProvider") {
                     while (isActive) {
                         search()
                         publish()

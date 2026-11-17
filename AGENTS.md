@@ -27,7 +27,7 @@ Kotlin, Jetpack Compose with Material 3, Navigation Compose (type-safe routes), 
 - **Get out of the way.** Opening the app shows channels from the cache at once; nothing waits on the network. The player shows only video until a tap; the controls hide themselves. No pop-ups, no onboarding beyond sign-in.
 - **Speed first** ([speed](docs/decisions/speed.md)): lists are paged straight from Room; downloads stream into the database in batches; nothing heavy runs before the first frame.
 - **Customizable** (Melvin, 2026-11-17: "customizing most things in the settings"): a new behaviour gets a setting when people could reasonably want it either way, with the common choice as the default.
-- **Never ask for, log or commit a login.** The app stores it encrypted until sign-out ([security](docs/decisions/security.md)). Error messages go through `XtreamUrls.redact`. Playlists and guides are never committed (`.gitignore` blocks `*.m3u`, `*.xmltv`, `.env`).
+- **Never ask for, log or commit a login.** The app stores it encrypted until sign-out ([security](docs/decisions/security.md)). Error messages go through `XtreamUrls.redact`; log lines through `AppLog`, which scrubs them ([diagnostics](docs/decisions/diagnostics.md)). Playlists and guides are never committed (`.gitignore` blocks `*.m3u`, `*.xmltv`, `.env`).
 - **English is Canadian English** (as in Liftsmith): colour, favourite, behaviour, centre, cancelled, but -ize (organize). Code identifiers stay as they are.
 
 ## Code conventions
@@ -35,6 +35,7 @@ Kotlin, Jetpack Compose with Material 3, Navigation Compose (type-safe routes), 
 - Formatting is ktlint's (`.editorconfig`, width 140) through Spotless, and Prettier's for YAML, JSON and Markdown. Don't hand-format.
 - detekt (`config/detekt/detekt.yml`) and Android Lint (`warningsAsErrors`) fail CI on any finding. Fix the cause; suppress only with a comment saying why.
 - Every string a person reads is in `res/values/strings.xml`; numbers that change a word use `<plurals>`.
+- Fire-and-forget coroutines use `launchSafely(tag)`, and caught failures go to `AppLog` (`attempt` instead of `runCatching`), so nothing fails silently and nothing crashes the app ([diagnostics](docs/decisions/diagnostics.md)).
 - A bug fix comes with a test that fails without it. Flaky tests are fixed at the cause, never retried.
 
 ## CI/CD (like Liftsmith)
@@ -54,6 +55,7 @@ One file per topic in `docs/decisions/`, A to Z. Add a line when you add a topic
 - [Auto-tune](docs/decisions/auto-tune.md): finding a working English stream for a live event, one connection at a time.
 - [Branding](docs/decisions/branding.md): name, icon, colours, themes.
 - [Channel scan](docs/decisions/channel-scan.md): finding dead channels without blaming them for the internet or the server.
+- [Diagnostics](docs/decisions/diagnostics.md): crash reports, `launchSafely` and `attempt`, the developer log, keeping logins out of it.
 - [Large screens](docs/decisions/large-screens.md): navigation rail, list and detail panes, the guide beside the player on tablets.
 - [Offline downloads](docs/decisions/offline.md): saving films and episodes, one connection at a time.
 - [Playlist and guide](docs/decisions/playlist.md): Xtream URLs, how streams are sorted, countries, refresh.

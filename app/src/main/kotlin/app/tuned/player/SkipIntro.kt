@@ -16,9 +16,9 @@ import app.tuned.core.ContentKind
 import app.tuned.core.IntroSkip
 import app.tuned.data.IntroStore
 import app.tuned.data.db.ItemEntity
+import app.tuned.diagnostics.launchSafely
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
-import kotlinx.coroutines.launch
 
 /**
  * The "Skip intro" button on episodes (see [IntroSkip]): it shows near the start, at the bottom right, and jumps past
@@ -77,7 +77,7 @@ class SkipIntro(
                 val learned = IntroSkip.learn(oldPosition.positionMs, newPosition.positionMs, learnedHere) ?: return
                 learnedHere = learned
                 intro = learned
-                activity.lifecycleScope.launch { store.set(key, learned) }
+                activity.lifecycleScope.launchSafely("SkipIntro") { store.set(key, learned) }
             }
         }
 
@@ -91,7 +91,7 @@ class SkipIntro(
                     bottomMargin = (BOTTOM_DP * density).toInt()
                 },
         )
-        activity.lifecycleScope.launch {
+        activity.lifecycleScope.launchSafely("SkipIntro") {
             while (isActive) {
                 update()
                 delay(CHECK_MS)

@@ -10,6 +10,7 @@ import androidx.mediarouter.media.MediaRouteSelector
 import app.tuned.R
 import app.tuned.core.CastMedia
 import app.tuned.data.db.ItemEntity
+import app.tuned.diagnostics.attempt
 import app.tuned.ui.MainActivity
 import com.google.android.gms.cast.CastMediaControlIntent
 import com.google.android.gms.cast.MediaInfo
@@ -41,7 +42,8 @@ class CastControl(
     private val onStatus: (String?) -> Unit,
 ) {
     @Suppress("DEPRECATION") // the Task-based replacement needs an executor and a callback for the same result
-    private val context: CastContext? = runCatching { CastContext.getSharedInstance(activity) }.getOrNull()
+    private val context: CastContext? =
+        attempt("Cast", "Cast isn't available on this device") { CastContext.getSharedInstance(activity) }.getOrNull()
     private var session: CastSession? = null
     private var lastPositionMs = 0L
 
@@ -193,7 +195,7 @@ class CastControl(
 private class SafeRouteButton(
     context: Context,
 ) : MediaRouteButton(context) {
-    override fun showDialog(): Boolean = runCatching { super.showDialog() }.getOrDefault(false)
+    override fun showDialog(): Boolean = attempt("Cast", "Couldn't open the cast picker") { super.showDialog() }.getOrDefault(false)
 }
 
 /** Read by the Cast framework (manifest meta-data): the default receiver, with a notification while casting. */

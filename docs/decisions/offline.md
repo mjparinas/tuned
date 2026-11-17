@@ -10,6 +10,8 @@
 
 **Network.** Downloads follow the existing "Wi-Fi only" setting for refreshes rather than adding a second one: a person who keeps refreshes off mobile data wants the same for gigabyte-sized files.
 
-**Playing.** When a film or episode has a finished download, the player plays the file instead of the stream, with no other change. Live channels can't be downloaded.
+**Playing.** When a film or episode has a finished download, the player plays the file instead of the stream, with no other change, from every way in: the episode row, continue watching, the next episode, and the Downloads page. The player reads through Media3's `DefaultDataSource`, which opens `file://` itself and passes only network addresses to OkHttp; OkHttp alone can't open a file, so saved episodes used to fail (Melvin, 2026-11-17). A saved item never needs the provider, so it plays even while another download holds the one connection. Live channels can't be downloaded.
 
 **Database.** Rows live in the `downloads` table (Room v6), keyed by the item's stable id, so they survive playlist refreshes like favourites do. Switching to a different playlist clears its items, so its downloads stay listed but can't be opened until that playlist is used again.
+
+**Grouped by show** (Melvin, 2026-11-17: "Downloaded shows should be organized by shows and seasons"). Both parts of the Downloads page group episodes under their show, then by season with episodes in order, and list films under Movies. While downloading, the group downloading now comes first; once saved, the most recently saved group does. An episode whose show has left the playlist is listed with the films.

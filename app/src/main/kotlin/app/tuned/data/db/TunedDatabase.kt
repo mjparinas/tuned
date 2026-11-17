@@ -21,9 +21,10 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         SeenEpisodeEntity::class,
         ChannelScanEntity::class,
         ItemFts::class,
+        ShowGroupEntity::class,
         TmdbSeasonEntity::class,
     ],
-    version = 11,
+    version = 12,
     exportSchema = true,
 )
 abstract class TunedDatabase : RoomDatabase() {
@@ -45,6 +46,8 @@ abstract class TunedDatabase : RoomDatabase() {
 
     abstract fun channelScan(): ChannelScanDao
 
+    abstract fun shows(): ShowDao
+
     companion object {
         fun create(context: Context): TunedDatabase = Room
             .databaseBuilder(context, TunedDatabase::class.java, "tuned.db")
@@ -62,7 +65,12 @@ abstract class TunedDatabase : RoomDatabase() {
                 MIGRATION_8_9,
                 MIGRATION_9_10,
                 MIGRATION_10_11,
-            ).build()
+                MIGRATION_11_12,
+            )
+            // Going back to an older release (installing an older APK) can't keep a newer database: start it afresh
+            // rather than crash on every launch. Upgrades always migrate, above.
+            .fallbackToDestructiveMigrationOnDowngrade(dropAllTables = true)
+            .build()
 
         /** Adds auto-tune's channel health. */
         val MIGRATION_1_2 =
@@ -169,9 +177,24 @@ abstract class TunedDatabase : RoomDatabase() {
                 }
             }
 
-        /** Adds TMDB's seasons, for episode screenshots and names. */
+        /** Adds the per-show table the Shows tab reads, filled from the cached playlist. */
         val MIGRATION_10_11 =
             object : Migration(10, 11) {
+                override fun migrate(db: SupportSQLiteDatabase) {
+                    db.execSQL(
+                        "CREATE TABLE IF NOT EXISTS `show_groups` (`rowId` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+                            "`showKey` TEXT NOT NULL, `groupName` TEXT NOT NULL, `region` TEXT, `adult` INTEGER NOT NULL, " +
+                            "`showName` TEXT NOT NULL, `logo` TEXT, `episodes` INTEGER NOT NULL, `sortOrder` INTEGER NOT NULL)",
+                    )
+                    db.execSQL("CREATE INDEX IF NOT EXISTS `index_show_groups_showKey` ON `show_groups` (`showKey`)")
+                    db.execSQL("CREATE INDEX IF NOT EXISTS `index_show_groups_sortOrder` ON `show_groups` (`sortOrder`)")
+                    db.execSQL("INSERT INTO show_groups (${ShowGroups.COLUMNS}) ${ShowGroups.SELECT}")
+                }
+            }
+
+        /** Adds TMDB's seasons, for episode screenshots and names. */
+        val MIGRATION_11_12 =
+            object : Migration(11, 12) {
                 override fun migrate(db: SupportSQLiteDatabase) {
                     db.execSQL(
                         "CREATE TABLE IF NOT EXISTS `tmdb_seasons` (`cacheKey` TEXT NOT NULL, `found` INTEGER NOT NULL, " +

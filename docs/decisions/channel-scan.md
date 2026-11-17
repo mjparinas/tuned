@@ -20,6 +20,16 @@ Settings › Channel health › **Scan channels** looks at every live channel th
 
 The same screen shows the last scan's counts (working, failed, not judged) and, when it stopped early, why. Below are the hidden channels, each with **Show again**, and the channels that failed but are still shown. A channel shown again by hand is never hidden by a scan after that. **Hide channels that keep failing** (on by default) turns the hiding off without forgetting anything. Hidden channels stay out of every list, search, channel flipping and auto-tune, through the same hidden keys as countries and groups (`scan:dead`).
 
+## Hiding channels that won't play (2026-11-17)
+
+Melvin: "if a channel doesn't load but you know the service is up and internet is working, hide that channel from results". Channel health › **Hide channels that won't play** (on by default) does that from the player, without waiting for two scans. When a live channel fails for good there (after its retries, or while auto-tune or backup copies try it), it is hidden only when all three are true (`ChannelScan.blameOnPlay`, with tests):
+
+- the phone's network is validated;
+- the service answers: Xtream's account call accepts the login with a connection free (a full account or no answer blames nothing; a plain M3U has no such call);
+- another channel drew a picture within ten minutes, before or after, which shows streams were flowing. A failure with no picture yet waits for the next one, which is usually the backup copy or the next channel tried.
+
+The channel is then saved as hidden in `channel_scan` with the reason "wouldn't play", so it appears in the report with **Show again**, and a scan that finds it working brings it back. A channel shown again by hand is never hidden this way. The checks share `data/ServiceCheck` with the scan.
+
 ## One connection at a time
 
 The scan never looks at a channel while the player is open or a download runs. A look in progress is cut off the moment either starts, and the scan carries on after. The account call is not a stream. What scans find is stored in `channel_scan` (Room v9). Switching to a different playlist clears it, and signing out stops a running scan.

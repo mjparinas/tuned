@@ -36,5 +36,8 @@ import kotlinx.serialization.Serializable
     val itemId: Long,
 )
 
+/** Settings › Developer › Logs. */
+@Serializable data object DeveloperLogRoute
+
 /** Settings › Downloads. */
 @Serializable data object DownloadsRoute

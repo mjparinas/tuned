@@ -56,40 +56,43 @@ interface ItemDao {
     @Query("SELECT tvgId, url FROM items WHERE kind = 0 AND tvgId IS NOT NULL")
     suspend fun liveLinks(): List<LiveLink>
 
+    /** Live TV in playlist order. Paged, so it reads only the rows on screen, straight down the (kind, sortOrder) index. */
     @Query(
-        """
-        SELECT i.id, i.name, i.logo, i.groupName, i.tvgId,
-            p.title AS nowTitle, p.start AS nowStart, p.stop AS nowStop,
-            (f.itemId IS NOT NULL) AS favourite
-        FROM items i
-        LEFT JOIN programmes p ON p.channelId = i.tvgId AND p.start <= :now AND p.stop > :now
-        LEFT JOIN favourites f ON f.itemId = i.id
-        LEFT JOIN history h ON h.itemId = i.id
-        WHERE i.kind = 0
-            AND (i.region IS NULL OR i.region NOT IN (:hidden)) AND ('g:' || i.kind || ':' || i.groupName) NOT IN (:hidden)
-            AND NOT ('scan:dead' IN (:hidden) AND i.id IN (SELECT itemId FROM channel_scan WHERE hidden = 1))
-            AND NOT ('placeholder' IN (:hidden) AND i.kind = 0
-                AND ((' ' || i.searchName) GLOB '* no event*' OR (' ' || i.searchName) GLOB '* no live event*'))
-            AND (:adult OR i.adult = 0)
-            AND (:group IS NULL OR i.groupName = :group)
-            AND (:only != 1 OR f.itemId IS NOT NULL)
-            AND (:only != 2 OR h.itemId IS NOT NULL)
-            AND (:query = '' OR i.id IN (SELECT docid FROM items_fts WHERE items_fts MATCH :match) OR i.tvgId IN (
-                -- An event search ("UFC") also finds the channels showing it now or within the hour.
-                SELECT channelId FROM programmes
-                WHERE start > :now - 86400000 AND start < :now + 3600000 AND stop > :now AND title LIKE '%' || :query || '%'
-            ))
-        GROUP BY i.id
-        ORDER BY CASE WHEN :only = 2 THEN h.watchedAt END DESC, CASE WHEN :only = 1 THEN f.position END, i.sortOrder
-        """,
+        "SELECT $CHANNEL_COLUMNS, 0 AS favourite FROM items i $NOW_JOIN WHERE $CHANNEL_FILTER ORDER BY i.sortOrder",
     )
     fun channels(
         now: Long,
         hidden: List<String>,
         adult: Boolean,
         group: String?,
-        /** 0 for every channel, [ONLY_FAVOURITES] or [ONLY_RECENT]. */
-        only: Int,
+        query: String,
+        match: String,
+    ): PagingSource<Int, ChannelWithNow>
+
+    /** Favourite channels, in their own order (Settings › Order favourites). */
+    @Query(
+        "SELECT $CHANNEL_COLUMNS, 1 AS favourite FROM items i JOIN favourites f ON f.itemId = i.id $NOW_JOIN " +
+            "WHERE $CHANNEL_FILTER ORDER BY f.position",
+    )
+    fun favouriteChannels(
+        now: Long,
+        hidden: List<String>,
+        adult: Boolean,
+        group: String?,
+        query: String,
+        match: String,
+    ): PagingSource<Int, ChannelWithNow>
+
+    /** Channels watched lately, latest first. */
+    @Query(
+        "SELECT $CHANNEL_COLUMNS, 0 AS favourite FROM items i JOIN history h ON h.itemId = i.id $NOW_JOIN " +
+            "WHERE $CHANNEL_FILTER ORDER BY h.watchedAt DESC",
+    )
+    fun recentChannels(
+        now: Long,
+        hidden: List<String>,
+        adult: Boolean,
+        group: String?,
         query: String,
         match: String,
     ): PagingSource<Int, ChannelWithNow>
@@ -177,7 +180,9 @@ interface ItemDao {
             p.title AS nowTitle, p.start AS nowStart, p.stop AS nowStop,
             (f.itemId IS NOT NULL) AS favourite
         FROM items i
-        LEFT JOIN programmes p ON p.channelId = i.tvgId AND p.start <= :now AND p.stop > :now
+        LEFT JOIN programmes p ON p.rowId = (
+            SELECT rowId FROM programmes WHERE channelId = i.tvgId AND start <= :now AND stop > :now ORDER BY start DESC LIMIT 1
+        )
         LEFT JOIN favourites f ON f.itemId = i.id
         WHERE i.kind = 0
             AND (i.region IS NULL OR i.region NOT IN (:hidden)) AND ('g:' || i.kind || ':' || i.groupName) NOT IN (:hidden)
@@ -189,7 +194,6 @@ interface ItemDao {
                 SELECT channelId FROM programmes
                 WHERE start > :now - 86400000 AND start < :now + 3600000 AND stop > :now AND title LIKE '%' || :query || '%'
             ))
-        GROUP BY i.id
         ORDER BY (f.itemId IS NULL), i.sortOrder
         LIMIT :limit
         """,
@@ -320,13 +324,36 @@ interface ItemDao {
         adult: Boolean,
     ): List<TuneRow>
 
+    /**
+     * Possible backup copies of a live channel: other live channels whose name has every word of the channel's
+     * [ChannelCopies][app.tuned.core.ChannelCopies] key, through the full-text index. The caller keeps only exact key
+     * matches. Hidden channels are left out like everywhere else.
+     */
+    @Query(
+        """
+        SELECT i.id, i.name, i.groupName, i.region, 1 AS nameMatch, 0 AS guideMatch, h.okAt, h.deadAt, h.height
+        FROM items i
+        LEFT JOIN channel_health h ON h.itemId = i.id
+        WHERE i.kind = 0 AND i.id != :exclude
+            AND i.id IN (SELECT docid FROM items_fts WHERE items_fts MATCH :match)
+            AND (i.region IS NULL OR i.region NOT IN (:hidden)) AND ('g:' || i.kind || ':' || i.groupName) NOT IN (:hidden)
+            AND NOT ('scan:dead' IN (:hidden) AND i.id IN (SELECT itemId FROM channel_scan WHERE hidden = 1))
+            AND NOT ('placeholder' IN (:hidden) AND i.kind = 0
+                AND ((' ' || i.searchName) GLOB '* no event*' OR (' ' || i.searchName) GLOB '* no live event*'))
+            AND (:adult OR i.adult = 0)
+        ORDER BY i.sortOrder
+        LIMIT 200
+        """,
+    )
+    suspend fun copyCandidates(
+        exclude: Long,
+        match: String,
+        hidden: List<String>,
+        adult: Boolean,
+    ): List<TuneRow>
+
     @Query("SELECT region, COUNT(*) AS count FROM items WHERE region IS NOT NULL GROUP BY region ORDER BY count DESC")
     fun regions(): Flow<List<RegionCount>>
-
-    companion object {
-        const val ONLY_FAVOURITES = 1
-        const val ONLY_RECENT = 2
-    }
 }
 
 @Dao
@@ -476,8 +503,11 @@ interface DownloadDao {
     @Query("SELECT * FROM downloads ORDER BY addedAt DESC")
     fun all(): Flow<List<DownloadEntity>>
 
-    /** Everything saved or on its way, newest first, with each item's artwork while it's still in the playlist. */
-    @Query("SELECT d.*, i.logo AS logo FROM downloads d LEFT JOIN items i ON i.id = d.itemId ORDER BY d.addedAt DESC")
+    /** Everything saved or on its way, newest first, with each item's artwork and show while it's still in the playlist. */
+    @Query(
+        "SELECT d.*, i.logo AS logo, i.showKey AS showKey, i.showName AS showName, i.season AS season, i.episode AS episode " +
+            "FROM downloads d LEFT JOIN items i ON i.id = d.itemId ORDER BY d.addedAt DESC",
+    )
     fun rows(): Flow<List<DownloadRow>>
 
     @Query("SELECT * FROM downloads WHERE state = 0 ORDER BY addedAt LIMIT 1")
@@ -585,3 +615,73 @@ interface ChannelScanDao {
     )
     fun report(): Flow<List<ScanReportRow>>
 }
+
+/** The Shows tab's per-show table ([ShowGroupEntity]). */
+@Dao
+interface ShowDao {
+    /**
+     * The Shows tab when nothing narrows it: grouped from [ShowGroupEntity], a few rows per show, instead of from
+     * every episode. New episodes are counted only for the shows on screen.
+     */
+    @Query(
+        """
+        SELECT s.showKey, MIN(s.showName) AS showName, MAX(s.logo) AS logo, MIN(s.groupName) AS groupName,
+            SUM(s.episodes) AS episodes,
+            CASE WHEN s.showKey IN (SELECT showKey FROM seen_episodes) THEN (
+                SELECT COUNT(*) FROM items e
+                WHERE e.kind = 2 AND e.showKey = s.showKey AND e.id NOT IN (SELECT itemId FROM seen_episodes)
+            ) ELSE 0 END AS newEpisodes
+        FROM show_groups s
+        WHERE (s.region IS NULL OR s.region NOT IN (:hidden)) AND ('g:2:' || s.groupName) NOT IN (:hidden)
+            AND (:adult OR s.adult = 0)
+            AND (:group IS NULL OR s.groupName = :group)
+        GROUP BY s.showKey
+        ORDER BY MIN(s.sortOrder)
+        """,
+    )
+    fun showsTab(
+        hidden: List<String>,
+        adult: Boolean,
+        group: String?,
+    ): PagingSource<Int, ShowSummary>
+
+    @Query("DELETE FROM show_groups")
+    suspend fun deleteShowGroups()
+
+    /** [ItemDao.groups] for Shows, from the per-show table: the same counts without reading every episode. */
+    @Query(
+        """
+        SELECT groupName, SUM(episodes) AS count FROM show_groups
+        WHERE (region IS NULL OR region NOT IN (:hidden)) AND ('g:2:' || groupName) NOT IN (:hidden) AND (:adult OR adult = 0)
+        GROUP BY groupName ORDER BY MIN(sortOrder)
+        """,
+    )
+    fun showGroupChips(
+        hidden: List<String>,
+        adult: Boolean,
+    ): Flow<List<GroupCount>>
+}
+
+/** What a Live TV row shows: the channel and what's on now. */
+private const val CHANNEL_COLUMNS =
+    "i.id, i.name, i.logo, i.groupName, i.tvgId, p.title AS nowTitle, p.start AS nowStart, p.stop AS nowStop"
+
+/**
+ * What's on now: the latest programme started on the channel, found through the (channelId, start) index. One row per
+ * channel by construction, so the lists need no GROUP BY, which made SQLite build and sort the whole list per page.
+ */
+private const val NOW_JOIN =
+    "LEFT JOIN programmes p ON p.rowId = (SELECT rowId FROM programmes WHERE channelId = i.tvgId AND start <= :now " +
+        "AND stop > :now ORDER BY start DESC LIMIT 1)"
+
+/** Hidden countries, groups, dead channels and empty event slots stay out; the group chip and the search narrow. */
+private const val CHANNEL_FILTER =
+    "i.kind = 0 AND (i.region IS NULL OR i.region NOT IN (:hidden)) AND ('g:0:' || i.groupName) NOT IN (:hidden) " +
+        "AND NOT ('scan:dead' IN (:hidden) AND i.id IN (SELECT itemId FROM channel_scan WHERE hidden = 1)) " +
+        "AND NOT ('placeholder' IN (:hidden) AND ((' ' || i.searchName) GLOB '* no event*' " +
+        "OR (' ' || i.searchName) GLOB '* no live event*')) " +
+        "AND (:adult OR i.adult = 0) AND (:group IS NULL OR i.groupName = :group) " +
+        "AND (:query = '' OR i.id IN (SELECT docid FROM items_fts WHERE items_fts MATCH :match) OR i.tvgId IN (" +
+        // An event search ("UFC") also finds the channels showing it now or within the hour.
+        "SELECT channelId FROM programmes WHERE start > :now - 86400000 AND start < :now + 3600000 AND stop > :now " +
+        "AND title LIKE '%' || :query || '%'))"

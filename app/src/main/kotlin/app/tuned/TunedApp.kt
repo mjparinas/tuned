@@ -2,11 +2,13 @@ package app.tuned
 
 import android.app.Application
 import android.content.Context
+import android.os.StrictMode
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.ProcessLifecycleOwner
 import androidx.work.WorkInfo
 import androidx.work.WorkManager
+import app.tuned.data.AccountRepository
 import app.tuned.data.BackupRepository
 import app.tuned.data.ChannelScanner
 import app.tuned.data.CredentialStore
@@ -18,6 +20,9 @@ import app.tuned.data.SettingsRepository
 import app.tuned.data.SyncRepository
 import app.tuned.data.TuneRepository
 import app.tuned.data.db.TunedDatabase
+import app.tuned.diagnostics.AppLog
+import app.tuned.diagnostics.CrashReporter
+import app.tuned.diagnostics.loggingHandler
 import app.tuned.updates.GitHubUpdates
 import app.tuned.work.OfflineWorker
 import app.tuned.work.Reminders
@@ -52,7 +57,8 @@ import java.util.concurrent.TimeUnit
 class AppContainer(
     private val context: Context,
 ) {
-    val appScope = CoroutineScope(SupervisorJob())
+    /** A failure in background work is logged (Settings › Developer › Logs), never a crash. */
+    val appScope = CoroutineScope(SupervisorJob() + loggingHandler("App"))
     val settings = SettingsRepository(context)
     val credentials = CredentialStore(context)
     val db by lazy { TunedDatabase.create(context) }
@@ -84,6 +90,7 @@ class AppContainer(
                 .map { infos -> infos.any { it.state == WorkInfo.State.RUNNING } }
         combine(playerOpen, downloading) { open, down -> open || down }.stateIn(appScope, SharingStarted.Eagerly, false)
     }
+    val account by lazy { AccountRepository(http, credentials, settings, playerOpen) }
     val channelScan by lazy { ChannelScanner(context, db, http, credentials, settings, streamBusy) }
     val scanControl by lazy { ScanWorker.Control(context) }
 
@@ -98,12 +105,14 @@ class AppContainer(
         if (previous != null && !previous.samePlaylist(login)) {
             reminders.cancelAll()
             db.items().deleteAll()
+            db.shows().deleteShowGroups()
             db.programmes().deleteAll()
             db.catchUp().deleteAll()
             db.channelScan().deleteAll()
             settings.update { it.copy(lastPlaylistSync = 0, lastGuideSync = 0) }
         }
         settings.update { it.copy(lastSyncError = "") }
+        account.clear()
         scheduler.refreshNow(first = true)
         val s = settings.settings.first()
         scheduler.schedule(s.playlistRefreshHours, s.guideRefreshHours, s.unmeteredOnly)
@@ -115,6 +124,7 @@ class AppContainer(
         scanControl.stop()
         reminders.cancelAll()
         credentials.clear()
+        account.clear()
         db.items().deleteAll()
         db.programmes().deleteAll()
         settings.update { it.copy(lastPlaylistSync = 0, lastGuideSync = 0, lastSyncError = "") }
@@ -130,8 +140,32 @@ class TunedApp :
 
     override fun onCreate() {
         super.onCreate()
+        CrashReporter.install(this)
+        // Debug builds log any disk or network work on the main thread, so a slip that would stutter shows up early.
+        if (BuildConfig.DEBUG) {
+            StrictMode.setThreadPolicy(
+                StrictMode.ThreadPolicy
+                    .Builder()
+                    .detectAll()
+                    .penaltyLog()
+                    .build(),
+            )
+            StrictMode.setVmPolicy(
+                StrictMode.VmPolicy
+                    .Builder()
+                    .detectLeakedClosableObjects()
+                    .penaltyLog()
+                    .build(),
+            )
+        }
         container = AppContainer(this)
         lockAdultWhenAway()
+        container.appScope.launch {
+            container.settings.settings
+                .map { it.developerMode }
+                .distinctUntilChanged()
+                .collect { AppLog.verbose = it }
+        }
         // Re-plan background refreshes whenever their settings change (not on every launch).
         container.appScope.launch {
             container.settings.settings

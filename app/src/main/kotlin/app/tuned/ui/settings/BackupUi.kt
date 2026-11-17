@@ -33,6 +33,8 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import app.tuned.R
 import app.tuned.container
 import app.tuned.core.BackupCrypto
+import app.tuned.diagnostics.AppLog
+import app.tuned.diagnostics.launchSafely
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
@@ -104,15 +106,22 @@ class BackupViewModel(
     private fun launchJob(block: suspend () -> Unit) {
         if (state.value.busy) return
         state.update { State(busy = true) }
-        viewModelScope.launch {
+        viewModelScope.launchSafely("Backup") {
             try {
                 block()
             } catch (_: BackupCrypto.WrongPassphrase) {
                 state.update { State(wrongPassphrase = true) }
             } catch (_: BackupCrypto.NotABackup) {
                 state.update { State(message = getApplication<Application>().getString(R.string.backup_not_a_backup)) }
-            } catch (_: IOException) {
+            } catch (e: IOException) {
+                AppLog.w("Backup", "Couldn't read or write the backup file", e)
                 state.update { State(message = getApplication<Application>().getString(R.string.backup_file_error)) }
+            } catch (e: SecurityException) {
+                // The file picker's permission was taken back before the file was opened.
+                AppLog.w("Backup", "No longer allowed to open the backup file", e)
+                state.update { State(message = getApplication<Application>().getString(R.string.backup_file_error)) }
+            } finally {
+                if (state.value.busy) state.update { State(message = getApplication<Application>().getString(R.string.backup_file_error)) }
             }
         }
     }

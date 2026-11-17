@@ -21,6 +21,8 @@
     <string name="login_sign_in">Sign in</string>
     <string name="login_downloading">Downloading your channels. Big playlists can take a few minutes the first time; it keeps going if you leave the app.</string>
     <string name="login_checking">Checking your login…</string>
+    <string name="login_bad_server">That doesn\'t look like a server address. Check it and try again.</string>
+    <string name="login_failed">Something went wrong while signing in. Please try again.</string>
     <string name="login_wrong">The server didn\'t accept that username and password.</string>
     <string name="first_run_change_login">Change login</string>
     <string name="login_privacy">Your login is encrypted on this device and stays until you sign out.</string>
@@ -144,6 +146,22 @@
     <string name="settings_pure_black_summary">True black in dark mode, for OLED screens</string>
 
     <string name="settings_advanced">Advanced</string>
+    <string name="settings_developer">Developer</string>
+    <string name="settings_developer_mode">Developer mode</string>
+    <string name="settings_developer_mode_summary">Keep a detailed log of what Tuned does and show it here, to find out what went wrong. Crash reports are saved either way.</string>
+    <string name="settings_logs_summary">Crash reports and the recent log, to read, copy or share. Logins are left out.</string>
+    <string name="logs_title">Logs</string>
+    <string name="logs_copy">Copy log</string>
+    <string name="logs_copied">Log copied</string>
+    <string name="logs_share">Share log</string>
+    <string name="logs_clear">Clear log</string>
+    <string name="logs_recent">Recent log, newest first</string>
+    <string name="logs_empty">Nothing logged yet</string>
+    <string name="logs_empty_summary">Errors, warnings and crashes show up here as they happen.</string>
+    <plurals name="logs_crashes">
+        <item quantity="one">%d crash report</item>
+        <item quantity="other">%d crash reports</item>
+    </plurals>
     <string name="settings_user_agent">User agent</string>
     <string name="settings_user_agent_default">Default (Tuned)</string>
     <string name="settings_version">Tuned %1$s (%2$d)</string>

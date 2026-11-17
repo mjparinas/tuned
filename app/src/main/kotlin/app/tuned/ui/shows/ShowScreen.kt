@@ -59,6 +59,7 @@ import app.tuned.data.EpisodeInfo
 import app.tuned.data.db.HistoryEntity
 import app.tuned.data.db.ItemEntity
 import app.tuned.data.db.SeenEpisodeEntity
+import app.tuned.diagnostics.launchSafely
 import app.tuned.ui.common.BackTopBar
 import app.tuned.ui.common.focusRing
 import app.tuned.ui.details.DetailsBody
@@ -78,7 +79,6 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class ShowViewModel(
@@ -95,7 +95,7 @@ class ShowViewModel(
     fun load(showKey: String) {
         if (key.value == showKey) return
         key.value = showKey
-        viewModelScope.launch {
+        viewModelScope.launchSafely("Show") {
             val list = db.items().episodes(showKey).first { it.isNotEmpty() }
             val seen = db.seenEpisodes().seen(showKey).toSet()
             // A show opened for the first time has nothing new: everything is simply there.

@@ -16,10 +16,10 @@ import app.tuned.data.SyncProgress
 import app.tuned.data.db.ChannelWithNow
 import app.tuned.data.db.ContinueRow
 import app.tuned.data.db.GroupCount
-import app.tuned.data.db.ItemDao
 import app.tuned.data.db.ItemEntity
 import app.tuned.data.db.ShowSummary
 import app.tuned.data.hiddenKeys
+import app.tuned.diagnostics.launchSafely
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.delay
@@ -34,7 +34,6 @@ import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.launch
 
 /** What a list shows: a category, favourites only, or everything. */
 sealed interface Filter {
@@ -65,6 +64,11 @@ class BrowseViewModel(
 ) : AndroidViewModel(app) {
     private val container = app.container
     private val items = container.db.items()
+
+    init {
+        // The account's status (connections in use, expiry), so the player and Settings never wait for it.
+        viewModelScope.launch { container.account.refreshIfOld() }
+    }
 
     private val filters = mutableMapOf<ContentKind, MutableStateFlow<Filter>>()
     private val searches = mutableMapOf<ContentKind, MutableStateFlow<String>>()
@@ -97,19 +101,13 @@ class BrowseViewModel(
         query(ContentKind.LIVE)
             .flatMapLatest { q ->
                 Pager(config) {
-                    items.channels(
-                        q.now,
-                        q.hidden,
-                        q.adult,
-                        (q.filter as? Filter.Group)?.name,
-                        when (q.filter) {
-                            Filter.Favourites -> ItemDao.ONLY_FAVOURITES
-                            Filter.Recent -> ItemDao.ONLY_RECENT
-                            else -> 0
-                        },
-                        q.search,
-                        Search.match(q.search),
-                    )
+                    val group = (q.filter as? Filter.Group)?.name
+                    val match = Search.match(q.search)
+                    when (q.filter) {
+                        Filter.Favourites -> items.favouriteChannels(q.now, q.hidden, q.adult, group, q.search, match)
+                        Filter.Recent -> items.recentChannels(q.now, q.hidden, q.adult, group, q.search, match)
+                        else -> items.channels(q.now, q.hidden, q.adult, group, q.search, match)
+                    }
                 }.flow
             }.cachedIn(viewModelScope)
 
@@ -133,14 +131,13 @@ class BrowseViewModel(
         query(ContentKind.SERIES)
             .flatMapLatest { q ->
                 Pager(config) {
-                    items.shows(
-                        q.hidden,
-                        q.adult,
-                        (q.filter as? Filter.Group)?.name,
-                        q.filter == Filter.Favourites,
-                        q.search,
-                        Search.match(q.search),
-                    )
+                    val group = (q.filter as? Filter.Group)?.name
+                    // Browsing reads the per-show table; a search or Favourites narrows the episodes themselves.
+                    if (q.search.isEmpty() && q.filter != Filter.Favourites) {
+                        container.db.shows().showsTab(q.hidden, q.adult, group)
+                    } else {
+                        items.shows(q.hidden, q.adult, group, q.filter == Filter.Favourites, q.search, Search.match(q.search))
+                    }
                 }.flow
             }.cachedIn(viewModelScope)
 
@@ -161,8 +158,15 @@ class BrowseViewModel(
         settings
             .map { it?.hiddenKeys().orEmpty() to (it?.showAdult ?: false) }
             .distinctUntilChanged()
-            .flatMapLatest { (hidden, adult) -> items.groups(kind.code, hidden, adult) }
-            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+            .flatMapLatest { (hidden, adult) ->
+                if (kind ==
+                    ContentKind.SERIES
+                ) {
+                    container.db.shows().showGroupChips(hidden, adult)
+                } else {
+                    items.groups(kind.code, hidden, adult)
+                }
+            }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
     }
 
     val refreshing = container.scheduler.refreshing.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), false)
@@ -187,7 +191,7 @@ class BrowseViewModel(
 
     /** "Change login" when the first download fails: back to sign-in with nothing kept. */
     fun signOut(onDone: () -> Unit) {
-        viewModelScope.launch {
+        viewModelScope.launchSafely("BrowseViewModel") {
             container.signOut()
             onDone()
         }
@@ -212,12 +216,12 @@ class BrowseViewModel(
         group: String,
     ) {
         filter(kind).value = Filter.All
-        viewModelScope.launch {
+        viewModelScope.launchSafely("BrowseViewModel") {
             container.settings.update { it.copy(hiddenGroups = it.hiddenGroups + HiddenGroups.key(kind.code, group)) }
         }
     }
 
     fun rememberTab(index: Int) {
-        viewModelScope.launch { container.settings.update { it.copy(lastTab = index) } }
+        viewModelScope.launchSafely("BrowseViewModel") { container.settings.update { it.copy(lastTab = index) } }
     }
 }

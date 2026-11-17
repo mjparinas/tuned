@@ -3,6 +3,7 @@ package app.tuned.data
 import app.tuned.data.db.FavouriteEntity
 import app.tuned.data.db.TunedDatabase
 import app.tuned.data.db.WatchLaterEntity
+import app.tuned.diagnostics.attempt
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -52,7 +53,8 @@ class OptimisticSet<K>(
         pending.update { it + (key to on) }
         scope.launch {
             writes.withLock {
-                runCatching { write() }.onFailure { pending.update { p -> if (p[key] == on) p - key else p } }
+                attempt("Picks", "Couldn't save the change") { write() }
+                    .onFailure { pending.update { p -> if (p[key] == on) p - key else p } }
             }
         }
     }

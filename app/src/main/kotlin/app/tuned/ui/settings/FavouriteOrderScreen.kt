@@ -32,12 +32,12 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import app.tuned.R
 import app.tuned.container
 import app.tuned.data.db.FavouriteRow
+import app.tuned.diagnostics.launchSafely
 import app.tuned.ui.common.BackTopBar
 import coil3.compose.AsyncImage
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.launch
 
 class FavouriteOrderViewModel(
     app: Application,
@@ -56,7 +56,7 @@ class FavouriteOrderViewModel(
         val to = from + by
         if (from !in list.indices || to !in list.indices) return
         list.add(to, list.removeAt(from))
-        viewModelScope.launch { library.reorderFavourites(list.map { it.id }) }
+        viewModelScope.launchSafely("FavouriteOrder") { library.reorderFavourites(list.map { it.id }) }
     }
 }
 

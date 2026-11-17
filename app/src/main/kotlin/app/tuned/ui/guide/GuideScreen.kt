@@ -56,6 +56,7 @@ import app.tuned.container
 import app.tuned.core.CatchUp
 import app.tuned.data.db.ItemEntity
 import app.tuned.data.db.ProgrammeEntity
+import app.tuned.diagnostics.launchSafely
 import app.tuned.player.PlayerActivity
 import app.tuned.ui.common.BackTopBar
 import app.tuned.ui.common.focusRing
@@ -84,7 +85,7 @@ class GuideViewModel(
 
     fun load(id: Long) {
         if (channel.value?.id == id) return
-        viewModelScope.launch { channel.value = db.items().get(id) }
+        viewModelScope.launchSafely("Guide") { channel.value = db.items().get(id) }
     }
 
     /** Days of recordings the channel keeps (catch-up), 0 for none. */
@@ -120,7 +121,7 @@ class GuideViewModel(
         if (Reminders.key(c.id, p.start) in scheduled.value) {
             reminders.cancel(c.id, p.start)
         } else {
-            viewModelScope.launch {
+            viewModelScope.launchSafely("Guide") {
                 reminders.set(c.id, c.name, p.title, p.start, settings.settings.first().reminderLeadMinutes)
             }
         }

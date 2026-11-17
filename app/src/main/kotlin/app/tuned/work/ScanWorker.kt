@@ -20,6 +20,8 @@ import androidx.work.WorkerParameters
 import androidx.work.workDataOf
 import app.tuned.R
 import app.tuned.container
+import app.tuned.diagnostics.attempt
+import app.tuned.diagnostics.logFailures
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
@@ -33,12 +35,13 @@ class ScanWorker(
 ) : CoroutineWorker(context, params) {
     private var lastReport = 0L
 
-    override suspend fun doWork(): Result {
+    override suspend fun doWork(): Result = logFailures("Scan", failed = { Result.failure() }) {
         val container = applicationContext.container
-        if (container.credentials.load() == null) return Result.success()
-        runCatching { setForeground(foregroundInfo(0, 0)) } // Android 12+ may refuse from the background; it runs anyway
+        if (container.credentials.load() == null) return@logFailures Result.success()
+        // Android 12+ may refuse from the background; it runs anyway.
+        attempt("Scan", "Couldn't run as a foreground service") { setForeground(foregroundInfo(0, 0)) }
         container.channelScan.scan { done, total -> report(done, total) }
-        return Result.success()
+        Result.success()
     }
 
     private fun report(
