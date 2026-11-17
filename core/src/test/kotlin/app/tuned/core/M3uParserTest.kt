@@ -72,7 +72,13 @@ class M3uParserTest {
     @Test
     fun `junk lines never stop the parse`() {
         val list = parse("garbage\n#EXTINF:-1 tvg-id=\"unclosed,Bad\nhttp://a/1.ts\n#EXTINF\nhttp://a/2.ts\n")
-        assertEquals(3, list.size)
+        assertEquals(listOf("http://a/1.ts", "http://a/2.ts"), list.map { it.url })
+    }
+
+    @Test
+    fun `an html error page instead of a playlist has no streams`() {
+        val page = "<!DOCTYPE html>\n<html><head><title>403 Forbidden</title></head>\n<body>Access denied</body></html>\n"
+        assertEquals(0, parse(page).size)
     }
 
     @Test

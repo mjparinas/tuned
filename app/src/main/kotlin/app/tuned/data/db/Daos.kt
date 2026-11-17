@@ -781,6 +781,29 @@ interface ShowDao {
         hidden: List<String>,
         adult: Boolean,
     ): Flow<List<GroupCount>>
+
+    /**
+     * Episodes already fetched for shows read from the Xtream API (`core/XtreamApi`): every episode with a real link.
+     * A refresh keeps them in place of the show's stand-in row, so an opened show doesn't fold back to one row.
+     */
+    @Query("SELECT * FROM items WHERE kind = 2 AND url NOT LIKE 'xtream-series:%'")
+    suspend fun fetchedEpisodes(): List<ItemEntity>
+
+    /** Swaps a show's stand-in row for its episodes, in one go so the show page never sees neither. */
+    @Transaction
+    suspend fun replaceStandIn(
+        standInId: Long,
+        episodes: List<ItemEntity>,
+    ) {
+        insertEpisodes(episodes)
+        deleteItem(standInId)
+    }
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertEpisodes(items: List<ItemEntity>)
+
+    @Query("DELETE FROM items WHERE id = :id")
+    suspend fun deleteItem(id: Long)
 }
 
 /** What a Live TV row shows: the channel and what's on now. */
