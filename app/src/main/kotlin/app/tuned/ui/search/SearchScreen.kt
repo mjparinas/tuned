@@ -53,6 +53,7 @@ import app.tuned.core.Search
 import app.tuned.data.db.ChannelWithNow
 import app.tuned.data.db.ItemEntity
 import app.tuned.data.db.ShowSummary
+import app.tuned.data.hiddenKeys
 import app.tuned.ui.browse.Logo
 import app.tuned.ui.common.VoiceSearchButton
 import app.tuned.ui.common.focusRing
@@ -86,7 +87,7 @@ class SearchViewModel(
         combine(
             query.debounce(200).distinctUntilChanged(),
             container.settings.settings,
-        ) { q, s -> Triple(q, s.hiddenRegions.toList(), s.showAdult) }
+        ) { q, s -> Triple(q, s.hiddenKeys(), s.showAdult) }
             .mapLatest { (q, hidden, adult) ->
                 val text = Search.normalize(q).trim()
                 if (text.isEmpty()) {

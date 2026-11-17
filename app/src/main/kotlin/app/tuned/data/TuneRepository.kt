@@ -25,7 +25,7 @@ class TuneRepository(
                 normalized = normalized,
                 from = now,
                 to = now + HOUR,
-                hidden = s.hiddenRegions.toList(),
+                hidden = s.hiddenKeys(),
                 adult = s.showAdult,
             )
         val candidates =

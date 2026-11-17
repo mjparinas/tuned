@@ -54,6 +54,7 @@ import app.tuned.core.ContentKind
 import app.tuned.data.AppSettings
 import app.tuned.data.db.HistoryEntity
 import app.tuned.data.db.ItemEntity
+import app.tuned.data.hiddenKeys
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
@@ -304,7 +305,7 @@ class PlayerActivity : FragmentActivity() {
     private suspend fun siblings(item: ItemEntity): List<ItemEntity> {
         val items = container.db.items()
         return when (ContentKind.fromCode(item.kind)) {
-            ContentKind.LIVE -> items.channelsInGroup(item.groupName, settings.hiddenRegions.toList(), settings.showAdult)
+            ContentKind.LIVE -> items.channelsInGroup(item.groupName, settings.hiddenKeys(), settings.showAdult)
             ContentKind.SERIES -> item.showKey?.let { items.episodesNow(it) }.orEmpty()
             ContentKind.MOVIE -> emptyList()
         }.ifEmpty { listOf(item) }
