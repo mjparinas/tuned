@@ -40,6 +40,7 @@ import coil3.annotation.DelicateCoilApi
 import coil3.asImage
 import coil3.test.FakeImageLoaderEngine
 import com.github.takahirom.roborazzi.captureRoboImage
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import org.junit.Before
 import org.junit.Rule
@@ -72,7 +73,7 @@ class Screenshots {
         val engine = FakeImageLoaderEngine.Builder()
         art.forEach { (url, bitmap) -> engine.intercept(url, bitmap.asImage()) }
         SingletonImageLoader.setUnsafe(ImageLoader.Builder(app).components { add(engine.build()) }.build())
-        runBlocking { seed() }
+        runBlocking(Dispatchers.IO) { seed() }
     }
 
     @Test fun login() = shot("01-sign-in", ThemeMode.DARK, wait = "Sign in") { LoginScreen(onSignedIn = {}) }
