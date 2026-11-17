@@ -13,6 +13,7 @@ import app.tuned.core.EventChannels
 import app.tuned.core.Placeholders
 import app.tuned.core.RoundTheClock
 import app.tuned.core.ScanEngine
+import app.tuned.core.StreamLink
 import app.tuned.data.db.ChannelScanEntity
 import app.tuned.data.db.TunedDatabase
 import kotlinx.coroutines.Dispatchers
@@ -163,10 +164,10 @@ class ChannelScanner(
         override fun now(): Long = System.currentTimeMillis()
 
         override suspend fun probe(id: Long): Failure? {
-            val url = db.items().get(id)?.url ?: return Failure.HTTP
+            val link = StreamLink.split(db.items().get(id)?.url ?: return Failure.HTTP)
             while (true) {
                 busy.first { !it }
-                val look = interruptible { calls -> look(url, calls) }
+                val look = interruptible { calls -> look(link.url, calls, link.headers) }
                 if (look != null) return look.failure
                 // The player opened or a download started mid-look: wait, then look again.
             }
@@ -215,10 +216,15 @@ class ChannelScanner(
             if (cut) null else result
         }
 
-        private fun request(url: String) = Request
+        /** The playlist's own headers for the stream (a user agent or referrer it asks for) win over the app's. */
+        private fun request(
+            url: String,
+            headers: Map<String, String>,
+        ) = Request
             .Builder()
             .url(url)
             .header("User-Agent", agent)
+            .apply { headers.forEach { (name, value) -> header(name, value) } }
             .build()
 
         private inner class Look(
@@ -229,6 +235,7 @@ class ChannelScanner(
         private fun look(
             url: String,
             calls: Call.Factory,
+            headers: Map<String, String>,
             depth: Int = 0,
         ): Look {
             var code: Int? = null
@@ -236,7 +243,7 @@ class ChannelScanner(
             var timedOut = false
             var failed = false
             try {
-                calls.newCall(request(url)).execute().use { r ->
+                calls.newCall(request(url, headers)).execute().use { r ->
                     code = r.code
                     if (r.isSuccessful) bytes = read(r.body.byteStream())
                 }
@@ -248,7 +255,7 @@ class ChannelScanner(
             val failure = ChannelScan.classify(code, bytes, timedOut, failed)
             if (failure == null && depth < MAX_DEPTH && ChannelScan.isPlaylist(bytes)) {
                 val next = ChannelScan.firstUri(bytes.decodeToString(), url) ?: return Look(Failure.NO_DATA)
-                return look(next, calls, depth + 1)
+                return look(next, calls, headers, depth + 1)
             }
             return Look(failure)
         }

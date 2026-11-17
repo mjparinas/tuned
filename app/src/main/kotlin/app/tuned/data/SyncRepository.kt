@@ -118,21 +118,38 @@ class SyncRepository(
                 if (r.isSuccessful) XtreamAccount.timezone(r.body.string().take(MAX_ACCOUNT_ANSWER)) else null
             }
         if (zone != null) settings.update { it.copy(serverTimezone = zone) }
-        val rows =
-            http.newCall(get(XtreamUrls.liveStreams(login.server, login.username, login.password))).execute().use { r ->
-                if (!r.isSuccessful) throw IOException("HTTP ${r.code}")
-                // Streamed one channel at a time: the list of every live channel can run to megabytes.
-                Json
-                    .decodeToSequence(r.body.byteStream(), JsonObject.serializer())
-                    .mapNotNull { o ->
-                        val days = CatchUp.days(o.text("tv_archive"), o.text("tv_archive_duration"))
-                        o.text("stream_id")?.takeIf { days > 0 }?.let { CatchUpEntity(it, days) }
-                    }.toList()
+        val rows = ArrayList<CatchUpEntity>()
+        val adult = HashSet<String>()
+        http.newCall(get(XtreamUrls.liveStreams(login.server, login.username, login.password))).execute().use { r ->
+            if (!r.isSuccessful) throw IOException("HTTP ${r.code}")
+            // Streamed one channel at a time: the list of every live channel can run to megabytes.
+            for (o in Json.decodeToSequence(r.body.byteStream(), JsonObject.serializer())) {
+                val id = o.text("stream_id") ?: continue
+                val days = CatchUp.days(o.text("tv_archive"), o.text("tv_archive_duration"))
+                if (days > 0) rows += CatchUpEntity(id, days)
+                if (o.text("is_adult") == "1") adult += id
             }
+        }
         db.withTransaction {
             db.catchUp().deleteAll()
             rows.chunked(BATCH).forEach { db.catchUp().insertAll(it) }
         }
+        markAdult(adult)
+    }
+
+    /**
+     * Channels the server flags `is_adult` are adult even when their category doesn't say so (other providers file
+     * them under names like "Night" or "Premium"). Runs after each playlist import, which resets the flag from the names.
+     */
+    private suspend fun markAdult(streamIds: Set<String>) {
+        if (streamIds.isEmpty()) return
+        val ids =
+            db
+                .items()
+                .liveUrls()
+                .filter { CatchUp.streamId(it.url) in streamIds }
+                .map { it.id }
+        ids.chunked(SQL_VARIABLES).forEach { db.catchUp().markAdult(it) }
     }
 
     private fun JsonObject.text(key: String) = (this[key] as? JsonPrimitive)?.contentOrNull
@@ -264,6 +281,7 @@ class SyncRepository(
 
     private companion object {
         const val BATCH = 1_000
+        const val SQL_VARIABLES = 900
         const val MAX_ACCOUNT_ANSWER = 64_000
         const val HOUR = 3_600_000L
         const val DAY = 24 * HOUR

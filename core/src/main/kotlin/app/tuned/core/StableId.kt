@@ -7,7 +7,8 @@ package app.tuned.core
 object StableId {
     fun of(entry: PlaylistEntry): Long {
         val tail =
-            entry.url
+            StreamLink
+                .address(entry.url)
                 .substringBefore('?')
                 .substringAfterLast('/')
                 .substringBeforeLast('.')

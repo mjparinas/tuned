@@ -538,6 +538,14 @@ interface CatchUpDao {
 
     @Query("SELECT days FROM catchup WHERE streamId = :streamId")
     fun days(streamId: String): Flow<Int?>
+
+    // What the Xtream API says about live channels, beside their catch-up days: both come from get_live_streams.
+    @Query("SELECT id, url FROM items WHERE kind = 0")
+    suspend fun liveUrls(): List<ItemUrl>
+
+    /** Marks live channels the server itself calls adult (Xtream `is_adult`), whatever their category says. */
+    @Query("UPDATE items SET adult = 1 WHERE id IN (:ids)")
+    suspend fun markAdult(ids: List<Long>)
 }
 
 @Dao
