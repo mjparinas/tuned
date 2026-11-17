@@ -65,10 +65,10 @@ class Screenshots {
     @OptIn(DelicateCoilApi::class)
     @Before
     fun setUp() {
-        WorkManagerTestInitHelper.initializeTestWorkManager(
-            app,
-            Configuration.Builder().setExecutor(SynchronousExecutor()).build(),
-        )
+        // App startup may already have set WorkManager up; the test one only matters when it hasn't.
+        runCatching {
+            WorkManagerTestInitHelper.initializeTestWorkManager(app, Configuration.Builder().setExecutor(SynchronousExecutor()).build())
+        }
         val engine = FakeImageLoaderEngine.Builder()
         art.forEach { (url, bitmap) -> engine.intercept(url, bitmap.asImage()) }
         SingletonImageLoader.setUnsafe(ImageLoader.Builder(app).components { add(engine.build()) }.build())

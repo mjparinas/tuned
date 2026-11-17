@@ -82,6 +82,8 @@ android {
                 test.systemProperty("roborazzi.record.filePathStrategy", "relativePathFromRoborazziContextOutputDirectory")
             } else {
                 test.exclude("app/tuned/screenshots/**")
+                // The app has no other JVM tests yet (they live in :core), so finding none is expected.
+                test.failOnNoDiscoveredTests.set(false)
             }
         }
     }
