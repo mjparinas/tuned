@@ -1,6 +1,6 @@
 # Player
 
-**Media3 ExoPlayer** in `PlayerActivity`, full screen, system bars hidden. A tap shows the standard controls and the title (channel name with what's on now and next, or the movie or episode name); they hide again after the timeout in Settings (3 seconds by default).
+**Media3 ExoPlayer** in `PlayerActivity`, full screen, system bars hidden. A tap shows the standard controls, a back button (Melvin, 2026-11-17) and the title (channel name with what's on now and next, or the movie or episode name); they hide again after the timeout in Settings (3 seconds by default).
 
 **Controls.** Play and pause, seek bar and skip back and forward (on-demand only; lengths in Settings), previous and next (the next channel in the same category for live, the next episode for shows), the CC button, and the settings menu with audio track and speed.
 
