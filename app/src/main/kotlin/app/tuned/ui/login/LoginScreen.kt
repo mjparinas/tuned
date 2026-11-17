@@ -48,19 +48,25 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import app.tuned.R
 import app.tuned.container
+import app.tuned.core.XtreamAccount
 import app.tuned.core.XtreamUrls
 import app.tuned.data.Credentials
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import okhttp3.Request
 import java.io.IOException
+import java.util.concurrent.TimeUnit
 
 /** The default server; editable here and in Settings (Melvin, 2026-11-17). */
 const val DEFAULT_SERVER = "http://eros4k.ddns.net"
 
 class LoginViewModel(
-    app: Application,
+    private val app: Application,
 ) : AndroidViewModel(app) {
     data class State(
         val busy: Boolean = false,
@@ -70,7 +76,11 @@ class LoginViewModel(
     val state = MutableStateFlow(State())
     private val container = app.container
 
-    /** Saves the login, downloads the playlist once in the foreground (so the first screen has channels), then plans refreshes. */
+    /**
+     * Checks a server login with the server's small account answer (seconds, not the 400 MB playlist), saves it,
+     * and opens the app. The playlist then downloads in the background with a progress bar; the first screen waits
+     * for it.
+     */
     fun signIn(
         credentials: Credentials,
         onDone: () -> Unit,
@@ -78,18 +88,75 @@ class LoginViewModel(
         if (state.value.busy) return
         state.update { State(busy = true) }
         viewModelScope.launch {
-            container.credentials.save(credentials.copy(server = XtreamUrls.normalizeServer(credentials.server)))
+            val login = credentials.copy(server = XtreamUrls.normalizeServer(credentials.server))
+            val error =
+                if (login.playlistUrl.isBlank()) {
+                    try {
+                        if (check(login) == false) app.getString(R.string.login_wrong) else null
+                    } catch (e: IOException) {
+                        XtreamUrls.redact(e.message ?: e.javaClass.simpleName, login.username, login.password)
+                    }
+                } else {
+                    null
+                }
+            if (error != null) {
+                state.update { State(error = error) }
+                return@launch
+            }
+            container.credentials.save(login)
+            container.settings.update { it.copy(lastSyncError = "") }
+            container.scheduler.refreshNow(first = true)
+            val s = container.settings.settings.first()
+            container.scheduler.schedule(s.playlistRefreshHours, s.guideRefreshHours, s.unmeteredOnly)
+            state.update { State() }
+            onDone()
+        }
+    }
+
+    /** True or false when the server says whether it accepts the login, null when it doesn't answer the question. */
+    private suspend fun check(login: Credentials): Boolean? = withContext(Dispatchers.IO) {
+        val ua =
+            container.settings.settings
+                .first()
+                .userAgent
+        val request =
+            Request
+                .Builder()
+                .url(XtreamUrls.account(login.server, login.username, login.password))
+                .apply { if (ua.isNotBlank()) header("User-Agent", ua) }
+                .build()
+        var last: IOException? = null
+        repeat(CHECK_ATTEMPTS) { attempt ->
             try {
-                container.sync.refreshAll()
-                val s = container.settings.settings.first()
-                container.scheduler.schedule(s.playlistRefreshHours, s.guideRefreshHours, s.unmeteredOnly)
-                state.update { State() }
-                onDone()
+                return@withContext checkHttp.newCall(request).execute().use { response ->
+                    when {
+                        response.code == HTTP_UNAUTHORIZED || response.code == HTTP_FORBIDDEN -> false
+                        !response.isSuccessful -> null
+                        else -> XtreamAccount.accepted(response.body.string().take(MAX_ANSWER))
+                    }
+                }
             } catch (e: IOException) {
-                container.credentials.clear()
-                state.update { State(error = e.message ?: "Couldn't sign in") }
+                last = e
+                if (attempt < CHECK_ATTEMPTS - 1) delay((attempt + 1) * RETRY_DELAY_MS)
             }
         }
+        throw last ?: IOException("Couldn't reach the server")
+    }
+
+    private val checkHttp by lazy {
+        container.http
+            .newBuilder()
+            .connectTimeout(30, TimeUnit.SECONDS)
+            .readTimeout(60, TimeUnit.SECONDS)
+            .build()
+    }
+
+    private companion object {
+        const val CHECK_ATTEMPTS = 3
+        const val RETRY_DELAY_MS = 2_000L
+        const val MAX_ANSWER = 64 * 1024
+        const val HTTP_UNAUTHORIZED = 401
+        const val HTTP_FORBIDDEN = 403
     }
 }
 
@@ -199,7 +266,7 @@ fun LoginScreen(
             }
             if (state.busy) {
                 Text(
-                    stringResource(R.string.login_downloading),
+                    stringResource(R.string.login_checking),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )

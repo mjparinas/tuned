@@ -22,6 +22,13 @@ object XtreamUrls {
         password: String,
     ): String = "${normalizeServer(server)}/xmltv.php?username=${enc(username)}&password=${enc(password)}"
 
+    /** The account check: a small JSON answer whose `user_info.auth` is 1 for a good login. */
+    fun account(
+        server: String,
+        username: String,
+        password: String,
+    ): String = "${normalizeServer(server)}/player_api.php?username=${enc(username)}&password=${enc(password)}"
+
     /** Replaces the username and password wherever they appear (query or path), for error messages and logs. */
     fun redact(
         text: String,

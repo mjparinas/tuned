@@ -11,6 +11,7 @@ import app.tuned.container
 import app.tuned.core.ContentKind
 import app.tuned.core.Search
 import app.tuned.data.AppSettings
+import app.tuned.data.SyncProgress
 import app.tuned.data.db.ChannelWithNow
 import app.tuned.data.db.FavouriteEntity
 import app.tuned.data.db.GroupCount
@@ -129,6 +130,10 @@ class BrowseViewModel(
 
     val refreshing = container.scheduler.refreshing.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), false)
 
+    /** What a running refresh is doing (bytes downloaded, rows saved), for the progress bar. */
+    val progress: StateFlow<SyncProgress?> =
+        container.scheduler.progress.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
+
     /** Nothing cached yet (first run, or the first download is still going). */
     val empty: StateFlow<Boolean?> =
         items
@@ -146,6 +151,14 @@ class BrowseViewModel(
     val lastError = settings.map { it?.lastSyncError.orEmpty() }.stateIn(viewModelScope, SharingStarted.Eagerly, "")
 
     fun refresh() = container.scheduler.refreshNow()
+
+    /** "Change login" when the first download fails: back to sign-in with nothing kept. */
+    fun signOut(onDone: () -> Unit) {
+        viewModelScope.launch {
+            container.signOut()
+            onDone()
+        }
+    }
 
     fun toggleFavourite(
         itemId: Long,
