@@ -55,7 +55,8 @@ class SyncWorker(
             } else {
                 container.sync.refreshAll(::report)
             }
-            // New guide data: the widget's "on now" lines move on too.
+            // New guide data: alerts for followed teams' next games, and the widget's "on now" lines move on too.
+            attempt(TAG, "Couldn't set event alerts") { container.events.scheduleAlerts() }
             attempt(TAG, "Couldn't update the widget") { FavouritesWidget().updateAll(applicationContext) }
             // A copy left running for days still hears about a new release.
             UpdateNotice.checkInBackground(applicationContext)

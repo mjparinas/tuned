@@ -358,6 +358,53 @@ interface ItemDao {
         adult: Boolean,
     ): List<TuneRow>
 
+    /**
+     * Live Events: what's on sports and pay-per-view channels from now until [to], for
+     * [Events][app.tuned.core.Events] to sort into events. The category words here are a quick first cut; the rules
+     * in `Events` decide. Hidden countries and groups are left out; "No event" placeholders and channels a scan
+     * found dead are kept, since the guide says an event is on them.
+     */
+    @Query(
+        """
+        SELECT i.id AS itemId, i.name AS channelName, i.groupName AS `group`, p.title, p.start, p.stop
+        FROM programmes p
+        JOIN items i ON i.tvgId = p.channelId AND i.kind = 0
+        WHERE p.stop > :from AND p.start < :to
+            AND (
+                (lower(i.groupName) || ' ' || i.searchName) GLOB '*sport*'
+                OR (lower(i.groupName) || ' ' || i.searchName) GLOB '*ppv*'
+                OR (lower(i.groupName) || ' ' || i.searchName) GLOB '*event*'
+                OR (lower(i.groupName) || ' ' || i.searchName) GLOB '*ufc*'
+                OR (lower(i.groupName) || ' ' || i.searchName) GLOB '*espn*'
+                OR (lower(i.groupName) || ' ' || i.searchName) GLOB '*dazn*'
+                OR (lower(i.groupName) || ' ' || i.searchName) GLOB '*tsn*'
+                OR (lower(i.groupName) || ' ' || i.searchName) GLOB '*bein*'
+                OR (lower(i.groupName) || ' ' || i.searchName) GLOB '*nfl*'
+                OR (lower(i.groupName) || ' ' || i.searchName) GLOB '*nba*'
+                OR (lower(i.groupName) || ' ' || i.searchName) GLOB '*nhl*'
+                OR (lower(i.groupName) || ' ' || i.searchName) GLOB '*mlb*'
+                OR (lower(i.groupName) || ' ' || i.searchName) GLOB '*f1*'
+                OR (lower(i.groupName) || ' ' || i.searchName) GLOB '*fight*'
+                OR (lower(i.groupName) || ' ' || i.searchName) GLOB '*boxing*'
+                OR (lower(i.groupName) || ' ' || i.searchName) GLOB '*wwe*'
+                OR (lower(i.groupName) || ' ' || i.searchName) GLOB '*golf*'
+                OR (lower(i.groupName) || ' ' || i.searchName) GLOB '*tennis*'
+                OR (lower(i.groupName) || ' ' || i.searchName) GLOB '*cricket*'
+                OR (lower(i.groupName) || ' ' || i.searchName) GLOB '*rugby*'
+            )
+            AND (i.region IS NULL OR i.region NOT IN (:hidden)) AND ('g:' || i.kind || ':' || i.groupName) NOT IN (:hidden)
+            AND (:adult OR i.adult = 0)
+        ORDER BY p.start, i.sortOrder
+        LIMIT 20000
+        """,
+    )
+    suspend fun eventProgrammes(
+        from: Long,
+        to: Long,
+        hidden: List<String>,
+        adult: Boolean,
+    ): List<EventRow>
+
     @Query("SELECT region, COUNT(*) AS count FROM items WHERE region IS NOT NULL GROUP BY region ORDER BY count DESC")
     fun regions(): Flow<List<RegionCount>>
 }

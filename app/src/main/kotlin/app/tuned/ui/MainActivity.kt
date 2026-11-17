@@ -30,6 +30,7 @@ import app.tuned.ui.browse.HomeScreen
 import app.tuned.ui.common.WithOfflineBanner
 import app.tuned.ui.details.MovieScreen
 import app.tuned.ui.details.PersonScreen
+import app.tuned.ui.events.EventsScreen
 import app.tuned.ui.guide.GuideScreen
 import app.tuned.ui.login.LoginScreen
 import app.tuned.ui.offline.DownloadsScreen
@@ -136,6 +137,7 @@ class MainActivity : ComponentActivity() {
                     onOpenSettings = { nav.navigate(SettingsRoute) },
                     onOpenSearch = { nav.navigate(SearchRoute()) },
                     onOpenDownloads = { nav.navigate(DownloadsRoute) },
+                    onOpenEvents = { nav.navigate(EventsRoute) },
                     onTune = tune,
                     onSignedOut = { nav.navigate(LoginRoute) { popUpTo(0) { inclusive = true } } },
                 )
@@ -178,6 +180,7 @@ class MainActivity : ComponentActivity() {
                     onBack = { nav.popBackStack() },
                 )
             }
+            composable<EventsRoute> { EventsScreen(onTune = tune, onBack = { nav.popBackStack() }) }
             composable<GuideRoute> { entry ->
                 GuideScreen(itemId = entry.toRoute<GuideRoute>().itemId, onPlay = play, onBack = { nav.popBackStack() })
             }

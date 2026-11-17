@@ -193,6 +193,16 @@ data class HiddenScanRow(
     val groupName: String,
 )
 
+/** A programme on a sports or pay-per-view channel, for Live Events ([ItemDao.eventProgrammes]). */
+data class EventRow(
+    val itemId: Long,
+    val channelName: String,
+    val group: String,
+    val title: String,
+    val start: Long,
+    val stop: Long,
+)
+
 /** A live channel with what's on now (from the guide), for the Live TV list. */
 data class ChannelWithNow(
     val id: Long,

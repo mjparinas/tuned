@@ -82,6 +82,8 @@ data class AppSettings(
     val hiddenRegions: Set<String> = emptySet(),
     /** Hidden groups, as [app.tuned.core.HiddenGroups] keys. */
     val hiddenGroups: Set<String> = emptySet(),
+    /** Teams, leagues and fighters followed on Live Events ("Canucks", "UFC"), as typed. */
+    val followedEvents: Set<String> = emptySet(),
     val showAdult: Boolean = false,
     val playlistRefreshHours: Int = 12,
     val guideRefreshHours: Int = 6,
@@ -248,6 +250,7 @@ class SettingsRepository(
             lastTab = p[K.lastTab] ?: d.lastTab,
             hiddenRegions = p[K.hiddenRegions] ?: d.hiddenRegions,
             hiddenGroups = p[K.hiddenGroups] ?: d.hiddenGroups,
+            followedEvents = p[K.followedEvents] ?: d.followedEvents,
             playlistRefreshHours = p[K.playlistRefreshHours] ?: d.playlistRefreshHours,
             guideRefreshHours = p[K.guideRefreshHours] ?: d.guideRefreshHours,
             reminderLeadMinutes = p[K.reminderLeadMinutes] ?: d.reminderLeadMinutes,
@@ -316,6 +319,7 @@ class SettingsRepository(
         p[K.lastTab] = s.lastTab
         p[K.hiddenRegions] = s.hiddenRegions
         p[K.hiddenGroups] = s.hiddenGroups
+        p[K.followedEvents] = s.followedEvents
         p[K.playlistRefreshHours] = s.playlistRefreshHours
         p[K.guideRefreshHours] = s.guideRefreshHours
         p[K.reminderLeadMinutes] = s.reminderLeadMinutes
@@ -383,6 +387,7 @@ class SettingsRepository(
         val lastTab = intPreferencesKey("last_tab")
         val hiddenRegions = stringSetPreferencesKey("hidden_regions")
         val hiddenGroups = stringSetPreferencesKey("hidden_groups")
+        val followedEvents = stringSetPreferencesKey("followed_events")
         val adultPin = stringPreferencesKey("adult_pin")
         val playlistRefreshHours = intPreferencesKey("playlist_refresh_hours")
         val guideRefreshHours = intPreferencesKey("guide_refresh_hours")
