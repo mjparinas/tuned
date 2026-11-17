@@ -30,12 +30,14 @@ import app.tuned.diagnostics.AppLog
 import app.tuned.diagnostics.CrashReporter
 import app.tuned.diagnostics.attempt
 import app.tuned.diagnostics.launchSafely
+import app.tuned.diagnostics.attempt
 import app.tuned.diagnostics.loggingHandler
 import app.tuned.updates.GitHubUpdates
 import app.tuned.work.OfflineWorker
 import app.tuned.work.Reminders
 import app.tuned.work.ScanWorker
 import app.tuned.work.SyncScheduler
+import app.tuned.work.TvHome
 import coil3.ImageLoader
 import coil3.PlatformContext
 import coil3.SingletonImageLoader
@@ -89,7 +91,7 @@ class AppContainer(
     val reminders by lazy { Reminders(context) }
     val events by lazy { EventsRepository(db, settings, reminders) }
     val offline by lazy { Offline(context, db, settings) }
-    val picks by lazy { Picks(db, appScope) }
+    val picks by lazy { Picks(db, appScope) { TvHome.schedule(context) } }
     val connectivity by lazy { Connectivity(context, appScope) }
     val metadata by lazy { MetadataRepository(http, settings, db.metadata(), appScope, connectivity::onlineNow) }
     val savedArtwork by lazy { SavedArtwork(context, db, metadata) }
@@ -120,6 +122,7 @@ class AppContainer(
         credentials.remember(login)
         if (previous != null && !previous.samePlaylist(login)) {
             reminders.cancelAll()
+            if (TvHome.isTv(context)) attempt("TvHome", "Couldn't clear the home screen") { TvHome(context).clear() }
             db.items().deleteAll()
             db.shows().deleteShowGroups()
             db.programmes().deleteAll()
@@ -162,6 +165,7 @@ class AppContainer(
         scheduler.cancelAll()
         scanControl.stop()
         reminders.cancelAll()
+        if (TvHome.isTv(context)) attempt("TvHome", "Couldn't clear the home screen") { TvHome(context).clear() }
         credentials.clear()
         account.clear()
         db.items().deleteAll()

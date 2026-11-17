@@ -64,6 +64,8 @@ class OptimisticSet<K>(
 class Picks(
     private val db: TunedDatabase,
     scope: CoroutineScope,
+    /** After a favourite is added or taken away (the TV home screen's row follows). */
+    private val onFavouritesChanged: () -> Unit = {},
 ) {
     val favourites = OptimisticSet(db.library().favouriteIds(), scope)
     val watchLater = OptimisticSet(db.watchLater().keys(), scope)
@@ -73,6 +75,7 @@ class Picks(
         on: Boolean,
     ) = favourites.set(itemId, on) {
         if (on) db.library().addFavourite(FavouriteEntity(itemId, System.currentTimeMillis())) else db.library().removeFavourite(itemId)
+        onFavouritesChanged()
     }
 
     fun setWatchLater(
