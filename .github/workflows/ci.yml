@@ -19,7 +19,7 @@ permissions:
 jobs:
   # What this run has to do, as in Liftsmith:
   #  1. Nothing, when this exact tree already passed. "CI passed" records the tree it tested as a commit status
-  #     ("CI passed tree"), so the staging push after a squash merge, the nightly promotion pull request, the push
+  #     ("CI passed tree"), so the staging push after a squash merge, the promotion pull request, the push
   #     to main and the merge back into staging finish in seconds.
   #  2. Only the gate, when every changed file is Markdown and the commit before it passed.
   #  3. Everything otherwise.
@@ -167,9 +167,34 @@ jobs:
           path: app/build/outputs/apk/debug/app-debug.apk
           retention-days: 7
 
+  # Melvin, 2026-11-17: the decision record "should be updated and kept in sync every time new features are added
+  # or removed". A pull request titled feat:, breaking (!), revert or remove must change AGENTS.md or docs/decisions/.
+  # It reads only the title and the file list, so it runs even when the tree already passed.
+  decisions:
+    name: Decision record
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      pull-requests: read
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          sparse-checkout: scripts
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+      - name: Feature changes update AGENTS.md or docs/decisions/
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR: ${{ github.event.pull_request.number }}
+        run: gh api "repos/${{ github.repository }}/pulls/$PR/files" --paginate --jq '.[].filename' | node scripts/decision-record.mjs
+
   passed:
     name: CI passed
-    needs: [changes, format, analysis, test, android]
+    needs: [changes, decisions, format, analysis, test, android]
     if: always()
     runs-on: ubuntu-latest
     permissions:
