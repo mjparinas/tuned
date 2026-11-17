@@ -2,8 +2,10 @@ package app.tuned.ui.theme
 
 import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Shapes
 import androidx.compose.material3.Typography
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.dynamicDarkColorScheme
@@ -13,6 +15,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import app.tuned.data.ThemeMode
 
@@ -96,6 +99,20 @@ private val TunedType =
         )
     }
 
+/**
+ * Soft, rounded corners everywhere, like a modern website (Melvin, 2026-11-17: "rounded input boxes and buttons").
+ * Set once here, so every text field (extraSmall), chip (small), card (medium) and sheet or dialog (large and up)
+ * follows. Buttons are already fully round in Material 3.
+ */
+val TunedShapes =
+    Shapes(
+        extraSmall = RoundedCornerShape(14.dp),
+        small = RoundedCornerShape(percent = 50),
+        medium = RoundedCornerShape(20.dp),
+        large = RoundedCornerShape(24.dp),
+        extraLarge = RoundedCornerShape(32.dp),
+    )
+
 @Composable
 fun isDark(mode: ThemeMode): Boolean = when (mode) {
     ThemeMode.SYSTEM -> isSystemInDarkTheme()
@@ -127,5 +144,5 @@ fun TunedTheme(
             }
         }
     if (dark && pureBlack) scheme = scheme.pureBlack()
-    MaterialTheme(colorScheme = scheme, typography = TunedType, content = content)
+    MaterialTheme(colorScheme = scheme, typography = TunedType, shapes = TunedShapes, content = content)
 }

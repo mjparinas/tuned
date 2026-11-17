@@ -245,7 +245,12 @@ private fun LiveList(
 ) {
     val channels = vm.channels.collectAsLazyPagingItems()
     val state = rememberLazyListState()
-    LazyColumn(state = state, modifier = Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 16.dp)) {
+    LazyColumn(
+        state = state,
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(start = 12.dp, end = 12.dp, top = 4.dp, bottom = 16.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
         items(count = channels.itemCount, key = channels.itemKey { it.id }) { index ->
             val channel = channels[index]
             if (channel == null) {
@@ -273,12 +278,13 @@ private fun ChannelRow(
     onToggleFavourite: () -> Unit,
 ) {
     var menu by remember { mutableStateOf(false) }
-    Box {
+    // Each channel is a rounded card, like a row on a modern website.
+    Box(Modifier.clip(MaterialTheme.shapes.medium).background(MaterialTheme.colorScheme.surfaceContainerLow)) {
         Row(
             Modifier
                 .fillMaxWidth()
                 .combinedClickable(onClick = onPlay, onLongClick = { menu = true })
-                .padding(horizontal = 16.dp, vertical = 8.dp),
+                .padding(start = 10.dp, end = 4.dp, top = 10.dp, bottom = 10.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Logo(channel.logo, Modifier.size(width = 64.dp, height = 44.dp))
