@@ -72,13 +72,14 @@ class ProfilesDbTest {
         // The SQL and the Kotlin rule agree.
         assertEquals(items.filter { KidsContent.isKids(it.groupName, it.name, live = true) }.map { it.id }, shown)
         assertEquals(listOf(1L, 2L, 3L, 4L), search(emptyList()))
+        // A grown-up group shows only for the kids channels in it.
         assertEquals(
-            listOf("US| KIDS"),
+            listOf("US| KIDS" to 1, "US | Entertainment" to 1),
             db
                 .items()
                 .groups(0, kids, adult = false)
                 .first()
-                .map { it.groupName },
+                .map { it.groupName to it.count },
         )
     }
 
