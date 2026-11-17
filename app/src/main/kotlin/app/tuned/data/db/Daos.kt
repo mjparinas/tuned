@@ -30,6 +30,10 @@ interface ItemDao {
     @Query("SELECT * FROM items WHERE id = :id")
     suspend fun get(id: Long): ItemEntity?
 
+    /** The live channel watched last, for the quick-settings tile. */
+    @Query("SELECT i.* FROM history h JOIN items i ON i.id = h.itemId WHERE i.kind = 0 ORDER BY h.watchedAt DESC LIMIT 1")
+    suspend fun lastWatchedChannel(): ItemEntity?
+
     @Query("SELECT * FROM items WHERE id IN (:ids)")
     suspend fun getAll(ids: List<Long>): List<ItemEntity>
 
@@ -318,7 +322,7 @@ interface LibraryDao {
     /** Favourite channels in the order they're shown, for Settings › Order favourites. */
     @Query(
         """
-        SELECT i.id, i.name, i.logo FROM favourites f JOIN items i ON i.id = f.itemId
+        SELECT i.id, i.name, i.logo, i.tvgId FROM favourites f JOIN items i ON i.id = f.itemId
         WHERE i.kind = 0
         GROUP BY i.id
         ORDER BY f.position, i.sortOrder

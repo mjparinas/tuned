@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="widget_favourites">Favourite channels</string>
+    <string name="widget_favourites_description">Your favourite channels and what\'s on now. Tap one to watch.</string>
+    <string name="widget_empty">Tap the heart on a channel to see it here.</string>
+    <string name="tile_last_channel">Last channel</string>
+</resources>
