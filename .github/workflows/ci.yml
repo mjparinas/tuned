@@ -116,6 +116,9 @@ jobs:
       - uses: ./.github/actions/setup-android
       # detekt and Android Lint both fail on any finding (warnings are errors).
       - run: ./gradlew detekt :app:lintDebug --continue
+      - name: Print the findings
+        if: failure()
+        run: cat app/build/reports/lint-results-debug.txt build/reports/detekt/detekt.txt 2>/dev/null || true
       - uses: actions/upload-artifact@v7
         if: failure()
         with:

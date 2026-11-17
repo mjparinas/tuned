@@ -31,10 +31,8 @@ class SyncWorker(
     /** Expedited work on Android 11 and older runs as a foreground service, which needs a (quiet) notification. */
     override suspend fun getForegroundInfo(): ForegroundInfo {
         val manager = applicationContext.getSystemService(NotificationManager::class.java)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val name = applicationContext.getString(R.string.sync_channel)
-            manager.createNotificationChannel(NotificationChannel(CHANNEL, name, NotificationManager.IMPORTANCE_MIN))
-        }
+        val name = applicationContext.getString(R.string.sync_channel)
+        manager.createNotificationChannel(NotificationChannel(CHANNEL, name, NotificationManager.IMPORTANCE_MIN))
         val notification =
             NotificationCompat
                 .Builder(applicationContext, CHANNEL)

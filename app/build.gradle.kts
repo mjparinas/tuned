@@ -58,9 +58,8 @@ android {
         warningsAsErrors = true
         abortOnError = true
         checkDependencies = true
-        // Every finding in the job log too, not only in the uploaded HTML report.
+        // A plain-text report as well, which CI prints to the job log when lint fails.
         textReport = true
-        textOutput = File("stdout")
         // Versions are Dependabot's job (weekly, grouped); a newer release on Maven must not fail an unrelated change.
         disable += setOf("GradleDependency", "NewerVersionAvailable", "AndroidGradlePluginVersion", "OldTargetApi")
         // IPTV servers stream over plain HTTP (docs/decisions/security.md).
