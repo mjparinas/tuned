@@ -51,6 +51,7 @@ import app.tuned.ui.shows.ShowScreen
 import app.tuned.ui.theme.TunedTheme
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 
 class MainActivity : ComponentActivity() {
@@ -69,6 +70,14 @@ class MainActivity : ComponentActivity() {
         splash.setKeepOnScreenCondition { settings.value == null }
         val signedIn = container.credentials.load() != null
         incomingSearch.value = searchQuery(intent)
+        // Like a cable box: a fresh launch from the home screen goes straight into the last channel (a setting, off by
+        // default). The lists are underneath, from the cache, for when the player closes.
+        if (savedInstanceState == null && signedIn && intent?.action == Intent.ACTION_MAIN && incomingSearch.value == null) {
+            lifecycleScope.launchSafely("Main") {
+                if (!container.settings.settings.first().startOnLastChannel) return@launchSafely
+                container.db.items().lastWatchedChannel()?.let { PlayerActivity.start(this@MainActivity, it.id) }
+            }
+        }
 
         setContent {
             val s by settings.collectAsStateWithLifecycle()
