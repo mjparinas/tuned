@@ -6,6 +6,10 @@ Melvin, 2026-11-17: "optimize for the app not crashing or being unreliable", and
 
 - **Background work never crashes the app.** `AppContainer.appScope` carries a `CoroutineExceptionHandler` that logs. ViewModels and activities launch fire-and-forget work with `launchSafely(tag) { … }` (`diagnostics/Safely.kt`), which logs a failure and leaves the screen working. Work whose result the person waits for still handles its errors itself and says what went wrong (sign-in, backup, refresh).
 - **`attempt(tag, what) { … }`** replaces `runCatching` where the failure is worth knowing about. Unlike `runCatching` it never swallows `CancellationException`, so a cancelled coroutine stops instead of carrying on.
+- **Background jobs** (refresh, downloads, channel scans) run inside `logFailures`, so an unexpected failure is logged and ends that run as failed; network failures are still retried as before. A download whose address can't be used is marked failed so the queue moves on.
+- **Opening another app** (a trailer, the share sheet, the installer, "allow installs from Tuned") goes through `startActivitySafely`, so a device with nothing to handle it (an Android TV without a browser) logs it instead of crashing.
+- **Sign-in and backup never stay stuck on "busy"**: whatever fails is logged and the screen says so. A server address OkHttp can't parse says so instead of crashing.
+- **Installing an older release over a newer one** starts the database afresh (`fallbackToDestructiveMigrationOnDowngrade`) instead of crashing on every launch; upgrades always migrate.
 - **A real crash still ends the app.** `CrashReporter` saves a report first (stack trace, device, version and the 200 log lines before it) and then hands the crash to Android as before. Keeping a process alive after an unknown failure on the main thread leaves it frozen or half-working, which is worse than a restart. At most 10 reports are kept, on the device only.
 - **A damaged settings file resets to the defaults** (DataStore `ReplaceFileCorruptionHandler`), and a read error reads as the defaults, instead of crashing every launch.
 

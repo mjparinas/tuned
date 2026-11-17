@@ -60,11 +60,11 @@ import app.tuned.data.AppSettings
 import app.tuned.data.BufferMode
 import app.tuned.data.StartTab
 import app.tuned.data.ThemeMode
+import app.tuned.diagnostics.launchSafely
 import app.tuned.ui.common.BackTopBar
 import app.tuned.ui.theme.swatch
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.launch
 import java.security.MessageDigest
 
 enum class PinResult { Ok, Wrong, TooMany }
@@ -78,7 +78,7 @@ class SettingsViewModel(
     private val container = app.container
 
     fun update(change: (AppSettings) -> AppSettings) {
-        viewModelScope.launch { container.settings.update(change) }
+        viewModelScope.launchSafely("Settings") { container.settings.update(change) }
     }
 
     val hasPin = container.settings.hasAdultPin.stateIn(viewModelScope, SharingStarted.Eagerly, false)
@@ -131,12 +131,12 @@ class SettingsViewModel(
     fun refreshNow() = container.scheduler.refreshNow()
 
     fun clearHistory() {
-        viewModelScope.launch { container.db.library().clearHistory() }
+        viewModelScope.launchSafely("Settings") { container.db.library().clearHistory() }
     }
 
     /** Signing out forgets the login, the cached playlist and guide, and stops background refreshes. */
     fun signOut(onDone: () -> Unit) {
-        viewModelScope.launch {
+        viewModelScope.launchSafely("Settings") {
             container.signOut()
             onDone()
         }

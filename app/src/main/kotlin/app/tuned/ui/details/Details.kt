@@ -1,7 +1,6 @@
 package app.tuned.ui.details
 
 import android.app.Application
-import android.content.ActivityNotFoundException
 import android.content.Intent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
@@ -68,13 +67,14 @@ import app.tuned.core.Titles
 import app.tuned.data.CastMember
 import app.tuned.data.Metadata
 import app.tuned.data.db.ItemEntity
+import app.tuned.diagnostics.launchSafely
+import app.tuned.diagnostics.startActivitySafely
 import app.tuned.ui.library.LibraryViewModel
 import app.tuned.ui.library.WatchLaterButton
 import app.tuned.ui.library.WatchedButton
 import app.tuned.ui.offline.DownloadButton
 import coil3.compose.AsyncImage
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.launch
 
 /** The TMDB details for one film or show: what the device has at once, then anything newer. */
 class DetailsViewModel(
@@ -92,8 +92,8 @@ class DetailsViewModel(
     private var loaded: String? = null
 
     fun loadItem(id: Long) {
-        viewModelScope.launch {
-            val found = container.db.items().get(id) ?: return@launch
+        viewModelScope.launchSafely("Details") {
+            val found = container.db.items().get(id) ?: return@launchSafely
             item.value = found
             val h = container.db.library().progress(id)
             resumable.value = h != null && h.positionMs > RESUME_FROM_MS && (h.durationMs <= 0 || h.positionMs < h.durationMs * DONE)
@@ -107,7 +107,7 @@ class DetailsViewModel(
     ) {
         if (loaded == name) return
         loaded = name
-        viewModelScope.launch {
+        viewModelScope.launchSafely("Details") {
             details.value = container.metadata.cached(name, tv)
             hasKey.value = container.metadata.hasKey()
             container.metadata.details(name, tv)?.let { details.value = it }
@@ -327,11 +327,7 @@ fun TrailerButton(videoId: String) {
     val context = LocalContext.current
     OutlinedButton(
         onClick = {
-            try {
-                context.startActivity(Intent(Intent.ACTION_VIEW, "https://www.youtube.com/watch?v=$videoId".toUri()))
-            } catch (_: ActivityNotFoundException) {
-                // Nothing on the device can open a link.
-            }
+            context.startActivitySafely(Intent(Intent.ACTION_VIEW, "https://www.youtube.com/watch?v=$videoId".toUri()), "Trailer")
         },
         contentPadding = ButtonDefaults.ButtonWithIconContentPadding,
     ) {

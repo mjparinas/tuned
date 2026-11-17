@@ -1,7 +1,6 @@
 package app.tuned.ui.settings
 
 import android.app.Application
-import android.content.ActivityNotFoundException
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
@@ -52,6 +51,7 @@ import app.tuned.diagnostics.LogEntry
 import app.tuned.diagnostics.LogLevel
 import app.tuned.diagnostics.attempt
 import app.tuned.diagnostics.launchSafely
+import app.tuned.diagnostics.startActivitySafely
 import app.tuned.ui.common.BackTopBar
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -217,9 +217,5 @@ private fun share(
             .setType("text/plain")
             .putExtra(Intent.EXTRA_SUBJECT, title)
             .putExtra(Intent.EXTRA_TEXT, text)
-    try {
-        context.startActivity(Intent.createChooser(send, title))
-    } catch (e: ActivityNotFoundException) {
-        AppLog.w("Logs", "Nothing can share text", e)
-    }
+    context.startActivitySafely(Intent.createChooser(send, title), "Logs")
 }

@@ -18,6 +18,8 @@ import app.tuned.R
 import app.tuned.container
 import app.tuned.data.SyncProgress
 import app.tuned.diagnostics.AppLog
+import app.tuned.diagnostics.attempt
+import app.tuned.diagnostics.logFailures
 import app.tuned.ui.SyncText
 import app.tuned.updates.UpdateNotice
 import app.tuned.widget.FavouritesWidget
@@ -31,7 +33,9 @@ class SyncWorker(
     private var lastStep: SyncProgress.Step? = null
     private var foreground = false
 
-    override suspend fun doWork(): Result {
+    override suspend fun doWork(): Result = logFailures(TAG, failed = { Result.failure() }) { refresh() }
+
+    private suspend fun refresh(): Result {
         val container = applicationContext.container
         if (container.credentials.load() == null) return Result.success()
         // A 400 MB playlist on a slow server can take many minutes. Running as a foreground service keeps the
@@ -52,7 +56,7 @@ class SyncWorker(
                 container.sync.refreshAll(::report)
             }
             // New guide data: the widget's "on now" lines move on too.
-            runCatching { FavouritesWidget().updateAll(applicationContext) }
+            attempt(TAG, "Couldn't update the widget") { FavouritesWidget().updateAll(applicationContext) }
             // A copy left running for days still hears about a new release.
             UpdateNotice.checkInBackground(applicationContext)
             Result.success()

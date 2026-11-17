@@ -20,6 +20,7 @@ import app.tuned.data.db.ItemDao
 import app.tuned.data.db.ItemEntity
 import app.tuned.data.db.ShowSummary
 import app.tuned.data.hiddenKeys
+import app.tuned.diagnostics.launchSafely
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.delay
@@ -34,7 +35,6 @@ import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.launch
 
 /** What a list shows: a category, favourites only, or everything. */
 sealed interface Filter {
@@ -187,7 +187,7 @@ class BrowseViewModel(
 
     /** "Change login" when the first download fails: back to sign-in with nothing kept. */
     fun signOut(onDone: () -> Unit) {
-        viewModelScope.launch {
+        viewModelScope.launchSafely("BrowseViewModel") {
             container.signOut()
             onDone()
         }
@@ -212,12 +212,12 @@ class BrowseViewModel(
         group: String,
     ) {
         filter(kind).value = Filter.All
-        viewModelScope.launch {
+        viewModelScope.launchSafely("BrowseViewModel") {
             container.settings.update { it.copy(hiddenGroups = it.hiddenGroups + HiddenGroups.key(kind.code, group)) }
         }
     }
 
     fun rememberTab(index: Int) {
-        viewModelScope.launch { container.settings.update { it.copy(lastTab = index) } }
+        viewModelScope.launchSafely("BrowseViewModel") { container.settings.update { it.copy(lastTab = index) } }
     }
 }

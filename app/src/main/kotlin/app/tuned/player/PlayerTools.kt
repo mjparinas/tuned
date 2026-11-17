@@ -29,10 +29,10 @@ import app.tuned.R
 import app.tuned.core.RemoteKeys
 import app.tuned.data.VideoFit
 import app.tuned.data.db.ItemEntity
+import app.tuned.diagnostics.launchSafely
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
-import kotlinx.coroutines.launch
 
 /**
  * The buttons at the top right of the player, shown with the controls: channels (live), aspect, quality, subtitle timing,
@@ -273,7 +273,7 @@ class PlayerTools(
         unlockButton.requestFocus()
         unlockJob?.cancel()
         unlockJob =
-            activity.lifecycleScope.launch {
+            activity.lifecycleScope.launchSafely("PlayerTools") {
                 delay(UNLOCK_SHOWN_MS)
                 unlockButton.visibility = View.GONE
             }
@@ -303,7 +303,7 @@ class PlayerTools(
         }
         info.visibility = View.VISIBLE
         infoJob =
-            activity.lifecycleScope.launch {
+            activity.lifecycleScope.launchSafely("PlayerTools") {
                 while (isActive) {
                     info.text = infoText()
                     delay(1_000)

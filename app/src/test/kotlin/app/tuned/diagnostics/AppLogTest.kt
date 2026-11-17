@@ -65,4 +65,16 @@ class AppLogTest {
         assertTrue(after, "the scope keeps working after a failure")
         assertTrue(AppLog.snapshot().any { it.tag == "VM" && "boom" in it.message })
     }
+
+    @Test
+    fun `logFailures turns an unexpected failure into the fallback and logs it`() {
+        val result = logFailures("Job", failed = { "failed" }) { error("database closed") }
+        assertEquals("failed", result)
+        assertTrue(AppLog.snapshot().single().message.contains("database closed"))
+    }
+
+    @Test
+    fun `logFailures never swallows cancellation`() {
+        assertFailsWith<CancellationException> { logFailures("Job", failed = { 0 }) { throw CancellationException("stop") } }
+    }
 }

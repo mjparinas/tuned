@@ -56,6 +56,8 @@ import app.tuned.data.db.HistoryEntity
 import app.tuned.data.db.ItemEntity
 import app.tuned.data.hiddenKeys
 import app.tuned.diagnostics.AppLog
+import app.tuned.diagnostics.attempt
+import app.tuned.diagnostics.launchSafely
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
@@ -109,7 +111,8 @@ class PlayerActivity : FragmentActivity() {
         container.offline.pause()
         buildViews()
         hideSystemBars()
-        lifecycleScope.launch {
+        // Nothing to show if the channel can't be read: log it and close rather than sit on a black screen.
+        lifecycleScope.launchSafely("Player", onError = { finish() }) {
             settings = container.settings.settings.first()
             if (settings.landscapePlayback) requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
             tools.applyFit(settings.videoFit)
@@ -118,7 +121,7 @@ class PlayerActivity : FragmentActivity() {
             val query = intent.getStringExtra(EXTRA_TUNE)
             if (query != null) {
                 startTune(query)
-                return@launch
+                return@launchSafely
             }
             val id = intent.getLongExtra(EXTRA_ID, 0)
             val channel = container.db.items().get(id)
@@ -132,7 +135,7 @@ class PlayerActivity : FragmentActivity() {
                 }
             if (item == null) {
                 finish()
-                return@launch
+                return@launchSafely
             }
             // A recording plays on its own; next and previous would leave it for live channels.
             queue = if (item.id == CatchUpLinks.ID) listOf(item) else siblings(item)
@@ -245,7 +248,9 @@ class PlayerActivity : FragmentActivity() {
                         isLive = ::live,
                         touch = { gestures },
                         say = ::flash,
-                        onFitChanged = { fit -> lifecycleScope.launch { container.settings.update { it.copy(videoFit = fit) } } },
+                        onFitChanged = { fit ->
+                            lifecycleScope.launchSafely("Player") { container.settings.update { it.copy(videoFit = fit) } }
+                        },
                         subtitles = subtitleTiming,
                         casting = { cast?.casting == true },
                     ),
@@ -294,7 +299,7 @@ class PlayerActivity : FragmentActivity() {
         if (text != null) showStatus(text)
         flashJob?.cancel()
         flashJob =
-            lifecycleScope.launch {
+            lifecycleScope.launchSafely("Player") {
                 delay(FLASH_MS)
                 if (autoTune?.searching != true) statusView.visibility = View.GONE
             }
@@ -309,8 +314,8 @@ class PlayerActivity : FragmentActivity() {
         val callback =
             object : ConnectivityManager.NetworkCallback() {
                 override fun onAvailable(network: Network) {
-                    lifecycleScope.launch {
-                        val p = player ?: return@launch
+                    lifecycleScope.launchSafely("Player") {
+                        val p = player ?: return@launchSafely
                         if (cast?.casting != true && (p.playerError != null || p.playbackState == Player.STATE_IDLE)) {
                             liveRetries = 0
                             flash(getString(R.string.player_reconnecting))
@@ -319,7 +324,7 @@ class PlayerActivity : FragmentActivity() {
                     }
                 }
             }
-        runCatching { cm.registerDefaultNetworkCallback(callback) }.onSuccess { reconnect = callback }
+        attempt("Player", "Couldn't watch the network") { cm.registerDefaultNetworkCallback(callback) }.onSuccess { reconnect = callback }
     }
 
     /** Live: the other channels in the same category, so next/previous flips channels. Shows: the show's episodes. */
@@ -395,7 +400,7 @@ class PlayerActivity : FragmentActivity() {
             exo.playWhenReady = true
         }
         updateOverlay(queue[index])
-        if (!live) progressJob = lifecycleScope.launch { saveProgressEvery(exo) }
+        if (!live) progressJob = lifecycleScope.launchSafely("Player") { saveProgressEvery(exo) }
     }
 
     private fun buildPlayer(live: Boolean): ExoPlayer {
@@ -486,7 +491,7 @@ class PlayerActivity : FragmentActivity() {
             if (settings.autoReconnect && (live || network) && liveRetries < MAX_RETRIES) {
                 liveRetries++
                 flash(getString(R.string.player_reconnecting_try, liveRetries, MAX_RETRIES))
-                lifecycleScope.launch {
+                lifecycleScope.launchSafely("Player") {
                     delay(1_500L * liveRetries)
                     p.prepare()
                 }
@@ -515,7 +520,7 @@ class PlayerActivity : FragmentActivity() {
         if (ContentKind.fromCode(item.kind) == ContentKind.LIVE) rememberChannel(item.id)
         val tvgId = item.tvgId ?: return
         if (ContentKind.fromCode(item.kind) != ContentKind.LIVE) return
-        lifecycleScope.launch {
+        lifecycleScope.launchSafely("Player") {
             val now = System.currentTimeMillis()
             val shows = container.db.programmes().nowAndNext(tvgId, now)
             val current = shows.firstOrNull { it.start <= now }

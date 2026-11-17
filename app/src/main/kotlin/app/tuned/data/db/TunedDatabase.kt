@@ -60,7 +60,11 @@ abstract class TunedDatabase : RoomDatabase() {
                 MIGRATION_7_8,
                 MIGRATION_8_9,
                 MIGRATION_9_10,
-            ).build()
+            )
+            // Going back to an older release (installing an older APK) can't keep a newer database: start it afresh
+            // rather than crash on every launch. Upgrades always migrate, above.
+            .fallbackToDestructiveMigrationOnDowngrade(dropAllTables = true)
+            .build()
 
         /** Adds auto-tune's channel health. */
         val MIGRATION_1_2 =
