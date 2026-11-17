@@ -325,6 +325,7 @@ private fun CategoryChips(
         items(groups, key = { "g:" + it.groupName }) { g ->
             val on = filter == Filter.Group(g.groupName)
             val context = LocalContext.current
+            val hiddenMessage = stringResource(R.string.group_hidden, g.groupName)
             FilterChip(
                 selected = on,
                 onClick = { filterFlow.value = if (on) Filter.All else Filter.Group(g.groupName) },
@@ -342,7 +343,7 @@ private fun CategoryChips(
                                         Toast
                                             .makeText(
                                                 context,
-                                                context.getString(R.string.group_hidden, g.groupName),
+                                                hiddenMessage,
                                                 Toast.LENGTH_LONG,
                                             ).show()
                                     },
