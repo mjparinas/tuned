@@ -609,28 +609,25 @@ class PlayerActivity : FragmentActivity() {
         }
     }
 
-    /**
-     * An episode's title becomes TMDB's name ("Kamp Krusty") with the show and number beneath, once it's known: from
-     * the device at once when the show's page was opened, else one cached TMDB request. Playback never waits for it.
-     */
-    private fun showEpisodeName(item: ItemEntity) {
-        val show = item.showName ?: return
-        val season = item.season ?: return
-        val episode = item.episode ?: return
-        lifecycleScope.launchSafely("Player") {
-            val info = container.metadata.cachedEpisode(show, season, episode) ?: container.metadata.episode(show, season, episode)
-            val name = info?.name ?: return@launchSafely
-            // Moved on to the next episode meanwhile: that one has its own lookup.
-            if (player?.currentMediaItem?.mediaId != item.id.toString()) return@launchSafely
-            titleView.text = name
-            subtitleView.text = getString(R.string.continue_episode, Titles.display(show), season, episode)
-        }
-    }
-
     private fun updateOverlay(item: ItemEntity) {
         titleView.text = item.name
         subtitleView.text = item.groupName
-        showEpisodeName(item)
+        // The episode's TMDB name, from the device at once when the show's page was opened, else one cached
+        // TMDB request. Playback never waits for it, and it stays out of its own function because detekt caps
+        // this class at 30.
+        val show = item.showName
+        val season = item.season
+        val episode = item.episode
+        if (show != null && season != null && episode != null) {
+            lifecycleScope.launchSafely("Player") {
+                val info = container.metadata.cachedEpisode(show, season, episode) ?: container.metadata.episode(show, season, episode)
+                // Moved on to the next episode meanwhile: that one has its own lookup.
+                if (info?.name != null && player?.currentMediaItem?.mediaId == item.id.toString()) {
+                    titleView.text = info.name
+                    subtitleView.text = getString(R.string.continue_episode, Titles.display(show), season, episode)
+                }
+            }
+        }
         if (ContentKind.fromCode(item.kind) == ContentKind.LIVE) rememberChannel(item.id)
         val tvgId = item.tvgId ?: return
         if (ContentKind.fromCode(item.kind) != ContentKind.LIVE) return
