@@ -36,5 +36,14 @@ import kotlinx.serialization.Serializable
     val itemId: Long,
 )
 
+/** An actor's films and shows. [personId] is TMDB's, or 0 when only the name is known. */
+@Serializable data class PersonRoute(
+    val personId: Long,
+    val name: String,
+)
+
+/** Settings › Developer › Logs. */
+@Serializable data object DeveloperLogRoute
+
 /** Settings › Downloads. */
 @Serializable data object DownloadsRoute

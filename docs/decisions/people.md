@@ -1,0 +1,8 @@
+# People
+
+**Filmography pages (Melvin, 2026-11-17: "tap on an actor or actress, and it shows you in chronological order all the TV shows or movies that they've been in").** Tapping someone in a film's or show's cast opens their page: photo, biography, then every film and show they acted in, oldest first, with undated (upcoming) ones last.
+
+- **One request per person.** TMDB's `/person/{id}?append_to_response=combined_credits` sends every credit in one answer; it has no pages to fetch. The answer is kept in the `metadata` table as `person|<id>` (credits as JSON in the `cast` column), so no schema change was needed, a page seen once opens from the device and works offline, and it is refreshed after a month. The list is a `LazyColumn`, so only the rows on screen are drawn and each poster loads as its row appears; a career of hundreds of credits opens as fast as a short one.
+- **Cast lines now keep the TMDB person id** (a fourth tab-separated field). Cast cached before that has no id, so the page looks the name up once with `/search/person`.
+- **Talk shows and the news are left out** (TMDB genres 10767 and 10763), where an actor only appears as themselves. A show with several parts is listed once, at its earliest date, with the parts joined and the episodes added up (`Filmography.order` in `:core`).
+- **What's in the playlist is marked.** Each credit is looked up with the same full-text search as Search, then kept only when the title is the same once tags and punctuation are gone and the years agree when both are known (`Filmography.matches`). Those rows show a play mark and open the film or show; the rest are dimmed and don't open. A chip filters the list to what's in the playlist. Hidden countries, groups and adult content stay hidden here too.

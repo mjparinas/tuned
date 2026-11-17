@@ -36,11 +36,11 @@ import app.tuned.core.ScanEngine
 import app.tuned.data.AppSettings
 import app.tuned.data.ChannelScanner
 import app.tuned.data.db.ScanReportRow
+import app.tuned.diagnostics.launchSafely
 import app.tuned.ui.common.BackTopBar
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.launch
 
 class ChannelHealthViewModel(
     app: Application,
@@ -64,15 +64,19 @@ class ChannelHealthViewModel(
     fun stop() = container.scanControl.stop()
 
     fun keep(itemId: Long) {
-        viewModelScope.launch { container.channelScan.keep(itemId) }
+        viewModelScope.launchSafely("ChannelHealth") { container.channelScan.keep(itemId) }
     }
 
     fun setHideDead(on: Boolean) {
-        viewModelScope.launch { container.settings.update { it.copy(hideDeadChannels = on) } }
+        viewModelScope.launchSafely("ChannelHealth") { container.settings.update { it.copy(hideDeadChannels = on) } }
+    }
+
+    fun setHideFailedOnPlay(on: Boolean) {
+        viewModelScope.launchSafely("ChannelHealth") { container.settings.update { it.copy(hideFailedOnPlay = on) } }
     }
 
     fun setHidePlaceholders(on: Boolean) {
-        viewModelScope.launch { container.settings.update { it.copy(hidePlaceholders = on) } }
+        viewModelScope.launchSafely("ChannelHealth") { container.settings.update { it.copy(hidePlaceholders = on) } }
     }
 }
 
@@ -103,6 +107,13 @@ fun ChannelHealthScreen(
                     settings.hideDeadChannels,
                     stringResource(R.string.health_hide_dead_summary),
                 ) { on -> vm.setHideDead(on) }
+            }
+            item {
+                SwitchRow(
+                    stringResource(R.string.health_hide_failed_on_play),
+                    settings.hideFailedOnPlay,
+                    stringResource(R.string.health_hide_failed_on_play_summary),
+                ) { on -> vm.setHideFailedOnPlay(on) }
             }
             item {
                 SwitchRow(
@@ -222,5 +233,6 @@ private fun reasonText(reason: String?): Int = when (ChannelScan.Failure.entries
     ChannelScan.Failure.TIMEOUT -> R.string.health_reason_timeout
     ChannelScan.Failure.CONNECTION -> R.string.health_reason_connection
     ChannelScan.Failure.ACCOUNT -> R.string.health_reason_account
+    ChannelScan.Failure.PLAYBACK -> R.string.health_reason_playback
     null -> R.string.health_reason_http
 }

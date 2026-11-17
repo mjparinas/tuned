@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="account_status">Subscription</string>
+    <string name="account_status_unknown">Signed in</string>
+    <string name="account_trial">Trial</string>
+    <string name="account_no_end">No end date</string>
+    <!-- %1$s: a date such as "Jan 3, 2027". -->
+    <string name="account_expires_on">Ends %1$s</string>
+    <string name="account_expired_on">Ended %1$s</string>
+    <!-- %1$s: the date; %2$d: whole days left (0 on the last day). -->
+    <plurals name="account_expires_soon">
+        <item quantity="one">Ends %1$s, in %2$d day</item>
+        <item quantity="other">Ends %1$s, in %2$d days</item>
+    </plurals>
+    <string name="account_connections_title">Connections in use</string>
+    <!-- %1$d: in use; %2$d: allowed. -->
+    <string name="account_connections">%1$d of %2$d</string>
+    <string name="account_connections_full">%1$d of %2$d: all in use, probably on another device</string>
+    <!-- Shown in the player instead of starting. %1$d: in use; %2$d: allowed. -->
+    <string name="account_full_wait">All your connections are in use (%1$d of %2$d), probably on another device. Opening another could go over your account\'s limit. Press play to start anyway.</string>
+</resources>

@@ -60,11 +60,11 @@ import app.tuned.data.AppSettings
 import app.tuned.data.BufferMode
 import app.tuned.data.StartTab
 import app.tuned.data.ThemeMode
+import app.tuned.diagnostics.launchSafely
 import app.tuned.ui.common.BackTopBar
 import app.tuned.ui.theme.swatch
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.launch
 import java.security.MessageDigest
 
 enum class PinResult { Ok, Wrong, TooMany }
@@ -78,7 +78,7 @@ class SettingsViewModel(
     private val container = app.container
 
     fun update(change: (AppSettings) -> AppSettings) {
-        viewModelScope.launch { container.settings.update(change) }
+        viewModelScope.launchSafely("Settings") { container.settings.update(change) }
     }
 
     val hasPin = container.settings.hasAdultPin.stateIn(viewModelScope, SharingStarted.Eagerly, false)
@@ -131,12 +131,12 @@ class SettingsViewModel(
     fun refreshNow() = container.scheduler.refreshNow()
 
     fun clearHistory() {
-        viewModelScope.launch { container.db.library().clearHistory() }
+        viewModelScope.launchSafely("Settings") { container.db.library().clearHistory() }
     }
 
     /** Signing out forgets the login, the cached playlist and guide, and stops background refreshes. */
     fun signOut(onDone: () -> Unit) {
-        viewModelScope.launch {
+        viewModelScope.launchSafely("Settings") {
             container.signOut()
             onDone()
         }
@@ -153,6 +153,7 @@ fun SettingsScreen(
     onOpenChannelHealth: () -> Unit,
     onOpenFavouriteOrder: () -> Unit,
     onOpenDownloads: () -> Unit,
+    onOpenLogs: () -> Unit,
     onSignedOut: () -> Unit,
     onAddPlaylist: () -> Unit,
     onSwitchedPlaylist: () -> Unit,
@@ -176,6 +177,7 @@ fun SettingsScreen(
             SectionHeader(stringResource(R.string.settings_account))
             SettingRow(stringResource(R.string.login_server), vm.server(), onClick = { editServer = true })
             SettingRow(stringResource(R.string.login_username), vm.username())
+            AccountStatusRows()
             PlaylistsRow(onAdd = onAddPlaylist, onSwitched = onSwitchedPlaylist)
             SettingRow(
                 stringResource(R.string.settings_refresh_now),
@@ -253,6 +255,11 @@ fun SettingsScreen(
                 stringResource(R.string.settings_guide_in_list),
                 settings.showGuideInList,
             ) { on -> vm.update { it.copy(showGuideInList = on) } }
+            SwitchRow(
+                stringResource(R.string.settings_live_grid),
+                settings.liveGrid,
+                summary = stringResource(R.string.settings_live_grid_summary),
+            ) { on -> vm.update { it.copy(liveGrid = on) } }
             ChoiceRow(
                 stringResource(R.string.settings_start_tab),
                 StartTab.entries,
@@ -341,6 +348,28 @@ fun SettingsScreen(
                 stringResource(R.string.settings_reconnect_summary),
             ) { on -> vm.update { it.copy(autoReconnect = on) } }
             SwitchRow(
+                stringResource(R.string.settings_backup_copies),
+                settings.backupCopies,
+                stringResource(R.string.settings_backup_copies_summary),
+            ) { on -> vm.update { it.copy(backupCopies = on) } }
+            SwitchRow(
+                stringResource(R.string.settings_match_frame_rate),
+                settings.matchFrameRate,
+                stringResource(R.string.settings_match_frame_rate_summary),
+            ) { on -> vm.update { it.copy(matchFrameRate = on) } }
+            ChoiceRow(
+                stringResource(R.string.settings_live_rewind),
+                listOf(0, 15, 30, 60),
+                settings.liveRewindMinutes,
+                label = { m ->
+                    if (m == 0) {
+                        stringResource(R.string.settings_live_rewind_off)
+                    } else {
+                        pluralStringResource(R.plurals.settings_live_rewind_minutes, m, m)
+                    }
+                },
+            ) { m -> vm.update { it.copy(liveRewindMinutes = m) } }
+            SwitchRow(
                 stringResource(R.string.settings_landscape),
                 settings.landscapePlayback,
             ) { on -> vm.update { it.copy(landscapePlayback = on) } }
@@ -379,7 +408,7 @@ fun SettingsScreen(
             SectionHeader(stringResource(R.string.settings_tune))
             ChoiceRow(
                 stringResource(R.string.settings_tune_timeout),
-                listOf(6_000, 10_000, 15_000, 20_000),
+                listOf(5_000, 8_000, 10_000, 15_000, 20_000),
                 settings.tuneTimeoutMs,
                 label = { ms -> pluralStringResource(R.plurals.seconds, ms / 1000, ms / 1000) },
             ) { ms -> vm.update { it.copy(tuneTimeoutMs = ms) } }
@@ -460,6 +489,21 @@ fun SettingsScreen(
                 stringResource(R.string.settings_check_updates_summary),
             ) { on -> vm.update { it.copy(checkUpdates = on) } }
             UpdateCheckRow()
+
+            SectionHeader(stringResource(R.string.settings_developer))
+            SwitchRow(
+                stringResource(R.string.settings_developer_mode),
+                settings.developerMode,
+                stringResource(R.string.settings_developer_mode_summary),
+            ) { on -> vm.update { it.copy(developerMode = on) } }
+            if (settings.developerMode) {
+                SettingRow(
+                    stringResource(R.string.logs_title),
+                    stringResource(R.string.settings_logs_summary),
+                    onClick = onOpenLogs,
+                    trailing = { Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null) },
+                )
+            }
             HorizontalDivider(Modifier.padding(top = 16.dp))
             Text(
                 stringResource(R.string.settings_version, BuildConfig.VERSION_NAME, BuildConfig.VERSION_CODE),

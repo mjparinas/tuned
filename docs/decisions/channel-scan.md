@@ -20,10 +20,29 @@ Settings › Channel health › **Scan channels** looks at every live channel th
 
 The same screen shows the last scan's counts (working, failed, not judged) and, when it stopped early, why. Below are the hidden channels, each with **Show again**, and the channels that failed but are still shown. A channel shown again by hand is never hidden by a scan after that. **Hide channels that keep failing** (on by default) turns the hiding off without forgetting anything. Hidden channels stay out of every list, search, channel flipping and auto-tune, through the same hidden keys as countries and groups (`scan:dead`).
 
+## Hiding channels that won't play (2026-11-17)
+
+Melvin: "if a channel doesn't load but you know the service is up and internet is working, hide that channel from results". Channel health › **Hide channels that won't play** (on by default) does that from the player, without waiting for two scans. When a live channel fails for good there (after its retries, or while auto-tune or backup copies try it), it is hidden only when all three are true (`ChannelScan.blameOnPlay`, with tests):
+
+- the phone's network is validated;
+- the service answers: Xtream's account call accepts the login with a connection free (a full account or no answer blames nothing; a plain M3U has no such call);
+- another channel drew a picture within ten minutes, before or after, which shows streams were flowing. A failure with no picture yet waits for the next one, which is usually the backup copy or the next channel tried.
+
+The channel is then saved as hidden in `channel_scan` with the reason "wouldn't play", so it appears in the report with **Show again**, and a scan that finds it working brings it back. A channel shown again by hand is never hidden this way. The checks share `data/ServiceCheck` with the scan.
+
+## Sports, PPV and event channels are never hidden (2026-11-17)
+
+Melvin: hiding must not drop "live sports, boxing, UFC, football, NHL, etc., and pay-per-view … just in case there is no show at that time". An event slot is dark between events, so a failure says nothing about the next one.
+
+- A channel whose name or category marks it as sport, PPV or an event (`core/EventChannels.kt`, with tests) is never hidden by a scan or by **Hide channels that won't play**. Its failures are still noted, so the report shows them and auto-tune tries it after channels that work.
+- Ones hidden before this rule, or renamed into one by a playlist refresh, come back when the app opens and before each scan (`ChannelScanner.releaseEventChannels`).
+- Auto-tune searches every channel, including "No event" placeholders and channels hidden as dead, and keeps the sports, PPV and event ones. A held channel the guide places the event on is ranked like any other. One that only matches by name is tried last.
+- Other channels stay hidden only until a scan finds them working, as before.
+
 ## One connection at a time
 
 The scan never looks at a channel while the player is open or a download runs. A look in progress is cut off the moment either starts, and the scan carries on after. The account call is not a stream. What scans find is stored in `channel_scan` (Room v9). Switching to a different playlist clears it, and signing out stops a running scan.
 
 ## Empty event channels
 
-Melvin, 2026-11-17: "Can you hide all these no event streaming links somehow". Providers keep hundreds of pay-per-view and event slots in the playlist between events, named like "- NO EVENT STREAMING - | 8K EXCLUSIVE | SE: PLAY+ PPV 43". A switch in Channel health, **Hide empty event channels** (on by default), leaves out live channels whose name says "no event" or "no live event" (`core/Placeholders.kt`, the same rule in SQL in `ItemDao`) from Live TV, search, auto-tune and the scan. It goes by the name alone, so a slot shows again as soon as a playlist refresh brings it under a real event's name. No scan is needed and nothing is stored.
+Melvin, 2026-11-17: "Can you hide all these no event streaming links somehow". Providers keep hundreds of pay-per-view and event slots in the playlist between events, named like "- NO EVENT STREAMING - | 8K EXCLUSIVE | SE: PLAY+ PPV 43". A switch in Channel health, **Hide empty event channels** (on by default), leaves out live channels whose name says "no event" or "no live event" (`core/Placeholders.kt`, the same rule in SQL in `ItemDao`) from Live TV, search and the scan. Auto-tune still looks at them (below). It goes by the name alone, so a slot shows again as soon as a playlist refresh brings it under a real event's name. No scan is needed and nothing is stored.

@@ -12,6 +12,9 @@ object Tmdb {
     const val BACKDROPS = "https://image.tmdb.org/t/p/w1280"
     const val PROFILES = "https://image.tmdb.org/t/p/w185"
 
+    /** Episode screenshots: 300 pixels wide is sharp at a row thumbnail's size and a fraction of a full still. */
+    const val STILLS = "https://image.tmdb.org/t/p/w300"
+
     /** What to search for: the title without the provider's tags, and the year when the name has one. */
     data class Query(
         val title: String,
@@ -69,6 +72,25 @@ object Tmdb {
         tv: Boolean,
         key: String,
     ): String = "$API/${if (tv) "tv" else "movie"}/$id?append_to_response=videos,credits${apiKey(key)}"
+
+    /** One season of a show: each episode's name, summary, runtime and screenshot. */
+    fun season(
+        id: Long,
+        season: Int,
+        key: String,
+    ): String = "$API/tv/$id/season/$season" + apiKey(key).replaceFirst('&', '?')
+
+    /** A person's page in one answer: name, photo, biography and every film and show they were in. */
+    fun person(
+        id: Long,
+        key: String,
+    ): String = "$API/person/$id?append_to_response=combined_credits${apiKey(key)}"
+
+    /** Finds a person by name, for cast saved before their TMDB id was kept. */
+    fun searchPerson(
+        name: String,
+        key: String,
+    ): String = "$API/search/person?query=${enc(name.trim())}&include_adult=false${apiKey(key)}"
 
     /** "1h 52m", or "48m" under an hour; null when unknown. */
     fun runtime(minutes: Int?): String? {

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="grid_show">Show the TV guide grid</string>
+    <string name="grid_hide">Show the channel list</string>
+    <string name="grid_now">Now</string>
+    <string name="grid_today">Today</string>
+    <string name="grid_no_guide">No guide</string>
+    <string name="grid_time_range">%1$s – %2$s</string>
+    <string name="settings_live_grid">Show Live TV as a guide grid</string>
+    <string name="settings_live_grid_summary">Channels down the side and time across the top. The button beside search switches too.</string>
+</resources>

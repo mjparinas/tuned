@@ -37,10 +37,11 @@ import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
+import androidx.media3.common.Tracks
 import androidx.media3.common.VideoSize
 import androidx.media3.common.util.UnstableApi
-import androidx.media3.datasource.okhttp.OkHttpDataSource
 import androidx.media3.exoplayer.DefaultLoadControl
+import androidx.media3.exoplayer.DefaultRenderersFactory
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import androidx.media3.exoplayer.trackselection.DefaultTrackSelector
@@ -55,6 +56,9 @@ import app.tuned.data.AppSettings
 import app.tuned.data.db.HistoryEntity
 import app.tuned.data.db.ItemEntity
 import app.tuned.data.hiddenKeys
+import app.tuned.diagnostics.AppLog
+import app.tuned.diagnostics.attempt
+import app.tuned.diagnostics.launchSafely
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
@@ -99,7 +103,50 @@ class PlayerActivity : FragmentActivity() {
     private val subtitleTiming = SubtitleTiming()
     private var reconnect: ConnectivityManager.NetworkCallback? = null
     private var autoTune: AutoTune? = null
+    private val tuneNext by lazy {
+        TuneNext(
+            activity = this,
+            hasNext = { autoTune != null && player?.hasNextMediaItem() == true },
+            onNext = { player?.seekToNextMediaItem() },
+        )
+    }
+
+    /** The current channel has drawn a picture since it started (a channel that never did gets one retry, not five). */
+    private var pictured = false
+
+    /** Backup copies and hiding channels that won't play; see [Backups]. */
+    private val backups by lazy {
+        Backups(
+            context = this,
+            scope = lifecycleScope,
+            container = container,
+            hooks =
+                Backups.Hooks(
+                    settings = { settings },
+                    queue = { queue },
+                    setQueue = { queue = it },
+                    mediaItem = { it.toMediaItem(null) },
+                    showing = ::updateOverlay,
+                    status = { text -> if (text == null) statusView.visibility = View.GONE else showStatus(text) },
+                    flash = ::flash,
+                    casting = { cast?.casting == true },
+                ),
+        )
+    }
     private lateinit var statusView: TextView
+    private val audioCheck by lazy {
+        AudioCheck { codec -> Toast.makeText(this, getString(R.string.player_no_sound, codec), Toast.LENGTH_LONG).show() }
+    }
+    private val timeshift by lazy {
+        LiveTimeshift(
+            context = this,
+            scope = lifecycleScope,
+            http = container.http,
+            userAgent = { settings.userAgent.ifBlank { "Tuned/${BuildConfig.VERSION_NAME}" } },
+            keepMinutes = { settings.liveRewindMinutes },
+        )
+    }
+    private val frameRate by lazy { FrameRateMatch(this) { settings.matchFrameRate && cast?.casting != true } }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -108,7 +155,8 @@ class PlayerActivity : FragmentActivity() {
         container.offline.pause()
         buildViews()
         hideSystemBars()
-        lifecycleScope.launch {
+        // Nothing to show if the channel can't be read: log it and close rather than sit on a black screen.
+        lifecycleScope.launchSafely("Player", onError = { finish() }) {
             settings = container.settings.settings.first()
             if (settings.landscapePlayback) requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
             tools.applyFit(settings.videoFit)
@@ -117,7 +165,7 @@ class PlayerActivity : FragmentActivity() {
             val query = intent.getStringExtra(EXTRA_TUNE)
             if (query != null) {
                 startTune(query)
-                return@launch
+                return@launchSafely
             }
             val id = intent.getLongExtra(EXTRA_ID, 0)
             val channel = container.db.items().get(id)
@@ -131,7 +179,7 @@ class PlayerActivity : FragmentActivity() {
                 }
             if (item == null) {
                 finish()
-                return@launch
+                return@launchSafely
             }
             // A recording plays on its own; next and previous would leave it for live channels.
             queue = if (item.id == CatchUpLinks.ID) listOf(item) else siblings(item)
@@ -208,12 +256,14 @@ class PlayerActivity : FragmentActivity() {
         )
         tools.attach(root)
         skipIntro.attach(root)
+        tuneNext.attach(root)
         levelBars.attach(root)
         // The title shows and hides with the controls, so a tap reveals everything and the video is otherwise bare.
         playerView.setControllerVisibilityListener(
             PlayerView.ControllerVisibilityListener { visibility ->
                 overlay.visibility = visibility
                 tools.onControls(visibility)
+                tuneNext.onControls(visibility)
             },
         )
         setContentView(root)
@@ -244,7 +294,9 @@ class PlayerActivity : FragmentActivity() {
                         isLive = ::live,
                         touch = { gestures },
                         say = ::flash,
-                        onFitChanged = { fit -> lifecycleScope.launch { container.settings.update { it.copy(videoFit = fit) } } },
+                        onFitChanged = { fit ->
+                            lifecycleScope.launchSafely("Player") { container.settings.update { it.copy(videoFit = fit) } }
+                        },
                         subtitles = subtitleTiming,
                         casting = { cast?.casting == true },
                     ),
@@ -293,9 +345,9 @@ class PlayerActivity : FragmentActivity() {
         if (text != null) showStatus(text)
         flashJob?.cancel()
         flashJob =
-            lifecycleScope.launch {
+            lifecycleScope.launchSafely("Player") {
                 delay(FLASH_MS)
-                if (autoTune?.searching != true) statusView.visibility = View.GONE
+                if (autoTune?.searching != true && !backups.searching) statusView.visibility = View.GONE
             }
     }
 
@@ -308,8 +360,8 @@ class PlayerActivity : FragmentActivity() {
         val callback =
             object : ConnectivityManager.NetworkCallback() {
                 override fun onAvailable(network: Network) {
-                    lifecycleScope.launch {
-                        val p = player ?: return@launch
+                    lifecycleScope.launchSafely("Player") {
+                        val p = player ?: return@launchSafely
                         if (cast?.casting != true && (p.playerError != null || p.playbackState == Player.STATE_IDLE)) {
                             liveRetries = 0
                             flash(getString(R.string.player_reconnecting))
@@ -318,7 +370,7 @@ class PlayerActivity : FragmentActivity() {
                     }
                 }
             }
-        runCatching { cm.registerDefaultNetworkCallback(callback) }.onSuccess { reconnect = callback }
+        attempt("Player", "Couldn't watch the network") { cm.registerDefaultNetworkCallback(callback) }.onSuccess { reconnect = callback }
     }
 
     /** Live: the other channels in the same category, so next/previous flips channels. Shows: the show's episodes. */
@@ -354,8 +406,10 @@ class PlayerActivity : FragmentActivity() {
                 onStatus = { position ->
                     statusView.visibility = if (position == null) View.GONE else View.VISIBLE
                     if (position != null) statusView.text = getString(R.string.tune_trying, position, queue.size)
+                    if (position == null) tuneNext.flash()
                 },
                 onGiveUp = { Toast.makeText(this, getString(R.string.tune_none, query), Toast.LENGTH_LONG).show() },
+                onDead = backups::channelFailed,
             )
         autoTune = tuner
         start(queue.first())
@@ -374,34 +428,48 @@ class PlayerActivity : FragmentActivity() {
         playerView.setControllerShowTimeoutMs(settings.controlsTimeoutMs)
         playerView.setShowNextButton(queue.size > 1)
         playerView.setShowPreviousButton(queue.size > 1)
-        playerView.setShowFastForwardButton(!live)
-        playerView.setShowRewindButton(!live)
+        // Live channels can rewind and catch up once paused (see [LiveTimeshift]); the buttons are greyed out until then.
+        playerView.setShowFastForwardButton(!live || timeshift.enabled)
+        playerView.setShowRewindButton(!live || timeshift.enabled)
         CaptionStyles.apply(requireNotNull(playerView.subtitleView), settings.captions)
 
         // Saved films and episodes play from the device.
         val local = container.offline.files(queue.map { it.id })
+        // Offline with a saved episode: next and previous keep to the saved ones, which are all that can play.
+        if (item.id in local && !container.connectivity.onlineNow()) {
+            queue = queue.filter { it.id in local }
+            playerView.setShowNextButton(queue.size > 1)
+            playerView.setShowPreviousButton(queue.size > 1)
+        }
         val mediaItems = queue.map { it.toMediaItem(local[it.id]) }
         val index = queue.indexOfFirst { it.id == item.id }.coerceAtLeast(0)
         val resumeAt = if (!live && settings.resumePlayback) resumePosition(item.id) else C.TIME_UNSET
         exo.setMediaItems(mediaItems, index, resumeAt)
         exo.pauseAtEndOfMediaItems = kind == ContentKind.SERIES && !settings.autoPlayNext
         val castNow = cast?.takeIf { it.casting }
+        // Every connection on the account is in use on another device: opening one more could go over the limit, so
+        // wait for the person to press play (Settings › Account shows the same numbers). A saved file opens no
+        // connection, so it never waits.
+        val full = if (castNow == null && queue[index].id !in local) container.account.fullElsewhere() else null
         if (castNow != null) {
             // Already casting: this goes to the TV, and the phone opens no stream of its own.
             castNow.load(queue[index], live, resumeAt)
+        } else if (full != null) {
+            showStatus(getString(R.string.account_full_wait, full.activeConnections ?: 0, full.maxConnections ?: 0))
+            playerView.showController()
         } else {
             exo.prepare()
             exo.playWhenReady = true
         }
         updateOverlay(queue[index])
-        if (!live) progressJob = lifecycleScope.launch { saveProgressEvery(exo) }
+        if (!live) progressJob = lifecycleScope.launchSafely("Player") { saveProgressEvery(exo) }
+        if (live && autoTune == null && item.id != CatchUpLinks.ID) backups.attach(exo)
     }
 
     private fun buildPlayer(live: Boolean): ExoPlayer {
-        val http =
-            OkHttpDataSource
-                .Factory(container.http)
-                .setUserAgent(settings.userAgent.ifBlank { "Tuned/${BuildConfig.VERSION_NAME}" })
+        // Streams over OkHttp (through the live rewind copy on live TV), saved downloads from the device.
+        val agent = settings.userAgent.ifBlank { "Tuned/${BuildConfig.VERSION_NAME}" }
+        val http = PlayerSources.factory(this, container.http, agent) { network -> if (live) timeshift.factory(network) else network }
         // TS streams from IPTV servers often start on a non-IDR frame; these flags start them sooner.
         val extractors =
             DefaultExtractorsFactory().setTsExtractorFlags(
@@ -425,8 +493,10 @@ class PlayerActivity : FragmentActivity() {
                         .setTrackTypeDisabled(C.TRACK_TYPE_TEXT, !captions.enabled),
                 )
             }
+        // If a device's first decoder for a format fails to start, try its next one instead of giving up.
+        val renderers = DefaultRenderersFactory(this).setEnableDecoderFallback(true)
         return ExoPlayer
-            .Builder(this)
+            .Builder(this, renderers)
             .setMediaSourceFactory(DefaultMediaSourceFactory(http, extractors).setSubtitleParserFactory(subtitleTiming.parsers))
             .setLoadControl(load)
             .setTrackSelector(selector)
@@ -457,6 +527,21 @@ class PlayerActivity : FragmentActivity() {
             updateOverlay(item)
             if (cast?.casting == true) cast?.load(item, live, 0)
             liveRetries = 0
+            pictured = false
+            player?.let(timeshift::onChannelChanged)
+            // Flipping to another channel ends the search for a copy of the last one.
+            backups.onChannelChanged(id)
+        }
+
+        override fun onRenderedFirstFrame() {
+            player
+                ?.currentMediaItem
+                ?.mediaId
+                ?.toLongOrNull()
+                ?.let {
+                    pictured = true
+                    backups.pictureShown(it)
+                }
         }
 
         override fun onPlaybackStateChanged(playbackState: Int) {
@@ -465,11 +550,16 @@ class PlayerActivity : FragmentActivity() {
         }
 
         override fun onPlayerError(error: PlaybackException) {
+            AppLog.w("Player", "Playback error: ${error.errorCodeName}", error)
             val p = player ?: return
             // Auto-tune: a channel that fails while being tried is dead; move straight on to the next one.
             val tuner = autoTune
             if (tuner != null && tuner.searching) {
                 tuner.failCurrent()
+                return
+            }
+            if (backups.searching) {
+                backups.failCurrent()
                 return
             }
             if (error.errorCode == PlaybackException.ERROR_CODE_BEHIND_LIVE_WINDOW) {
@@ -481,10 +571,12 @@ class PlayerActivity : FragmentActivity() {
             // episode picks up where it was (prepare keeps the position).
             val network =
                 error.errorCode in PlaybackException.ERROR_CODE_IO_UNSPECIFIED..PlaybackException.ERROR_CODE_IO_READ_POSITION_OUT_OF_RANGE
-            if (settings.autoReconnect && (live || network) && liveRetries < MAX_RETRIES) {
+            // A live channel that never showed a picture gets one retry before its backup copies are tried, for speed.
+            val tries = backups.retries(fresh = live && !pictured, usual = MAX_RETRIES)
+            if (settings.autoReconnect && (live || network) && liveRetries < tries) {
                 liveRetries++
-                flash(getString(R.string.player_reconnecting_try, liveRetries, MAX_RETRIES))
-                lifecycleScope.launch {
+                flash(getString(R.string.player_reconnecting_try, liveRetries, tries))
+                lifecycleScope.launchSafely("Player") {
                     delay(1_500L * liveRetries)
                     p.prepare()
                 }
@@ -495,10 +587,19 @@ class PlayerActivity : FragmentActivity() {
                 tuner.failCurrent()
                 return
             }
-            Toast.makeText(this@PlayerActivity, getString(R.string.player_error, error.errorCodeName), Toast.LENGTH_LONG).show()
+            // A live channel that died for good: play a backup copy of it if there is one.
+            val sayError = {
+                Toast.makeText(this@PlayerActivity, getString(R.string.player_error, error.errorCodeName), Toast.LENGTH_LONG).show()
+            }
+            if (!live || !backups.takeOver(p.currentMediaItem?.mediaId?.toLongOrNull(), onNone = sayError)) sayError()
+        }
+
+        override fun onTracksChanged(tracks: Tracks) {
+            player?.let { audioCheck.onTracks(it, tracks) }
         }
 
         override fun onVideoSizeChanged(videoSize: VideoSize) {
+            frameRate.onVideo(player?.videoFormat?.frameRate)
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) setPictureInPictureParams(pipParams())
         }
 
@@ -513,7 +614,7 @@ class PlayerActivity : FragmentActivity() {
         if (ContentKind.fromCode(item.kind) == ContentKind.LIVE) rememberChannel(item.id)
         val tvgId = item.tvgId ?: return
         if (ContentKind.fromCode(item.kind) != ContentKind.LIVE) return
-        lifecycleScope.launch {
+        lifecycleScope.launchSafely("Player") {
             val now = System.currentTimeMillis()
             val shows = container.db.programmes().nowAndNext(tvgId, now)
             val current = shows.firstOrNull { it.start <= now }
@@ -528,18 +629,40 @@ class PlayerActivity : FragmentActivity() {
 
     /** What the on-screen controls drive: the phone's player, or the TV's play and pause while casting. */
     private inner class ViewPlayer(
-        exo: ExoPlayer,
+        private val exo: ExoPlayer,
     ) : ForwardingPlayer(exo) {
         override fun prepare() {
             if (cast?.casting != true) super.prepare()
         }
 
         override fun play() {
-            if (cast?.casting == true) cast?.play() else super.play()
+            when {
+                cast?.casting == true -> {
+                    cast?.play()
+                }
+
+                playbackState == Player.STATE_IDLE -> {
+                    // Held because the account was full, or stopped: pressing play starts it.
+                    statusView.visibility = View.GONE
+                    super.prepare()
+                    super.play()
+                }
+
+                else -> {
+                    super.play()
+                }
+            }
         }
 
         override fun pause() {
-            if (cast?.casting == true) cast?.pause() else super.pause()
+            when {
+                cast?.casting == true -> cast?.pause()
+
+                // A live channel pauses into the copy kept on the device, so it can carry on, rewind or catch up.
+                live() && timeshift.shift(exo) -> Unit
+
+                else -> super.pause()
+            }
         }
     }
 
@@ -676,6 +799,8 @@ class PlayerActivity : FragmentActivity() {
     override fun onDestroy() {
         progressJob?.cancel()
         autoTune?.release()
+        backups.release()
+        timeshift.release()
         gestures?.release()
         tools.release()
         cast?.release()
@@ -683,6 +808,7 @@ class PlayerActivity : FragmentActivity() {
         reconnect?.let { cb -> runCatching { getSystemService(ConnectivityManager::class.java)?.unregisterNetworkCallback(cb) } }
         player?.release()
         player = null
+        container.account.noStreamSince = System.currentTimeMillis()
         container.playerOpen.value = false
         super.onDestroy()
     }

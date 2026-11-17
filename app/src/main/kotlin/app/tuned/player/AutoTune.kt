@@ -3,10 +3,10 @@ package app.tuned.player
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import app.tuned.data.TuneRepository
+import app.tuned.diagnostics.launchSafely
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 
 /**
  * Auto-tune in the player: the queue holds the ranked channels for an event, and this tries them in order like a
@@ -25,6 +25,8 @@ internal class AutoTune(
     private val onStatus: (Int?) -> Unit,
     /** Every channel failed. */
     private val onGiveUp: () -> Unit,
+    /** A channel failed to play (to hide it if the internet and the service were fine). */
+    private val onDead: (Long) -> Unit = {},
 ) : Player.Listener {
     lateinit var player: Player
     private var probe: Job? = null
@@ -49,7 +51,7 @@ internal class AutoTune(
         val id = currentId() ?: return
         probe?.cancel()
         val height = player.videoSize.height
-        scope.launch { tune.played(id, height) }
+        scope.launchSafely("AutoTune") { tune.played(id, height) }
         if (minHeight > 0 && height in 1 until minHeight) {
             if (fallback < 0) fallback = player.currentMediaItemIndex
             next()
@@ -62,7 +64,8 @@ internal class AutoTune(
     fun failCurrent() {
         val id = currentId() ?: return
         probe?.cancel()
-        scope.launch { tune.failed(id) }
+        scope.launchSafely("AutoTune") { tune.failed(id) }
+        onDead(id)
         next()
     }
 
@@ -77,7 +80,7 @@ internal class AutoTune(
         searching = true
         onStatus(player.currentMediaItemIndex + 1)
         probe =
-            scope.launch {
+            scope.launchSafely("AutoTune") {
                 delay(timeoutMs)
                 if (searching && currentId() == id) failCurrent()
             }

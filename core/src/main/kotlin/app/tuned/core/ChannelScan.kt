@@ -21,7 +21,17 @@ object ChannelScan {
     const val HIDE_AFTER = 2
     const val MIN_APART_MS = 6 * 60 * 60_000L
 
-    enum class Failure { HTTP, NO_DATA, NOT_VIDEO, TIMEOUT, CONNECTION, ACCOUNT }
+    enum class Failure {
+        HTTP,
+        NO_DATA,
+        NOT_VIDEO,
+        TIMEOUT,
+        CONNECTION,
+        ACCOUNT,
+
+        /** It wouldn't play in the player while the internet and the service were working ([afterPlayFailure]). */
+        PLAYBACK,
+    }
 
     /**
      * One look at a stream: the HTTP [code] (null when no answer came), the first bytes, and whether the time ran out
@@ -123,4 +133,33 @@ object ChannelScan {
 
     /** The person's "Show again": a fresh start, and kept out of the scan's hiding from now on. */
     fun keep(previous: Record?): Record = Record(lastOkAt = previous?.lastOkAt ?: 0, kept = true)
+
+    /**
+     * Melvin, 2026-11-17: "if a channel doesn't load but you know the service is up and internet is working, hide that
+     * channel from results". True only when all three say so: the phone's network is validated, the service answers
+     * (the Xtream account call accepts the login with a connection free, or for a plain M3U there is no such call), and
+     * another channel drew a picture shortly before or after, which shows streams were flowing.
+     */
+    fun blameOnPlay(
+        internetUp: Boolean,
+        server: ScanEngine.Server,
+        anotherChannelPlayed: Boolean,
+    ): Boolean = internetUp && anotherChannelPlayed && (server == ScanEngine.Server.UP || server == ScanEngine.Server.UNKNOWN)
+
+    /** Another channel's picture counts within this long of the failure, before or after. */
+    const val OTHER_PLAYED_WITHIN_MS = 10 * 60_000L
+
+    /** A failure in the player that [blameOnPlay] confirmed: hidden at once, unless the person chose to keep it. */
+    fun afterPlayFailure(
+        previous: Record?,
+        now: Long,
+    ): Record {
+        val p = previous ?: Record()
+        return p.copy(
+            failures = maxOf(p.failures, HIDE_AFTER),
+            firstFailAt = if (p.firstFailAt > 0) p.firstFailAt else now,
+            lastFailAt = now,
+            reason = Failure.PLAYBACK,
+        )
+    }
 }

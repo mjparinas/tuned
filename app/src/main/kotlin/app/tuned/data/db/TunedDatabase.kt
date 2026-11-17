@@ -20,8 +20,11 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         WatchLaterEntity::class,
         SeenEpisodeEntity::class,
         ChannelScanEntity::class,
+        ItemFts::class,
+        ShowGroupEntity::class,
+        TmdbSeasonEntity::class,
     ],
-    version = 9,
+    version = 12,
     exportSchema = true,
 )
 abstract class TunedDatabase : RoomDatabase() {
@@ -43,6 +46,8 @@ abstract class TunedDatabase : RoomDatabase() {
 
     abstract fun channelScan(): ChannelScanDao
 
+    abstract fun shows(): ShowDao
+
     companion object {
         fun create(context: Context): TunedDatabase = Room
             .databaseBuilder(context, TunedDatabase::class.java, "tuned.db")
@@ -58,7 +63,14 @@ abstract class TunedDatabase : RoomDatabase() {
                 MIGRATION_6_7,
                 MIGRATION_7_8,
                 MIGRATION_8_9,
-            ).build()
+                MIGRATION_9_10,
+                MIGRATION_10_11,
+                MIGRATION_11_12,
+            )
+            // Going back to an older release (installing an older APK) can't keep a newer database: start it afresh
+            // rather than crash on every launch. Upgrades always migrate, above.
+            .fallbackToDestructiveMigrationOnDowngrade(dropAllTables = true)
+            .build()
 
         /** Adds auto-tune's channel health. */
         val MIGRATION_1_2 =
@@ -150,5 +162,55 @@ abstract class TunedDatabase : RoomDatabase() {
                     )
                 }
             }
+
+        /**
+         * Search's full-text index over names (the same table and triggers Room creates for [ItemFts]), filled from the
+         * cached playlist, and an index on programme start times for "on now" guide searches.
+         */
+        val MIGRATION_9_10 =
+            object : Migration(9, 10) {
+                override fun migrate(db: SupportSQLiteDatabase) {
+                    db.execSQL("CREATE VIRTUAL TABLE IF NOT EXISTS `items_fts` USING FTS4(`searchName` TEXT NOT NULL, content=`items`)")
+                    for ((name, sql) in ftsTriggers) db.execSQL("CREATE TRIGGER IF NOT EXISTS room_fts_content_sync_items_fts_$name $sql")
+                    db.execSQL("INSERT INTO `items_fts`(`items_fts`) VALUES('rebuild')")
+                    db.execSQL("CREATE INDEX IF NOT EXISTS `index_programmes_start` ON `programmes` (`start`)")
+                }
+            }
+
+        /** Adds the per-show table the Shows tab reads, filled from the cached playlist. */
+        val MIGRATION_10_11 =
+            object : Migration(10, 11) {
+                override fun migrate(db: SupportSQLiteDatabase) {
+                    db.execSQL(
+                        "CREATE TABLE IF NOT EXISTS `show_groups` (`rowId` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+                            "`showKey` TEXT NOT NULL, `groupName` TEXT NOT NULL, `region` TEXT, `adult` INTEGER NOT NULL, " +
+                            "`showName` TEXT NOT NULL, `logo` TEXT, `episodes` INTEGER NOT NULL, `sortOrder` INTEGER NOT NULL)",
+                    )
+                    db.execSQL("CREATE INDEX IF NOT EXISTS `index_show_groups_showKey` ON `show_groups` (`showKey`)")
+                    db.execSQL("CREATE INDEX IF NOT EXISTS `index_show_groups_sortOrder` ON `show_groups` (`sortOrder`)")
+                    db.execSQL("INSERT INTO show_groups (${ShowGroups.COLUMNS}) ${ShowGroups.SELECT}")
+                }
+            }
+
+        /** Adds TMDB's seasons, for episode screenshots and names. */
+        val MIGRATION_11_12 =
+            object : Migration(11, 12) {
+                override fun migrate(db: SupportSQLiteDatabase) {
+                    db.execSQL(
+                        "CREATE TABLE IF NOT EXISTS `tmdb_seasons` (`cacheKey` TEXT NOT NULL, `found` INTEGER NOT NULL, " +
+                            "`episodes` TEXT NOT NULL, `fetchedAt` INTEGER NOT NULL, PRIMARY KEY(`cacheKey`))",
+                    )
+                }
+            }
+
+        private const val FTS_INSERT = "INSERT INTO `items_fts`(`docid`, `searchName`) VALUES (NEW.`rowid`, NEW.`searchName`); END"
+
+        private val ftsTriggers =
+            listOf(
+                "BEFORE_UPDATE" to "BEFORE UPDATE ON `items` BEGIN DELETE FROM `items_fts` WHERE `docid`=OLD.`rowid`; END",
+                "BEFORE_DELETE" to "BEFORE DELETE ON `items` BEGIN DELETE FROM `items_fts` WHERE `docid`=OLD.`rowid`; END",
+                "AFTER_UPDATE" to "AFTER UPDATE ON `items` BEGIN $FTS_INSERT",
+                "AFTER_INSERT" to "AFTER INSERT ON `items` BEGIN $FTS_INSERT",
+            )
     }
 }

@@ -7,6 +7,8 @@ import androidx.mediarouter.media.MediaRouter
 import app.tuned.container
 import app.tuned.core.Dlna
 import app.tuned.data.db.ItemEntity
+import app.tuned.diagnostics.attempt
+import app.tuned.diagnostics.loggingHandler
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
@@ -96,7 +98,7 @@ class DlnaControl(
         action: String,
     ) {
         val url = controlUrl ?: return
-        owner.lifecycleScope.launch(Dispatchers.IO) {
+        owner.lifecycleScope.launch(Dispatchers.IO + loggingHandler("Dlna")) {
             sending.withLock {
                 val request =
                     Request
@@ -106,7 +108,7 @@ class DlnaControl(
                         .post(body.toRequestBody(SOAP))
                         .build()
                 // A TV that refuses one step (Stop when idle, Seek on a live stream) still plays.
-                runCatching { http.newCall(request).execute().close() }
+                attempt("Dlna", "The TV refused $action") { http.newCall(request).execute().close() }
             }
         }
     }

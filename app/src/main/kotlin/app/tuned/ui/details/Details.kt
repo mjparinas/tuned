@@ -1,9 +1,9 @@
 package app.tuned.ui.details
 
 import android.app.Application
-import android.content.ActivityNotFoundException
 import android.content.Intent
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -68,13 +68,15 @@ import app.tuned.core.Titles
 import app.tuned.data.CastMember
 import app.tuned.data.Metadata
 import app.tuned.data.db.ItemEntity
+import app.tuned.diagnostics.launchSafely
+import app.tuned.diagnostics.startActivitySafely
+import app.tuned.ui.common.focusRing
 import app.tuned.ui.library.LibraryViewModel
 import app.tuned.ui.library.WatchLaterButton
 import app.tuned.ui.library.WatchedButton
 import app.tuned.ui.offline.DownloadButton
 import coil3.compose.AsyncImage
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.launch
 
 /** The TMDB details for one film or show: what the device has at once, then anything newer. */
 class DetailsViewModel(
@@ -92,8 +94,8 @@ class DetailsViewModel(
     private var loaded: String? = null
 
     fun loadItem(id: Long) {
-        viewModelScope.launch {
-            val found = container.db.items().get(id) ?: return@launch
+        viewModelScope.launchSafely("Details") {
+            val found = container.db.items().get(id) ?: return@launchSafely
             item.value = found
             val h = container.db.library().progress(id)
             resumable.value = h != null && h.positionMs > RESUME_FROM_MS && (h.durationMs <= 0 || h.positionMs < h.durationMs * DONE)
@@ -107,7 +109,7 @@ class DetailsViewModel(
     ) {
         if (loaded == name) return
         loaded = name
-        viewModelScope.launch {
+        viewModelScope.launchSafely("Details") {
             details.value = container.metadata.cached(name, tv)
             hasKey.value = container.metadata.hasKey()
             container.metadata.details(name, tv)?.let { details.value = it }
@@ -129,6 +131,7 @@ fun MovieScreen(
     itemId: Long,
     onPlay: (Long) -> Unit,
     onBack: () -> Unit,
+    onOpenPerson: (CastMember) -> Unit = {},
     vm: DetailsViewModel = viewModel(),
 ) {
     LaunchedEffect(itemId) { vm.loadItem(itemId) }
@@ -191,7 +194,7 @@ fun MovieScreen(
                         WatchedButton(it.id)
                     }
                 }
-                DetailsBody(details, hasKey)
+                DetailsBody(details, hasKey, onOpenPerson = onOpenPerson)
             }
         }
     }
@@ -254,12 +257,16 @@ private fun RatingChip(text: String) {
     }
 }
 
-/** Genres, summary, cast and the TMDB credit; with no key, one line on where to add it. */
+/**
+ * Genres, summary, cast and the TMDB credit; with no key, one line on where to add it. Tapping someone in the cast
+ * opens their films and shows.
+ */
 @Composable
 fun DetailsBody(
     details: Metadata?,
     hasKey: Boolean,
     modifier: Modifier = Modifier,
+    onOpenPerson: (CastMember) -> Unit = {},
 ) {
     Column(modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(16.dp)) {
         if (details == null) {
@@ -284,7 +291,7 @@ fun DetailsBody(
         details.overview?.let { Text(it, style = MaterialTheme.typography.bodyMedium) }
         if (details.cast.isNotEmpty()) {
             Text(stringResource(R.string.details_cast), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-            CastRow(details.cast)
+            CastRow(details.cast, onOpenPerson)
         }
         Text(
             stringResource(R.string.details_source),
@@ -295,10 +302,22 @@ fun DetailsBody(
 }
 
 @Composable
-private fun CastRow(cast: List<CastMember>) {
-    LazyRow(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+private fun CastRow(
+    cast: List<CastMember>,
+    onOpen: (CastMember) -> Unit,
+) {
+    val shape = RoundedCornerShape(12.dp)
+    LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
         items(cast, key = { it.name + it.character }) { person ->
-            Column(Modifier.width(76.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+            Column(
+                Modifier
+                    .width(84.dp)
+                    .focusRing(shape, MaterialTheme.colorScheme.primary)
+                    .clip(shape)
+                    .clickable(onClickLabel = stringResource(R.string.person_open, person.name)) { onOpen(person) }
+                    .padding(4.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
                 AsyncImage(
                     model = person.photo,
                     contentDescription = null,
@@ -327,11 +346,7 @@ fun TrailerButton(videoId: String) {
     val context = LocalContext.current
     OutlinedButton(
         onClick = {
-            try {
-                context.startActivity(Intent(Intent.ACTION_VIEW, "https://www.youtube.com/watch?v=$videoId".toUri()))
-            } catch (_: ActivityNotFoundException) {
-                // Nothing on the device can open a link.
-            }
+            context.startActivitySafely(Intent(Intent.ACTION_VIEW, "https://www.youtube.com/watch?v=$videoId".toUri()), "Trailer")
         },
         contentPadding = ButtonDefaults.ButtonWithIconContentPadding,
     ) {

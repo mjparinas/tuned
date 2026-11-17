@@ -4,7 +4,6 @@ import androidx.activity.ComponentActivity
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.lifecycle.lifecycleScope
 import app.tuned.container
 import com.google.android.play.core.appupdate.AppUpdateManagerFactory
 import com.google.android.play.core.appupdate.AppUpdateOptions
@@ -45,8 +44,10 @@ class AppUpdates(
 
     fun check() {
         if (!fromPlay) {
-            activity.lifecycleScope.launch {
-                val container = activity.container
+            // The app's scope, not this screen's: leaving the screen mid-download (Back, the player) must not cut
+            // the check short. The check never throws.
+            val container = activity.container
+            container.appScope.launch {
                 if (container.settings.settings
                         .first()
                         .checkUpdates

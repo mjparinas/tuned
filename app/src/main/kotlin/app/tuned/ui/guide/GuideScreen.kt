@@ -54,9 +54,9 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import app.tuned.R
 import app.tuned.container
 import app.tuned.core.CatchUp
-import app.tuned.data.db.FavouriteEntity
 import app.tuned.data.db.ItemEntity
 import app.tuned.data.db.ProgrammeEntity
+import app.tuned.diagnostics.launchSafely
 import app.tuned.player.PlayerActivity
 import app.tuned.ui.common.BackTopBar
 import app.tuned.ui.common.focusRing
@@ -85,7 +85,7 @@ class GuideViewModel(
 
     fun load(id: Long) {
         if (channel.value?.id == id) return
-        viewModelScope.launch { channel.value = db.items().get(id) }
+        viewModelScope.launchSafely("Guide") { channel.value = db.items().get(id) }
     }
 
     /** Days of recordings the channel keeps (catch-up), 0 for none. */
@@ -103,10 +103,10 @@ class GuideViewModel(
                 c.tvgId?.let { db.programmes().upcoming(it, from, if (days > 0) LIMIT_WITH_PAST else LIMIT) } ?: emptyFlow()
             }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
+    private val picks = app.container.picks
+
     val favourite: StateFlow<Boolean> =
-        channel
-            .filterNotNull()
-            .flatMapLatest { db.library().isFavourite(it.id) }
+        combine(channel.filterNotNull(), picks.favourites.value) { c, ids -> c.id in ids }
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), false)
 
     private val reminders = app.container.reminders
@@ -121,7 +121,7 @@ class GuideViewModel(
         if (Reminders.key(c.id, p.start) in scheduled.value) {
             reminders.cancel(c.id, p.start)
         } else {
-            viewModelScope.launch {
+            viewModelScope.launchSafely("Guide") {
                 reminders.set(c.id, c.name, p.title, p.start, settings.settings.first().reminderLeadMinutes)
             }
         }
@@ -134,15 +134,7 @@ class GuideViewModel(
 
     fun toggleFavourite() {
         val c = channel.value ?: return
-        viewModelScope.launch {
-            if (favourite.value) {
-                db.library().removeFavourite(
-                    c.id,
-                )
-            } else {
-                db.library().addFavourite(FavouriteEntity(c.id, System.currentTimeMillis()))
-            }
-        }
+        picks.setFavourite(c.id, !favourite.value)
     }
 }
 

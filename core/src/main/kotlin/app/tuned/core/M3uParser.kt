@@ -62,7 +62,7 @@ object M3uParser {
         val attributes: Map<String, String>,
     )
 
-    /** Reads `#EXTINF:-1 key="value" key2="value2",Title`. Values may hold commas, so this scans, not splits. */
+    /** Reads `#EXTINF:-1 key="value" key2='value2',Title`. Values may hold commas, so this scans, not splits. */
     @Suppress("CyclomaticComplexMethod") // a hand-written scanner reads best as one loop
     internal fun parseExtInf(line: String): ExtInf {
         val attributes = HashMap<String, String>()
@@ -84,8 +84,9 @@ object M3uParser {
                     val eq = line.indexOf('=', i)
                     if (eq < 0) break
                     val key = line.substring(i, eq).trim().lowercase()
-                    if (eq + 1 < line.length && line[eq + 1] == '"') {
-                        val close = line.indexOf('"', eq + 2)
+                    val quote = line.getOrNull(eq + 1)
+                    if (quote == '"' || quote == '\'') {
+                        val close = line.indexOf(quote, eq + 2)
                         if (close < 0) break
                         attributes[key] = line.substring(eq + 2, close).trim()
                         i = close + 1
@@ -119,7 +120,7 @@ object M3uParser {
             group = group,
             tvgId = a["tvg-id"]?.takeIf { it.isNotBlank() },
             logo = a["tvg-logo"]?.takeIf { it.isNotBlank() },
-            region = Regions.detect(group, a["tvg-country"], name),
+            region = Regions.detect(group, a["tvg-country"], name, a["tvg-language"]),
             adult = Classifier.isAdult(group, name),
             episode = if (kind == ContentKind.SERIES) Episodes.parse(name, group) else null,
             order = order,

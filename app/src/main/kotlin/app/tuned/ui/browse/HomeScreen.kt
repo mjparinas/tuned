@@ -41,6 +41,7 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.DownloadForOffline
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
+import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Movie
 import androidx.compose.material.icons.filled.Radar
@@ -103,6 +104,7 @@ import app.tuned.container
 import app.tuned.core.ContentKind
 import app.tuned.core.ScreenLayout
 import app.tuned.data.AppSettings
+import app.tuned.data.CastMember
 import app.tuned.data.StartTab
 import app.tuned.data.SyncProgress
 import app.tuned.data.db.ChannelWithNow
@@ -111,9 +113,14 @@ import app.tuned.data.db.ItemEntity
 import app.tuned.data.db.ShowSummary
 import app.tuned.data.db.WatchLaterEntity
 import app.tuned.ui.SyncText
+import app.tuned.ui.common.ChannelRowSkeleton
+import app.tuned.ui.common.SKELETON_ROWS
 import app.tuned.ui.common.VoiceSearchButton
+import app.tuned.ui.common.firstLoad
 import app.tuned.ui.common.focusRing
+import app.tuned.ui.common.skeleton
 import app.tuned.ui.common.windowWidthDp
+import app.tuned.ui.guide.GuideGridView
 import app.tuned.ui.library.LibraryViewModel
 import app.tuned.ui.library.watchLaterRow
 import app.tuned.ui.offline.DownloadsViewModel
@@ -141,6 +148,7 @@ fun HomeScreen(
     onOpenShow: (String, String) -> Unit,
     onOpenGuide: (Long) -> Unit,
     onOpenMovie: (Long) -> Unit,
+    onOpenPerson: (CastMember) -> Unit,
     onOpenSettings: () -> Unit,
     onOpenSearch: () -> Unit,
     onOpenDownloads: () -> Unit,
@@ -209,6 +217,8 @@ fun HomeScreen(
                     text = text,
                     hint = stringResource(tab.search),
                     onChange = { search.value = it },
+                    grid = if (tab.kind == ContentKind.LIVE) settings.liveGrid else null,
+                    onToggleGrid = { vm.setLiveGrid(!settings.liveGrid) },
                     onOpenSearch = onOpenSearch,
                     onOpenSettings = onOpenSettings,
                 )
@@ -245,7 +255,7 @@ fun HomeScreen(
                 CategoryChips(vm, tab.kind)
                 val lists: @Composable () -> Unit = {
                     when (tab.kind) {
-                        ContentKind.LIVE -> LiveList(vm, settings.showGuideInList, onPlay, openGuide)
+                        ContentKind.LIVE -> LiveTab(vm, settings, onPlay, openGuide)
                         ContentKind.MOVIE -> MovieGrid(vm, onPlay, openMovie)
                         ContentKind.SERIES -> ShowGrid(vm, openShow, onPlay)
                     }
@@ -268,7 +278,7 @@ fun HomeScreen(
         if (panes && open != null) {
             VerticalDivider()
             Box(Modifier.weight(ScreenLayout.DETAIL_FRACTION).fillMaxHeight()) {
-                DetailPane(open, onPlay = onPlay, onClose = { detail = null })
+                DetailPane(open, onPlay = onPlay, onClose = { detail = null }, onOpenPerson = onOpenPerson)
             }
         }
     }
@@ -302,6 +312,8 @@ private fun SearchBarRow(
     text: String,
     hint: String,
     onChange: (String) -> Unit,
+    grid: Boolean?,
+    onToggleGrid: () -> Unit,
     onOpenSearch: () -> Unit,
     onOpenSettings: () -> Unit,
 ) {
@@ -336,6 +348,15 @@ private fun SearchBarRow(
                     ),
                 modifier = Modifier.weight(1f).height(52.dp),
             )
+            // Live TV only: switch between the channel list and the grid guide.
+            if (grid != null) {
+                IconButton(onClick = onToggleGrid) {
+                    Icon(
+                        if (grid) Icons.AutoMirrored.Filled.List else Icons.Filled.GridView,
+                        contentDescription = stringResource(if (grid) R.string.grid_hide else R.string.grid_show),
+                    )
+                }
+            }
             IconButton(onClick = onOpenSearch) {
                 Icon(Icons.Filled.TravelExplore, contentDescription = stringResource(R.string.search_everything))
             }
@@ -416,6 +437,21 @@ private fun CategoryChips(
     }
 }
 
+/** Live TV as the channel list, or as the grid guide when that's switched on. */
+@Composable
+private fun LiveTab(
+    vm: BrowseViewModel,
+    settings: AppSettings,
+    onPlay: (Long) -> Unit,
+    onOpenGuide: (Long) -> Unit,
+) {
+    if (settings.liveGrid) {
+        GuideGridView(vm.channels.collectAsLazyPagingItems(), settings.guideDays, onPlay, onOpenGuide)
+    } else {
+        LiveList(vm, settings.showGuideInList, onPlay, onOpenGuide)
+    }
+}
+
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun LiveList(
@@ -425,6 +461,7 @@ private fun LiveList(
     onOpenGuide: (Long) -> Unit,
 ) {
     val channels = vm.channels.collectAsLazyPagingItems()
+    val favourites by vm.favouriteIds.collectAsStateWithLifecycle()
     val state = rememberLazyListState()
     LazyColumn(
         state = state,
@@ -432,17 +469,20 @@ private fun LiveList(
         contentPadding = PaddingValues(start = 12.dp, end = 12.dp, top = 4.dp, bottom = 16.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
+        if (channels.firstLoad) items(SKELETON_ROWS) { ChannelRowSkeleton() }
         items(count = channels.itemCount, key = channels.itemKey { it.id }) { index ->
             val channel = channels[index]
             if (channel == null) {
-                Spacer(Modifier.height(64.dp))
+                ChannelRowSkeleton()
             } else {
+                val favourite = channel.id in favourites
                 ChannelRow(
                     channel = channel,
+                    favourite = favourite,
                     showGuide = showGuide,
                     onPlay = { onPlay(channel.id) },
                     onGuide = { onOpenGuide(channel.id) },
-                    onToggleFavourite = { vm.toggleFavourite(channel.id, channel.favourite) },
+                    onToggleFavourite = { vm.toggleFavourite(channel.id, favourite) },
                 )
             }
         }
@@ -468,6 +508,7 @@ internal fun FavouriteButton(
 @Composable
 private fun ChannelRow(
     channel: ChannelWithNow,
+    favourite: Boolean,
     showGuide: Boolean,
     onPlay: () -> Unit,
     onGuide: () -> Unit,
@@ -522,7 +563,7 @@ private fun ChannelRow(
                     }
                 }
             }
-            FavouriteButton(channel.favourite, onToggleFavourite)
+            FavouriteButton(favourite, onToggleFavourite)
             if (channel.tvgId != null) {
                 IconButton(onClick = onGuide) {
                     Icon(Icons.AutoMirrored.Filled.List, contentDescription = stringResource(R.string.guide_open))
@@ -531,7 +572,7 @@ private fun ChannelRow(
         }
         DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
             DropdownMenuItem(
-                text = { Text(stringResource(if (channel.favourite) R.string.favourite_remove else R.string.favourite_add)) },
+                text = { Text(stringResource(if (favourite) R.string.favourite_remove else R.string.favourite_add)) },
                 onClick = {
                     menu = false
                     onToggleFavourite()
@@ -571,6 +612,7 @@ private fun MovieGrid(
     ) {
         continueWatching(vm, ContentKind.MOVIE, onPlay)
         watchLaterRow(shows = false, visible = { fullList(vm, ContentKind.MOVIE) }, onOpenMovie = onOpenMovie, onOpenShow = { _, _ -> })
+        if (movies.firstLoad) items(SKELETON_ROWS) { PosterPlaceholder() }
         items(count = movies.itemCount, key = movies.itemKey { it.id }) { index ->
             val movie: ItemEntity? = movies[index]
             if (movie == null) {
@@ -624,6 +666,7 @@ private fun ShowGrid(
     ) {
         continueWatching(vm, ContentKind.SERIES, onPlay)
         watchLaterRow(shows = true, visible = { fullList(vm, ContentKind.SERIES) }, onOpenMovie = {}, onOpenShow = onOpenShow)
+        if (shows.firstLoad) items(SKELETON_ROWS) { PosterPlaceholder() }
         items(count = shows.itemCount, key = shows.itemKey { it.showKey }) { index ->
             val show: ShowSummary? = shows[index]
             if (show == null) {
@@ -858,7 +901,7 @@ private fun PosterPlaceholder() {
             .fillMaxWidth()
             .aspectRatio(2f / 3f)
             .clip(RoundedCornerShape(10.dp))
-            .background(MaterialTheme.colorScheme.surfaceContainerHigh),
+            .skeleton(),
     )
 }
 
