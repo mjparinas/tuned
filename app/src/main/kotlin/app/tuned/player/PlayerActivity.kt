@@ -52,6 +52,7 @@ import app.tuned.BuildConfig
 import app.tuned.R
 import app.tuned.container
 import app.tuned.core.ContentKind
+import app.tuned.core.StreamLink
 import app.tuned.core.Titles
 import app.tuned.data.AppSettings
 import app.tuned.data.db.HistoryEntity
@@ -65,6 +66,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import java.io.File
+import java.util.concurrent.ConcurrentHashMap
 
 /**
  * Full-screen playback. Nothing on screen but the video until a tap shows the standard Media3 controls: play and
@@ -81,6 +83,9 @@ class PlayerActivity : FragmentActivity() {
     private lateinit var subtitleView: TextView
     private var settings = AppSettings()
     private var queue: List<ItemEntity> = emptyList()
+
+    /** Headers the playlist asks for, by stream host; read by the player's network requests on their own threads. */
+    private val streamHeaders = ConcurrentHashMap<String, Map<String, String>>()
     private var progressJob: Job? = null
     private var liveRetries = 0
     private var gestures: PlayerGestures? = null
@@ -468,9 +473,17 @@ class PlayerActivity : FragmentActivity() {
     }
 
     private fun buildPlayer(live: Boolean): ExoPlayer {
-        // Streams over OkHttp (through the live rewind copy on live TV), saved downloads from the device.
+        // Streams over OkHttp (through the live rewind copy on live TV), with the headers the playlist asks for;
+        // saved downloads from the device.
         val agent = settings.userAgent.ifBlank { "Tuned/${BuildConfig.VERSION_NAME}" }
-        val http = PlayerSources.factory(this, container.http, agent) { network -> if (live) timeshift.factory(network) else network }
+        val http =
+            PlayerSources.factory(
+                this,
+                container.http,
+                agent,
+                headers = { uri -> uri.host?.let(streamHeaders::get).orEmpty() },
+                network = { network -> if (live) timeshift.factory(network) else network },
+            )
         // TS streams from IPTV servers often start on a non-IDR frame; these flags start them sooner.
         val extractors =
             DefaultExtractorsFactory().setTsExtractorFlags(
@@ -716,12 +729,21 @@ class PlayerActivity : FragmentActivity() {
 
     private fun live(): Boolean = queue.firstOrNull()?.kind == ContentKind.LIVE.code
 
-    private fun ItemEntity.toMediaItem(file: File?): MediaItem = MediaItem
-        .Builder()
-        .setMediaId(id.toString())
-        .setUri(file?.toUri() ?: url.toUri())
-        .setMediaMetadata(MediaMetadata.Builder().setTitle(name).build())
-        .build()
+    private fun ItemEntity.toMediaItem(file: File?): MediaItem {
+        val link = StreamLink.split(url)
+        if (file == null && link.headers.isNotEmpty()) {
+            link.url
+                .toUri()
+                .host
+                ?.let { streamHeaders[it] = link.headers }
+        }
+        return MediaItem
+            .Builder()
+            .setMediaId(id.toString())
+            .setUri(file?.toUri() ?: link.url.toUri())
+            .setMediaMetadata(MediaMetadata.Builder().setTitle(name).build())
+            .build()
+    }
 
     private fun hideSystemBars() {
         WindowCompat.setDecorFitsSystemWindows(window, false)
@@ -864,12 +886,18 @@ class PlayerActivity : FragmentActivity() {
             )
         }
 
+        /** Auto-tune: find a working stream for [query] (a channel or an event) and play it. */
+        fun tuneIntent(
+            context: Context,
+            query: String,
+        ): Intent = Intent(context, PlayerActivity::class.java).putExtra(EXTRA_TUNE, query)
+
         /** Auto-tune: find a working channel showing [query] (a channel name or an event in the guide) and play it. */
         fun tune(
             context: Context,
             query: String,
         ) {
-            context.startActivity(Intent(context, PlayerActivity::class.java).putExtra(EXTRA_TUNE, query))
+            context.startActivity(tuneIntent(context, query))
         }
     }
 }

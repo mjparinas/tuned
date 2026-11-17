@@ -47,3 +47,6 @@ import kotlinx.serialization.Serializable
 
 /** Settings › Downloads. */
 @Serializable data object DownloadsRoute
+
+/** Live Events: today's games, fights and pay-per-views. */
+@Serializable data object EventsRoute

@@ -39,6 +39,7 @@ import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.DownloadForOffline
+import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.GridView
@@ -152,6 +153,7 @@ fun HomeScreen(
     onOpenSettings: () -> Unit,
     onOpenSearch: () -> Unit,
     onOpenDownloads: () -> Unit,
+    onOpenEvents: () -> Unit,
     onTune: (String) -> Unit,
     onSignedOut: () -> Unit,
     vm: BrowseViewModel = viewModel(),
@@ -221,6 +223,7 @@ fun HomeScreen(
                     onToggleGrid = { vm.setLiveGrid(!settings.liveGrid) },
                     onOpenSearch = onOpenSearch,
                     onOpenSettings = onOpenSettings,
+                    onOpenEvents = onOpenEvents.takeIf { tab.kind == ContentKind.LIVE },
                 )
             },
             bottomBar = {
@@ -316,6 +319,8 @@ private fun SearchBarRow(
     onToggleGrid: () -> Unit,
     onOpenSearch: () -> Unit,
     onOpenSettings: () -> Unit,
+    /** Live Events, shown on the Live TV tab only. */
+    onOpenEvents: (() -> Unit)?,
 ) {
     Surface(color = MaterialTheme.colorScheme.surface) {
         Row(
@@ -355,6 +360,11 @@ private fun SearchBarRow(
                         if (grid) Icons.AutoMirrored.Filled.List else Icons.Filled.GridView,
                         contentDescription = stringResource(if (grid) R.string.grid_hide else R.string.grid_show),
                     )
+                }
+            }
+            if (onOpenEvents != null) {
+                IconButton(onClick = onOpenEvents) {
+                    Icon(Icons.Filled.EmojiEvents, contentDescription = stringResource(R.string.events_title))
                 }
             }
             IconButton(onClick = onOpenSearch) {
