@@ -155,6 +155,24 @@ class BrowseViewModel(
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
     }
 
+    private val episodeNames = MutableStateFlow<Map<Long, String>>(emptyMap())
+    private val askedNames = mutableSetOf<Long>()
+
+    /** TMDB's names for the episodes in Continue Watching ("Kamp Krusty"), by item id, as they become known. */
+    val continueNames: StateFlow<Map<Long, String>> = episodeNames
+
+    /** Looks up one episode's TMDB name: from the device when known, else one cached TMDB request per season. */
+    fun loadEpisodeName(row: ContinueRow) {
+        val show = row.showName ?: return
+        val season = row.season ?: return
+        val episode = row.episode ?: return
+        if (!askedNames.add(row.id)) return
+        viewModelScope.launch {
+            val info = container.metadata.cachedEpisode(show, season, episode) ?: container.metadata.episode(show, season, episode)
+            info?.name?.let { name -> episodeNames.value += row.id to name }
+        }
+    }
+
     private val groupFlows = mutableMapOf<ContentKind, StateFlow<List<GroupCount>>>()
 
     fun groups(kind: ContentKind): StateFlow<List<GroupCount>> = groupFlows.getOrPut(kind) {

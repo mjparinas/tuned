@@ -88,6 +88,23 @@ class SeasonMetadataTest {
     }
 
     @Test
+    fun anEpisodeIsNamedFromTheShowsNameAndThenFromTheDevice() = runTest {
+        settings.update { it.copy(tmdbKey = "abc") }
+        assertNull(repo.cachedEpisode("EN - The Simpsons (1989)", 4, 1))
+        server.enqueue(MockResponse.Builder().body("""{"results":[{"id":456,"name":"The Simpsons"}]}""").build())
+        server.enqueue(MockResponse.Builder().body(SEASON).build())
+
+        assertEquals("Kamp Krusty", repo.episode("EN - The Simpsons (1989)", 4, 1)?.name)
+        assertEquals("/3/search/tv", server.takeRequest().url.encodedPath)
+        assertEquals("/3/tv/456/season/4", server.takeRequest().url.encodedPath)
+
+        // Every episode of that season is known on the device now, with no further requests.
+        assertEquals("A Streetcar Named Marge", repo.cachedEpisode("EN - The Simpsons (1989)", 4, 2)?.name)
+        assertEquals("Kamp Krusty", repo.episode("EN - The Simpsons (1989)", 4, 1)?.name)
+        assertEquals(2, server.requestCount)
+    }
+
+    @Test
     fun withoutAKeyNothingIsAsked() = runTest {
         settings.update { it.copy(tmdbKey = "") }
         assertNull(repo.season(456, 4))

@@ -266,6 +266,32 @@ class MetadataRepository(
         }
     }
 
+    /**
+     * TMDB's details for one episode of a show (by the playlist's show name), from the device alone: known once the
+     * show's page or this episode was looked up before. Never touches the network, so lists can call it freely.
+     */
+    suspend fun cachedEpisode(
+        showName: String,
+        season: Int,
+        episode: Int,
+    ): EpisodeInfo? {
+        val show = dao.get(cacheKey(showName, true))?.takeIf { it.found } ?: return null
+        return cachedSeason(show.tmdbId, season)?.get(episode)
+    }
+
+    /**
+     * TMDB's details for one episode, asking TMDB when the device doesn't know yet: one show search and one season
+     * request, both kept, so every other episode of that season is known after.
+     */
+    suspend fun episode(
+        showName: String,
+        season: Int,
+        episode: Int,
+    ): EpisodeInfo? {
+        val show = summary(showName, tv = true) ?: return null
+        return season(show.tmdbId, season)?.get(episode)
+    }
+
     private fun downloadSeason(
         cacheKey: String,
         tmdbId: Long,
