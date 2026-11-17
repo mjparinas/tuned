@@ -149,6 +149,7 @@ fun SettingsScreen(
     onBack: () -> Unit,
     onOpenCaptions: () -> Unit,
     onOpenRegions: () -> Unit,
+    onOpenFavouriteOrder: () -> Unit,
     onSignedOut: () -> Unit,
     vm: SettingsViewModel = viewModel(),
 ) {
@@ -189,6 +190,12 @@ fun SettingsScreen(
                     pluralStringResource(R.plurals.countries_hidden, settings.hiddenRegions.size, settings.hiddenRegions.size)
                 },
                 onClick = onOpenRegions,
+                trailing = { Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null) },
+            )
+            SettingRow(
+                stringResource(R.string.settings_favourite_order),
+                stringResource(R.string.settings_favourite_order_summary),
+                onClick = onOpenFavouriteOrder,
                 trailing = { Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null) },
             )
             val hasPin by vm.hasPin.collectAsStateWithLifecycle()

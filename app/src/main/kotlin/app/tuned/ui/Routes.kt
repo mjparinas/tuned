@@ -20,3 +20,5 @@ import kotlinx.serialization.Serializable
 @Serializable data object CaptionSettingsRoute
 
 @Serializable data object RegionSettingsRoute
+
+@Serializable data object FavouriteOrderRoute
