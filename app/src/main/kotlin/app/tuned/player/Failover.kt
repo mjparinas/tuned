@@ -2,10 +2,10 @@ package app.tuned.player
 
 import androidx.media3.common.Player
 import app.tuned.data.TuneRepository
+import app.tuned.diagnostics.launchSafely
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 
 /**
  * Backup copies in the player (from the 2026-11-17 app audit). When a live channel dies for good, the player swaps
@@ -63,7 +63,7 @@ internal class Failover(
         searching = false
         onStatus(null)
         val height = player.videoSize.height
-        scope.launch { tune.played(id, height) }
+        scope.launchSafely("Failover") { tune.played(id, height) }
         onFound(id)
     }
 
@@ -71,7 +71,7 @@ internal class Failover(
     fun failCurrent() {
         val id = copies.getOrNull(position) ?: return
         probe?.cancel()
-        scope.launch { tune.failed(id) }
+        scope.launchSafely("Failover") { tune.failed(id) }
         onDead(id)
         tryNext()
     }
@@ -90,7 +90,7 @@ internal class Failover(
         onStatus(position + 1 to copies.size)
         swapTo(id)
         probe =
-            scope.launch {
+            scope.launchSafely("Failover") {
                 delay(timeoutMs)
                 if (searching && copies.getOrNull(position) == id) failCurrent()
             }
