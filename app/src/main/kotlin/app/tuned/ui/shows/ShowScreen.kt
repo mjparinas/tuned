@@ -55,6 +55,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import app.tuned.R
 import app.tuned.container
 import app.tuned.core.Titles
+import app.tuned.data.CastMember
 import app.tuned.data.EpisodeInfo
 import app.tuned.data.db.HistoryEntity
 import app.tuned.data.db.ItemEntity
@@ -145,6 +146,7 @@ fun ShowScreen(
     title: String,
     onPlay: (Long) -> Unit,
     onBack: () -> Unit,
+    onOpenPerson: (CastMember) -> Unit = {},
     vm: ShowViewModel = viewModel(),
     details: DetailsViewModel = viewModel(),
     library: LibraryViewModel = viewModel(),
@@ -199,7 +201,7 @@ fun ShowScreen(
                             WatchLaterButton(LibraryViewModel.show(showKey, title, metadata?.poster ?: episodes.firstOrNull()?.logo))
                         }
                         Spacer(Modifier.height(12.dp))
-                        DetailsBody(metadata, hasKey)
+                        DetailsBody(metadata, hasKey, onOpenPerson = onOpenPerson)
                     }
                 }
                 val shown = episodes.filter { season == null || (it.season ?: 1) == season }

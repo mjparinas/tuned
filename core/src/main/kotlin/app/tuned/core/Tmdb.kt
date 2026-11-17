@@ -80,6 +80,18 @@ object Tmdb {
         key: String,
     ): String = "$API/tv/$id/season/$season" + apiKey(key).replaceFirst('&', '?')
 
+    /** A person's page in one answer: name, photo, biography and every film and show they were in. */
+    fun person(
+        id: Long,
+        key: String,
+    ): String = "$API/person/$id?append_to_response=combined_credits${apiKey(key)}"
+
+    /** Finds a person by name, for cast saved before their TMDB id was kept. */
+    fun searchPerson(
+        name: String,
+        key: String,
+    ): String = "$API/search/person?query=${enc(name.trim())}&include_adult=false${apiKey(key)}"
+
     /** "1h 52m", or "48m" under an hour; null when unknown. */
     fun runtime(minutes: Int?): String? {
         if (minutes == null || minutes <= 0) return null
