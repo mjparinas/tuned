@@ -100,6 +100,11 @@ class PlayerTools(
             addView(button(R.drawable.ic_player_lock, R.string.player_lock) { lock() })
         }
 
+    /** Puts another button (the cast button) at the start of the toolbar. */
+    fun addButton(view: View) {
+        toolbar.addView(view, 0)
+    }
+
     /** Adds the panels (guide, info, unlock) over the video. */
     fun attach(root: FrameLayout) {
         root.addView(

@@ -22,14 +22,15 @@ import android.widget.ImageButton
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
-import androidx.activity.ComponentActivity
 import androidx.annotation.OptIn
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
+import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.lifecycleScope
 import androidx.media3.common.AudioAttributes
 import androidx.media3.common.C
+import androidx.media3.common.ForwardingPlayer
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
 import androidx.media3.common.PlaybackException
@@ -63,7 +64,7 @@ import kotlinx.coroutines.launch
  * tested surface and starts fastest.
  */
 @OptIn(UnstableApi::class)
-class PlayerActivity : ComponentActivity() {
+class PlayerActivity : FragmentActivity() {
     private var player: ExoPlayer? = null
     private lateinit var playerView: PlayerView
     private lateinit var overlay: LinearLayout
@@ -75,6 +76,7 @@ class PlayerActivity : ComponentActivity() {
     private var liveRetries = 0
     private var gestures: PlayerGestures? = null
     private lateinit var tools: PlayerTools
+    private var cast: CastControl? = null
     private var reconnect: ConnectivityManager.NetworkCallback? = null
     private var autoTune: AutoTune? = null
     private lateinit var statusView: TextView
@@ -208,6 +210,14 @@ class PlayerActivity : ComponentActivity() {
                     ),
             )
         overlay.addView(tools.toolbar)
+        cast =
+            CastControl(
+                activity = this,
+                player = { player },
+                current = { player?.let { queue.getOrNull(it.currentMediaItemIndex) } },
+                isLive = ::live,
+                onStatus = { text -> if (text == null) statusView.visibility = View.GONE else showStatus(text) },
+            ).also { c -> c.button?.let(tools::addButton) }
     }
 
     @SuppressLint("ClickableViewAccessibility") // PlayerGestures calls performClick on every tap
@@ -261,7 +271,7 @@ class PlayerActivity : ComponentActivity() {
                 override fun onAvailable(network: Network) {
                     lifecycleScope.launch {
                         val p = player ?: return@launch
-                        if (p.playerError != null || p.playbackState == Player.STATE_IDLE) {
+                        if (cast?.casting != true && (p.playerError != null || p.playbackState == Player.STATE_IDLE)) {
                             liveRetries = 0
                             flash(getString(R.string.player_reconnecting))
                             p.prepare()
@@ -321,7 +331,7 @@ class PlayerActivity : ComponentActivity() {
         val live = kind == ContentKind.LIVE
         val exo = buildPlayer(live)
         player = exo
-        playerView.player = exo
+        playerView.player = ViewPlayer(exo)
         playerView.setControllerShowTimeoutMs(settings.controlsTimeoutMs)
         playerView.setShowNextButton(queue.size > 1)
         playerView.setShowPreviousButton(queue.size > 1)
@@ -334,8 +344,14 @@ class PlayerActivity : ComponentActivity() {
         val resumeAt = if (!live && settings.resumePlayback) resumePosition(item.id) else C.TIME_UNSET
         exo.setMediaItems(mediaItems, index, resumeAt)
         exo.pauseAtEndOfMediaItems = kind == ContentKind.SERIES && !settings.autoPlayNext
-        exo.prepare()
-        exo.playWhenReady = true
+        val castNow = cast?.takeIf { it.casting }
+        if (castNow != null) {
+            // Already casting: this goes to the TV, and the phone opens no stream of its own.
+            castNow.load(queue[index], live, resumeAt)
+        } else {
+            exo.prepare()
+            exo.playWhenReady = true
+        }
         updateOverlay(queue[index])
         if (!live) progressJob = lifecycleScope.launch { saveProgressEvery(exo) }
     }
@@ -393,7 +409,9 @@ class PlayerActivity : ComponentActivity() {
             reason: Int,
         ) {
             val id = mediaItem?.mediaId?.toLongOrNull() ?: return
-            queue.firstOrNull { it.id == id }?.let(::updateOverlay)
+            val item = queue.firstOrNull { it.id == id } ?: return
+            updateOverlay(item)
+            if (cast?.casting == true) cast?.load(item, live, 0)
             liveRetries = 0
         }
 
@@ -461,6 +479,23 @@ class PlayerActivity : ComponentActivity() {
                     current?.let { getString(R.string.player_now, it.title) },
                     next?.let { getString(R.string.player_next, it.title) },
                 ).joinToString("  ·  ").ifBlank { item.groupName }
+        }
+    }
+
+    /** What the on-screen controls drive: the phone's player, or the TV's play and pause while casting. */
+    private inner class ViewPlayer(
+        exo: ExoPlayer,
+    ) : ForwardingPlayer(exo) {
+        override fun prepare() {
+            if (cast?.casting != true) super.prepare()
+        }
+
+        override fun play() {
+            if (cast?.casting == true) cast?.play() else super.play()
+        }
+
+        override fun pause() {
+            if (cast?.casting == true) cast?.pause() else super.pause()
         }
     }
 
@@ -589,6 +624,7 @@ class PlayerActivity : ComponentActivity() {
         autoTune?.release()
         gestures?.release()
         tools.release()
+        cast?.release()
         reconnect?.let { cb -> runCatching { getSystemService(ConnectivityManager::class.java)?.unregisterNetworkCallback(cb) } }
         player?.release()
         player = null

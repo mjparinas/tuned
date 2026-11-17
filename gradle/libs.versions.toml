@@ -74,6 +74,8 @@ androidx-media3-exoplayer = { module = "androidx.media3:media3-exoplayer", versi
 androidx-media3-exoplayer-hls = { module = "androidx.media3:media3-exoplayer-hls", version.ref = "media3" }
 androidx-media3-datasource-okhttp = { module = "androidx.media3:media3-datasource-okhttp", version.ref = "media3" }
 androidx-media3-ui = { module = "androidx.media3:media3-ui", version.ref = "media3" }
+# Brings the Cast framework (and MediaRouter) at the version Media3 is tested with.
+androidx-media3-cast = { module = "androidx.media3:media3-cast", version.ref = "media3" }
 androidx-profileinstaller = { module = "androidx.profileinstaller:profileinstaller", version.ref = "profileinstaller" }
 junit = { module = "junit:junit", version.ref = "junit" }
 play-app-update = { module = "com.google.android.play:app-update-ktx", version.ref = "play-app-update" }
