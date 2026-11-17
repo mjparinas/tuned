@@ -21,8 +21,9 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         SeenEpisodeEntity::class,
         ChannelScanEntity::class,
         ItemFts::class,
+        TmdbSeasonEntity::class,
     ],
-    version = 10,
+    version = 11,
     exportSchema = true,
 )
 abstract class TunedDatabase : RoomDatabase() {
@@ -60,6 +61,7 @@ abstract class TunedDatabase : RoomDatabase() {
                 MIGRATION_7_8,
                 MIGRATION_8_9,
                 MIGRATION_9_10,
+                MIGRATION_10_11,
             ).build()
 
         /** Adds auto-tune's channel health. */
@@ -164,6 +166,17 @@ abstract class TunedDatabase : RoomDatabase() {
                     for ((name, sql) in ftsTriggers) db.execSQL("CREATE TRIGGER IF NOT EXISTS room_fts_content_sync_items_fts_$name $sql")
                     db.execSQL("INSERT INTO `items_fts`(`items_fts`) VALUES('rebuild')")
                     db.execSQL("CREATE INDEX IF NOT EXISTS `index_programmes_start` ON `programmes` (`start`)")
+                }
+            }
+
+        /** Adds TMDB's seasons, for episode screenshots and names. */
+        val MIGRATION_10_11 =
+            object : Migration(10, 11) {
+                override fun migrate(db: SupportSQLiteDatabase) {
+                    db.execSQL(
+                        "CREATE TABLE IF NOT EXISTS `tmdb_seasons` (`cacheKey` TEXT NOT NULL, `found` INTEGER NOT NULL, " +
+                            "`episodes` TEXT NOT NULL, `fetchedAt` INTEGER NOT NULL, PRIMARY KEY(`cacheKey`))",
+                    )
                 }
             }
 
