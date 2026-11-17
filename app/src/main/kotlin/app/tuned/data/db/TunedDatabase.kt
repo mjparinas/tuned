@@ -9,7 +9,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
 
 @Database(
     entities = [ItemEntity::class, ProgrammeEntity::class, FavouriteEntity::class, HistoryEntity::class, ChannelHealthEntity::class],
-    version = 2,
+    version = 3,
     exportSchema = true,
 )
 abstract class TunedDatabase : RoomDatabase() {
@@ -25,7 +25,7 @@ abstract class TunedDatabase : RoomDatabase() {
             // WAL: the lists keep reading the old playlist while a refresh writes the new one.
             .setJournalMode(JournalMode.WRITE_AHEAD_LOGGING)
             // Favourites, progress and channel health are the person's own, so every version change keeps them.
-            .addMigrations(MIGRATION_1_2)
+            .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
             .build()
 
         /** Adds auto-tune's channel health. */
@@ -36,6 +36,15 @@ abstract class TunedDatabase : RoomDatabase() {
                         "CREATE TABLE IF NOT EXISTS `channel_health` (`itemId` INTEGER NOT NULL, `okAt` INTEGER NOT NULL, " +
                             "`deadAt` INTEGER NOT NULL, `height` INTEGER NOT NULL, PRIMARY KEY(`itemId`))",
                     )
+                }
+            }
+
+        /** Lets favourites be put in any order; existing ones keep the order they were added in. */
+        val MIGRATION_2_3 =
+            object : Migration(2, 3) {
+                override fun migrate(db: SupportSQLiteDatabase) {
+                    db.execSQL("ALTER TABLE `favourites` ADD COLUMN `position` INTEGER NOT NULL DEFAULT 0")
+                    db.execSQL("UPDATE `favourites` SET `position` = `addedAt`")
                 }
             }
     }

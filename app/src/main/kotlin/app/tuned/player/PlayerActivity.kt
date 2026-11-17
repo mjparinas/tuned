@@ -1,5 +1,6 @@
 package app.tuned.player
 
+import android.annotation.SuppressLint
 import android.app.PictureInPictureParams
 import android.content.Context
 import android.content.Intent
@@ -7,13 +8,17 @@ import android.content.pm.ActivityInfo
 import android.content.res.Configuration
 import android.graphics.Color
 import android.graphics.Rect
+import android.net.ConnectivityManager
+import android.net.Network
 import android.os.Build
 import android.os.Bundle
 import android.util.Rational
+import android.util.TypedValue
 import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
+import android.widget.ImageButton
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
@@ -68,6 +73,9 @@ class PlayerActivity : ComponentActivity() {
     private var queue: List<ItemEntity> = emptyList()
     private var progressJob: Job? = null
     private var liveRetries = 0
+    private var gestures: PlayerGestures? = null
+    private lateinit var tools: PlayerTools
+    private var reconnect: ConnectivityManager.NetworkCallback? = null
     private var autoTune: AutoTune? = null
     private lateinit var statusView: TextView
 
@@ -78,6 +86,9 @@ class PlayerActivity : ComponentActivity() {
         lifecycleScope.launch {
             settings = container.settings.settings.first()
             if (settings.landscapePlayback) requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
+            tools.applyFit(settings.videoFit)
+            if (settings.playerGestures) setUpGestures()
+            if (settings.autoReconnect) reconnectWhenOnline()
             val query = intent.getStringExtra(EXTRA_TUNE)
             if (query != null) {
                 startTune(query)
@@ -113,15 +124,31 @@ class PlayerActivity : ComponentActivity() {
                 setTextColor(0xCCFFFFFF.toInt())
                 textSize = 14f
             }
-        overlay =
+        val density = resources.displayMetrics.density
+        // Back sits with the title, so it shows whenever the controls do (system back and gestures work too).
+        val back = backButton()
+        val titles =
             LinearLayout(this).apply {
                 orientation = LinearLayout.VERTICAL
-                setBackgroundResource(R.drawable.player_top_scrim)
-                val pad = (24 * resources.displayMetrics.density).toInt()
-                setPadding(pad, pad, pad, pad * 2)
                 addView(titleView)
                 addView(subtitleView)
             }
+        overlay =
+            LinearLayout(this).apply {
+                orientation = LinearLayout.HORIZONTAL
+                setBackgroundResource(R.drawable.player_top_scrim)
+                val pad = (24 * density).toInt()
+                setPadding(pad / 2, pad / 2, pad, pad * 2)
+                addView(back, LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT))
+                addView(
+                    titles,
+                    LinearLayout
+                        .LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f)
+                        .apply { marginStart = (4 * density).toInt() },
+                )
+                gravity = Gravity.CENTER_VERTICAL
+            }
+        setUpTools()
         statusView =
             TextView(this).apply {
                 setTextColor(Color.WHITE)
@@ -141,13 +168,108 @@ class PlayerActivity : ComponentActivity() {
             statusView,
             FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT, Gravity.CENTER),
         )
+        tools.attach(root)
         // The title shows and hides with the controls, so a tap reveals everything and the video is otherwise bare.
         playerView.setControllerVisibilityListener(
             PlayerView.ControllerVisibilityListener { visibility ->
                 overlay.visibility = visibility
+                tools.onControls(visibility)
             },
         )
         setContentView(root)
+    }
+
+    private fun backButton() = ImageButton(this).apply {
+        setImageResource(R.drawable.ic_arrow_back)
+        contentDescription = getString(R.string.back)
+        val ripple = TypedValue()
+        theme.resolveAttribute(android.R.attr.selectableItemBackgroundBorderless, ripple, true)
+        setBackgroundResource(ripple.resourceId)
+        val pad = (12 * resources.displayMetrics.density).toInt()
+        setPadding(pad, pad, pad, pad)
+        setOnClickListener { onBackPressedDispatcher.onBackPressed() }
+    }
+
+    /** The buttons at the top right (channels, aspect, quality, info, lock); see [PlayerTools]. */
+    private fun setUpTools() {
+        tools =
+            PlayerTools(
+                activity = this,
+                playerView = playerView,
+                overlay = overlay,
+                hooks =
+                    PlayerTools.Hooks(
+                        player = { player },
+                        queue = { queue },
+                        isLive = ::live,
+                        touch = { gestures },
+                        say = ::flash,
+                        onFitChanged = { fit -> lifecycleScope.launch { container.settings.update { it.copy(videoFit = fit) } } },
+                    ),
+            )
+        overlay.addView(tools.toolbar)
+    }
+
+    @SuppressLint("ClickableViewAccessibility") // PlayerGestures calls performClick on every tap
+    private fun setUpGestures() {
+        val g =
+            PlayerGestures(
+                activity = this,
+                playerView = playerView,
+                isLive = ::live,
+                onSeek = { forward ->
+                    player?.let { p ->
+                        if (forward) p.seekForward() else p.seekBack()
+                        val seconds = (if (forward) settings.seekForwardMs else settings.seekBackMs) / 1_000
+                        flash(getString(if (forward) R.string.gesture_forward else R.string.gesture_back, seconds))
+                    }
+                },
+                onChannel = { next -> player?.let { p -> if (next) p.seekToNextMediaItem() else p.seekToPreviousMediaItem() } },
+                say = { text -> showStatus(text) },
+                quiet = { flash(null) },
+            )
+        gestures = g
+        playerView.setOnTouchListener(g)
+    }
+
+    private fun showStatus(text: String) {
+        statusView.text = text
+        statusView.visibility = View.VISIBLE
+    }
+
+    private var flashJob: Job? = null
+
+    /** Shows [text] (or keeps what's there) for a moment, then hides it. */
+    private fun flash(text: String?) {
+        if (text != null) showStatus(text)
+        flashJob?.cancel()
+        flashJob =
+            lifecycleScope.launch {
+                delay(FLASH_MS)
+                if (autoTune?.searching != true) statusView.visibility = View.GONE
+            }
+    }
+
+    /**
+     * When the connection comes back (Wi-Fi to mobile, a tunnel, a router restart), a stream that stopped on an error
+     * starts again by itself, from where it was for films and episodes.
+     */
+    private fun reconnectWhenOnline() {
+        val cm = getSystemService(ConnectivityManager::class.java) ?: return
+        val callback =
+            object : ConnectivityManager.NetworkCallback() {
+                override fun onAvailable(network: Network) {
+                    lifecycleScope.launch {
+                        val p = player ?: return@launch
+                        if (p.playerError != null || p.playbackState == Player.STATE_IDLE) {
+                            liveRetries = 0
+                            flash(getString(R.string.player_reconnecting))
+                            p.prepare()
+                        }
+                    }
+                }
+            }
+        runCatching { cm.registerDefaultNetworkCallback(callback) }.onSuccess { reconnect = callback }
     }
 
     /** Live: the other channels in the same category, so next/previous flips channels. Shows: the show's episodes. */
@@ -275,6 +397,11 @@ class PlayerActivity : ComponentActivity() {
             liveRetries = 0
         }
 
+        override fun onPlaybackStateChanged(playbackState: Int) {
+            // Playing again after a drop: the next drop gets the full set of retries.
+            if (playbackState == Player.STATE_READY) liveRetries = 0
+        }
+
         override fun onPlayerError(error: PlaybackException) {
             val p = player ?: return
             // Auto-tune: a channel that fails while being tried is dead; move straight on to the next one.
@@ -288,9 +415,13 @@ class PlayerActivity : ComponentActivity() {
                 p.prepare()
                 return
             }
-            // Live streams drop now and then; try again quietly a few times before saying anything.
-            if (live && liveRetries < MAX_LIVE_RETRIES) {
+            // Streams drop now and then: try again a few times, with a short note, before saying anything else. A film or
+            // episode picks up where it was (prepare keeps the position).
+            val network =
+                error.errorCode in PlaybackException.ERROR_CODE_IO_UNSPECIFIED..PlaybackException.ERROR_CODE_IO_READ_POSITION_OUT_OF_RANGE
+            if (settings.autoReconnect && (live || network) && liveRetries < MAX_RETRIES) {
                 liveRetries++
+                flash(getString(R.string.player_reconnecting_try, liveRetries, MAX_RETRIES))
                 lifecycleScope.launch {
                     delay(1_500L * liveRetries)
                     p.prepare()
@@ -317,6 +448,7 @@ class PlayerActivity : ComponentActivity() {
     private fun updateOverlay(item: ItemEntity) {
         titleView.text = item.name
         subtitleView.text = item.groupName
+        if (ContentKind.fromCode(item.kind) == ContentKind.LIVE) rememberChannel(item.id)
         val tvgId = item.tvgId ?: return
         if (ContentKind.fromCode(item.kind) != ContentKind.LIVE) return
         lifecycleScope.launch {
@@ -336,6 +468,13 @@ class PlayerActivity : ComponentActivity() {
         val h = container.db.library().progress(id) ?: return C.TIME_UNSET
         val nearlyDone = h.durationMs > 0 && h.positionMs > h.durationMs * 0.95
         return if (h.positionMs > 30_000 && !nearlyDone) h.positionMs else C.TIME_UNSET
+    }
+
+    /** Live channels go into history too (no position), for the Recent filter on Live TV. */
+    private fun rememberChannel(id: Long) {
+        container.appScope.launch {
+            container.db.library().saveProgress(HistoryEntity(id, 0, 0, System.currentTimeMillis()))
+        }
     }
 
     private suspend fun saveProgressEvery(exo: ExoPlayer) {
@@ -411,10 +550,11 @@ class PlayerActivity : ComponentActivity() {
         newConfig: Configuration,
     ) {
         super.onPictureInPictureModeChanged(isInPictureInPictureMode, newConfig)
-        playerView.useController = !isInPictureInPictureMode
+        playerView.useController = !isInPictureInPictureMode && !tools.locked
         if (isInPictureInPictureMode) {
             playerView.hideController()
             overlay.visibility = View.GONE
+            tools.hidePanels()
         }
     }
 
@@ -447,6 +587,9 @@ class PlayerActivity : ComponentActivity() {
     override fun onDestroy() {
         progressJob?.cancel()
         autoTune?.release()
+        gestures?.release()
+        tools.release()
+        reconnect?.let { cb -> runCatching { getSystemService(ConnectivityManager::class.java)?.unregisterNetworkCallback(cb) } }
         player?.release()
         player = null
         super.onDestroy()
@@ -455,13 +598,19 @@ class PlayerActivity : ComponentActivity() {
     companion object {
         private const val EXTRA_ID = "id"
         private const val EXTRA_TUNE = "tune"
-        private const val MAX_LIVE_RETRIES = 3
+        private const val MAX_RETRIES = 5
+        private const val FLASH_MS = 900L
+
+        fun intent(
+            context: Context,
+            itemId: Long,
+        ): Intent = Intent(context, PlayerActivity::class.java).putExtra(EXTRA_ID, itemId)
 
         fun start(
             context: Context,
             itemId: Long,
         ) {
-            context.startActivity(Intent(context, PlayerActivity::class.java).putExtra(EXTRA_ID, itemId))
+            context.startActivity(intent(context, itemId))
         }
 
         /** Auto-tune: find a working channel showing [query] (a channel name or an event in the guide) and play it. */

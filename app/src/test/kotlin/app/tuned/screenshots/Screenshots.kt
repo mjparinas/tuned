@@ -104,7 +104,7 @@ class Screenshots {
     @Test fun guide() = shot("07-guide", ThemeMode.DARK, wait = "The National") { GuideScreen(itemId = 1, onPlay = {}, onBack = {}) }
 
     @Test fun settings() = shot("08-settings", ThemeMode.DARK, wait = "Captions") {
-        SettingsScreen(settings = dark, onBack = {}, onOpenCaptions = {}, onOpenRegions = {}, onSignedOut = {})
+        SettingsScreen(settings = dark, onBack = {}, onOpenCaptions = {}, onOpenRegions = {}, onOpenFavouriteOrder = {}, onSignedOut = {})
     }
 
     @Test fun captions() = shot("09-captions", ThemeMode.DARK, wait = "Captions") {
@@ -116,8 +116,11 @@ class Screenshots {
     }
 
     @Composable
-    private fun Home(settings: AppSettings) =
-        HomeScreen(settings, onPlay = {}, onOpenShow = { _, _ -> }, onOpenGuide = {}, onOpenSettings = {}, onTune = {}, onSignedOut = {})
+    private fun Home(settings: AppSettings) = HomeScreen(settings, onPlay = {}, onOpenShow = {
+        _,
+        _,
+        ->
+    }, onOpenGuide = {}, onOpenSettings = {}, onOpenSearch = {}, onTune = {}, onSignedOut = {})
 
     private fun shot(
         name: String,

@@ -1,8 +1,16 @@
 # Player
 
-**Media3 ExoPlayer** in `PlayerActivity`, full screen, system bars hidden. A tap shows the standard controls and the title (channel name with what's on now and next, or the movie or episode name); they hide again after the timeout in Settings (3 seconds by default).
+**Media3 ExoPlayer** in `PlayerActivity`, full screen, system bars hidden. A tap shows the standard controls, a back button (Melvin, 2026-11-17) and the title (channel name with what's on now and next, or the movie or episode name); they hide again after the timeout in Settings (3 seconds by default).
 
 **Controls.** Play and pause, seek bar and skip back and forward (on-demand only; lengths in Settings), previous and next (the next channel in the same category for live, the next episode for shows), the CC button, and the settings menu with audio track and speed.
+
+**Player tools** (Melvin, 2026-11-17). Buttons at the top right, shown with the controls:
+
+- **Channels** (live, when the category has more than one): the category's channels down the right with what's on now; picking one switches on the same connection.
+- **Aspect**: Fit, Zoom to fill (crops) and Stretch, in turn. The last choice is remembered.
+- **Quality**: the stream's own renditions plus Auto. Most IPTV channels are a single TS rendition, so it says so instead of opening an empty list.
+- **Stream info**: resolution, frame rate, codecs, bitrate when the stream says, audio channels and language, and the buffer, refreshed every second.
+- **Lock**: ignores every touch and back, so a pocket or a child can't change anything. A tap shows the unlock button for three seconds.
 
 **Captions** (Melvin, 2026-11-17: "customizing CC controls in the settings"). Settings › Captions sets on or off, language, size, font, bold, text colour, edge style and colour, background colour and opacity, distance from the bottom, and whether to ignore the stream's own styling. A live preview shows the result. The CC button changes captions for the current video only.
 
@@ -15,3 +23,17 @@
 **Resume.** Movies and episodes save their position every 10 seconds and on leaving; reopening resumes after 30 seconds in, unless 95% watched. Shows mark watched episodes.
 
 **Picture-in-picture** when leaving the app while playing (Settings, on by default). Leaving without it ends playback.
+
+## Gestures and reconnecting (2026-11-17)
+
+Melvin asked for auto-reconnect and player gestures. Both are on by default and each has a switch in Settings › Player.
+
+- **Gestures** (`PlayerGestures`), as most phone players do them:
+  - drag up or down on the left half for brightness, on the right half for volume;
+  - double-tap the left or right third to skip back or forward (films and episodes);
+  - swipe sideways to change channel (live TV);
+  - a single tap still shows the controls.
+
+  Brightness goes back to the system's when the player closes.
+
+- **Reconnect.** A dropped live stream, or a network error on a film or episode, is retried up to five times with a growing pause, and "Reconnecting… (2 of 5)" shows meanwhile. The count resets once it plays again. When the phone's connection comes back (`ConnectivityManager` default network), a stopped stream starts again by itself, and `prepare()` keeps a film's position. It still uses one connection at a time, never a second stream.

@@ -11,11 +11,23 @@ import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
+import app.tuned.core.PinHash
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.withContext
 
 enum class ThemeMode { SYSTEM, LIGHT, DARK }
+
+/** The colour of buttons, switches and highlights; violet is the brand colour (docs/decisions/branding.md). */
+enum class Accent { VIOLET, BLUE, TEAL, GREEN, ORANGE, PINK, RED }
+
+/** How the picture fills the screen: whole picture with bars, cropped to fill, or stretched. */
+enum class VideoFit { FIT, ZOOM, STRETCH }
 
 enum class StartTab { LIVE, MOVIES, SHOWS, LAST }
 
@@ -57,12 +69,15 @@ data class AppSettings(
     val theme: ThemeMode = ThemeMode.SYSTEM,
     val dynamicColour: Boolean = false,
     val pureBlack: Boolean = false,
+    val accent: Accent = Accent.VIOLET,
     val startTab: StartTab = StartTab.LIVE,
     val lastTab: Int = 0,
     val hiddenRegions: Set<String> = emptySet(),
     val showAdult: Boolean = false,
     val playlistRefreshHours: Int = 12,
     val guideRefreshHours: Int = 6,
+    /** How long before a programme starts its reminder goes off. */
+    val reminderLeadMinutes: Int = 5,
     val guideDays: Int = 3,
     val unmeteredOnly: Boolean = false,
     val buffer: BufferMode = BufferMode.BALANCED,
@@ -70,7 +85,11 @@ data class AppSettings(
     val resumePlayback: Boolean = true,
     val autoPlayNext: Boolean = true,
     val pictureInPicture: Boolean = true,
+    val playerGestures: Boolean = true,
+    val autoReconnect: Boolean = true,
     val landscapePlayback: Boolean = true,
+    /** The player's aspect button; the last choice sticks. */
+    val videoFit: VideoFit = VideoFit.FIT,
     val controlsTimeoutMs: Int = 3_000,
     /** Auto-tune moves on when a channel shows no picture within this long. */
     val tuneTimeoutMs: Int = 10_000,
@@ -94,10 +113,40 @@ private val Context.dataStore by preferencesDataStore(name = "settings")
 class SettingsRepository(
     private val context: Context,
 ) {
+    /**
+     * Adult categories show only while unlocked with the parental PIN, and only until the app closes: the unlock lives
+     * in memory, never on disk, so `showAdult` always starts false.
+     */
+    private val adultUnlocked = MutableStateFlow(false)
+
     val settings: Flow<AppSettings> =
-        context.dataStore.data
-            .map(::read)
+        combine(context.dataStore.data.map(::read), adultUnlocked) { s, unlocked -> s.copy(showAdult = unlocked) }
             .distinctUntilChanged()
+
+    /** Whether a parental PIN has been set. */
+    val hasAdultPin: Flow<Boolean> =
+        context.dataStore.data
+            .map { !it[K.adultPin].isNullOrEmpty() }
+            .distinctUntilChanged()
+
+    /** Sets (or replaces) the PIN and unlocks. The caller has already checked the old PIN, if there was one. */
+    suspend fun setAdultPin(pin: String) {
+        val hash = withContext(Dispatchers.Default) { PinHash.create(pin) }
+        context.dataStore.edit { it[K.adultPin] = hash }
+        adultUnlocked.value = true
+    }
+
+    /** Unlocks adult categories when [pin] matches. */
+    suspend fun unlockAdult(pin: String): Boolean {
+        val stored = context.dataStore.data.first()[K.adultPin] ?: return false
+        val ok = withContext(Dispatchers.Default) { PinHash.verify(pin, stored) }
+        if (ok) adultUnlocked.value = true
+        return ok
+    }
+
+    fun lockAdult() {
+        adultUnlocked.value = false
+    }
 
     suspend fun update(change: (AppSettings) -> AppSettings) {
         context.dataStore.edit { prefs -> write(prefs, change(read(prefs))) }
@@ -111,12 +160,13 @@ class SettingsRepository(
             theme = enumOr(p[K.theme], d.theme),
             dynamicColour = p[K.dynamicColour] ?: d.dynamicColour,
             pureBlack = p[K.pureBlack] ?: d.pureBlack,
+            accent = enumOr(p[K.accent], d.accent),
             startTab = enumOr(p[K.startTab], d.startTab),
             lastTab = p[K.lastTab] ?: d.lastTab,
             hiddenRegions = p[K.hiddenRegions] ?: d.hiddenRegions,
-            showAdult = p[K.showAdult] ?: d.showAdult,
             playlistRefreshHours = p[K.playlistRefreshHours] ?: d.playlistRefreshHours,
             guideRefreshHours = p[K.guideRefreshHours] ?: d.guideRefreshHours,
+            reminderLeadMinutes = p[K.reminderLeadMinutes] ?: d.reminderLeadMinutes,
             guideDays = p[K.guideDays] ?: d.guideDays,
             unmeteredOnly = p[K.unmeteredOnly] ?: d.unmeteredOnly,
             buffer = enumOr(p[K.buffer], d.buffer),
@@ -124,7 +174,10 @@ class SettingsRepository(
             resumePlayback = p[K.resumePlayback] ?: d.resumePlayback,
             autoPlayNext = p[K.autoPlayNext] ?: d.autoPlayNext,
             pictureInPicture = p[K.pictureInPicture] ?: d.pictureInPicture,
+            playerGestures = p[K.playerGestures] ?: d.playerGestures,
+            autoReconnect = p[K.autoReconnect] ?: d.autoReconnect,
             landscapePlayback = p[K.landscapePlayback] ?: d.landscapePlayback,
+            videoFit = enumOr(p[K.videoFit], d.videoFit),
             controlsTimeoutMs = p[K.controlsTimeoutMs] ?: d.controlsTimeoutMs,
             tuneTimeoutMs = p[K.tuneTimeoutMs] ?: d.tuneTimeoutMs,
             tuneMinHeight = p[K.tuneMinHeight] ?: d.tuneMinHeight,
@@ -162,12 +215,13 @@ class SettingsRepository(
         p[K.theme] = s.theme.name
         p[K.dynamicColour] = s.dynamicColour
         p[K.pureBlack] = s.pureBlack
+        p[K.accent] = s.accent.name
         p[K.startTab] = s.startTab.name
         p[K.lastTab] = s.lastTab
         p[K.hiddenRegions] = s.hiddenRegions
-        p[K.showAdult] = s.showAdult
         p[K.playlistRefreshHours] = s.playlistRefreshHours
         p[K.guideRefreshHours] = s.guideRefreshHours
+        p[K.reminderLeadMinutes] = s.reminderLeadMinutes
         p[K.guideDays] = s.guideDays
         p[K.unmeteredOnly] = s.unmeteredOnly
         p[K.buffer] = s.buffer.name
@@ -175,7 +229,10 @@ class SettingsRepository(
         p[K.resumePlayback] = s.resumePlayback
         p[K.autoPlayNext] = s.autoPlayNext
         p[K.pictureInPicture] = s.pictureInPicture
+        p[K.playerGestures] = s.playerGestures
+        p[K.autoReconnect] = s.autoReconnect
         p[K.landscapePlayback] = s.landscapePlayback
+        p[K.videoFit] = s.videoFit.name
         p[K.controlsTimeoutMs] = s.controlsTimeoutMs
         p[K.tuneTimeoutMs] = s.tuneTimeoutMs
         p[K.tuneMinHeight] = s.tuneMinHeight
@@ -212,12 +269,14 @@ class SettingsRepository(
         val theme = stringPreferencesKey("theme")
         val dynamicColour = booleanPreferencesKey("dynamic_colour")
         val pureBlack = booleanPreferencesKey("pure_black")
+        val accent = stringPreferencesKey("accent")
         val startTab = stringPreferencesKey("start_tab")
         val lastTab = intPreferencesKey("last_tab")
         val hiddenRegions = stringSetPreferencesKey("hidden_regions")
-        val showAdult = booleanPreferencesKey("show_adult")
+        val adultPin = stringPreferencesKey("adult_pin")
         val playlistRefreshHours = intPreferencesKey("playlist_refresh_hours")
         val guideRefreshHours = intPreferencesKey("guide_refresh_hours")
+        val reminderLeadMinutes = intPreferencesKey("reminder_lead_minutes")
         val guideDays = intPreferencesKey("guide_days")
         val unmeteredOnly = booleanPreferencesKey("unmetered_only")
         val buffer = stringPreferencesKey("buffer")
@@ -225,7 +284,10 @@ class SettingsRepository(
         val resumePlayback = booleanPreferencesKey("resume_playback")
         val autoPlayNext = booleanPreferencesKey("auto_play_next")
         val pictureInPicture = booleanPreferencesKey("picture_in_picture")
+        val playerGestures = booleanPreferencesKey("player_gestures")
+        val autoReconnect = booleanPreferencesKey("auto_reconnect")
         val landscapePlayback = booleanPreferencesKey("landscape_playback")
+        val videoFit = stringPreferencesKey("video_fit")
         val controlsTimeoutMs = intPreferencesKey("controls_timeout_ms")
         val tuneTimeoutMs = intPreferencesKey("tune_timeout_ms")
         val tuneMinHeight = intPreferencesKey("tune_min_height")

@@ -1,0 +1,152 @@
+package app.tuned.player
+
+import android.app.Activity
+import android.content.Context
+import android.media.AudioManager
+import android.view.GestureDetector
+import android.view.MotionEvent
+import android.view.View
+import android.view.WindowManager
+import androidx.annotation.OptIn
+import androidx.media3.common.util.UnstableApi
+import androidx.media3.ui.PlayerView
+import app.tuned.R
+import kotlin.math.abs
+import kotlin.math.roundToInt
+
+/**
+ * Touch gestures over the video, the way most phone players work:
+ * - drag up or down on the left half for brightness, on the right half for volume;
+ * - double-tap the left or right third to skip back or forward (films and episodes);
+ * - swipe left or right to change channel (live TV);
+ * - a single tap still shows or hides the controls.
+ *
+ * Feedback appears in [say] (the centre label) and fades with [quiet].
+ */
+@OptIn(UnstableApi::class)
+class PlayerGestures(
+    private val activity: Activity,
+    private val playerView: PlayerView,
+    private val isLive: () -> Boolean,
+    private val onSeek: (forward: Boolean) -> Unit,
+    private val onChannel: (next: Boolean) -> Unit,
+    private val say: (String) -> Unit,
+    private val quiet: () -> Unit,
+) : View.OnTouchListener {
+    private val audio = activity.getSystemService(Context.AUDIO_SERVICE) as AudioManager
+    private var mode = Mode.None
+    private var startLevel = 0f
+
+    private enum class Mode { None, Brightness, Volume }
+
+    private val detector =
+        GestureDetector(
+            activity,
+            object : GestureDetector.SimpleOnGestureListener() {
+                override fun onDown(e: MotionEvent): Boolean = true
+
+                override fun onSingleTapConfirmed(e: MotionEvent): Boolean {
+                    if (playerView.isControllerFullyVisible) playerView.hideController() else playerView.showController()
+                    return true
+                }
+
+                override fun onDoubleTap(e: MotionEvent): Boolean {
+                    if (isLive()) return false
+                    val third = playerView.width / THIRDS
+                    when {
+                        e.x < third -> onSeek(false)
+                        e.x > playerView.width - third -> onSeek(true)
+                        else -> return false
+                    }
+                    return true
+                }
+
+                override fun onScroll(
+                    down: MotionEvent?,
+                    e: MotionEvent,
+                    dx: Float,
+                    dy: Float,
+                ): Boolean {
+                    val start = down ?: return false
+                    val totalX = e.x - start.x
+                    val totalY = e.y - start.y
+                    if (mode == Mode.None) {
+                        if (abs(totalY) < slop || abs(totalY) < abs(totalX)) return false
+                        mode = if (start.x < playerView.width / 2f) Mode.Brightness else Mode.Volume
+                        startLevel = if (mode == Mode.Brightness) brightness() else volume()
+                    }
+                    // A full-height drag goes from nothing to everything.
+                    val level = (startLevel - totalY / playerView.height.coerceAtLeast(1)).coerceIn(0f, 1f)
+                    if (mode == Mode.Brightness) setBrightness(level) else setVolume(level)
+                    return true
+                }
+
+                override fun onFling(
+                    down: MotionEvent?,
+                    e: MotionEvent,
+                    vx: Float,
+                    vy: Float,
+                ): Boolean {
+                    val start = down ?: return false
+                    if (mode != Mode.None || !isLive()) return false
+                    val dx = e.x - start.x
+                    if (abs(dx) < playerView.width / FLING_FRACTION || abs(vx) < abs(vy)) return false
+                    onChannel(dx < 0)
+                    return true
+                }
+            },
+        )
+
+    private val slop = 24 * activity.resources.displayMetrics.density
+
+    override fun onTouch(
+        v: View,
+        event: MotionEvent,
+    ): Boolean {
+        val handled = detector.onTouchEvent(event)
+        if (event.actionMasked == MotionEvent.ACTION_UP || event.actionMasked == MotionEvent.ACTION_CANCEL) {
+            if (mode != Mode.None) quiet()
+            mode = Mode.None
+            if (event.actionMasked == MotionEvent.ACTION_UP) v.performClick()
+        }
+        return handled
+    }
+
+    private fun brightness(): Float {
+        val current = activity.window.attributes.screenBrightness
+        return if (current >= 0f) current else DEFAULT_BRIGHTNESS
+    }
+
+    private fun setBrightness(level: Float) {
+        val attrs = activity.window.attributes
+        attrs.screenBrightness = level.coerceAtLeast(MIN_BRIGHTNESS)
+        activity.window.attributes = attrs
+        say(activity.getString(R.string.gesture_brightness, (level * PERCENT).roundToInt()))
+    }
+
+    private fun volume(): Float {
+        val max = audio.getStreamMaxVolume(AudioManager.STREAM_MUSIC).coerceAtLeast(1)
+        return audio.getStreamVolume(AudioManager.STREAM_MUSIC).toFloat() / max
+    }
+
+    private fun setVolume(level: Float) {
+        val max = audio.getStreamMaxVolume(AudioManager.STREAM_MUSIC)
+        audio.setStreamVolume(AudioManager.STREAM_MUSIC, (level * max).roundToInt(), 0)
+        say(activity.getString(R.string.gesture_volume, (level * PERCENT).roundToInt()))
+    }
+
+    /** Hands brightness back to the system when the player closes. */
+    fun release() {
+        val attrs = activity.window.attributes
+        attrs.screenBrightness = WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_NONE
+        activity.window.attributes = attrs
+    }
+
+    private companion object {
+        const val THIRDS = 3
+        const val FLING_FRACTION = 4
+        const val PERCENT = 100
+        const val DEFAULT_BRIGHTNESS = 0.5f
+        const val MIN_BRIGHTNESS = 0.01f
+    }
+}

@@ -5,6 +5,7 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Transaction
 import androidx.room.Upsert
 import kotlinx.coroutines.flow.Flow
 
@@ -43,17 +44,19 @@ interface ItemDao {
         FROM items i
         LEFT JOIN programmes p ON p.channelId = i.tvgId AND p.start <= :now AND p.stop > :now
         LEFT JOIN favourites f ON f.itemId = i.id
+        LEFT JOIN history h ON h.itemId = i.id
         WHERE i.kind = 0
             AND (i.region IS NULL OR i.region NOT IN (:hidden))
             AND (:adult OR i.adult = 0)
             AND (:group IS NULL OR i.groupName = :group)
             AND (:favouritesOnly = 0 OR f.itemId IS NOT NULL)
+            AND (:recentOnly = 0 OR h.itemId IS NOT NULL)
             AND (:query = '' OR i.searchName LIKE '%' || :query || '%' OR i.tvgId IN (
                 -- An event search ("UFC") also finds the channels showing it now or within the hour.
                 SELECT channelId FROM programmes WHERE title LIKE '%' || :query || '%' AND stop > :now AND start < :now + 3600000
             ))
         GROUP BY i.id
-        ORDER BY i.sortOrder
+        ORDER BY CASE WHEN :recentOnly = 1 THEN h.watchedAt END DESC, CASE WHEN :favouritesOnly = 1 THEN f.position END, i.sortOrder
         """,
     )
     fun channels(
@@ -62,8 +65,29 @@ interface ItemDao {
         adult: Boolean,
         group: String?,
         favouritesOnly: Boolean,
+        recentOnly: Boolean,
         query: String,
     ): PagingSource<Int, ChannelWithNow>
+
+    /** Movies or episodes started and not finished, last watched first, for the Continue Watching row. */
+    @Query(
+        """
+        SELECT i.id, i.name, i.logo, i.showName, i.season, i.episode, h.positionMs, h.durationMs
+        FROM history h
+        JOIN items i ON i.id = h.itemId
+        WHERE i.kind = :kind
+            AND (i.region IS NULL OR i.region NOT IN (:hidden))
+            AND (:adult OR i.adult = 0)
+            AND h.durationMs > 0 AND h.positionMs > 30000 AND h.positionMs < h.durationMs * 95 / 100
+        ORDER BY h.watchedAt DESC
+        LIMIT 20
+        """,
+    )
+    fun continueWatching(
+        kind: Int,
+        hidden: List<String>,
+        adult: Boolean,
+    ): Flow<List<ContinueRow>>
 
     @Query(
         """
@@ -107,6 +131,70 @@ interface ItemDao {
         favouritesOnly: Boolean,
         query: String,
     ): PagingSource<Int, ShowSummary>
+
+    /** Search everywhere: the first few live channels for a search (names, or what's on now and within the hour). */
+    @Query(
+        """
+        SELECT i.id, i.name, i.logo, i.groupName, i.tvgId,
+            p.title AS nowTitle, p.start AS nowStart, p.stop AS nowStop,
+            (f.itemId IS NOT NULL) AS favourite
+        FROM items i
+        LEFT JOIN programmes p ON p.channelId = i.tvgId AND p.start <= :now AND p.stop > :now
+        LEFT JOIN favourites f ON f.itemId = i.id
+        WHERE i.kind = 0
+            AND (i.region IS NULL OR i.region NOT IN (:hidden))
+            AND (:adult OR i.adult = 0)
+            AND (i.searchName LIKE '%' || :query || '%' OR i.tvgId IN (
+                SELECT channelId FROM programmes WHERE title LIKE '%' || :query || '%' AND stop > :now AND start < :now + 3600000
+            ))
+        GROUP BY i.id
+        ORDER BY (f.itemId IS NULL), i.sortOrder
+        LIMIT :limit
+        """,
+    )
+    suspend fun searchChannels(
+        query: String,
+        now: Long,
+        hidden: List<String>,
+        adult: Boolean,
+        limit: Int,
+    ): List<ChannelWithNow>
+
+    @Query(
+        """
+        SELECT * FROM items i
+        WHERE i.kind = 1 AND i.searchName LIKE '%' || :query || '%'
+            AND (i.region IS NULL OR i.region NOT IN (:hidden))
+            AND (:adult OR i.adult = 0)
+        ORDER BY i.sortOrder
+        LIMIT :limit
+        """,
+    )
+    suspend fun searchMovies(
+        query: String,
+        hidden: List<String>,
+        adult: Boolean,
+        limit: Int,
+    ): List<ItemEntity>
+
+    @Query(
+        """
+        SELECT showKey, MIN(showName) AS showName, MAX(logo) AS logo, MIN(groupName) AS groupName, COUNT(*) AS episodes
+        FROM items i
+        WHERE i.kind = 2 AND i.showKey IS NOT NULL AND i.searchName LIKE '%' || :query || '%'
+            AND (i.region IS NULL OR i.region NOT IN (:hidden))
+            AND (:adult OR i.adult = 0)
+        GROUP BY showKey
+        ORDER BY MIN(sortOrder)
+        LIMIT :limit
+        """,
+    )
+    suspend fun searchShows(
+        query: String,
+        hidden: List<String>,
+        adult: Boolean,
+        limit: Int,
+    ): List<ShowSummary>
 
     @Query("SELECT * FROM items WHERE kind = 2 AND showKey = :showKey ORDER BY season, episode, sortOrder")
     fun episodes(showKey: String): Flow<List<ItemEntity>>
@@ -199,6 +287,13 @@ interface ProgrammeDao {
         now: Long,
     ): List<ProgrammeEntity>
 
+    /** What's on now on each of [channelIds], for the player's mini guide. */
+    @Query("SELECT * FROM programmes WHERE channelId IN (:channelIds) AND start <= :now AND stop > :now")
+    suspend fun onNow(
+        channelIds: List<String>,
+        now: Long,
+    ): List<ProgrammeEntity>
+
     @Query("SELECT COUNT(*) FROM programmes")
     suspend fun count(): Int
 }
@@ -216,6 +311,29 @@ interface LibraryDao {
 
     @Query("SELECT EXISTS(SELECT 1 FROM favourites WHERE itemId = :itemId)")
     fun isFavourite(itemId: Long): Flow<Boolean>
+
+    /** Favourite channels in the order they're shown, for Settings › Order favourites. */
+    @Query(
+        """
+        SELECT i.id, i.name, i.logo FROM favourites f JOIN items i ON i.id = f.itemId
+        WHERE i.kind = 0
+        GROUP BY i.id
+        ORDER BY f.position, i.sortOrder
+        """,
+    )
+    fun favouriteChannels(): Flow<List<FavouriteRow>>
+
+    @Query("UPDATE favourites SET position = :position WHERE itemId = :itemId")
+    suspend fun setFavouritePosition(
+        itemId: Long,
+        position: Long,
+    )
+
+    /** Saves a new order: [ids] first to last. */
+    @Transaction
+    suspend fun reorderFavourites(ids: List<Long>) {
+        ids.forEachIndexed { i, id -> setFavouritePosition(id, i.toLong()) }
+    }
 
     @Upsert
     suspend fun saveProgress(history: HistoryEntity)

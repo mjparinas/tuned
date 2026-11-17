@@ -49,6 +49,8 @@ data class ProgrammeEntity(
 data class FavouriteEntity(
     @PrimaryKey val itemId: Long,
     val addedAt: Long,
+    /** Where it sits in the Favourites list (Settings › Order favourites); new ones go to the end. */
+    @ColumnInfo(defaultValue = "0") val position: Long = addedAt,
 )
 
 @Entity(tableName = "history", indices = [Index(value = ["watchedAt"])])
@@ -94,6 +96,20 @@ data class ChannelWithNow(
     @ColumnInfo(name = "favourite") val favourite: Boolean,
 )
 
+/** A movie or episode to pick up where it was left. */
+data class ContinueRow(
+    val id: Long,
+    val name: String,
+    val logo: String?,
+    val showName: String?,
+    val season: Int?,
+    val episode: Int?,
+    val positionMs: Long,
+    val durationMs: Long,
+) {
+    val fraction: Float get() = if (durationMs > 0) (positionMs.toFloat() / durationMs).coerceIn(0f, 1f) else 0f
+}
+
 data class ShowSummary(
     val showKey: String,
     val showName: String,
@@ -110,4 +126,11 @@ data class GroupCount(
 data class RegionCount(
     val region: String,
     val count: Int,
+)
+
+/** A favourite channel in Settings › Order favourites. */
+data class FavouriteRow(
+    val id: Long,
+    val name: String,
+    val logo: String?,
 )

@@ -98,6 +98,8 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci --no-audit --no-fund
+      - name: Release version script tests
+        run: node --test scripts/*.test.mjs
       - name: Prettier (YAML, JSON, Markdown)
         run: npx prettier --check .
       - uses: ./.github/actions/setup-android

@@ -2,16 +2,28 @@ package app.tuned.ui.settings
 
 import android.app.Application
 import android.os.Build
+import android.os.SystemClock
 import android.text.format.DateUtils
+import androidx.compose.foundation.background
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -25,23 +37,40 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import app.tuned.BuildConfig
 import app.tuned.R
 import app.tuned.container
 import app.tuned.core.XtreamUrls
+import app.tuned.data.Accent
 import app.tuned.data.AppSettings
 import app.tuned.data.BufferMode
 import app.tuned.data.StartTab
 import app.tuned.data.ThemeMode
 import app.tuned.ui.common.BackTopBar
+import app.tuned.ui.theme.swatch
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import java.security.MessageDigest
+
+enum class PinResult { Ok, Wrong, TooMany }
+
+private const val MAX_WRONG = 5
+private const val WAIT_MS = 30_000L
 
 class SettingsViewModel(
     app: Application,
@@ -50,6 +79,36 @@ class SettingsViewModel(
 
     fun update(change: (AppSettings) -> AppSettings) {
         viewModelScope.launch { container.settings.update(change) }
+    }
+
+    val hasPin = container.settings.hasAdultPin.stateIn(viewModelScope, SharingStarted.Eagerly, false)
+    private var wrongTries = 0
+    private var lockedUntil = 0L
+
+    suspend fun setPin(pin: String) = container.settings.setAdultPin(pin)
+
+    /** Five wrong PINs in a row wait 30 seconds before the next try, so guessing all 10,000 takes days. */
+    suspend fun unlock(pin: String): PinResult {
+        if (SystemClock.elapsedRealtime() < lockedUntil) return PinResult.TooMany
+        if (container.settings.unlockAdult(pin)) {
+            wrongTries = 0
+            return PinResult.Ok
+        }
+        if (++wrongTries >= MAX_WRONG) {
+            wrongTries = 0
+            lockedUntil = SystemClock.elapsedRealtime() + WAIT_MS
+            return PinResult.TooMany
+        }
+        return PinResult.Wrong
+    }
+
+    fun lockAdult() = container.settings.lockAdult()
+
+    /** "Forgot PIN": the account password (or, for a playlist link login, the link) proves it's the account holder. */
+    fun matchesLogin(secret: String): Boolean {
+        val login = container.credentials.load() ?: return false
+        val expected = login.password.ifEmpty { login.playlistUrl }
+        return expected.isNotEmpty() && MessageDigest.isEqual(secret.toByteArray(), expected.toByteArray())
     }
 
     fun server(): String = container.credentials
@@ -90,6 +149,7 @@ fun SettingsScreen(
     onBack: () -> Unit,
     onOpenCaptions: () -> Unit,
     onOpenRegions: () -> Unit,
+    onOpenFavouriteOrder: () -> Unit,
     onSignedOut: () -> Unit,
     vm: SettingsViewModel = viewModel(),
 ) {
@@ -132,13 +192,29 @@ fun SettingsScreen(
                 onClick = onOpenRegions,
                 trailing = { Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null) },
             )
+            SettingRow(
+                stringResource(R.string.settings_favourite_order),
+                stringResource(R.string.settings_favourite_order_summary),
+                onClick = onOpenFavouriteOrder,
+                trailing = { Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null) },
+            )
+            val hasPin by vm.hasPin.collectAsStateWithLifecycle()
+            var pinDialog by remember { mutableStateOf<PinMode?>(null) }
             SwitchRow(
                 stringResource(R.string.settings_show_adult),
                 settings.showAdult,
-                stringResource(R.string.settings_show_adult_summary),
+                stringResource(if (hasPin) R.string.settings_show_adult_summary else R.string.settings_show_adult_summary_no_pin),
             ) { on ->
-                vm.update { it.copy(showAdult = on) }
+                if (on) pinDialog = if (hasPin) PinMode.Unlock else PinMode.Create else vm.lockAdult()
             }
+            if (hasPin && settings.showAdult) {
+                SettingRow(
+                    stringResource(R.string.settings_change_pin),
+                    stringResource(R.string.settings_change_pin_summary),
+                    onClick = { pinDialog = PinMode.Create },
+                )
+            }
+            pinDialog?.let { mode -> PinDialog(mode, vm, onDone = { pinDialog = null }) }
             SwitchRow(
                 stringResource(R.string.settings_guide_in_list),
                 settings.showGuideInList,
@@ -163,6 +239,20 @@ fun SettingsScreen(
                 settings.guideDays,
                 label = { d -> pluralStringResource(R.plurals.days, d, d) },
             ) { d -> vm.update { it.copy(guideDays = d) } }
+            ChoiceRow(
+                stringResource(R.string.settings_reminder_lead),
+                listOf(0, 1, 5, 10, 15, 30),
+                settings.reminderLeadMinutes,
+                label = { m ->
+                    if (m ==
+                        0
+                    ) {
+                        stringResource(R.string.reminder_at_start)
+                    } else {
+                        pluralStringResource(R.plurals.minutes_before, m, m)
+                    }
+                },
+            ) { m -> vm.update { it.copy(reminderLeadMinutes = m) } }
             SwitchRow(
                 stringResource(R.string.settings_unmetered),
                 settings.unmeteredOnly,
@@ -206,6 +296,16 @@ fun SettingsScreen(
             ) { on ->
                 vm.update { it.copy(pictureInPicture = on) }
             }
+            SwitchRow(
+                stringResource(R.string.settings_gestures),
+                settings.playerGestures,
+                stringResource(R.string.settings_gestures_summary),
+            ) { on -> vm.update { it.copy(playerGestures = on) } }
+            SwitchRow(
+                stringResource(R.string.settings_reconnect),
+                settings.autoReconnect,
+                stringResource(R.string.settings_reconnect_summary),
+            ) { on -> vm.update { it.copy(autoReconnect = on) } }
             SwitchRow(
                 stringResource(R.string.settings_landscape),
                 settings.landscapePlayback,
@@ -267,6 +367,9 @@ fun SettingsScreen(
                     settings.dynamicColour,
                     stringResource(R.string.settings_dynamic_colour_summary),
                 ) { on -> vm.update { it.copy(dynamicColour = on) } }
+            }
+            if (!settings.dynamicColour || Build.VERSION.SDK_INT < Build.VERSION_CODES.S) {
+                AccentRow(settings.accent) { a -> vm.update { it.copy(accent = a) } }
             }
             SwitchRow(
                 stringResource(R.string.settings_pure_black),
@@ -384,4 +487,43 @@ private fun themeLabel(mode: ThemeMode): Int = when (mode) {
     ThemeMode.SYSTEM -> R.string.theme_system
     ThemeMode.LIGHT -> R.string.theme_light
     ThemeMode.DARK -> R.string.theme_dark
+}
+
+/** Accent colour: a row of round swatches, the chosen one ticked. */
+@Composable
+private fun AccentRow(
+    selected: Accent,
+    onPick: (Accent) -> Unit,
+) {
+    Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp)) {
+        Text(stringResource(R.string.settings_accent), style = MaterialTheme.typography.bodyLarge)
+        Spacer(Modifier.height(12.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.horizontalScroll(rememberScrollState())) {
+            Accent.entries.forEach { accent ->
+                val name = stringResource(accentLabel(accent))
+                Box(
+                    contentAlignment = Alignment.Center,
+                    modifier =
+                        Modifier
+                            .size(40.dp)
+                            .clip(CircleShape)
+                            .background(accent.swatch())
+                            .selectable(selected = accent == selected, role = Role.RadioButton, onClick = { onPick(accent) })
+                            .semantics { contentDescription = name },
+                ) {
+                    if (accent == selected) Icon(Icons.Filled.Check, contentDescription = null, tint = Color.White)
+                }
+            }
+        }
+    }
+}
+
+private fun accentLabel(accent: Accent): Int = when (accent) {
+    Accent.VIOLET -> R.string.accent_violet
+    Accent.BLUE -> R.string.accent_blue
+    Accent.TEAL -> R.string.accent_teal
+    Accent.GREEN -> R.string.accent_green
+    Accent.ORANGE -> R.string.accent_orange
+    Accent.PINK -> R.string.accent_pink
+    Accent.RED -> R.string.accent_red
 }
