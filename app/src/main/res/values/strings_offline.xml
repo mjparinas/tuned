@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="downloads">Downloads</string>
+    <string name="downloads_summary">Films and episodes saved to watch offline</string>
+    <string name="downloads_running">Downloading</string>
+    <string name="downloads_empty">Nothing saved yet. Tap the download button on a film, an episode or a whole season to watch it offline.</string>
+    <string name="download">Download</string>
+    <string name="download_remove">Remove download</string>
+    <string name="download_retry">Try again</string>
+    <string name="download_failed">Couldn\'t download</string>
+    <string name="download_waiting">Waiting (downloads pause while something plays)</string>
+    <string name="download_progress">%1$s of %2$s</string>
+    <string name="downloads_section_active">Downloading</string>
+    <string name="downloads_section_ready">Ready to watch</string>
+    <string name="downloads_storage">%1$s on this device</string>
+    <string name="download_paused">Paused</string>
+    <string name="download_pause">Pause download</string>
+    <string name="download_resume">Resume download</string>
+    <string name="download_cancel">Cancel download</string>
+    <string name="download_season_done">Season saved</string>
+    <plurals name="download_season">
+        <item quantity="one">Download season (%d episode)</item>
+        <item quantity="other">Download season (%d episodes)</item>
+    </plurals>
+    <plurals name="download_season_progress">
+        <item quantity="one">%1$d of %2$d episode saved</item>
+        <item quantity="other">%1$d of %2$d episodes saved</item>
+    </plurals>
+</resources>

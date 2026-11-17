@@ -30,11 +30,18 @@ interface ItemDao {
     @Query("SELECT * FROM items WHERE id = :id")
     suspend fun get(id: Long): ItemEntity?
 
+    /** The live channel watched last, for the quick-settings tile. */
+    @Query("SELECT i.* FROM history h JOIN items i ON i.id = h.itemId WHERE i.kind = 0 ORDER BY h.watchedAt DESC LIMIT 1")
+    suspend fun lastWatchedChannel(): ItemEntity?
+
     @Query("SELECT * FROM items WHERE id IN (:ids)")
     suspend fun getAll(ids: List<Long>): List<ItemEntity>
 
     @Query("SELECT DISTINCT tvgId FROM items WHERE kind = 0 AND tvgId IS NOT NULL")
     suspend fun liveTvgIds(): List<String>
+
+    @Query("SELECT tvgId, url FROM items WHERE kind = 0 AND tvgId IS NOT NULL")
+    suspend fun liveLinks(): List<LiveLink>
 
     @Query(
         """
@@ -306,6 +313,9 @@ interface LibraryDao {
     @Query("DELETE FROM favourites WHERE itemId = :itemId")
     suspend fun removeFavourite(itemId: Long)
 
+    @Query("SELECT * FROM favourites")
+    suspend fun allFavourites(): List<FavouriteEntity>
+
     @Query("SELECT itemId FROM favourites")
     fun favouriteIds(): Flow<List<Long>>
 
@@ -315,7 +325,7 @@ interface LibraryDao {
     /** Favourite channels in the order they're shown, for Settings › Order favourites. */
     @Query(
         """
-        SELECT i.id, i.name, i.logo FROM favourites f JOIN items i ON i.id = f.itemId
+        SELECT i.id, i.name, i.logo, i.tvgId FROM favourites f JOIN items i ON i.id = f.itemId
         WHERE i.kind = 0
         GROUP BY i.id
         ORDER BY f.position, i.sortOrder
@@ -355,4 +365,66 @@ interface LibraryDao {
 
     @Upsert
     suspend fun saveHealth(health: ChannelHealthEntity)
+}
+
+@Dao
+interface CatchUpDao {
+    @Query("DELETE FROM catchup")
+    suspend fun deleteAll()
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAll(rows: List<CatchUpEntity>)
+
+    @Query("SELECT * FROM catchup")
+    suspend fun all(): List<CatchUpEntity>
+
+    @Query("SELECT days FROM catchup WHERE streamId = :streamId")
+    fun days(streamId: String): Flow<Int?>
+}
+
+@Dao
+interface DownloadDao {
+    @Upsert
+    suspend fun upsert(row: DownloadEntity)
+
+    @Query("DELETE FROM downloads WHERE itemId = :itemId")
+    suspend fun delete(itemId: Long)
+
+    @Query("SELECT * FROM downloads WHERE itemId = :itemId")
+    suspend fun get(itemId: Long): DownloadEntity?
+
+    @Query("SELECT * FROM downloads WHERE itemId IN (:ids) AND state = 1")
+    suspend fun done(ids: List<Long>): List<DownloadEntity>
+
+    @Query("SELECT * FROM downloads ORDER BY addedAt DESC")
+    fun all(): Flow<List<DownloadEntity>>
+
+    /** Everything saved or on its way, newest first, with each item's artwork while it's still in the playlist. */
+    @Query("SELECT d.*, i.logo AS logo FROM downloads d LEFT JOIN items i ON i.id = d.itemId ORDER BY d.addedAt DESC")
+    fun rows(): Flow<List<DownloadRow>>
+
+    @Query("SELECT * FROM downloads WHERE state = 0 ORDER BY addedAt LIMIT 1")
+    suspend fun next(): DownloadEntity?
+
+    @Query("UPDATE downloads SET bytes = :bytes, total = :total WHERE itemId = :itemId")
+    suspend fun progress(
+        itemId: Long,
+        bytes: Long,
+        total: Long,
+    )
+
+    @Query("UPDATE downloads SET state = :state WHERE itemId = :itemId")
+    suspend fun state(
+        itemId: Long,
+        state: Int,
+    )
+}
+
+@Dao
+interface MetadataDao {
+    @Upsert
+    suspend fun upsert(row: MetadataEntity)
+
+    @Query("SELECT * FROM metadata WHERE cacheKey = :cacheKey")
+    suspend fun get(cacheKey: String): MetadataEntity?
 }

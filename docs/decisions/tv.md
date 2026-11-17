@@ -1,0 +1,19 @@
+# Android TV
+
+**What** (backlog, 2026-11-17: "Android TV remote support"). The same APK installs on Android TV and Google TV, shows a banner on the TV home screen, and works with a remote alone.
+
+**One app, not a second one.** The phone screens already work with a remote: Compose moves focus between buttons, cards and rows with the arrows, and centre or OK clicks (a long press opens the same menu as a long touch). A separate Compose for TV interface (`androidx.tv`) would mean a second copy of every screen to keep in step, so instead:
+
+- Everything a remote can land on (posters, channel rows, Continue Watching cards, search results, episodes, guide rows) shows a clear outline in the accent colour while focused (`ui/common/FocusRing.kt`). Touch never focuses these, so phones look the same.
+- The manifest says touch, Wi-Fi and leanback are optional, adds the TV launcher category, and gives the app a 320 × 180 banner (`drawable/tv_banner.xml`, a vector, so it stays sharp at 4K).
+
+A dedicated TV layout can come later if the phone layout proves awkward from the sofa.
+
+**The remote in the player** (`core/RemoteKeys.kt`, with tests). Media3's controls already handle play, pause, fast forward and rewind, and any arrow shows the controls. On top of that:
+
+- On live TV, up and down change channel while the controls are hidden, as on a cable box. The channel up and down buttons (and page up and down) change channel at any time.
+- In films and episodes, left and right skip back and forward by the player's skip amounts while the controls are hidden.
+- The guide (or menu) button opens and closes the mini guide on live TV; the info button shows stream info.
+- Once the controls show, the arrows move between buttons as usual. While the screen is locked, keys do nothing but reveal the unlock button through back.
+
+Holding an arrow keeps skipping; holding a channel button changes channel once, so a long press can't flip through several channels and open several connections in a row.

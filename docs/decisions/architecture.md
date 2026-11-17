@@ -9,3 +9,5 @@
 **No dependency injection framework.** One `AppContainer` built in `TunedApp` holds the database, OkHttp client, settings, login store and scheduler, created lazily. The app is small enough that Hilt would add build time and start-up cost for nothing.
 
 **Player on Views.** `PlayerActivity` uses Media3's `PlayerView` (Views), not Compose, because it is Media3's own tested surface with the standard controls (captions button, audio and speed menu), and it starts fastest. Everything else is Compose.
+
+**Widget and tile** (2026-11-17). A Glance home screen widget lists favourite channels with what's on now; a tap starts the channel. It refreshes after each background sync and every 30 minutes. A quick-settings tile, Last channel, goes straight back to the live channel watched last, or opens the app if there isn't one.

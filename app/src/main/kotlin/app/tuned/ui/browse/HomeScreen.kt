@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
@@ -32,15 +33,19 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.DownloadForOffline
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Movie
 import androidx.compose.material.icons.filled.Radar
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.TravelExplore
 import androidx.compose.material.icons.filled.Tv
 import androidx.compose.material.icons.filled.VideoLibrary
+import androidx.compose.material3.Badge
+import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -63,6 +68,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -72,6 +78,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
@@ -94,6 +101,8 @@ import app.tuned.data.db.ItemEntity
 import app.tuned.data.db.ShowSummary
 import app.tuned.ui.SyncText
 import app.tuned.ui.common.VoiceSearchButton
+import app.tuned.ui.common.focusRing
+import app.tuned.ui.offline.DownloadsViewModel
 import app.tuned.updates.GitHubUpdates
 import coil3.compose.AsyncImage
 
@@ -117,8 +126,10 @@ fun HomeScreen(
     onPlay: (Long) -> Unit,
     onOpenShow: (String, String) -> Unit,
     onOpenGuide: (Long) -> Unit,
+    onOpenMovie: (Long) -> Unit,
     onOpenSettings: () -> Unit,
     onOpenSearch: () -> Unit,
+    onOpenDownloads: () -> Unit,
     onTune: (String) -> Unit,
     onSignedOut: () -> Unit,
     vm: BrowseViewModel = viewModel(),
@@ -173,6 +184,7 @@ fun HomeScreen(
                         label = { Text(stringResource(t.label)) },
                     )
                 }
+                DownloadsNavItem(onOpenDownloads)
             }
         },
     ) { padding ->
@@ -193,7 +205,7 @@ fun HomeScreen(
             PullToRefreshBox(isRefreshing = refreshing && progress == null, onRefresh = vm::refresh, modifier = Modifier.fillMaxSize()) {
                 when (tab.kind) {
                     ContentKind.LIVE -> LiveList(vm, settings.showGuideInList, onPlay, onOpenGuide)
-                    ContentKind.MOVIE -> MovieGrid(vm, onPlay)
+                    ContentKind.MOVIE -> MovieGrid(vm, onPlay, onOpenMovie)
                     ContentKind.SERIES -> ShowGrid(vm, onOpenShow, onPlay)
                 }
             }
@@ -367,6 +379,7 @@ private fun ChannelRow(
         Row(
             Modifier
                 .fillMaxWidth()
+                .focusRing(MaterialTheme.shapes.medium, MaterialTheme.colorScheme.primary)
                 .combinedClickable(onClick = onPlay, onLongClick = { menu = true })
                 .padding(start = 10.dp, end = 4.dp, top = 10.dp, bottom = 10.dp),
             verticalAlignment = Alignment.CenterVertically,
@@ -444,6 +457,7 @@ private fun ChannelRow(
 private fun MovieGrid(
     vm: BrowseViewModel,
     onPlay: (Long) -> Unit,
+    onOpenMovie: (Long) -> Unit,
 ) {
     val movies = vm.movies.collectAsLazyPagingItems()
     val favourites by vm.favouriteIds.collectAsStateWithLifecycle()
@@ -462,12 +476,16 @@ private fun MovieGrid(
                 PosterPlaceholder()
             } else {
                 val favourite = movie.id in favourites
+                val rating by produceState<Double?>(null, movie.name) { value = vm.rating(movie.name, tv = false) }
+                // A tap opens the film's page; Play now is in the long-press menu for a straight start.
                 Poster(
                     title = movie.name,
                     image = movie.logo,
                     favourite = favourite,
-                    onClick = { onPlay(movie.id) },
+                    rating = rating,
+                    onClick = { onOpenMovie(movie.id) },
                     onToggleFavourite = { vm.toggleFavourite(movie.id, favourite) },
+                    onPlayNow = { onPlay(movie.id) },
                 )
             }
         }
@@ -495,9 +513,11 @@ private fun ShowGrid(
             if (show == null) {
                 PosterPlaceholder()
             } else {
+                val rating by produceState<Double?>(null, show.showName) { value = vm.rating(show.showName, tv = true) }
                 Poster(
                     title = show.showName,
                     image = show.logo,
+                    rating = rating,
                     subtitle = pluralEpisodes(show.episodes),
                     onClick = { onOpenShow(show.showKey, show.showName) },
                 )
@@ -545,7 +565,13 @@ private fun ContinueCard(
         } else {
             row.name
         }
-    Column(Modifier.width(132.dp).clip(RoundedCornerShape(12.dp)).clickable(onClick = onClick)) {
+    Column(
+        Modifier
+            .width(132.dp)
+            .clip(RoundedCornerShape(12.dp))
+            .focusRing(RoundedCornerShape(12.dp), MaterialTheme.colorScheme.primary)
+            .clickable(onClick = onClick),
+    ) {
         Box(
             Modifier
                 .fillMaxWidth()
@@ -582,12 +608,16 @@ fun Poster(
     subtitle: String? = null,
     favourite: Boolean = false,
     onToggleFavourite: (() -> Unit)? = null,
+    onPlayNow: (() -> Unit)? = null,
+    rating: Double? = null,
 ) {
     var menu by remember { mutableStateOf(false) }
+    val hasMenu = onToggleFavourite != null || onPlayNow != null
     Column(
         Modifier
             .clip(RoundedCornerShape(10.dp))
-            .combinedClickable(onClick = onClick, onLongClick = onToggleFavourite?.let { { menu = true } }),
+            .focusRing(RoundedCornerShape(10.dp), MaterialTheme.colorScheme.primary)
+            .combinedClickable(onClick = onClick, onLongClick = if (hasMenu) ({ menu = true }) else null),
     ) {
         Box {
             AsyncImage(
@@ -601,6 +631,7 @@ fun Poster(
                         .clip(RoundedCornerShape(10.dp))
                         .background(MaterialTheme.colorScheme.surfaceContainerHigh),
             )
+            rating?.let { RatingBadge(it, Modifier.align(Alignment.BottomEnd).padding(6.dp)) }
             if (favourite) {
                 Icon(
                     Icons.Filled.Favorite,
@@ -609,15 +640,26 @@ fun Poster(
                     tint = MaterialTheme.colorScheme.primary,
                 )
             }
-            if (onToggleFavourite != null) {
+            if (hasMenu) {
                 DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
-                    DropdownMenuItem(
-                        text = { Text(stringResource(if (favourite) R.string.favourite_remove else R.string.favourite_add)) },
-                        onClick = {
-                            menu = false
-                            onToggleFavourite()
-                        },
-                    )
+                    onPlayNow?.let { play ->
+                        DropdownMenuItem(
+                            text = { Text(stringResource(R.string.play_now)) },
+                            onClick = {
+                                menu = false
+                                play()
+                            },
+                        )
+                    }
+                    onToggleFavourite?.let { toggle ->
+                        DropdownMenuItem(
+                            text = { Text(stringResource(if (favourite) R.string.favourite_remove else R.string.favourite_add)) },
+                            onClick = {
+                                menu = false
+                                toggle()
+                            },
+                        )
+                    }
                 }
             }
         }
@@ -730,4 +772,46 @@ private fun RefreshBar(progress: SyncProgress) {
         Spacer(Modifier.height(4.dp))
         SyncProgressBar(progress, Modifier.fillMaxWidth())
     }
+}
+
+/** The TMDB rating in the poster's corner, readable over any artwork. */
+@Composable
+private fun RatingBadge(
+    rating: Double,
+    modifier: Modifier = Modifier,
+) {
+    val locale = LocalConfiguration.current.locales[0]
+    Row(
+        modifier
+            .clip(RoundedCornerShape(6.dp))
+            .background(Color.Black.copy(alpha = 0.72f))
+            .padding(horizontal = 6.dp, vertical = 2.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(Icons.Filled.Star, null, Modifier.size(12.dp), tint = RATING_GOLD)
+        Spacer(Modifier.width(3.dp))
+        Text(String.format(locale, "%.1f", rating), style = MaterialTheme.typography.labelSmall, color = Color.White)
+    }
+}
+
+/** The usual star gold, which reads on the dark badge whatever the app's accent. */
+private val RATING_GOLD = Color(0xFFF5C518)
+
+/** Downloads, beside the three sections: opens its own page, with a badge while anything is still to download. */
+@Composable
+private fun RowScope.DownloadsNavItem(
+    onClick: () -> Unit,
+    downloads: DownloadsViewModel = viewModel(),
+) {
+    val pending by downloads.pending.collectAsStateWithLifecycle()
+    NavigationBarItem(
+        selected = false,
+        onClick = onClick,
+        icon = {
+            BadgedBox(badge = { if (pending > 0) Badge { Text("$pending") } }) {
+                Icon(Icons.Filled.DownloadForOffline, contentDescription = null)
+            }
+        },
+        label = { Text(stringResource(R.string.downloads)) },
+    )
 }

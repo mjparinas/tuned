@@ -6,6 +6,8 @@
 
 **Backups are off** (`allowBackup=false` and data extraction rules that exclude everything), so neither the encrypted login nor the cached URLs (which contain it) reach a cloud backup or a device transfer.
 
+**Backup files** (Melvin, 2026-11-17: backup and restore "including the server, playlist link, username and password"). Settings › Back up saves the login, every setting except the sync times, the parental PIN's hash and the favourites to a file the person picks. Because the file holds the login, it is sealed with a passphrase they choose (at least 8 characters): AES-256-GCM with a key from PBKDF2-SHA256 (310,000 rounds and a fresh salt per file), and the header is authenticated too (`core/BackupCrypto`). A wrong passphrase or a damaged file is refused before anything changes. The passphrase isn't stored and can't be recovered. Restore is in Settings and on the sign-in screen; a restored login starts the first download straight away. Android's own cloud backup stays off.
+
 **Cleartext HTTP is allowed** (`network_security_config.xml`), because IPTV servers, eros4k.ddns.net included, serve playlists and streams over plain HTTP on whatever host a stream redirects to. Android Lint's `InsecureBaseConfiguration` check is disabled for that reason.
 
 ## Parental PIN (2026-11-17)
@@ -16,3 +18,5 @@ Melvin asked for "a pin to filter out adult content". Adult categories (the clas
 - The unlock lives in memory only. It ends when the app process ends, or 5 minutes after the app leaves the screen, so a phone handed over later shows nothing adult.
 - Five wrong PINs in a row wait 30 seconds before the next try.
 - "Forgot PIN" takes the account password (or, for a playlist link login, the link) and then sets a new PIN. The PIN stays across sign-out, because it guards the device rather than one login.
+
+**Saved playlists** (2026-11-17). Every login used on the device is kept, encrypted with the same Keystore key as the one in use, so Settings › Playlists can switch between them without typing them again. Switching to another provider clears the cached channels, guide and catch-up list and downloads the other playlist, so the lists never mix and the app still holds one playlist at a time. Signing out forgets all of them; the encrypted backup holds only the login in use.

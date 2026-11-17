@@ -20,8 +20,10 @@ import app.tuned.container
 import app.tuned.data.AppSettings
 import app.tuned.player.PlayerActivity
 import app.tuned.ui.browse.HomeScreen
+import app.tuned.ui.details.MovieScreen
 import app.tuned.ui.guide.GuideScreen
 import app.tuned.ui.login.LoginScreen
+import app.tuned.ui.offline.DownloadsScreen
 import app.tuned.ui.search.SearchScreen
 import app.tuned.ui.settings.CaptionSettingsScreen
 import app.tuned.ui.settings.FavouriteOrderScreen
@@ -81,8 +83,9 @@ class MainActivity : ComponentActivity() {
         }
         NavHost(navController = nav, startDestination = if (signedIn) HomeRoute else LoginRoute) {
             composable<LoginRoute> {
+                // From sign-in or from Settings › Playlists › Add: either way the new playlist opens on its own.
                 LoginScreen(onSignedIn = {
-                    nav.navigate(HomeRoute) { popUpTo<LoginRoute> { inclusive = true } }
+                    nav.navigate(HomeRoute) { popUpTo(0) { inclusive = true } }
                 })
             }
             composable<HomeRoute> {
@@ -91,8 +94,10 @@ class MainActivity : ComponentActivity() {
                     onPlay = play,
                     onOpenShow = { key, title -> nav.navigate(ShowRoute(key, title)) },
                     onOpenGuide = { id -> nav.navigate(GuideRoute(id)) },
+                    onOpenMovie = { id -> nav.navigate(MovieRoute(id)) },
                     onOpenSettings = { nav.navigate(SettingsRoute) },
                     onOpenSearch = { nav.navigate(SearchRoute()) },
+                    onOpenDownloads = { nav.navigate(DownloadsRoute) },
                     onTune = tune,
                     onSignedOut = { nav.navigate(LoginRoute) { popUpTo(0) { inclusive = true } } },
                 )
@@ -103,12 +108,16 @@ class MainActivity : ComponentActivity() {
                     onBack = { nav.popBackStack() },
                     onPlay = play,
                     onOpenShow = { key, title -> nav.navigate(ShowRoute(key, title)) },
+                    onOpenMovie = { id -> nav.navigate(MovieRoute(id)) },
                     onTune = tune,
                 )
             }
             composable<ShowRoute> { entry ->
                 val route = entry.toRoute<ShowRoute>()
                 ShowScreen(showKey = route.showKey, title = route.title, onPlay = play, onBack = { nav.popBackStack() })
+            }
+            composable<MovieRoute> { entry ->
+                MovieScreen(itemId = entry.toRoute<MovieRoute>().itemId, onPlay = play, onBack = { nav.popBackStack() })
             }
             composable<GuideRoute> { entry ->
                 GuideScreen(itemId = entry.toRoute<GuideRoute>().itemId, onPlay = play, onBack = { nav.popBackStack() })
@@ -120,10 +129,16 @@ class MainActivity : ComponentActivity() {
                     onOpenCaptions = { nav.navigate(CaptionSettingsRoute) },
                     onOpenRegions = { nav.navigate(RegionSettingsRoute) },
                     onOpenFavouriteOrder = { nav.navigate(FavouriteOrderRoute) },
+                    onOpenDownloads = { nav.navigate(DownloadsRoute) },
                     onSignedOut = {
                         nav.navigate(LoginRoute) { popUpTo(0) { inclusive = true } }
                     },
+                    onAddPlaylist = { nav.navigate(LoginRoute) },
+                    onSwitchedPlaylist = { nav.navigate(HomeRoute) { popUpTo(0) { inclusive = true } } },
                 )
+            }
+            composable<DownloadsRoute> {
+                DownloadsScreen(onPlay = play, onBack = { nav.popBackStack() })
             }
             composable<CaptionSettingsRoute> {
                 CaptionSettingsScreen(settings = current, onBack = { nav.popBackStack() })

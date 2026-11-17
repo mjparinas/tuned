@@ -8,6 +8,7 @@ import android.content.pm.ServiceInfo
 import android.os.Build
 import android.os.SystemClock
 import androidx.core.app.NotificationCompat
+import androidx.glance.appwidget.updateAll
 import androidx.work.CoroutineWorker
 import androidx.work.Data
 import androidx.work.ForegroundInfo
@@ -17,6 +18,7 @@ import app.tuned.R
 import app.tuned.container
 import app.tuned.data.SyncProgress
 import app.tuned.ui.SyncText
+import app.tuned.widget.FavouritesWidget
 import java.io.IOException
 
 class SyncWorker(
@@ -47,6 +49,8 @@ class SyncWorker(
             } else {
                 container.sync.refreshAll(::report)
             }
+            // New guide data: the widget's "on now" lines move on too.
+            runCatching { FavouritesWidget().updateAll(applicationContext) }
             Result.success()
         } catch (_: IOException) {
             // The download already retried with backoff; the first sign-in reports at once instead of waiting for more.

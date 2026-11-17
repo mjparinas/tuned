@@ -150,7 +150,10 @@ fun SettingsScreen(
     onOpenCaptions: () -> Unit,
     onOpenRegions: () -> Unit,
     onOpenFavouriteOrder: () -> Unit,
+    onOpenDownloads: () -> Unit,
     onSignedOut: () -> Unit,
+    onAddPlaylist: () -> Unit,
+    onSwitchedPlaylist: () -> Unit,
     vm: SettingsViewModel = viewModel(),
 ) {
     var editServer by remember { mutableStateOf(false) }
@@ -171,11 +174,13 @@ fun SettingsScreen(
             SectionHeader(stringResource(R.string.settings_account))
             SettingRow(stringResource(R.string.login_server), vm.server(), onClick = { editServer = true })
             SettingRow(stringResource(R.string.login_username), vm.username())
+            PlaylistsRow(onAdd = onAddPlaylist, onSwitched = onSwitchedPlaylist)
             SettingRow(
                 stringResource(R.string.settings_refresh_now),
                 lastSync(settings),
                 onClick = vm::refreshNow,
             )
+            BackupRows()
             SettingRow(stringResource(R.string.settings_sign_out), stringResource(R.string.settings_sign_out_summary), onClick = {
                 confirmSignOut =
                     true
@@ -190,6 +195,12 @@ fun SettingsScreen(
                     pluralStringResource(R.plurals.countries_hidden, settings.hiddenRegions.size, settings.hiddenRegions.size)
                 },
                 onClick = onOpenRegions,
+                trailing = { Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null) },
+            )
+            SettingRow(
+                stringResource(R.string.downloads),
+                stringResource(R.string.downloads_summary),
+                onClick = onOpenDownloads,
                 trailing = { Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null) },
             )
             SettingRow(
@@ -377,6 +388,23 @@ fun SettingsScreen(
                 stringResource(R.string.settings_pure_black_summary),
             ) { on ->
                 vm.update { it.copy(pureBlack = on) }
+            }
+
+            SectionHeader(stringResource(R.string.settings_ratings))
+            var editTmdb by remember { mutableStateOf(false) }
+            SettingRow(
+                stringResource(R.string.settings_tmdb_key),
+                if (settings.tmdbKey.isBlank()) {
+                    stringResource(R.string.settings_tmdb_key_summary)
+                } else {
+                    stringResource(R.string.settings_tmdb_key_set)
+                },
+                onClick = { editTmdb = true },
+            )
+            if (editTmdb) {
+                TextDialog(stringResource(R.string.settings_tmdb_key), settings.tmdbKey, onDismiss = { editTmdb = false }) { key ->
+                    vm.update { it.copy(tmdbKey = key.trim()) }
+                }
             }
 
             SectionHeader(stringResource(R.string.settings_advanced))

@@ -15,6 +15,7 @@ import android.os.Bundle
 import android.util.Rational
 import android.util.TypedValue
 import android.view.Gravity
+import android.view.KeyEvent
 import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
@@ -22,14 +23,16 @@ import android.widget.ImageButton
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
-import androidx.activity.ComponentActivity
 import androidx.annotation.OptIn
+import androidx.core.net.toUri
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
+import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.lifecycleScope
 import androidx.media3.common.AudioAttributes
 import androidx.media3.common.C
+import androidx.media3.common.ForwardingPlayer
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
 import androidx.media3.common.PlaybackException
@@ -55,6 +58,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import java.io.File
 
 /**
  * Full-screen playback. Nothing on screen but the video until a tap shows the standard Media3 controls: play and
@@ -63,7 +67,7 @@ import kotlinx.coroutines.launch
  * tested surface and starts fastest.
  */
 @OptIn(UnstableApi::class)
-class PlayerActivity : ComponentActivity() {
+class PlayerActivity : FragmentActivity() {
     private var player: ExoPlayer? = null
     private lateinit var playerView: PlayerView
     private lateinit var overlay: LinearLayout
@@ -75,12 +79,15 @@ class PlayerActivity : ComponentActivity() {
     private var liveRetries = 0
     private var gestures: PlayerGestures? = null
     private lateinit var tools: PlayerTools
+    private var cast: CastControl? = null
     private var reconnect: ConnectivityManager.NetworkCallback? = null
     private var autoTune: AutoTune? = null
     private lateinit var statusView: TextView
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // One connection to the provider at a time: downloads wait while anything plays.
+        container.offline.pause()
         buildViews()
         hideSystemBars()
         lifecycleScope.launch {
@@ -95,12 +102,21 @@ class PlayerActivity : ComponentActivity() {
                 return@launch
             }
             val id = intent.getLongExtra(EXTRA_ID, 0)
-            val item = container.db.items().get(id)
+            val channel = container.db.items().get(id)
+            val catchUpStart = intent.getLongExtra(EXTRA_FROM, 0)
+            val item =
+                if (channel != null && catchUpStart > 0) {
+                    val title = intent.getStringExtra(EXTRA_TITLE).orEmpty()
+                    CatchUpLinks.item(container, channel, title, catchUpStart, intent.getLongExtra(EXTRA_UNTIL, 0))
+                } else {
+                    channel
+                }
             if (item == null) {
                 finish()
                 return@launch
             }
-            queue = siblings(item)
+            // A recording plays on its own; next and previous would leave it for live channels.
+            queue = if (item.id == CatchUpLinks.ID) listOf(item) else siblings(item)
             start(item)
         }
     }
@@ -158,7 +174,11 @@ class PlayerActivity : ComponentActivity() {
                 val pad = (12 * resources.displayMetrics.density).toInt()
                 setPadding(pad * 2, pad, pad * 2, pad)
             }
-        val root = FrameLayout(this)
+        // TV remote buttons go to the tools before the player's own controls; see [PlayerTools.onKey].
+        val root =
+            object : FrameLayout(this) {
+                override fun dispatchKeyEvent(event: KeyEvent): Boolean = tools.onKey(event) || super.dispatchKeyEvent(event)
+            }
         root.addView(playerView, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
         root.addView(
             overlay,
@@ -208,6 +228,14 @@ class PlayerActivity : ComponentActivity() {
                     ),
             )
         overlay.addView(tools.toolbar)
+        cast =
+            CastControl(
+                activity = this,
+                player = { player },
+                current = { player?.let { queue.getOrNull(it.currentMediaItemIndex) } },
+                isLive = ::live,
+                onStatus = { text -> if (text == null) statusView.visibility = View.GONE else showStatus(text) },
+            ).also { c -> tools.addButton(c.button) }
     }
 
     @SuppressLint("ClickableViewAccessibility") // PlayerGestures calls performClick on every tap
@@ -261,7 +289,7 @@ class PlayerActivity : ComponentActivity() {
                 override fun onAvailable(network: Network) {
                     lifecycleScope.launch {
                         val p = player ?: return@launch
-                        if (p.playerError != null || p.playbackState == Player.STATE_IDLE) {
+                        if (cast?.casting != true && (p.playerError != null || p.playbackState == Player.STATE_IDLE)) {
                             liveRetries = 0
                             flash(getString(R.string.player_reconnecting))
                             p.prepare()
@@ -321,7 +349,7 @@ class PlayerActivity : ComponentActivity() {
         val live = kind == ContentKind.LIVE
         val exo = buildPlayer(live)
         player = exo
-        playerView.player = exo
+        playerView.player = ViewPlayer(exo)
         playerView.setControllerShowTimeoutMs(settings.controlsTimeoutMs)
         playerView.setShowNextButton(queue.size > 1)
         playerView.setShowPreviousButton(queue.size > 1)
@@ -329,13 +357,21 @@ class PlayerActivity : ComponentActivity() {
         playerView.setShowRewindButton(!live)
         CaptionStyles.apply(requireNotNull(playerView.subtitleView), settings.captions)
 
-        val mediaItems = queue.map { it.toMediaItem() }
+        // Saved films and episodes play from the device.
+        val local = container.offline.files(queue.map { it.id })
+        val mediaItems = queue.map { it.toMediaItem(local[it.id]) }
         val index = queue.indexOfFirst { it.id == item.id }.coerceAtLeast(0)
         val resumeAt = if (!live && settings.resumePlayback) resumePosition(item.id) else C.TIME_UNSET
         exo.setMediaItems(mediaItems, index, resumeAt)
         exo.pauseAtEndOfMediaItems = kind == ContentKind.SERIES && !settings.autoPlayNext
-        exo.prepare()
-        exo.playWhenReady = true
+        val castNow = cast?.takeIf { it.casting }
+        if (castNow != null) {
+            // Already casting: this goes to the TV, and the phone opens no stream of its own.
+            castNow.load(queue[index], live, resumeAt)
+        } else {
+            exo.prepare()
+            exo.playWhenReady = true
+        }
         updateOverlay(queue[index])
         if (!live) progressJob = lifecycleScope.launch { saveProgressEvery(exo) }
     }
@@ -393,7 +429,9 @@ class PlayerActivity : ComponentActivity() {
             reason: Int,
         ) {
             val id = mediaItem?.mediaId?.toLongOrNull() ?: return
-            queue.firstOrNull { it.id == id }?.let(::updateOverlay)
+            val item = queue.firstOrNull { it.id == id } ?: return
+            updateOverlay(item)
+            if (cast?.casting == true) cast?.load(item, live, 0)
             liveRetries = 0
         }
 
@@ -464,6 +502,23 @@ class PlayerActivity : ComponentActivity() {
         }
     }
 
+    /** What the on-screen controls drive: the phone's player, or the TV's play and pause while casting. */
+    private inner class ViewPlayer(
+        exo: ExoPlayer,
+    ) : ForwardingPlayer(exo) {
+        override fun prepare() {
+            if (cast?.casting != true) super.prepare()
+        }
+
+        override fun play() {
+            if (cast?.casting == true) cast?.play() else super.play()
+        }
+
+        override fun pause() {
+            if (cast?.casting == true) cast?.pause() else super.pause()
+        }
+    }
+
     private suspend fun resumePosition(id: Long): Long {
         val h = container.db.library().progress(id) ?: return C.TIME_UNSET
         val nearlyDone = h.durationMs > 0 && h.positionMs > h.durationMs * 0.95
@@ -485,7 +540,11 @@ class PlayerActivity : ComponentActivity() {
     }
 
     private suspend fun saveProgress(exo: ExoPlayer) {
-        val id = exo.currentMediaItem?.mediaId?.toLongOrNull() ?: return
+        val id =
+            exo.currentMediaItem
+                ?.mediaId
+                ?.toLongOrNull()
+                ?.takeIf { it != CatchUpLinks.ID } ?: return
         val duration = exo.duration
         if (duration == C.TIME_UNSET || duration <= 0) return
         container.db.library().saveProgress(HistoryEntity(id, exo.currentPosition, duration, System.currentTimeMillis()))
@@ -493,10 +552,10 @@ class PlayerActivity : ComponentActivity() {
 
     private fun live(): Boolean = queue.firstOrNull()?.kind == ContentKind.LIVE.code
 
-    private fun ItemEntity.toMediaItem(): MediaItem = MediaItem
+    private fun ItemEntity.toMediaItem(file: File?): MediaItem = MediaItem
         .Builder()
         .setMediaId(id.toString())
-        .setUri(url)
+        .setUri(file?.toUri() ?: url.toUri())
         .setMediaMetadata(MediaMetadata.Builder().setTitle(name).build())
         .build()
 
@@ -570,7 +629,7 @@ class PlayerActivity : ComponentActivity() {
             val id = exo.currentMediaItem?.mediaId?.toLongOrNull()
             val position = exo.currentPosition
             val duration = exo.duration
-            if (id != null && duration > 0 && !live()) {
+            if (id != null && id != CatchUpLinks.ID && duration > 0 && !live()) {
                 container.appScope.launch {
                     container.db.library().saveProgress(HistoryEntity(id, position, duration, System.currentTimeMillis()))
                 }
@@ -589,6 +648,8 @@ class PlayerActivity : ComponentActivity() {
         autoTune?.release()
         gestures?.release()
         tools.release()
+        cast?.release()
+        container.appScope.launch { container.offline.start() }
         reconnect?.let { cb -> runCatching { getSystemService(ConnectivityManager::class.java)?.unregisterNetworkCallback(cb) } }
         player?.release()
         player = null
@@ -598,6 +659,9 @@ class PlayerActivity : ComponentActivity() {
     companion object {
         private const val EXTRA_ID = "id"
         private const val EXTRA_TUNE = "tune"
+        private const val EXTRA_FROM = "catchup_from"
+        private const val EXTRA_UNTIL = "catchup_until"
+        private const val EXTRA_TITLE = "catchup_title"
         private const val MAX_RETRIES = 5
         private const val FLASH_MS = 900L
 
@@ -611,6 +675,19 @@ class PlayerActivity : ComponentActivity() {
             itemId: Long,
         ) {
             context.startActivity(intent(context, itemId))
+        }
+
+        /** Catch-up: the recording of [title] on channel [itemId], from [from] to [until]. */
+        fun catchUp(
+            context: Context,
+            itemId: Long,
+            title: String,
+            from: Long,
+            until: Long,
+        ) {
+            context.startActivity(
+                intent(context, itemId).putExtra(EXTRA_FROM, from).putExtra(EXTRA_UNTIL, until).putExtra(EXTRA_TITLE, title),
+            )
         }
 
         /** Auto-tune: find a working channel showing [query] (a channel name or an event in the guide) and play it. */

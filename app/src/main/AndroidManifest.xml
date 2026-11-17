@@ -2,8 +2,22 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
+    <!-- Android TV (docs/decisions/tv.md): the same app, run with a remote. Nothing here needs touch, and a TV on
+         ethernet has no Wi-Fi, so neither is required. -->
+    <uses-feature
+        android:name="android.software.leanback"
+        android:required="false" />
+    <uses-feature
+        android:name="android.hardware.touchscreen"
+        android:required="false" />
+    <uses-feature
+        android:name="android.hardware.wifi"
+        android:required="false" />
+
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <!-- Finding DLNA TVs: the search is a multicast on the local network. -->
+    <uses-permission android:name="android.permission.CHANGE_WIFI_MULTICAST_STATE" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <!-- Expedited refreshes run as a short foreground service on Android 11 and older. -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
@@ -21,6 +35,7 @@
     <application
         android:name=".TunedApp"
         android:allowBackup="false"
+        android:banner="@drawable/tv_banner"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="false"
         android:icon="@mipmap/ic_launcher"
@@ -31,6 +46,10 @@
         android:enableOnBackInvokedCallback="true"
         android:theme="@style/Theme.Tuned"
         tools:targetApi="36">
+        <meta-data
+            android:name="com.google.android.gms.cast.framework.OPTIONS_PROVIDER_CLASS_NAME"
+            android:value="app.tuned.player.CastOptionsProvider" />
+
 
         <activity
             android:name=".ui.MainActivity"
@@ -41,6 +60,7 @@
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
+                <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
             </intent-filter>
             <!-- Search: the system search box, a TV remote's search button, and "search for UFC on Tuned" (Assistant). -->
             <intent-filter>
@@ -72,5 +92,33 @@
         <receiver
             android:name=".updates.InstallResultReceiver"
             android:exported="false" />
+
+        <!-- Home screen widget: favourite channels with what's on now. -->
+        <receiver
+            android:name=".widget.FavouritesWidgetReceiver"
+            android:exported="true"
+            android:label="@string/widget_favourites">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_favourites" />
+        </receiver>
+
+        <!-- Quick-settings tile: straight back to the last channel. -->
+        <service
+            android:name=".widget.LastChannelTile"
+            android:exported="true"
+            android:icon="@drawable/ic_stat_tuned"
+            android:label="@string/tile_last_channel"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.service.quicksettings.TOGGLEABLE_TILE"
+                android:value="false" />
+        </service>
     </application>
 </manifest>

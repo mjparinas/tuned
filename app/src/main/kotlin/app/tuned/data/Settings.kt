@@ -98,6 +98,8 @@ data class AppSettings(
     val seekBackMs: Long = 10_000,
     val seekForwardMs: Long = 30_000,
     val userAgent: String = "",
+    /** The person's own TMDB key (v3 key or v4 read token) for ratings and trailers; blank turns them off. */
+    val tmdbKey: String = "",
     val showGuideInList: Boolean = true,
     /** Look for a newer release on GitHub at start (copies from Play update through Play either way). */
     val checkUpdates: Boolean = true,
@@ -105,6 +107,8 @@ data class AppSettings(
     val lastPlaylistSync: Long = 0,
     val lastGuideSync: Long = 0,
     val lastSyncError: String = "",
+    /** The Xtream server's time zone, read at each refresh; catch-up links are in its local time. */
+    val serverTimezone: String = "",
 )
 
 private val Context.dataStore by preferencesDataStore(name = "settings")
@@ -148,6 +152,30 @@ class SettingsRepository(
         adultUnlocked.value = false
     }
 
+    /** Every stored setting by its key, for a backup. Sync times and the open tab are left out: they belong to this phone. */
+    suspend fun snapshot(): Map<String, Any> = context.dataStore.data
+        .first()
+        .asMap()
+        .mapKeys { it.key.name }
+        .filterKeys { it !in DEVICE_ONLY }
+
+    /** Puts back what [snapshot] saved; values of a type the app doesn't store are skipped. */
+    @Suppress("UNCHECKED_CAST") // a Set read back from a backup only ever holds the strings it was saved with
+    suspend fun restore(values: Map<String, Any>) {
+        context.dataStore.edit { prefs ->
+            for ((name, value) in values.filterKeys { it !in DEVICE_ONLY }) {
+                when (value) {
+                    is Boolean -> prefs[booleanPreferencesKey(name)] = value
+                    is Int -> prefs[intPreferencesKey(name)] = value
+                    is Long -> prefs[longPreferencesKey(name)] = value
+                    is Float -> prefs[floatPreferencesKey(name)] = value
+                    is String -> prefs[stringPreferencesKey(name)] = value
+                    is Set<*> -> prefs[stringSetPreferencesKey(name)] = value as Set<String>
+                }
+            }
+        }
+    }
+
     suspend fun update(change: (AppSettings) -> AppSettings) {
         context.dataStore.edit { prefs -> write(prefs, change(read(prefs))) }
     }
@@ -184,6 +212,7 @@ class SettingsRepository(
             seekBackMs = p[K.seekBackMs] ?: d.seekBackMs,
             seekForwardMs = p[K.seekForwardMs] ?: d.seekForwardMs,
             userAgent = p[K.userAgent] ?: d.userAgent,
+            tmdbKey = p[K.tmdbKey] ?: d.tmdbKey,
             showGuideInList = p[K.showGuideInList] ?: d.showGuideInList,
             checkUpdates = p[K.checkUpdates] ?: d.checkUpdates,
             captions =
@@ -205,6 +234,7 @@ class SettingsRepository(
             lastPlaylistSync = p[K.lastPlaylistSync] ?: d.lastPlaylistSync,
             lastGuideSync = p[K.lastGuideSync] ?: d.lastGuideSync,
             lastSyncError = p[K.lastSyncError] ?: d.lastSyncError,
+            serverTimezone = p[K.serverTimezone] ?: d.serverTimezone,
         )
     }
 
@@ -239,6 +269,7 @@ class SettingsRepository(
         p[K.seekBackMs] = s.seekBackMs
         p[K.seekForwardMs] = s.seekForwardMs
         p[K.userAgent] = s.userAgent
+        p[K.tmdbKey] = s.tmdbKey
         p[K.showGuideInList] = s.showGuideInList
         p[K.checkUpdates] = s.checkUpdates
         val c = s.captions
@@ -258,6 +289,7 @@ class SettingsRepository(
         p[K.lastPlaylistSync] = s.lastPlaylistSync
         p[K.lastGuideSync] = s.lastGuideSync
         p[K.lastSyncError] = s.lastSyncError
+        p[K.serverTimezone] = s.serverTimezone
     }
 
     private inline fun <reified E : Enum<E>> enumOr(
@@ -294,6 +326,7 @@ class SettingsRepository(
         val seekBackMs = longPreferencesKey("seek_back_ms")
         val seekForwardMs = longPreferencesKey("seek_forward_ms")
         val userAgent = stringPreferencesKey("user_agent")
+        val tmdbKey = stringPreferencesKey("tmdb_key")
         val showGuideInList = booleanPreferencesKey("show_guide_in_list")
         val checkUpdates = booleanPreferencesKey("check_updates")
         val ccEnabled = booleanPreferencesKey("cc_enabled")
@@ -312,5 +345,10 @@ class SettingsRepository(
         val lastPlaylistSync = longPreferencesKey("last_playlist_sync")
         val lastGuideSync = longPreferencesKey("last_guide_sync")
         val lastSyncError = stringPreferencesKey("last_sync_error")
+        val serverTimezone = stringPreferencesKey("server_timezone")
+    }
+
+    private companion object {
+        val DEVICE_ONLY = setOf(K.lastPlaylistSync.name, K.lastGuideSync.name, K.lastSyncError.name, K.lastTab.name, K.serverTimezone.name)
     }
 }

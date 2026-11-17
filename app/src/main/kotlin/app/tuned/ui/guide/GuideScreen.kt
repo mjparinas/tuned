@@ -20,12 +20,14 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.NotificationsNone
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Replay
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -40,6 +42,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -50,19 +53,25 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import app.tuned.R
 import app.tuned.container
+import app.tuned.core.CatchUp
 import app.tuned.data.db.FavouriteEntity
 import app.tuned.data.db.ItemEntity
 import app.tuned.data.db.ProgrammeEntity
+import app.tuned.player.PlayerActivity
 import app.tuned.ui.common.BackTopBar
+import app.tuned.ui.common.focusRing
 import app.tuned.work.Reminders
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.util.Date
@@ -79,11 +88,20 @@ class GuideViewModel(
         viewModelScope.launch { channel.value = db.items().get(id) }
     }
 
-    val programmes: StateFlow<List<ProgrammeEntity>> =
+    /** Days of recordings the channel keeps (catch-up), 0 for none. */
+    val catchUpDays: StateFlow<Int> =
         channel
             .filterNotNull()
-            .flatMapLatest { c -> c.tvgId?.let { db.programmes().upcoming(it, System.currentTimeMillis(), 200) } ?: emptyFlow() }
-            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+            .flatMapLatest { c -> CatchUp.streamId(c.url)?.let { id -> db.catchUp().days(id).map { it ?: 0 } } ?: flowOf(0) }
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), 0)
+
+    /** What's on now and next; on a catch-up channel, also what's been on within its recordings. */
+    val programmes: StateFlow<List<ProgrammeEntity>> =
+        combine(channel.filterNotNull(), catchUpDays) { c, days -> c to days }
+            .flatMapLatest { (c, days) ->
+                val from = CatchUp.keepFrom(System.currentTimeMillis(), days)
+                c.tvgId?.let { db.programmes().upcoming(it, from, if (days > 0) LIMIT_WITH_PAST else LIMIT) } ?: emptyFlow()
+            }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
     val favourite: StateFlow<Boolean> =
         channel
@@ -107,6 +125,11 @@ class GuideViewModel(
                 reminders.set(c.id, c.name, p.title, p.start, settings.settings.first().reminderLeadMinutes)
             }
         }
+    }
+
+    private companion object {
+        const val LIMIT = 200
+        const val LIMIT_WITH_PAST = 1_000
     }
 
     fun toggleFavourite() {
@@ -135,6 +158,7 @@ fun GuideScreen(
     val channel by vm.channel.collectAsStateWithLifecycle()
     val programmes by vm.programmes.collectAsStateWithLifecycle()
     val favourite by vm.favourite.collectAsStateWithLifecycle()
+    val catchUpDays by vm.catchUpDays.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val time = DateFormat.getTimeFormat(context)
     val day = DateFormat.getMediumDateFormat(context)
@@ -193,9 +217,21 @@ fun GuideScreen(
                     Triple(p, label, i == 0 || label != day.format(Date(programmes[i - 1].start)))
                 }
             }
-        LazyColumn(Modifier.padding(padding).fillMaxSize(), contentPadding = PaddingValues(bottom = 96.dp)) {
+        // With catch-up the list starts in the past, so it opens on what's on now.
+        val listState = rememberLazyListState()
+        var scrolled by remember { mutableStateOf(false) }
+        LaunchedEffect(rows) {
+            if (!scrolled) {
+                val current = rows.indexOfFirst { it.first.stop > now }
+                if (current > 0) listState.scrollToItem(current)
+                scrolled = true
+            }
+        }
+        LazyColumn(Modifier.padding(padding).fillMaxSize(), state = listState, contentPadding = PaddingValues(bottom = 96.dp)) {
             items(rows, key = { it.first.rowId }) { (p, label, header) ->
                 val onNow = p.start <= now && p.stop > now
+                val replay = !onNow && CatchUp.available(p.start, now, catchUpDays)
+                val watchAgain = { PlayerActivity.catchUp(context, itemId, p.title, p.start, p.stop) }
                 Column {
                     if (header) {
                         Text(
@@ -218,7 +254,8 @@ fun GuideScreen(
                                     } else {
                                         Modifier
                                     },
-                                ).clickable(enabled = onNow) { onPlay(itemId) }
+                                ).focusRing(RectangleShape, MaterialTheme.colorScheme.primary)
+                                .clickable(enabled = onNow || replay) { if (onNow) onPlay(itemId) else watchAgain() }
                                 .padding(horizontal = 16.dp, vertical = 10.dp),
                     ) {
                         Text(
@@ -239,6 +276,15 @@ fun GuideScreen(
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     maxLines = 3,
+                                )
+                            }
+                        }
+                        if (replay) {
+                            IconButton(onClick = watchAgain) {
+                                Icon(
+                                    Icons.Filled.Replay,
+                                    contentDescription = stringResource(R.string.catchup_watch),
+                                    tint = MaterialTheme.colorScheme.primary,
                                 )
                             }
                         }

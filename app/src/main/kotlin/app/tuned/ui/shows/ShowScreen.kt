@@ -2,10 +2,12 @@ package app.tuned.ui.shows
 
 import android.app.Application
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -25,6 +27,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -32,6 +35,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -44,6 +49,14 @@ import app.tuned.container
 import app.tuned.data.db.HistoryEntity
 import app.tuned.data.db.ItemEntity
 import app.tuned.ui.common.BackTopBar
+import app.tuned.ui.common.focusRing
+import app.tuned.ui.details.DetailsBody
+import app.tuned.ui.details.DetailsViewModel
+import app.tuned.ui.details.MetaLine
+import app.tuned.ui.details.TrailerButton
+import app.tuned.ui.offline.DownloadButton
+import app.tuned.ui.offline.SeasonDownloadButton
+import coil3.compose.AsyncImage
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -82,8 +95,12 @@ fun ShowScreen(
     onPlay: (Long) -> Unit,
     onBack: () -> Unit,
     vm: ShowViewModel = viewModel(),
+    details: DetailsViewModel = viewModel(),
 ) {
     vm.load(showKey)
+    LaunchedEffect(title) { details.load(title, tv = true) }
+    val metadata by details.details.collectAsStateWithLifecycle()
+    val hasKey by details.hasKey.collectAsStateWithLifecycle()
     val episodes by vm.episodes.collectAsStateWithLifecycle()
     val progress by vm.progress.collectAsStateWithLifecycle()
     val seasons = episodes.map { it.season ?: 1 }.distinct().sorted()
@@ -104,7 +121,31 @@ fun ShowScreen(
                 }
             }
             LazyColumn(contentPadding = PaddingValues(vertical = 8.dp)) {
-                items(episodes.filter { season == null || (it.season ?: 1) == season }, key = { it.id }) { ep ->
+                item(key = "details") {
+                    Column(Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
+                        metadata?.backdrop?.let { image ->
+                            AsyncImage(
+                                model = image,
+                                contentDescription = null,
+                                contentScale = ContentScale.Crop,
+                                modifier = Modifier.fillMaxWidth().aspectRatio(16f / 9f).clip(RoundedCornerShape(12.dp)),
+                            )
+                            Spacer(Modifier.height(12.dp))
+                        }
+                        MetaLine(metadata)
+                        metadata?.trailer?.let {
+                            Spacer(Modifier.height(12.dp))
+                            TrailerButton(it)
+                        }
+                        Spacer(Modifier.height(12.dp))
+                        DetailsBody(metadata, hasKey)
+                    }
+                }
+                val shown = episodes.filter { season == null || (it.season ?: 1) == season }
+                item(key = "season-download") {
+                    Box(Modifier.padding(horizontal = 16.dp, vertical = 4.dp)) { SeasonDownloadButton(shown) }
+                }
+                items(shown, key = { it.id }) { ep ->
                     EpisodeRow(ep, progress[ep.id], onClick = { onPlay(ep.id) })
                 }
             }
@@ -120,7 +161,11 @@ private fun EpisodeRow(
 ) {
     val watched = history != null && history.durationMs > 0 && history.positionMs > history.durationMs * 0.92
     Row(
-        Modifier.fillMaxWidth().clickable(onClick = onClick).padding(horizontal = 16.dp, vertical = 12.dp),
+        Modifier
+            .fillMaxWidth()
+            .focusRing(RectangleShape, MaterialTheme.colorScheme.primary)
+            .clickable(onClick = onClick)
+            .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Icon(
@@ -145,5 +190,6 @@ private fun EpisodeRow(
                 )
             }
         }
+        DownloadButton(episode)
     }
 }

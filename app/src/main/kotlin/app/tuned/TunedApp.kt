@@ -5,7 +5,11 @@ import android.content.Context
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.ProcessLifecycleOwner
+import app.tuned.data.BackupRepository
 import app.tuned.data.CredentialStore
+import app.tuned.data.Credentials
+import app.tuned.data.MetadataRepository
+import app.tuned.data.Offline
 import app.tuned.data.SettingsRepository
 import app.tuned.data.SyncRepository
 import app.tuned.data.TuneRepository
@@ -27,6 +31,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.drop
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import okhttp3.OkHttpClient
@@ -52,7 +57,31 @@ class AppContainer(
     val tune by lazy { TuneRepository(db, settings) }
     val scheduler = SyncScheduler(context)
     val updates by lazy { GitHubUpdates(context, http) }
+    val backup by lazy { BackupRepository(credentials, settings, db) }
     val reminders by lazy { Reminders(context) }
+    val offline by lazy { Offline(context, db, settings) }
+    val metadata by lazy { MetadataRepository(http, settings, db.metadata()) }
+
+    /**
+     * Makes [login] the one in use and remembers it among the saved playlists. A different playlist's channels and
+     * guide are cleared first, so the lists never mix two providers, then everything is downloaded afresh.
+     */
+    suspend fun useLogin(login: Credentials) {
+        val previous = credentials.load()
+        credentials.save(login)
+        credentials.remember(login)
+        if (previous != null && !previous.samePlaylist(login)) {
+            reminders.cancelAll()
+            db.items().deleteAll()
+            db.programmes().deleteAll()
+            db.catchUp().deleteAll()
+            settings.update { it.copy(lastPlaylistSync = 0, lastGuideSync = 0) }
+        }
+        settings.update { it.copy(lastSyncError = "") }
+        scheduler.refreshNow(first = true)
+        val s = settings.settings.first()
+        scheduler.schedule(s.playlistRefreshHours, s.guideRefreshHours, s.unmeteredOnly)
+    }
 
     /** Forgets the login, the cached playlist and guide, and stops background refreshes. */
     suspend fun signOut() {
@@ -112,7 +141,10 @@ class TunedApp :
         )
     }
 
-    /** Logos and posters: memory plus a 256 MB disk cache, through the same OkHttp client as everything else. */
+    /**
+     * Logos, posters, backdrops and cast photos: memory plus a 512 MB disk cache in app storage (not the cache folder,
+     * which Android empties when space runs low), so artwork downloads once and then loads from the device.
+     */
     override fun newImageLoader(context: PlatformContext): ImageLoader = ImageLoader
         .Builder(context)
         .components { add(OkHttpNetworkFetcherFactory(callFactory = { container.http })) }
@@ -120,8 +152,8 @@ class TunedApp :
         .diskCache {
             DiskCache
                 .Builder()
-                .directory(context.cacheDir.resolve("images"))
-                .maxSizeBytes(256L * 1024 * 1024)
+                .directory(context.filesDir.resolve("images"))
+                .maxSizeBytes(512L * 1024 * 1024)
                 .build()
         }.crossfade(true)
         .build()

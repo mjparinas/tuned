@@ -1,6 +1,7 @@
 package app.tuned.data.db
 
 import androidx.room.ColumnInfo
+import androidx.room.Embedded
 import androidx.room.Entity
 import androidx.room.Index
 import androidx.room.PrimaryKey
@@ -32,6 +33,75 @@ data class ItemEntity(
     val season: Int?,
     val episode: Int?,
     val sortOrder: Int,
+)
+
+/** A film or episode saved for watching offline. Kept across playlist refreshes, like favourites. */
+@Entity(tableName = "downloads")
+data class DownloadEntity(
+    @PrimaryKey val itemId: Long,
+    val name: String,
+    val url: String,
+    /** Where the finished file is (app storage, removed with the app). */
+    val path: String,
+    val bytes: Long = 0,
+    /** The full size, or -1 while unknown. */
+    val total: Long = -1,
+    val state: Int = QUEUED,
+    val addedAt: Long,
+) {
+    companion object {
+        const val QUEUED = 0
+        const val DONE = 1
+        const val FAILED = 2
+
+        /** Held back by the person; skipped until they resume it. */
+        const val PAUSED = 3
+    }
+}
+
+/** A download with the artwork of the film or episode it saves, for the Downloads page. */
+data class DownloadRow(
+    @Embedded val download: DownloadEntity,
+    val logo: String?,
+)
+
+/**
+ * What TMDB said about a film or show, kept on the device so details and ratings load without the network.
+ * [full] is false when only the search answer (rating, summary, artwork) is known, true once the details page has
+ * also fetched genres, runtime, cast and trailer. A row with [found] false remembers that nothing matched.
+ */
+@Entity(tableName = "metadata")
+data class MetadataEntity(
+    @PrimaryKey val cacheKey: String,
+    val found: Boolean,
+    val full: Boolean,
+    val tmdbId: Long,
+    val title: String,
+    val year: String?,
+    val overview: String?,
+    val rating: Double?,
+    val poster: String?,
+    val backdrop: String?,
+    /** Comma-separated. */
+    val genres: String,
+    val runtime: String?,
+    /** One person per line: name, character and photo link, tab-separated. */
+    val cast: String,
+    val trailer: String?,
+    val fetchedAt: Long,
+)
+
+/** A live channel that keeps recordings (Xtream `tv_archive`), by its stream id; replaced on every playlist refresh. */
+@Entity(tableName = "catchup")
+data class CatchUpEntity(
+    @PrimaryKey val streamId: String,
+    val days: Int,
+)
+
+/** A live channel's guide id and link, to match it with its catch-up days. */
+data class LiveLink(
+    val tvgId: String,
+    val url: String,
 )
 
 @Entity(tableName = "programmes", indices = [Index(value = ["channelId", "start"]), Index(value = ["stop"])])
@@ -133,4 +203,5 @@ data class FavouriteRow(
     val id: Long,
     val name: String,
     val logo: String?,
+    val tvgId: String?,
 )

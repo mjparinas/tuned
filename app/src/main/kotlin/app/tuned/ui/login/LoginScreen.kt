@@ -51,6 +51,7 @@ import app.tuned.container
 import app.tuned.core.XtreamAccount
 import app.tuned.core.XtreamUrls
 import app.tuned.data.Credentials
+import app.tuned.ui.settings.RestoreButton
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -103,11 +104,7 @@ class LoginViewModel(
                 state.update { State(error = error) }
                 return@launch
             }
-            container.credentials.save(login)
-            container.settings.update { it.copy(lastSyncError = "") }
-            container.scheduler.refreshNow(first = true)
-            val s = container.settings.settings.first()
-            container.scheduler.schedule(s.playlistRefreshHours, s.guideRefreshHours, s.unmeteredOnly)
+            container.useLogin(login)
             state.update { State() }
             onDone()
         }
@@ -264,6 +261,7 @@ fun LoginScreen(
                     Text(stringResource(R.string.login_sign_in))
                 }
             }
+            RestoreButton(onRestoredLogin = onSignedIn)
             if (state.busy) {
                 Text(
                     stringResource(R.string.login_checking),

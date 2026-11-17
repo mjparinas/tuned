@@ -74,20 +74,6 @@ android {
     testOptions {
         unitTests.isReturnDefaultValues = true
         unitTests.isIncludeAndroidResources = true
-        unitTests.all { test ->
-            // Screenshots (./gradlew :app:testDebugUnitTest -Pscreenshots) render every screen with sample data into
-            // app/build/outputs/roborazzi. They are slow, so ordinary test runs skip them.
-            if (project.hasProperty("screenshots")) {
-                test.filter.includeTestsMatching("app.tuned.screenshots.*")
-                test.systemProperty("roborazzi.test.record", "true")
-                test.testLogging.exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
-                test.systemProperty("roborazzi.record.filePathStrategy", "relativePathFromRoborazziContextOutputDirectory")
-            } else {
-                test.exclude("app/tuned/screenshots/**")
-                // The app has no other JVM tests yet (they live in :core), so finding none is expected.
-                test.failOnNoDiscoveredTests.set(false)
-            }
-        }
     }
 }
 
@@ -143,6 +129,8 @@ dependencies {
     implementation(libs.androidx.media3.exoplayer.hls)
     implementation(libs.androidx.media3.datasource.okhttp)
     implementation(libs.androidx.media3.ui)
+    implementation(libs.androidx.glance.appwidget)
+    implementation(libs.androidx.media3.cast)
 
     implementation(libs.coil.compose)
     implementation(libs.coil.network.okhttp)
@@ -157,11 +145,6 @@ dependencies {
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.okhttp.mockwebserver)
     testImplementation(libs.robolectric)
-    testImplementation(libs.roborazzi)
-    testImplementation(libs.roborazzi.compose)
-    testImplementation(libs.roborazzi.junit)
-    testImplementation(libs.androidx.compose.ui.test.junit4)
+    testImplementation(libs.androidx.test.core)
     testImplementation(libs.androidx.work.testing)
-    testImplementation(libs.coil.test)
-    debugImplementation(libs.androidx.compose.ui.test.manifest)
 }

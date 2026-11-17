@@ -39,6 +39,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -54,6 +55,7 @@ import app.tuned.data.db.ItemEntity
 import app.tuned.data.db.ShowSummary
 import app.tuned.ui.browse.Logo
 import app.tuned.ui.common.VoiceSearchButton
+import app.tuned.ui.common.focusRing
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -110,6 +112,7 @@ fun SearchScreen(
     onBack: () -> Unit,
     onPlay: (Long) -> Unit,
     onOpenShow: (String, String) -> Unit,
+    onOpenMovie: (Long) -> Unit,
     onTune: (String) -> Unit,
     vm: SearchViewModel = viewModel(),
 ) {
@@ -181,7 +184,7 @@ fun SearchScreen(
             section(R.string.tab_live, r.channels) { c ->
                 ResultRow(c.name, c.nowTitle ?: c.groupName, c.logo) { onPlay(c.id) }
             }
-            section(R.string.tab_movies, r.movies) { m -> ResultRow(m.name, m.groupName, m.logo) { onPlay(m.id) } }
+            section(R.string.tab_movies, r.movies) { m -> ResultRow(m.name, m.groupName, m.logo) { onOpenMovie(m.id) } }
             section(R.string.tab_shows, r.shows) { s -> ResultRow(s.showName, s.groupName, s.logo) { onOpenShow(s.showKey, s.showName) } }
         }
     }
@@ -211,7 +214,11 @@ private fun ResultRow(
     onClick: () -> Unit,
 ) {
     Row(
-        Modifier.fillMaxWidth().clickable(onClick = onClick).padding(horizontal = 4.dp, vertical = 8.dp),
+        Modifier
+            .fillMaxWidth()
+            .focusRing(RectangleShape, MaterialTheme.colorScheme.primary)
+            .clickable(onClick = onClick)
+            .padding(horizontal = 4.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Logo(image, Modifier.size(44.dp))

@@ -22,6 +22,8 @@
 
 **Resume.** Movies and episodes save their position every 10 seconds and on leaving; reopening resumes after 30 seconds in, unless 95% watched. Shows mark watched episodes.
 
+**Cast** (Chromecast, 2026-11-17). The cast button sits with the player tools. Casting uses the default media receiver. When a cast starts the phone stops its own stream, so the provider only ever sees one connection, and the TV plays the channel. Next, previous, swipes and the mini guide change the channel on the TV, and the play and pause buttons control the TV. Ending the cast resumes on the phone, at the same point for films and episodes. The default receiver can't play raw MPEG-TS, so Xtream live links are sent as the same channel's `.m3u8`; films in formats the receiver lacks (MKV, for example) may not play. DLNA and UPnP TVs (2026-11-17) appear in the same picker, found with an SSDP search on the local network while the player is open; phones without Google Play services list only those. A DLNA TV is sent the link as it is (most play MPEG-TS and MP4), with the same one-connection rule. A TV that can't seek starts films from the beginning.
+
 **Picture-in-picture** when leaving the app while playing (Settings, on by default). Leaving without it ends playback.
 
 ## Gestures and reconnecting (2026-11-17)
@@ -37,3 +39,9 @@ Melvin asked for auto-reconnect and player gestures. Both are on by default and 
   Brightness goes back to the system's when the player closes.
 
 - **Reconnect.** A dropped live stream, or a network error on a film or episode, is retried up to five times with a growing pause, and "Reconnecting… (2 of 5)" shows meanwhile. The count resets once it plays again. When the phone's connection comes back (`ConnectivityManager` default network), a stopped stream starts again by itself, and `prepare()` keeps a film's position. It still uses one connection at a time, never a second stream.
+
+**Ratings and trailers** (2026-11-17). From The Movie Database, with the person's own free key in Settings › Ratings (a v3 key or a v4 read token; it is never committed, and it rides in the encrypted backup with the other settings). Titles are cleaned of the provider's tags (`EN -`, `4K`, `[FHD]`) and the year is used when the name has one. Without a key nothing is asked and the page says where to add one.
+
+**Film page** (Melvin, 2026-11-17: "when i click on a movie, it should take me to the movie details page", and the rating at the bottom right of each poster). Tapping a film's poster, in the grid or in search, opens its page: the backdrop across the top fading into the page, the poster and title over its lower edge, rating, year and runtime, genres, Play (Resume when started), Trailer (YouTube), the summary and a row of the cast with photos. Play now stays in the poster's long-press menu. Each poster in Movies and Shows shows its TMDB rating in the bottom right corner (TMDB's own score; IMDb's needs a separate service). A show's page has the same details above its episodes.
+
+**Kept on the device** (Melvin, 2026-11-17). Every TMDB answer is saved in the database (`metadata` table): the search answer for a poster's rating, and the full details once a page is opened. A page or badge seen once loads from the device, works offline, and is asked again only after a month (a week for "not found"). Artwork (posters, backdrops, cast photos, logos) goes through Coil's 512 MB disk cache in app storage rather than the cache folder, so Android doesn't empty it when space is low.
