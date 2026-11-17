@@ -40,6 +40,9 @@ interface ItemDao {
     @Query("SELECT DISTINCT tvgId FROM items WHERE kind = 0 AND tvgId IS NOT NULL")
     suspend fun liveTvgIds(): List<String>
 
+    @Query("SELECT tvgId, url FROM items WHERE kind = 0 AND tvgId IS NOT NULL")
+    suspend fun liveLinks(): List<LiveLink>
+
     @Query(
         """
         SELECT i.id, i.name, i.logo, i.groupName, i.tvgId,
@@ -362,4 +365,19 @@ interface LibraryDao {
 
     @Upsert
     suspend fun saveHealth(health: ChannelHealthEntity)
+}
+
+@Dao
+interface CatchUpDao {
+    @Query("DELETE FROM catchup")
+    suspend fun deleteAll()
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAll(rows: List<CatchUpEntity>)
+
+    @Query("SELECT * FROM catchup")
+    suspend fun all(): List<CatchUpEntity>
+
+    @Query("SELECT days FROM catchup WHERE streamId = :streamId")
+    fun days(streamId: String): Flow<Int?>
 }

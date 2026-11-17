@@ -1,6 +1,9 @@
 package app.tuned.core
 
 import java.net.URLEncoder
+import java.time.Instant
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 
 /** Where an Xtream Codes server keeps its playlist and guide, and how to keep login details out of logs. */
 object XtreamUrls {
@@ -28,6 +31,32 @@ object XtreamUrls {
         username: String,
         password: String,
     ): String = "${normalizeServer(server)}/player_api.php?username=${enc(username)}&password=${enc(password)}"
+
+    /** Every live channel with its catch-up details (`tv_archive`, `tv_archive_duration`). */
+    fun liveStreams(
+        server: String,
+        username: String,
+        password: String,
+    ): String = account(server, username, password) + "&action=get_live_streams"
+
+    /**
+     * A recording on a catch-up channel: [minutes] from [startMs], which the server reads in its own time zone
+     * ([zone], from the account answer).
+     */
+    fun timeshift(
+        server: String,
+        username: String,
+        password: String,
+        streamId: String,
+        startMs: Long,
+        minutes: Int,
+        zone: ZoneId,
+    ): String {
+        val start = TIMESHIFT_START.format(Instant.ofEpochMilli(startMs).atZone(zone))
+        return "${normalizeServer(server)}/timeshift/${enc(username)}/${enc(password)}/$minutes/$start/$streamId.ts"
+    }
+
+    private val TIMESHIFT_START: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd:HH-mm")
 
     /** Replaces the username and password wherever they appear (query or path), for error messages and logs. */
     fun redact(

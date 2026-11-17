@@ -97,12 +97,21 @@ class PlayerActivity : FragmentActivity() {
                 return@launch
             }
             val id = intent.getLongExtra(EXTRA_ID, 0)
-            val item = container.db.items().get(id)
+            val channel = container.db.items().get(id)
+            val catchUpStart = intent.getLongExtra(EXTRA_FROM, 0)
+            val item =
+                if (channel != null && catchUpStart > 0) {
+                    val title = intent.getStringExtra(EXTRA_TITLE).orEmpty()
+                    CatchUpLinks.item(container, channel, title, catchUpStart, intent.getLongExtra(EXTRA_UNTIL, 0))
+                } else {
+                    channel
+                }
             if (item == null) {
                 finish()
                 return@launch
             }
-            queue = siblings(item)
+            // A recording plays on its own; next and previous would leave it for live channels.
+            queue = if (item.id == CatchUpLinks.ID) listOf(item) else siblings(item)
             start(item)
         }
     }
@@ -520,7 +529,11 @@ class PlayerActivity : FragmentActivity() {
     }
 
     private suspend fun saveProgress(exo: ExoPlayer) {
-        val id = exo.currentMediaItem?.mediaId?.toLongOrNull() ?: return
+        val id =
+            exo.currentMediaItem
+                ?.mediaId
+                ?.toLongOrNull()
+                ?.takeIf { it != CatchUpLinks.ID } ?: return
         val duration = exo.duration
         if (duration == C.TIME_UNSET || duration <= 0) return
         container.db.library().saveProgress(HistoryEntity(id, exo.currentPosition, duration, System.currentTimeMillis()))
@@ -605,7 +618,7 @@ class PlayerActivity : FragmentActivity() {
             val id = exo.currentMediaItem?.mediaId?.toLongOrNull()
             val position = exo.currentPosition
             val duration = exo.duration
-            if (id != null && duration > 0 && !live()) {
+            if (id != null && id != CatchUpLinks.ID && duration > 0 && !live()) {
                 container.appScope.launch {
                     container.db.library().saveProgress(HistoryEntity(id, position, duration, System.currentTimeMillis()))
                 }
@@ -634,6 +647,9 @@ class PlayerActivity : FragmentActivity() {
     companion object {
         private const val EXTRA_ID = "id"
         private const val EXTRA_TUNE = "tune"
+        private const val EXTRA_FROM = "catchup_from"
+        private const val EXTRA_UNTIL = "catchup_until"
+        private const val EXTRA_TITLE = "catchup_title"
         private const val MAX_RETRIES = 5
         private const val FLASH_MS = 900L
 
@@ -647,6 +663,19 @@ class PlayerActivity : FragmentActivity() {
             itemId: Long,
         ) {
             context.startActivity(intent(context, itemId))
+        }
+
+        /** Catch-up: the recording of [title] on channel [itemId], from [from] to [until]. */
+        fun catchUp(
+            context: Context,
+            itemId: Long,
+            title: String,
+            from: Long,
+            until: Long,
+        ) {
+            context.startActivity(
+                intent(context, itemId).putExtra(EXTRA_FROM, from).putExtra(EXTRA_UNTIL, until).putExtra(EXTRA_TITLE, title),
+            )
         }
 
         /** Auto-tune: find a working channel showing [query] (a channel name or an event in the guide) and play it. */

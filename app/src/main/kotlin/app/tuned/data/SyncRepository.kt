@@ -2,6 +2,7 @@ package app.tuned.data
 
 import android.util.Xml
 import androidx.room.withTransaction
+import app.tuned.core.CatchUp
 import app.tuned.core.Episodes
 import app.tuned.core.M3uParser
 import app.tuned.core.PlaylistEntry
@@ -9,7 +10,9 @@ import app.tuned.core.Search
 import app.tuned.core.StableId
 import app.tuned.core.Streams
 import app.tuned.core.XmltvParser
+import app.tuned.core.XtreamAccount
 import app.tuned.core.XtreamUrls
+import app.tuned.data.db.CatchUpEntity
 import app.tuned.data.db.ItemEntity
 import app.tuned.data.db.ProgrammeEntity
 import app.tuned.data.db.TunedDatabase
@@ -18,7 +21,14 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.contentOrNull
+import kotlinx.serialization.json.decodeToSequence
 import okhttp3.OkHttpClient
+import okhttp3.Request
 import java.io.File
 import java.io.IOException
 import java.io.InputStream
@@ -45,7 +55,7 @@ data class SyncProgress(
  */
 class SyncRepository(
     private val db: TunedDatabase,
-    http: OkHttpClient,
+    private val http: OkHttpClient,
     private val credentials: CredentialStore,
     private val settings: SettingsRepository,
     private val dir: File,
@@ -80,8 +90,48 @@ class SyncRepository(
                 throw IOException(message, e)
             }
         settings.update { it.copy(lastPlaylistSync = System.currentTimeMillis(), lastSyncError = "") }
+        // Catch-up is a bonus: a server that doesn't answer leaves the last known channels as they were.
+        if (login.playlistUrl.isBlank()) runCatching { refreshCatchUp(login) }
         return count
     }
+
+    /** Which live channels keep recordings (Xtream only), and the server's time zone that catch-up links use. */
+    @OptIn(ExperimentalSerializationApi::class)
+    private suspend fun refreshCatchUp(login: Credentials) = withContext(Dispatchers.IO) {
+        val ua =
+            settings.settings
+                .first()
+                .userAgent
+                .ifBlank { null }
+
+        fun get(url: String) = Request
+            .Builder()
+            .url(url)
+            .apply { ua?.let { header("User-Agent", it) } }
+            .build()
+        val zone =
+            http.newCall(get(XtreamUrls.account(login.server, login.username, login.password))).execute().use { r ->
+                if (r.isSuccessful) XtreamAccount.timezone(r.body.string().take(MAX_ACCOUNT_ANSWER)) else null
+            }
+        if (zone != null) settings.update { it.copy(serverTimezone = zone) }
+        val rows =
+            http.newCall(get(XtreamUrls.liveStreams(login.server, login.username, login.password))).execute().use { r ->
+                if (!r.isSuccessful) throw IOException("HTTP ${r.code}")
+                // Streamed one channel at a time: the list of every live channel can run to megabytes.
+                Json
+                    .decodeToSequence(r.body.byteStream(), JsonObject.serializer())
+                    .mapNotNull { o ->
+                        val days = CatchUp.days(o.text("tv_archive"), o.text("tv_archive_duration"))
+                        o.text("stream_id")?.takeIf { days > 0 }?.let { CatchUpEntity(it, days) }
+                    }.toList()
+            }
+        db.withTransaction {
+            db.catchUp().deleteAll()
+            rows.chunked(BATCH).forEach { db.catchUp().insertAll(it) }
+        }
+    }
+
+    private fun JsonObject.text(key: String) = (this[key] as? JsonPrimitive)?.contentOrNull
 
     private suspend fun refreshGuideLocked(progress: (SyncProgress) -> Unit): Int {
         val login = credentials.load() ?: throw IOException("Not signed in")
@@ -149,6 +199,15 @@ class SyncRepository(
         if (wanted.isEmpty()) return 0
         val now = System.currentTimeMillis()
         val from = now - HOUR
+        // Channels with catch-up keep their past programmes for as long as the server keeps the recordings.
+        val archive = db.catchUp().all().associate { it.streamId to it.days }
+        val pastFrom = HashMap<String, Long>()
+        if (archive.isNotEmpty()) {
+            for (link in db.items().liveLinks()) {
+                val days = CatchUp.streamId(link.url)?.let(archive::get) ?: continue
+                pastFrom.merge(link.tvgId, CatchUp.keepFrom(now, days), ::minOf)
+            }
+        }
         val until = now + days * DAY
         var count = 0
         db.withTransaction {
@@ -156,7 +215,9 @@ class SyncRepository(
             val parser = Xml.newPullParser()
             parser.setInput(input, null)
             val batch = ArrayList<ProgrammeEntity>(BATCH)
-            for (p in XmltvParser.programmes(parser) { id, start, stop -> stop > from && start < until && id in wanted }) {
+            for (p in XmltvParser.programmes(
+                parser,
+            ) { id, start, stop -> stop > (pastFrom[id] ?: from) && start < until && id in wanted }) {
                 batch +=
                     ProgrammeEntity(channelId = p.channelId, start = p.start, stop = p.stop, title = p.title, description = p.description)
                 count++
@@ -194,6 +255,7 @@ class SyncRepository(
 
     private companion object {
         const val BATCH = 1_000
+        const val MAX_ACCOUNT_ANSWER = 64_000
         const val HOUR = 3_600_000L
         const val DAY = 24 * HOUR
     }

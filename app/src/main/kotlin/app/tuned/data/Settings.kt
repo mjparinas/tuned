@@ -105,6 +105,8 @@ data class AppSettings(
     val lastPlaylistSync: Long = 0,
     val lastGuideSync: Long = 0,
     val lastSyncError: String = "",
+    /** The Xtream server's time zone, read at each refresh; catch-up links are in its local time. */
+    val serverTimezone: String = "",
 )
 
 private val Context.dataStore by preferencesDataStore(name = "settings")
@@ -229,6 +231,7 @@ class SettingsRepository(
             lastPlaylistSync = p[K.lastPlaylistSync] ?: d.lastPlaylistSync,
             lastGuideSync = p[K.lastGuideSync] ?: d.lastGuideSync,
             lastSyncError = p[K.lastSyncError] ?: d.lastSyncError,
+            serverTimezone = p[K.serverTimezone] ?: d.serverTimezone,
         )
     }
 
@@ -282,6 +285,7 @@ class SettingsRepository(
         p[K.lastPlaylistSync] = s.lastPlaylistSync
         p[K.lastGuideSync] = s.lastGuideSync
         p[K.lastSyncError] = s.lastSyncError
+        p[K.serverTimezone] = s.serverTimezone
     }
 
     private inline fun <reified E : Enum<E>> enumOr(
@@ -336,9 +340,10 @@ class SettingsRepository(
         val lastPlaylistSync = longPreferencesKey("last_playlist_sync")
         val lastGuideSync = longPreferencesKey("last_guide_sync")
         val lastSyncError = stringPreferencesKey("last_sync_error")
+        val serverTimezone = stringPreferencesKey("server_timezone")
     }
 
     private companion object {
-        val DEVICE_ONLY = setOf(K.lastPlaylistSync.name, K.lastGuideSync.name, K.lastSyncError.name, K.lastTab.name)
+        val DEVICE_ONLY = setOf(K.lastPlaylistSync.name, K.lastGuideSync.name, K.lastSyncError.name, K.lastTab.name, K.serverTimezone.name)
     }
 }
