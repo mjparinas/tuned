@@ -157,7 +157,10 @@ class TunedApp :
         container = AppContainer(this)
         lockAdultWhenAway()
         container.appScope.launch {
-            container.settings.settings.map { it.developerMode }.distinctUntilChanged().collect { AppLog.verbose = it }
+            container.settings.settings
+                .map { it.developerMode }
+                .distinctUntilChanged()
+                .collect { AppLog.verbose = it }
         }
         // Re-plan background refreshes whenever their settings change (not on every launch).
         container.appScope.launch {

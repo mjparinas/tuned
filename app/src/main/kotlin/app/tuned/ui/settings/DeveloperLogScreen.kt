@@ -170,7 +170,12 @@ private fun CrashRow(crash: CrashReport) {
             DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT).format(Date(crash.timeMs)),
             style = MaterialTheme.typography.bodyLarge,
         )
-        val headline = crash.text.lineSequence().drop(4).firstOrNull { it.isNotBlank() }.orEmpty()
+        val headline =
+            crash.text
+                .lineSequence()
+                .drop(4)
+                .firstOrNull { it.isNotBlank() }
+                .orEmpty()
         if (open) {
             SelectionContainer { Text(crash.text, fontFamily = FontFamily.Monospace, style = MaterialTheme.typography.bodySmall) }
         } else {

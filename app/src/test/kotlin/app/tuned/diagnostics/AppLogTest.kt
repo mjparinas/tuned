@@ -46,7 +46,8 @@ class AppLogTest {
     fun `attempt logs a failure and returns it`() {
         val result = attempt<Int>("T", "Reading failed") { error("disk") }
         assertTrue(result.isFailure)
-        assertEquals("Reading failed", AppLog.snapshot().single().message.lineSequence().first())
+        val message = AppLog.snapshot().single().message
+        assertEquals("Reading failed", message.lineSequence().first())
     }
 
     @Test
@@ -70,7 +71,8 @@ class AppLogTest {
     fun `logFailures turns an unexpected failure into the fallback and logs it`() {
         val result = logFailures("Job", failed = { "failed" }) { error("database closed") }
         assertEquals("failed", result)
-        assertTrue(AppLog.snapshot().single().message.contains("database closed"))
+        val message = AppLog.snapshot().single().message
+        assertTrue("database closed" in message)
     }
 
     @Test
