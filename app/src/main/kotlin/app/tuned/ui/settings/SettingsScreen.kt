@@ -391,7 +391,7 @@ fun SettingsScreen(
             SectionHeader(stringResource(R.string.settings_tune))
             ChoiceRow(
                 stringResource(R.string.settings_tune_timeout),
-                listOf(6_000, 10_000, 15_000, 20_000),
+                listOf(5_000, 8_000, 10_000, 15_000, 20_000),
                 settings.tuneTimeoutMs,
                 label = { ms -> pluralStringResource(R.plurals.seconds, ms / 1000, ms / 1000) },
             ) { ms -> vm.update { it.copy(tuneTimeoutMs = ms) } }

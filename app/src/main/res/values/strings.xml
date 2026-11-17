@@ -128,6 +128,7 @@
     <string name="tune_quality_any">Any</string>
     <string name="tune_quality_at_least">%1$dp or better</string>
     <string name="tune_button">Auto-tune</string>
+    <string name="tune_next">Next stream</string>
     <string name="tune_trying">Finding a working channel: %1$d of %2$d</string>
     <string name="tune_none">No channel showing “%1$s” is working right now</string>
     <string name="tune_nothing_found">Nothing found for “%1$s”</string>
