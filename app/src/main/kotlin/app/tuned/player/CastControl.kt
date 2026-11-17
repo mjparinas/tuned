@@ -6,6 +6,7 @@ import androidx.core.net.toUri
 import androidx.fragment.app.FragmentActivity
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.mediarouter.app.MediaRouteButton
+import androidx.mediarouter.media.MediaRouteSelector
 import app.tuned.R
 import app.tuned.core.CastMedia
 import app.tuned.data.db.ItemEntity
@@ -28,7 +29,8 @@ import com.google.android.gms.common.images.WebImage
 /**
  * Chromecast from the player. When a cast starts, the phone stops its own stream (so only one connection to the
  * provider is ever open) and the TV plays the channel; changing channel while casting changes it on the TV, and ending
- * the cast picks the stream back up on the phone. Phones without Google Play services simply get no cast button.
+ * the cast picks the stream back up on the phone. DLNA TVs show in the same picker ([DlnaControl]); phones without
+ * Google Play services list only those.
  */
 class CastControl(
     private val activity: FragmentActivity,
@@ -43,15 +45,21 @@ class CastControl(
     private var session: CastSession? = null
     private var lastPositionMs = 0L
 
-    /** The standard cast button, or null without Play services. */
-    val button: MediaRouteButton? =
-        context?.let {
-            MediaRouteButton(ContextThemeWrapper(activity, R.style.Theme_Tuned_CastButton)).also { button ->
-                CastButtonFactory.setUpMediaRouteButton(activity.applicationContext, button)
-            }
+    /** The standard cast button, listing Chromecasts (with Play services) and DLNA TVs together. */
+    val button: MediaRouteButton =
+        MediaRouteButton(ContextThemeWrapper(activity, R.style.Theme_Tuned_CastButton)).also { button ->
+            if (context != null) CastButtonFactory.setUpMediaRouteButton(activity.applicationContext, button)
+            button.routeSelector =
+                MediaRouteSelector
+                    .Builder()
+                    .addSelector(button.routeSelector)
+                    .addSelector(DlnaRouteProvider.selector)
+                    .build()
         }
 
-    val casting get() = session?.isConnected == true
+    private val dlna = DlnaControl(activity, activity, onStarted = ::handOff, onEnded = ::ended)
+
+    val casting get() = session?.isConnected == true || dlna.active
 
     private val listener =
         object : SessionManagerListener<CastSession> {
@@ -105,15 +113,21 @@ class CastControl(
             ?.currentCastSession
             ?.takeIf { it.isConnected }
             ?.let { session = it }
+        dlna.resume()
     }
 
     /** The TV takes over: the phone lets go of its stream so the provider sees a single connection. */
     private fun started(s: CastSession) {
         session = s
+        handOff(s.castDevice?.friendlyName.orEmpty())
+    }
+
+    private fun handOff(name: String) {
+        lastPositionMs = 0L
+        onStatus(activity.getString(R.string.cast_playing_on, name))
         val exo = player() ?: return
         current()?.let { load(it, isLive(), exo.currentPosition) }
         exo.stop()
-        onStatus(activity.getString(R.string.cast_playing_on, s.castDevice?.friendlyName.orEmpty()))
     }
 
     /** Back on the phone, from where the TV was for films and episodes. */
@@ -132,6 +146,7 @@ class CastControl(
         live: Boolean,
         positionMs: Long,
     ) {
+        if (dlna.active) return dlna.load(item, live, positionMs)
         val client = session?.remoteMediaClient ?: return
         val media = CastMedia.forCast(item.url, live)
         val metadata =
@@ -158,15 +173,16 @@ class CastControl(
     }
 
     fun play() {
-        session?.remoteMediaClient?.play()
+        if (dlna.active) dlna.play() else session?.remoteMediaClient?.play()
     }
 
     fun pause() {
-        session?.remoteMediaClient?.pause()
+        if (dlna.active) dlna.pause() else session?.remoteMediaClient?.pause()
     }
 
     fun release() {
         context?.sessionManager?.removeSessionManagerListener(listener, CastSession::class.java)
+        dlna.release()
     }
 }
 
