@@ -114,22 +114,53 @@ data class ProgrammeEntity(
     val description: String?,
 )
 
-/** Favourites and watch history survive refreshes because they hold the stable id, not a row. */
-@Entity(tableName = "favourites")
+/**
+ * Favourites and watch history survive refreshes because they hold the stable id, not a row. Each profile keeps its
+ * own ([profileId]); the DAOs fill it in with the profile in use, so callers leave it out.
+ */
+@Entity(tableName = "favourites", primaryKeys = ["profileId", "itemId"])
 data class FavouriteEntity(
-    @PrimaryKey val itemId: Long,
+    val itemId: Long,
     val addedAt: Long,
     /** Where it sits in the Favourites list (Settings › Order favourites); new ones go to the end. */
     @ColumnInfo(defaultValue = "0") val position: Long = addedAt,
+    @ColumnInfo(defaultValue = "1") val profileId: Long = Profiles.FIRST,
 )
 
-@Entity(tableName = "history", indices = [Index(value = ["watchedAt"])])
+@Entity(tableName = "history", primaryKeys = ["profileId", "itemId"], indices = [Index(value = ["watchedAt"])])
 data class HistoryEntity(
-    @PrimaryKey val itemId: Long,
+    val itemId: Long,
     val positionMs: Long,
     val durationMs: Long,
     val watchedAt: Long,
+    @ColumnInfo(defaultValue = "1") val profileId: Long = Profiles.FIRST,
 )
+
+/** Who's watching (docs/decisions/profiles.md). A kids profile sees kids and family categories only. */
+@Entity(tableName = "profiles")
+data class ProfileEntity(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    /** Blank for the first profile until it's named; shown as "Me". */
+    val name: String,
+    /** An index into the accent colours, for the round badge. */
+    val colour: Int,
+    val kids: Boolean,
+    /** A [app.tuned.core.PinHash] when the profile is locked, else null. */
+    val pinHash: String?,
+    val createdAt: Long,
+)
+
+/** The one row saying which profile is in use. Queries read it in SQL, so a switch refreshes every list at once. */
+@Entity(tableName = "current_profile")
+data class CurrentProfileEntity(
+    @PrimaryKey val slot: Int = 0,
+    val profileId: Long,
+)
+
+object Profiles {
+    /** The profile every install starts with, and the one older favourites and history belong to. */
+    const val FIRST = 1L
+}
 
 /** What auto-tune learned about a live channel: when it last played or failed, and how sharp it was. */
 @Entity(tableName = "channel_health")
@@ -212,14 +243,15 @@ data class FavouriteRow(
  * A film or a show saved to watch later (Melvin, 2026-11-17). [key] is `m:<item id>` for a film or `s:<show key>` for a
  * show. The title and artwork are kept here, so the list shows without looking anything up.
  */
-@Entity(tableName = "watch_later")
+@Entity(tableName = "watch_later", primaryKeys = ["profileId", "key"])
 data class WatchLaterEntity(
-    @PrimaryKey val key: String,
+    val key: String,
     val itemId: Long?,
     val showKey: String?,
     val title: String,
     val image: String?,
     val addedAt: Long,
+    @ColumnInfo(defaultValue = "1") val profileId: Long = Profiles.FIRST,
 ) {
     companion object {
         fun movieKey(itemId: Long) = "m:$itemId"
@@ -232,10 +264,11 @@ data class WatchLaterEntity(
  * An episode that was in the list the last time its show was opened (Melvin, 2026-11-17: "new episodes"). Episodes of
  * an opened show that aren't here arrived since, and show as new. Ids are stable across refreshes, so this survives them.
  */
-@Entity(tableName = "seen_episodes", indices = [Index("showKey")])
+@Entity(tableName = "seen_episodes", primaryKeys = ["profileId", "itemId"], indices = [Index("showKey")])
 data class SeenEpisodeEntity(
-    @PrimaryKey val itemId: Long,
+    val itemId: Long,
     val showKey: String,
+    @ColumnInfo(defaultValue = "1") val profileId: Long = Profiles.FIRST,
 )
 
 /**

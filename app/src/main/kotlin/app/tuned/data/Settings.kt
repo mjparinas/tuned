@@ -12,6 +12,7 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import app.tuned.core.ChannelScan
+import app.tuned.core.KidsContent
 import app.tuned.core.PinHash
 import app.tuned.core.Placeholders
 import kotlinx.coroutines.Dispatchers
@@ -121,11 +122,25 @@ data class AppSettings(
     val lastSyncError: String = "",
     /** The Xtream server's time zone, read at each refresh; catch-up links are in its local time. */
     val serverTimezone: String = "",
+    /** Show "Who's watching?" when the app opens, while there's more than one profile. */
+    val askProfileAtStart: Boolean = true,
+    /**
+     * The profile in use, mirrored here from the database by [ProfileRepository] so the first frame knows it without
+     * opening the database. A kids profile leaves out adult and grown-up categories.
+     */
+    val profileId: Long = 1,
+    val kidsProfile: Boolean = false,
+    val profileCount: Int = 1,
 )
 
 /** Hidden countries, hidden groups and the channel filters together: the one list every query filters by. */
 fun AppSettings.hiddenKeys(): List<String> {
-    val filters = listOfNotNull(ChannelScan.HIDDEN_KEY.takeIf { hideDeadChannels }, Placeholders.HIDDEN_KEY.takeIf { hidePlaceholders })
+    val filters =
+        listOfNotNull(
+            ChannelScan.HIDDEN_KEY.takeIf { hideDeadChannels },
+            Placeholders.HIDDEN_KEY.takeIf { hidePlaceholders },
+            KidsContent.HIDDEN_KEY.takeIf { kidsProfile },
+        )
     return (hiddenRegions + hiddenGroups + filters).sorted()
 }
 
@@ -142,7 +157,7 @@ class SettingsRepository(
     private val adultUnlocked = MutableStateFlow(false)
 
     val settings: Flow<AppSettings> =
-        combine(context.dataStore.data.map(::read), adultUnlocked) { s, unlocked -> s.copy(showAdult = unlocked) }
+        combine(context.dataStore.data.map(::read), adultUnlocked) { s, unlocked -> s.copy(showAdult = unlocked && !s.kidsProfile) }
             .distinctUntilChanged()
 
     /** Whether a parental PIN has been set. */
@@ -158,16 +173,34 @@ class SettingsRepository(
         adultUnlocked.value = true
     }
 
-    /** Unlocks adult categories when [pin] matches. */
+    /** Unlocks adult categories when [pin] matches. A kids profile never unlocks them. */
     suspend fun unlockAdult(pin: String): Boolean {
-        val stored = context.dataStore.data.first()[K.adultPin] ?: return false
-        val ok = withContext(Dispatchers.Default) { PinHash.verify(pin, stored) }
+        val ok = checkAdultPin(pin)
         if (ok) adultUnlocked.value = true
         return ok
     }
 
+    /** Whether [pin] is the parental PIN, without unlocking anything. */
+    suspend fun checkAdultPin(pin: String): Boolean {
+        val stored = context.dataStore.data.first()[K.adultPin] ?: return false
+        return withContext(Dispatchers.Default) { PinHash.verify(pin, stored) }
+    }
+
     fun lockAdult() {
         adultUnlocked.value = false
+    }
+
+    /** Records the profile in use (see [AppSettings.profileId]); only [ProfileRepository] calls this. */
+    suspend fun mirrorProfile(
+        id: Long,
+        kids: Boolean,
+        count: Int,
+    ) {
+        context.dataStore.edit {
+            it[K.profileId] = id
+            it[K.kidsProfile] = kids
+            it[K.profileCount] = count
+        }
     }
 
     /** Every stored setting by its key, for a backup. Sync times and the open tab are left out: they belong to this phone. */
@@ -258,6 +291,10 @@ class SettingsRepository(
             lastGuideSync = p[K.lastGuideSync] ?: d.lastGuideSync,
             lastSyncError = p[K.lastSyncError] ?: d.lastSyncError,
             serverTimezone = p[K.serverTimezone] ?: d.serverTimezone,
+            askProfileAtStart = p[K.askProfileAtStart] ?: d.askProfileAtStart,
+            profileId = p[K.profileId] ?: d.profileId,
+            kidsProfile = p[K.kidsProfile] ?: d.kidsProfile,
+            profileCount = p[K.profileCount] ?: d.profileCount,
         )
     }
 
@@ -318,6 +355,10 @@ class SettingsRepository(
         p[K.lastGuideSync] = s.lastGuideSync
         p[K.lastSyncError] = s.lastSyncError
         p[K.serverTimezone] = s.serverTimezone
+        p[K.askProfileAtStart] = s.askProfileAtStart
+        p[K.profileId] = s.profileId
+        p[K.kidsProfile] = s.kidsProfile
+        p[K.profileCount] = s.profileCount
     }
 
     private inline fun <reified E : Enum<E>> enumOr(
@@ -379,9 +420,24 @@ class SettingsRepository(
         val lastGuideSync = longPreferencesKey("last_guide_sync")
         val lastSyncError = stringPreferencesKey("last_sync_error")
         val serverTimezone = stringPreferencesKey("server_timezone")
+        val askProfileAtStart = booleanPreferencesKey("ask_profile_at_start")
+        val profileId = longPreferencesKey("profile_id")
+        val kidsProfile = booleanPreferencesKey("kids_profile")
+        val profileCount = intPreferencesKey("profile_count")
     }
 
     private companion object {
-        val DEVICE_ONLY = setOf(K.lastPlaylistSync.name, K.lastGuideSync.name, K.lastSyncError.name, K.lastTab.name, K.serverTimezone.name)
+        val DEVICE_ONLY =
+            setOf(
+                K.lastPlaylistSync.name,
+                K.lastGuideSync.name,
+                K.lastSyncError.name,
+                K.lastTab.name,
+                K.serverTimezone.name,
+                // The profiles live in the database, which a backup doesn't hold.
+                K.profileId.name,
+                K.kidsProfile.name,
+                K.profileCount.name,
+            )
     }
 }

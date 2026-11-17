@@ -20,8 +20,10 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         WatchLaterEntity::class,
         SeenEpisodeEntity::class,
         ChannelScanEntity::class,
+        ProfileEntity::class,
+        CurrentProfileEntity::class,
     ],
-    version = 9,
+    version = 10,
     exportSchema = true,
 )
 abstract class TunedDatabase : RoomDatabase() {
@@ -43,6 +45,8 @@ abstract class TunedDatabase : RoomDatabase() {
 
     abstract fun channelScan(): ChannelScanDao
 
+    abstract fun profiles(): ProfileDao
+
     companion object {
         fun create(context: Context): TunedDatabase = Room
             .databaseBuilder(context, TunedDatabase::class.java, "tuned.db")
@@ -58,7 +62,22 @@ abstract class TunedDatabase : RoomDatabase() {
                 MIGRATION_6_7,
                 MIGRATION_7_8,
                 MIGRATION_8_9,
-            ).build()
+                MIGRATION_9_10,
+            ).addCallback(FirstProfile)
+            .build()
+
+        /** A new install starts with one profile, in use. */
+        private object FirstProfile : Callback() {
+            override fun onCreate(db: SupportSQLiteDatabase) = addFirstProfile(db)
+        }
+
+        private fun addFirstProfile(db: SupportSQLiteDatabase) {
+            db.execSQL(
+                "INSERT OR IGNORE INTO `profiles` (`id`, `name`, `colour`, `kids`, `pinHash`, `createdAt`) " +
+                    "VALUES (${Profiles.FIRST}, '', 0, 0, NULL, ${System.currentTimeMillis()})",
+            )
+            db.execSQL("INSERT OR IGNORE INTO `current_profile` (`slot`, `profileId`) VALUES (0, ${Profiles.FIRST})")
+        }
 
         /** Adds auto-tune's channel health. */
         val MIGRATION_1_2 =
@@ -150,5 +169,67 @@ abstract class TunedDatabase : RoomDatabase() {
                     )
                 }
             }
+
+        /**
+         * Adds profiles. Favourites, history, watch later and seen episodes gain a profile, and everything already
+         * there goes to the first one, so nothing is lost.
+         */
+        val MIGRATION_9_10 =
+            object : Migration(9, 10) {
+                override fun migrate(db: SupportSQLiteDatabase) {
+                    db.execSQL(
+                        "CREATE TABLE IF NOT EXISTS `profiles` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `name` TEXT NOT NULL, " +
+                            "`colour` INTEGER NOT NULL, `kids` INTEGER NOT NULL, `pinHash` TEXT, `createdAt` INTEGER NOT NULL)",
+                    )
+                    db.execSQL(
+                        "CREATE TABLE IF NOT EXISTS `current_profile` (`slot` INTEGER NOT NULL, `profileId` INTEGER NOT NULL, " +
+                            "PRIMARY KEY(`slot`))",
+                    )
+                    addFirstProfile(db)
+                    rebuild(
+                        db,
+                        "favourites",
+                        "`itemId` INTEGER NOT NULL, `addedAt` INTEGER NOT NULL, `position` INTEGER NOT NULL DEFAULT 0, " +
+                            "`profileId` INTEGER NOT NULL DEFAULT 1, PRIMARY KEY(`profileId`, `itemId`)",
+                        "`itemId`, `addedAt`, `position`",
+                    )
+                    rebuild(
+                        db,
+                        "history",
+                        "`itemId` INTEGER NOT NULL, `positionMs` INTEGER NOT NULL, `durationMs` INTEGER NOT NULL, " +
+                            "`watchedAt` INTEGER NOT NULL, `profileId` INTEGER NOT NULL DEFAULT 1, PRIMARY KEY(`profileId`, `itemId`)",
+                        "`itemId`, `positionMs`, `durationMs`, `watchedAt`",
+                    )
+                    db.execSQL("CREATE INDEX IF NOT EXISTS `index_history_watchedAt` ON `history` (`watchedAt`)")
+                    rebuild(
+                        db,
+                        "watch_later",
+                        "`key` TEXT NOT NULL, `itemId` INTEGER, `showKey` TEXT, `title` TEXT NOT NULL, `image` TEXT, " +
+                            "`addedAt` INTEGER NOT NULL, `profileId` INTEGER NOT NULL DEFAULT 1, PRIMARY KEY(`profileId`, `key`)",
+                        "`key`, `itemId`, `showKey`, `title`, `image`, `addedAt`",
+                    )
+                    rebuild(
+                        db,
+                        "seen_episodes",
+                        "`itemId` INTEGER NOT NULL, `showKey` TEXT NOT NULL, `profileId` INTEGER NOT NULL DEFAULT 1, " +
+                            "PRIMARY KEY(`profileId`, `itemId`)",
+                        "`itemId`, `showKey`",
+                    )
+                    db.execSQL("CREATE INDEX IF NOT EXISTS `index_seen_episodes_showKey` ON `seen_episodes` (`showKey`)")
+                }
+            }
+
+        /** SQLite can't change a primary key in place: copy [table] into the new shape, then swap it in. */
+        private fun rebuild(
+            db: SupportSQLiteDatabase,
+            table: String,
+            columns: String,
+            copied: String,
+        ) {
+            db.execSQL("CREATE TABLE `${table}_new` ($columns)")
+            db.execSQL("INSERT INTO `${table}_new` ($copied, `profileId`) SELECT $copied, ${Profiles.FIRST} FROM `$table`")
+            db.execSQL("DROP TABLE `$table`")
+            db.execSQL("ALTER TABLE `${table}_new` RENAME TO `$table`")
+        }
     }
 }

@@ -58,6 +58,7 @@ One file per topic in `docs/decisions/`, A to Z. Add a line when you add a topic
 - [Offline downloads](docs/decisions/offline.md): saving films and episodes, one connection at a time.
 - [Playlist and guide](docs/decisions/playlist.md): Xtream URLs, how streams are sorted, countries, refresh.
 - [Player](docs/decisions/player.md): Media3 setup, controls, captions, audio, picture-in-picture.
+- [Profiles](docs/decisions/profiles.md): who's watching, kids profiles, profile PINs.
 - [Security](docs/decisions/security.md): login storage, cleartext HTTP, backups.
 - [Speed](docs/decisions/speed.md): what keeps the app fast, and the budget.
 - [TV](docs/decisions/tv.md): Android TV launcher, focus outlines, remote keys in the player.

@@ -27,6 +27,11 @@ import kotlinx.serialization.Serializable
 
 @Serializable data object FavouriteOrderRoute
 
+/** "Who's watching?": the first screen when [atStart], else opened from Home or Settings to switch or manage. */
+@Serializable data class ProfilesRoute(
+    val atStart: Boolean = false,
+)
+
 @Serializable data class SearchRoute(
     val query: String = "",
 )

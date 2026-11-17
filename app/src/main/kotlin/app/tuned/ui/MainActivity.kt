@@ -9,6 +9,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
@@ -29,6 +30,7 @@ import app.tuned.ui.settings.CaptionSettingsScreen
 import app.tuned.ui.settings.ChannelHealthScreen
 import app.tuned.ui.settings.FavouriteOrderScreen
 import app.tuned.ui.settings.HiddenGroupsScreen
+import app.tuned.ui.settings.ProfilesScreen
 import app.tuned.ui.settings.RegionSettingsScreen
 import app.tuned.ui.settings.SettingsScreen
 import app.tuned.ui.shows.ShowScreen
@@ -82,7 +84,28 @@ class MainActivity : ComponentActivity() {
             if (container.credentials.load() != null) nav.navigate(SearchRoute(query)) { launchSingleTop = true }
             incomingSearch.value = null
         }
-        NavHost(navController = nav, startDestination = if (signedIn) HomeRoute else LoginRoute) {
+        // Decided once: a later change to the profiles mustn't swap the start of a back stack already built.
+        val start: Any =
+            remember {
+                when {
+                    !signedIn -> LoginRoute
+                    current.profileCount > 1 && current.askProfileAtStart -> ProfilesRoute(atStart = true)
+                    else -> HomeRoute
+                }
+            }
+        NavHost(navController = nav, startDestination = start) {
+            composable<ProfilesRoute> { entry ->
+                val atStart = entry.toRoute<ProfilesRoute>().atStart
+                ProfilesScreen(
+                    atStart = atStart,
+                    onPicked = {
+                        if (atStart || !nav.popBackStack(HomeRoute, inclusive = false)) {
+                            nav.navigate(HomeRoute) { popUpTo(0) { inclusive = true } }
+                        }
+                    },
+                    onBack = { nav.popBackStack() },
+                )
+            }
             composable<LoginRoute> {
                 // From sign-in or from Settings › Playlists › Add: either way the new playlist opens on its own.
                 LoginScreen(onSignedIn = {
@@ -97,6 +120,7 @@ class MainActivity : ComponentActivity() {
                     onOpenGuide = { id -> nav.navigate(GuideRoute(id)) },
                     onOpenMovie = { id -> nav.navigate(MovieRoute(id)) },
                     onOpenSettings = { nav.navigate(SettingsRoute) },
+                    onOpenProfiles = { nav.navigate(ProfilesRoute()) },
                     onOpenSearch = { nav.navigate(SearchRoute()) },
                     onOpenDownloads = { nav.navigate(DownloadsRoute) },
                     onTune = tune,
@@ -133,6 +157,7 @@ class MainActivity : ComponentActivity() {
                     onOpenChannelHealth = { nav.navigate(ChannelHealthRoute) },
                     onOpenFavouriteOrder = { nav.navigate(FavouriteOrderRoute) },
                     onOpenDownloads = { nav.navigate(DownloadsRoute) },
+                    onOpenProfiles = { nav.navigate(ProfilesRoute()) },
                     onSignedOut = {
                         nav.navigate(LoginRoute) { popUpTo(0) { inclusive = true } }
                     },

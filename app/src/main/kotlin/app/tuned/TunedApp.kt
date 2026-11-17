@@ -13,6 +13,7 @@ import app.tuned.data.CredentialStore
 import app.tuned.data.Credentials
 import app.tuned.data.MetadataRepository
 import app.tuned.data.Offline
+import app.tuned.data.ProfileRepository
 import app.tuned.data.SettingsRepository
 import app.tuned.data.SyncRepository
 import app.tuned.data.TuneRepository
@@ -71,6 +72,7 @@ class AppContainer(
     val reminders by lazy { Reminders(context) }
     val offline by lazy { Offline(context, db, settings) }
     val metadata by lazy { MetadataRepository(http, settings, db.metadata()) }
+    val profiles by lazy { ProfileRepository(db, settings) }
 
     /** True while the player is open; downloads and channel scans hold back so only one stream is ever open. */
     val playerOpen = MutableStateFlow(false)
@@ -130,6 +132,7 @@ class TunedApp :
         super.onCreate()
         container = AppContainer(this)
         lockAdultWhenAway()
+        container.appScope.launch { container.profiles.sync() }
         // Re-plan background refreshes whenever their settings change (not on every launch).
         container.appScope.launch {
             container.settings.settings
