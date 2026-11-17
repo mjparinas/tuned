@@ -31,3 +31,6 @@ import kotlinx.serialization.Serializable
 @Serializable data class MovieRoute(
     val itemId: Long,
 )
+
+/** Settings › Downloads. */
+@Serializable data object DownloadsRoute

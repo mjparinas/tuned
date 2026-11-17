@@ -23,6 +23,7 @@ import app.tuned.ui.browse.HomeScreen
 import app.tuned.ui.details.MovieScreen
 import app.tuned.ui.guide.GuideScreen
 import app.tuned.ui.login.LoginScreen
+import app.tuned.ui.offline.DownloadsScreen
 import app.tuned.ui.search.SearchScreen
 import app.tuned.ui.settings.CaptionSettingsScreen
 import app.tuned.ui.settings.FavouriteOrderScreen
@@ -127,12 +128,16 @@ class MainActivity : ComponentActivity() {
                     onOpenCaptions = { nav.navigate(CaptionSettingsRoute) },
                     onOpenRegions = { nav.navigate(RegionSettingsRoute) },
                     onOpenFavouriteOrder = { nav.navigate(FavouriteOrderRoute) },
+                    onOpenDownloads = { nav.navigate(DownloadsRoute) },
                     onSignedOut = {
                         nav.navigate(LoginRoute) { popUpTo(0) { inclusive = true } }
                     },
                     onAddPlaylist = { nav.navigate(LoginRoute) },
                     onSwitchedPlaylist = { nav.navigate(HomeRoute) { popUpTo(0) { inclusive = true } } },
                 )
+            }
+            composable<DownloadsRoute> {
+                DownloadsScreen(onPlay = play, onBack = { nav.popBackStack() })
             }
             composable<CaptionSettingsRoute> {
                 CaptionSettingsScreen(settings = current, onBack = { nav.popBackStack() })

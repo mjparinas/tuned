@@ -150,6 +150,7 @@ fun SettingsScreen(
     onOpenCaptions: () -> Unit,
     onOpenRegions: () -> Unit,
     onOpenFavouriteOrder: () -> Unit,
+    onOpenDownloads: () -> Unit,
     onSignedOut: () -> Unit,
     onAddPlaylist: () -> Unit,
     onSwitchedPlaylist: () -> Unit,
@@ -194,6 +195,12 @@ fun SettingsScreen(
                     pluralStringResource(R.plurals.countries_hidden, settings.hiddenRegions.size, settings.hiddenRegions.size)
                 },
                 onClick = onOpenRegions,
+                trailing = { Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null) },
+            )
+            SettingRow(
+                stringResource(R.string.downloads),
+                stringResource(R.string.downloads_summary),
+                onClick = onOpenDownloads,
                 trailing = { Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null) },
             )
             SettingRow(

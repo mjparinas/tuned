@@ -51,6 +51,7 @@ import app.tuned.ui.details.DetailsBody
 import app.tuned.ui.details.DetailsViewModel
 import app.tuned.ui.details.MetaLine
 import app.tuned.ui.details.TrailerButton
+import app.tuned.ui.offline.DownloadButton
 import coil3.compose.AsyncImage
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -177,5 +178,6 @@ private fun EpisodeRow(
                 )
             }
         }
+        DownloadButton(episode)
     }
 }

@@ -34,6 +34,27 @@ data class ItemEntity(
     val sortOrder: Int,
 )
 
+/** A film or episode saved for watching offline. Kept across playlist refreshes, like favourites. */
+@Entity(tableName = "downloads")
+data class DownloadEntity(
+    @PrimaryKey val itemId: Long,
+    val name: String,
+    val url: String,
+    /** Where the finished file is (app storage, removed with the app). */
+    val path: String,
+    val bytes: Long = 0,
+    /** The full size, or -1 while unknown. */
+    val total: Long = -1,
+    val state: Int = QUEUED,
+    val addedAt: Long,
+) {
+    companion object {
+        const val QUEUED = 0
+        const val DONE = 1
+        const val FAILED = 2
+    }
+}
+
 /**
  * What TMDB said about a film or show, kept on the device so details and ratings load without the network.
  * [full] is false when only the search answer (rating, summary, artwork) is known, true once the details page has

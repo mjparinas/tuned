@@ -383,6 +383,40 @@ interface CatchUpDao {
 }
 
 @Dao
+interface DownloadDao {
+    @Upsert
+    suspend fun upsert(row: DownloadEntity)
+
+    @Query("DELETE FROM downloads WHERE itemId = :itemId")
+    suspend fun delete(itemId: Long)
+
+    @Query("SELECT * FROM downloads WHERE itemId = :itemId")
+    suspend fun get(itemId: Long): DownloadEntity?
+
+    @Query("SELECT * FROM downloads WHERE itemId IN (:ids) AND state = 1")
+    suspend fun done(ids: List<Long>): List<DownloadEntity>
+
+    @Query("SELECT * FROM downloads ORDER BY addedAt DESC")
+    fun all(): Flow<List<DownloadEntity>>
+
+    @Query("SELECT * FROM downloads WHERE state = 0 ORDER BY addedAt LIMIT 1")
+    suspend fun next(): DownloadEntity?
+
+    @Query("UPDATE downloads SET bytes = :bytes, total = :total WHERE itemId = :itemId")
+    suspend fun progress(
+        itemId: Long,
+        bytes: Long,
+        total: Long,
+    )
+
+    @Query("UPDATE downloads SET state = :state WHERE itemId = :itemId")
+    suspend fun state(
+        itemId: Long,
+        state: Int,
+    )
+}
+
+@Dao
 interface MetadataDao {
     @Upsert
     suspend fun upsert(row: MetadataEntity)
