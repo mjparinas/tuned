@@ -1,8 +1,11 @@
 package app.tuned.data
 
+import app.tuned.core.MetadataCache
 import app.tuned.core.Tmdb
 import app.tuned.data.db.MetadataDao
 import app.tuned.data.db.MetadataEntity
+import app.tuned.diagnostics.launchSafely
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.sync.Mutex
@@ -42,13 +45,16 @@ data class Metadata(
 
 /**
  * Looks films and shows up on TMDB with the key from Settings and keeps every answer in the database, so a page or
- * a rating seen once loads from the device after that (Melvin, 2026-11-17). Answers are refreshed after a month,
- * and "nothing found" after a week. Without a key nothing is asked.
+ * a rating seen once loads from the device after that (Melvin, 2026-11-17: "grab from the cache first"). The device's
+ * answer always comes first: an answer over a month old (a week for "nothing found") is still shown at once and
+ * refreshed behind it, and nothing is asked while the device is offline. Without a key nothing is asked.
  */
 class MetadataRepository(
     private val http: OkHttpClient,
     private val settings: SettingsRepository,
     private val dao: MetadataDao,
+    private val scope: CoroutineScope,
+    private val online: () -> Boolean,
 ) {
     private val json = Json { ignoreUnknownKeys = true }
 
@@ -84,16 +90,49 @@ class MetadataRepository(
         full: Boolean,
     ): Metadata? {
         val key = cacheKey(name, tv)
-        return locks.getOrPut(key) { Mutex() }.withLock {
+        val lock = locks.getOrPut(key) { Mutex() }
+        return lock.withLock {
             val row = dao.get(key)
-            val now = System.currentTimeMillis()
-            val fresh = row != null && now - row.fetchedAt < if (row.found) KEEP_MS else KEEP_MISSING_MS
-            when {
-                row != null && fresh && (!row.found || row.full || !full) -> row.takeIf { it.found }?.toMetadata()
-                else -> fetch(key, name, tv, full, row)
+            when (decide(row, full)) {
+                MetadataCache.Use.CACHED -> {
+                    row?.takeIf { it.found }?.toMetadata()
+                }
+
+                MetadataCache.Use.CACHED_THEN_REFRESH -> {
+                    scope.launchSafely(TAG) { refresh(key, name, tv, full) }
+                    row?.takeIf { it.found }?.toMetadata()
+                }
+
+                MetadataCache.Use.FETCH -> {
+                    fetch(key, name, tv, full, row)
+                }
             }
         }
     }
+
+    /** Behind a stale answer already shown: fetched once, however many screens asked meanwhile. */
+    private suspend fun refresh(
+        key: String,
+        name: String,
+        tv: Boolean,
+        full: Boolean,
+    ) {
+        locks.getOrPut(key) { Mutex() }.withLock {
+            val row = dao.get(key)
+            // A details page's answer stays one when a poster refreshes it, so the cast isn't lost.
+            if (decide(row, full) == MetadataCache.Use.CACHED_THEN_REFRESH) fetch(key, name, tv, full || row?.full == true, row)
+        }
+    }
+
+    private fun decide(
+        row: MetadataEntity?,
+        full: Boolean,
+    ) = MetadataCache.decide(
+        row = row?.let { MetadataCache.Row(found = it.found, full = it.full, fetchedAt = it.fetchedAt) },
+        wantFull = full,
+        now = System.currentTimeMillis(),
+        online = online(),
+    )
 
     private suspend fun fetch(
         cacheKey: String,
@@ -262,7 +301,6 @@ class MetadataRepository(
     private companion object {
         const val MIN_VOTES = 10
         const val MAX_CAST = 15
-        const val KEEP_MS = 30L * 24 * 3_600_000
-        const val KEEP_MISSING_MS = 7L * 24 * 3_600_000
+        const val TAG = "Metadata"
     }
 }

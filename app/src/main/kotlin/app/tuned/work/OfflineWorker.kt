@@ -44,6 +44,8 @@ class OfflineWorker(
         attempt(TAG, "Couldn't run as a foreground service") { setForeground(foregroundInfo(null)) }
         while (true) {
             val row = dao.next() ?: return Result.success()
+            // Its page first (details, poster, cast photos), so it looks the same offline; a few small requests.
+            attempt(TAG, "Couldn't save the artwork for ${row.name}") { container.savedArtwork.keep(row.itemId) }
             try {
                 downloader.download(row.url, File(row.path), ua) { bytes, total -> report(row, bytes, total) }
                 val size = File(row.path).length()
