@@ -89,6 +89,12 @@ class GuideViewModel(
         viewModelScope.launchSafely("Guide") { channel.value = db.items().get(id) }
     }
 
+    /** After a guide fix: the channel's guide id may have changed, so read it again. */
+    fun reload() {
+        val id = channel.value?.id ?: return
+        viewModelScope.launchSafely("Guide") { channel.value = db.items().get(id) }
+    }
+
     /** Days of recordings the channel keeps (catch-up), 0 for none. */
     val catchUpDays: StateFlow<Int> =
         channel
