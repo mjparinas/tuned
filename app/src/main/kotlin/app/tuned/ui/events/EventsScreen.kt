@@ -151,17 +151,16 @@ class EventsViewModel(
         const val TAG = "Events"
         const val REFRESH_MS = 60_000L
 
-        fun midnightAfter(now: Long): Long =
-            Calendar
-                .getInstance()
-                .apply {
-                    timeInMillis = now
-                    set(Calendar.HOUR_OF_DAY, 0)
-                    set(Calendar.MINUTE, 0)
-                    set(Calendar.SECOND, 0)
-                    set(Calendar.MILLISECOND, 0)
-                    add(Calendar.DAY_OF_MONTH, 1)
-                }.timeInMillis
+        fun midnightAfter(now: Long): Long = Calendar
+            .getInstance()
+            .apply {
+                timeInMillis = now
+                set(Calendar.HOUR_OF_DAY, 0)
+                set(Calendar.MINUTE, 0)
+                set(Calendar.SECOND, 0)
+                set(Calendar.MILLISECOND, 0)
+                add(Calendar.DAY_OF_MONTH, 1)
+            }.timeInMillis
     }
 }
 
@@ -188,8 +187,14 @@ fun EventsScreen(
             item(key = "follow") { FollowRow(followed, vm::follow, vm::unfollow) }
             val s = sections
             when {
-                s == null -> item(key = "loading") { Loading() }
-                s.empty -> item(key = "empty") { Empty() }
+                s == null -> {
+                    item(key = "loading") { Loading() }
+                }
+
+                s.empty -> {
+                    item(key = "empty") { Empty() }
+                }
+
                 else -> {
                     val row = EventRowActions(now, alerts, onTune, toggleAlert)
                     section(R.string.events_following, s.following, row)
