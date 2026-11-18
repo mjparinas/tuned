@@ -105,46 +105,46 @@ object Fmp4 {
                         u8(0)
                     },
                 )
+                bytes(minf(t))
+            },
+        )
+    }
+
+    private fun minf(t: Track): ByteArray = box("minf") {
+        bytes(
+            if (t.video) {
+                fullBox("vmhd", 0, 1) { zeros(8) }
+            } else {
+                fullBox("smhd", 0, 0) { zeros(4) }
+            },
+        )
+        bytes(
+            box("dinf") {
                 bytes(
-                    box("minf") {
-                        bytes(
-                            if (t.video) {
-                                fullBox("vmhd", 0, 1) { zeros(8) }
-                            } else {
-                                fullBox("smhd", 0, 0) { zeros(4) }
-                            },
-                        )
-                        bytes(
-                            box("dinf") {
-                                bytes(
-                                    fullBox("dref", 0, 0) {
-                                        u32(1)
-                                        bytes(fullBox("url ", 0, 1) {})
-                                    },
-                                )
-                            },
-                        )
-                        bytes(
-                            box("stbl") {
-                                bytes(
-                                    fullBox("stsd", 0, 0) {
-                                        u32(1)
-                                        bytes(t.entry)
-                                    },
-                                )
-                                bytes(fullBox("stts", 0, 0) { u32(0) })
-                                bytes(fullBox("stsc", 0, 0) { u32(0) })
-                                bytes(
-                                    fullBox("stsz", 0, 0) {
-                                        u32(0)
-                                        u32(0)
-                                    },
-                                )
-                                bytes(fullBox("stco", 0, 0) { u32(0) })
-                            },
-                        )
+                    fullBox("dref", 0, 0) {
+                        u32(1)
+                        bytes(fullBox("url ", 0, 1) {})
                     },
                 )
+            },
+        )
+        bytes(
+            box("stbl") {
+                bytes(
+                    fullBox("stsd", 0, 0) {
+                        u32(1)
+                        bytes(t.entry)
+                    },
+                )
+                bytes(fullBox("stts", 0, 0) { u32(0) })
+                bytes(fullBox("stsc", 0, 0) { u32(0) })
+                bytes(
+                    fullBox("stsz", 0, 0) {
+                        u32(0)
+                        u32(0)
+                    },
+                )
+                bytes(fullBox("stco", 0, 0) { u32(0) })
             },
         )
     }
