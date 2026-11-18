@@ -31,8 +31,8 @@ import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.MultipartBody
 import okhttp3.OkHttpClient
 import okhttp3.Request
-import okhttp3.Response
 import okhttp3.RequestBody.Companion.toRequestBody
+import okhttp3.Response
 import java.io.IOException
 
 /**
@@ -90,7 +90,14 @@ class GoogleDrive(
                 .add("client_id", BuildConfig.GOOGLE_TV_CLIENT_ID)
                 .add("scope", CloudSync.SCOPE)
                 .build()
-        val answer = send(Request.Builder().url(DEVICE_CODE_URL).post(form).build()) ?: return null
+        val answer =
+            send(
+                Request
+                    .Builder()
+                    .url(DEVICE_CODE_URL)
+                    .post(form)
+                    .build(),
+            ) ?: return null
         if (answer.first != HTTP_OK) return null
         return attempt(TAG, "Couldn't read Google's sign-in code") {
             json.decodeFromString(DeviceCode.serializer(), answer.second)
@@ -111,7 +118,14 @@ class GoogleDrive(
                 .build()
         while (System.currentTimeMillis() < until) {
             delay(wait)
-            val answer = send(Request.Builder().url(TOKEN_URL).post(form).build())
+            val answer =
+                send(
+                    Request
+                        .Builder()
+                        .url(TOKEN_URL)
+                        .post(form)
+                        .build(),
+                )
             val poll = answer?.let { CloudSync.poll(it.first, errorOf(it.second)) } ?: CloudSync.Poll.WAIT
             when (poll) {
                 CloudSync.Poll.SIGNED_IN -> return if (saveTokens(requireNotNull(answer).second)) poll else CloudSync.Poll.FAILED
@@ -129,7 +143,13 @@ class GoogleDrive(
         forget()
         if (refresh != null) {
             val form = FormBody.Builder().add("token", refresh).build()
-            send(Request.Builder().url(REVOKE_URL).post(form).build())
+            send(
+                Request
+                    .Builder()
+                    .url(REVOKE_URL)
+                    .post(form)
+                    .build(),
+            )
         }
     }
 
@@ -155,7 +175,12 @@ class GoogleDrive(
         return Remote(
             id = requireNotNull(file["id"]).jsonPrimitive.content,
             fingerprint = props?.get(PROP_FINGERPRINT)?.jsonPrimitive?.content,
-            changedAt = props?.get(PROP_CHANGED)?.jsonPrimitive?.content?.toLongOrNull() ?: 0,
+            changedAt =
+                props
+                    ?.get(PROP_CHANGED)
+                    ?.jsonPrimitive
+                    ?.content
+                    ?.toLongOrNull() ?: 0,
         )
     }
 
@@ -224,7 +249,14 @@ class GoogleDrive(
                 .add("refresh_token", refresh)
                 .add("grant_type", "refresh_token")
                 .build()
-        val answer = send(Request.Builder().url(TOKEN_URL).post(form).build()) ?: return@withLock null
+        val answer =
+            send(
+                Request
+                    .Builder()
+                    .url(TOKEN_URL)
+                    .post(form)
+                    .build(),
+            ) ?: return@withLock null
         when {
             answer.first == HTTP_OK && saveTokens(answer.second) -> {
                 access

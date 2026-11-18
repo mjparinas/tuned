@@ -147,7 +147,11 @@ class BackupRepository(
         contents.favourites.forEach { library.addFavourite(FavouriteEntity(it.itemId, it.addedAt, it.position)) }
         val later = db.watchLater()
         val keep = contents.watchLater.map { it.key }.toSet()
-        later.all().first().filter { it.key !in keep }.forEach { later.remove(it.key) }
+        later
+            .all()
+            .first()
+            .filter { it.key !in keep }
+            .forEach { later.remove(it.key) }
         contents.watchLater.forEach { later.add(WatchLaterEntity(it.key, it.itemId, it.showKey, it.title, it.image, it.addedAt)) }
         contents.playlists.forEach { credentials.remember(it.toCredentials()) }
         val first = contents.playlists.firstOrNull()
