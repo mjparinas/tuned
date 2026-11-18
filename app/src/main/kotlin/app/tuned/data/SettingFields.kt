@@ -111,6 +111,7 @@ internal val SETTING_FIELDS: List<SettingField<*, *>> =
         bool("pull_to_refresh", { pullToRefresh }) { copy(pullToRefresh = it) },
         // What's hidden
         stringSet("hidden_regions", { hiddenRegions }) { copy(hiddenRegions = it) },
+        stringSet("seen_regions", { seenRegions }) { copy(seenRegions = it) }.notBackedUp(),
         stringSet("hidden_groups", { hiddenGroups }) { copy(hiddenGroups = it) },
         bool("hide_dead_channels", { hideDeadChannels }) { copy(hideDeadChannels = it) },
         bool("hide_failed_on_play", { hideFailedOnPlay }) { copy(hideFailedOnPlay = it) },

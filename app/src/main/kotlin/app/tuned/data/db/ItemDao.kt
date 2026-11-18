@@ -456,4 +456,8 @@ interface ItemDao {
 
     @Query("SELECT region, COUNT(*) AS count FROM items WHERE region IS NOT NULL GROUP BY region ORDER BY count DESC")
     fun regions(): Flow<List<RegionCount>>
+
+    /** Every region in the playlist, through the region index. */
+    @Query("SELECT DISTINCT region FROM items WHERE region IS NOT NULL")
+    suspend fun regionTags(): List<String>
 }

@@ -6,6 +6,7 @@ import android.os.StrictMode
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.ProcessLifecycleOwner
+import app.tuned.data.settleNewRegions
 import app.tuned.diagnostics.AppLog
 import app.tuned.diagnostics.CrashReporter
 import app.tuned.diagnostics.launchSafely
@@ -55,6 +56,8 @@ class TunedApp :
         lockAdultWhenAway()
         CloudSyncWorker.watch(this)
         container.appScope.launchSafely("Profiles") { container.profiles.sync() }
+        // Remember the countries already there, so ones a refresh adds can follow the rest.
+        container.appScope.launchSafely("Regions") { settleNewRegions(container.db, container.settings) }
         container.appScope.launch {
             container.settings.settings
                 .map { it.developerMode }
