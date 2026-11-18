@@ -106,6 +106,9 @@ class PlayerActivity : FragmentActivity() {
     private val levelBars by lazy { LevelBars(this) }
     private lateinit var tools: PlayerTools
     private var cast: CastControl? = null
+
+    /** Saved copies in the queue, by item id: played from the device here, and served from the phone when casting. */
+    private var savedFiles: Map<Long, File> = emptyMap()
     private val subtitleTiming = SubtitleTiming()
     private var reconnect: ConnectivityManager.NetworkCallback? = null
     private var autoTune: AutoTune? = null
@@ -314,6 +317,7 @@ class PlayerActivity : FragmentActivity() {
                 player = { player },
                 current = { player?.let { queue.getOrNull(it.currentMediaItemIndex) } },
                 isLive = ::live,
+                savedFile = { id -> savedFiles[id] },
                 onStatus = { text -> if (text == null) statusView.visibility = View.GONE else showStatus(text) },
             ).also { c -> tools.addButton(c.button) }
     }
@@ -441,6 +445,7 @@ class PlayerActivity : FragmentActivity() {
 
         // Saved films and episodes play from the device.
         val local = container.offline.files(queue.map { it.id })
+        savedFiles = local
         // Offline with a saved episode: next and previous keep to the saved ones, which are all that can play.
         if (item.id in local && !container.connectivity.onlineNow()) {
             queue = queue.filter { it.id in local }

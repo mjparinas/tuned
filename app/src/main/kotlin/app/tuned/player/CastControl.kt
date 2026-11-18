@@ -10,6 +10,7 @@ import androidx.mediarouter.app.MediaRouteButton
 import androidx.mediarouter.media.MediaRouteSelector
 import app.tuned.R
 import app.tuned.core.CastMedia
+import app.tuned.core.FileServer
 import app.tuned.core.StreamLink
 import app.tuned.data.db.ItemEntity
 import app.tuned.diagnostics.AppLog
@@ -34,6 +35,9 @@ import com.google.android.gms.cast.framework.media.CastMediaOptions
 import com.google.android.gms.cast.framework.media.NotificationOptions
 import com.google.android.gms.cast.framework.media.RemoteMediaClient
 import com.google.android.gms.common.images.WebImage
+import java.io.File
+import java.net.Inet4Address
+import java.net.NetworkInterface
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 
@@ -53,6 +57,8 @@ class CastControl(
     private val player: () -> ExoPlayer?,
     private val current: () -> ItemEntity?,
     private val isLive: () -> Boolean,
+    /** The saved copy of a film or episode, by item id, which the TV is given from the phone instead of the stream. */
+    private val savedFile: (Long) -> File?,
     /** Shows a lasting note over the video ("Playing on Living Room TV"), or hides it with null. */
     private val onStatus: (String?) -> Unit,
 ) {
@@ -62,6 +68,7 @@ class CastControl(
     private var session: CastSession? = null
     private var lastPositionMs = 0L
     private var retry: Job? = null
+    private var files: FileServer? = null
     private var lastPlayerState = MediaStatus.PLAYER_STATE_UNKNOWN
 
     /** What the TV says about the media: logged, so a cast that shows "No media selected" says why. */
@@ -188,6 +195,7 @@ class CastControl(
     /** Back on the phone, from where the TV was for films and episodes. */
     private fun ended() {
         retry?.cancel()
+        stopServing()
         session?.remoteMediaClient?.unregisterCallback(mediaCallback)
         session = null
         onStatus(null)
@@ -203,35 +211,54 @@ class CastControl(
         live: Boolean,
         positionMs: Long,
     ) {
-        if (dlna.active) return dlna.load(item, live, positionMs)
         retry?.cancel()
-        send(item, live, positionMs, attempt = 1)
+        // A saved film or episode plays from the phone, never the provider ("saved before streamed").
+        val saved = savedFile(item.id)
+        val savedUrl =
+            saved?.let { file ->
+                serve(file) ?: run {
+                    AppLog.w(TAG, "${file.name} is saved, but the phone has no Wi-Fi address to serve it from")
+                    onStatus(activity.getString(R.string.cast_no_wifi))
+                    return
+                }
+            }
+        if (dlna.active) return dlna.load(item, live, positionMs, savedUrl)
+        val media =
+            if (saved != null && savedUrl != null) {
+                CastMedia.Media(savedUrl, CastMedia.mimeFor(saved.name))
+            } else {
+                CastMedia.forCast(StreamLink.address(item.url), live) // a Chromecast takes no extra headers
+            }
+        send(Request(item, live, positionMs, media, attempt = 1))
     }
 
-    private fun send(
-        item: ItemEntity,
-        live: Boolean,
-        positionMs: Long,
-        attempt: Int,
-    ) {
+    /** One load sent to a Chromecast, kept to send again as it was. */
+    private data class Request(
+        val item: ItemEntity,
+        val live: Boolean,
+        val positionMs: Long,
+        val media: CastMedia.Media,
+        val attempt: Int,
+    )
+
+    private fun send(r: Request) {
         val s = session ?: return AppLog.w(TAG, "Not connected to a TV, so nothing was sent")
         val client = s.remoteMediaClient ?: return AppLog.w(TAG, "${name(s)} isn't ready for media yet")
-        val media = CastMedia.forCast(StreamLink.address(item.url), live) // a Chromecast takes no extra headers
         AppLog.i(TAG) {
-            "Sending to ${name(s)}, try $attempt: ${media.url} as ${media.mimeType}, " +
-                if (live) "live" else "from ${positionMs / MS_PER_S} s"
+            "Sending to ${name(s)}, try ${r.attempt}: ${r.media.url} as ${r.media.mimeType}, " +
+                if (r.live) "live" else "from ${r.positionMs / MS_PER_S} s"
         }
         val metadata =
-            MediaMetadata(if (live) MediaMetadata.MEDIA_TYPE_GENERIC else MediaMetadata.MEDIA_TYPE_MOVIE).apply {
-                putString(MediaMetadata.KEY_TITLE, item.name)
-                putString(MediaMetadata.KEY_SUBTITLE, item.groupName)
-                item.logo?.let { addImage(WebImage(it.toUri())) }
+            MediaMetadata(if (r.live) MediaMetadata.MEDIA_TYPE_GENERIC else MediaMetadata.MEDIA_TYPE_MOVIE).apply {
+                putString(MediaMetadata.KEY_TITLE, r.item.name)
+                putString(MediaMetadata.KEY_SUBTITLE, r.item.groupName)
+                r.item.logo?.let { addImage(WebImage(it.toUri())) }
             }
         val info =
             MediaInfo
-                .Builder(media.url)
-                .setStreamType(if (live) MediaInfo.STREAM_TYPE_LIVE else MediaInfo.STREAM_TYPE_BUFFERED)
-                .setContentType(media.mimeType)
+                .Builder(r.media.url)
+                .setStreamType(if (r.live) MediaInfo.STREAM_TYPE_LIVE else MediaInfo.STREAM_TYPE_BUFFERED)
+                .setContentType(r.media.mimeType)
                 .setMetadata(metadata)
                 .build()
         client
@@ -240,25 +267,21 @@ class CastControl(
                     .Builder()
                     .setMediaInfo(info)
                     .setAutoplay(true)
-                    .setCurrentTime(if (live) 0 else positionMs.coerceAtLeast(0))
+                    .setCurrentTime(if (r.live) 0 else r.positionMs.coerceAtLeast(0))
                     .build(),
-            ).setResultCallback { result -> loaded(result.status.isSuccess, result.status.statusCode, s, item, live, positionMs, attempt) }
+            ).setResultCallback { result -> loaded(result.status.isSuccess, result.status.statusCode, s, r) }
     }
 
-    @Suppress("LongParameterList") // the one load being answered, to try again as it was
     private fun loaded(
         ok: Boolean,
         status: Int,
         s: CastSession,
-        item: ItemEntity,
-        live: Boolean,
-        positionMs: Long,
-        attempt: Int,
+        r: Request,
     ) {
         if (ok) return AppLog.i(TAG) { "${name(s)} took it" }
-        AppLog.w(TAG, "${name(s)} couldn't load it, try $attempt: ${code(status)}")
+        AppLog.w(TAG, "${name(s)} couldn't load it, try ${r.attempt}: ${code(status)}")
         if (session !== s) return
-        val wait = CastMedia.retryDelayMs(attempt)
+        val wait = CastMedia.retryDelayMs(r.attempt)
         if (wait == null) {
             onStatus(activity.getString(R.string.cast_failed, name(s)))
             return
@@ -266,8 +289,37 @@ class CastControl(
         retry =
             activity.lifecycleScope.launchSafely(TAG) {
                 delay(wait)
-                if (session === s) send(item, live, positionMs, attempt + 1)
+                if (session === s) send(r.copy(attempt = r.attempt + 1))
             }
+    }
+
+    /** The address a TV on the same Wi-Fi can fetch [file] from, or null when the phone has no local address. */
+    private fun serve(file: File): String? {
+        val host = localAddress() ?: return null
+        val server =
+            files ?: attempt(TAG, "Couldn't start sharing saved files") { FileServer { line -> AppLog.d(TAG) { line } } }
+                .getOrNull()
+                ?.also { files = it }
+                ?: return null
+        return "http://$host:${server.port}${server.share(file)}"
+    }
+
+    /** The phone's address on the local network (Wi-Fi first), which the TV can reach. */
+    private fun localAddress(): String? =
+        attempt(TAG, "Couldn't read the phone's network address") {
+            NetworkInterface
+                .getNetworkInterfaces()
+                .toList()
+                .filter { it.isUp && !it.isLoopback }
+                .sortedByDescending { it.name.startsWith("wlan") }
+                .flatMap { it.inetAddresses.toList() }
+                .firstOrNull { it is Inet4Address && it.isSiteLocalAddress }
+                ?.hostAddress
+        }.getOrNull()
+
+    private fun stopServing() {
+        files?.close()
+        files = null
     }
 
     fun play() {
@@ -280,6 +332,7 @@ class CastControl(
 
     fun release() {
         retry?.cancel()
+        stopServing()
         session?.remoteMediaClient?.unregisterCallback(mediaCallback)
         context?.sessionManager?.removeSessionManagerListener(listener, CastSession::class.java)
         dlna.release()

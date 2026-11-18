@@ -86,9 +86,11 @@ class DlnaControl(
         item: ItemEntity,
         live: Boolean,
         positionMs: Long,
+        /** The phone's own address for a saved copy, played instead of the stream. */
+        savedUrl: String? = null,
     ) {
         send(Dlna.stop(), "Stop")
-        val url = StreamLink.address(item.url) // a TV takes no extra headers
+        val url = savedUrl ?: StreamLink.address(item.url) // a TV takes no extra headers
         AppLog.i("Dlna") { "Sending to the TV: $url (${Dlna.mimeFor(url)}), live=$live, from ${positionMs / 1000} s" }
         send(Dlna.setUri(url, item.name, Dlna.mimeFor(url)), "SetAVTransportURI")
         send(Dlna.play(), "Play")

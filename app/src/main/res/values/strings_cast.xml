@@ -2,4 +2,5 @@
 <resources>
     <string name="cast_playing_on">Playing on %1$s</string>
     <string name="cast_failed">%1$s couldn\'t play this. Settings › Developer › Logs has the details.</string>
+    <string name="cast_no_wifi">Connect the phone to the same Wi-Fi as the TV to cast a saved film or episode.</string>
 </resources>
