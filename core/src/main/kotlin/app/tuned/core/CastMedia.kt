@@ -37,5 +37,13 @@ object CastMedia {
         else -> "video/*"
     }
 
+    /**
+     * How long to wait before sending a load the TV turned down once more, or null to give up. A provider that allows
+     * one connection can still count the phone's for a moment after it closes, so the first refusal gets one more try.
+     */
+    fun retryDelayMs(attempt: Int): Long? = if (attempt < TRIES) RETRY_DELAY_MS else null
+
+    private const val TRIES = 2
+    private const val RETRY_DELAY_MS = 3_000L
     private const val HLS = "application/x-mpegURL"
 }

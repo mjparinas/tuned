@@ -1,6 +1,6 @@
 name: Release
 
-# On every promotion to main (nightly or by hand; promote-staging.yml dispatches this, because a merge made with
+# On every promotion to main (by hand; promote-staging.yml dispatches this, because a merge made with
 # GITHUB_TOKEN doesn't fire `push`) and on demand (Actions › Release › Run workflow, from any branch):
 #   - builds a signed APK and publishes it as a GitHub release tagged v<version> (for example v1.2.0). Installed
 #     copies find it and offer to update (docs/decisions/updates.md);

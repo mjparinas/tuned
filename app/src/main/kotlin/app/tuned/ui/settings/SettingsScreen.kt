@@ -230,9 +230,19 @@ fun SettingsScreen(
             }
             pinDialog?.let { mode -> PinDialog(mode, vm, onDone = { pinDialog = null }) }
             SwitchRow(
+                stringResource(R.string.settings_hide_247),
+                settings.hide247,
+                stringResource(R.string.settings_hide_247_summary),
+            ) { on -> vm.update { it.copy(hide247 = on) } }
+            SwitchRow(
                 stringResource(R.string.settings_guide_in_list),
                 settings.showGuideInList,
             ) { on -> vm.update { it.copy(showGuideInList = on) } }
+            SwitchRow(
+                stringResource(R.string.settings_live_grid),
+                settings.liveGrid,
+                summary = stringResource(R.string.settings_live_grid_summary),
+            ) { on -> vm.update { it.copy(liveGrid = on) } }
             ChoiceRow(
                 stringResource(R.string.settings_start_tab),
                 StartTab.entries,
@@ -330,6 +340,18 @@ fun SettingsScreen(
                 settings.matchFrameRate,
                 stringResource(R.string.settings_match_frame_rate_summary),
             ) { on -> vm.update { it.copy(matchFrameRate = on) } }
+            ChoiceRow(
+                stringResource(R.string.settings_live_rewind),
+                listOf(0, 15, 30, 60),
+                settings.liveRewindMinutes,
+                label = { m ->
+                    if (m == 0) {
+                        stringResource(R.string.settings_live_rewind_off)
+                    } else {
+                        pluralStringResource(R.plurals.settings_live_rewind_minutes, m, m)
+                    }
+                },
+            ) { m -> vm.update { it.copy(liveRewindMinutes = m) } }
             SwitchRow(
                 stringResource(R.string.settings_landscape),
                 settings.landscapePlayback,

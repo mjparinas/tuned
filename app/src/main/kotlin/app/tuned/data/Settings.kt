@@ -16,6 +16,7 @@ import androidx.datastore.preferences.preferencesDataStore
 import app.tuned.core.ChannelScan
 import app.tuned.core.PinHash
 import app.tuned.core.Placeholders
+import app.tuned.core.RoundTheClock
 import app.tuned.diagnostics.AppLog
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -82,6 +83,8 @@ data class AppSettings(
     val hiddenRegions: Set<String> = emptySet(),
     /** Hidden groups, as [app.tuned.core.HiddenGroups] keys. */
     val hiddenGroups: Set<String> = emptySet(),
+    /** Teams, leagues and fighters followed on Live Events ("Canucks", "UFC"), as typed. */
+    val followedEvents: Set<String> = emptySet(),
     val showAdult: Boolean = false,
     val playlistRefreshHours: Int = 12,
     val guideRefreshHours: Int = 6,
@@ -103,8 +106,12 @@ data class AppSettings(
     val backupCopies: Boolean = true,
     /** Switch the display to the video's frame rate where the screen offers it (Settings › Player). */
     val matchFrameRate: Boolean = true,
+    /** Minutes of a live channel kept on the device to pause and rewind; 0 turns it off (Settings › Player). */
+    val liveRewindMinutes: Int = 30,
     /** Leave out empty event slots ("NO EVENT STREAMING"); see [Placeholders]. Melvin, 2026-11-17: hide them. */
     val hidePlaceholders: Boolean = true,
+    /** Leave out round-the-clock "24/7" channels; see [RoundTheClock]. Melvin, 2026-11-17. Off by default. */
+    val hide247: Boolean = false,
     val pictureInPicture: Boolean = true,
     val playerGestures: Boolean = true,
     val autoReconnect: Boolean = true,
@@ -124,6 +131,8 @@ data class AppSettings(
     /** The person's own TMDB key (v3 key or v4 read token) for ratings and trailers; blank turns them off. */
     val tmdbKey: String = "",
     val showGuideInList: Boolean = true,
+    /** Live TV as a grid guide (channels down the side, time across the top) instead of a list. */
+    val liveGrid: Boolean = false,
     /** Look for a newer release on GitHub at start (copies from Play update through Play either way). */
     val checkUpdates: Boolean = true,
     val captions: CaptionStyle = CaptionStyle(),
@@ -138,7 +147,12 @@ data class AppSettings(
 
 /** Hidden countries, hidden groups and the channel filters together: the one list every query filters by. */
 fun AppSettings.hiddenKeys(): List<String> {
-    val filters = listOfNotNull(ChannelScan.HIDDEN_KEY.takeIf { hideDeadChannels }, Placeholders.HIDDEN_KEY.takeIf { hidePlaceholders })
+    val filters =
+        listOfNotNull(
+            ChannelScan.HIDDEN_KEY.takeIf { hideDeadChannels },
+            Placeholders.HIDDEN_KEY.takeIf { hidePlaceholders },
+            RoundTheClock.HIDDEN_KEY.takeIf { hide247 },
+        )
     return (hiddenRegions + hiddenGroups + filters).sorted()
 }
 
@@ -244,6 +258,7 @@ class SettingsRepository(
             lastTab = p[K.lastTab] ?: d.lastTab,
             hiddenRegions = p[K.hiddenRegions] ?: d.hiddenRegions,
             hiddenGroups = p[K.hiddenGroups] ?: d.hiddenGroups,
+            followedEvents = p[K.followedEvents] ?: d.followedEvents,
             playlistRefreshHours = p[K.playlistRefreshHours] ?: d.playlistRefreshHours,
             guideRefreshHours = p[K.guideRefreshHours] ?: d.guideRefreshHours,
             reminderLeadMinutes = p[K.reminderLeadMinutes] ?: d.reminderLeadMinutes,
@@ -258,7 +273,9 @@ class SettingsRepository(
             hideFailedOnPlay = p[K.hideFailedOnPlay] ?: d.hideFailedOnPlay,
             backupCopies = p[K.backupCopies] ?: d.backupCopies,
             matchFrameRate = p[K.matchFrameRate] ?: d.matchFrameRate,
+            liveRewindMinutes = p[K.liveRewindMinutes] ?: d.liveRewindMinutes,
             hidePlaceholders = p[K.hidePlaceholders] ?: d.hidePlaceholders,
+            hide247 = p[K.hide247] ?: d.hide247,
             pictureInPicture = p[K.pictureInPicture] ?: d.pictureInPicture,
             playerGestures = p[K.playerGestures] ?: d.playerGestures,
             autoReconnect = p[K.autoReconnect] ?: d.autoReconnect,
@@ -273,6 +290,7 @@ class SettingsRepository(
             userAgent = p[K.userAgent] ?: d.userAgent,
             tmdbKey = p[K.tmdbKey] ?: d.tmdbKey,
             showGuideInList = p[K.showGuideInList] ?: d.showGuideInList,
+            liveGrid = p[K.liveGrid] ?: d.liveGrid,
             checkUpdates = p[K.checkUpdates] ?: d.checkUpdates,
             captions =
                 CaptionStyle(
@@ -310,6 +328,7 @@ class SettingsRepository(
         p[K.lastTab] = s.lastTab
         p[K.hiddenRegions] = s.hiddenRegions
         p[K.hiddenGroups] = s.hiddenGroups
+        p[K.followedEvents] = s.followedEvents
         p[K.playlistRefreshHours] = s.playlistRefreshHours
         p[K.guideRefreshHours] = s.guideRefreshHours
         p[K.reminderLeadMinutes] = s.reminderLeadMinutes
@@ -324,7 +343,9 @@ class SettingsRepository(
         p[K.hideFailedOnPlay] = s.hideFailedOnPlay
         p[K.backupCopies] = s.backupCopies
         p[K.matchFrameRate] = s.matchFrameRate
+        p[K.liveRewindMinutes] = s.liveRewindMinutes
         p[K.hidePlaceholders] = s.hidePlaceholders
+        p[K.hide247] = s.hide247
         p[K.pictureInPicture] = s.pictureInPicture
         p[K.playerGestures] = s.playerGestures
         p[K.autoReconnect] = s.autoReconnect
@@ -339,6 +360,7 @@ class SettingsRepository(
         p[K.userAgent] = s.userAgent
         p[K.tmdbKey] = s.tmdbKey
         p[K.showGuideInList] = s.showGuideInList
+        p[K.liveGrid] = s.liveGrid
         p[K.checkUpdates] = s.checkUpdates
         val c = s.captions
         p[K.ccEnabled] = c.enabled
@@ -375,6 +397,7 @@ class SettingsRepository(
         val lastTab = intPreferencesKey("last_tab")
         val hiddenRegions = stringSetPreferencesKey("hidden_regions")
         val hiddenGroups = stringSetPreferencesKey("hidden_groups")
+        val followedEvents = stringSetPreferencesKey("followed_events")
         val adultPin = stringPreferencesKey("adult_pin")
         val playlistRefreshHours = intPreferencesKey("playlist_refresh_hours")
         val guideRefreshHours = intPreferencesKey("guide_refresh_hours")
@@ -390,7 +413,9 @@ class SettingsRepository(
         val hideFailedOnPlay = booleanPreferencesKey("hide_failed_on_play")
         val backupCopies = booleanPreferencesKey("backup_copies")
         val matchFrameRate = booleanPreferencesKey("match_frame_rate")
+        val liveRewindMinutes = intPreferencesKey("live_rewind_minutes")
         val hidePlaceholders = booleanPreferencesKey("hide_placeholders")
+        val hide247 = booleanPreferencesKey("hide_247")
         val pictureInPicture = booleanPreferencesKey("picture_in_picture")
         val playerGestures = booleanPreferencesKey("player_gestures")
         val autoReconnect = booleanPreferencesKey("auto_reconnect")
@@ -405,6 +430,7 @@ class SettingsRepository(
         val userAgent = stringPreferencesKey("user_agent")
         val tmdbKey = stringPreferencesKey("tmdb_key")
         val showGuideInList = booleanPreferencesKey("show_guide_in_list")
+        val liveGrid = booleanPreferencesKey("live_grid")
         val checkUpdates = booleanPreferencesKey("check_updates")
         val ccEnabled = booleanPreferencesKey("cc_enabled")
         val ccLanguage = stringPreferencesKey("cc_language")

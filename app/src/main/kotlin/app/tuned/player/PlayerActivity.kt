@@ -52,6 +52,8 @@ import app.tuned.BuildConfig
 import app.tuned.R
 import app.tuned.container
 import app.tuned.core.ContentKind
+import app.tuned.core.StreamLink
+import app.tuned.core.Titles
 import app.tuned.data.AppSettings
 import app.tuned.data.db.HistoryEntity
 import app.tuned.data.db.ItemEntity
@@ -64,6 +66,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import java.io.File
+import java.util.concurrent.ConcurrentHashMap
 
 /**
  * Full-screen playback. Nothing on screen but the video until a tap shows the standard Media3 controls: play and
@@ -80,6 +83,9 @@ class PlayerActivity : FragmentActivity() {
     private lateinit var subtitleView: TextView
     private var settings = AppSettings()
     private var queue: List<ItemEntity> = emptyList()
+
+    /** Headers the playlist asks for, by stream host; read by the player's network requests on their own threads. */
+    private val streamHeaders = ConcurrentHashMap<String, Map<String, String>>()
     private var progressJob: Job? = null
     private var liveRetries = 0
     private var gestures: PlayerGestures? = null
@@ -100,6 +106,9 @@ class PlayerActivity : FragmentActivity() {
     private val levelBars by lazy { LevelBars(this) }
     private lateinit var tools: PlayerTools
     private var cast: CastControl? = null
+
+    /** Saved copies in the queue, by item id: played from the device here, and served from the phone when casting. */
+    private var savedFiles: Map<Long, File> = emptyMap()
     private val subtitleTiming = SubtitleTiming()
     private var reconnect: ConnectivityManager.NetworkCallback? = null
     private var autoTune: AutoTune? = null
@@ -136,6 +145,15 @@ class PlayerActivity : FragmentActivity() {
     private lateinit var statusView: TextView
     private val audioCheck by lazy {
         AudioCheck { codec -> Toast.makeText(this, getString(R.string.player_no_sound, codec), Toast.LENGTH_LONG).show() }
+    }
+    private val timeshift by lazy {
+        LiveTimeshift(
+            context = this,
+            scope = lifecycleScope,
+            http = container.http,
+            userAgent = { settings.userAgent.ifBlank { "Tuned/${BuildConfig.VERSION_NAME}" } },
+            keepMinutes = { settings.liveRewindMinutes },
+        )
     }
     private val frameRate by lazy { FrameRateMatch(this) { settings.matchFrameRate && cast?.casting != true } }
 
@@ -299,6 +317,7 @@ class PlayerActivity : FragmentActivity() {
                 player = { player },
                 current = { player?.let { queue.getOrNull(it.currentMediaItemIndex) } },
                 isLive = ::live,
+                savedFile = { id -> savedFiles[id] },
                 onStatus = { text -> if (text == null) statusView.visibility = View.GONE else showStatus(text) },
             ).also { c -> tools.addButton(c.button) }
     }
@@ -419,12 +438,20 @@ class PlayerActivity : FragmentActivity() {
         playerView.setControllerShowTimeoutMs(settings.controlsTimeoutMs)
         playerView.setShowNextButton(queue.size > 1)
         playerView.setShowPreviousButton(queue.size > 1)
-        playerView.setShowFastForwardButton(!live)
-        playerView.setShowRewindButton(!live)
+        // Live channels can rewind and catch up once paused (see [LiveTimeshift]); the buttons are greyed out until then.
+        playerView.setShowFastForwardButton(!live || timeshift.enabled)
+        playerView.setShowRewindButton(!live || timeshift.enabled)
         CaptionStyles.apply(requireNotNull(playerView.subtitleView), settings.captions)
 
         // Saved films and episodes play from the device.
         val local = container.offline.files(queue.map { it.id })
+        savedFiles = local
+        // Offline with a saved episode: next and previous keep to the saved ones, which are all that can play.
+        if (item.id in local && !container.connectivity.onlineNow()) {
+            queue = queue.filter { it.id in local }
+            playerView.setShowNextButton(queue.size > 1)
+            playerView.setShowPreviousButton(queue.size > 1)
+        }
         val mediaItems = queue.map { it.toMediaItem(local[it.id]) }
         val index = queue.indexOfFirst { it.id == item.id }.coerceAtLeast(0)
         val resumeAt = if (!live && settings.resumePlayback) resumePosition(item.id) else C.TIME_UNSET
@@ -432,8 +459,9 @@ class PlayerActivity : FragmentActivity() {
         exo.pauseAtEndOfMediaItems = kind == ContentKind.SERIES && !settings.autoPlayNext
         val castNow = cast?.takeIf { it.casting }
         // Every connection on the account is in use on another device: opening one more could go over the limit, so
-        // wait for the person to press play (Settings › Account shows the same numbers).
-        val full = if (castNow == null) container.account.fullElsewhere() else null
+        // wait for the person to press play (Settings › Account shows the same numbers). A saved file opens no
+        // connection, so it never waits.
+        val full = if (castNow == null && queue[index].id !in local) container.account.fullElsewhere() else null
         if (castNow != null) {
             // Already casting: this goes to the TV, and the phone opens no stream of its own.
             castNow.load(queue[index], live, resumeAt)
@@ -450,8 +478,17 @@ class PlayerActivity : FragmentActivity() {
     }
 
     private fun buildPlayer(live: Boolean): ExoPlayer {
-        // Streams over OkHttp, saved downloads from the device.
-        val http = PlayerSources.factory(this, container.http, settings.userAgent.ifBlank { "Tuned/${BuildConfig.VERSION_NAME}" })
+        // Streams over OkHttp (through the live rewind copy on live TV), with the headers the playlist asks for;
+        // saved downloads from the device.
+        val agent = settings.userAgent.ifBlank { "Tuned/${BuildConfig.VERSION_NAME}" }
+        val http =
+            PlayerSources.factory(
+                this,
+                container.http,
+                agent,
+                headers = { uri -> uri.host?.let(streamHeaders::get).orEmpty() },
+                network = { network -> if (live) timeshift.factory(network) else network },
+            )
         // TS streams from IPTV servers often start on a non-IDR frame; these flags start them sooner.
         val extractors =
             DefaultExtractorsFactory().setTsExtractorFlags(
@@ -510,6 +547,7 @@ class PlayerActivity : FragmentActivity() {
             if (cast?.casting == true) cast?.load(item, live, 0)
             liveRetries = 0
             pictured = false
+            player?.let(timeshift::onChannelChanged)
             // Flipping to another channel ends the search for a copy of the last one.
             backups.onChannelChanged(id)
         }
@@ -592,6 +630,22 @@ class PlayerActivity : FragmentActivity() {
     private fun updateOverlay(item: ItemEntity) {
         titleView.text = item.name
         subtitleView.text = item.groupName
+        // The episode's TMDB name, from the device at once when the show's page was opened, else one cached
+        // TMDB request. Playback never waits for it, and it stays out of its own function because detekt caps
+        // this class at 30.
+        val show = item.showName
+        val season = item.season
+        val episode = item.episode
+        if (show != null && season != null && episode != null) {
+            lifecycleScope.launchSafely("Player") {
+                val info = container.metadata.cachedEpisode(show, season, episode) ?: container.metadata.episode(show, season, episode)
+                // Moved on to the next episode meanwhile: that one has its own lookup.
+                if (info?.name != null && player?.currentMediaItem?.mediaId == item.id.toString()) {
+                    titleView.text = info.name
+                    subtitleView.text = getString(R.string.continue_episode, Titles.display(show), season, episode)
+                }
+            }
+        }
         if (ContentKind.fromCode(item.kind) == ContentKind.LIVE) rememberChannel(item.id)
         val tvgId = item.tvgId ?: return
         if (ContentKind.fromCode(item.kind) != ContentKind.LIVE) return
@@ -610,7 +664,7 @@ class PlayerActivity : FragmentActivity() {
 
     /** What the on-screen controls drive: the phone's player, or the TV's play and pause while casting. */
     private inner class ViewPlayer(
-        exo: ExoPlayer,
+        private val exo: ExoPlayer,
     ) : ForwardingPlayer(exo) {
         override fun prepare() {
             if (cast?.casting != true) super.prepare()
@@ -636,7 +690,14 @@ class PlayerActivity : FragmentActivity() {
         }
 
         override fun pause() {
-            if (cast?.casting == true) cast?.pause() else super.pause()
+            when {
+                cast?.casting == true -> cast?.pause()
+
+                // A live channel pauses into the copy kept on the device, so it can carry on, rewind or catch up.
+                live() && timeshift.shift(exo) -> Unit
+
+                else -> super.pause()
+            }
         }
     }
 
@@ -673,12 +734,21 @@ class PlayerActivity : FragmentActivity() {
 
     private fun live(): Boolean = queue.firstOrNull()?.kind == ContentKind.LIVE.code
 
-    private fun ItemEntity.toMediaItem(file: File?): MediaItem = MediaItem
-        .Builder()
-        .setMediaId(id.toString())
-        .setUri(file?.toUri() ?: url.toUri())
-        .setMediaMetadata(MediaMetadata.Builder().setTitle(name).build())
-        .build()
+    private fun ItemEntity.toMediaItem(file: File?): MediaItem {
+        val link = StreamLink.split(url)
+        if (file == null && link.headers.isNotEmpty()) {
+            link.url
+                .toUri()
+                .host
+                ?.let { streamHeaders[it] = link.headers }
+        }
+        return MediaItem
+            .Builder()
+            .setMediaId(id.toString())
+            .setUri(file?.toUri() ?: link.url.toUri())
+            .setMediaMetadata(MediaMetadata.Builder().setTitle(name).build())
+            .build()
+    }
 
     private fun hideSystemBars() {
         WindowCompat.setDecorFitsSystemWindows(window, false)
@@ -774,6 +844,7 @@ class PlayerActivity : FragmentActivity() {
         progressJob?.cancel()
         autoTune?.release()
         backups.release()
+        timeshift.release()
         gestures?.release()
         tools.release()
         cast?.release()
@@ -820,12 +891,18 @@ class PlayerActivity : FragmentActivity() {
             )
         }
 
+        /** Auto-tune: find a working stream for [query] (a channel or an event) and play it. */
+        fun tuneIntent(
+            context: Context,
+            query: String,
+        ): Intent = Intent(context, PlayerActivity::class.java).putExtra(EXTRA_TUNE, query)
+
         /** Auto-tune: find a working channel showing [query] (a channel name or an event in the guide) and play it. */
         fun tune(
             context: Context,
             query: String,
         ) {
-            context.startActivity(Intent(context, PlayerActivity::class.java).putExtra(EXTRA_TUNE, query))
+            context.startActivity(tuneIntent(context, query))
         }
     }
 }

@@ -87,6 +87,8 @@ data class DownloadRow(
     val logo: String?,
     val showKey: String? = null,
     val showName: String? = null,
+    /** The show's poster, as on the Shows tab. */
+    val showLogo: String? = null,
     val season: Int? = null,
     val episode: Int? = null,
 )
@@ -111,9 +113,24 @@ data class MetadataEntity(
     /** Comma-separated. */
     val genres: String,
     val runtime: String?,
-    /** One person per line: name, character and photo link, tab-separated. */
+    /**
+     * One person per line: name, character, photo link and TMDB person id, tab-separated. A person's own row
+     * ("person|<id>", see PeopleRepository) keeps their credits here as JSON instead.
+     */
     val cast: String,
     val trailer: String?,
+    val fetchedAt: Long,
+)
+
+/**
+ * One season of a show on TMDB, keyed "tmdbId|season": the episodes as JSON (name, summary, runtime and screenshot
+ * link), or nothing found. Kept so a season seen once shows its screenshots and names from the device after that.
+ */
+@Entity(tableName = "tmdb_seasons")
+data class TmdbSeasonEntity(
+    @PrimaryKey val cacheKey: String,
+    val found: Boolean,
+    val episodes: String,
     val fetchedAt: Long,
 )
 
@@ -122,6 +139,12 @@ data class MetadataEntity(
 data class CatchUpEntity(
     @PrimaryKey val streamId: String,
     val days: Int,
+)
+
+/** A stream's id and link, to match it with what the Xtream API says about its stream id. */
+data class ItemUrl(
+    val id: Long,
+    val url: String,
 )
 
 /** A live channel's guide id and link, to match it with its catch-up days. */
@@ -177,6 +200,25 @@ data class TuneRow(
     val okAt: Long?,
     val deadAt: Long?,
     val height: Int?,
+    /** Hidden in the lists (dead in a scan, or a "No event" placeholder); auto-tune still tries event channels. */
+    val held: Boolean,
+)
+
+/** A channel a scan hid, with its name, for [ChannelScanDao.hiddenNames]. */
+data class HiddenScanRow(
+    val itemId: Long,
+    val name: String,
+    val groupName: String,
+)
+
+/** A programme on a sports or pay-per-view channel, for Live Events ([ItemDao.eventProgrammes]). */
+data class EventRow(
+    val itemId: Long,
+    val channelName: String,
+    val group: String,
+    val title: String,
+    val start: Long,
+    val stop: Long,
 )
 
 /** A live channel with what's on now (from the guide), for the Live TV list. */

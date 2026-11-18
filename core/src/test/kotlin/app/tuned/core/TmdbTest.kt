@@ -33,6 +33,8 @@ class TmdbTest {
             "https://api.themoviedb.org/3/movie/603?append_to_response=videos,credits&api_key=abc",
             Tmdb.details(603, tv = false, key = "abc"),
         )
+        assertEquals("https://api.themoviedb.org/3/tv/456/season/4?api_key=abc", Tmdb.season(456, 4, key = "abc"))
+        assertEquals("https://api.themoviedb.org/3/tv/456/season/4", Tmdb.season(456, 4, key = "eyJhbGciOi.x.y"))
         assertEquals("2h 16m", Tmdb.runtime(136))
         assertEquals("48m", Tmdb.runtime(48))
         assertEquals("2h", Tmdb.runtime(120))
