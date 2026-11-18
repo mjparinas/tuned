@@ -60,7 +60,7 @@ class MainActivity : ComponentActivity() {
         if (request == null && fresh && incomingSearch.value == null) {
             lifecycleScope.launchSafely("Main") {
                 val prefs = container.settings.settings.first()
-                if (!prefs.startOnLastChannel) return@launchSafely
+                if (!prefs.startsOnLastChannel()) return@launchSafely
                 val items = container.db.items()
                 val channel = items.lastWatchedChannel() ?: return@launchSafely
                 PlayerActivity.start(this@MainActivity, channel.id)
@@ -131,7 +131,7 @@ class MainActivity : ComponentActivity() {
             remember {
                 when {
                     !signedIn -> WelcomeRoute
-                    current.profileCount > 1 && current.askProfileAtStart -> ProfilesRoute(atStart = true)
+                    current.asksProfileAtStart() -> ProfilesRoute(atStart = true)
                     else -> HomeRoute
                 }
             }
