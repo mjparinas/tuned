@@ -15,6 +15,13 @@
     <string name="player_quality">Quality</string>
     <string name="player_quality_auto">Auto</string>
     <string name="player_quality_only_one">This stream has one quality</string>
+    <!-- The HQ button's list of a channel's copies: the quality, then the copy's name, as in "FHD · US| ESPN FHD". -->
+    <string name="player_quality_copy">%1$s · %2$s</string>
+    <string name="player_quality_uhd">4K</string>
+    <string name="player_quality_fhd">FHD</string>
+    <string name="player_quality_hd">HD</string>
+    <string name="player_quality_sd">SD</string>
+    <string name="player_quality_untagged">Standard</string>
     <string name="player_guide">Channels</string>
     <string name="player_guide_close">Close channels</string>
     <plurals name="player_audio_channels">

@@ -20,7 +20,6 @@ internal fun PlaylistsPage(
 ) {
     PlaylistsRow(onOpen = { onOpen(PlaylistsRoute) })
     AccountStatusRows()
-    BackupRows()
     TraktRows()
     CloudSyncRows()
     var confirmSignOut by remember { mutableStateOf(false) }

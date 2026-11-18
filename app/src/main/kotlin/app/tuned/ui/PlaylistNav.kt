@@ -32,7 +32,6 @@ fun NavGraphBuilder.playlistScreens(app: AppNav) {
         WelcomeScreen(
             firstRun = true,
             onPick = { kind -> app.nav.navigate(AddPlaylistRoute(kind.name)) },
-            onRestored = app.openHome,
             onBack = {},
         )
     }
@@ -40,7 +39,6 @@ fun NavGraphBuilder.playlistScreens(app: AppNav) {
         WelcomeScreen(
             firstRun = false,
             onPick = { kind -> app.nav.navigate(AddPlaylistRoute(kind.name)) },
-            onRestored = app.openHome,
             onBack = { app.nav.popBackStack() },
         )
     }

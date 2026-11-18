@@ -10,20 +10,15 @@ import android.net.ConnectivityManager
 import android.net.Network
 import android.os.Build
 import android.os.Bundle
-import android.util.TypedValue
 import android.view.Gravity
 import android.view.KeyEvent
 import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
-import android.widget.ImageButton
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
 import androidx.annotation.OptIn
-import androidx.core.view.WindowCompat
-import androidx.core.view.WindowInsetsCompat
-import androidx.core.view.WindowInsetsControllerCompat
 import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.lifecycleScope
 import androidx.media3.common.AudioAttributes
@@ -143,6 +138,24 @@ class PlayerActivity : FragmentActivity() {
         )
     }
 
+    /** The HQ button's copies of the live channel in other picture qualities; see [QualityCopies]. */
+    private val qualityCopies: QualityCopies by lazy {
+        QualityCopies(
+            scope = lifecycleScope,
+            tune = container.tune,
+            hooks =
+                QualityCopies.Hooks(
+                    casting = { cast?.casting == true },
+                    switchTo = { id ->
+                        player?.let { backups.swapTo(it, id) }
+                        backups.onChannelChanged(id)
+                        qualityCopies.onChannel(id)
+                    },
+                    changed = { if (::tools.isInitialized) tools.refreshQuality() },
+                ),
+        )
+    }
+
     /** Typing a channel number and flipping back; see [ChannelDial]. */
     private val dial by lazy {
         ChannelDial(
@@ -187,6 +200,14 @@ class PlayerActivity : FragmentActivity() {
         )
     }
 
+    private val jumpToLive by lazy {
+        JumpToLive(
+            activity = this,
+            behind = { timeshift.behind && cast?.casting != true },
+            goLive = { player?.let(timeshift::goLive) == true },
+        )
+    }
+
     private val recorder by lazy {
         LiveRecorder(
             this,
@@ -207,7 +228,12 @@ class PlayerActivity : FragmentActivity() {
     }
 
     private val trakt by lazy {
-        TraktScrobbler(container.trakt, container.appScope) { player?.let { queue.getOrNull(it.currentMediaItemIndex) } }
+        TraktScrobbler(
+            container.trakt,
+            container.appScope,
+            current = { player?.let { queue.getOrNull(it.currentMediaItemIndex) } },
+            elsewhere = { cast?.tvPosition() },
+        )
     }
 
     private val frameRate by lazy { FrameRateMatch(this) { settings.matchFrameRate && cast?.casting != true } }
@@ -218,7 +244,7 @@ class PlayerActivity : FragmentActivity() {
         container.playerOpen.value = true
         container.offline.pause()
         buildViews()
-        hideSystemBars()
+        hideSystemBars(window)
         // Nothing to show if the channel can't be read: log it and close rather than sit on a black screen.
         lifecycleScope.launchSafely("Player", onError = { finish() }) {
             settings = container.settings.settings.first()
@@ -268,20 +294,11 @@ class PlayerActivity : FragmentActivity() {
                 setShowBuffering(PlayerView.SHOW_BUFFERING_WHEN_PLAYING)
                 setShowSubtitleButton(true)
             }
-        titleView =
-            TextView(this).apply {
-                setTextColor(Color.WHITE)
-                textSize = 18f
-                setTypeface(typeface, android.graphics.Typeface.BOLD)
-            }
-        subtitleView =
-            TextView(this).apply {
-                setTextColor(0xCCFFFFFF.toInt())
-                textSize = 14f
-            }
+        titleView = titleText(this)
+        subtitleView = subtitleText(this)
         val density = resources.displayMetrics.density
         // Back sits with the title, so it shows whenever the controls do (system back and gestures work too).
-        val back = backButton()
+        val back = backButton(this) { onBackPressedDispatcher.onBackPressed() }
         val titles =
             LinearLayout(this).apply {
                 orientation = LinearLayout.VERTICAL
@@ -304,15 +321,7 @@ class PlayerActivity : FragmentActivity() {
                 gravity = Gravity.CENTER_VERTICAL
             }
         setUpTools()
-        statusView =
-            TextView(this).apply {
-                setTextColor(Color.WHITE)
-                textSize = 14f
-                visibility = View.GONE
-                setBackgroundColor(0x99000000.toInt())
-                val pad = (12 * resources.displayMetrics.density).toInt()
-                setPadding(pad * 2, pad, pad * 2, pad)
-            }
+        statusView = statusText(this)
         // TV remote buttons go to the tools before the player's own controls; see [PlayerTools.onKey].
         val root =
             object : FrameLayout(this) {
@@ -327,32 +336,28 @@ class PlayerActivity : FragmentActivity() {
             statusView,
             FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT, Gravity.CENTER),
         )
-        tools.attach(root)
-        recorder.attach(root)
-        skipIntro.attach(root)
-        tuneNext.attach(root)
-        levelBars.attach(root)
+        attachFeatures(root)
         // The title shows and hides with the controls, so a tap reveals everything and the video is otherwise bare.
         playerView.setControllerVisibilityListener(
             PlayerView.ControllerVisibilityListener { visibility ->
                 overlay.visibility = visibility
                 tools.onControls(visibility)
                 recorder.onControls(visibility)
+                jumpToLive.onControls(visibility)
                 tuneNext.onControls(visibility)
             },
         )
         setContentView(root)
     }
 
-    private fun backButton() = ImageButton(this).apply {
-        setImageResource(R.drawable.ic_arrow_back)
-        contentDescription = getString(R.string.back)
-        val ripple = TypedValue()
-        theme.resolveAttribute(android.R.attr.selectableItemBackgroundBorderless, ripple, true)
-        setBackgroundResource(ripple.resourceId)
-        val pad = (12 * resources.displayMetrics.density).toInt()
-        setPadding(pad, pad, pad, pad)
-        setOnClickListener { onBackPressedDispatcher.onBackPressed() }
+    /** The player features drawn over the video, each in its own file. */
+    private fun attachFeatures(root: FrameLayout) {
+        tools.attach(root)
+        recorder.attach(root)
+        skipIntro.attach(root)
+        jumpToLive.attach(root)
+        tuneNext.attach(root)
+        levelBars.attach(root)
     }
 
     /** The buttons at the top right (channels, aspect, quality, info, lock); see [PlayerTools]. */
@@ -376,6 +381,7 @@ class PlayerActivity : FragmentActivity() {
                         casting = { cast?.casting == true },
                         dial = dial,
                     ),
+                copies = qualityCopies,
             )
         overlay.addView(tools.toolbar)
         tools.addButton(subtitleSearch.button)
@@ -391,7 +397,7 @@ class PlayerActivity : FragmentActivity() {
         tools.addButton(recorder.button)
     }
 
-    @SuppressLint("ClickableViewAccessibility") // PlayerGestures calls performClick on every tap
+    @SuppressLint("ClickableViewAccessibility") // PlayerGestures performs the click once a single tap is confirmed
     private fun setUpGestures() {
         val g =
             PlayerGestures(
@@ -629,6 +635,7 @@ class PlayerActivity : FragmentActivity() {
             if (live) dial.onChannel(id)
             // Flipping to another channel ends the search for a copy of the last one.
             backups.onChannelChanged(id)
+            qualityCopies.onChannel(if (live && id != CatchUpLinks.ID) id else null)
         }
 
         override fun onRenderedFirstFrame() {
@@ -694,6 +701,7 @@ class PlayerActivity : FragmentActivity() {
 
         override fun onTracksChanged(tracks: Tracks) {
             player?.let { audioCheck.onTracks(it, tracks) }
+            tools.onTracks(tracks)
         }
 
         override fun onVideoSizeChanged(videoSize: VideoSize) {
@@ -790,14 +798,6 @@ class PlayerActivity : FragmentActivity() {
 
     private fun live(): Boolean = queue.firstOrNull()?.kind == ContentKind.LIVE.code
 
-    private fun hideSystemBars() {
-        WindowCompat.setDecorFitsSystemWindows(window, false)
-        WindowCompat.getInsetsController(window, window.decorView).apply {
-            hide(WindowInsetsCompat.Type.systemBars())
-            systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
-        }
-    }
-
     override fun onUserLeaveHint() {
         super.onUserLeaveHint()
         // Android 12+ enters picture-in-picture by itself (setAutoEnterEnabled); older versions need asking.
@@ -819,6 +819,7 @@ class PlayerActivity : FragmentActivity() {
         super.onPictureInPictureModeChanged(isInPictureInPictureMode, newConfig)
         playerView.useController = !isInPictureInPictureMode && !tools.locked
         recorder.hideMark(isInPictureInPictureMode)
+        jumpToLive.hide(isInPictureInPictureMode)
         if (isInPictureInPictureMode) {
             playerView.hideController()
             overlay.visibility = View.GONE
@@ -828,7 +829,7 @@ class PlayerActivity : FragmentActivity() {
 
     override fun onWindowFocusChanged(hasFocus: Boolean) {
         super.onWindowFocusChanged(hasFocus)
-        if (hasFocus) hideSystemBars()
+        if (hasFocus) hideSystemBars(window)
     }
 
     override fun onStop() {

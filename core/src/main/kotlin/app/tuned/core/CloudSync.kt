@@ -65,10 +65,58 @@ object CloudSync {
         else -> Poll.FAILED
     }
 
+    /** Why signing in to Google ended without an account, in words the dialog can explain. */
+    enum class Reason { OFFLINE, UNKNOWN_CLIENT, WRONG_CLIENT_TYPE, WRONG_SECRET, SCOPE_NOT_ALLOWED, DENIED, EXPIRED, OTHER }
+
+    /** A failed sign-in: the [reason], and Google's own words ([detail], null when Google wasn't reached) to show under it. */
+    data class Failure(
+        val reason: Reason,
+        val detail: String?,
+    )
+
+    /**
+     * Google's answer to a failed sign-in step ([status] null when Google wasn't reached at all), from the "error" and
+     * "error_description" fields of the reply. Before this, every one of them read "Couldn't reach Google", which hid a
+     * misconfigured OAuth client behind a network message.
+     */
+    fun failure(
+        status: Int?,
+        error: String?,
+        description: String?,
+    ): Failure {
+        if (status == null) return Failure(Reason.OFFLINE, null)
+        val reason =
+            when (error) {
+                "access_denied" -> Reason.DENIED
+                "expired_token" -> Reason.EXPIRED
+                "invalid_scope" -> Reason.SCOPE_NOT_ALLOWED
+                "unauthorized_client" -> Reason.WRONG_CLIENT_TYPE
+                "deleted_client" -> Reason.UNKNOWN_CLIENT
+                "invalid_client" -> invalidClient(description.orEmpty().lowercase())
+                else -> Reason.OTHER
+            }
+        val detail = listOfNotNull(error ?: "HTTP $status", description?.takeIf { it.isNotBlank() }).joinToString(": ")
+        return Failure(reason, detail)
+    }
+
+    /** Google's "invalid_client" covers an unknown client, the wrong kind of client and a wrong secret. */
+    private fun invalidClient(about: String): Reason = when {
+        "not found" in about || "deleted" in about -> Reason.UNKNOWN_CLIENT
+        "type" in about -> Reason.WRONG_CLIENT_TYPE
+        else -> Reason.WRONG_SECRET
+    }
+
+    /** Whether Drive turned a request down because the Drive API is off in the app's Google Cloud project. */
+    fun driveApiOff(
+        status: Int,
+        body: String,
+    ): Boolean = status == HTTP_FORBIDDEN && ("accessNotConfigured" in body || "SERVICE_DISABLED" in body)
+
     /** The one scope asked for: a folder in the person's Drive that only Tuned can see, nothing else of theirs. */
     const val SCOPE = "https://www.googleapis.com/auth/drive.appdata"
     const val FILE_NAME = "tuned-sync"
 
     private const val HMAC = "HmacSHA256"
     private const val HTTP_OK = 200
+    private const val HTTP_FORBIDDEN = 403
 }

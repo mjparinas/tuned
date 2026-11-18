@@ -1,6 +1,6 @@
 package app.tuned.data
 
-import app.tuned.core.BackupCrypto
+import app.tuned.core.PassphraseCrypto
 import app.tuned.data.db.FavouriteEntity
 import app.tuned.data.db.TunedDatabase
 import app.tuned.data.db.WatchLaterEntity
@@ -20,11 +20,11 @@ import kotlinx.serialization.json.put
 import kotlinx.serialization.json.putJsonArray
 
 /**
- * Backup and restore (Melvin, 2026-11-17): the login, every setting and the favourites in one file sealed with a
- * passphrase ([BackupCrypto]), so moving to a new phone or reinstalling is one step. The playlist and guide aren't in
- * it: they download again from the restored login.
+ * The copy that sync between devices shares ([CloudSyncRepository]): saved playlists, settings, favourites and watch
+ * later. The playlist and guide aren't in it: they download again from the synced logins. (Backup files were removed,
+ * Melvin, 2026-11-18.)
  */
-class BackupRepository(
+class SyncCopyRepository(
     private val credentials: CredentialStore,
     private val settings: SettingsRepository,
     private val db: TunedDatabase,
@@ -32,8 +32,7 @@ class BackupRepository(
     @Serializable
     private data class Contents(
         val version: Int = 1,
-        val login: Login? = null,
-        /** Every saved playlist (Settings › Playlists), so a restore brings back the whole list. */
+        /** Every saved playlist (Settings › Playlists) except files. */
         val playlists: List<Login> = emptyList(),
         val settings: Map<String, JsonElement> = emptyMap(),
         val favourites: List<Favourite> = emptyList(),
@@ -71,30 +70,6 @@ class BackupRepository(
         val addedAt: Long,
         val position: Long,
     )
-
-    /** What a restore brought back, so the caller knows whether to start downloading. */
-    data class Restored(
-        val signedIn: Boolean,
-        val favourites: Int,
-    )
-
-    suspend fun export(passphrase: CharArray): ByteArray = withContext(Dispatchers.IO) {
-        val contents =
-            Contents(
-                login = credentials.load()?.toLogin(),
-                // A playlist picked from a file lives on this device only, so it isn't in the backup.
-                playlists = credentials.saved().filter { it.kind != Credentials.Kind.File }.map { it.toLogin() },
-                settings = settings.snapshot().mapValues { (_, v) -> encode(v) },
-                favourites = db.library().allFavourites().map { Favourite(it.itemId, it.addedAt, it.position) },
-                watchLater =
-                    db
-                        .watchLater()
-                        .all()
-                        .first()
-                        .map { Later(it.key, it.itemId, it.showKey, it.title, it.image, it.addedAt) },
-            )
-        BackupCrypto.seal(json.encodeToString(Contents.serializer(), contents).toByteArray(), passphrase)
-    }
 
     /**
      * The copy that sync between devices shares ([CloudSync]): the saved playlists, settings, favourites and watch
@@ -140,7 +115,7 @@ class BackupRepository(
     suspend fun applySyncCopy(plain: ByteArray): Boolean = withContext(Dispatchers.IO) {
         val contents =
             runCatching { json.decodeFromString(Contents.serializer(), plain.decodeToString()) }
-                .getOrElse { throw BackupCrypto.NotABackup() }
+                .getOrElse { throw PassphraseCrypto.NotOurs() }
         settings.restore(contents.settings.mapNotNull { (k, v) -> decode(v)?.let { k to it } }.toMap())
         val library = db.library()
         library.clearFavourites()
@@ -161,27 +136,6 @@ class BackupRepository(
         } else {
             false
         }
-    }
-
-    /** Throws [BackupCrypto.WrongPassphrase] or [BackupCrypto.NotABackup]; nothing changes unless the whole file reads. */
-    suspend fun import(
-        sealed: ByteArray,
-        passphrase: CharArray,
-    ): Restored = withContext(Dispatchers.IO) {
-        val plain = BackupCrypto.open(sealed, passphrase)
-        val contents =
-            runCatching { json.decodeFromString(Contents.serializer(), plain.decodeToString()) }
-                .getOrElse { throw BackupCrypto.NotABackup() }
-        settings.restore(contents.settings.mapNotNull { (k, v) -> decode(v)?.let { k to it } }.toMap())
-        contents.favourites.forEach { db.library().addFavourite(FavouriteEntity(it.itemId, it.addedAt, it.position)) }
-        contents.watchLater.forEach { db.watchLater().add(WatchLaterEntity(it.key, it.itemId, it.showKey, it.title, it.image, it.addedAt)) }
-        contents.playlists.forEach { credentials.remember(it.toCredentials()) }
-        contents.login?.let {
-            val login = it.toCredentials()
-            credentials.save(login)
-            credentials.remember(login)
-        }
-        Restored(signedIn = contents.login != null, favourites = contents.favourites.size)
     }
 
     private companion object {

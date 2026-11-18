@@ -100,6 +100,8 @@ class SyncRepository(
             }
         // Channels with their own guide fix keep it across the new playlist.
         db.guideFixes().reapply()
+        // A country found for the first time follows the rest: hidden when most are.
+        settleNewRegions(db, settings)
         settings.update { it.copy(lastPlaylistSync = System.currentTimeMillis(), lastSyncError = "") }
         // Catch-up is a bonus: a server that doesn't answer leaves the last known channels as they were.
         if (login.playlistUrl.isBlank()) attempt("Sync", "Catch-up refresh failed") { refreshCatchUp(login) }

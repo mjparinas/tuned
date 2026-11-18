@@ -1,9 +1,12 @@
 package app.tuned.core
 
+import app.tuned.core.CloudSync.Reason
 import app.tuned.core.CloudSync.Step
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNotEquals
+import kotlin.test.assertTrue
 
 class CloudSyncTest {
     private fun decide(
@@ -51,5 +54,28 @@ class CloudSyncTest {
         assertEquals(CloudSync.Poll.DENIED, CloudSync.poll(403, "access_denied"))
         assertEquals(CloudSync.Poll.EXPIRED, CloudSync.poll(400, "expired_token"))
         assertEquals(CloudSync.Poll.FAILED, CloudSync.poll(500, null))
+    }
+
+    @Test
+    fun aFailedSignInSaysWhatGoogleSaid() {
+        assertEquals(CloudSync.Failure(Reason.OFFLINE, null), CloudSync.failure(null, null, null))
+        val unknown = CloudSync.failure(401, "invalid_client", "The OAuth client was not found.")
+        assertEquals(Reason.UNKNOWN_CLIENT, unknown.reason)
+        assertEquals("invalid_client: The OAuth client was not found.", unknown.detail)
+        assertEquals(Reason.WRONG_CLIENT_TYPE, CloudSync.failure(401, "invalid_client", "Invalid client type.").reason)
+        assertEquals(Reason.WRONG_CLIENT_TYPE, CloudSync.failure(400, "unauthorized_client", null).reason)
+        assertEquals(Reason.WRONG_SECRET, CloudSync.failure(401, "invalid_client", "Unauthorized").reason)
+        assertEquals(Reason.SCOPE_NOT_ALLOWED, CloudSync.failure(400, "invalid_scope", "Invalid scope").reason)
+        assertEquals(Reason.DENIED, CloudSync.failure(403, "access_denied", null).reason)
+        assertEquals(Reason.EXPIRED, CloudSync.failure(400, "expired_token", null).reason)
+        assertEquals(CloudSync.Failure(Reason.OTHER, "HTTP 500"), CloudSync.failure(500, null, null))
+    }
+
+    @Test
+    fun aDisabledDriveApiIsToldApartFromNoNetwork() {
+        assertTrue(CloudSync.driveApiOff(403, """{"error":{"errors":[{"reason":"accessNotConfigured"}]}}"""))
+        assertTrue(CloudSync.driveApiOff(403, """{"error":{"status":"PERMISSION_DENIED","details":[{"reason":"SERVICE_DISABLED"}]}}"""))
+        assertFalse(CloudSync.driveApiOff(403, """{"error":{"errors":[{"reason":"rateLimitExceeded"}]}}"""))
+        assertFalse(CloudSync.driveApiOff(500, "accessNotConfigured"))
     }
 }

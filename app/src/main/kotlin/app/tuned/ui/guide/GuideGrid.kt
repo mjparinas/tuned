@@ -1,8 +1,6 @@
 package app.tuned.ui.guide
 
 import android.app.Application
-import android.text.format.DateFormat
-import android.text.format.DateUtils
 import android.util.LruCache
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -45,7 +43,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.focus.onFocusChanged
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
@@ -66,6 +63,7 @@ import app.tuned.data.db.ProgrammeEntity
 import app.tuned.diagnostics.attempt
 import app.tuned.ui.browse.Logo
 import app.tuned.ui.common.focusRing
+import app.tuned.ui.common.rememberTimeLabels
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -75,7 +73,6 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.runningFold
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-import java.util.Date
 import kotlin.math.roundToInt
 
 /**
@@ -271,14 +268,13 @@ private fun TimeHeader(
     xOf: (Long) -> Int,
     onNow: () -> Unit,
 ) {
-    val context = LocalContext.current
-    val time = remember(context) { DateFormat.getTimeFormat(context) }
+    val times = rememberTimeLabels()
     val day =
-        if (DateUtils.isToday(viewStart)) {
-            stringResource(R.string.grid_today)
-        } else {
-            DateUtils.formatDateTime(context, viewStart, DateUtils.FORMAT_SHOW_WEEKDAY or DateUtils.FORMAT_ABBREV_WEEKDAY)
-        }
+        stringResource(
+            R.string.grid_day_zone,
+            if (times.isToday(viewStart, now)) stringResource(R.string.grid_today) else times.day(viewStart),
+            times.zoneName(viewStart),
+        )
     val showingNow = now in viewStart..(viewStart + visible)
     Row(Modifier.fillMaxWidth().height(HEADER_HEIGHT), verticalAlignment = Alignment.CenterVertically) {
         // The corner says which day is in view; when "now" has scrolled away, it brings it back.
@@ -302,7 +298,7 @@ private fun TimeHeader(
         Box(Modifier.weight(1f).fillMaxHeight().clipToBounds()) {
             for (tick in GuideGrid.ticks(windowFrom, windowTo)) {
                 Text(
-                    time.format(Date(tick)),
+                    times.time(tick),
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1,
@@ -425,8 +421,7 @@ private fun ProgrammeCell(
     onClick: () -> Unit,
     onFocus: () -> Unit,
 ) {
-    val context = LocalContext.current
-    val time = remember(context) { DateFormat.getTimeFormat(context) }
+    val times = rememberTimeLabels()
     val onNow = programme.start <= now && programme.stop > now
     val past = programme.stop <= now
     val colours = MaterialTheme.colorScheme
@@ -468,7 +463,7 @@ private fun ProgrammeCell(
                 overflow = TextOverflow.Ellipsis,
             )
             Text(
-                stringResource(R.string.grid_time_range, time.format(Date(programme.start)), time.format(Date(programme.stop))),
+                stringResource(R.string.grid_time_range, times.time(programme.start), times.time(programme.stop)),
                 style = MaterialTheme.typography.bodySmall,
                 color = colours.onSurfaceVariant,
                 maxLines = 1,

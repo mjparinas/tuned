@@ -56,7 +56,10 @@ class RegionViewModel(
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
     fun setHidden(hidden: Set<String>) {
-        viewModelScope.launchSafely("RegionSettings") { container.settings.update { it.copy(hiddenRegions = hidden) } }
+        val known = regions.value.map { it.region }
+        viewModelScope.launchSafely("RegionSettings") {
+            container.settings.update { it.copy(hiddenRegions = hidden, seenRegions = it.seenRegions + known) }
+        }
     }
 }
 

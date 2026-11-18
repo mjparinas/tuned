@@ -10,14 +10,15 @@ import javax.crypto.spec.PBEKeySpec
 import javax.crypto.spec.SecretKeySpec
 
 /**
- * Seals a backup with a passphrase the person chooses, because it holds their login. AES-256-GCM with a key from
- * PBKDF2-SHA256 (a fresh salt per file); GCM's tag means a wrong passphrase or a damaged file is caught, never
- * half-read. File layout: "TUNEDBK" + version byte, rounds (4 bytes), salt (16), IV (12), then the sealed bytes.
+ * Seals the sync copy with a passphrase the person chooses, because it holds their logins. AES-256-GCM with a key
+ * from PBKDF2-SHA256 (a fresh salt each time); GCM's tag means a wrong passphrase or damaged data is caught, never
+ * half-read. The "TUNEDBK" magic dates from backup files and stays, so copies already in Drive still open.
+ * Layout: "TUNEDBK" + version byte, rounds (4 bytes), salt (16), IV (12), then the sealed bytes.
  */
-object BackupCrypto {
-    class WrongPassphrase : Exception("The passphrase doesn't open this backup")
+object PassphraseCrypto {
+    class WrongPassphrase : Exception("The passphrase doesn't open this")
 
-    class NotABackup : Exception("This isn't a Tuned backup")
+    class NotOurs : Exception("This isn't sealed by Tuned")
 
     const val MIN_PASSPHRASE = 8
     private val MAGIC = "TUNEDBK".toByteArray()
@@ -55,7 +56,7 @@ object BackupCrypto {
         passphrase: CharArray,
     ): ByteArray {
         val headerSize = MAGIC.size + 1 + 4
-        val rounds = roundsOf(sealed) ?: throw NotABackup()
+        val rounds = roundsOf(sealed) ?: throw NotOurs()
         val salt = sealed.copyOfRange(headerSize, headerSize + SALT_BYTES)
         val iv = sealed.copyOfRange(headerSize + SALT_BYTES, headerSize + SALT_BYTES + IV_BYTES)
         val cipher = Cipher.getInstance("AES/GCM/NoPadding")
@@ -68,7 +69,7 @@ object BackupCrypto {
         }
     }
 
-    /** The key-stretching rounds from the header, or null when [sealed] isn't a backup this version can read. */
+    /** The key-stretching rounds from the header, or null when [sealed] isn't something this version can read. */
     private fun roundsOf(sealed: ByteArray): Int? {
         val headerSize = MAGIC.size + 1 + 4
         if (sealed.size < headerSize + SALT_BYTES + IV_BYTES || !sealed.copyOfRange(0, MAGIC.size).contentEquals(MAGIC)) return null
