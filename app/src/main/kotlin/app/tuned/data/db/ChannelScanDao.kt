@@ -11,7 +11,7 @@ interface ChannelScanDao {
     @Query(
         """
         SELECT id FROM items
-        WHERE kind = 0 AND (region IS NULL OR region NOT IN (:hidden)) AND ('g:' || kind || ':' || groupName) NOT IN (:hidden)
+        WHERE kind = 0 AND COALESCE(region, 'none') NOT IN (:hidden) AND ('g:' || kind || ':' || groupName) NOT IN (:hidden)
             AND NOT ('placeholder' IN (:hidden)
                 AND ((' ' || searchName) GLOB '* no event*' OR (' ' || searchName) GLOB '* no live event*'))
             AND NOT ('247' IN (:hidden) AND kind = 0

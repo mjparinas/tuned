@@ -104,7 +104,7 @@ interface ItemDao {
         FROM history h
         JOIN items i ON i.id = h.itemId
         WHERE h.profileId = $ME AND i.kind = :kind
-            AND (i.region IS NULL OR i.region NOT IN (:hidden)) AND ('g:' || i.kind || ':' || i.groupName) NOT IN (:hidden)
+            AND COALESCE(i.region, 'none') NOT IN (:hidden) AND ('g:' || i.kind || ':' || i.groupName) NOT IN (:hidden)
             AND NOT ('scan:dead' IN (:hidden) AND i.id IN (SELECT itemId FROM channel_scan WHERE hidden = 1))
             AND NOT ('placeholder' IN (:hidden) AND i.kind = 0
                 AND ((' ' || i.searchName) GLOB '* no event*' OR (' ' || i.searchName) GLOB '* no live event*'))
@@ -129,7 +129,7 @@ interface ItemDao {
         """
         SELECT * FROM items i
         WHERE i.kind = :kind
-            AND (i.region IS NULL OR i.region NOT IN (:hidden)) AND ('g:' || i.kind || ':' || i.groupName) NOT IN (:hidden)
+            AND COALESCE(i.region, 'none') NOT IN (:hidden) AND ('g:' || i.kind || ':' || i.groupName) NOT IN (:hidden)
             AND NOT ('scan:dead' IN (:hidden) AND i.id IN (SELECT itemId FROM channel_scan WHERE hidden = 1))
             AND NOT ('placeholder' IN (:hidden) AND i.kind = 0
                 AND ((' ' || i.searchName) GLOB '* no event*' OR (' ' || i.searchName) GLOB '* no live event*'))
@@ -163,7 +163,7 @@ interface ItemDao {
                 THEN 1 ELSE 0 END) AS newEpisodes
         FROM items i
         WHERE i.kind = 2 AND i.showKey IS NOT NULL
-            AND (i.region IS NULL OR i.region NOT IN (:hidden)) AND ('g:' || i.kind || ':' || i.groupName) NOT IN (:hidden)
+            AND COALESCE(i.region, 'none') NOT IN (:hidden) AND ('g:' || i.kind || ':' || i.groupName) NOT IN (:hidden)
             AND NOT ('scan:dead' IN (:hidden) AND i.id IN (SELECT itemId FROM channel_scan WHERE hidden = 1))
             AND NOT ('placeholder' IN (:hidden) AND i.kind = 0
                 AND ((' ' || i.searchName) GLOB '* no event*' OR (' ' || i.searchName) GLOB '* no live event*'))
@@ -201,7 +201,7 @@ interface ItemDao {
         )
         LEFT JOIN favourites f ON f.itemId = i.id AND f.profileId = $ME
         WHERE i.kind = 0
-            AND (i.region IS NULL OR i.region NOT IN (:hidden)) AND ('g:' || i.kind || ':' || i.groupName) NOT IN (:hidden)
+            AND COALESCE(i.region, 'none') NOT IN (:hidden) AND ('g:' || i.kind || ':' || i.groupName) NOT IN (:hidden)
             AND NOT ('scan:dead' IN (:hidden) AND i.id IN (SELECT itemId FROM channel_scan WHERE hidden = 1))
             AND NOT ('placeholder' IN (:hidden) AND i.kind = 0
                 AND ((' ' || i.searchName) GLOB '* no event*' OR (' ' || i.searchName) GLOB '* no live event*'))
@@ -232,7 +232,7 @@ interface ItemDao {
         """
         SELECT * FROM items i
         WHERE i.kind = 1 AND i.id IN (SELECT docid FROM items_fts WHERE items_fts MATCH :match)
-            AND (i.region IS NULL OR i.region NOT IN (:hidden)) AND ('g:' || i.kind || ':' || i.groupName) NOT IN (:hidden)
+            AND COALESCE(i.region, 'none') NOT IN (:hidden) AND ('g:' || i.kind || ':' || i.groupName) NOT IN (:hidden)
             AND NOT ('scan:dead' IN (:hidden) AND i.id IN (SELECT itemId FROM channel_scan WHERE hidden = 1))
             AND NOT ('placeholder' IN (:hidden) AND i.kind = 0
                 AND ((' ' || i.searchName) GLOB '* no event*' OR (' ' || i.searchName) GLOB '* no live event*'))
@@ -261,7 +261,7 @@ interface ItemDao {
                 THEN 1 ELSE 0 END) AS newEpisodes
         FROM items i
         WHERE i.kind = 2 AND i.showKey IS NOT NULL AND i.id IN (SELECT docid FROM items_fts WHERE items_fts MATCH :match)
-            AND (i.region IS NULL OR i.region NOT IN (:hidden)) AND ('g:' || i.kind || ':' || i.groupName) NOT IN (:hidden)
+            AND COALESCE(i.region, 'none') NOT IN (:hidden) AND ('g:' || i.kind || ':' || i.groupName) NOT IN (:hidden)
             AND NOT ('scan:dead' IN (:hidden) AND i.id IN (SELECT itemId FROM channel_scan WHERE hidden = 1))
             AND NOT ('placeholder' IN (:hidden) AND i.kind = 0
                 AND ((' ' || i.searchName) GLOB '* no event*' OR (' ' || i.searchName) GLOB '* no live event*'))
@@ -292,7 +292,7 @@ interface ItemDao {
     @Query(
         """
         SELECT * FROM items
-        WHERE kind = 0 AND groupName = :group AND (region IS NULL OR region NOT IN (:hidden)) AND ('g:' || kind || ':' || groupName) NOT IN (:hidden)
+        WHERE kind = 0 AND groupName = :group AND COALESCE(region, 'none') NOT IN (:hidden) AND ('g:' || kind || ':' || groupName) NOT IN (:hidden)
             AND NOT ('scan:dead' IN (:hidden) AND id IN (SELECT itemId FROM channel_scan WHERE hidden = 1)) AND (:adult OR adult = 0)
             $KIDS_ONLY
             AND NOT ('placeholder' IN (:hidden) AND kind = 0
@@ -313,7 +313,7 @@ interface ItemDao {
     @Query(
         """
         SELECT groupName, COUNT(*) AS count FROM items
-        WHERE kind = :kind AND (region IS NULL OR region NOT IN (:hidden)) AND ('g:' || kind || ':' || groupName) NOT IN (:hidden)
+        WHERE kind = :kind AND COALESCE(region, 'none') NOT IN (:hidden) AND ('g:' || kind || ':' || groupName) NOT IN (:hidden)
             AND NOT ('scan:dead' IN (:hidden) AND id IN (SELECT itemId FROM channel_scan WHERE hidden = 1)) AND (:adult OR adult = 0)
             $KIDS_ONLY
             AND NOT ('placeholder' IN (:hidden) AND kind = 0
@@ -355,7 +355,7 @@ interface ItemDao {
         FROM items i
         LEFT JOIN channel_health h ON h.itemId = i.id
         WHERE i.kind = 0
-            AND (i.region IS NULL OR i.region NOT IN (:hidden)) AND ('g:' || i.kind || ':' || i.groupName) NOT IN (:hidden)
+            AND COALESCE(i.region, 'none') NOT IN (:hidden) AND ('g:' || i.kind || ':' || i.groupName) NOT IN (:hidden)
             AND (:adult OR i.adult = 0)
             $KIDS_ONLY_I
             AND (nameMatch OR guideMatch)
@@ -385,7 +385,7 @@ interface ItemDao {
         LEFT JOIN channel_health h ON h.itemId = i.id
         WHERE i.kind = 0 AND i.id != :exclude
             AND i.id IN (SELECT docid FROM items_fts WHERE items_fts MATCH :match)
-            AND (i.region IS NULL OR i.region NOT IN (:hidden)) AND ('g:' || i.kind || ':' || i.groupName) NOT IN (:hidden)
+            AND COALESCE(i.region, 'none') NOT IN (:hidden) AND ('g:' || i.kind || ':' || i.groupName) NOT IN (:hidden)
             AND NOT ('scan:dead' IN (:hidden) AND i.id IN (SELECT itemId FROM channel_scan WHERE hidden = 1))
             AND NOT ('placeholder' IN (:hidden) AND i.kind = 0
                 AND ((' ' || i.searchName) GLOB '* no event*' OR (' ' || i.searchName) GLOB '* no live event*'))
@@ -440,7 +440,7 @@ interface ItemDao {
                 OR (lower(i.groupName) || ' ' || i.searchName) GLOB '*cricket*'
                 OR (lower(i.groupName) || ' ' || i.searchName) GLOB '*rugby*'
             )
-            AND (i.region IS NULL OR i.region NOT IN (:hidden)) AND ('g:' || i.kind || ':' || i.groupName) NOT IN (:hidden)
+            AND COALESCE(i.region, 'none') NOT IN (:hidden) AND ('g:' || i.kind || ':' || i.groupName) NOT IN (:hidden)
             AND (:adult OR i.adult = 0)
             $KIDS_ONLY_I
         ORDER BY p.start, i.sortOrder
@@ -454,6 +454,7 @@ interface ItemDao {
         adult: Boolean,
     ): List<EventRow>
 
-    @Query("SELECT region, COUNT(*) AS count FROM items WHERE region IS NOT NULL GROUP BY region ORDER BY count DESC")
+    /** Each region and its stream count; streams with no region count under [app.tuned.core.Regions.NONE]. */
+    @Query("SELECT COALESCE(region, 'none') AS region, COUNT(*) AS count FROM items GROUP BY region ORDER BY count DESC")
     fun regions(): Flow<List<RegionCount>>
 }

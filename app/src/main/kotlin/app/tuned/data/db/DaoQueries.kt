@@ -111,7 +111,7 @@ internal const val NOW_JOIN =
 
 /** Hidden countries, groups, dead channels and empty event slots stay out; the group chip and the search narrow. */
 internal const val CHANNEL_FILTER =
-    "i.kind = 0 AND (i.region IS NULL OR i.region NOT IN (:hidden)) AND ('g:0:' || i.groupName) NOT IN (:hidden) " +
+    "i.kind = 0 AND COALESCE(i.region, 'none') NOT IN (:hidden) AND ('g:0:' || i.groupName) NOT IN (:hidden) " +
         "AND NOT ('scan:dead' IN (:hidden) AND i.id IN (SELECT itemId FROM channel_scan WHERE hidden = 1)) " +
         "AND NOT ('placeholder' IN (:hidden) AND ((' ' || i.searchName) GLOB '* no event*' " +
         "OR (' ' || i.searchName) GLOB '* no live event*')) " +
