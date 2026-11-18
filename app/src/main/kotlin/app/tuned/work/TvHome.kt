@@ -55,7 +55,8 @@ class TvHome(
                     items.continueWatching(ContentKind.SERIES.code, hidden, s.showAdult).first()
             ).take(MAX_CARDS)
         updateWatchNext(inProgress)
-        updateFavourites(c.db.library().favouriteChannels().first().take(MAX_CARDS))
+        val favourites = c.db.library().favouriteChannels()
+        updateFavourites(favourites.first().take(MAX_CARDS))
     }
 
     /** Signing out: every card points at channels and films that are gone. */
