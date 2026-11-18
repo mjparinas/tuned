@@ -27,5 +27,8 @@ Each profile has its own **favourites, watch history (Continue Watching and watc
 
 ## Who's watching
 
+- **Pictures** (Melvin, 2026-11-18: "make this page look more visually appealing … allow people to choose an avatar … special avatars for pro users only"). A profile wears an avatar, an emoji on a soft gradient, or its first letter on its colour as before. Emoji cost nothing to download, stay sharp at every size, and are from Unicode 10 or older so Android 8 draws them. The set is in `core/Avatars.kt`; the stored key (`profiles.avatar`, database version 17) never changes, and an unknown key falls back to the letter.
+- Twelve are free (fox, panda, tiger and friends; they take the profile's colour). Twelve are **Premium** (dragon, unicorn, T. rex, rocket, wizard, crown and more), each with its own gradient and a slowly turning gold, rose and cyan ring on the picker, still on Home's small badge. Without Premium they show a lock and open the Premium screen. A profile keeps a Premium picture it already has if Premium ends, since taking it away would only annoy.
+- The picker is centred on a soft glow of the accent colour, with large rounded-square pictures (104dp), a ring around the profile in use, a Kids pill under kids profiles, a press and focus bounce, and "Manage profiles" as a button under the profiles instead of a pencil in the corner.
 - With more than one profile, the app opens on "Who's watching?" (Settings: "Ask who's watching at start", on by default, as most households with profiles share a device). With one profile nothing changes: no picker and no profile button.
 - Home shows the profile's badge beside Settings while there is more than one profile; tapping it switches. Settings › Profiles adds and manages them.

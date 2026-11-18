@@ -161,6 +161,7 @@ private val FEATURES =
     listOf(
         R.string.premium_feature_playlists,
         R.string.premium_feature_profiles,
+        R.string.premium_feature_avatars,
         R.string.premium_feature_rewind,
         R.string.premium_feature_record,
         R.string.premium_feature_downloads,
