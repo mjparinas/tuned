@@ -13,6 +13,13 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
+    inputs:
+      bundle_only:
+        # Builds the signed store bundle (and APK) as artifacts without a GitHub release, for an upload to a Play testing
+        # track. Nothing reaches production or installed copies (docs/decisions/premium.md).
+        description: "Signed store bundle only: no GitHub release"
+        type: boolean
+        default: false
 
 concurrency:
   group: release
@@ -64,7 +71,7 @@ jobs:
           rm "$RUNNER_TEMP/upload.jks"
           cp app/build/outputs/apk/github/release/app-github-release.apk "$RUNNER_TEMP/tuned.apk"
       - name: GitHub release
-        if: env.HAS_KEY == 'true'
+        if: env.HAS_KEY == 'true' && !inputs.bundle_only
         env:
           GH_TOKEN: ${{ github.token }}
           TAG: v${{ steps.v.outputs.version }}

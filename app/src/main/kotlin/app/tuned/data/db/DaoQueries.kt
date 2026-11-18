@@ -111,7 +111,7 @@ internal const val NOW_JOIN =
 
 /** Hidden countries, groups, dead channels and empty event slots stay out; the group chip and the search narrow. */
 internal const val CHANNEL_FILTER =
-    "i.kind = 0 AND (i.region IS NULL OR i.region NOT IN (:hidden)) AND ('g:0:' || i.groupName) NOT IN (:hidden) " +
+    "i.kind = 0 AND COALESCE(i.region, 'none') NOT IN (:hidden) AND ('g:0:' || i.groupName) NOT IN (:hidden) " +
         "AND NOT ('scan:dead' IN (:hidden) AND i.id IN (SELECT itemId FROM channel_scan WHERE hidden = 1)) " +
         "AND NOT ('placeholder' IN (:hidden) AND ((' ' || i.searchName) GLOB '* no event*' " +
         "OR (' ' || i.searchName) GLOB '* no live event*')) " +
@@ -123,3 +123,14 @@ internal const val CHANNEL_FILTER =
         // An event search ("UFC") also finds the channels showing it now or within the hour.
         "SELECT channelId FROM programmes WHERE start > :now - 86400000 AND start < :now + 3600000 AND stop > :now " +
         "AND title LIKE '%' || :query || '%'))"
+
+/**
+ * Live TV's quick filters ([app.tuned.ui.browse.LiveQuick]), on top of the chip chosen. `:topic` is a Sports or PPV
+ * full-text query ([app.tuned.core.LiveTopic.fullText]) on channel names, or '' for any channel; the categories that
+ * match it come in `:quick` as `g:<category>`, since a category has no full-text index. `:quick` also holds the country
+ * tags to keep, or `any`. A channel with no country found has none to match, so a country or language leaves it out.
+ */
+internal const val LIVE_QUICK =
+    "AND (:topic = '' OR ('g:' || i.groupName) IN (:quick) " +
+        "OR i.id IN (SELECT docid FROM items_fts WHERE items_fts MATCH :topic)) " +
+        "AND ('any' IN (:quick) OR i.region IN (:quick))"

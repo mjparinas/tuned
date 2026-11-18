@@ -1,28 +1,30 @@
 package app.tuned.ui.settings
 
 import android.app.Application
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsFocusedAsState
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.GridItemSpan
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.CircleShape
@@ -34,9 +36,10 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -44,6 +47,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -51,7 +55,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -61,15 +70,14 @@ import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import app.tuned.R
 import app.tuned.container
+import app.tuned.core.Avatars
 import app.tuned.core.ProfileLock
 import app.tuned.data.Accent
 import app.tuned.data.db.ProfileEntity
@@ -90,6 +98,7 @@ class ProfilesViewModel(
 
     val profiles: StateFlow<List<ProfileEntity>?> = repo.profiles.stateIn(viewModelScope, SharingStarted.Eagerly, null)
     val current: StateFlow<ProfileEntity?> = repo.current.stateIn(viewModelScope, SharingStarted.Eagerly, null)
+    val premiumUnlocked: StateFlow<Boolean> = container.premium.unlocked
     val hasParentalPin: StateFlow<Boolean> = container.settings.hasAdultPin.stateIn(viewModelScope, SharingStarted.Eagerly, false)
     val askAtStart: StateFlow<Boolean?> =
         container.settings.settings
@@ -113,7 +122,7 @@ class ProfilesViewModel(
         viewModelScope.launchSafely("Profiles") {
             val id =
                 if (profile.id == 0L) {
-                    repo.create(profile.name, profile.colour, profile.kids)
+                    repo.create(profile.name, profile.colour, profile.kids, profile.avatar)
                 } else {
                     repo.save(profile)
                     profile.id
@@ -210,68 +219,88 @@ fun ProfilesScreen(
         }
     }
 
+    val primary = MaterialTheme.colorScheme.primary
+    val manageToggle: () -> Unit = { managing = !managing }
     Scaffold(
+        containerColor = Color.Transparent,
+        modifier =
+            Modifier
+                .background(MaterialTheme.colorScheme.background)
+                // A soft glow of the accent behind the profiles, so the first screen feels like a welcome, not a form.
+                .drawBehind {
+                    drawRect(
+                        Brush.radialGradient(
+                            listOf(primary.copy(alpha = 0.22f), Color.Transparent),
+                            center = Offset(size.width / 2, size.height * 0.38f),
+                            radius = size.maxDimension * 0.62f,
+                        ),
+                    )
+                },
         topBar = {
-            val actions: @Composable RowScope.() -> Unit = {
-                // A kids profile can pick, but never add, change or remove profiles.
-                if (!kidsNow) {
-                    IconButton(onClick = { managing = !managing }) {
-                        if (managing) {
-                            Icon(Icons.Filled.Check, contentDescription = stringResource(R.string.profiles_done))
-                        } else {
-                            Icon(Icons.Filled.Edit, contentDescription = stringResource(R.string.profiles_manage))
-                        }
-                    }
-                }
-            }
             if (atStart) {
-                Row(
-                    Modifier.fillMaxWidth().statusBarsPadding().padding(start = 16.dp, end = 4.dp, top = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Spacer(Modifier.weight(1f))
-                    actions()
-                }
+                Spacer(Modifier.statusBarsPadding())
             } else {
-                BackTopBar(stringResource(if (managing) R.string.profiles_manage else R.string.profiles_title), onBack, actions)
+                BackTopBar(stringResource(if (managing) R.string.profiles_manage else R.string.profiles_title), onBack)
             }
         },
     ) { padding ->
-        LazyVerticalGrid(
-            columns = GridCells.Adaptive(136.dp),
-            contentPadding = PaddingValues(24.dp),
-            horizontalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterHorizontally),
-            verticalArrangement = Arrangement.spacedBy(24.dp),
-            modifier = Modifier.padding(padding).fillMaxSize(),
-        ) {
-            if (atStart) {
-                item(span = { GridItemSpan(maxLineSpan) }) {
+        BoxWithConstraints(Modifier.padding(padding).fillMaxSize()) {
+            Column(
+                Modifier
+                    .fillMaxWidth()
+                    .verticalScroll(rememberScrollState())
+                    .heightIn(min = maxHeight)
+                    .padding(horizontal = 16.dp, vertical = 24.dp),
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                if (atStart) {
                     Text(
                         stringResource(if (managing) R.string.profiles_manage else R.string.profiles_title),
-                        style = MaterialTheme.typography.headlineMedium,
+                        style = MaterialTheme.typography.headlineLarge,
+                        fontWeight = FontWeight.SemiBold,
                         textAlign = TextAlign.Center,
-                        modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
+                        modifier = Modifier.fillMaxWidth(),
                     )
+                    Spacer(Modifier.height(40.dp))
                 }
-            }
-            items(list, key = { it.id }) { p ->
-                ProfileTile(p, selected = p.id == current?.id, managing = managing, onClick = { pick(p) })
-            }
-            if (!kidsNow && managing) {
-                item(key = "add") {
-                    AddTile(onClick = {
-                        // A second profile is Premium (docs/decisions/premium.md).
-                        if (list.isEmpty() || context.container.premium.allow(context)) editing = newProfile(list.size)
-                    })
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally),
+                    verticalArrangement = Arrangement.spacedBy(20.dp),
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    list.forEach { p ->
+                        key(p.id) { ProfileTile(p, selected = p.id == current?.id, managing = managing, onClick = { pick(p) }) }
+                    }
+                    if (!kidsNow && managing) {
+                        AddTile(onClick = {
+                            // A second profile is Premium (docs/decisions/premium.md).
+                            if (list.isEmpty() || context.container.premium.allow(context)) editing = newProfile(list.size)
+                        })
+                    }
                 }
-            }
-            if (managing && list.size > 1) {
-                item(span = { GridItemSpan(maxLineSpan) }) {
-                    SwitchRow(
-                        stringResource(R.string.profiles_ask_at_start),
-                        askAtStart ?: true,
-                        stringResource(R.string.profiles_ask_at_start_summary),
-                    ) { on -> vm.setAskAtStart(on) }
+                // A kids profile can pick, but never add, change or remove profiles.
+                if (!kidsNow) {
+                    Spacer(Modifier.height(40.dp))
+                    if (managing) {
+                        Button(onClick = manageToggle) { Text(stringResource(R.string.profiles_done)) }
+                    } else {
+                        OutlinedButton(onClick = manageToggle) {
+                            Icon(Icons.Filled.Edit, contentDescription = null, modifier = Modifier.size(18.dp))
+                            Spacer(Modifier.width(8.dp))
+                            Text(stringResource(R.string.profiles_manage))
+                        }
+                    }
+                }
+                if (managing && list.size > 1) {
+                    Spacer(Modifier.height(16.dp))
+                    Box(Modifier.widthIn(max = 480.dp)) {
+                        SwitchRow(
+                            stringResource(R.string.profiles_ask_at_start),
+                            askAtStart ?: true,
+                            stringResource(R.string.profiles_ask_at_start_summary),
+                        ) { on -> vm.setAskAtStart(on) }
+                    }
                 }
             }
         }
@@ -322,43 +351,88 @@ private fun ProfileTile(
     managing: Boolean,
     onClick: () -> Unit,
 ) {
-    val shape = RoundedCornerShape(16.dp)
+    val shape = RoundedCornerShape(20.dp)
+    val avatarShape = RoundedCornerShape(TILE_AVATAR * 0.28f)
+    val interaction = remember { MutableInteractionSource() }
+    val pressed by interaction.collectIsPressedAsState()
+    val focused by interaction.collectIsFocusedAsState()
+    // A press sinks the picture a little and a remote's focus lifts it, so a tap and a D-pad both feel answered.
+    val scale by animateFloatAsState(
+        when {
+            pressed -> 0.94f
+            focused -> 1.06f
+            else -> 1f
+        },
+        label = "profileScale",
+    )
     // The ring and the pencil are drawn, so a screen reader is told in words which profile is in use and what a tap does.
     val current = stringResource(R.string.a11y_current_profile)
     val edit = stringResource(R.string.a11y_edit)
+    val ring = MaterialTheme.colorScheme.primary
     Column(
         Modifier
+            .width(TILE_WIDTH)
             .focusRing(shape, MaterialTheme.colorScheme.primary)
             .clip(shape)
-            .clickable(onClickLabel = if (managing) edit else null, onClick = onClick)
-            .semantics(mergeDescendants = true) { if (selected && !managing) stateDescription = current }
-            .padding(8.dp),
+            .clickable(
+                interactionSource = interaction,
+                indication = LocalIndication.current,
+                onClickLabel = if (managing) edit else null,
+                onClick = onClick,
+            ).semantics(mergeDescendants = true) { if (selected && !managing) stateDescription = current }
+            .padding(vertical = 8.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Box(contentAlignment = Alignment.Center) {
-            ProfileBadge(profile, size = 88.dp)
+        Box(
+            Modifier
+                .graphicsLayer {
+                    scaleX = scale
+                    scaleY = scale
+                }.size(TILE_AVATAR + 12.dp)
+                .then(
+                    if (selected && !managing) {
+                        Modifier.border(3.dp, ring, RoundedCornerShape((TILE_AVATAR + 12.dp) * 0.28f))
+                    } else {
+                        Modifier
+                    },
+                ),
+            contentAlignment = Alignment.Center,
+        ) {
+            Box(Modifier.shadow(10.dp, avatarShape, clip = false)) {
+                ProfileBadge(profile, size = TILE_AVATAR, shape = avatarShape, animate = true)
+            }
             if (managing) {
                 Box(
-                    Modifier.size(88.dp).clip(CircleShape).background(Color.Black.copy(alpha = 0.35f)),
+                    Modifier.size(TILE_AVATAR).clip(avatarShape).background(Color.Black.copy(alpha = 0.45f)),
                     contentAlignment = Alignment.Center,
-                ) { Icon(Icons.Filled.Edit, contentDescription = null, tint = Color.White) }
-            } else if (selected) {
-                Box(Modifier.size(96.dp).border(3.dp, MaterialTheme.colorScheme.primary, CircleShape))
+                ) { Icon(Icons.Filled.Edit, contentDescription = null, tint = Color.White, modifier = Modifier.size(32.dp)) }
             }
         }
-        Spacer(Modifier.height(8.dp))
-        Row(verticalAlignment = Alignment.CenterVertically) {
+        Spacer(Modifier.height(10.dp))
+        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(horizontal = 4.dp)) {
             if (profile.pinHash != null) {
                 Icon(Icons.Filled.Lock, contentDescription = stringResource(R.string.profile_locked), modifier = Modifier.size(14.dp))
                 Spacer(Modifier.width(4.dp))
             }
-            Text(displayName(profile), style = MaterialTheme.typography.titleSmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(
+                displayName(profile),
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
         }
         if (profile.kids) {
+            Spacer(Modifier.height(4.dp))
             Text(
                 stringResource(R.string.profile_kids_badge),
                 style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.primary,
+                color = MaterialTheme.colorScheme.onSecondaryContainer,
+                modifier =
+                    Modifier
+                        .clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.secondaryContainer)
+                        .padding(horizontal = 10.dp, vertical = 2.dp),
             )
         }
     }
@@ -366,40 +440,29 @@ private fun ProfileTile(
 
 @Composable
 private fun AddTile(onClick: () -> Unit) {
-    val shape = RoundedCornerShape(16.dp)
+    val shape = RoundedCornerShape(20.dp)
+    val avatarShape = RoundedCornerShape(TILE_AVATAR * 0.28f)
     Column(
         Modifier
+            .width(TILE_WIDTH)
             .focusRing(shape, MaterialTheme.colorScheme.primary)
             .clip(shape)
             .clickable(onClick = onClick)
-            .padding(8.dp),
+            .padding(vertical = 8.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Box(
-            Modifier.size(88.dp).clip(CircleShape).background(MaterialTheme.colorScheme.surfaceVariant),
-            contentAlignment = Alignment.Center,
-        ) { Icon(Icons.Filled.Add, contentDescription = null, modifier = Modifier.size(36.dp)) }
-        Spacer(Modifier.height(8.dp))
-        Text(stringResource(R.string.profile_add), style = MaterialTheme.typography.titleSmall)
-    }
-}
-
-/** A profile's round badge: its colour and first letter. Also the profile button on Home. */
-@Composable
-fun ProfileBadge(
-    profile: ProfileEntity,
-    size: Dp,
-) {
-    Box(
-        Modifier.size(size).clip(CircleShape).background(profileColour(profile.colour)),
-        contentAlignment = Alignment.Center,
-    ) {
-        Text(
-            displayName(profile).take(1).uppercase(),
-            color = Color.White,
-            fontWeight = FontWeight.Bold,
-            fontSize = (size.value * 0.42f).sp,
-        )
+        Box(Modifier.size(TILE_AVATAR + 12.dp), contentAlignment = Alignment.Center) {
+            Box(
+                Modifier
+                    .size(TILE_AVATAR)
+                    .clip(avatarShape)
+                    .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f))
+                    .border(2.dp, MaterialTheme.colorScheme.outlineVariant, avatarShape),
+                contentAlignment = Alignment.Center,
+            ) { Icon(Icons.Filled.Add, contentDescription = null, modifier = Modifier.size(40.dp)) }
+        }
+        Spacer(Modifier.height(10.dp))
+        Text(stringResource(R.string.profile_add), style = MaterialTheme.typography.titleMedium)
     }
 }
 
@@ -407,8 +470,6 @@ fun ProfileBadge(
 fun displayName(profile: ProfileEntity): String = profile.name.ifBlank { stringResource(R.string.profile_default_name) }
 
 private fun newProfile(count: Int) = ProfileEntity(name = "", colour = count, kids = false, pinHash = null, createdAt = 0)
-
-private fun profileColour(index: Int): Color = Accent.entries[Math.floorMod(index, Accent.entries.size)].swatch()
 
 /** Name, colour, kids, PIN lock and delete for one profile; a new one has id 0. */
 @Composable
@@ -421,6 +482,9 @@ private fun ProfileEditor(
     val hasParentalPin by vm.hasParentalPin.collectAsStateWithLifecycle()
     var name by remember { mutableStateOf(profile.name) }
     var colour by remember { mutableStateOf(profile.colour) }
+    var avatar by remember { mutableStateOf(profile.avatar) }
+    val premiumUnlocked by vm.premiumUnlocked.collectAsStateWithLifecycle()
+    val context = LocalContext.current
     var kids by remember { mutableStateOf(profile.kids) }
     var locked by remember { mutableStateOf(profile.pinHash != null) }
     var newPin by remember { mutableStateOf<String?>(null) }
@@ -441,7 +505,7 @@ private fun ProfileEditor(
         }
     val save = {
         val clearPin = !locked && profile.pinHash != null
-        vm.save(profile.copy(name = name, colour = colour, kids = kids), pin = newPin, clearPin = clearPin)
+        vm.save(profile.copy(name = name, colour = colour, kids = kids, avatar = avatar), pin = newPin, clearPin = clearPin)
         onClose()
     }
 
@@ -450,11 +514,27 @@ private fun ProfileEditor(
         title = { Text(stringResource(if (profile.id == 0L) R.string.profile_new_title else R.string.profile_edit_title)) },
         text = {
             Column(Modifier.verticalScroll(rememberScrollState())) {
+                val letter = name.ifBlank { stringResource(R.string.profile_default_name) }.take(1).uppercase()
+                Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                    AvatarPicture(Avatars.find(avatar), colour, letter, size = 88.dp, animate = true)
+                }
+                Spacer(Modifier.height(16.dp))
                 OutlinedTextField(
                     value = name,
                     onValueChange = { name = it.take(MAX_NAME) },
                     label = { Text(stringResource(R.string.profile_name)) },
                     singleLine = true,
+                )
+                Spacer(Modifier.height(12.dp))
+                AvatarChooser(
+                    selected = avatar,
+                    current = profile.avatar,
+                    colour = colour,
+                    letter = letter,
+                    premiumUnlocked = premiumUnlocked,
+                    onPick = { avatar = it },
+                    // Opens the Premium screen; the picture stays as it was.
+                    onLocked = { context.container.premium.allow(context) },
                 )
                 Spacer(Modifier.height(12.dp))
                 Text(stringResource(R.string.profile_colour), style = MaterialTheme.typography.labelLarge)
@@ -530,3 +610,5 @@ private fun ProfileEditor(
 }
 
 private const val MAX_NAME = 24
+private val TILE_AVATAR = 104.dp
+private val TILE_WIDTH = 136.dp

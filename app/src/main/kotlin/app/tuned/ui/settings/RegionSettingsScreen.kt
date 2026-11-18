@@ -80,14 +80,19 @@ fun RegionSettingsScreen(
     val hidden = settings.hiddenRegions
     val languages = remember(regions) { RegionLanguages.group(regions.map { it.region }) }
     val counts = remember(regions) { regions.associate { it.region to it.count } }
-    val byName = remember(regions) { Regions.sortedByName(regions) { it.region } }
+    // Streams with no country get their own switch, last, under the countries.
+    val byName = remember(regions) { Regions.sortedByName(regions.filter { it.region != Regions.NONE }) { it.region } }
+    val other = regions.firstOrNull { it.region == Regions.NONE }
+    val otherName = stringResource(R.string.regions_other)
     // Filters as each letter is typed; the lists are small, so nothing waits on the database.
     var query by rememberSaveable { mutableStateOf("") }
     val shownLanguages =
         languages
             .map { (code, tags) -> Triple(code, tags, languageName(code)) }
             .filter { (_, tags, name) -> Regions.matchesSearch(query, tags + name) }
-    val shownRegions = byName.filter { Regions.regionMatches(query, it.region) }
+    val shownRegions =
+        byName.filter { Regions.regionMatches(query, it.region) } +
+            listOfNotNull(other?.takeIf { Regions.matchesSearch(query, listOf(otherName)) })
     Scaffold(
         topBar = {
             BackTopBar(stringResource(R.string.settings_countries), onBack) {
@@ -181,10 +186,12 @@ private fun RegionList(
             if (regions.isNotEmpty()) item { SectionHeader(stringResource(R.string.regions_countries)) }
         }
         items(regions, key = { it.region }) { r ->
+            val streams = pluralStringResource(R.plurals.streams, r.count, r.count)
+            val none = r.region == Regions.NONE
             SwitchRow(
-                title = "${Regions.displayName(r.region)} (${r.region})",
+                title = if (none) stringResource(R.string.regions_other) else "${Regions.displayName(r.region)} (${r.region})",
                 checked = r.region !in hidden,
-                summary = pluralStringResource(R.plurals.streams, r.count, r.count),
+                summary = if (none) stringResource(R.string.regions_other_summary, streams) else streams,
             ) { show -> onSetHidden(if (show) hidden - r.region else hidden + r.region) }
         }
     }

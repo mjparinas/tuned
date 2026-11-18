@@ -28,7 +28,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         GuideFixEntity::class,
         GuideChannelEntity::class,
     ],
-    version = 16,
+    version = 17,
     exportSchema = true,
 )
 abstract class TunedDatabase : RoomDatabase() {
@@ -58,6 +58,8 @@ abstract class TunedDatabase : RoomDatabase() {
 
     abstract fun channelNumbers(): ChannelNumberDao
 
+    abstract fun liveFilters(): LiveFilterDao
+
     companion object {
         fun create(context: Context): TunedDatabase = Room
             .databaseBuilder(context, TunedDatabase::class.java, "tuned.db")
@@ -80,6 +82,7 @@ abstract class TunedDatabase : RoomDatabase() {
                 MIGRATION_13_14,
                 MIGRATION_14_15,
                 MIGRATION_15_16,
+                MIGRATION_16_17,
             ).addCallback(FirstProfile)
             // Going back to an older release (installing an older APK) can't keep a newer database: start it afresh
             // rather than crash on every launch. Upgrades always migrate, above.
@@ -258,6 +261,14 @@ abstract class TunedDatabase : RoomDatabase() {
             object : Migration(15, 16) {
                 override fun migrate(db: SupportSQLiteDatabase) {
                     db.execSQL("ALTER TABLE `catchup` ADD COLUMN `source` TEXT")
+                }
+            }
+
+        /** Adds profile avatars; every profile keeps its letter until one is picked. */
+        val MIGRATION_16_17 =
+            object : Migration(16, 17) {
+                override fun migrate(db: SupportSQLiteDatabase) {
+                    db.execSQL("ALTER TABLE `profiles` ADD COLUMN `avatar` TEXT")
                 }
             }
 

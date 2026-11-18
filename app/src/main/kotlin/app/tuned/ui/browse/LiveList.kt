@@ -73,6 +73,7 @@ internal fun LiveTab(
         Box(Modifier.fillMaxSize()) {
             GuideGridView(channels, settings.guideDays, onPlay, onOpenGuide)
             NoMatches(channels, vm, ContentKind.LIVE, onSearchEverything)
+            NoQuickMatches(channels, vm)
         }
     } else {
         LiveList(
@@ -131,6 +132,7 @@ private fun LiveList(
             channels.peekOrNull(index)?.let { FastScroll.label(it.groupName, if (showNumbers) it.number else 0) }
         }
         NoMatches(channels, vm, ContentKind.LIVE, onSearchEverything)
+        NoQuickMatches(channels, vm)
     }
 }
 

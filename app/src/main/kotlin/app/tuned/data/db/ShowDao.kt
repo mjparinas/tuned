@@ -24,7 +24,7 @@ interface ShowDao {
                 WHERE e.kind = 2 AND e.showKey = s.showKey AND e.id NOT IN (SELECT itemId FROM seen_episodes WHERE profileId = $ME)
             ) ELSE 0 END AS newEpisodes
         FROM show_groups s
-        WHERE (s.region IS NULL OR s.region NOT IN (:hidden)) AND ('g:2:' || s.groupName) NOT IN (:hidden)
+        WHERE COALESCE(s.region, 'none') NOT IN (:hidden) AND ('g:2:' || s.groupName) NOT IN (:hidden)
             AND (:adult OR s.adult = 0)
             $KIDS_ONLY_S
             $ROUND_THE_CLOCK_S
@@ -46,7 +46,7 @@ interface ShowDao {
     @Query(
         """
         SELECT groupName, SUM(episodes) AS count FROM show_groups
-        WHERE (region IS NULL OR region NOT IN (:hidden)) AND ('g:2:' || groupName) NOT IN (:hidden) AND (:adult OR adult = 0)
+        WHERE COALESCE(region, 'none') NOT IN (:hidden) AND ('g:2:' || groupName) NOT IN (:hidden) AND (:adult OR adult = 0)
             $KIDS_ONLY_GROUPS
             $ROUND_THE_CLOCK_GROUPS
         GROUP BY groupName ORDER BY MIN(sortOrder)

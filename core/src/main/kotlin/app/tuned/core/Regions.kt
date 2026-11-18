@@ -12,6 +12,13 @@ import java.util.Locale
  * the region. Tags that only describe quality (`4K`, `HD`, `VIP`) are skipped, so `4K | US Movies` still reads US.
  */
 object Regions {
+    /**
+     * The switch for streams with no country or language Tuned can read (Melvin, 2026-11-18: with every country off,
+     * 40,000 channels still showed). Stored in the hidden countries like a tag; lowercase, so no real tag matches it.
+     * The list queries read a missing region as this key, so the SQL spells it out too (`COALESCE(region, 'none')`).
+     */
+    const val NONE = "none"
+
     // Any run of symbols separates: "US| ", "US » ", "US ➤ ", "US ┃ ", "US ✦ " all read the same.
     private val separators = Regex("""[^\p{L}\p{N}\s+&'!]+""")
     private val spaces = Regex("""\s+""")

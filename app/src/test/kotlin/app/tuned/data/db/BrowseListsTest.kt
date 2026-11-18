@@ -35,7 +35,19 @@ class BrowseListsTest {
             listOf(programme("a", 0, 100, "Morning"), programme("a", 50, 100, "Update"), programme("a", 100, 200, "Later")),
         )
 
-        val rows = db.items().channels(60, emptyList(), adult = false, group = null, query = "", match = "").all()
+        val rows =
+            db
+                .items()
+                .channels(
+                    60,
+                    emptyList(),
+                    adult = false,
+                    group = null,
+                    query = "",
+                    match = "",
+                    topic = "",
+                    quick = listOf("any"),
+                ).all()
 
         assertEquals(listOf(1L, 2L), rows.map { it.id })
         assertEquals(listOf("Update", null), rows.map { it.nowTitle })
@@ -53,7 +65,7 @@ class BrowseListsTest {
             listOf(3L, 1L),
             db
                 .items()
-                .favouriteChannels(0, emptyList(), false, null, "", "")
+                .favouriteChannels(0, emptyList(), false, null, "", "", "", listOf("any"))
                 .all()
                 .map { it.id },
         )
@@ -61,7 +73,7 @@ class BrowseListsTest {
             listOf(3L, 2L),
             db
                 .items()
-                .recentChannels(0, emptyList(), false, null, "", "")
+                .recentChannels(0, emptyList(), false, null, "", "", "", listOf("any"))
                 .all()
                 .map { it.id },
         )
