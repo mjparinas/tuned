@@ -241,7 +241,13 @@ object Regions {
     fun displayName(region: String): String = names[region] ?: isoNames[region] ?: region
 
     private val isoNames: Map<String, String> by lazy {
-        Locale.getISOCountries().associateWith { Locale.Builder().setRegion(it).build().getDisplayCountry(Locale.ENGLISH) }
+        Locale.getISOCountries().associateWith {
+            Locale
+                .Builder()
+                .setRegion(it)
+                .build()
+                .getDisplayCountry(Locale.ENGLISH)
+        }
     }
 
     /**
