@@ -110,12 +110,14 @@ class ProfilesDbTest {
         old.execSQL("INSERT INTO seen_episodes VALUES (11, 'abc')")
 
         TunedDatabase.MIGRATION_12_13.migrate(old)
+        // 13 to 16 leave these tables alone; 17 adds the avatar.
+        TunedDatabase.MIGRATION_16_17.migrate(old)
 
         assertEquals(listOf("7|500|3|1"), rows(old, "SELECT itemId, addedAt, position, profileId FROM favourites"))
         assertEquals(listOf("8|1000|2000|50|1"), rows(old, "SELECT itemId, positionMs, durationMs, watchedAt, profileId FROM history"))
         assertEquals(listOf("s:abc|1"), rows(old, "SELECT `key`, profileId FROM watch_later"))
         assertEquals(listOf("11|abc|1"), rows(old, "SELECT itemId, showKey, profileId FROM seen_episodes"))
-        assertEquals(listOf("1|0"), rows(old, "SELECT id, kids FROM profiles"))
+        assertEquals(listOf("1|0|null"), rows(old, "SELECT id, kids, avatar FROM profiles"))
         assertEquals(listOf("1"), rows(old, "SELECT profileId FROM current_profile"))
 
         // Same columns, keys and indices as a database Room makes from scratch, so Room's check on opening passes.
@@ -123,6 +125,28 @@ class ProfilesDbTest {
         for (table in listOf("favourites", "history", "watch_later", "seen_episodes", "profiles", "current_profile")) {
             assertEquals(shape(fresh, table), shape(old, table), table)
         }
+        helper.close()
+    }
+
+    @Test
+    fun avatarsAreSavedAndTheUpgradeKeepsEveryProfileOnItsLetter() = runTest {
+        val id = db.profiles().insert(ProfileEntity(name = "Deen", colour = 1, kids = true, pinHash = null, createdAt = 1, avatar = "fox"))
+        assertEquals("fox", db.profiles().get(id)?.avatar)
+
+        val helper =
+            openHelper(16) { old ->
+                old.execSQL(
+                    "CREATE TABLE `profiles` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `name` TEXT NOT NULL, " +
+                        "`colour` INTEGER NOT NULL, `kids` INTEGER NOT NULL, `pinHash` TEXT, `createdAt` INTEGER NOT NULL)",
+                )
+            }
+        val old = helper.writableDatabase
+        old.execSQL("INSERT INTO profiles VALUES (1, 'Melvin', 0, 0, NULL, 5)")
+
+        TunedDatabase.MIGRATION_16_17.migrate(old)
+
+        assertEquals(listOf("1|Melvin|null"), rows(old, "SELECT id, name, avatar FROM profiles"))
+        assertEquals(shape(db.openHelper.writableDatabase, "profiles"), shape(old, "profiles"))
         helper.close()
     }
 

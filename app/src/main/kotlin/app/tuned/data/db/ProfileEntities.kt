@@ -15,6 +15,8 @@ data class ProfileEntity(
     /** A [app.tuned.core.PinHash] when the profile is locked, else null. */
     val pinHash: String?,
     val createdAt: Long,
+    /** An [app.tuned.core.Avatars] key, or null to show the first letter on [colour]. */
+    val avatar: String? = null,
 )
 
 /** The one row saying which profile is in use. Queries read it in SQL, so a switch refreshes every list at once. */

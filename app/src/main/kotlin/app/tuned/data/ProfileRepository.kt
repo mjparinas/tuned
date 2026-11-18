@@ -57,9 +57,13 @@ class ProfileRepository(
         name: String,
         colour: Int,
         kids: Boolean,
+        avatar: String? = null,
     ): Long {
         val now = System.currentTimeMillis()
-        val id = dao.insert(ProfileEntity(name = name.trim(), colour = colour, kids = kids, pinHash = null, createdAt = now))
+        val id =
+            dao.insert(
+                ProfileEntity(name = name.trim(), colour = colour, kids = kids, pinHash = null, createdAt = now, avatar = avatar),
+            )
         mirror()
         return id
     }
