@@ -14,11 +14,16 @@ data class ProgrammeEntity(
     val description: String?,
 )
 
-/** A live channel that keeps recordings (Xtream `tv_archive`), by its stream id; replaced on every playlist refresh. */
+/**
+ * A live channel that keeps recordings, replaced on every playlist refresh. Xtream channels (`tv_archive`) are keyed
+ * by stream id; plain M3U channels by [app.tuned.core.CatchUp.key] with their link template in [source]
+ * ([app.tuned.core.M3uCatchUp.encode]).
+ */
 @Entity(tableName = "catchup")
 data class CatchUpEntity(
     @PrimaryKey val streamId: String,
     val days: Int,
+    val source: String? = null,
 )
 
 /** A programme on a sports or pay-per-view channel, for Live Events ([ItemDao.eventProgrammes]). */

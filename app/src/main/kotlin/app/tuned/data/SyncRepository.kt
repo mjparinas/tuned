@@ -121,6 +121,8 @@ class SyncRepository(
         val url = login.playlistUrl.ifBlank { XtreamUrls.playlist(login.server, login.username, login.password) }
         val saved = { rows: Int -> progress(SyncProgress(SyncProgress.Step.SavingPlaylist, rows.toLong())) }
         val api = XtreamImport(http, login, userAgent())
+        // A plain playlist's catch-up comes from its own attributes, gathered as it's read (Xtream asks the API after).
+        val catchUp = ArrayList<CatchUpEntity>()
         val m3u =
             runCatchingIo {
                 download(url, "playlist", SyncProgress.Step.Playlist, progress) { input, fingerprint ->
@@ -133,6 +135,7 @@ class SyncRepository(
                     var fromOneFile = true
                     memo.forget()
                     importPlaylist(saved) { add ->
+                        catchUp.clear() // a download that starts over reads the playlist again
                         var shows = 0
                         var order = 0
                         val reader = input.bufferedReader()
@@ -140,6 +143,7 @@ class SyncRepository(
                         for (entry in M3uParser.entries(reader)) {
                             if (entry.kind == ContentKind.SERIES) shows++
                             order = entry.order + 1
+                            if (!xtream) entry.catchUp?.let { catchUp += CatchUpEntity(CatchUp.key(entry.url), it.days, it.encode()) }
                             add(entry)
                         }
                         // Some providers leave series out of the M3U; their API still lists them, and those can change
@@ -151,7 +155,10 @@ class SyncRepository(
                     }.also { if (fromOneFile) memo.remember(print) }
                 }
             }
-        val failure = m3u.exceptionOrNull() ?: return m3u.getOrThrow()
+        val failure =
+            m3u.exceptionOrNull() ?: return m3u.getOrThrow().also {
+                if (!xtream) replaceCatchUp(catchUp)
+            }
         if (!xtream) throw failure
         AppLog.w(TAG_SYNC, "M3U download failed; reading the Xtream API instead", failure)
         memo.forget() // the cache is about to come from the API, not from a file
@@ -211,11 +218,13 @@ class SyncRepository(
                 if (o.text("is_adult") == "1") adult += id
             }
         }
-        db.withTransaction {
-            db.catchUp().deleteAll()
-            rows.chunked(BATCH).forEach { db.catchUp().insertAll(it) }
-        }
+        replaceCatchUp(rows)
         markAdult(adult)
+    }
+
+    private suspend fun replaceCatchUp(rows: List<CatchUpEntity>) = db.withTransaction {
+        db.catchUp().deleteAll()
+        rows.chunked(BATCH).forEach { db.catchUp().insertAll(it) }
     }
 
     /**

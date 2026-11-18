@@ -62,7 +62,7 @@ class GuideImport(
         val archive = db.catchUp().all().associate { it.streamId to it.days }
         if (archive.isNotEmpty()) {
             for (link in db.items().liveLinks()) {
-                val keep = CatchUp.streamId(link.url)?.let(archive::get) ?: continue
+                val keep = archive[CatchUp.key(link.url)] ?: continue
                 pastFrom.merge(link.tvgId, CatchUp.keepFrom(now, keep), ::minOf)
             }
         }
