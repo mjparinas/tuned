@@ -293,7 +293,7 @@ class PlayerActivity : FragmentActivity() {
             }
             // The tile, the widget, TV home cards and other apps' play intents skip the lists' filters.
             if (channel != null && recording == 0L && !mayPlay(channel)) {
-                Toast.makeText(this@PlayerActivity, R.string.player_locked, Toast.LENGTH_LONG).show()
+                Toast.makeText(this@PlayerActivity, R.string.player_not_allowed, Toast.LENGTH_LONG).show()
                 finish()
                 return@launchSafely
             }
