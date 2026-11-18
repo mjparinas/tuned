@@ -160,7 +160,7 @@ fun HomeScreen(
     onOpenDownloads: () -> Unit,
     onOpenEvents: () -> Unit,
     onTune: (String) -> Unit,
-    onSignedOut: () -> Unit,
+    onOpenPlaylists: () -> Unit,
     vm: BrowseViewModel = viewModel(),
 ) {
     val start =
@@ -258,7 +258,7 @@ fun HomeScreen(
                         progress = progress,
                         error = lastError,
                         onRetry = vm::refresh,
-                        onChangeLogin = { vm.signOut(onSignedOut) },
+                        onChangeLogin = onOpenPlaylists,
                     )
                     return@Column
                 }

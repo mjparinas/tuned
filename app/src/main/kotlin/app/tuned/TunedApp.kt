@@ -28,6 +28,7 @@ import app.tuned.data.TuneRepository
 import app.tuned.data.db.TunedDatabase
 import app.tuned.diagnostics.AppLog
 import app.tuned.diagnostics.CrashReporter
+import app.tuned.diagnostics.attempt
 import app.tuned.diagnostics.launchSafely
 import app.tuned.diagnostics.loggingHandler
 import app.tuned.updates.GitHubUpdates
@@ -58,6 +59,8 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import okhttp3.OkHttpClient
+import java.io.File
+import java.net.URI
 import java.util.concurrent.TimeUnit
 
 /** Everything the app shares, built once and on first use (nothing heavy runs before the first frame). */
@@ -131,8 +134,31 @@ class AppContainer(
         scheduler.schedule(s.playlistRefreshHours, s.guideRefreshHours, s.unmeteredOnly)
     }
 
+    /** Playlists picked from a file are copied here, one file each, so they still read after the original moves. */
+    val playlistFiles: File get() = File(context.filesDir, "playlists")
+
+    /**
+     * Removes a saved playlist. Removing the one in use switches to the next saved one; removing the last one signs
+     * out. Returns true when nothing is left, so the caller can show the welcome screen.
+     */
+    suspend fun removePlaylist(login: Credentials): Boolean {
+        val active = credentials.load()?.samePlaylist(login) == true
+        val next = credentials.saved().firstOrNull { !it.samePlaylist(login) }
+        if (active && next == null) {
+            signOut()
+            return true
+        }
+        credentials.forget(login)
+        if (login.kind == Credentials.Kind.File) {
+            attempt("Playlists", "Couldn't delete the playlist file") { File(URI(login.playlistUrl)).delete() }
+        }
+        if (active && next != null) useLogin(next)
+        return false
+    }
+
     /** Forgets the login, the cached playlist and guide, and stops background refreshes. */
     suspend fun signOut() {
+        playlistFiles.deleteRecursively()
         scheduler.cancelAll()
         scanControl.stop()
         reminders.cancelAll()
