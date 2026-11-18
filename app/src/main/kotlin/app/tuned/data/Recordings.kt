@@ -87,9 +87,8 @@ class Recordings(
     fun file(r: Recording): File = File(dir, "${r.id}$VIDEO")
 
     /** Room left for recordings, so one can stop before the storage fills up. */
-    fun freeBytes(): Long =
-        attempt(TAG, "Couldn't check the free space") { storage.getAllocatableBytes(storage.getUuidForPath(dir)) }
-            .getOrElse { dir.freeSpace }
+    fun freeBytes(): Long = attempt(TAG, "Couldn't check the free space") { storage.getAllocatableBytes(storage.getUuidForPath(dir)) }
+        .getOrElse { dir.freeSpace }
 
     /** Starts the files for [r]: its details now, its video as it arrives. */
     fun begin(r: Recording): File {
