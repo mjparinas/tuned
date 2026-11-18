@@ -68,6 +68,7 @@
     <string name="regions_help">Turn a language or country off to hide its channels, movies and shows everywhere, search included. A language covers the countries that speak it, so English covers US, UK, Canada and the rest.</string>
     <string name="regions_show_all">Show all</string>
     <string name="regions_hide_all">Hide all</string>
+    <string name="regions_search">Search languages and countries</string>
     <string name="settings_show_adult">Show adult categories</string>
     <string name="settings_show_adult_summary">Hidden until unlocked with your PIN. Locks again 5 minutes after you leave the app.</string>
     <string name="settings_show_adult_summary_no_pin">Hidden. Turning this on asks you to set a PIN first.</string>
