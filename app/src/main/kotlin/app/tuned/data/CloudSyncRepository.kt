@@ -16,7 +16,7 @@ import java.io.IOException
 /**
  * Sync between devices (from the app audit, item 13; Melvin chose his Google account's Drive app folder, 2026-11-17):
  * the saved playlists, settings, favourites and watch later ([SyncCopyRepository.syncCopy]) kept the same on a phone and
- * a TV. The copy goes to Drive's hidden app folder as it is, with no passphrase (Melvin, 2026-11-18: "i dont think we
+ * a TV. The copy goes to one file in the person's Drive as it is, with no passphrase (Melvin, 2026-11-18: "i dont think we
  * need encryption"), so signing in to Google is all a device needs. Each run takes the other device's copy or sends this one's
  * ([CloudSync.decide]); everything works offline and catches up on the next run.
  */

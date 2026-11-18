@@ -27,7 +27,7 @@ Tuned connects to these services only to do what you ask:
 
 Sync is optional and off until you turn it on. When you sign in with Google, Tuned asks only for access to files it creates itself (the `drive.file` scope). It keeps one file, called "Tuned sync", in your Drive, and it can't see or change any of your other Drive files.
 
-Before anything leaves the device, Tuned locks your synced playlists, settings, favourites and watch later with a passphrase you choose (AES-256-GCM). Google stores only the locked file and can't read it. Tuned never sees your Google password. Stop syncing signs the device out and asks Google to revoke Tuned's access. You can also remove Tuned's access at any time from your Google account's security settings.
+The file holds your saved playlists (including their logins), settings, favourites and watch later, so your phone and TV stay the same. It isn't encrypted by Tuned: it is protected by your Google account, so anyone who can open your Drive could read it. Deleting the file removes the synced copy. Tuned never sees your Google password. Stop syncing signs the device out and asks Google to revoke Tuned's access. You can also remove Tuned's access at any time from your Google account's security settings.
 
 Tuned's use of information received from Google APIs follows the [Google API Services User Data Policy](https://developers.google.com/terms/api-services-user-data-policy), including the Limited Use requirements.
 
