@@ -68,6 +68,18 @@ class RegionsTest {
     }
 
     @Test
+    fun `countries in their own language and the nordic area count`() {
+        assertEquals("SE", group("SVERIGE | Sport"))
+        assertEquals("SE", group("SVENSKA KANALER"))
+        assertEquals("NO", group("NORGE: Film"))
+        assertEquals("DK", group("DANMARK SPORT"))
+        assertEquals("SE", group("NORDIC | SE Viaplay"))
+        assertEquals("NORDIC", group("NORDIC FILM"))
+        assertEquals("NORDIC", group("SCANDINAVIA | Kids"))
+        assertEquals("SE", group("SWEDEN HIGHLIGHTS"))
+    }
+
+    @Test
     fun `ex-yu and plain prefixes still read as before`() {
         assertEquals("EX", group("|EXYU| STRANI FILMOVI 1950-2022"))
         assertEquals("US", group("|US| MOVIES NETWORK"))

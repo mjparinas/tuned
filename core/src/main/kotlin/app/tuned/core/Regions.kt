@@ -123,13 +123,21 @@ object Regions {
             "AFR" to "Africa",
             "ASIA" to "Asia",
             "EUR" to "Europe",
+            "NORDIC" to "Nordic",
         )
 
     /**
      * Continents providers put in front of a country: "ASIA | INDIA MOVIES", "EUROPE | DE Sports". The country after
      * one wins; a continent with nothing more specific after it is the region itself, so it still gets a switch.
      */
-    private val areas = mapOf("ASIA" to "ASIA", "EUROPE" to "EUR", "AFRICA" to "AFR")
+    private val areas =
+        mapOf(
+            "ASIA" to "ASIA",
+            "EUROPE" to "EUR",
+            "AFRICA" to "AFR",
+            "NORDIC" to "NORDIC",
+            "SCANDINAVIA" to "NORDIC",
+        )
 
     /** Every tag that may name a region: the ISO country codes, plus the language and area tags providers add. */
     private val known: Set<String> =
@@ -214,6 +222,33 @@ object Regions {
                 "AFRICAN" to "AFR",
                 "EX YU" to "EX",
                 "EXYU" to "EX",
+                // Countries in their own language, as providers for that country write them: "SVERIGE | Sport".
+                "SVERIGE" to "SE",
+                "SVENSKA" to "SE",
+                "NORGE" to "NO",
+                "NORSK" to "NO",
+                "DANMARK" to "DK",
+                "DANSK" to "DK",
+                "SUOMI" to "FI",
+                "DEUTSCHLAND" to "DE",
+                "ESPAÑA" to "ES",
+                "ESPANA" to "ES",
+                "ITALIA" to "IT",
+                "NEDERLAND" to "NL",
+                "POLSKA" to "PL",
+                "TÜRKIYE" to "TR",
+                "TURKIYE" to "TR",
+                "HRVATSKA" to "HR",
+                "SRBIJA" to "RS",
+                "ROMANIA" to "RO",
+                "MAGYAR" to "HU",
+                "ÖSTERREICH" to "AT",
+                "SCHWEIZ" to "CH",
+                // Areas as words, for a name with no symbol after it ("NORDIC FILM"); with a symbol, [areas] reads them.
+                "ASIA" to "ASIA",
+                "NORDIC" to "NORDIC",
+                "SCANDINAVIA" to "NORDIC",
+                "SCANDINAVIAN" to "NORDIC",
             )
 
     /**
