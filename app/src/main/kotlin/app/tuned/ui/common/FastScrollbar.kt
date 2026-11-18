@@ -133,7 +133,7 @@ fun FastScrollbar(
         Box(
             Modifier
                 .align(Alignment.TopEnd)
-                .offset(thumbOffset)
+                .offset { thumbOffset() }
                 .width(TOUCH_WIDTH)
                 .height(THUMB_HEIGHT)
                 .graphicsLayer { this.alpha = alpha }
@@ -165,7 +165,7 @@ fun FastScrollbar(
             Box(
                 Modifier
                     .align(Alignment.TopEnd)
-                    .offset(thumbOffset)
+                    .offset { thumbOffset() }
                     .padding(end = TOUCH_WIDTH + 4.dp)
                     .widthIn(max = BUBBLE_MAX_WIDTH)
                     .clip(RoundedCornerShape(12.dp))
