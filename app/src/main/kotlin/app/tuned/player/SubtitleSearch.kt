@@ -48,15 +48,16 @@ class SubtitleSearch(
         ?.let { id -> queue().firstOrNull { it.id == id } }
 
     /**
-     * Subtitles fetched before for [items], by item id, so they come back with their film with no download; when
-     * [startId] has one, captions turn on in its language.
+     * [mediaItems] (one per item in [items]) with the subtitles fetched before for each, so they come back with their
+     * film with no download; when [startId] has some, captions turn on in their language.
      */
-    suspend fun restore(
+    suspend fun withSaved(
         exo: ExoPlayer,
         items: List<ItemEntity>,
         startId: Long,
-    ): Map<Long, File> {
-        if (items.none(::onDemand)) return emptyMap()
+        mediaItems: List<MediaItem>,
+    ): List<MediaItem> {
+        if (items.none(::onDemand)) return mediaItems
         val saved = repository.saved(items.map { it.id })
         saved[startId]?.let { file ->
             exo.trackSelectionParameters =
@@ -66,7 +67,10 @@ class SubtitleSearch(
                     .setPreferredTextLanguage(languageOf(file))
                     .build()
         }
-        return saved
+        return mediaItems.mapIndexed { i, media ->
+            val file = items.getOrNull(i)?.let { saved[it.id] } ?: return@mapIndexed media
+            media.buildUpon().setSubtitleConfigurations(listOf(track(file))).build()
+        }
     }
 
     /** Items already searched for by themselves this time, so a video with nothing to find is asked about once. */

@@ -53,7 +53,6 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import app.tuned.BuildConfig
 import app.tuned.R
 import app.tuned.container
-import app.tuned.core.XtreamUrls
 import app.tuned.data.Accent
 import app.tuned.data.AppSettings
 import app.tuned.data.BufferMode
@@ -96,23 +95,6 @@ class SettingsViewModel(
 
     override fun matchesLogin(secret: String): Boolean = container.credentials.matches(secret)
 
-    fun server(): String = container.credentials
-        .load()
-        ?.server
-        .orEmpty()
-
-    fun username(): String = container.credentials
-        .load()
-        ?.username
-        .orEmpty()
-
-    /** A new server address keeps the login and refreshes at once. */
-    fun changeServer(server: String) {
-        val login = container.credentials.load() ?: return
-        container.credentials.save(login.copy(server = XtreamUrls.normalizeServer(server)))
-        container.scheduler.refreshNow()
-    }
-
     fun refreshNow() = container.scheduler.refreshNow()
 
     fun clearHistory() {
@@ -141,11 +123,9 @@ fun SettingsScreen(
     onOpenProfiles: () -> Unit,
     onOpenLogs: () -> Unit,
     onSignedOut: () -> Unit,
-    onAddPlaylist: () -> Unit,
-    onSwitchedPlaylist: () -> Unit,
+    onOpenPlaylists: () -> Unit,
     vm: SettingsViewModel = viewModel(),
 ) {
-    var editServer by remember { mutableStateOf(false) }
     var confirmSignOut by remember { mutableStateOf(false) }
     val hours = listOf(0, 3, 6, 12, 24, 48)
     val hoursLabel: @Composable (Int) -> String = { h ->
@@ -161,10 +141,8 @@ fun SettingsScreen(
                 .navigationBarsPadding(),
         ) {
             SectionHeader(stringResource(R.string.settings_account))
-            SettingRow(stringResource(R.string.login_server), vm.server(), onClick = { editServer = true })
-            SettingRow(stringResource(R.string.login_username), vm.username())
+            PlaylistsRow(onOpen = onOpenPlaylists)
             AccountStatusRows()
-            PlaylistsRow(onAdd = onAddPlaylist, onSwitched = onSwitchedPlaylist)
             SettingRow(
                 stringResource(R.string.settings_refresh_now),
                 lastSync(settings),
@@ -262,12 +240,22 @@ fun SettingsScreen(
                 settings.liveGrid,
                 summary = stringResource(R.string.settings_live_grid_summary),
             ) { on -> vm.update { it.copy(liveGrid = on) } }
+            SwitchRow(
+                stringResource(R.string.settings_channel_numbers),
+                settings.channelNumbers,
+                stringResource(R.string.settings_channel_numbers_summary),
+            ) { on -> vm.update { it.copy(channelNumbers = on) } }
             ChoiceRow(
                 stringResource(R.string.settings_start_tab),
                 StartTab.entries,
                 settings.startTab,
                 label = { stringResource(startTabLabel(it)) },
             ) { t -> vm.update { it.copy(startTab = t) } }
+            SwitchRow(
+                stringResource(R.string.settings_start_on_last_channel),
+                settings.startOnLastChannel,
+                stringResource(R.string.settings_start_on_last_channel_summary),
+            ) { on -> vm.update { it.copy(startOnLastChannel = on) } }
 
             SectionHeader(stringResource(R.string.settings_background))
             ChoiceRow(stringResource(R.string.settings_playlist_refresh), hours, settings.playlistRefreshHours, hoursLabel) { h ->
@@ -518,9 +506,6 @@ fun SettingsScreen(
         }
     }
 
-    if (editServer) {
-        TextDialog(stringResource(R.string.login_server), vm.server(), onDismiss = { editServer = false }, onSave = vm::changeServer)
-    }
     if (confirmSignOut) {
         AlertDialog(
             onDismissRequest = { confirmSignOut = false },

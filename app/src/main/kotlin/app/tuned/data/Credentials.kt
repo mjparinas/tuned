@@ -22,18 +22,39 @@ data class Credentials(
     val guideUrl: String = "",
     /** More guide links (Settings › Guide), read after the main one to fill channels it lacks. Encrypted: they often carry a key. */
     val extraGuides: List<String> = emptyList(),
+    /** The name the person gave it ("Living room", "Sports"). Blank shows [detail] instead. */
+    val name: String = "",
 ) {
+    enum class Kind { Xtream, Link, File }
+
+    val kind: Kind
+        get() =
+            when {
+                playlistUrl.isBlank() -> Kind.Xtream
+                playlistUrl.startsWith(FILE_SCHEME) -> Kind.File
+                else -> Kind.Link
+            }
+
     /** Same provider and account: switching between these keeps the cached channels. */
     fun samePlaylist(other: Credentials) = server == other.server && username == other.username && playlistUrl == other.playlistUrl
 
-    /** How the playlist is listed in Settings: the account and server, or the link's host. */
-    val label: String
+    /** Where it comes from, without the password: the account and server, the link's host, or the file's name. */
+    val detail: String
         get() =
-            if (playlistUrl.isNotBlank()) {
-                playlistUrl.substringAfter("://").substringBefore('/').substringBefore('?')
-            } else {
-                "$username @ ${server.substringAfter("://")}"
+            when (kind) {
+                Kind.Xtream -> "$username @ ${server.substringAfter("://")}"
+                Kind.Link -> playlistUrl.substringAfter("://").substringBefore('/').substringBefore('?')
+                Kind.File -> name.ifBlank { playlistUrl.substringAfterLast('/') }
             }
+
+    /** How the playlist is listed: its name, or where it comes from. */
+    val label: String
+        get() = name.ifBlank { detail }
+
+    companion object {
+        /** Playlists picked from a file are copied into the app and read from here. */
+        const val FILE_SCHEME = "file:"
+    }
 }
 
 /** An OpenSubtitles.com sign-in. */
@@ -87,10 +108,16 @@ class CredentialStore(
         return all.ifEmpty { listOfNotNull(load()) }
     }
 
-    /** Adds [credentials] to the saved playlists, or updates the one for the same account. */
+    /** Adds [credentials] to the saved playlists, or updates the one for the same account where it stands. */
     fun remember(credentials: Credentials) {
-        val others = saved().filterNot { it.samePlaylist(credentials) }
-        write(others + credentials)
+        val all = saved()
+        val existing = all.firstOrNull { it.samePlaylist(credentials) }
+        if (existing == null) {
+            write(all + credentials)
+        } else {
+            val updated = credentials.copy(name = credentials.name.ifBlank { existing.name })
+            write(all.map { if (it.samePlaylist(credentials)) updated else it })
+        }
     }
 
     fun forget(credentials: Credentials) = write(saved().filterNot { it.samePlaylist(credentials) })
@@ -125,6 +152,16 @@ class CredentialStore(
         prefs.edit { putString(KEY_SAVED, encrypt(list.joinToString(LINE, transform = ::encode))) }
     }
 
+    /** Gives a saved playlist a new name, the one in use included. */
+    fun rename(
+        credentials: Credentials,
+        name: String,
+    ) {
+        val renamed = credentials.copy(name = name.trim())
+        write(saved().map { if (it.samePlaylist(credentials)) renamed else it })
+        if (load()?.samePlaylist(credentials) == true) save(renamed)
+    }
+
     private fun encode(c: Credentials): String = listOf(
         c.server,
         c.username,
@@ -132,12 +169,14 @@ class CredentialStore(
         c.playlistUrl,
         c.guideUrl,
         c.extraGuides.joinToString(LINE),
+        c.name,
     ).joinToString(SEP) { Base64.encodeToString(it.toByteArray(), Base64.NO_WRAP) }
 
     private fun decode(text: String): Credentials {
         val parts = text.split(SEP).map { String(Base64.decode(it, Base64.NO_WRAP)) }
         val extra = parts.getOrElse(5) { "" }.split(LINE).filter { it.isNotBlank() }
-        return Credentials(parts[0], parts[1], parts[2], parts.getOrElse(3) { "" }, parts.getOrElse(4) { "" }, extra)
+        val name = parts.getOrElse(6) { "" }
+        return Credentials(parts[0], parts[1], parts[2], parts.getOrElse(3) { "" }, parts.getOrElse(4) { "" }, extra, name)
     }
 
     private fun key(): SecretKey {
