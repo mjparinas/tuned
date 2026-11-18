@@ -6,7 +6,7 @@
 
 **Backups are off** (`allowBackup=false` and data extraction rules that exclude everything), so neither the encrypted login nor the cached URLs (which contain it) reach a cloud backup or a device transfer.
 
-**Backup files: removed** (Melvin, 2026-11-18: "Remove the file back up feature"). Settings › Back up and Restore, and "Restore from a backup" on the welcome screen, are gone; moving to a new phone or a TV is sync between devices ([sync](sync.md)). Files made with it no longer open. Its encryption stays as `core/PassphraseCrypto` (AES-256-GCM, PBKDF2-SHA256 with 310,000 rounds and a fresh salt each time, header authenticated), which now seals only the synced copy.
+**Backup files: removed** (Melvin, 2026-11-18: "Remove the file back up feature"). Settings › Back up and Restore, and "Restore from a backup" on the welcome screen, are gone; moving to a new phone or a TV is sync between devices ([sync](sync.md)). Files made with it no longer open. Its encryption stays as `core/PassphraseCrypto` (AES-256-GCM, PBKDF2-SHA256 with 310,000 rounds and a fresh salt each time, header authenticated), which now only reads sync copies older versions locked.
 
 **Cleartext HTTP is allowed** (`network_security_config.xml`), because IPTV servers, eros4k.ddns.net included, serve playlists and streams over plain HTTP on whatever host a stream redirects to. Android Lint's `InsecureBaseConfiguration` check is disabled for that reason.
 
@@ -23,6 +23,6 @@ Melvin asked for "a pin to filter out adult content". Adult categories (the clas
 
 **Saved playlists** (2026-11-17). Every login used on the device is kept, encrypted with the same Keystore key as the one in use, so Settings › Playlists can switch between them without typing them again. Switching to another provider clears the cached channels, guide and catch-up list and downloads the other playlist, so the lists never mix and the app still holds one playlist at a time. Signing out forgets all of them, and deletes playlist files copied into the app. The synced copy holds every saved playlist except files ([sync](sync.md)).
 
-**Sync between devices** (2026-11-18). The synced copy holds the saved playlists' logins, so it is sealed with the person's sync passphrase before it reaches Google Drive (`core/PassphraseCrypto`); the passphrase and the Google refresh token are sealed with Keystore keys and are never synced ([sync](sync.md)).
+**Sync between devices** (2026-11-18). The synced copy holds the saved playlists' logins and goes to Google Drive's hidden app folder without a passphrase (Melvin, 2026-11-18: "i dont think we need encryption"), so the logins are as safe as the Google account. The Google refresh token is sealed with a Keystore key and is never synced ([sync](sync.md)).
 
 **OpenSubtitles account** (2026-11-17). The optional sign-in for subtitle search is encrypted with the same Keystore key as the login (`CredentialStore.subtitleAccount`), stays out of settings and sync, and is forgotten on sign-out. The API key is not a setting: it comes from the `OPENSUBTITLES_API_KEY` repository secret at release build time, like the TMDB key.

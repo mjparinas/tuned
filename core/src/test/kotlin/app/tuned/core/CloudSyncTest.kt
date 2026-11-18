@@ -39,11 +39,10 @@ class CloudSyncTest {
     }
 
     @Test
-    fun theFingerprintDependsOnThePassphrase() {
-        val plain = "same".toByteArray()
-        val one = CloudSync.fingerprint(plain, "passphrase1".toCharArray())
-        assertEquals(one, CloudSync.fingerprint(plain, "passphrase1".toCharArray()))
-        assertNotEquals(one, CloudSync.fingerprint(plain, "passphrase2".toCharArray()))
+    fun theFingerprintChangesWithTheCopy() {
+        val one = CloudSync.fingerprint("same".toByteArray())
+        assertEquals(one, CloudSync.fingerprint("same".toByteArray()))
+        assertNotEquals(one, CloudSync.fingerprint("other".toByteArray()))
     }
 
     @Test

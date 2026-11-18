@@ -10,9 +10,10 @@ import javax.crypto.spec.PBEKeySpec
 import javax.crypto.spec.SecretKeySpec
 
 /**
- * Seals the sync copy with a passphrase the person chooses, because it holds their logins. AES-256-GCM with a key
- * from PBKDF2-SHA256 (a fresh salt each time); GCM's tag means a wrong passphrase or damaged data is caught, never
- * half-read. The "TUNEDBK" magic dates from backup files and stays, so copies already in Drive still open.
+ * The passphrase lock that sync between devices used until Melvin dropped it (2026-11-18). Nothing is sealed any more;
+ * this stays only so a copy an older version left in Drive can be read once, with the passphrase that device still
+ * holds, and replaced by a plain one. AES-256-GCM with a key from PBKDF2-SHA256; GCM's tag means a wrong passphrase or
+ * damaged data is caught, never half-read. The "TUNEDBK" magic dates from the removed backup files.
  * Layout: "TUNEDBK" + version byte, rounds (4 bytes), salt (16), IV (12), then the sealed bytes.
  */
 object PassphraseCrypto {
@@ -20,7 +21,6 @@ object PassphraseCrypto {
 
     class NotOurs : Exception("This isn't sealed by Tuned")
 
-    const val MIN_PASSPHRASE = 8
     private val MAGIC = "TUNEDBK".toByteArray()
     private const val VERSION: Byte = 1
     private const val ROUNDS = 310_000
@@ -50,6 +50,9 @@ object PassphraseCrypto {
         cipher.updateAAD(header)
         return header + salt + iv + cipher.doFinal(plain)
     }
+
+    /** Whether [bytes] were sealed by an older version (the header), as opposed to a plain sync copy. */
+    fun isSealed(bytes: ByteArray): Boolean = bytes.size >= MAGIC.size && bytes.copyOfRange(0, MAGIC.size).contentEquals(MAGIC)
 
     fun open(
         sealed: ByteArray,
