@@ -1,6 +1,6 @@
 # Premium and store builds
 
-Tuned is free with no ads, and a Premium unlock covers the power features. Melvin agreed the plan on 2026-11-17 ([plan](https://claude.ai/artifact/2WZsayqCX4acMnvmVmnBHX)): free plus Premium with no ads, the split below, the prices, an empty server field in store builds, and GitHub releases staying free with everything unlocked. Fire TV (Amazon Appstore) comes after Play; the store listing's support email and website are still open.
+Tuned is free with no ads, and a Premium unlock covers the power features. Melvin agreed the plan on 2026-11-17 ([plan](https://claude.ai/artifact/2WZsayqCX4acMnvmVmnBHX)): free plus Premium with no ads, the split below, the prices, an empty server field in store builds, and GitHub releases staying free with everything unlocked. On 2026-11-18 he decided no Fire TV (Amazon Appstore) for now ("not going to do fire tv for now"), so Play is the only store; the listing's support email is his own Gmail address. The privacy policy still needs a page to live on.
 
 ## Two builds
 
