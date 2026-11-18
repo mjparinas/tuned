@@ -1,8 +1,6 @@
 package app.tuned
 
 import android.content.Context
-import androidx.work.WorkInfo
-import androidx.work.WorkManager
 import app.tuned.data.AccountRepository
 import app.tuned.data.ChannelScanner
 import app.tuned.data.CloudSyncRepository
@@ -27,6 +25,7 @@ import app.tuned.data.TraktAccount
 import app.tuned.data.TuneRepository
 import app.tuned.data.db.TunedDatabase
 import app.tuned.diagnostics.loggingHandler
+import app.tuned.player.TvCasting
 import app.tuned.premium.Premium
 import app.tuned.updates.GitHubUpdates
 import app.tuned.work.OfflineWorker
@@ -40,8 +39,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 import okhttp3.OkHttpClient
 import java.util.concurrent.TimeUnit
 
@@ -73,7 +72,7 @@ class AppContainer(
     }
     val reminders by lazy { Reminders(context) }
     val events by lazy { EventsRepository(db, settings, reminders) }
-    val offline by lazy { Offline(context, db, settings) }
+    val offline by lazy { Offline(context, db, settings, ::watching) }
     val recordings by lazy { Recordings(context) }
     val picks by lazy { Picks(db, appScope) { TvHome.schedule(context) } }
     val connectivity by lazy { Connectivity(context, appScope) }
@@ -87,15 +86,21 @@ class AppContainer(
 
     /** True while the player is open; downloads and channel scans hold back so only one stream is ever open. */
     val playerOpen = MutableStateFlow(false)
+
+    /** True while a download holds its connection; set by [OfflineWorker] until its connection is closed. */
+    val downloadOpen = MutableStateFlow(false)
+
+    /** A TV playing Tuned's stream, which outlives the player screen; downloads and scans wait for it too. */
+    val tvCasting by lazy { TvCasting(context) { appScope.launch { offline.start() } } }
+
+    /** Something is being watched, on the phone or on a TV: the stream comes first and downloads wait. */
+    fun watching(): Boolean = playerOpen.value || tvCasting.active.value
+
     private val streamBusy: StateFlow<Boolean> by lazy {
-        val downloading =
-            WorkManager
-                .getInstance(context)
-                .getWorkInfosForUniqueWorkFlow(OfflineWorker.NAME)
-                .map { infos -> infos.any { it.state == WorkInfo.State.RUNNING } }
-        combine(playerOpen, downloading) { open, down -> open || down }.stateIn(appScope, SharingStarted.Eagerly, false)
+        combine(playerOpen, tvCasting.active, downloadOpen) { open, tv, down -> open || tv || down }
+            .stateIn(appScope, SharingStarted.Eagerly, false)
     }
-    val account by lazy { AccountRepository(http, credentials, settings, playerOpen) }
+    val account by lazy { AccountRepository(http, credentials, settings, streamBusy) }
     val channelScan by lazy { ChannelScanner(context, db, http, credentials, settings, streamBusy) }
     val scanControl by lazy { ScanWorker.Control(context) }
 

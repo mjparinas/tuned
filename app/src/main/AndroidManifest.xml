@@ -46,6 +46,11 @@
         android:enableOnBackInvokedCallback="true"
         android:theme="@style/Theme.Tuned"
         tools:targetApi="36">
+        <!-- Lets the startup benchmark read timings from release builds (docs/decisions/speed.md). It exposes
+             nothing a person's data could leak through: profiling only, from adb. -->
+        <profileable
+            android:shell="true"
+            tools:targetApi="29" />
         <meta-data
             android:name="com.google.android.gms.cast.framework.OPTIONS_PROVIDER_CLASS_NAME"
             android:value="app.tuned.player.CastOptionsProvider" />

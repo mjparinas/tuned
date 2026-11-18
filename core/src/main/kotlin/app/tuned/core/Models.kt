@@ -33,6 +33,8 @@ data class PlaylistEntry(
     val adult: Boolean,
     val episode: EpisodeInfo?,
     val order: Int,
+    /** A plain M3U channel's catch-up, when its playlist names one. */
+    val catchUp: M3uCatchUp? = null,
 )
 
 /** One programme from an XMLTV guide. Times are epoch milliseconds. */

@@ -22,3 +22,7 @@ Melvin, 2026-11-17: "optimize for the app not crashing or being unreliable", and
 
 - **Logs** is always there, under Troubleshooting: crash reports, then the recent log newest first, with copy, share (plain text, up to 200,000 characters) and clear.
 - **Developer mode was removed** (Melvin, 2026-11-18: "remove developer mode but keep logs"). It was a switch that kept the detailed log and showed Logs; now both are always on, so there is nothing to turn on before a problem can be looked into. The old stored `developer_mode` value is simply ignored.
+
+## Device smoke test (2026-11-18)
+
+From the gap review Melvin asked for ("what else are we missing"): the app had JVM tests only, so nothing checked the real screens or the one-connection rule end to end. `:smoketest` installs the github debug app on an emulator (a Gradle managed device, Pixel 6, API 34 ATD image) and drives it with UI Automator against `:fakeprovider`, a stand-in provider on the loopback that serves a generated playlist and a 30 second test clip at about the speed it plays, so a stream connection stays open the way a live channel's does. It clears the app's data, adds the playlist link from the welcome screen, waits for the channels, plays one, changes channel twice with the remote's channel key, and goes back to Live TV. It fails if two stream connections were ever open at the same moment. CI runs it on every pull request as **Device smoke test**, part of "CI passed". No real login or playlist is involved.

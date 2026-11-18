@@ -1,6 +1,12 @@
 package app.tuned.data
 
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.withTimeout
 import mockwebserver3.Dispatcher
 import mockwebserver3.MockResponse
 import mockwebserver3.MockWebServer
@@ -14,6 +20,7 @@ import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import java.io.IOException
 import java.util.concurrent.CopyOnWriteArrayList
+import java.util.concurrent.TimeUnit
 import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -107,5 +114,46 @@ class DownloaderTest {
         val few = Downloader(OkHttpClient(), maxStalls = 3, backoffMs = { 0 })
         assertFailsWith<IOException> { few.download(server.url("/get.php").toString(), folder.root.resolve("playlist")) }
         assertEquals(3, server.requestCount)
+    }
+
+    @Test
+    fun aSavedDownloadCarriesOnAfterBeingStopped() = runTest {
+        // The first run is cut off (the player opening stops downloads); the next run picks up from the same bytes.
+        serve(drops = 1, validator = true)
+        val target = folder.root.resolve("film.mkv")
+        val once = Downloader(OkHttpClient(), maxStalls = 1, backoffMs = { 0 })
+        assertFailsWith<IOException> { once.download(server.url("/film.mkv").toString(), target, keepPart = true) }
+        assertTrue(folder.root.resolve("film.mkv.part").length() > 0)
+        val out = downloader.download(server.url("/film.mkv").toString(), target, keepPart = true)
+        assertContentEquals(file, out.readBytes())
+        assertEquals(2, ranges.size)
+        assertNull(ranges[0])
+        assertTrue(ranges[1] != null && ranges[1] != "bytes=0-", "the second run resumes: $ranges")
+        assertTrue(!folder.root.resolve("film.mkv.part.tag").exists())
+    }
+
+    @Test
+    fun stoppingADownloadHangsUpAtOnce() = runBlocking {
+        // A stalled server: a little, then nothing for a long while. The player opening stops the download, and its
+        // connection must close then, not when the server next sends something (one connection, ever).
+        server.enqueue(
+            MockResponse
+                .Builder()
+                .body(okio.Buffer().write(file))
+                .throttleBody(16 * 1024, 20, TimeUnit.SECONDS)
+                .build(),
+        )
+        val got = CompletableDeferred<Unit>()
+        val job =
+            launch(Dispatchers.IO) {
+                downloader.download(server.url("/film.mkv").toString(), folder.root.resolve("film.mkv"), keepPart = true) { bytes, _ ->
+                    if (bytes > 0) got.complete(Unit)
+                }
+            }
+        withTimeout(10_000) { got.await() }
+        val stopped = System.nanoTime()
+        withTimeout(3_000) { job.cancelAndJoin() }
+        assertTrue(System.nanoTime() - stopped < TimeUnit.SECONDS.toNanos(3))
+        assertTrue(folder.root.resolve("film.mkv.part").length() > 0, "what it had is kept for next time")
     }
 }

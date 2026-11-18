@@ -5,6 +5,7 @@ plugins {
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.ksp)
     alias(libs.plugins.room)
+    alias(libs.plugins.androidx.baselineprofile)
 }
 
 android {
@@ -129,6 +130,22 @@ kotlin {
     }
 }
 
+// The baseline profile (docs/decisions/speed.md) is generated on an emulator by .github/workflows/baseline-profile.yml
+// and committed under src/main/generated/, so release builds of both stores compile the first minute's code at install. It
+// is recorded on the github build, whose code is the same as play's apart from the updater and billing. Normal
+// builds only read it; they never start an emulator.
+baselineProfile {
+    automaticGenerationDuringBuild = false
+    saveInSrc = true
+    mergeIntoMain = true
+    // Puts the startup code together at the front of the dex file too, so less of it is read from storage.
+    dexLayoutOptimization = true
+    // Only the github build is driven on the emulator; mergeIntoMain gives the play build the same profile.
+    variants {
+        create("github") { from(project(":baselineprofile")) }
+    }
+}
+
 // Room's plugin writes each variant's schema separately, so debug and release builds don't race on one file.
 room {
     schemaDirectory("$projectDir/schemas")
@@ -175,6 +192,7 @@ dependencies {
     implementation(libs.androidx.media3.exoplayer.hls)
     implementation(libs.androidx.media3.datasource.okhttp)
     implementation(libs.androidx.media3.ui)
+    implementation(libs.androidx.media3.session)
     implementation(libs.androidx.glance.appwidget)
     implementation(libs.androidx.media3.cast)
 

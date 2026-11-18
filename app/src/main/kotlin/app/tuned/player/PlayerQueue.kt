@@ -17,5 +17,10 @@ suspend fun playerSiblings(
         ContentKind.LIVE -> items.channelsInGroup(item.groupName, settings.hiddenKeys(), settings.showAdult)
         ContentKind.SERIES -> item.showKey?.let { items.episodesNow(it) }.orEmpty()
         ContentKind.MOVIE -> emptyList()
-    }.ifEmpty { listOf(item) }
+    }.let { siblings ->
+        // A channel its category hides (one the scan found dead, a 24/7 channel, a hidden country) can still be opened
+        // from Favourites, Search, the guide or the widget. Without it in the queue the player fell back to the first
+        // channel of the category and played something else.
+        if (siblings.any { it.id == item.id }) siblings else listOf(item) + siblings
+    }
 }

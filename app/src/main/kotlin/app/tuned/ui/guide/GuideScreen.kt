@@ -71,7 +71,6 @@ import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -98,7 +97,7 @@ class GuideViewModel(
     val catchUpDays: StateFlow<Int> =
         channel
             .filterNotNull()
-            .flatMapLatest { c -> CatchUp.streamId(c.url)?.let { id -> db.catchUp().days(id).map { it ?: 0 } } ?: flowOf(0) }
+            .flatMapLatest { c -> db.catchUp().days(CatchUp.key(c.url)).map { it ?: 0 } }
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), 0)
 
     /** What's on now and next; on a catch-up channel, also what's been on within its recordings. */

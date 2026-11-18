@@ -21,6 +21,9 @@ interface CatchUpDao {
     @Query("SELECT MAX(days) FROM catchup")
     suspend fun maxDays(): Int?
 
+    @Query("SELECT * FROM catchup WHERE streamId = :key")
+    suspend fun get(key: String): CatchUpEntity?
+
     @Query("SELECT days FROM catchup WHERE streamId = :streamId")
     fun days(streamId: String): Flow<Int?>
 

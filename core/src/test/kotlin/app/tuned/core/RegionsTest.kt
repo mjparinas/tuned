@@ -32,8 +32,11 @@ class RegionsTest {
     }
 
     @Test
-    fun `tvg-country wins and the channel name is the fallback`() {
-        assertEquals("CA", Regions.detect("US| News", "CA;US", "x"))
+    fun `the category's country wins over tvg-country, and the channel name is the fallback`() {
+        // The category is what people see and hide by (Melvin, 2026-11-18): "|EXYU| ..." hides with Ex-Yugoslavia.
+        assertEquals("US", Regions.detect("US| News", "CA;US", "x"))
+        assertEquals("EX", Regions.detect("|EXYU| STRANI FILMOVI", "HR", "Ex - R.M.N. (2022)"))
+        assertEquals("HR", Regions.detect("Filmovi", "HR", "x"))
         assertEquals("DE", Regions.detect("News", null, "DE: Das Erste"))
         assertEquals("Canada", Regions.displayName("CA"))
         assertEquals("ZZ", Regions.displayName("ZZ"))
@@ -68,6 +71,18 @@ class RegionsTest {
     }
 
     @Test
+    fun `countries in their own language and the nordic area count`() {
+        assertEquals("SE", group("SVERIGE | Sport"))
+        assertEquals("SE", group("SVENSKA KANALER"))
+        assertEquals("NO", group("NORGE: Film"))
+        assertEquals("DK", group("DANMARK SPORT"))
+        assertEquals("SE", group("NORDIC | SE Viaplay"))
+        assertEquals("NORDIC", group("NORDIC FILM"))
+        assertEquals("NORDIC", group("SCANDINAVIA | Kids"))
+        assertEquals("SE", group("SWEDEN HIGHLIGHTS"))
+    }
+
+    @Test
     fun `ex-yu and plain prefixes still read as before`() {
         assertEquals("EX", group("|EXYU| STRANI FILMOVI 1950-2022"))
         assertEquals("US", group("|US| MOVIES NETWORK"))
@@ -93,5 +108,19 @@ class RegionsTest {
         assertFalse(Regions.regionMatches("germany", "FR"))
         assertTrue(Regions.matchesSearch("espa", listOf("Español")))
         assertFalse(Regions.matchesSearch("french", listOf("English", "US", "UK")))
+    }
+
+    @Test
+    fun `a tag and a bar in the stream's own name beats the category`() {
+        // Melvin, 2026-11-18: Hindi channels filed under "US| MOVIES NETWORK" showed with only US and Canada on.
+        assertEquals("IN", Regions.detect("US| MOVIES NETWORK", null, "HINDI| & PICTURES FHD"))
+        assertEquals("IN", Regions.detect("US| MOVIES NETWORK", null, "IN | Colors Cineplex"))
+        assertEquals("US", Regions.detect("US| MOVIES NETWORK", null, "US| THE FILM DETECTIVE"))
+        // A colon, a quality tag or an unknown word in front of the bar leaves the category in charge.
+        assertEquals("US", Regions.detect("US| Movies", null, "IT: Chapter Two"))
+        assertEquals("US", Regions.detect("US| Sports", null, "VIP | ESPN"))
+        assertEquals("US", Regions.detect("US| Sports", null, "NFL | Week 1"))
+        // The name's own tag beats tvg-country too, which now comes after the category.
+        assertEquals("IN", Regions.detect("US| News", "CA", "HINDI| Aaj Tak"))
     }
 }

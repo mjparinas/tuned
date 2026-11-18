@@ -10,6 +10,8 @@ Tuned is a native Android IPTV player. It signs in to an Xtream Codes-style serv
 ./gradlew :app:testGithubDebugUnitTest # app unit tests
 ./gradlew spotlessApply               # format Kotlin (ktlint); CI runs spotlessCheck
 ./gradlew detekt :app:lintGithubDebug # static analysis and Android Lint; any finding fails
+./gradlew :app:generateGithubReleaseBaselineProfile  # baseline profile on an emulator (Baseline profile workflow does it in CI)
+./gradlew :smoketest:pixel6Api34GithubDebugAndroidTest  # device smoke test on an emulator (CI runs it on every pull request)
 npm ci && npm run format              # Prettier for YAML, JSON and Markdown; CI runs format:check
 ```
 
@@ -22,6 +24,9 @@ Kotlin, Jetpack Compose with Material 3, Navigation Compose (type-safe routes), 
 - `:core`: plain Kotlin, no Android. The M3U and XMLTV parsers, sorting streams into Live TV, Movies and Shows, country detection, episode numbering, Xtream URLs. Anything that can be tested without a device goes here, with a test.
 - `:app`: the Android app, in two builds ([premium](docs/decisions/premium.md)): `github` (GitHub Releases, updates itself, everything unlocked) and `play` (Google Play and other stores: no self-updater, no default server, Premium sold through Play Billing). Store builds never name a provider, channel or sports brand, in the app or the listing.
 - `:app` folders: `data/` (Room, DataStore settings, encrypted login, sync), `work/` (background refresh), `player/` (PlayerActivity), `ui/` (Compose screens, one screen and its ViewModel per file).
+- `:smoketest`: the github debug app on an emulator: sign in, play, change channel, back, and never two stream connections at once ([diagnostics](docs/decisions/diagnostics.md)).
+- `:fakeprovider`: plain Kotlin, the stand-in provider on the loopback that both device test modules use, with a generated clip and no login.
+- `:baselineprofile`: drives the release app on an emulator to write its baseline profile and measure cold start ([speed](docs/decisions/speed.md)).
 
 ## Product rules
 
@@ -29,7 +34,7 @@ Kotlin, Jetpack Compose with Material 3, Navigation Compose (type-safe routes), 
 - **Speed first** ([speed](docs/decisions/speed.md)): lists are paged straight from Room; downloads stream into the database in batches; nothing heavy runs before the first frame.
 - **Customizable** (Melvin, 2026-11-17: "customizing most things in the settings"): a new behaviour gets a setting when people could reasonably want it either way, with the common choice as the default.
 - **Never ask for, log or commit a login.** The app stores it encrypted until sign-out ([security](docs/decisions/security.md)). Error messages go through `XtreamUrls.redact`; log lines through `AppLog`, which scrubs them ([diagnostics](docs/decisions/diagnostics.md)). Playlists and guides are never committed (`.gitignore` blocks `*.m3u`, `*.xmltv`, `.env`).
-- **One stream connection, ever** (Melvin, 2026-11-17: "i dont want to get banned"). The player, auto-tune, backup copies, channel scans and downloads share one connection: the old stream closes before the next opens, nothing prefetches, and there is no multi-view or live preview ([scope](docs/decisions/scope.md)).
+- **One stream connection, ever** (Melvin, 2026-11-17: "i dont want to get banned"). The player, auto-tune, backup copies, channel scans and downloads share one connection: the old stream closes before the next opens, nothing prefetches, and there is no multi-view or live preview ([scope](docs/decisions/scope.md)). **Watching comes first** (Melvin, 2026-11-18: "the app should prioritize the stream and have the downloads wait"): a download is a stream connection too, so while anything plays (the player, picture-in-picture, the next episode, or a cast to a TV, which outlives the player screen) downloads and channel scans stop and wait, the download hangs up before the stream opens, and they carry on when watching ends ([offline](docs/decisions/offline.md)).
 - **Saved before streamed.** Anything downloaded plays from the device, never the stream ([offline](docs/decisions/offline.md)). TMDB art and details come from the device's cache first and the network only for what's missing ([player](docs/decisions/player.md)).
 - **Real names over numbers.** Show an episode's TMDB name where there is one, rather than "S1 E1" (Melvin, 2026-11-17).
 - **No second video on screen, and no sleep timer** (Melvin, 2026-11-17). Android's picture-in-picture, the one stream shrinking to a small window when you leave the app, stays. A second channel inset over the first is banned because it is a second stream. Don't build or propose a sleep timer ([scope](docs/decisions/scope.md)).
@@ -49,7 +54,7 @@ Kotlin, Jetpack Compose with Material 3, Navigation Compose (type-safe routes), 
 
 ## CI/CD (like Liftsmith)
 
-- `ci.yml` on every pull request and push to `main` and `staging`: formatting (Prettier, ktlint), lint and static analysis (detekt, Android Lint), unit tests, and the Android build (an unsigned release build so R8 problems show up here; no debug APK, because Melvin installs only production releases, 2026-11-18). **"CI passed"** is the one required check. A tree that already passed, or a Markdown-only change after a passing commit, skips the work.
+- `ci.yml` on every pull request and push to `main` and `staging`: formatting (Prettier, ktlint), lint and static analysis (detekt, Android Lint), unit tests, the device smoke test on an emulator, and the Android build (an unsigned release build so R8 problems show up here; no debug APK, because Melvin installs only production releases, 2026-11-18). **"CI passed"** is the one required check. A tree that already passed, or a Markdown-only change after a passing commit, skips the work.
 - `promote-staging.yml`: `main` is production and every pull request targets `staging`. Run by hand, it promotes staging to main when "CI passed" is green (a direct merge, so it needs no repository setting), then merges main back into staging. **Every production release needs Melvin's go-ahead, each time** (2026-11-17; he holds releases until a batch of features is in), so the nightly schedule Liftsmith uses is off.
 - `release.yml`: on every promotion and on demand, a signed APK published as a **GitHub release** (`v<version>`, no build number), which installed copies offer to update to; plus a signed App Bundle for the Play **internal** track once its secret exists ([updates](docs/decisions/updates.md)). The version is semver, bumped automatically from the commits since the last release (`scripts/next-version.mjs`; `package.json` is a floor), and the version code comes from it (1.2.3 is 1002003). Skips with a notice until its secrets exist.
 - Secrets: `ANDROID_KEYSTORE_B64` (base64 upload keystore, alias `upload`), `ANDROID_KEYSTORE_PASSWORD`, `PLAY_SERVICE_ACCOUNT_JSON`, optional `PROMOTE_TOKEN`. The app's own service keys (`TMDB_API_KEY` for ratings and details, `OPENSUBTITLES_API_KEY` for subtitle search, and the others each feature adds) are release secrets built into `BuildConfig`, never committed and never typed into Settings; a build without one hides that feature. The first upload must be done by hand in Play Console before the API can upload.

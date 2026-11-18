@@ -31,7 +31,15 @@ class OfflineWorker(
 ) : CoroutineWorker(context, params) {
     private var lastReport = 0L
 
-    override suspend fun doWork(): Result = logFailures(TAG, failed = { Result.failure() }) { download() }
+    override suspend fun doWork(): Result = try {
+        applicationContext.container.downloadOpen.value = true
+        logFailures(TAG, failed = { Result.failure() }) { download() }
+    } finally {
+        // Reached only once the connection is closed (Downloader hangs it up when stopped); the player waits for it.
+        applicationContext.container.downloadOpen.value = false
+        // The server takes a while to stop counting the download's connection; see [AccountRepository.noStreamSince].
+        applicationContext.container.account.noStreamSince = System.currentTimeMillis()
+    }
 
     private suspend fun download(): Result {
         val container = applicationContext.container
@@ -44,6 +52,9 @@ class OfflineWorker(
         // A film is large; as a foreground service the download carries on with the screen off.
         attempt(TAG, "Couldn't run as a foreground service") { setForeground(foregroundInfo(null)) }
         while (true) {
+            // Something started playing (the player, or a TV) between being queued and now: stop; the queue starts
+            // again when it ends.
+            if (container.watching()) return Result.success()
             val row = dao.next() ?: return Result.success()
             // Its page first (details, poster, cast photos), so it looks the same offline; a few small requests.
             attempt(TAG, "Couldn't save the artwork for ${row.name}") { container.savedArtwork.keep(row.itemId) }
@@ -51,7 +62,7 @@ class OfflineWorker(
                 // A user agent the playlist asks for wins over the app's.
                 val link = StreamLink.split(row.url)
                 val agent = link.headers[StreamLink.USER_AGENT] ?: ua
-                downloader.download(link.url, File(row.path), agent) { bytes, total -> report(row, bytes, total) }
+                downloader.download(link.url, File(row.path), agent, keepPart = true) { bytes, total -> report(row, bytes, total) }
                 val size = File(row.path).length()
                 dao.progress(row.itemId, size, size)
                 dao.state(row.itemId, DownloadEntity.DONE)

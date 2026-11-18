@@ -68,7 +68,7 @@ class RegionViewModel(
  * the playlist, A to Z by name, with how many streams each has. The search box above filters both as you type.
  * Turning one off hides its channels, movies and shows everywhere, including search. A language is the set of tags
  * that speak it ([RegionLanguages]), so its switch turns all of those on or off together and needs nothing stored of
- * its own; it shows on while any of them is on.
+ * its own; it shows on only while all of them are on.
  */
 @Composable
 fun RegionSettingsScreen(
@@ -163,13 +163,17 @@ private fun RegionList(
             item { SectionHeader(stringResource(R.string.regions_languages)) }
             items(languages, key = { "lang:" + it.first }) { (_, tags, name) ->
                 val streams = tags.sumOf { counts[it] ?: 0 }
+                // On only when every country in it is on (Melvin, 2026-11-18: with only US and Canada on, English
+                // looked on). Some on shows which ones; turning it on shows them all, off hides them all.
+                val shown = tags.filter { it !in hidden }
+                val partial = shown.isNotEmpty() && shown.size < tags.size
                 SwitchRow(
                     title = name,
-                    checked = tags.any { it !in hidden },
+                    checked = shown.size == tags.size,
                     summary =
                         stringResource(
-                            R.string.language_summary,
-                            tags.joinToString(", "),
+                            if (partial) R.string.language_summary_partial else R.string.language_summary,
+                            (if (partial) shown else tags).joinToString(", "),
                             pluralStringResource(R.plurals.streams, streams, streams),
                         ),
                 ) { show -> onSetHidden(if (show) hidden - tags.toSet() else hidden + tags) }

@@ -51,6 +51,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 import java.io.File
 import java.util.concurrent.ConcurrentHashMap
 
@@ -63,6 +64,7 @@ import java.util.concurrent.ConcurrentHashMap
 @OptIn(UnstableApi::class)
 class PlayerActivity : FragmentActivity() {
     private var player: ExoPlayer? = null
+    private val session = PlayerSession(this) { settings.mediaButtons }
     private lateinit var playerView: PlayerView
     private lateinit var overlay: LinearLayout
     private lateinit var titleView: TextView
@@ -249,6 +251,8 @@ class PlayerActivity : FragmentActivity() {
         // One connection to the provider at a time: downloads and channel scans wait while anything plays.
         container.playerOpen.value = true
         container.offline.pause()
+        // A cast outlives this screen; downloads keep waiting while a TV plays.
+        container.tvCasting.watch()
         buildViews()
         hideSystemBars(window)
         // Nothing to show if the channel can't be read: log it and close rather than sit on a black screen.
@@ -390,7 +394,8 @@ class PlayerActivity : FragmentActivity() {
                 copies = qualityCopies,
             )
         overlay.addView(tools.toolbar)
-        tools.addButton(subtitleSearch.button)
+        val captionButtons = listOf(subtitleSearch.button, tools.subtitleTimingButton)
+        if (!placeBesideCaptions(playerView, captionButtons)) captionButtons.reversed().forEach(tools::addButton)
         cast =
             CastControl(
                 activity = this,
@@ -484,7 +489,10 @@ class PlayerActivity : FragmentActivity() {
         val exo = buildPlayer(live)
         player = exo
         trakt.attach(exo)
-        playerView.player = ViewPlayer(exo, { cast }, { statusView.visibility = View.GONE }, ::pauseLive)
+        val shown = ViewPlayer(exo, { cast }, { statusView.visibility = View.GONE }, ::pauseLive)
+        playerView.player = shown
+        // Media buttons and the Assistant act through the same player as the on-screen controls.
+        session.attach(shown)
         playerView.setControllerShowTimeoutMs(settings.controlsTimeoutMs)
         playerView.setShowNextButton(queue.size > 1)
         playerView.setShowPreviousButton(queue.size > 1)
@@ -519,6 +527,9 @@ class PlayerActivity : FragmentActivity() {
             showStatus(getString(R.string.account_full_wait, full.activeConnections ?: 0, full.maxConnections ?: 0))
             playerView.showController()
         } else {
+            // A download stopped as the player opened hangs up first, so the provider never sees two connections. It
+            // takes a moment at most, and only when a download was running.
+            withTimeoutOrNull(DOWNLOAD_STOP_MS) { container.downloadOpen.first { !it } }
             exo.prepare()
             exo.playWhenReady = true
         }
@@ -697,8 +708,10 @@ class PlayerActivity : FragmentActivity() {
     }
 
     private fun updateOverlay(item: ItemEntity) {
-        titleView.text = item.name
-        subtitleView.text = item.groupName
+        // The name without the provider's language tag ("EN - "), and no category beneath it (Melvin, 2026-11-18). A
+        // catch-up recording keeps its channel's name there.
+        titleView.text = Titles.display(item.name)
+        subtitleView.text = if (item.id == CatchUpLinks.ID) item.groupName else ""
         // The episode's TMDB name, from the device at once when the show's page was opened, else one cached
         // TMDB request. Playback never waits for it, and it stays out of its own function because detekt caps
         // this class at 30.
@@ -727,7 +740,7 @@ class PlayerActivity : FragmentActivity() {
                 listOfNotNull(
                     current?.let { getString(R.string.player_now, it.title) },
                     next?.let { getString(R.string.player_next, it.title) },
-                ).joinToString("  ·  ").ifBlank { item.groupName }
+                ).joinToString("  ·  ")
         }
     }
 
@@ -763,6 +776,19 @@ class PlayerActivity : FragmentActivity() {
             overlay.visibility = View.GONE
             tools.hidePanels()
         }
+    }
+
+    /**
+     * The player is single-task, so picking another channel while it is open (from the app behind picture-in-picture,
+     * the widget, the quick-settings tile or a game alert) arrives here rather than in [onCreate]. It used to be
+     * ignored and the old channel kept playing. Now the player starts over on the new pick; Android destroys this
+     * one first, so its stream closes before the next opens.
+     */
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        if (PlayRequest.of(intent) == PlayRequest.of(getIntent())) return
+        setIntent(intent)
+        recreate()
     }
 
     override fun onWindowFocusChanged(hasFocus: Boolean) {
@@ -803,24 +829,27 @@ class PlayerActivity : FragmentActivity() {
         tools.release()
         dial.release()
         cast?.release()
-        container.appScope.launch { container.offline.start() }
         reconnect.stop()
+        session.release()
+        // The stream closes before downloads carry on, so the provider never sees two connections.
         player?.release()
         player = null
         container.account.noStreamSince = System.currentTimeMillis()
         container.playerOpen.value = false
+        container.appScope.launch { container.offline.start() }
         super.onDestroy()
     }
 
     companion object {
-        private const val EXTRA_ID = "id"
-        private const val EXTRA_TUNE = "tune"
-        private const val EXTRA_FROM = "catchup_from"
+        internal const val EXTRA_ID = "id"
+        internal const val EXTRA_TUNE = "tune"
+        internal const val EXTRA_FROM = "catchup_from"
         private const val EXTRA_UNTIL = "catchup_until"
         private const val EXTRA_TITLE = "catchup_title"
-        private const val EXTRA_RECORDING = "recording"
+        internal const val EXTRA_RECORDING = "recording"
         private const val MAX_RETRIES = 5
         private const val FLASH_MS = 900L
+        private const val DOWNLOAD_STOP_MS = 2_000L
 
         fun intent(
             context: Context,
