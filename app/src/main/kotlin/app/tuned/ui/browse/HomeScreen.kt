@@ -1,6 +1,5 @@
 package app.tuned.ui.browse
 
-import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -49,6 +48,10 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -61,6 +64,8 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -91,6 +96,7 @@ import app.tuned.ui.common.windowWidthDp
 import app.tuned.ui.offline.DownloadsViewModel
 import app.tuned.ui.settings.ProfileBadge
 import app.tuned.updates.GitHubUpdates
+import kotlinx.coroutines.launch
 
 internal data class Tab(
     val kind: ContentKind,
@@ -116,7 +122,8 @@ fun HomeScreen(
     onOpenPerson: (CastMember) -> Unit,
     onOpenSettings: () -> Unit,
     onOpenProfiles: () -> Unit,
-    onOpenSearch: () -> Unit,
+    /** Search everything, starting from the words typed on the tab (empty for none). */
+    onOpenSearch: (String) -> Unit,
     onOpenDownloads: () -> Unit,
     onOpenEvents: () -> Unit,
     onTune: (String) -> Unit,
@@ -166,10 +173,28 @@ fun HomeScreen(
         vm.rememberTab(index)
     }
 
+    val snackbar = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+    val undoLabel = stringResource(R.string.group_hidden_undo)
+    // Hiding a category says so with Undo, rather than a toast that can't take it back.
+    val onGroupHidden: (ContentKind, String, String) -> Unit = { kind, group, message ->
+        scope.launch {
+            snackbar.currentSnackbarData?.dismiss()
+            val result =
+                snackbar.showSnackbar(
+                    message,
+                    actionLabel = undoLabel,
+                    duration = SnackbarDuration.Long,
+                )
+            if (result == SnackbarResult.ActionPerformed) vm.unhideGroup(kind, group)
+        }
+    }
+
     Row(Modifier.fillMaxSize()) {
         if (rail) HomeRail(selected, select, onOpenDownloads)
         Scaffold(
             modifier = Modifier.weight(1 - ScreenLayout.DETAIL_FRACTION),
+            snackbarHost = { SnackbarHost(snackbar) },
             floatingActionButton = {
                 // Auto-tune: with a search on Live TV (a channel or an event, say "UFC"), find one that works and play it.
                 if (tab.kind == ContentKind.LIVE && liveSearch.isNotBlank()) {
@@ -189,7 +214,8 @@ fun HomeScreen(
                     onChange = { search.value = it },
                     grid = if (tab.kind == ContentKind.LIVE) settings.liveGrid else null,
                     onToggleGrid = { vm.setLiveGrid(!settings.liveGrid) },
-                    onOpenSearch = onOpenSearch,
+                    // The words typed on the tab carry over, so the search isn't typed twice.
+                    onOpenSearch = { onOpenSearch(text.trim()) },
                     // A kids profile has no way into Settings; switching profile (with a PIN) is the way out.
                     onOpenSettings = onOpenSettings.takeUnless { settings.kidsProfile },
                     profile = profile.takeIf { settings.profileCount > 1 },
@@ -226,12 +252,12 @@ fun HomeScreen(
                 }
                 requestedProgress?.let { RefreshBar(it) }
                 UpdateBanner()
-                CategoryChips(vm, tab.kind)
+                CategoryChips(vm, tab.kind, onGroupHidden)
                 val lists: @Composable () -> Unit = {
                     when (tab.kind) {
-                        ContentKind.LIVE -> LiveTab(vm, settings, onPlay, openGuide)
-                        ContentKind.MOVIE -> MovieGrid(vm, onPlay, openMovie, settings.alwaysShowScrollbar)
-                        ContentKind.SERIES -> ShowGrid(vm, openShow, onPlay, settings.alwaysShowScrollbar)
+                        ContentKind.LIVE -> LiveTab(vm, settings, onPlay, openGuide, onOpenSearch)
+                        ContentKind.MOVIE -> MovieGrid(vm, onPlay, openMovie, settings.alwaysShowScrollbar, onOpenSearch)
+                        ContentKind.SERIES -> ShowGrid(vm, openShow, onPlay, settings.alwaysShowScrollbar, onOpenSearch)
                     }
                 }
                 // Pull to refresh is a setting, off by default; Settings › Refresh now always works.
@@ -362,6 +388,8 @@ private fun SearchBarRow(
 private fun CategoryChips(
     vm: BrowseViewModel,
     kind: ContentKind,
+    /** The kind, the group and the message that says it is hidden. */
+    onHidden: (ContentKind, String, String) -> Unit,
 ) {
     val groups by vm.groups(kind).collectAsStateWithLifecycle()
     val filterFlow = vm.filter(kind)
@@ -395,7 +423,6 @@ private fun CategoryChips(
         }
         items(groups, key = { "g:" + it.groupName }) { g ->
             val on = filter == Filter.Group(g.groupName)
-            val context = LocalContext.current
             val hiddenMessage = stringResource(R.string.group_hidden, g.groupName)
             FilterChip(
                 selected = on,
@@ -411,12 +438,7 @@ private fun CategoryChips(
                                 modifier =
                                     Modifier.size(18.dp).clickable {
                                         vm.hideGroup(kind, g.groupName)
-                                        Toast
-                                            .makeText(
-                                                context,
-                                                hiddenMessage,
-                                                Toast.LENGTH_LONG,
-                                            ).show()
+                                        onHidden(kind, g.groupName, hiddenMessage)
                                     },
                             )
                         }
