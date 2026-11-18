@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_media_buttons">Media buttons</string>
+    <string name="settings_media_buttons_summary">Headphones, Bluetooth, the TV remote\'s play key and the Assistant can pause, play and change channel</string>
+</resources>

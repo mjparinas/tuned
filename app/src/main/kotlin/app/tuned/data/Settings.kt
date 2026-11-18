@@ -120,6 +120,8 @@ data class AppSettings(
     /** Leave out round-the-clock "24/7" channels, films and shows; see [RoundTheClock]. Melvin, 2026-11-17 and 11-18. Off by default. */
     val hide247: Boolean = false,
     val pictureInPicture: Boolean = true,
+    /** Headphone, Bluetooth and remote media buttons and the Assistant control the player (Settings › Player). */
+    val mediaButtons: Boolean = true,
     val playerGestures: Boolean = true,
     val autoReconnect: Boolean = true,
     val landscapePlayback: Boolean = true,
