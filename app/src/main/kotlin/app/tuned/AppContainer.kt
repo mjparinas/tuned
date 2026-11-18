@@ -61,7 +61,7 @@ class AppContainer(
             .retryOnConnectionFailure(true)
             .build()
     }
-    val sync by lazy { SyncRepository(db, http, credentials, settings, context.noBackupFilesDir.resolve("sync")) }
+    val sync by lazy { SyncRepository(db, http, credentials::load, settings, context.noBackupFilesDir.resolve("sync")) }
     val tune by lazy { TuneRepository(db, settings) }
     val scheduler = SyncScheduler(context)
     val guideFixes by lazy { GuideFixRepository(db, sync, scheduler, credentials) }

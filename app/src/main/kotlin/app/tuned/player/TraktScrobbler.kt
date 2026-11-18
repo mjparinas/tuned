@@ -18,25 +18,50 @@ import kotlinx.coroutines.Job
  * still arrives after the player closes.
  */
 internal class TraktScrobbler(
-    private val account: TraktAccount,
+    /** Whether a Trakt account is signed in. */
+    private val signedIn: () -> Boolean,
+    /** Sends one scrobble ([TraktAccount.scrobble]). */
+    private val scrobble: suspend (action: String, target: Trakt.Target, progress: Double) -> Unit,
     private val scope: CoroutineScope,
     /** The item the player is on now. */
     private val current: () -> ItemEntity?,
     /** Where the TV is, as position and length in ms, while a cast has the video; null when the phone plays it. */
     private val elsewhere: () -> Pair<Long, Long>? = { null },
 ) : Player.Listener {
+    constructor(
+        account: TraktAccount,
+        scope: CoroutineScope,
+        current: () -> ItemEntity?,
+        elsewhere: () -> Pair<Long, Long>? = { null },
+    ) : this({ account.available && account.session.value != null }, account::scrobble, scope, current, elsewhere)
+
     private var player: Player? = null
     private var started: Trakt.Target? = null
     private var lastProgress = 0.0
-    private var last: Job? = null
 
-    private val active: Boolean get() = account.available && account.session.value != null
+    /** The length of what [started] is, kept for the moment the player has already moved on to the next. */
+    private var length = 0L
+    private var last: Job? = null
 
     fun attach(p: Player) {
         player?.removeListener(this)
         player = p
         started = null
-        if (active) p.addListener(this)
+        if (signedIn()) p.addListener(this)
+    }
+
+    /**
+     * Next episode (or a seek into another item) moves on before [onMediaItemTransition] says so, and by then the
+     * player only knows the new item. The spot left is here: without it the stop carried the spot from the start, and
+     * an episode watched to the credits never reached 80% on Trakt.
+     */
+    override fun onPositionDiscontinuity(
+        oldPosition: Player.PositionInfo,
+        newPosition: Player.PositionInfo,
+        reason: Int,
+    ) {
+        if (started == null || oldPosition.mediaItemIndex == newPosition.mediaItemIndex || elsewhere() != null) return
+        if (length > 0) lastProgress = Trakt.progress(oldPosition.positionMs, length)
     }
 
     override fun onPlaybackStateChanged(playbackState: Int) {
@@ -92,8 +117,10 @@ internal class TraktScrobbler(
     }
 
     private fun progress(p: Player): Double {
-        val (position, length) = elsewhere() ?: (p.currentPosition to p.duration)
-        return Trakt.progress(position, length).also { lastProgress = it }
+        val tv = elsewhere()
+        if (tv == null) length = p.duration
+        val (position, duration) = tv ?: (p.currentPosition to p.duration)
+        return Trakt.progress(position, duration).also { lastProgress = it }
     }
 
     private fun send(
@@ -105,7 +132,7 @@ internal class TraktScrobbler(
         last =
             scope.launchSafely(TAG) {
                 before?.join()
-                account.scrobble(action, target, progress)
+                scrobble(action, target, progress)
             }
     }
 

@@ -67,7 +67,8 @@ data class SyncProgress(
 class SyncRepository(
     private val db: TunedDatabase,
     private val http: OkHttpClient,
-    private val credentials: CredentialStore,
+    /** The login in use ([CredentialStore.load]). */
+    private val currentLogin: () -> Credentials?,
     private val settings: SettingsRepository,
     private val dir: File,
 ) {
@@ -89,7 +90,7 @@ class SyncRepository(
     suspend fun refreshGuide(progress: (SyncProgress) -> Unit = {}): Int = lock.withLock { refreshGuideLocked(progress) }
 
     private suspend fun refreshPlaylistLocked(progress: (SyncProgress) -> Unit): Int {
-        val login = credentials.load() ?: throw IOException("Not signed in")
+        val login = currentLogin() ?: throw IOException("Not signed in")
         val count =
             try {
                 importFromServer(login, progress)
@@ -123,6 +124,8 @@ class SyncRepository(
         val api = XtreamImport(http, login, userAgent())
         // A plain playlist's catch-up comes from its own attributes, gathered as it's read (Xtream asks the API after).
         val catchUp = ArrayList<CatchUpEntity>()
+        // False when the file hadn't changed and wasn't read: the catch-up already saved from it stays.
+        var readCatchUp = false
         val m3u =
             runCatchingIo {
                 download(url, "playlist", SyncProgress.Step.Playlist, progress) { input, fingerprint ->
@@ -136,6 +139,7 @@ class SyncRepository(
                     memo.forget()
                     importPlaylist(saved) { add ->
                         catchUp.clear() // a download that starts over reads the playlist again
+                        readCatchUp = true
                         var shows = 0
                         var order = 0
                         val reader = input.bufferedReader()
@@ -157,7 +161,7 @@ class SyncRepository(
             }
         val failure =
             m3u.exceptionOrNull() ?: return m3u.getOrThrow().also {
-                if (!xtream) replaceCatchUp(catchUp)
+                if (!xtream && readCatchUp) replaceCatchUp(catchUp)
             }
         if (!xtream) throw failure
         AppLog.w(TAG_SYNC, "M3U download failed; reading the Xtream API instead", failure)
@@ -245,7 +249,7 @@ class SyncRepository(
     private fun JsonObject.text(key: String) = (this[key] as? JsonPrimitive)?.contentOrNull
 
     private suspend fun refreshGuideLocked(progress: (SyncProgress) -> Unit): Int {
-        val login = credentials.load() ?: throw IOException("Not signed in")
+        val login = currentLogin() ?: throw IOException("Not signed in")
         // A plain playlist's guide is the one its header names; without one only the extra guide links are read.
         val main =
             login.guideUrl.ifBlank {
@@ -394,7 +398,7 @@ class SyncRepository(
      */
     suspend fun loadShow(showKey: String) {
         val standIn = db.items().episodesNow(showKey).firstOrNull { XtreamApi.standInId(it.url) != null } ?: return
-        val login = credentials.load() ?: return
+        val login = currentLogin() ?: return
         val api = XtreamImport(http, login, userAgent())
         val episodes =
             api
