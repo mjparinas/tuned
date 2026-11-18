@@ -768,6 +768,19 @@ class PlayerActivity : FragmentActivity() {
         }
     }
 
+    /**
+     * The player is single-task, so picking another channel while it is open (from the app behind picture-in-picture,
+     * the widget, the quick-settings tile or a game alert) arrives here rather than in [onCreate]. It used to be
+     * ignored and the old channel kept playing. Now the player starts over on the new pick; Android destroys this
+     * one first, so its stream closes before the next opens.
+     */
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        if (PlayRequest.of(intent) == PlayRequest.of(getIntent())) return
+        setIntent(intent)
+        recreate()
+    }
+
     override fun onWindowFocusChanged(hasFocus: Boolean) {
         super.onWindowFocusChanged(hasFocus)
         if (hasFocus) hideSystemBars(window)
@@ -817,12 +830,12 @@ class PlayerActivity : FragmentActivity() {
     }
 
     companion object {
-        private const val EXTRA_ID = "id"
-        private const val EXTRA_TUNE = "tune"
-        private const val EXTRA_FROM = "catchup_from"
+        internal const val EXTRA_ID = "id"
+        internal const val EXTRA_TUNE = "tune"
+        internal const val EXTRA_FROM = "catchup_from"
         private const val EXTRA_UNTIL = "catchup_until"
         private const val EXTRA_TITLE = "catchup_title"
-        private const val EXTRA_RECORDING = "recording"
+        internal const val EXTRA_RECORDING = "recording"
         private const val MAX_RETRIES = 5
         private const val FLASH_MS = 900L
 
