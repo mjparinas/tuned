@@ -53,6 +53,7 @@ import app.tuned.R
 import app.tuned.container
 import app.tuned.core.ContentKind
 import app.tuned.core.StreamLink
+import app.tuned.core.Titles
 import app.tuned.data.AppSettings
 import app.tuned.data.db.HistoryEntity
 import app.tuned.data.db.ItemEntity
@@ -624,6 +625,22 @@ class PlayerActivity : FragmentActivity() {
     private fun updateOverlay(item: ItemEntity) {
         titleView.text = item.name
         subtitleView.text = item.groupName
+        // The episode's TMDB name, from the device at once when the show's page was opened, else one cached
+        // TMDB request. Playback never waits for it, and it stays out of its own function because detekt caps
+        // this class at 30.
+        val show = item.showName
+        val season = item.season
+        val episode = item.episode
+        if (show != null && season != null && episode != null) {
+            lifecycleScope.launchSafely("Player") {
+                val info = container.metadata.cachedEpisode(show, season, episode) ?: container.metadata.episode(show, season, episode)
+                // Moved on to the next episode meanwhile: that one has its own lookup.
+                if (info?.name != null && player?.currentMediaItem?.mediaId == item.id.toString()) {
+                    titleView.text = info.name
+                    subtitleView.text = getString(R.string.continue_episode, Titles.display(show), season, episode)
+                }
+            }
+        }
         if (ContentKind.fromCode(item.kind) == ContentKind.LIVE) rememberChannel(item.id)
         val tvgId = item.tvgId ?: return
         if (ContentKind.fromCode(item.kind) != ContentKind.LIVE) return

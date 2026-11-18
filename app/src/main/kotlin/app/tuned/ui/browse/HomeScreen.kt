@@ -727,6 +727,7 @@ private fun LazyGridScope.continueWatching(
 ) {
     item(key = "continue", span = { GridItemSpan(maxLineSpan) }, contentType = "continue") {
         val rows by vm.continueWatching(kind).collectAsStateWithLifecycle()
+        val names by vm.continueNames.collectAsStateWithLifecycle()
         if (rows.isEmpty() || !fullList(vm, kind)) return@item
         Column {
             Text(
@@ -735,7 +736,10 @@ private fun LazyGridScope.continueWatching(
                 modifier = Modifier.padding(bottom = 8.dp),
             )
             LazyRow(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                items(rows, key = { it.id }) { row -> ContinueCard(row, onClick = { onPlay(row.id) }) }
+                items(rows, key = { it.id }) { row ->
+                    LaunchedEffect(row.id) { vm.loadEpisodeName(row) }
+                    ContinueCard(row, names[row.id], onClick = { onPlay(row.id) })
+                }
             }
             Spacer(Modifier.height(6.dp))
         }
@@ -756,13 +760,23 @@ private fun fullList(
 @Composable
 private fun ContinueCard(
     row: ContinueRow,
+    episodeName: String?,
     onClick: () -> Unit,
 ) {
+    // TMDB's episode name ("The Simpsons · Kamp Krusty") reads better than its number, when it's known.
     val title =
-        if (row.showName != null && row.season != null && row.episode != null) {
-            stringResource(R.string.continue_episode, row.showName, row.season, row.episode)
-        } else {
-            row.name
+        when {
+            row.showName != null && episodeName != null -> {
+                stringResource(R.string.continue_episode_named, row.showName, episodeName)
+            }
+
+            row.showName != null && row.season != null && row.episode != null -> {
+                stringResource(R.string.continue_episode, row.showName, row.season, row.episode)
+            }
+
+            else -> {
+                row.name
+            }
         }
     Column(
         Modifier
