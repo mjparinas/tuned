@@ -100,12 +100,19 @@ class FileServer(
         val out = BufferedOutputStream(client.getOutputStream(), BUFFER)
         val file = files[path]?.takeIf { it.isFile }
         when {
-            method == "OPTIONS" -> respond(out, "204 No Content", emptyMap())
-            method != "GET" && method != "HEAD" -> respond(out, "405 Method Not Allowed", emptyMap())
+            method == "OPTIONS" -> {
+                respond(out, "204 No Content", emptyMap())
+            }
+
+            method != "GET" && method != "HEAD" -> {
+                respond(out, "405 Method Not Allowed", emptyMap())
+            }
+
             file == null -> {
                 log("Asked for an unknown file ($method)")
                 respond(out, "404 Not Found", emptyMap())
             }
+
             else -> sendFile(out, file, method == "HEAD", headers["range"])
         }
         out.flush()
@@ -222,6 +229,7 @@ object ByteRanges {
                 val n = last.toLongOrNull()?.takeIf { it > 0 } ?: return null
                 if (length == 0L) UNSATISFIABLE else (length - n).coerceAtLeast(0) to length - 1
             }
+
             else -> {
                 val start = first.toLongOrNull()?.takeIf { it >= 0 } ?: return null
                 val end = if (last.isEmpty()) length - 1 else last.toLongOrNull()?.takeIf { it >= start } ?: return null

@@ -35,11 +35,11 @@ import com.google.android.gms.cast.framework.media.CastMediaOptions
 import com.google.android.gms.cast.framework.media.NotificationOptions
 import com.google.android.gms.cast.framework.media.RemoteMediaClient
 import com.google.android.gms.common.images.WebImage
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import java.io.File
 import java.net.Inet4Address
 import java.net.NetworkInterface
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
 
 /**
  * Chromecast from the player. When a cast starts, the phone stops its own stream (so only one connection to the
@@ -305,17 +305,16 @@ class CastControl(
     }
 
     /** The phone's address on the local network (Wi-Fi first), which the TV can reach. */
-    private fun localAddress(): String? =
-        attempt(TAG, "Couldn't read the phone's network address") {
-            NetworkInterface
-                .getNetworkInterfaces()
-                .toList()
-                .filter { it.isUp && !it.isLoopback }
-                .sortedByDescending { it.name.startsWith("wlan") }
-                .flatMap { it.inetAddresses.toList() }
-                .firstOrNull { it is Inet4Address && it.isSiteLocalAddress }
-                ?.hostAddress
-        }.getOrNull()
+    private fun localAddress(): String? = attempt(TAG, "Couldn't read the phone's network address") {
+        NetworkInterface
+            .getNetworkInterfaces()
+            .toList()
+            .filter { it.isUp && !it.isLoopback }
+            .sortedByDescending { it.name.startsWith("wlan") }
+            .flatMap { it.inetAddresses.toList() }
+            .firstOrNull { it is Inet4Address && it.isSiteLocalAddress }
+            ?.hostAddress
+    }.getOrNull()
 
     private fun stopServing() {
         files?.close()
