@@ -14,8 +14,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
 import androidx.lifecycle.AndroidViewModel
@@ -28,6 +26,8 @@ import app.tuned.core.Trakt
 import app.tuned.data.TraktAccount
 import app.tuned.diagnostics.launchSafely
 import app.tuned.diagnostics.startActivitySafely
+import app.tuned.premium.LockedRow
+import app.tuned.premium.premiumUnlocked
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -102,7 +102,12 @@ fun TraktRows(vm: TraktViewModel = viewModel()) {
     SectionHeader(stringResource(R.string.trakt))
     val signedIn = session
     if (signedIn == null) {
-        SettingRow(stringResource(R.string.trakt_sign_in), stringResource(R.string.trakt_sign_in_summary), onClick = vm::startSignIn)
+        // Trakt is Premium (docs/decisions/premium.md).
+        if (premiumUnlocked()) {
+            SettingRow(stringResource(R.string.trakt_sign_in), stringResource(R.string.trakt_sign_in_summary), onClick = vm::startSignIn)
+        } else {
+            LockedRow(stringResource(R.string.trakt_sign_in))
+        }
     } else {
         val name = signedIn.username ?: stringResource(R.string.trakt_account_unnamed)
         SettingRow(stringResource(R.string.trakt_signed_in, name), stringResource(R.string.trakt_sign_out), onClick = vm::signOut)
@@ -132,12 +137,7 @@ private fun SignInDialog(
                     Column {
                         Text(stringResource(R.string.trakt_enter_code, state.code.verificationUrl.removePrefix("https://")))
                         Spacer(Modifier.height(16.dp))
-                        Text(
-                            state.code.userCode,
-                            style = MaterialTheme.typography.headlineMedium,
-                            fontFamily = FontFamily.Monospace,
-                            fontWeight = FontWeight.Bold,
-                        )
+                        SignInCode(state.code.userCode)
                         Spacer(Modifier.height(16.dp))
                         Text(stringResource(R.string.trakt_waiting), style = MaterialTheme.typography.bodySmall)
                     }

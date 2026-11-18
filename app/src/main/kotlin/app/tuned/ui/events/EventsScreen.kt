@@ -4,8 +4,6 @@ import android.Manifest
 import android.app.Application
 import android.content.pm.PackageManager
 import android.os.Build
-import android.text.format.DateFormat
-import android.text.format.DateUtils
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
@@ -61,20 +59,22 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import app.tuned.R
 import app.tuned.container
 import app.tuned.core.Events
+import app.tuned.core.TimeZones
 import app.tuned.data.EventsRepository
 import app.tuned.diagnostics.attempt
 import app.tuned.diagnostics.launchSafely
 import app.tuned.ui.common.BackTopBar
 import app.tuned.ui.common.focusRing
+import app.tuned.ui.common.rememberTimeLabels
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
-import java.util.Calendar
-import java.util.Date
+import java.time.ZoneId
 
 /** The page's lists: what the person follows, what's on now, later today and tomorrow. */
 data class EventSections(
@@ -101,6 +101,13 @@ class EventsViewModel(
             .distinctUntilChanged()
             .stateIn(viewModelScope, SharingStarted.Eagerly, emptySet())
 
+    /** Settings › Guide › Time zone: where "Later today" ends and "Tomorrow" begins. */
+    private val zone: StateFlow<ZoneId> =
+        settings.settings
+            .map { TimeZones.resolve(it.timeZone) }
+            .distinctUntilChanged()
+            .stateIn(viewModelScope, SharingStarted.Eagerly, ZoneId.systemDefault())
+
     /** Keys ([EventsRepository.alertKey]) of alerts still to go off. */
     val alerts: StateFlow<Set<String>> =
         app.container.reminders.scheduled
@@ -108,7 +115,7 @@ class EventsViewModel(
 
     init {
         viewModelScope.launchSafely(TAG) {
-            followed.collect { attempt(TAG, "Couldn't read the guide") { reload() } }
+            combine(followed, zone) { _, _ -> }.collect { attempt(TAG, "Couldn't read the guide") { reload() } }
         }
         // Events start and end while the page is open: move them between sections once a minute.
         viewModelScope.launchSafely(TAG) {
@@ -124,7 +131,7 @@ class EventsViewModel(
         val all = events.events(now)
         val follows = followed.value
         val (mine, rest) = all.partition { follows.isNotEmpty() && Events.follows(it, follows) }
-        val midnight = midnightAfter(now)
+        val midnight = TimeZones.nextMidnight(now, zone.value)
         sections.value =
             EventSections(
                 following = mine,
@@ -134,7 +141,11 @@ class EventsViewModel(
             )
     }
 
+    // Following and alerts are Premium; browsing and Tune stay free (docs/decisions/premium.md).
+    private val premium = app.container.premium
+
     fun follow(name: String) {
+        if (!premium.allow(getApplication<Application>())) return
         viewModelScope.launchSafely(TAG) { events.follow(name) }
     }
 
@@ -144,23 +155,13 @@ class EventsViewModel(
 
     fun toggleAlert(event: Events.Event) {
         val on = EventsRepository.alertKey(event) !in alerts.value
+        if (on && !premium.allow(getApplication<Application>())) return
         viewModelScope.launchSafely(TAG) { events.setAlert(event, on) }
     }
 
     private companion object {
         const val TAG = "Events"
         const val REFRESH_MS = 60_000L
-
-        fun midnightAfter(now: Long): Long = Calendar
-            .getInstance()
-            .apply {
-                timeInMillis = now
-                set(Calendar.HOUR_OF_DAY, 0)
-                set(Calendar.MINUTE, 0)
-                set(Calendar.SECOND, 0)
-                set(Calendar.MILLISECOND, 0)
-                add(Calendar.DAY_OF_MONTH, 1)
-            }.timeInMillis
     }
 }
 
@@ -185,6 +186,7 @@ fun EventsScreen(
     Scaffold(topBar = { BackTopBar(stringResource(R.string.events_title), onBack) }) { padding ->
         LazyColumn(Modifier.padding(padding).fillMaxSize(), contentPadding = PaddingValues(bottom = 24.dp)) {
             item(key = "follow") { FollowRow(followed, vm::follow, vm::unfollow) }
+            item(key = "zone") { ZoneNote() }
             val s = sections
             when {
                 s == null -> {
@@ -259,16 +261,16 @@ private fun EventRow(
     event: Events.Event,
     row: EventRowActions,
 ) {
-    val context = LocalContext.current
+    val times = rememberTimeLabels()
     val live = event.liveAt(row.now)
     val tunable = live || event.start - row.now <= TUNE_BEFORE_MS
     val time =
         if (live) {
             stringResource(R.string.events_live)
-        } else if (DateUtils.isToday(event.start)) {
-            DateFormat.getTimeFormat(context).format(Date(event.start))
+        } else if (times.isToday(event.start, row.now)) {
+            times.time(event.start)
         } else {
-            DateUtils.formatDateTime(context, event.start, DateUtils.FORMAT_SHOW_TIME or DateUtils.FORMAT_SHOW_WEEKDAY)
+            times.dayTime(event.start)
         }
     Row(
         verticalAlignment = Alignment.CenterVertically,
@@ -309,6 +311,18 @@ private fun EventRow(
             }
         }
     }
+}
+
+/** Which zone the times are in ("Times in PST"), changed in Settings › Guide. */
+@Composable
+private fun ZoneNote() {
+    val times = rememberTimeLabels()
+    Text(
+        stringResource(R.string.events_zone, times.zoneName()),
+        style = MaterialTheme.typography.labelMedium,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
+    )
 }
 
 /** Follow a team, league or fighter: their events come first, with an alert before each. */

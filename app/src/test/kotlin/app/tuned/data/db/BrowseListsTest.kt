@@ -96,6 +96,35 @@ class BrowseListsTest {
     }
 
     @Test
+    fun hide247LeavesOutMoviesAndShowsToo() = runTest {
+        val writer = PlaylistWriter(db)
+        writer.begin()
+        val rows =
+            listOf(
+                item(1, 1, "Heat", group = "Action"),
+                item(2, 1, "Rocky 1-6", group = "24/7 Movies"),
+                episode(3, "Friends 24/7", "Comedy"),
+                episode(4, "Bluey", "Kids"),
+                episode(5, "The Office", "EN| 247 Shows"),
+            )
+        rows.forEach { writer.accept(it.id) }
+        writer.add(rows)
+        writer.commit()
+        val hidden = listOf("247")
+        val items = db.items()
+        val shows = db.shows()
+
+        assertEquals(listOf(1L), items.items(1, hidden, false, null, false, "", "").all().map { it.id })
+        assertEquals(listOf("Action"), items.groups(1, hidden, false).first().map { it.groupName })
+        assertEquals(listOf("Bluey"), shows.showsTab(hidden, false, null).all().map { it.showName })
+        assertEquals(listOf("Kids"), shows.showGroupChips(hidden, false).first().map { it.groupName })
+        assertEquals(listOf("Bluey"), items.shows(hidden, false, null, false, "", "").all().map { it.showName })
+        // Off, everything is back.
+        assertEquals(2, items.items(1, emptyList(), false, null, false, "", "").all().size)
+        assertEquals(3, shows.showsTab(emptyList(), false, null).all().size)
+    }
+
+    @Test
     fun theUpgradeFillsTheShowsTable() = runTest {
         db.items().insertAll(listOf(episode(1, "Bluey", "Kids")))
         val sql = db.openHelper.writableDatabase

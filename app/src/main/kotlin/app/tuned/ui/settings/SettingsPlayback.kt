@@ -6,6 +6,8 @@ import androidx.compose.ui.res.stringResource
 import app.tuned.R
 import app.tuned.data.AppSettings
 import app.tuned.data.BufferMode
+import app.tuned.premium.LockedRow
+import app.tuned.premium.premiumUnlocked
 
 @Composable
 internal fun PlaybackPage(
@@ -37,18 +39,23 @@ internal fun PlaybackPage(
             }
         },
     ) { ms -> vm.update { it.copy(skipIntroMs = ms) } }
-    ChoiceRow(
-        stringResource(R.string.settings_live_rewind),
-        listOf(0, 15, 30, 60),
-        settings.liveRewindMinutes,
-        label = { m ->
-            if (m == 0) {
-                stringResource(R.string.settings_live_rewind_off)
-            } else {
-                pluralStringResource(R.plurals.settings_live_rewind_minutes, m, m)
-            }
-        },
-    ) { m -> vm.update { it.copy(liveRewindMinutes = m) } }
+    // Pause and rewind live TV is Premium (docs/decisions/premium.md).
+    if (!premiumUnlocked()) {
+        LockedRow(stringResource(R.string.settings_live_rewind))
+    } else {
+        ChoiceRow(
+            stringResource(R.string.settings_live_rewind),
+            listOf(0, 15, 30, 60),
+            settings.liveRewindMinutes,
+            label = { m ->
+                if (m == 0) {
+                    stringResource(R.string.settings_live_rewind_off)
+                } else {
+                    pluralStringResource(R.plurals.settings_live_rewind_minutes, m, m)
+                }
+            },
+        ) { m -> vm.update { it.copy(liveRewindMinutes = m) } }
+    }
     ChoiceRow(
         stringResource(R.string.settings_buffer),
         BufferMode.entries,

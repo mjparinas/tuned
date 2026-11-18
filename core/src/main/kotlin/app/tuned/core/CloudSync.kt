@@ -1,7 +1,6 @@
 package app.tuned.core
 
-import javax.crypto.Mac
-import javax.crypto.spec.SecretKeySpec
+import java.security.MessageDigest
 
 /**
  * The rules of sync between devices (phone and TV) through the person's Google Drive app folder: what one run does, and
@@ -37,18 +36,8 @@ object CloudSync {
         }
     }
 
-    /**
-     * A fingerprint of the synced copy keyed with the sync passphrase, so the one stored beside the file in Drive says
-     * nothing about what is inside it (the copy holds logins).
-     */
-    fun fingerprint(
-        plain: ByteArray,
-        passphrase: CharArray,
-    ): String {
-        val mac = Mac.getInstance(HMAC)
-        mac.init(SecretKeySpec(String(passphrase).toByteArray(), HMAC))
-        return mac.doFinal(plain).joinToString("") { "%02x".format(it) }
-    }
+    /** A fingerprint of the synced copy (SHA-256), stored beside the file in Drive to tell whether it changed. */
+    fun fingerprint(plain: ByteArray): String = MessageDigest.getInstance("SHA-256").digest(plain).joinToString("") { "%02x".format(it) }
 
     enum class Poll { SIGNED_IN, WAIT, SLOW_DOWN, DENIED, EXPIRED, FAILED }
 
@@ -65,10 +54,57 @@ object CloudSync {
         else -> Poll.FAILED
     }
 
+    /** Why signing in to Google ended without an account, in words the dialog can explain. */
+    enum class Reason { OFFLINE, UNKNOWN_CLIENT, WRONG_CLIENT_TYPE, WRONG_SECRET, SCOPE_NOT_ALLOWED, DENIED, EXPIRED, OTHER }
+
+    /** A failed sign-in: the [reason], and Google's own words ([detail], null when Google wasn't reached) to show under it. */
+    data class Failure(
+        val reason: Reason,
+        val detail: String?,
+    )
+
+    /**
+     * Google's answer to a failed sign-in step ([status] null when Google wasn't reached at all), from the "error" and
+     * "error_description" fields of the reply. Before this, every one of them read "Couldn't reach Google", which hid a
+     * misconfigured OAuth client behind a network message.
+     */
+    fun failure(
+        status: Int?,
+        error: String?,
+        description: String?,
+    ): Failure {
+        if (status == null) return Failure(Reason.OFFLINE, null)
+        val reason =
+            when (error) {
+                "access_denied" -> Reason.DENIED
+                "expired_token" -> Reason.EXPIRED
+                "invalid_scope" -> Reason.SCOPE_NOT_ALLOWED
+                "unauthorized_client" -> Reason.WRONG_CLIENT_TYPE
+                "deleted_client" -> Reason.UNKNOWN_CLIENT
+                "invalid_client" -> invalidClient(description.orEmpty().lowercase())
+                else -> Reason.OTHER
+            }
+        val detail = listOfNotNull(error ?: "HTTP $status", description?.takeIf { it.isNotBlank() }).joinToString(": ")
+        return Failure(reason, detail)
+    }
+
+    /** Google's "invalid_client" covers an unknown client, the wrong kind of client and a wrong secret. */
+    private fun invalidClient(about: String): Reason = when {
+        "not found" in about || "deleted" in about -> Reason.UNKNOWN_CLIENT
+        "type" in about -> Reason.WRONG_CLIENT_TYPE
+        else -> Reason.WRONG_SECRET
+    }
+
+    /** Whether Drive turned a request down because the Drive API is off in the app's Google Cloud project. */
+    fun driveApiOff(
+        status: Int,
+        body: String,
+    ): Boolean = status == HTTP_FORBIDDEN && ("accessNotConfigured" in body || "SERVICE_DISABLED" in body)
+
     /** The one scope asked for: a folder in the person's Drive that only Tuned can see, nothing else of theirs. */
     const val SCOPE = "https://www.googleapis.com/auth/drive.appdata"
     const val FILE_NAME = "tuned-sync"
 
-    private const val HMAC = "HmacSHA256"
     private const val HTTP_OK = 200
+    private const val HTTP_FORBIDDEN = 403
 }

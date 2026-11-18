@@ -1,8 +1,10 @@
 package app.tuned.ui
 
+import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.composable
 import androidx.navigation.toRoute
+import app.tuned.container
 import app.tuned.data.Credentials
 import app.tuned.ui.onboarding.AddPlaylistScreen
 import app.tuned.ui.onboarding.WelcomeScreen
@@ -30,7 +32,6 @@ fun NavGraphBuilder.playlistScreens(app: AppNav) {
         WelcomeScreen(
             firstRun = true,
             onPick = { kind -> app.nav.navigate(AddPlaylistRoute(kind.name)) },
-            onRestored = app.openHome,
             onBack = {},
         )
     }
@@ -38,7 +39,6 @@ fun NavGraphBuilder.playlistScreens(app: AppNav) {
         WelcomeScreen(
             firstRun = false,
             onPick = { kind -> app.nav.navigate(AddPlaylistRoute(kind.name)) },
-            onRestored = app.openHome,
             onBack = { app.nav.popBackStack() },
         )
     }
@@ -53,9 +53,11 @@ fun NavGraphBuilder.playlistScreens(app: AppNav) {
         )
     }
     composable<PlaylistsRoute> {
+        val context = LocalContext.current
         PlaylistsScreen(
             onBack = { app.nav.popBackStack() },
-            onAdd = { app.nav.navigate(ChoosePlaylistRoute) },
+            // A second playlist is Premium (docs/decisions/premium.md).
+            onAdd = { if (context.container.premium.allow(context)) app.nav.navigate(ChoosePlaylistRoute) },
             onEdit = { index, kind -> app.nav.navigate(AddPlaylistRoute(kind.name, index)) },
             onSwitched = app.openHome,
             onEmpty = app.openWelcome,

@@ -82,6 +82,8 @@ data class AppSettings(
     val startTab: StartTab = StartTab.LIVE,
     val lastTab: Int = 0,
     val hiddenRegions: Set<String> = emptySet(),
+    /** Every country the playlist had at the last check, so a new one can follow the rest ([app.tuned.core.NewRegions]). */
+    val seenRegions: Set<String> = emptySet(),
     /** Hidden groups, as [app.tuned.core.HiddenGroups] keys. */
     val hiddenGroups: Set<String> = emptySet(),
     /** Teams, leagues and fighters followed on Live Events ("Canucks", "UFC"), as typed. */
@@ -94,6 +96,8 @@ data class AppSettings(
     val guideDays: Int = 3,
     /** Moves the whole guide, for one that runs early or late (Settings › Guide). */
     val guideOffsetMinutes: Int = 0,
+    /** The zone guide and event times show in, as a zone id; blank follows the phone (Settings › Guide). */
+    val timeZone: String = "",
     val unmeteredOnly: Boolean = false,
     val buffer: BufferMode = BufferMode.BALANCED,
     val audioLanguage: String = "",
@@ -113,7 +117,7 @@ data class AppSettings(
     val liveRewindMinutes: Int = 30,
     /** Leave out empty event slots ("NO EVENT STREAMING"); see [Placeholders]. Melvin, 2026-11-17: hide them. */
     val hidePlaceholders: Boolean = true,
-    /** Leave out round-the-clock "24/7" channels; see [RoundTheClock]. Melvin, 2026-11-17. Off by default. */
+    /** Leave out round-the-clock "24/7" channels, films and shows; see [RoundTheClock]. Melvin, 2026-11-17 and 11-18. Off by default. */
     val hide247: Boolean = false,
     val pictureInPicture: Boolean = true,
     val playerGestures: Boolean = true,
@@ -138,6 +142,8 @@ data class AppSettings(
     val liveGrid: Boolean = false,
     /** Numbers beside live channels, for typing one on the remote (Settings › Lists). */
     val channelNumbers: Boolean = true,
+    /** Keep the scroll bar on Live TV, Movies and Shows on screen, instead of only while the list moves (Settings › Lists). */
+    val alwaysShowScrollbar: Boolean = false,
     /** Open straight into the last live channel at launch, as a cable box does (Settings › Start on the last channel). */
     val startOnLastChannel: Boolean = false,
     /** Look for a newer release on GitHub at start (copies from Play update through Play either way). */
@@ -244,8 +250,8 @@ class SettingsRepository(
     ) = update { it.copy(profileId = id, kidsProfile = kids, profileCount = count) }
 
     /**
-     * Every stored setting by its key, for a backup. Sync times and the open tab are left out: they belong to this phone.
-     * Reads the file directly, so a backup fails loudly rather than saving the defaults.
+     * Every stored setting by its key, for sync. Sync times and the open tab are left out: they belong to this phone.
+     * Reads the file directly, so sync fails loudly rather than saving the defaults.
      */
     suspend fun snapshot(): Map<String, Any> = context.dataStore.data
         .first()
@@ -254,7 +260,7 @@ class SettingsRepository(
         .filterKeys { it !in DEVICE_ONLY }
 
     /** Puts back what [snapshot] saved; values of a type the app doesn't store are skipped. */
-    @Suppress("UNCHECKED_CAST") // a Set read back from a backup only ever holds the strings it was saved with
+    @Suppress("UNCHECKED_CAST") // a Set read back from a synced copy only ever holds the strings it was saved with
     suspend fun restore(values: Map<String, Any>) {
         context.dataStore.edit { prefs ->
             for ((name, value) in values.filterKeys { it !in DEVICE_ONLY }) {
@@ -287,12 +293,12 @@ class SettingsRepository(
     private object K {
         val adultPin = stringPreferencesKey("adult_pin")
 
-        /** The per-device TMDB key from before it was built in; deleted on the next save, so it leaves backups too. */
+        /** The per-device TMDB key from before it was built in; deleted on the next save, so it leaves synced copies too. */
         val oldTmdbKey = stringPreferencesKey("tmdb_key")
     }
 
     private companion object {
-        /** Sync times, the open tab, developer mode and the profile mirror belong to this phone; a backup leaves them out. */
+        /** Sync times, the open tab, developer mode and the profile mirror belong to this phone; sync leaves them out. */
         val DEVICE_ONLY = SETTING_FIELDS.filter { it.deviceOnly }.map { it.key.name }.toSet()
     }
 }

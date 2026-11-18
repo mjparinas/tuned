@@ -9,8 +9,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.res.stringResource
+import app.tuned.BuildConfig
 import app.tuned.R
 import app.tuned.data.AppSettings
+import app.tuned.premium.PremiumRow
 import app.tuned.ui.DeveloperLogRoute
 
 @Composable
@@ -19,12 +21,16 @@ internal fun AboutPage(
     vm: SettingsViewModel,
     onOpen: (Any) -> Unit,
 ) {
-    SwitchRow(
-        stringResource(R.string.settings_check_updates),
-        settings.checkUpdates,
-        stringResource(R.string.settings_check_updates_summary),
-    ) { on -> vm.update { it.copy(checkUpdates = on) } }
-    UpdateCheckRow()
+    PremiumRow()
+    // Store builds update through their store, so there is nothing to turn on or off here.
+    if (BuildConfig.GITHUB_UPDATES) {
+        SwitchRow(
+            stringResource(R.string.settings_check_updates),
+            settings.checkUpdates,
+            stringResource(R.string.settings_check_updates_summary),
+        ) { on -> vm.update { it.copy(checkUpdates = on) } }
+        UpdateCheckRow()
+    }
     SectionHeader(stringResource(R.string.settings_advanced))
     var editUa by remember { mutableStateOf(false) }
     SettingRow(
