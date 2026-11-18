@@ -128,7 +128,10 @@ object XmltvParser {
         }
     }
 
-    /** XMLTV times: `20261117050000 +0000`, the offset optional (then UTC), seconds optional. */
+    /**
+     * XMLTV times: `20261117050000 +0000`, the offset optional (then UTC), seconds optional. Some guides leave out the
+     * space (`20261117050000+0100`); the offset still counts.
+     */
     fun parseTime(value: String): Long? {
         val v = value.trim()
         if (v.length < 12 || !v.substring(0, 12).all { it.isDigit() }) return null
@@ -143,7 +146,7 @@ object XmltvParser {
             if (v.length >= 14 && v[12].isDigit() && v[13].isDigit()) v.substring(12, 14).toInt() else 0,
         )
         var millis = calendar.timeInMillis
-        val offset = v.substringAfter(' ', "").trim()
+        val offset = v.dropWhile { it.isDigit() }.trim()
         if (offset.length == 5 && (offset[0] == '+' || offset[0] == '-') && offset.substring(1).all { it.isDigit() }) {
             val minutes = offset.substring(1, 3).toInt() * 60 + offset.substring(3, 5).toInt()
             millis -= (if (offset[0] == '+') 1 else -1) * minutes * 60_000L

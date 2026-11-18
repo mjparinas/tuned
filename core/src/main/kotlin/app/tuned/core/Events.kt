@@ -113,6 +113,16 @@ object Events {
         }
     }
 
+    /**
+     * The events whose alerts go when [name] is unfollowed: those it matched that nothing still [followed] covers.
+     * Following "Canucks" and "NHL" and dropping "Canucks" keeps the alert for "NHL: Canucks vs Oilers".
+     */
+    fun noLongerFollowed(
+        events: List<Event>,
+        name: String,
+        followed: Collection<String>,
+    ): List<Event> = events.filter { follows(it, listOf(name)) && !follows(it, followed) }
+
     private const val MIN_TITLE = 3
     const val SAME_START_MS = 30 * 60_000L
 }

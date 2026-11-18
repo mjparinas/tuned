@@ -62,4 +62,20 @@ class EventsTest {
         assertFalse(Events.follows(e, listOf("Can")))
         assertFalse(Events.follows(e, listOf("")))
     }
+
+    @Test
+    fun unfollowingTakesAwayOnlyTheAlertsNothingElseCovers() {
+        val events =
+            Events.group(
+                listOf(
+                    Row(1, "ESPN", "Sports", "NHL: Canucks vs. Oilers", 0, hour),
+                    Row(2, "ESPN 2", "Sports", "Canucks vs. Flames", 0, hour),
+                    Row(3, "ESPN 3", "Sports", "Leafs vs. Habs", 0, hour),
+                ),
+                now = 0,
+            )
+        val gone = Events.noLongerFollowed(events, "Canucks", followed = listOf("NHL"))
+        assertEquals(listOf("Canucks vs. Flames"), gone.map { it.title })
+        assertEquals(emptyList(), Events.noLongerFollowed(events, "Raptors", followed = listOf("NHL")))
+    }
 }
