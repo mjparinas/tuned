@@ -14,14 +14,7 @@ This file keeps the decisions that don't belong to one area yet: what Tuned will
 
 Each line names Melvin's words and date. Move it into the topic's file when it merges.
 
-- **Never hide sports, PPV and event channels** (Melvin, 2026-11-17: worried auto-tune or the scan would hide "legitimate channels" such as pay-per-view slots with nothing on, "just in case there is no show at that time"). Scans and failed plays only mark them off air; auto-tune still tries every one, recent failures last. Empty "NO EVENT STREAMING" slots stay out of the Live TV list but auto-tune and search can still reach them. (Pull request #63.)
-- **Downloads by show** (Melvin, 2026-11-17): one poster per show, then its seasons (with season posters where TMDB has them), then episodes with screenshots; the top of the page shows how much is downloaded and how much space is left on the device. (#64.)
-- **Real episode names everywhere** (Melvin, 2026-11-17: "if you can find the actual name of an episode, prioritize that over showing the season number and episode number"), with TMDB's still for each episode. (#57.)
-- **Offline mode** (Melvin, 2026-11-17): when the device is offline a banner says so at the top, everything cached can still be browsed, and downloads play.
-- **Cache first** (Melvin, 2026-11-17: "We should focus on caching as much as we can"): posters, covers, backdrops, descriptions and cast photos and names come from the device first; TMDB is asked only for what is missing, to save time and data.
-- **Actor pages** (Melvin, 2026-11-17): tapping a cast member lists every film and show they've been in, in date order, paged.
-- **Live Events page** (audit item 2, picked 2026-11-17): today's sports and pay-per-view with Tune.
-- **Full grid TV guide** and **profiles with a PIN lock** (Melvin, 2026-11-17).
+Nothing is waiting here now. Everything that was listed has merged and is recorded in its topic: never hiding sports and event channels ([channel scan](channel-scan.md)); Downloads by show with space left, offline mode and cache first ([offline](offline.md)); real episode names everywhere ([player](player.md)); actor pages ([people](people.md)); Live Events ([events](events.md)); the full grid guide ([playlist](playlist.md)); profiles with a PIN ([profiles](profiles.md)); phone and TV sync ([sync](sync.md)); Trakt ([Trakt](trakt.md)).
 
 ## Offered, not decided
 
