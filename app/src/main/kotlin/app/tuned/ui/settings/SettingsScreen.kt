@@ -251,6 +251,11 @@ fun SettingsScreen(
                 settings.startTab,
                 label = { stringResource(startTabLabel(it)) },
             ) { t -> vm.update { it.copy(startTab = t) } }
+            SwitchRow(
+                stringResource(R.string.settings_start_on_last_channel),
+                settings.startOnLastChannel,
+                stringResource(R.string.settings_start_on_last_channel_summary),
+            ) { on -> vm.update { it.copy(startOnLastChannel = on) } }
 
             SectionHeader(stringResource(R.string.settings_background))
             ChoiceRow(stringResource(R.string.settings_playlist_refresh), hours, settings.playlistRefreshHours, hoursLabel) { h ->
