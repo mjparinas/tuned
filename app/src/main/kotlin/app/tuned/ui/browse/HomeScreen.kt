@@ -2,10 +2,7 @@ package app.tuned.ui.browse
 
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
-import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -13,7 +10,6 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -21,34 +17,22 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.GridItemSpan
-import androidx.compose.foundation.lazy.grid.LazyGridScope
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
-import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.DownloadForOffline
 import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Movie
 import androidx.compose.material.icons.filled.Radar
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.TravelExplore
 import androidx.compose.material.icons.filled.Tv
 import androidx.compose.material.icons.filled.VideoLibrary
@@ -56,8 +40,6 @@ import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Button
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
@@ -79,8 +61,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.produceState
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -88,20 +68,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.paging.compose.collectAsLazyPagingItems
-import androidx.paging.compose.itemKey
 import app.tuned.R
 import app.tuned.container
 import app.tuned.core.ContentKind
@@ -110,27 +84,13 @@ import app.tuned.data.AppSettings
 import app.tuned.data.CastMember
 import app.tuned.data.StartTab
 import app.tuned.data.SyncProgress
-import app.tuned.data.db.ChannelWithNow
-import app.tuned.data.db.ContinueRow
-import app.tuned.data.db.ItemEntity
 import app.tuned.data.db.ProfileEntity
-import app.tuned.data.db.ShowSummary
-import app.tuned.data.db.WatchLaterEntity
 import app.tuned.ui.SyncText
-import app.tuned.ui.common.ChannelRowSkeleton
-import app.tuned.ui.common.SKELETON_ROWS
 import app.tuned.ui.common.VoiceSearchButton
-import app.tuned.ui.common.firstLoad
-import app.tuned.ui.common.focusRing
-import app.tuned.ui.common.skeleton
 import app.tuned.ui.common.windowWidthDp
-import app.tuned.ui.guide.GuideGridView
-import app.tuned.ui.library.LibraryViewModel
-import app.tuned.ui.library.watchLaterRow
 import app.tuned.ui.offline.DownloadsViewModel
 import app.tuned.ui.settings.ProfileBadge
 import app.tuned.updates.GitHubUpdates
-import coil3.compose.AsyncImage
 
 internal data class Tab(
     val kind: ContentKind,
@@ -466,512 +426,6 @@ private fun CategoryChips(
     }
 }
 
-/** Live TV as the channel list, or as the grid guide when that's switched on. */
-@Composable
-private fun LiveTab(
-    vm: BrowseViewModel,
-    settings: AppSettings,
-    onPlay: (Long) -> Unit,
-    onOpenGuide: (Long) -> Unit,
-) {
-    if (settings.liveGrid) {
-        GuideGridView(vm.channels.collectAsLazyPagingItems(), settings.guideDays, onPlay, onOpenGuide)
-    } else {
-        LiveList(vm, settings.showGuideInList, settings.channelNumbers, onPlay, onOpenGuide)
-    }
-}
-
-@OptIn(ExperimentalFoundationApi::class)
-@Composable
-private fun LiveList(
-    vm: BrowseViewModel,
-    showGuide: Boolean,
-    showNumbers: Boolean,
-    onPlay: (Long) -> Unit,
-    onOpenGuide: (Long) -> Unit,
-) {
-    val channels = vm.channels.collectAsLazyPagingItems()
-    val favourites by vm.favouriteIds.collectAsStateWithLifecycle()
-    val state = rememberLazyListState()
-    LazyColumn(
-        state = state,
-        modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(start = 12.dp, end = 12.dp, top = 4.dp, bottom = 16.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
-        if (channels.firstLoad) items(SKELETON_ROWS) { ChannelRowSkeleton() }
-        items(count = channels.itemCount, key = channels.itemKey { it.id }) { index ->
-            val channel = channels[index]
-            if (channel == null) {
-                ChannelRowSkeleton()
-            } else {
-                val favourite = channel.id in favourites
-                ChannelRow(
-                    channel = channel,
-                    favourite = favourite,
-                    showGuide = showGuide,
-                    showNumber = showNumbers,
-                    onPlay = { onPlay(channel.id) },
-                    onGuide = { onOpenGuide(channel.id) },
-                    onToggleFavourite = { vm.toggleFavourite(channel.id, favourite) },
-                )
-            }
-        }
-    }
-}
-
-/** One tap to favourite a channel or take it off: a filled heart in the accent colour when it is a favourite. */
-@Composable
-internal fun FavouriteButton(
-    favourite: Boolean,
-    onToggle: () -> Unit,
-) {
-    IconButton(onClick = onToggle) {
-        if (favourite) {
-            Icon(Icons.Filled.Favorite, stringResource(R.string.favourite_remove), tint = MaterialTheme.colorScheme.primary)
-        } else {
-            Icon(Icons.Filled.FavoriteBorder, stringResource(R.string.favourite_add))
-        }
-    }
-}
-
-@OptIn(ExperimentalFoundationApi::class)
-@Composable
-private fun ChannelRow(
-    channel: ChannelWithNow,
-    favourite: Boolean,
-    showGuide: Boolean,
-    showNumber: Boolean,
-    onPlay: () -> Unit,
-    onGuide: () -> Unit,
-    onToggleFavourite: () -> Unit,
-) {
-    var menu by remember { mutableStateOf(false) }
-    // Each channel is a rounded card, like a row on a modern website.
-    Box(Modifier.clip(MaterialTheme.shapes.medium).background(MaterialTheme.colorScheme.surfaceContainerLow)) {
-        Row(
-            Modifier
-                .fillMaxWidth()
-                .focusRing(MaterialTheme.shapes.medium, MaterialTheme.colorScheme.primary)
-                .combinedClickable(onClick = onPlay, onLongClick = { menu = true })
-                .padding(start = 10.dp, end = 4.dp, top = 10.dp, bottom = 10.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Logo(channel.logo, Modifier.size(width = 64.dp, height = 44.dp))
-            Spacer(Modifier.width(14.dp))
-            Column(Modifier.weight(1f)) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    if (showNumber && channel.number > 0) {
-                        Text(
-                            channel.number.toString(),
-                            style = MaterialTheme.typography.labelLarge,
-                            color = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.padding(end = 8.dp),
-                        )
-                    }
-                    Text(
-                        channel.name,
-                        style = MaterialTheme.typography.titleSmall,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.weight(1f, fill = false),
-                    )
-                }
-                val now = channel.nowTitle
-                if (showGuide && now != null) {
-                    Text(
-                        now,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                    val start = channel.nowStart ?: 0
-                    val stop = channel.nowStop ?: 0
-                    if (stop > start) {
-                        val progress = ((System.currentTimeMillis() - start).toFloat() / (stop - start)).coerceIn(0f, 1f)
-                        LinearProgressIndicator(
-                            progress = { progress },
-                            modifier =
-                                Modifier
-                                    .padding(top = 4.dp)
-                                    .fillMaxWidth(0.6f)
-                                    .height(3.dp)
-                                    .clip(RoundedCornerShape(2.dp)),
-                            drawStopIndicator = {},
-                        )
-                    }
-                }
-            }
-            FavouriteButton(favourite, onToggleFavourite)
-            if (channel.tvgId != null) {
-                IconButton(onClick = onGuide) {
-                    Icon(Icons.AutoMirrored.Filled.List, contentDescription = stringResource(R.string.guide_open))
-                }
-            }
-        }
-        DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
-            DropdownMenuItem(
-                text = { Text(stringResource(if (favourite) R.string.favourite_remove else R.string.favourite_add)) },
-                onClick = {
-                    menu = false
-                    onToggleFavourite()
-                },
-            )
-            if (channel.tvgId != null) {
-                DropdownMenuItem(
-                    text = { Text(stringResource(R.string.guide_open)) },
-                    onClick = {
-                        menu = false
-                        onGuide()
-                    },
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun MovieGrid(
-    vm: BrowseViewModel,
-    onPlay: (Long) -> Unit,
-    onOpenMovie: (Long) -> Unit,
-) {
-    val movies = vm.movies.collectAsLazyPagingItems()
-    val favourites by vm.favouriteIds.collectAsStateWithLifecycle()
-    val library: LibraryViewModel = viewModel()
-    val watched by library.watched.collectAsStateWithLifecycle()
-    val later by library.laterKeys.collectAsStateWithLifecycle()
-    LazyVerticalGrid(
-        columns = GridCells.Adaptive(minSize = ScreenLayout.posterMinDp(windowWidthDp()).dp),
-        state = rememberLazyGridState(),
-        contentPadding = PaddingValues(12.dp),
-        horizontalArrangement = Arrangement.spacedBy(10.dp),
-        verticalArrangement = Arrangement.spacedBy(14.dp),
-        modifier = Modifier.fillMaxSize(),
-    ) {
-        continueWatching(vm, ContentKind.MOVIE, onPlay)
-        watchLaterRow(shows = false, visible = { fullList(vm, ContentKind.MOVIE) }, onOpenMovie = onOpenMovie, onOpenShow = { _, _ -> })
-        if (movies.firstLoad) items(SKELETON_ROWS) { PosterPlaceholder() }
-        items(count = movies.itemCount, key = movies.itemKey { it.id }) { index ->
-            val movie: ItemEntity? = movies[index]
-            if (movie == null) {
-                PosterPlaceholder()
-            } else {
-                val favourite = movie.id in favourites
-                val rating by produceState<Double?>(null, movie.name) { value = vm.rating(movie.name, tv = false) }
-                // A tap opens the film's page; Play now is in the long-press menu for a straight start.
-                val done = movie.id in watched
-                val saved = WatchLaterEntity.movieKey(movie.id) in later
-                Poster(
-                    title = movie.name,
-                    image = movie.logo,
-                    favourite = favourite,
-                    rating = rating,
-                    watched = done,
-                    onClick = { onOpenMovie(movie.id) },
-                    onToggleFavourite = { vm.toggleFavourite(movie.id, favourite) },
-                    onPlayNow = { onPlay(movie.id) },
-                    extraMenu =
-                        listOf(
-                            stringResource(if (saved) R.string.watch_later_remove else R.string.watch_later_add) to {
-                                library.toggleLater(LibraryViewModel.movie(movie.id, movie.name, movie.logo))
-                            },
-                            stringResource(if (done) R.string.mark_unwatched else R.string.mark_watched) to {
-                                library.setWatched(listOf(movie.id), !done)
-                            },
-                        ),
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun ShowGrid(
-    vm: BrowseViewModel,
-    onOpenShow: (String, String) -> Unit,
-    onPlay: (Long) -> Unit,
-) {
-    val shows = vm.shows.collectAsLazyPagingItems()
-    val library: LibraryViewModel = viewModel()
-    val later by library.laterKeys.collectAsStateWithLifecycle()
-    LazyVerticalGrid(
-        columns = GridCells.Adaptive(minSize = ScreenLayout.posterMinDp(windowWidthDp()).dp),
-        state = rememberLazyGridState(),
-        contentPadding = PaddingValues(12.dp),
-        horizontalArrangement = Arrangement.spacedBy(10.dp),
-        verticalArrangement = Arrangement.spacedBy(14.dp),
-        modifier = Modifier.fillMaxSize(),
-    ) {
-        continueWatching(vm, ContentKind.SERIES, onPlay)
-        watchLaterRow(shows = true, visible = { fullList(vm, ContentKind.SERIES) }, onOpenMovie = {}, onOpenShow = onOpenShow)
-        if (shows.firstLoad) items(SKELETON_ROWS) { PosterPlaceholder() }
-        items(count = shows.itemCount, key = shows.itemKey { it.showKey }) { index ->
-            val show: ShowSummary? = shows[index]
-            if (show == null) {
-                PosterPlaceholder()
-            } else {
-                val rating by produceState<Double?>(null, show.showName) { value = vm.rating(show.showName, tv = true) }
-                Poster(
-                    title = show.showName,
-                    image = show.logo,
-                    rating = rating,
-                    subtitle =
-                        if (show.newEpisodes > 0) {
-                            stringResource(
-                                R.string.episodes_with_new,
-                                pluralEpisodes(show.episodes),
-                                pluralStringResource(R.plurals.new_episodes, show.newEpisodes, show.newEpisodes),
-                            )
-                        } else {
-                            pluralEpisodes(show.episodes)
-                        },
-                    onClick = { onOpenShow(show.showKey, show.showName) },
-                    extraMenu =
-                        listOf(
-                            stringResource(
-                                if (WatchLaterEntity.showKey(show.showKey) in
-                                    later
-                                ) {
-                                    R.string.watch_later_remove
-                                } else {
-                                    R.string.watch_later_add
-                                },
-                            ) to { library.toggleLater(LibraryViewModel.show(show.showKey, show.showName, show.logo)) },
-                        ),
-                )
-            }
-        }
-    }
-}
-
-/**
- * Continue Watching: a row across the top of Movies or Shows with what was started and not finished. Shows only on
- * the full list (no category, favourites or search), so it never pushes a search result down.
- */
-private fun LazyGridScope.continueWatching(
-    vm: BrowseViewModel,
-    kind: ContentKind,
-    onPlay: (Long) -> Unit,
-) {
-    item(key = "continue", span = { GridItemSpan(maxLineSpan) }, contentType = "continue") {
-        val rows by vm.continueWatching(kind).collectAsStateWithLifecycle()
-        val names by vm.continueNames.collectAsStateWithLifecycle()
-        if (rows.isEmpty() || !fullList(vm, kind)) return@item
-        Column {
-            Text(
-                stringResource(R.string.continue_watching),
-                style = MaterialTheme.typography.titleMedium,
-                modifier = Modifier.padding(bottom = 8.dp),
-            )
-            LazyRow(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                items(rows, key = { it.id }) { row ->
-                    LaunchedEffect(row.id) { vm.loadEpisodeName(row) }
-                    ContinueCard(row, names[row.id], onClick = { onPlay(row.id) })
-                }
-            }
-            Spacer(Modifier.height(6.dp))
-        }
-    }
-}
-
-/** True on the whole list: no category, favourites or search, where the rows across the top belong. */
-@Composable
-private fun fullList(
-    vm: BrowseViewModel,
-    kind: ContentKind,
-): Boolean {
-    val filter by vm.filter(kind).collectAsStateWithLifecycle()
-    val search by vm.search(kind).collectAsStateWithLifecycle()
-    return filter == Filter.All && search.isBlank()
-}
-
-@Composable
-private fun ContinueCard(
-    row: ContinueRow,
-    episodeName: String?,
-    onClick: () -> Unit,
-) {
-    // TMDB's episode name ("The Simpsons · Kamp Krusty") reads better than its number, when it's known.
-    val title =
-        when {
-            row.showName != null && episodeName != null -> {
-                stringResource(R.string.continue_episode_named, row.showName, episodeName)
-            }
-
-            row.showName != null && row.season != null && row.episode != null -> {
-                stringResource(R.string.continue_episode, row.showName, row.season, row.episode)
-            }
-
-            else -> {
-                row.name
-            }
-        }
-    Column(
-        Modifier
-            .width(132.dp)
-            .clip(RoundedCornerShape(12.dp))
-            .focusRing(RoundedCornerShape(12.dp), MaterialTheme.colorScheme.primary)
-            .clickable(onClick = onClick),
-    ) {
-        Box(
-            Modifier
-                .fillMaxWidth()
-                .aspectRatio(2f / 3f)
-                .clip(RoundedCornerShape(12.dp))
-                .background(MaterialTheme.colorScheme.surfaceContainerHigh),
-        ) {
-            AsyncImage(model = row.logo, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
-            LinearProgressIndicator(
-                progress = { row.fraction },
-                modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth().height(4.dp),
-                drawStopIndicator = {},
-            )
-        }
-        Text(
-            title,
-            style = MaterialTheme.typography.bodySmall,
-            maxLines = 2,
-            overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.padding(top = 6.dp),
-        )
-    }
-}
-
-@Composable
-private fun pluralEpisodes(count: Int): String = pluralStringResource(R.plurals.episodes, count, count)
-
-@OptIn(ExperimentalFoundationApi::class)
-@Composable
-fun Poster(
-    title: String,
-    image: String?,
-    onClick: () -> Unit,
-    subtitle: String? = null,
-    favourite: Boolean = false,
-    onToggleFavourite: (() -> Unit)? = null,
-    onPlayNow: (() -> Unit)? = null,
-    rating: Double? = null,
-    watched: Boolean = false,
-    /** More long-press menu entries: label and action. */
-    extraMenu: List<Pair<String, () -> Unit>> = emptyList(),
-) {
-    var menu by remember { mutableStateOf(false) }
-    val hasMenu = onToggleFavourite != null || onPlayNow != null || extraMenu.isNotEmpty()
-    Column(
-        Modifier
-            .clip(RoundedCornerShape(10.dp))
-            .focusRing(RoundedCornerShape(10.dp), MaterialTheme.colorScheme.primary)
-            .combinedClickable(onClick = onClick, onLongClick = if (hasMenu) ({ menu = true }) else null),
-    ) {
-        Box {
-            AsyncImage(
-                model = image,
-                contentDescription = null,
-                contentScale = ContentScale.Crop,
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .aspectRatio(2f / 3f)
-                        .clip(RoundedCornerShape(10.dp))
-                        .background(MaterialTheme.colorScheme.surfaceContainerHigh),
-            )
-            rating?.let { RatingBadge(it, Modifier.align(Alignment.BottomEnd).padding(6.dp)) }
-            if (favourite) {
-                Icon(
-                    Icons.Filled.Favorite,
-                    null,
-                    Modifier.align(Alignment.TopEnd).padding(6.dp).size(18.dp),
-                    tint = MaterialTheme.colorScheme.primary,
-                )
-            }
-            if (watched) {
-                Icon(
-                    Icons.Filled.CheckCircle,
-                    stringResource(R.string.watched),
-                    Modifier
-                        .align(Alignment.TopStart)
-                        .padding(6.dp)
-                        .size(20.dp)
-                        .background(Color.Black.copy(alpha = 0.55f), CircleShape),
-                    tint = Color.White,
-                )
-            }
-            if (hasMenu) {
-                DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
-                    onPlayNow?.let { play ->
-                        DropdownMenuItem(
-                            text = { Text(stringResource(R.string.play_now)) },
-                            onClick = {
-                                menu = false
-                                play()
-                            },
-                        )
-                    }
-                    onToggleFavourite?.let { toggle ->
-                        DropdownMenuItem(
-                            text = { Text(stringResource(if (favourite) R.string.favourite_remove else R.string.favourite_add)) },
-                            onClick = {
-                                menu = false
-                                toggle()
-                            },
-                        )
-                    }
-                    extraMenu.forEach { (label, action) ->
-                        DropdownMenuItem(
-                            text = { Text(label) },
-                            onClick = {
-                                menu = false
-                                action()
-                            },
-                        )
-                    }
-                }
-            }
-        }
-        Text(
-            title,
-            style = MaterialTheme.typography.bodySmall,
-            maxLines = 2,
-            overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.padding(top = 6.dp, start = 2.dp, end = 2.dp),
-        )
-        if (subtitle != null) {
-            Text(
-                subtitle,
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(horizontal = 2.dp),
-            )
-        }
-    }
-}
-
-@Composable
-private fun PosterPlaceholder() {
-    Box(
-        Modifier
-            .fillMaxWidth()
-            .aspectRatio(2f / 3f)
-            .clip(RoundedCornerShape(10.dp))
-            .skeleton(),
-    )
-}
-
-@Composable
-fun Logo(
-    url: String?,
-    modifier: Modifier = Modifier,
-) {
-    AsyncImage(
-        model = url,
-        contentDescription = null,
-        contentScale = ContentScale.Fit,
-        modifier = modifier.clip(RoundedCornerShape(8.dp)).background(MaterialTheme.colorScheme.surfaceContainerHigh).padding(4.dp),
-    )
-}
-
 @Composable
 private fun FirstRun(
     refreshing: Boolean,
@@ -1040,29 +494,6 @@ private fun RefreshBar(progress: SyncProgress) {
         SyncProgressBar(progress, Modifier.fillMaxWidth())
     }
 }
-
-/** The TMDB rating in the poster's corner, readable over any artwork. */
-@Composable
-private fun RatingBadge(
-    rating: Double,
-    modifier: Modifier = Modifier,
-) {
-    val locale = LocalConfiguration.current.locales[0]
-    Row(
-        modifier
-            .clip(RoundedCornerShape(6.dp))
-            .background(Color.Black.copy(alpha = 0.72f))
-            .padding(horizontal = 6.dp, vertical = 2.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Icon(Icons.Filled.Star, null, Modifier.size(12.dp), tint = RATING_GOLD)
-        Spacer(Modifier.width(3.dp))
-        Text(String.format(locale, "%.1f", rating), style = MaterialTheme.typography.labelSmall, color = Color.White)
-    }
-}
-
-/** The usual star gold, which reads on the dark badge whatever the app's accent. */
-private val RATING_GOLD = Color(0xFFF5C518)
 
 /** Downloads, beside the three sections: opens its own page, with a badge while anything is still to download. */
 @Composable

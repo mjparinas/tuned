@@ -135,7 +135,7 @@ class AddPlaylistViewModel(
                         false
                     } else {
                         if (replaces) container.credentials.forget(editing)
-                        container.useLogin(login)
+                        container.session.useLogin(login)
                         true
                     }
                 state.update { State() }
@@ -227,7 +227,7 @@ class AddPlaylistViewModel(
                 }
             }.getOrNull() == true
         if (!looksLikePlaylist) return@withContext null
-        val dir = container.playlistFiles.apply { mkdirs() }
+        val dir = container.session.playlistFiles.apply { mkdirs() }
         val target = File(dir, "${UUID.randomUUID()}.m3u")
         val copied =
             attempt("Playlists", "Couldn't copy the picked file") {
