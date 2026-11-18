@@ -59,7 +59,7 @@ jobs:
           echo "END-PROFILE"
       - name: Write the numbers to the summary
         if: ${{ !cancelled() }}
-        run: node scripts/startup-summary.mjs baselineprofile/build >> "$GITHUB_STEP_SUMMARY"
+        run: node scripts/startup-summary.mjs baselineprofile/build | tee -a "$GITHUB_STEP_SUMMARY"
       - uses: actions/upload-artifact@v7
         if: ${{ !cancelled() }}
         with:
