@@ -84,6 +84,7 @@ import app.tuned.data.db.DownloadRow
 import app.tuned.data.db.ItemEntity
 import app.tuned.diagnostics.launchSafely
 import app.tuned.player.PlayerActivity
+import app.tuned.premium.Premium
 import app.tuned.ui.browse.Poster
 import app.tuned.ui.common.BackTopBar
 import app.tuned.ui.common.focusRing
@@ -126,11 +127,21 @@ class DownloadsViewModel(
             }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyMap())
 
     fun add(item: ItemEntity) {
+        if (!roomFor(1)) return
         viewModelScope.launchSafely("Downloads") { offline.add(item) }
     }
 
     fun addAll(items: List<ItemEntity>) {
+        val saved = byItem.value
+        if (!roomFor(items.count { it.id !in saved })) return
         viewModelScope.launchSafely("Downloads") { offline.addAll(items) }
+    }
+
+    /** A free copy keeps [Premium.FREE_DOWNLOADS] downloads at once; more is Premium (docs/decisions/premium.md). */
+    private fun roomFor(more: Int): Boolean {
+        val premium = getApplication<Application>().container.premium
+        if (premium.unlocked.value || byItem.value.size + more <= Premium.FREE_DOWNLOADS) return true
+        return premium.allow(getApplication<Application>())
     }
 
     fun hold(itemId: Long) {

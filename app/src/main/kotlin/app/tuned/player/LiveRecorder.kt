@@ -45,6 +45,10 @@ internal class LiveRecorder(
         val stream: (Uri?) -> LiveBuffer?,
         val casting: () -> Boolean,
         val say: (String) -> Unit,
+        /** Recording is Premium (docs/decisions/premium.md): true while it's locked. */
+        val locked: () -> Boolean = { false },
+        /** Opens the Premium screen. */
+        val unlock: () -> Unit = {},
     )
 
     private val recordings = activity.container.recordings
@@ -116,6 +120,10 @@ internal class LiveRecorder(
     }
 
     private fun start() {
+        if (hooks.locked()) {
+            hooks.unlock()
+            return
+        }
         val channel = hooks.channel()
         val stream = hooks.stream(hooks.uri())
         val problem =

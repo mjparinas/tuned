@@ -19,8 +19,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
 import androidx.lifecycle.AndroidViewModel
@@ -34,6 +32,8 @@ import app.tuned.data.CloudSyncRepository
 import app.tuned.data.GoogleDrive
 import app.tuned.diagnostics.launchSafely
 import app.tuned.diagnostics.startActivitySafely
+import app.tuned.premium.LockedRow
+import app.tuned.premium.premiumUnlocked
 import app.tuned.work.CloudSyncWorker
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -120,6 +120,11 @@ fun CloudSyncRows(vm: CloudSyncViewModel = viewModel()) {
     var askPassphrase by remember { mutableStateOf(false) }
     SectionHeader(stringResource(R.string.cloud_sync))
     when {
+        // Sync is Premium (docs/decisions/premium.md).
+        !signedIn && !premiumUnlocked() -> {
+            LockedRow(stringResource(R.string.cloud_sync_start))
+        }
+
         !signedIn -> {
             SettingRow(
                 stringResource(R.string.cloud_sync_start),
@@ -195,12 +200,7 @@ private fun SignInDialog(
                     Column {
                         Text(stringResource(R.string.cloud_sync_enter_code, state.code.verificationUrl.removePrefix("https://")))
                         Spacer(Modifier.height(16.dp))
-                        Text(
-                            state.code.userCode,
-                            style = MaterialTheme.typography.headlineMedium,
-                            fontFamily = FontFamily.Monospace,
-                            fontWeight = FontWeight.Bold,
-                        )
+                        SignInCode(state.code.userCode)
                         Spacer(Modifier.height(16.dp))
                         Text(stringResource(R.string.cloud_sync_waiting), style = MaterialTheme.typography.bodySmall)
                     }
