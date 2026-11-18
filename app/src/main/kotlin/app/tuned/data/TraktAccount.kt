@@ -18,6 +18,7 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
@@ -102,12 +103,7 @@ class TraktAccount(
     suspend fun awaitSignIn(code: DeviceCode): Trakt.Poll {
         var wait = code.interval.coerceAtLeast(1) * MS
         val until = System.currentTimeMillis() + code.expiresIn * MS
-        val body =
-            buildJsonObject {
-                put("code", code.deviceCode)
-                put("client_id", BuildConfig.TRAKT_CLIENT_ID)
-                put("client_secret", BuildConfig.TRAKT_CLIENT_SECRET)
-            }
+        val body = jsonBody(Trakt.deviceTokenBody(BuildConfig.TRAKT_CLIENT_ID, code.deviceCode))
         while (System.currentTimeMillis() < until) {
             delay(wait)
             val answer = post("/oauth/device/token", body, token = null)
@@ -125,13 +121,7 @@ class TraktAccount(
     suspend fun signOut() {
         val s = sessionFlow.value ?: return
         clear()
-        val body =
-            buildJsonObject {
-                put("token", s.access)
-                put("client_id", BuildConfig.TRAKT_CLIENT_ID)
-                put("client_secret", BuildConfig.TRAKT_CLIENT_SECRET)
-            }
-        post("/oauth/revoke", body, token = null)
+        post("/oauth/revoke", jsonBody(Trakt.revokeBody(BuildConfig.TRAKT_CLIENT_ID, s.access)), token = null)
     }
 
     /**
@@ -179,14 +169,7 @@ class TraktAccount(
     private suspend fun token(): String? = refreshing.withLock {
         val s = sessionFlow.value ?: return@withLock null
         if (!Trakt.needsRefresh(s.expiresAt, System.currentTimeMillis())) return@withLock s.access
-        val body =
-            buildJsonObject {
-                put("refresh_token", s.refresh)
-                put("client_id", BuildConfig.TRAKT_CLIENT_ID)
-                put("client_secret", BuildConfig.TRAKT_CLIENT_SECRET)
-                put("redirect_uri", "urn:ietf:wg:oauth:2.0:oob")
-                put("grant_type", "refresh_token")
-            }
+        val body = jsonBody(Trakt.refreshBody(BuildConfig.TRAKT_CLIENT_ID, s.refresh))
         val answer = post("/oauth/token", body, token = null) ?: return@withLock null
         when {
             answer.first == HTTP_OK && saveTokens(answer.second, s.username) -> {
@@ -248,6 +231,8 @@ class TraktAccount(
             json.decodeFromString(Session.serializer(), box.open(blob))
         }.getOrNull()
     }
+
+    private fun jsonBody(fields: Map<String, String>): JsonObject = JsonObject(fields.mapValues { JsonPrimitive(it.value) })
 
     private suspend fun post(
         path: String,
