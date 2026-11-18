@@ -20,6 +20,16 @@ class EpisodesTest {
     }
 
     @Test
+    fun `an episode's own name is the words after its number`() {
+        assertEquals("The We We Are", Episodes.title("Severance S01E10 - The We We Are"))
+        assertEquals("Kamp Krusty", Episodes.title("EN - The Simpsons (1989) S04 E01 | Kamp Krusty"))
+        assertEquals("Pilot", Episodes.title("Show.S01.E01.Pilot"))
+        assertEquals(null, Episodes.title("Harbour Town S01E01"))
+        assertEquals(null, Episodes.title("Harbour Town S01E01 -"))
+        assertEquals("Planet Earth", Episodes.title("Planet Earth"))
+    }
+
+    @Test
     fun `show keys ignore case, accents and punctuation`() {
         assertEquals(Episodes.showKey("Grey's Anatomy"), Episodes.showKey("GREY'S  anatomy"))
         assertEquals("tele quebec", Search.normalize("Télé-Québec"))

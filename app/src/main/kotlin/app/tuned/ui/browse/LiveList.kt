@@ -46,6 +46,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.paging.compose.collectAsLazyPagingItems
 import androidx.paging.compose.itemKey
 import app.tuned.R
+import app.tuned.core.ContentKind
 import app.tuned.core.FastScroll
 import app.tuned.data.AppSettings
 import app.tuned.data.db.ChannelWithNow
@@ -65,11 +66,24 @@ internal fun LiveTab(
     settings: AppSettings,
     onPlay: (Long) -> Unit,
     onOpenGuide: (Long) -> Unit,
+    onSearchEverything: (String) -> Unit,
 ) {
     if (settings.liveGrid) {
-        GuideGridView(vm.channels.collectAsLazyPagingItems(), settings.guideDays, onPlay, onOpenGuide)
+        val channels = vm.channels.collectAsLazyPagingItems()
+        Box(Modifier.fillMaxSize()) {
+            GuideGridView(channels, settings.guideDays, onPlay, onOpenGuide)
+            NoMatches(channels, vm, ContentKind.LIVE, onSearchEverything)
+        }
     } else {
-        LiveList(vm, settings.showGuideInList, settings.channelNumbers, settings.alwaysShowScrollbar, onPlay, onOpenGuide)
+        LiveList(
+            vm,
+            settings.showGuideInList,
+            settings.channelNumbers,
+            settings.alwaysShowScrollbar,
+            onPlay,
+            onOpenGuide,
+            onSearchEverything,
+        )
     }
 }
 
@@ -82,6 +96,7 @@ private fun LiveList(
     alwaysShowScrollbar: Boolean,
     onPlay: (Long) -> Unit,
     onOpenGuide: (Long) -> Unit,
+    onSearchEverything: (String) -> Unit,
 ) {
     val channels = vm.channels.collectAsLazyPagingItems()
     val favourites by vm.favouriteIds.collectAsStateWithLifecycle()
@@ -115,6 +130,7 @@ private fun LiveList(
         FastScrollbar(rememberFastScroll(state), alwaysShowScrollbar) { index ->
             channels.peekOrNull(index)?.let { FastScroll.label(it.groupName, if (showNumbers) it.number else 0) }
         }
+        NoMatches(channels, vm, ContentKind.LIVE, onSearchEverything)
     }
 }
 
