@@ -29,8 +29,10 @@ class GuideImport(
     private val filled = HashSet<String>()
     private val channels = LinkedHashMap<String, String>()
     private var count = 0
+
     /** Each guide channel to read, and the ids to write its programmes under, with how far to move each copy. */
     private lateinit var targets: Map<String, List<Pair<String, Long>>>
+
     private val pastFrom = HashMap<String, Long>()
     private var from = 0L
     private var until = 0L
