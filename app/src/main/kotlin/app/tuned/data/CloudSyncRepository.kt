@@ -152,6 +152,7 @@ class CloudSyncRepository(
 
     private companion object {
         const val TAG = "CloudSync"
+
         /** Kept by versions before 2026-11-18, which locked the copy; read only to open such a copy once. */
         const val KEY_LEGACY_PASSPHRASE = "passphrase"
         const val KEY_SYNCED = "synced"
