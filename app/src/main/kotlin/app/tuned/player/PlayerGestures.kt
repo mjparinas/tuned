@@ -1,5 +1,6 @@
 package app.tuned.player
 
+import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Context
 import android.media.AudioManager
@@ -19,6 +20,10 @@ import kotlin.math.roundToInt
  * - double-tap the left or right third to skip back or forward (films and episodes);
  * - swipe left or right to change channel (live TV);
  * - a single tap still shows or hides the controls.
+ *
+ * A tap toggles the controls once, when it is confirmed as a single tap. [PlayerView.performClick] toggles them too, so
+ * it is called only then and never on every finger lift: calling it on lift as well hid the controls and showed them
+ * again a moment later (Melvin, 2026-11-18: "it looks like it's going to hide then it pops back up again").
  *
  * Brightness and volume show as bars at the screen's edges ([LevelBars]), which fade once the finger lifts.
  */
@@ -43,10 +48,8 @@ class PlayerGestures(
             object : GestureDetector.SimpleOnGestureListener() {
                 override fun onDown(e: MotionEvent): Boolean = true
 
-                override fun onSingleTapConfirmed(e: MotionEvent): Boolean {
-                    if (playerView.isControllerFullyVisible) playerView.hideController() else playerView.showController()
-                    return true
-                }
+                // PlayerView's click toggles the controls, and calling it also tells accessibility services a click happened.
+                override fun onSingleTapConfirmed(e: MotionEvent): Boolean = playerView.performClick()
 
                 override fun onDoubleTap(e: MotionEvent): Boolean {
                     if (isLive()) return false
@@ -97,6 +100,8 @@ class PlayerGestures(
 
     private val slop = 24 * activity.resources.displayMetrics.density
 
+    // The click is performed once a single tap is confirmed (above), not on every lift, so a tap toggles the controls once.
+    @SuppressLint("ClickableViewAccessibility")
     override fun onTouch(
         v: View,
         event: MotionEvent,
@@ -105,7 +110,6 @@ class PlayerGestures(
         if (event.actionMasked == MotionEvent.ACTION_UP || event.actionMasked == MotionEvent.ACTION_CANCEL) {
             if (mode != Mode.None) bars.hide()
             mode = Mode.None
-            if (event.actionMasked == MotionEvent.ACTION_UP) v.performClick()
         }
         return handled
     }

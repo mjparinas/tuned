@@ -41,7 +41,7 @@ Melvin asked for auto-reconnect and player gestures. Both are on by default and 
   - drag up or down on the left half for brightness, on the right half for volume;
   - double-tap the left or right third to skip back or forward (films and episodes);
   - swipe sideways to change channel (live TV);
-  - a single tap still shows the controls.
+  - a single tap shows the controls, and a tap while they show hides them; each tap toggles them once (Melvin, 2026-11-18: tapping hid them and they popped back up).
 
   Brightness goes back to the system's when the player closes.
 
