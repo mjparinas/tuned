@@ -10,7 +10,7 @@
 
 **Countries** (Melvin, 2026-11-17: "toggle controls in the settings that allow you to hide certain countries' content"). Providers seldom fill `tvg-country`, so the region usually comes from the category prefix. Since the provider compatibility review (2026-11-17), it is read in this order, so other providers' styles work too:
 
-1. `tvg-country`, when it names a known country, as a code (`US`, `gb`) or a name (`United States`). `INT` or `World` name nothing and fall through. In `tvg-country`, `AR` is Argentina (ISO), so it reads as Latino, not Arabic.
+1. `tvg-country`, when it names a known country, as a code (`US`, `gb`) or a name (`United States`). `INT` or `World` name nothing and fall through. In `tvg-country`, `AR` is Argentina (ISO), so it reads as Latino, not Arabic. Next comes a tag or language name and a bar at the start of the stream's own name (`HINDI| Sony Max`, `IN | Colors`), ahead of the category, because providers file other countries' channels under their own (`US| MOVIES NETWORK`; Melvin, 2026-11-18, seeing Hindi channels in Movies with only US and Canada on). A colon (`IT: Chapter Two`) or a word that isn't a tag (`NFL | Week 1`) doesn't count.
 2. A flag emoji in the category (`🇬🇧 Sports`).
 3. A tag at the start of the category, with any symbol after it: `US| News`, `|CA| Kids`, `[FR] Cinéma`, `UK: Sport`, `US » News`, `US ➤ News`, `4K | US Movies` (quality tags are skipped). Country and language names written out count too (`UNITED STATES | News`, `Canada: News`, `ENGLISH | Movies`, `LATINO | Deportes`, `EXYU | HRT`).
 4. A category that is only a country (`UK`, `USA`, `Germany`).

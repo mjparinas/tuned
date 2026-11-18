@@ -220,6 +220,10 @@ object Regions {
      * The region of one stream. `tvg-country` wins when it names a known country; then a flag or tag at the start of
      * the category or the name; then a tag in brackets at the end ("ESPN (US)"); then `tvg-language`, read as the tag
      * that speaks it, so the language switches still work for playlists that only say "English".
+     *
+     * A stream whose own name starts with a tag and a bar ("HINDI| Sony Max") is read by that tag before the category:
+     * providers file other countries' channels under their own ("US| MOVIES NETWORK"), and the name is the more
+     * specific of the two (Melvin, 2026-11-18: Hindi channels showing with only US and Canada on).
      */
     fun detect(
         group: String,
@@ -227,6 +231,7 @@ object Regions {
         name: String,
         tvgLanguage: String? = null,
     ): String? = country(tvgCountry)
+        ?: ownTag(name)
         ?: flag(group)
         ?: prefix(group)
         ?: whole(group)
@@ -365,6 +370,21 @@ object Regions {
     /** Names that start other things: "Georgia Bulldogs", "Jordan", "America's Got Talent", "Jersey Shore". */
     private val ambiguous =
         setOf("GEORGIA", "JORDAN", "CHAD", "JERSEY", "AMERICA", "LATIN", "ARAB", "MONACO", "DOMINICA", "NIGER", "MALI", "GUERNSEY")
+
+    /** "HINDI| & PICTURES", "US┃ STAR LIFE": a tag or language name, then a bar. A colon is not enough ("IT: Chapter Two"). */
+    private val barTag = Regex("""^\s*([\p{L} ]{2,20}?)\s*[|┃│]""")
+
+    private fun ownTag(name: String): String? {
+        val part =
+            barTag
+                .find(name)
+                ?.groupValues
+                ?.get(1)
+                ?.trim()
+                ?.uppercase() ?: return null
+        if (part in notRegions) return null
+        return if (token.matches(part) && part in known) normalize(part) else wordTags[part]
+    }
 
     private fun suffix(text: String): String? = bracketSuffix
         .find(text)
