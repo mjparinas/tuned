@@ -11,6 +11,7 @@ Melvin first chose **Google Play in-app updates** (2026-11-17), then **GitHub Re
 - Android only installs the update if it is signed with the same key as the installed app, so a swapped download can't replace Tuned. **Keep the upload keystore safe**: without it, installed copies can never update again.
 - Settings › Advanced › Check for updates turns this off. Debug builds never check.
 - The app needs `REQUEST_INSTALL_PACKAGES` for this. Play doesn't allow that permission, so a Play build must drop it.
+- The bottom of Settings shows the version and, under it, the short commit hash the build came from ("Build 1a2b3c4"), as plain text with no link (Melvin, 2026-11-18: "add the github hash to the bottom of the settings page please. No links"). Release and CI builds pass `GIT_COMMIT` (for a pull request, its own head commit rather than the merge commit GitHub builds); a local build asks git, and a build without git hides the line.
 
 ## Google Play (later)
 

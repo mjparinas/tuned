@@ -3,6 +3,7 @@ package app.tuned.ui.settings
 import android.app.Application
 import androidx.annotation.StringRes
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -140,12 +141,21 @@ fun SettingsScreen(
             onOpen(DownloadsRoute)
         }
         HorizontalDivider(Modifier.padding(top = 16.dp))
-        Text(
-            stringResource(R.string.settings_version, BuildConfig.VERSION_NAME, BuildConfig.VERSION_CODE),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(16.dp),
-        )
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Text(
+                stringResource(R.string.settings_version, BuildConfig.VERSION_NAME, BuildConfig.VERSION_CODE),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            // The commit this build came from, as plain text with no link (Melvin, 2026-11-18). Empty when the build had no git.
+            if (BuildConfig.GIT_COMMIT.isNotEmpty()) {
+                Text(
+                    stringResource(R.string.settings_build_commit, BuildConfig.GIT_COMMIT),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
     }
 }
 

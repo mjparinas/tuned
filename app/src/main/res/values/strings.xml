@@ -186,6 +186,7 @@
     <string name="settings_user_agent">User agent</string>
     <string name="settings_user_agent_default">Default (Tuned)</string>
     <string name="settings_version">Tuned %1$s (%2$d)</string>
+    <string name="settings_build_commit">Build %1$s</string>
 
     <string name="captions_show">Show captions</string>
     <string name="captions_show_summary">Turn them on or off for one video from the CC button</string>
