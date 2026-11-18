@@ -56,7 +56,7 @@ class TimeZonesTest {
 
     @Test
     fun theSameMomentCanBeTodayInOneZoneAndTomorrowInAnother() {
-        val now = at("2026-11-17T21:00", pacific)
+        val now = at("2026-11-17T20:00", pacific) // 11 p.m. Tuesday in Toronto
         val event = at("2026-11-17T23:30", pacific) // 2:30 a.m. Wednesday in Toronto
         assertTrue(TimeZones.sameDay(now, event, pacific))
         assertFalse(TimeZones.sameDay(now, event, toronto))
