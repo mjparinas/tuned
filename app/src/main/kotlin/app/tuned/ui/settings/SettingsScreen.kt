@@ -13,26 +13,40 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.automirrored.filled.PlaylistPlay
 import androidx.compose.material.icons.filled.Autorenew
 import androidx.compose.material.icons.filled.CalendarMonth
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.ClosedCaption
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.filled.PlayCircle
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Tv
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -42,6 +56,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import app.tuned.BuildConfig
 import app.tuned.R
 import app.tuned.container
+import app.tuned.core.Search
 import app.tuned.data.AppSettings
 import app.tuned.diagnostics.launchSafely
 import app.tuned.ui.CaptionSettingsRoute
@@ -118,15 +133,24 @@ enum class SettingsPage(
 
 /**
  * Settings' first screen: one row per page, plus captions, a page of its own. Downloads is in the home screen's bar,
- * so it has no row here (Melvin, 2026-11-18). Short enough to see at a glance, so nothing needs a search.
+ * so it has no row here (Melvin, 2026-11-18). A search box on top finds any setting on any page ([SettingsSearch]).
  */
 @Composable
 fun SettingsScreen(
     settings: AppSettings,
     onBack: () -> Unit,
     onOpen: (route: Any) -> Unit,
+    onSignedOut: () -> Unit,
+    vm: SettingsViewModel = viewModel(),
 ) {
     SettingsScaffold(stringResource(R.string.settings), onBack) {
+        var query by rememberSaveable { mutableStateOf("") }
+        SettingsSearchField(query) { query = it }
+        val words = remember(query) { Search.normalize(query).split(' ').filter { it.isNotEmpty() } }
+        if (words.isNotEmpty()) {
+            SettingsResults(words, settings, vm, onOpen, onSignedOut)
+            return@SettingsScaffold
+        }
         val pages = SettingsPage.entries
         pages.take(pages.indexOf(SettingsPage.PLAYBACK) + 1).forEach { PageRow(it, onOpen) }
         IconRow(
@@ -151,6 +175,85 @@ fun SettingsScreen(
                 )
             }
         }
+    }
+}
+
+@Composable
+private fun SettingsSearchField(
+    text: String,
+    onChange: (String) -> Unit,
+) {
+    TextField(
+        value = text,
+        onValueChange = onChange,
+        placeholder = { Text(stringResource(R.string.settings_search)) },
+        leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
+        trailingIcon = {
+            if (text.isNotEmpty()) {
+                IconButton(onClick = { onChange("") }) {
+                    Icon(Icons.Filled.Close, contentDescription = stringResource(R.string.search_clear))
+                }
+            }
+        },
+        singleLine = true,
+        shape = RoundedCornerShape(28.dp),
+        colors =
+            TextFieldDefaults.colors(
+                focusedIndicatorColor = Color.Transparent,
+                unfocusedIndicatorColor = Color.Transparent,
+            ),
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp),
+    )
+}
+
+/**
+ * Every page's rows that match [words], under the page's name; the rows work as they do on their page. A page whose
+ * own name matches is listed as a row that opens it, and Captions (a screen of its own) by its name.
+ */
+@Composable
+private fun SettingsResults(
+    words: List<String>,
+    settings: AppSettings,
+    vm: SettingsViewModel,
+    onOpen: (route: Any) -> Unit,
+    onSignedOut: () -> Unit,
+) {
+    fun matches(text: String) = Search.normalize(text).let { t -> words.all { it in t } }
+    // Kept across keystrokes: each row's effect leaves its old query's count and joins the new one in the same frame,
+    // so "No settings match" never flickers while typing.
+    val counts = remember { SettingsPage.entries.associateWith { mutableIntStateOf(0) } }
+    var shown = 0
+    val captions = stringResource(R.string.settings_captions)
+    if (matches(captions)) {
+        shown++
+        IconRow(
+            Icons.Filled.ClosedCaption,
+            captions,
+            stringResource(if (settings.captions.enabled) R.string.captions_on else R.string.captions_off),
+        ) { onOpen(CaptionSettingsRoute) }
+    }
+    SettingsPage.entries.forEach { page ->
+        val count = counts.getValue(page)
+        val title = stringResource(page.title)
+        val pageMatches = matches(title)
+        if (count.intValue > 0 || pageMatches) SectionHeader(title)
+        if (pageMatches) {
+            shown++
+            PageRow(page, onOpen)
+        }
+        val query = remember(words, page) { SettingsQuery(words, count) }
+        CompositionLocalProvider(LocalSettingsQuery provides query) {
+            SettingsPageContent(page, settings, vm, onOpen, onSignedOut)
+        }
+        shown += count.intValue
+    }
+    if (shown == 0) {
+        Text(
+            stringResource(R.string.settings_search_none),
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(16.dp),
+        )
     }
 }
 

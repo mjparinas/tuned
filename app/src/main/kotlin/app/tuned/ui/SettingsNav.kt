@@ -37,7 +37,12 @@ import kotlinx.serialization.Serializable
 /** Settings, its pages and the screens they open. */
 fun NavGraphBuilder.settingsScreens(app: AppNav) {
     composable<SettingsRoute> {
-        SettingsScreen(settings = app.settings, onBack = { app.nav.popBackStack() }, onOpen = { route -> app.nav.navigate(route) })
+        SettingsScreen(
+            settings = app.settings,
+            onBack = { app.nav.popBackStack() },
+            onOpen = { route -> app.nav.navigate(route) },
+            onSignedOut = app.openWelcome,
+        )
     }
     composable<SettingsPageRoute> { entry ->
         SettingsPageScreen(
