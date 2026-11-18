@@ -14,10 +14,17 @@ import app.tuned.data.AppSettings
 import app.tuned.ui.DeveloperLogRoute
 
 @Composable
-internal fun RatingsSettings(
+internal fun AboutPage(
     settings: AppSettings,
     vm: SettingsViewModel,
+    onOpen: (Any) -> Unit,
 ) {
+    SwitchRow(
+        stringResource(R.string.settings_check_updates),
+        settings.checkUpdates,
+        stringResource(R.string.settings_check_updates_summary),
+    ) { on -> vm.update { it.copy(checkUpdates = on) } }
+    UpdateCheckRow()
     SectionHeader(stringResource(R.string.settings_ratings))
     var editTmdb by remember { mutableStateOf(false) }
     SettingRow(
@@ -34,13 +41,6 @@ internal fun RatingsSettings(
             vm.update { it.copy(tmdbKey = key.trim()) }
         }
     }
-}
-
-@Composable
-internal fun AdvancedSettings(
-    settings: AppSettings,
-    vm: SettingsViewModel,
-) {
     SectionHeader(stringResource(R.string.settings_advanced))
     var editUa by remember { mutableStateOf(false) }
     SettingRow(
@@ -53,20 +53,6 @@ internal fun AdvancedSettings(
             vm.update { it.copy(userAgent = ua.trim()) }
         }
     }
-    SwitchRow(
-        stringResource(R.string.settings_check_updates),
-        settings.checkUpdates,
-        stringResource(R.string.settings_check_updates_summary),
-    ) { on -> vm.update { it.copy(checkUpdates = on) } }
-    UpdateCheckRow()
-}
-
-@Composable
-internal fun DeveloperSettings(
-    settings: AppSettings,
-    vm: SettingsViewModel,
-    onOpen: (Any) -> Unit,
-) {
     SectionHeader(stringResource(R.string.settings_developer))
     SwitchRow(
         stringResource(R.string.settings_developer_mode),

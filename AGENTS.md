@@ -40,7 +40,7 @@ Kotlin, Jetpack Compose with Material 3, Navigation Compose (type-safe routes), 
 - detekt (`config/detekt/detekt.yml`) and Android Lint (`warningsAsErrors`) fail CI on any finding. Fix the cause; suppress only with a comment saying why.
 - Every string a person reads is in `res/values/strings.xml`; numbers that change a word use `<plurals>`.
 - Fire-and-forget coroutines use `launchSafely(tag)`, and caught failures go to `AppLog` (`attempt` instead of `runCatching`), so nothing fails silently and nothing crashes the app ([diagnostics](docs/decisions/diagnostics.md)).
-- **Where new code goes, so parallel work doesn't collide.** Add to the file for your area, inside its area, never at the end of a shared list. A new setting is one field in `AppSettings` (`data/Settings.kt`) and one line in its area of `SETTING_FIELDS` (`data/SettingFields.kt`); its row goes in that area's section file (`ui/settings/SettingsPlayback.kt` and so on). A row that opens another screen passes its route to `onOpen`, so `SettingsScreen` and `MainActivity` don't change. Stored key names never change (a test pins them).
+- **Where new code goes, so parallel work doesn't collide.** Add to the file for your area, inside its area, never at the end of a shared list. A new setting is one field in `AppSettings` (`data/Settings.kt`) and one line in its area of `SETTING_FIELDS` (`data/SettingFields.kt`); its row goes in that page's file (`ui/settings/SettingsPlayback.kt` and so on; [settings](docs/decisions/settings.md)). A row that opens another screen passes its route to `onOpen`, so `SettingsScreen` and `MainActivity` don't change. Stored key names never change (a test pins them).
 - A bug fix comes with a test that fails without it. Flaky tests are fixed at the cause, never retried.
 
 ## CI/CD (like Liftsmith)
@@ -83,6 +83,7 @@ One file per topic in `docs/decisions/`, A to Z. Add a line when you add a topic
 - [Profiles](docs/decisions/profiles.md): who's watching, kids profiles, profile PINs.
 - [Scope](docs/decisions/scope.md): what Tuned will never do, and what's decided but not built yet.
 - [Security](docs/decisions/security.md): login storage, cleartext HTTP, backups.
+- [Settings](docs/decisions/settings.md): the pages of Settings and what goes where.
 - [Speed](docs/decisions/speed.md): what keeps the app fast, and the budget.
 - [TV](docs/decisions/tv.md): Android TV launcher, focus outlines, remote keys in the player.
 - [Updates](docs/decisions/updates.md): GitHub Releases updater now, Play in-app updates later, semver tags.
