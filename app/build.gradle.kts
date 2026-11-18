@@ -27,6 +27,19 @@ android {
         // them the Trakt settings stay hidden.
         buildConfigField("String", "TRAKT_CLIENT_ID", "\"${System.getenv("TRAKT_CLIENT_ID").orEmpty()}\"")
         buildConfigField("String", "TRAKT_CLIENT_SECRET", "\"${System.getenv("TRAKT_CLIENT_SECRET").orEmpty()}\"")
+        // The commit this build came from, shown as plain text at the bottom of Settings (Melvin, 2026-11-18). CI and Release
+        // pass GIT_COMMIT (a pull request's own head, not GitHub's merge commit); local builds ask git. Empty hides the line.
+        val gitCommit =
+            System.getenv("GIT_COMMIT")?.takeIf { it.isNotBlank() }
+                ?: runCatching {
+                    providers
+                        .exec {
+                            commandLine("git", "rev-parse", "HEAD")
+                            isIgnoreExitValue = true
+                        }.standardOutput.asText
+                        .get()
+                }.getOrNull()
+        buildConfigField("String", "GIT_COMMIT", "\"${gitCommit.orEmpty().trim().take(7)}\"")
     }
 
     signingConfigs {
