@@ -94,4 +94,23 @@ object Trakt {
     private const val HTTP_EXPIRED = 410
     private const val HTTP_DENIED = 418
     private const val HTTP_SLOW_DOWN = 429
+
+    /**
+     * The sign-in bodies. Trakt no longer issues a client secret (apps sign in with PKCE or a device code), so every
+     * body carries the client id alone; sending an empty secret would be refused.
+     */
+    fun deviceTokenBody(
+        clientId: String,
+        deviceCode: String,
+    ): Map<String, String> = mapOf("code" to deviceCode, "client_id" to clientId)
+
+    fun refreshBody(
+        clientId: String,
+        refreshToken: String,
+    ): Map<String, String> = mapOf("refresh_token" to refreshToken, "client_id" to clientId, "grant_type" to "refresh_token")
+
+    fun revokeBody(
+        clientId: String,
+        token: String,
+    ): Map<String, String> = mapOf("token" to token, "client_id" to clientId)
 }

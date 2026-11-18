@@ -58,4 +58,20 @@ class TraktTest {
         assertFalse(Trakt.needsRefresh(expiresAtMs = 10 * day, nowMs = 8 * day))
         assertTrue(Trakt.needsRefresh(expiresAtMs = 10 * day, nowMs = 9 * day + 1))
     }
+
+    @Test
+    fun signInBodiesCarryTheClientIdWithoutASecret() {
+        val bodies =
+            listOf(
+                Trakt.deviceTokenBody("id", "device"),
+                Trakt.refreshBody("id", "refresh"),
+                Trakt.revokeBody("id", "token"),
+            )
+        bodies.forEach { body ->
+            assertEquals("id", body["client_id"])
+            assertFalse("client_secret" in body)
+            assertFalse("redirect_uri" in body)
+        }
+        assertEquals("refresh_token", Trakt.refreshBody("id", "refresh")["grant_type"])
+    }
 }
