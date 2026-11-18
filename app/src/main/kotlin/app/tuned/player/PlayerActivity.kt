@@ -149,7 +149,7 @@ class PlayerActivity : FragmentActivity() {
             scope = lifecycleScope,
             hooks =
                 ChannelDial.Hooks(
-                    find = { n -> container.db.items().liveByNumber(n) },
+                    find = { n -> container.db.channelNumbers().liveByNumber(n) },
                     get = { id -> container.db.items().get(id) },
                     jump = { item ->
                         val exo = player

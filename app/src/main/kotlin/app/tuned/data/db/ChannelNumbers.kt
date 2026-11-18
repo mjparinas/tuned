@@ -8,8 +8,8 @@ import androidx.room.withTransaction
  */
 object ChannelNumbers {
     suspend fun fillIfMissing(db: TunedDatabase) {
-        if (!db.items().hasUnnumbered()) return
-        val ids = db.items().liveIdsInOrder()
+        if (!db.channelNumbers().hasUnnumbered()) return
+        val ids = db.channelNumbers().liveIdsInOrder()
         val sql = db.openHelper.writableDatabase
         ids.withIndex().chunked(CHUNK).forEach { chunk ->
             db.withTransaction {
