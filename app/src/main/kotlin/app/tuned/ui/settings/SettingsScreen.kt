@@ -2,7 +2,6 @@ package app.tuned.ui.settings
 
 import android.app.Application
 import android.os.Build
-import android.os.SystemClock
 import android.text.format.DateUtils
 import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
@@ -64,17 +63,13 @@ import app.tuned.diagnostics.launchSafely
 import app.tuned.ui.common.BackTopBar
 import app.tuned.ui.theme.swatch
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
-import java.security.MessageDigest
-
-enum class PinResult { Ok, Wrong, TooMany }
-
-private const val MAX_WRONG = 5
-private const val WAIT_MS = 30_000L
 
 class SettingsViewModel(
     app: Application,
-) : AndroidViewModel(app) {
+) : AndroidViewModel(app),
+    PinActions {
     private val container = app.container
 
     fun update(change: (AppSettings) -> AppSettings) {
@@ -82,34 +77,24 @@ class SettingsViewModel(
     }
 
     val hasPin = container.settings.hasAdultPin.stateIn(viewModelScope, SharingStarted.Eagerly, false)
-    private var wrongTries = 0
-    private var lockedUntil = 0L
 
-    suspend fun setPin(pin: String) = container.settings.setAdultPin(pin)
+    /** How many profiles there are, for the Profiles row. */
+    val profileCount =
+        container.profiles.profiles
+            .map { it.size }
+            .stateIn(viewModelScope, SharingStarted.Eagerly, 1)
 
-    /** Five wrong PINs in a row wait 30 seconds before the next try, so guessing all 10,000 takes days. */
-    suspend fun unlock(pin: String): PinResult {
-        if (SystemClock.elapsedRealtime() < lockedUntil) return PinResult.TooMany
-        if (container.settings.unlockAdult(pin)) {
-            wrongTries = 0
-            return PinResult.Ok
-        }
-        if (++wrongTries >= MAX_WRONG) {
-            wrongTries = 0
-            lockedUntil = SystemClock.elapsedRealtime() + WAIT_MS
-            return PinResult.TooMany
-        }
-        return PinResult.Wrong
+    override suspend fun setPin(pin: String) = container.settings.setAdultPin(pin)
+
+    override suspend fun unlock(pin: String): PinResult {
+        val throttle = container.profiles.throttle
+        if (throttle.waiting()) return PinResult.TooMany
+        return throttle.record(container.settings.unlockAdult(pin)).toPinResult()
     }
 
     fun lockAdult() = container.settings.lockAdult()
 
-    /** "Forgot PIN": the account password (or, for a playlist link login, the link) proves it's the account holder. */
-    fun matchesLogin(secret: String): Boolean {
-        val login = container.credentials.load() ?: return false
-        val expected = login.password.ifEmpty { login.playlistUrl }
-        return expected.isNotEmpty() && MessageDigest.isEqual(secret.toByteArray(), expected.toByteArray())
-    }
+    override fun matchesLogin(secret: String): Boolean = container.credentials.matches(secret)
 
     fun server(): String = container.credentials
         .load()
@@ -153,6 +138,7 @@ fun SettingsScreen(
     onOpenChannelHealth: () -> Unit,
     onOpenFavouriteOrder: () -> Unit,
     onOpenDownloads: () -> Unit,
+    onOpenProfiles: () -> Unit,
     onOpenLogs: () -> Unit,
     onSignedOut: () -> Unit,
     onAddPlaylist: () -> Unit,
@@ -196,6 +182,17 @@ fun SettingsScreen(
             })
 
             SectionHeader(stringResource(R.string.settings_content))
+            val profileCount by vm.profileCount.collectAsStateWithLifecycle()
+            SettingRow(
+                stringResource(R.string.settings_profiles),
+                if (profileCount > 1) {
+                    pluralStringResource(R.plurals.profiles_count, profileCount, profileCount)
+                } else {
+                    stringResource(R.string.settings_profiles_summary_one)
+                },
+                onClick = onOpenProfiles,
+                trailing = { Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null) },
+            )
             SettingRow(
                 stringResource(R.string.settings_countries),
                 if (settings.hiddenRegions.isEmpty()) {
@@ -285,6 +282,7 @@ fun SettingsScreen(
                 settings.guideDays,
                 label = { d -> pluralStringResource(R.plurals.days, d, d) },
             ) { d -> vm.update { it.copy(guideDays = d) } }
+            GuideFixRows(settings)
             ChoiceRow(
                 stringResource(R.string.settings_reminder_lead),
                 listOf(0, 1, 5, 10, 15, 30),

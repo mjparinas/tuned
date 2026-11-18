@@ -20,6 +20,8 @@ data class Credentials(
     /** Optional overrides for plain M3U providers (no Xtream login). Blank means "use the Xtream URL". */
     val playlistUrl: String = "",
     val guideUrl: String = "",
+    /** More guide links (Settings › Guide), read after the main one to fill channels it lacks. Encrypted: they often carry a key. */
+    val extraGuides: List<String> = emptyList(),
 ) {
     /** Same provider and account: switching between these keeps the cached channels. */
     fun samePlaylist(other: Credentials) = server == other.server && username == other.username && playlistUrl == other.playlistUrl
@@ -123,12 +125,19 @@ class CredentialStore(
         prefs.edit { putString(KEY_SAVED, encrypt(list.joinToString(LINE, transform = ::encode))) }
     }
 
-    private fun encode(c: Credentials): String = listOf(c.server, c.username, c.password, c.playlistUrl, c.guideUrl)
-        .joinToString(SEP) { Base64.encodeToString(it.toByteArray(), Base64.NO_WRAP) }
+    private fun encode(c: Credentials): String = listOf(
+        c.server,
+        c.username,
+        c.password,
+        c.playlistUrl,
+        c.guideUrl,
+        c.extraGuides.joinToString(LINE),
+    ).joinToString(SEP) { Base64.encodeToString(it.toByteArray(), Base64.NO_WRAP) }
 
     private fun decode(text: String): Credentials {
         val parts = text.split(SEP).map { String(Base64.decode(it, Base64.NO_WRAP)) }
-        return Credentials(parts[0], parts[1], parts[2], parts.getOrElse(3) { "" }, parts.getOrElse(4) { "" })
+        val extra = parts.getOrElse(5) { "" }.split(LINE).filter { it.isNotBlank() }
+        return Credentials(parts[0], parts[1], parts[2], parts.getOrElse(3) { "" }, parts.getOrElse(4) { "" }, extra)
     }
 
     private fun key(): SecretKey {
