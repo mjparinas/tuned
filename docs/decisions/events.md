@@ -24,7 +24,7 @@ Melvin, 2026-11-18: "it's not clear what timezone these are in, it should be adj
 
 ## Where
 
-The trophy button in the Live TV tab's top bar opens it.
+The Live events chip, first in the Live TV tab's row of categories, opens it (it was a trophy button beside search until Melvin's UI review on 2026-11-18 moved it, to give the search box its width).
 
 ## Not done
 

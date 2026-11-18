@@ -29,7 +29,9 @@ import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.History
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Movie
+import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.filled.Radar
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
@@ -37,9 +39,12 @@ import androidx.compose.material.icons.filled.TravelExplore
 import androidx.compose.material.icons.filled.Tv
 import androidx.compose.material.icons.filled.VideoLibrary
 import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Button
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
@@ -223,7 +228,6 @@ fun HomeScreen(
                     onOpenSettings = onOpenSettings.takeUnless { settings.kidsProfile },
                     profile = profile.takeIf { settings.profileCount > 1 },
                     onOpenProfiles = onOpenProfiles,
-                    onOpenEvents = onOpenEvents.takeIf { tab.kind == ContentKind.LIVE },
                 )
             },
             bottomBar = {
@@ -255,7 +259,7 @@ fun HomeScreen(
                 }
                 requestedProgress?.let { RefreshBar(it) }
                 UpdateBanner()
-                CategoryChips(vm, tab.kind, onGroupHidden)
+                CategoryChips(vm, tab.kind, onGroupHidden, onOpenEvents.takeIf { tab.kind == ContentKind.LIVE })
                 val lists: @Composable () -> Unit = {
                     when (tab.kind) {
                         ContentKind.LIVE -> LiveTab(vm, settings, onPlay, openGuide, onOpenSearch)
@@ -321,10 +325,8 @@ private fun SearchBarRow(
     onOpenSettings: (() -> Unit)?,
     profile: ProfileEntity?,
     onOpenProfiles: () -> Unit,
-    /** Live Events, shown on the Live TV tab only. */
-    onOpenEvents: (() -> Unit)?,
 ) {
-    val switchLabel = stringResource(R.string.profile_switch)
+    var menu by remember { mutableStateOf(false) }
     Surface(color = MaterialTheme.colorScheme.surface) {
         Row(
             Modifier
@@ -356,35 +358,61 @@ private fun SearchBarRow(
                     ),
                 modifier = Modifier.weight(1f).heightIn(min = 52.dp),
             )
-            // Live TV only: switch between the channel list and the grid guide.
-            if (grid != null) {
-                IconButton(onClick = onToggleGrid) {
-                    Icon(
-                        if (grid) Icons.AutoMirrored.Filled.List else Icons.Filled.GridView,
-                        contentDescription = stringResource(if (grid) R.string.grid_hide else R.string.grid_show),
-                    )
+            // One button beside the box, so search keeps the width (2026-11-18, UI review): the profile's badge when
+            // there are profiles, otherwise the three dots. Everything else that used to sit here is in its menu.
+            val more = stringResource(R.string.home_menu)
+            Box {
+                IconButton(onClick = { menu = true }, modifier = Modifier.semantics { contentDescription = more }) {
+                    if (profile != null) {
+                        ProfileBadge(profile, size = 28.dp)
+                    } else {
+                        Icon(Icons.Filled.MoreVert, contentDescription = null)
+                    }
                 }
-            }
-            if (onOpenEvents != null) {
-                IconButton(onClick = onOpenEvents) {
-                    Icon(Icons.Filled.EmojiEvents, contentDescription = stringResource(R.string.events_title))
-                }
-            }
-            IconButton(onClick = onOpenSearch) {
-                Icon(Icons.Filled.TravelExplore, contentDescription = stringResource(R.string.search_everything))
-            }
-            if (profile != null) {
-                IconButton(onClick = onOpenProfiles) {
-                    Box(Modifier.semantics { contentDescription = switchLabel }) { ProfileBadge(profile, size = 28.dp) }
-                }
-            }
-            if (onOpenSettings != null) {
-                IconButton(onClick = onOpenSettings) {
-                    Icon(Icons.Filled.Settings, contentDescription = stringResource(R.string.settings))
+                DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
+                    MenuRow(Icons.Filled.TravelExplore, stringResource(R.string.search_everything)) {
+                        menu = false
+                        onOpenSearch()
+                    }
+                    // Live TV only: switch between the channel list and the grid guide.
+                    if (grid != null) {
+                        MenuRow(
+                            if (grid) Icons.AutoMirrored.Filled.List else Icons.Filled.GridView,
+                            stringResource(if (grid) R.string.grid_hide else R.string.grid_show),
+                        ) {
+                            menu = false
+                            onToggleGrid()
+                        }
+                    }
+                    if (profile != null) {
+                        MenuRow(Icons.Filled.People, stringResource(R.string.profile_switch)) {
+                            menu = false
+                            onOpenProfiles()
+                        }
+                    }
+                    if (onOpenSettings != null) {
+                        MenuRow(Icons.Filled.Settings, stringResource(R.string.settings)) {
+                            menu = false
+                            onOpenSettings()
+                        }
+                    }
                 }
             }
         }
     }
+}
+
+@Composable
+private fun MenuRow(
+    icon: ImageVector,
+    label: String,
+    onClick: () -> Unit,
+) {
+    DropdownMenuItem(
+        text = { Text(label) },
+        leadingIcon = { Icon(icon, contentDescription = null) },
+        onClick = onClick,
+    )
 }
 
 @Composable
@@ -393,6 +421,8 @@ private fun CategoryChips(
     kind: ContentKind,
     /** The kind, the group and the message that says it is hidden. */
     onHidden: (ContentKind, String, String) -> Unit,
+    /** Live events, first in Live TV's row (it used to be an icon beside search). Null elsewhere. */
+    onOpenEvents: (() -> Unit)?,
 ) {
     val groups by vm.groups(kind).collectAsStateWithLifecycle()
     val filterFlow = vm.filter(kind)
@@ -401,6 +431,15 @@ private fun CategoryChips(
         contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
+        if (onOpenEvents != null) {
+            item(key = "events") {
+                AssistChip(
+                    onClick = onOpenEvents,
+                    leadingIcon = { Icon(Icons.Filled.EmojiEvents, contentDescription = null, modifier = Modifier.size(16.dp)) },
+                    label = { Text(stringResource(R.string.events_title)) },
+                )
+            }
+        }
         item(key = "all") {
             FilterChip(selected = filter == Filter.All, onClick = {
                 filterFlow.value = Filter.All
