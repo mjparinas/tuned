@@ -94,9 +94,9 @@ fun AvatarPicture(
     colour: Int,
     letter: String,
     size: Dp,
+    modifier: Modifier = Modifier,
     shape: Shape = CircleShape,
     animate: Boolean = false,
-    modifier: Modifier = Modifier,
 ) {
     val (light, dark) = gradientFor(avatar, colour)
     // Sized in pixels rather than sp: the picture is a fixed size, so large text mustn't push the glyph out of it.
