@@ -23,10 +23,12 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         ItemFts::class,
         ShowGroupEntity::class,
         TmdbSeasonEntity::class,
+        ProfileEntity::class,
+        CurrentProfileEntity::class,
         GuideFixEntity::class,
         GuideChannelEntity::class,
     ],
-    version = 13,
+    version = 14,
     exportSchema = true,
 )
 abstract class TunedDatabase : RoomDatabase() {
@@ -50,6 +52,8 @@ abstract class TunedDatabase : RoomDatabase() {
 
     abstract fun shows(): ShowDao
 
+    abstract fun profiles(): ProfileDao
+
     abstract fun guideFixes(): GuideFixDao
 
     companion object {
@@ -71,11 +75,25 @@ abstract class TunedDatabase : RoomDatabase() {
                 MIGRATION_10_11,
                 MIGRATION_11_12,
                 MIGRATION_12_13,
-            )
+                MIGRATION_13_14,
+            ).addCallback(FirstProfile)
             // Going back to an older release (installing an older APK) can't keep a newer database: start it afresh
             // rather than crash on every launch. Upgrades always migrate, above.
             .fallbackToDestructiveMigrationOnDowngrade(dropAllTables = true)
             .build()
+
+        /** A new install starts with one profile, in use. */
+        private object FirstProfile : Callback() {
+            override fun onCreate(db: SupportSQLiteDatabase) = addFirstProfile(db)
+        }
+
+        private fun addFirstProfile(db: SupportSQLiteDatabase) {
+            db.execSQL(
+                "INSERT OR IGNORE INTO `profiles` (`id`, `name`, `colour`, `kids`, `pinHash`, `createdAt`) " +
+                    "VALUES (${Profiles.FIRST}, '', 0, 0, NULL, ${System.currentTimeMillis()})",
+            )
+            db.execSQL("INSERT OR IGNORE INTO `current_profile` (`slot`, `profileId`) VALUES (0, ${Profiles.FIRST})")
+        }
 
         /** Adds auto-tune's channel health. */
         val MIGRATION_1_2 =
@@ -209,8 +227,8 @@ abstract class TunedDatabase : RoomDatabase() {
             }
 
         /** Adds guide fixes: a channel's own guide entry or time offset, and the guide's channel list to pick from. */
-        val MIGRATION_12_13 =
-            object : Migration(12, 13) {
+        val MIGRATION_13_14 =
+            object : Migration(13, 14) {
                 override fun migrate(db: SupportSQLiteDatabase) {
                     db.execSQL(
                         "CREATE TABLE IF NOT EXISTS `guide_fixes` (`itemId` INTEGER NOT NULL, `guideId` TEXT, " +
@@ -231,5 +249,67 @@ abstract class TunedDatabase : RoomDatabase() {
                 "AFTER_UPDATE" to "AFTER UPDATE ON `items` BEGIN $FTS_INSERT",
                 "AFTER_INSERT" to "AFTER INSERT ON `items` BEGIN $FTS_INSERT",
             )
+
+        /**
+         * Adds profiles. Favourites, history, watch later and seen episodes gain a profile, and everything already
+         * there goes to the first one, so nothing is lost.
+         */
+        val MIGRATION_12_13 =
+            object : Migration(12, 13) {
+                override fun migrate(db: SupportSQLiteDatabase) {
+                    db.execSQL(
+                        "CREATE TABLE IF NOT EXISTS `profiles` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `name` TEXT NOT NULL, " +
+                            "`colour` INTEGER NOT NULL, `kids` INTEGER NOT NULL, `pinHash` TEXT, `createdAt` INTEGER NOT NULL)",
+                    )
+                    db.execSQL(
+                        "CREATE TABLE IF NOT EXISTS `current_profile` (`slot` INTEGER NOT NULL, `profileId` INTEGER NOT NULL, " +
+                            "PRIMARY KEY(`slot`))",
+                    )
+                    addFirstProfile(db)
+                    rebuild(
+                        db,
+                        "favourites",
+                        "`itemId` INTEGER NOT NULL, `addedAt` INTEGER NOT NULL, `position` INTEGER NOT NULL DEFAULT 0, " +
+                            "`profileId` INTEGER NOT NULL DEFAULT 1, PRIMARY KEY(`profileId`, `itemId`)",
+                        "`itemId`, `addedAt`, `position`",
+                    )
+                    rebuild(
+                        db,
+                        "history",
+                        "`itemId` INTEGER NOT NULL, `positionMs` INTEGER NOT NULL, `durationMs` INTEGER NOT NULL, " +
+                            "`watchedAt` INTEGER NOT NULL, `profileId` INTEGER NOT NULL DEFAULT 1, PRIMARY KEY(`profileId`, `itemId`)",
+                        "`itemId`, `positionMs`, `durationMs`, `watchedAt`",
+                    )
+                    db.execSQL("CREATE INDEX IF NOT EXISTS `index_history_watchedAt` ON `history` (`watchedAt`)")
+                    rebuild(
+                        db,
+                        "watch_later",
+                        "`key` TEXT NOT NULL, `itemId` INTEGER, `showKey` TEXT, `title` TEXT NOT NULL, `image` TEXT, " +
+                            "`addedAt` INTEGER NOT NULL, `profileId` INTEGER NOT NULL DEFAULT 1, PRIMARY KEY(`profileId`, `key`)",
+                        "`key`, `itemId`, `showKey`, `title`, `image`, `addedAt`",
+                    )
+                    rebuild(
+                        db,
+                        "seen_episodes",
+                        "`itemId` INTEGER NOT NULL, `showKey` TEXT NOT NULL, `profileId` INTEGER NOT NULL DEFAULT 1, " +
+                            "PRIMARY KEY(`profileId`, `itemId`)",
+                        "`itemId`, `showKey`",
+                    )
+                    db.execSQL("CREATE INDEX IF NOT EXISTS `index_seen_episodes_showKey` ON `seen_episodes` (`showKey`)")
+                }
+            }
+
+        /** SQLite can't change a primary key in place: copy [table] into the new shape, then swap it in. */
+        private fun rebuild(
+            db: SupportSQLiteDatabase,
+            table: String,
+            columns: String,
+            copied: String,
+        ) {
+            db.execSQL("CREATE TABLE `${table}_new` ($columns)")
+            db.execSQL("INSERT INTO `${table}_new` ($copied, `profileId`) SELECT $copied, ${Profiles.FIRST} FROM `$table`")
+            db.execSQL("DROP TABLE `$table`")
+            db.execSQL("ALTER TABLE `${table}_new` RENAME TO `$table`")
+        }
     }
 }

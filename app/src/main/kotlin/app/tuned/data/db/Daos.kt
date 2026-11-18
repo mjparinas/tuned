@@ -6,8 +6,90 @@ import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Transaction
+import androidx.room.Update
 import androidx.room.Upsert
 import kotlinx.coroutines.flow.Flow
+
+/** The profile in use; 1 (the first profile) when none is set, as in a fresh test database. */
+private const val ME = "COALESCE((SELECT profileId FROM current_profile), 1)"
+
+/** Kids profiles: only kids and family categories ([app.tuned.core.KidsContent], keep the two in step). */
+private const val KIDS_ONLY_I =
+    "AND NOT ('kids' IN (:hidden) AND NOT (" +
+        "lower(i.groupName) GLOB '*kid*' OR " +
+        "lower(i.groupName) GLOB '*child*' OR " +
+        "lower(i.groupName) GLOB '*cartoon*' OR " +
+        "lower(i.groupName) GLOB '*family*' OR " +
+        "lower(i.groupName) GLOB '*junior*' OR " +
+        "lower(i.groupName) GLOB '*disney*' OR " +
+        "lower(i.groupName) GLOB '*nick*' OR " +
+        "lower(i.groupName) GLOB '*baby*' OR " +
+        "lower(i.groupName) GLOB '*animation*' OR " +
+        "lower(i.groupName) GLOB '*boomerang*' OR " +
+        "(i.kind = 0 AND (" +
+        "i.searchName GLOB '*kid*' OR " +
+        "i.searchName GLOB '*child*' OR " +
+        "i.searchName GLOB '*cartoon*' OR " +
+        "i.searchName GLOB '*junior*' OR " +
+        "i.searchName GLOB '*disney*' OR " +
+        "i.searchName GLOB '*nick*' OR " +
+        "i.searchName GLOB '*baby*' OR " +
+        "i.searchName GLOB '*boomerang*'" +
+        "))))"
+
+/** [KIDS_ONLY_I] for queries that don't name the table. */
+private const val KIDS_ONLY =
+    "AND NOT ('kids' IN (:hidden) AND NOT (" +
+        "lower(groupName) GLOB '*kid*' OR " +
+        "lower(groupName) GLOB '*child*' OR " +
+        "lower(groupName) GLOB '*cartoon*' OR " +
+        "lower(groupName) GLOB '*family*' OR " +
+        "lower(groupName) GLOB '*junior*' OR " +
+        "lower(groupName) GLOB '*disney*' OR " +
+        "lower(groupName) GLOB '*nick*' OR " +
+        "lower(groupName) GLOB '*baby*' OR " +
+        "lower(groupName) GLOB '*animation*' OR " +
+        "lower(groupName) GLOB '*boomerang*' OR " +
+        "(kind = 0 AND (" +
+        "searchName GLOB '*kid*' OR " +
+        "searchName GLOB '*child*' OR " +
+        "searchName GLOB '*cartoon*' OR " +
+        "searchName GLOB '*junior*' OR " +
+        "searchName GLOB '*disney*' OR " +
+        "searchName GLOB '*nick*' OR " +
+        "searchName GLOB '*baby*' OR " +
+        "searchName GLOB '*boomerang*'" +
+        "))))"
+
+/** [KIDS_ONLY_I] for the per-show table, which has groups but no channel names. */
+private const val KIDS_ONLY_S =
+    "AND NOT ('kids' IN (:hidden) AND NOT (" +
+        "lower(s.groupName) GLOB '*kid*' OR " +
+        "lower(s.groupName) GLOB '*child*' OR " +
+        "lower(s.groupName) GLOB '*cartoon*' OR " +
+        "lower(s.groupName) GLOB '*family*' OR " +
+        "lower(s.groupName) GLOB '*junior*' OR " +
+        "lower(s.groupName) GLOB '*disney*' OR " +
+        "lower(s.groupName) GLOB '*nick*' OR " +
+        "lower(s.groupName) GLOB '*baby*' OR " +
+        "lower(s.groupName) GLOB '*animation*' OR " +
+        "lower(s.groupName) GLOB '*boomerang*'" +
+        "))"
+
+/** [KIDS_ONLY_S] for queries on the per-show table that don't name it. */
+private const val KIDS_ONLY_GROUPS =
+    "AND NOT ('kids' IN (:hidden) AND NOT (" +
+        "lower(groupName) GLOB '*kid*' OR " +
+        "lower(groupName) GLOB '*child*' OR " +
+        "lower(groupName) GLOB '*cartoon*' OR " +
+        "lower(groupName) GLOB '*family*' OR " +
+        "lower(groupName) GLOB '*junior*' OR " +
+        "lower(groupName) GLOB '*disney*' OR " +
+        "lower(groupName) GLOB '*nick*' OR " +
+        "lower(groupName) GLOB '*baby*' OR " +
+        "lower(groupName) GLOB '*animation*' OR " +
+        "lower(groupName) GLOB '*boomerang*'" +
+        "))"
 
 /**
  * Every list query takes the same filters: hidden regions, whether adult categories show, an optional category and
@@ -44,7 +126,10 @@ interface ItemDao {
     suspend fun get(id: Long): ItemEntity?
 
     /** The live channel watched last, for the quick-settings tile. */
-    @Query("SELECT i.* FROM history h JOIN items i ON i.id = h.itemId WHERE i.kind = 0 ORDER BY h.watchedAt DESC LIMIT 1")
+    @Query(
+        "SELECT i.* FROM history h JOIN items i ON i.id = h.itemId WHERE h.profileId = $ME AND i.kind = 0 " +
+            "ORDER BY h.watchedAt DESC LIMIT 1",
+    )
     suspend fun lastWatchedChannel(): ItemEntity?
 
     @Query("SELECT * FROM items WHERE id IN (:ids)")
@@ -71,7 +156,7 @@ interface ItemDao {
 
     /** Favourite channels, in their own order (Settings › Order favourites). */
     @Query(
-        "SELECT $CHANNEL_COLUMNS, 1 AS favourite FROM items i JOIN favourites f ON f.itemId = i.id $NOW_JOIN " +
+        "SELECT $CHANNEL_COLUMNS, 1 AS favourite FROM items i JOIN favourites f ON f.itemId = i.id AND f.profileId = $ME $NOW_JOIN " +
             "WHERE $CHANNEL_FILTER ORDER BY f.position",
     )
     fun favouriteChannels(
@@ -85,7 +170,7 @@ interface ItemDao {
 
     /** Channels watched lately, latest first. */
     @Query(
-        "SELECT $CHANNEL_COLUMNS, 0 AS favourite FROM items i JOIN history h ON h.itemId = i.id $NOW_JOIN " +
+        "SELECT $CHANNEL_COLUMNS, 0 AS favourite FROM items i JOIN history h ON h.itemId = i.id AND h.profileId = $ME $NOW_JOIN " +
             "WHERE $CHANNEL_FILTER ORDER BY h.watchedAt DESC",
     )
     fun recentChannels(
@@ -103,7 +188,7 @@ interface ItemDao {
         SELECT i.id, i.name, i.logo, i.showName, i.season, i.episode, h.positionMs, h.durationMs
         FROM history h
         JOIN items i ON i.id = h.itemId
-        WHERE i.kind = :kind
+        WHERE h.profileId = $ME AND i.kind = :kind
             AND (i.region IS NULL OR i.region NOT IN (:hidden)) AND ('g:' || i.kind || ':' || i.groupName) NOT IN (:hidden)
             AND NOT ('scan:dead' IN (:hidden) AND i.id IN (SELECT itemId FROM channel_scan WHERE hidden = 1))
             AND NOT ('placeholder' IN (:hidden) AND i.kind = 0
@@ -113,6 +198,7 @@ interface ItemDao {
                     OR (' ' || lower(i.groupName || ' ' || i.name) || ' ') GLOB '*[^0-9]247[^0-9]*'
                     OR (' ' || lower(i.groupName || ' ' || i.name) || ' ') GLOB '*[^0-9]24 / 7[^0-9]*'))
             AND (:adult OR i.adult = 0)
+            $KIDS_ONLY_I
             AND h.durationMs > 0 AND h.positionMs > 30000 AND h.positionMs < h.durationMs * 95 / 100
         ORDER BY h.watchedAt DESC
         LIMIT 20
@@ -137,8 +223,9 @@ interface ItemDao {
                     OR (' ' || lower(i.groupName || ' ' || i.name) || ' ') GLOB '*[^0-9]247[^0-9]*'
                     OR (' ' || lower(i.groupName || ' ' || i.name) || ' ') GLOB '*[^0-9]24 / 7[^0-9]*'))
             AND (:adult OR i.adult = 0)
+            $KIDS_ONLY_I
             AND (:group IS NULL OR i.groupName = :group)
-            AND (:favouritesOnly = 0 OR i.id IN (SELECT itemId FROM favourites))
+            AND (:favouritesOnly = 0 OR i.id IN (SELECT itemId FROM favourites WHERE profileId = $ME))
             AND (:query = '' OR i.id IN (SELECT docid FROM items_fts WHERE items_fts MATCH :match))
         ORDER BY i.sortOrder
         """,
@@ -156,7 +243,8 @@ interface ItemDao {
     @Query(
         """
         SELECT showKey, MIN(showName) AS showName, MAX(logo) AS logo, MIN(groupName) AS groupName, COUNT(*) AS episodes,
-            SUM(CASE WHEN i.showKey IN (SELECT showKey FROM seen_episodes) AND i.id NOT IN (SELECT itemId FROM seen_episodes)
+            SUM(CASE WHEN i.showKey IN (SELECT showKey FROM seen_episodes WHERE profileId = $ME)
+                AND i.id NOT IN (SELECT itemId FROM seen_episodes WHERE profileId = $ME)
                 THEN 1 ELSE 0 END) AS newEpisodes
         FROM items i
         WHERE i.kind = 2 AND i.showKey IS NOT NULL
@@ -169,8 +257,9 @@ interface ItemDao {
                     OR (' ' || lower(i.groupName || ' ' || i.name) || ' ') GLOB '*[^0-9]247[^0-9]*'
                     OR (' ' || lower(i.groupName || ' ' || i.name) || ' ') GLOB '*[^0-9]24 / 7[^0-9]*'))
             AND (:adult OR i.adult = 0)
+            $KIDS_ONLY_I
             AND (:group IS NULL OR i.groupName = :group)
-            AND (:favouritesOnly = 0 OR i.id IN (SELECT itemId FROM favourites))
+            AND (:favouritesOnly = 0 OR i.id IN (SELECT itemId FROM favourites WHERE profileId = $ME))
             AND (:query = '' OR i.id IN (SELECT docid FROM items_fts WHERE items_fts MATCH :match))
         GROUP BY showKey
         ORDER BY MIN(sortOrder)
@@ -195,7 +284,7 @@ interface ItemDao {
         LEFT JOIN programmes p ON p.rowId = (
             SELECT rowId FROM programmes WHERE channelId = i.tvgId AND start <= :now AND stop > :now ORDER BY start DESC LIMIT 1
         )
-        LEFT JOIN favourites f ON f.itemId = i.id
+        LEFT JOIN favourites f ON f.itemId = i.id AND f.profileId = $ME
         WHERE i.kind = 0
             AND (i.region IS NULL OR i.region NOT IN (:hidden)) AND ('g:' || i.kind || ':' || i.groupName) NOT IN (:hidden)
             AND NOT ('scan:dead' IN (:hidden) AND i.id IN (SELECT itemId FROM channel_scan WHERE hidden = 1))
@@ -206,6 +295,7 @@ interface ItemDao {
                     OR (' ' || lower(i.groupName || ' ' || i.name) || ' ') GLOB '*[^0-9]247[^0-9]*'
                     OR (' ' || lower(i.groupName || ' ' || i.name) || ' ') GLOB '*[^0-9]24 / 7[^0-9]*'))
             AND (:adult OR i.adult = 0)
+            $KIDS_ONLY_I
             AND (i.id IN (SELECT docid FROM items_fts WHERE items_fts MATCH :match) OR i.tvgId IN (
                 SELECT channelId FROM programmes
                 WHERE start > :now - 86400000 AND start < :now + 3600000 AND stop > :now AND title LIKE '%' || :query || '%'
@@ -236,6 +326,7 @@ interface ItemDao {
                     OR (' ' || lower(i.groupName || ' ' || i.name) || ' ') GLOB '*[^0-9]247[^0-9]*'
                     OR (' ' || lower(i.groupName || ' ' || i.name) || ' ') GLOB '*[^0-9]24 / 7[^0-9]*'))
             AND (:adult OR i.adult = 0)
+            $KIDS_ONLY_I
         ORDER BY i.sortOrder
         LIMIT :limit
         """,
@@ -250,7 +341,8 @@ interface ItemDao {
     @Query(
         """
         SELECT showKey, MIN(showName) AS showName, MAX(logo) AS logo, MIN(groupName) AS groupName, COUNT(*) AS episodes,
-            SUM(CASE WHEN i.showKey IN (SELECT showKey FROM seen_episodes) AND i.id NOT IN (SELECT itemId FROM seen_episodes)
+            SUM(CASE WHEN i.showKey IN (SELECT showKey FROM seen_episodes WHERE profileId = $ME)
+                AND i.id NOT IN (SELECT itemId FROM seen_episodes WHERE profileId = $ME)
                 THEN 1 ELSE 0 END) AS newEpisodes
         FROM items i
         WHERE i.kind = 2 AND i.showKey IS NOT NULL AND i.id IN (SELECT docid FROM items_fts WHERE items_fts MATCH :match)
@@ -263,6 +355,7 @@ interface ItemDao {
                     OR (' ' || lower(i.groupName || ' ' || i.name) || ' ') GLOB '*[^0-9]247[^0-9]*'
                     OR (' ' || lower(i.groupName || ' ' || i.name) || ' ') GLOB '*[^0-9]24 / 7[^0-9]*'))
             AND (:adult OR i.adult = 0)
+            $KIDS_ONLY_I
         GROUP BY showKey
         ORDER BY MIN(sortOrder)
         LIMIT :limit
@@ -286,6 +379,7 @@ interface ItemDao {
         SELECT * FROM items
         WHERE kind = 0 AND groupName = :group AND (region IS NULL OR region NOT IN (:hidden)) AND ('g:' || kind || ':' || groupName) NOT IN (:hidden)
             AND NOT ('scan:dead' IN (:hidden) AND id IN (SELECT itemId FROM channel_scan WHERE hidden = 1)) AND (:adult OR adult = 0)
+            $KIDS_ONLY
             AND NOT ('placeholder' IN (:hidden) AND kind = 0
                 AND ((' ' || searchName) GLOB '* no event*' OR (' ' || searchName) GLOB '* no live event*'))
             AND NOT ('247' IN (:hidden) AND kind = 0
@@ -306,6 +400,7 @@ interface ItemDao {
         SELECT groupName, COUNT(*) AS count FROM items
         WHERE kind = :kind AND (region IS NULL OR region NOT IN (:hidden)) AND ('g:' || kind || ':' || groupName) NOT IN (:hidden)
             AND NOT ('scan:dead' IN (:hidden) AND id IN (SELECT itemId FROM channel_scan WHERE hidden = 1)) AND (:adult OR adult = 0)
+            $KIDS_ONLY
             AND NOT ('placeholder' IN (:hidden) AND kind = 0
                 AND ((' ' || searchName) GLOB '* no event*' OR (' ' || searchName) GLOB '* no live event*'))
             AND NOT ('247' IN (:hidden) AND kind = 0
@@ -347,6 +442,7 @@ interface ItemDao {
         WHERE i.kind = 0
             AND (i.region IS NULL OR i.region NOT IN (:hidden)) AND ('g:' || i.kind || ':' || i.groupName) NOT IN (:hidden)
             AND (:adult OR i.adult = 0)
+            $KIDS_ONLY_I
             AND (nameMatch OR guideMatch)
         ORDER BY i.sortOrder
         LIMIT 500
@@ -383,6 +479,7 @@ interface ItemDao {
                     OR (' ' || lower(i.groupName || ' ' || i.name) || ' ') GLOB '*[^0-9]247[^0-9]*'
                     OR (' ' || lower(i.groupName || ' ' || i.name) || ' ') GLOB '*[^0-9]24 / 7[^0-9]*'))
             AND (:adult OR i.adult = 0)
+            $KIDS_ONLY_I
         ORDER BY i.sortOrder
         LIMIT 200
         """,
@@ -430,6 +527,7 @@ interface ItemDao {
             )
             AND (i.region IS NULL OR i.region NOT IN (:hidden)) AND ('g:' || i.kind || ':' || i.groupName) NOT IN (:hidden)
             AND (:adult OR i.adult = 0)
+            $KIDS_ONLY_I
         ORDER BY p.start, i.sortOrder
         LIMIT 20000
         """,
@@ -488,35 +586,42 @@ interface ProgrammeDao {
     suspend fun count(): Int
 }
 
+/** The person's own lists, each for the profile in use ([ME]): writes stamp it, reads and deletes keep to it. */
 @Dao
 interface LibraryDao {
-    @Upsert
-    suspend fun addFavourite(favourite: FavouriteEntity)
+    @Query("SELECT profileId FROM current_profile")
+    suspend fun currentProfile(): Long?
 
-    @Query("DELETE FROM favourites WHERE itemId = :itemId")
+    @Upsert
+    suspend fun upsertFavourite(favourite: FavouriteEntity)
+
+    @Transaction
+    suspend fun addFavourite(favourite: FavouriteEntity) = upsertFavourite(favourite.copy(profileId = currentProfile() ?: Profiles.FIRST))
+
+    @Query("DELETE FROM favourites WHERE itemId = :itemId AND profileId = $ME")
     suspend fun removeFavourite(itemId: Long)
 
-    @Query("SELECT * FROM favourites")
+    @Query("SELECT * FROM favourites WHERE profileId = $ME")
     suspend fun allFavourites(): List<FavouriteEntity>
 
-    @Query("SELECT itemId FROM favourites")
+    @Query("SELECT itemId FROM favourites WHERE profileId = $ME")
     fun favouriteIds(): Flow<List<Long>>
 
-    @Query("SELECT EXISTS(SELECT 1 FROM favourites WHERE itemId = :itemId)")
+    @Query("SELECT EXISTS(SELECT 1 FROM favourites WHERE itemId = :itemId AND profileId = $ME)")
     fun isFavourite(itemId: Long): Flow<Boolean>
 
     /** Favourite channels in the order they're shown, for Settings › Order favourites. */
     @Query(
         """
         SELECT i.id, i.name, i.logo, i.tvgId FROM favourites f JOIN items i ON i.id = f.itemId
-        WHERE i.kind = 0
+        WHERE i.kind = 0 AND f.profileId = $ME
         GROUP BY i.id
         ORDER BY f.position, i.sortOrder
         """,
     )
     fun favouriteChannels(): Flow<List<FavouriteRow>>
 
-    @Query("UPDATE favourites SET position = :position WHERE itemId = :itemId")
+    @Query("UPDATE favourites SET position = :position WHERE itemId = :itemId AND profileId = $ME")
     suspend fun setFavouritePosition(
         itemId: Long,
         position: Long,
@@ -529,19 +634,22 @@ interface LibraryDao {
     }
 
     @Upsert
-    suspend fun saveProgress(history: HistoryEntity)
+    suspend fun upsertProgress(history: HistoryEntity)
 
-    @Query("SELECT * FROM history WHERE itemId = :itemId")
+    @Transaction
+    suspend fun saveProgress(history: HistoryEntity) = upsertProgress(history.copy(profileId = currentProfile() ?: Profiles.FIRST))
+
+    @Query("SELECT * FROM history WHERE itemId = :itemId AND profileId = $ME")
     suspend fun progress(itemId: Long): HistoryEntity?
 
-    @Query("SELECT * FROM history WHERE itemId IN (:ids)")
+    @Query("SELECT * FROM history WHERE itemId IN (:ids) AND profileId = $ME")
     fun progressFor(ids: List<Long>): Flow<List<HistoryEntity>>
 
-    @Query("DELETE FROM history")
+    @Query("DELETE FROM history WHERE profileId = $ME")
     suspend fun clearHistory()
 
     /** Films and episodes counted as watched: played to the end, or marked by hand. */
-    @Query("SELECT itemId FROM history WHERE durationMs > 0 AND positionMs >= durationMs * 92 / 100")
+    @Query("SELECT itemId FROM history WHERE profileId = $ME AND durationMs > 0 AND positionMs >= durationMs * 92 / 100")
     fun watchedIds(): Flow<List<Long>>
 
     /** Marks [ids] watched without playing them: a finished entry, so they leave Continue Watching too. */
@@ -555,10 +663,10 @@ interface LibraryDao {
     }
 
     /** Back to unwatched: forgets where they got to. */
-    @Query("DELETE FROM history WHERE itemId IN (:ids)")
+    @Query("DELETE FROM history WHERE itemId IN (:ids) AND profileId = $ME")
     suspend fun markUnwatched(ids: List<Long>)
 
-    @Query("DELETE FROM favourites")
+    @Query("DELETE FROM favourites WHERE profileId = $ME")
     suspend fun clearFavourites()
 
     @Query("SELECT * FROM channel_health WHERE itemId = :itemId")
@@ -566,6 +674,59 @@ interface LibraryDao {
 
     @Upsert
     suspend fun saveHealth(health: ChannelHealthEntity)
+}
+
+/** Who watches: the profiles, and which one is in use (one row in `current_profile`). */
+@Dao
+interface ProfileDao {
+    @Query("SELECT * FROM profiles ORDER BY id")
+    fun all(): Flow<List<ProfileEntity>>
+
+    @Query("SELECT * FROM profiles ORDER BY id")
+    suspend fun allNow(): List<ProfileEntity>
+
+    @Query("SELECT * FROM profiles WHERE id = :id")
+    suspend fun get(id: Long): ProfileEntity?
+
+    @Query("SELECT p.* FROM profiles p JOIN current_profile c ON c.profileId = p.id")
+    fun current(): Flow<ProfileEntity?>
+
+    @Query("SELECT p.* FROM profiles p JOIN current_profile c ON c.profileId = p.id")
+    suspend fun currentNow(): ProfileEntity?
+
+    @Insert
+    suspend fun insert(profile: ProfileEntity): Long
+
+    @Update
+    suspend fun update(profile: ProfileEntity)
+
+    @Upsert
+    suspend fun setCurrent(row: CurrentProfileEntity)
+
+    @Query("DELETE FROM profiles WHERE id = :id")
+    suspend fun deleteRow(id: Long)
+
+    @Query("DELETE FROM favourites WHERE profileId = :id")
+    suspend fun deleteFavourites(id: Long)
+
+    @Query("DELETE FROM history WHERE profileId = :id")
+    suspend fun deleteHistory(id: Long)
+
+    @Query("DELETE FROM watch_later WHERE profileId = :id")
+    suspend fun deleteWatchLater(id: Long)
+
+    @Query("DELETE FROM seen_episodes WHERE profileId = :id")
+    suspend fun deleteSeen(id: Long)
+
+    /** Removes a profile and everything it kept. The caller has moved off it first. */
+    @Transaction
+    suspend fun delete(id: Long) {
+        deleteFavourites(id)
+        deleteHistory(id)
+        deleteWatchLater(id)
+        deleteSeen(id)
+        deleteRow(id)
+    }
 }
 
 @Dao
@@ -654,26 +815,41 @@ interface MetadataDao {
 
 @Dao
 interface WatchLaterDao {
-    @Upsert
-    suspend fun add(row: WatchLaterEntity)
+    @Query("SELECT profileId FROM current_profile")
+    suspend fun currentProfile(): Long?
 
-    @Query("DELETE FROM watch_later WHERE `key` = :key")
+    @Upsert
+    suspend fun upsert(row: WatchLaterEntity)
+
+    @Transaction
+    suspend fun add(row: WatchLaterEntity) = upsert(row.copy(profileId = currentProfile() ?: Profiles.FIRST))
+
+    @Query("DELETE FROM watch_later WHERE `key` = :key AND profileId = $ME")
     suspend fun remove(key: String)
 
-    @Query("SELECT * FROM watch_later ORDER BY addedAt DESC")
+    @Query("SELECT * FROM watch_later WHERE profileId = $ME ORDER BY addedAt DESC")
     fun all(): Flow<List<WatchLaterEntity>>
 
-    @Query("SELECT `key` FROM watch_later")
+    @Query("SELECT `key` FROM watch_later WHERE profileId = $ME")
     fun keys(): Flow<List<String>>
 }
 
 @Dao
 interface SeenEpisodeDao {
-    @Query("SELECT itemId FROM seen_episodes WHERE showKey = :showKey")
+    @Query("SELECT profileId FROM current_profile")
+    suspend fun currentProfile(): Long?
+
+    @Query("SELECT itemId FROM seen_episodes WHERE showKey = :showKey AND profileId = $ME")
     suspend fun seen(showKey: String): List<Long>
 
     @Insert(onConflict = OnConflictStrategy.IGNORE)
-    suspend fun add(rows: List<SeenEpisodeEntity>)
+    suspend fun insert(rows: List<SeenEpisodeEntity>)
+
+    @Transaction
+    suspend fun add(rows: List<SeenEpisodeEntity>) {
+        val me = currentProfile() ?: Profiles.FIRST
+        insert(rows.map { it.copy(profileId = me) })
+    }
 }
 
 @Dao
@@ -748,13 +924,14 @@ interface ShowDao {
         """
         SELECT s.showKey, MIN(s.showName) AS showName, MAX(s.logo) AS logo, MIN(s.groupName) AS groupName,
             SUM(s.episodes) AS episodes,
-            CASE WHEN s.showKey IN (SELECT showKey FROM seen_episodes) THEN (
+            CASE WHEN s.showKey IN (SELECT showKey FROM seen_episodes WHERE profileId = $ME) THEN (
                 SELECT COUNT(*) FROM items e
-                WHERE e.kind = 2 AND e.showKey = s.showKey AND e.id NOT IN (SELECT itemId FROM seen_episodes)
+                WHERE e.kind = 2 AND e.showKey = s.showKey AND e.id NOT IN (SELECT itemId FROM seen_episodes WHERE profileId = $ME)
             ) ELSE 0 END AS newEpisodes
         FROM show_groups s
         WHERE (s.region IS NULL OR s.region NOT IN (:hidden)) AND ('g:2:' || s.groupName) NOT IN (:hidden)
             AND (:adult OR s.adult = 0)
+            $KIDS_ONLY_S
             AND (:group IS NULL OR s.groupName = :group)
         GROUP BY s.showKey
         ORDER BY MIN(s.sortOrder)
@@ -774,6 +951,7 @@ interface ShowDao {
         """
         SELECT groupName, SUM(episodes) AS count FROM show_groups
         WHERE (region IS NULL OR region NOT IN (:hidden)) AND ('g:2:' || groupName) NOT IN (:hidden) AND (:adult OR adult = 0)
+            $KIDS_ONLY_GROUPS
         GROUP BY groupName ORDER BY MIN(sortOrder)
         """,
     )
@@ -827,7 +1005,7 @@ private const val CHANNEL_FILTER =
         "AND NOT ('247' IN (:hidden) AND ((' ' || lower(i.groupName || ' ' || i.name) || ' ') GLOB '*[^0-9]24[/ x-]7[^0-9]*' " +
         "OR (' ' || lower(i.groupName || ' ' || i.name) || ' ') GLOB '*[^0-9]247[^0-9]*' " +
         "OR (' ' || lower(i.groupName || ' ' || i.name) || ' ') GLOB '*[^0-9]24 / 7[^0-9]*')) " +
-        "AND (:adult OR i.adult = 0) AND (:group IS NULL OR i.groupName = :group) " +
+        "AND (:adult OR i.adult = 0) $KIDS_ONLY_I AND (:group IS NULL OR i.groupName = :group) " +
         "AND (:query = '' OR i.id IN (SELECT docid FROM items_fts WHERE items_fts MATCH :match) OR i.tvgId IN (" +
         // An event search ("UFC") also finds the channels showing it now or within the hour.
         "SELECT channelId FROM programmes WHERE start > :now - 86400000 AND start < :now + 3600000 AND stop > :now " +
