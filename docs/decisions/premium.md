@@ -7,6 +7,7 @@ Tuned is free with no ads, and a Premium unlock covers the power features. Melvi
 - **`github`** is what GitHub Releases ship (`release.yml` builds `assembleGithubRelease`). It updates itself from GitHub ([updates](updates.md)), fills in the default server at sign-in, and has every Premium feature unlocked, so Melvin's copies and everyone already on the GitHub releases lose nothing.
 - **`play`** is for Google Play and later other stores (`release.yml` builds `bundlePlayRelease` for the internal track). It drops `REQUEST_INSTALL_PACKAGES` and the GitHub updater, because stores update the app themselves and Play doesn't allow the permission, and the server field starts empty.
 - Both share the application id `app.tuned` and the upload key, so one can replace the other.
+- **Release › Run workflow › Signed store bundle only** builds the signed `play` bundle as the `tuned-release-aab` artifact without a GitHub release, so a build can go to a Play testing track without a production release. Play only lets you create in-app products once it has seen a build with Play Billing, and the first upload is by hand (2026-11-18).
 - `BuildConfig.GITHUB_UPDATES` and `BuildConfig.DEFAULT_SERVER` are the only differences in code; anything new that differs gets its own `BuildConfig` field in `app/build.gradle.kts`.
 
 ## Store policy
