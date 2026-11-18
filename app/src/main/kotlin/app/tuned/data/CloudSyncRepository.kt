@@ -28,7 +28,7 @@ class CloudSyncRepository(
     /** A pulled copy signed this device in: start its first download. */
     private val onSignedIn: () -> Unit,
 ) {
-    enum class Problem { NONE, OFFLINE, PASSPHRASE }
+    enum class Problem { NONE, OFFLINE, PASSPHRASE, DRIVE_API_OFF }
 
     data class Status(
         val lastSyncAt: Long,
@@ -84,6 +84,10 @@ class CloudSyncRepository(
         } catch (_: PassphraseCrypto.WrongPassphrase) {
             AppLog.w(TAG, "The sync passphrase doesn't open the copy in Drive")
             statusFlow.value = statusFlow.value.copy(problem = Problem.PASSPHRASE)
+            true
+        } catch (e: GoogleDrive.DriveApiOff) {
+            AppLog.w(TAG, "Google Drive turned the request down", e)
+            statusFlow.value = statusFlow.value.copy(problem = Problem.DRIVE_API_OFF)
             true
         } catch (e: IOException) {
             AppLog.w(TAG, "Couldn't sync with Google Drive", e)

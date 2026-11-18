@@ -19,8 +19,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
 import androidx.lifecycle.AndroidViewModel
@@ -34,6 +32,8 @@ import app.tuned.data.CloudSyncRepository
 import app.tuned.data.GoogleDrive
 import app.tuned.diagnostics.launchSafely
 import app.tuned.diagnostics.startActivitySafely
+import app.tuned.premium.LockedRow
+import app.tuned.premium.premiumUnlocked
 import app.tuned.work.CloudSyncWorker
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -59,7 +59,7 @@ class CloudSyncViewModel(
         ) : SignIn
 
         data class Ended(
-            val result: CloudSync.Poll,
+            val failure: CloudSync.Failure,
         ) : SignIn
     }
 
@@ -71,16 +71,16 @@ class CloudSyncViewModel(
         job?.cancel()
         signInFlow.value = SignIn.Asking
         job =
-            viewModelScope.launchSafely(TAG, onError = { signInFlow.value = SignIn.Ended(CloudSync.Poll.FAILED) }) {
-                val code = drive.requestCode()
+            viewModelScope.launchSafely(TAG, onError = { signInFlow.value = SignIn.Ended(CloudSync.failure(null, null, null)) }) {
+                val answer = drive.requestCode()
+                val code = answer.code
                 if (code == null) {
-                    signInFlow.value = SignIn.Ended(CloudSync.Poll.FAILED)
+                    signInFlow.value = SignIn.Ended(answer.failure ?: CloudSync.failure(null, null, null))
                     return@launchSafely
                 }
                 signInFlow.value = SignIn.Code(code)
-                val result = drive.awaitSignIn(code)
-                // Signed in: straight on to the passphrase, so the dialog closes and that one opens.
-                signInFlow.value = if (result == CloudSync.Poll.SIGNED_IN) null else SignIn.Ended(result)
+                // Signed in (no failure): straight on to the passphrase, so the dialog closes and that one opens.
+                signInFlow.value = drive.awaitSignIn(code)?.let { SignIn.Ended(it) }
             }
     }
 
@@ -120,6 +120,11 @@ fun CloudSyncRows(vm: CloudSyncViewModel = viewModel()) {
     var askPassphrase by remember { mutableStateOf(false) }
     SectionHeader(stringResource(R.string.cloud_sync))
     when {
+        // Sync is Premium (docs/decisions/premium.md).
+        !signedIn && !premiumUnlocked() -> {
+            LockedRow(stringResource(R.string.cloud_sync_start))
+        }
+
         !signedIn -> {
             SettingRow(
                 stringResource(R.string.cloud_sync_start),
@@ -161,6 +166,10 @@ private fun statusText(status: CloudSyncRepository.Status): String = when {
         stringResource(R.string.cloud_sync_offline)
     }
 
+    status.problem == CloudSyncRepository.Problem.DRIVE_API_OFF -> {
+        stringResource(R.string.cloud_sync_drive_api_off)
+    }
+
     status.lastSyncAt == 0L -> {
         stringResource(R.string.cloud_sync_never)
     }
@@ -171,6 +180,17 @@ private fun statusText(status: CloudSyncRepository.Status): String = when {
             DateUtils.getRelativeDateTimeString(context, status.lastSyncAt, DateUtils.MINUTE_IN_MILLIS, DateUtils.WEEK_IN_MILLIS, 0)
         stringResource(R.string.cloud_sync_last, time)
     }
+}
+
+private fun failureText(reason: CloudSync.Reason): Int = when (reason) {
+    CloudSync.Reason.OFFLINE -> R.string.cloud_sync_failed
+    CloudSync.Reason.EXPIRED -> R.string.cloud_sync_expired
+    CloudSync.Reason.DENIED -> R.string.cloud_sync_denied
+    CloudSync.Reason.UNKNOWN_CLIENT -> R.string.cloud_sync_unknown_client
+    CloudSync.Reason.WRONG_CLIENT_TYPE -> R.string.cloud_sync_wrong_client_type
+    CloudSync.Reason.WRONG_SECRET -> R.string.cloud_sync_wrong_secret
+    CloudSync.Reason.SCOPE_NOT_ALLOWED -> R.string.cloud_sync_scope
+    CloudSync.Reason.OTHER -> R.string.cloud_sync_other
 }
 
 @Composable
@@ -193,27 +213,21 @@ private fun SignInDialog(
                     Column {
                         Text(stringResource(R.string.cloud_sync_enter_code, state.code.verificationUrl.removePrefix("https://")))
                         Spacer(Modifier.height(16.dp))
-                        Text(
-                            state.code.userCode,
-                            style = MaterialTheme.typography.headlineMedium,
-                            fontFamily = FontFamily.Monospace,
-                            fontWeight = FontWeight.Bold,
-                        )
+                        SignInCode(state.code.userCode)
                         Spacer(Modifier.height(16.dp))
                         Text(stringResource(R.string.cloud_sync_waiting), style = MaterialTheme.typography.bodySmall)
                     }
                 }
 
                 is CloudSyncViewModel.SignIn.Ended -> {
-                    Text(
-                        stringResource(
-                            when (state.result) {
-                                CloudSync.Poll.EXPIRED -> R.string.cloud_sync_expired
-                                CloudSync.Poll.DENIED -> R.string.cloud_sync_denied
-                                else -> R.string.cloud_sync_failed
-                            },
-                        ),
-                    )
+                    Column {
+                        Text(stringResource(failureText(state.failure.reason)))
+                        // Google's own words, so a setup problem on Google's side can be told from a network one.
+                        state.failure.detail?.let {
+                            Spacer(Modifier.height(12.dp))
+                            Text(stringResource(R.string.cloud_sync_google_said, it), style = MaterialTheme.typography.bodySmall)
+                        }
+                    }
                 }
             }
         },

@@ -1,5 +1,6 @@
 package app.tuned.core
 
+import java.text.Collator
 import java.util.Locale
 
 /**
@@ -227,6 +228,18 @@ object Regions {
         ?: language(tvgLanguage)
 
     fun displayName(region: String): String = names[region] ?: region
+
+    /**
+     * Regions in A to Z order of the name people read ("Canada" before "France"), not by how many streams each has
+     * (Melvin, 2026-11-18). Accents and case don't change the order, and two tags with the same name fall back to the tag.
+     */
+    fun <T> sortedByName(
+        items: List<T>,
+        region: (T) -> String,
+    ): List<T> {
+        val collator = Collator.getInstance(Locale.ENGLISH).apply { strength = Collator.PRIMARY }
+        return items.sortedWith(compareBy(collator) { item: T -> displayName(region(item)) }.thenBy { region(it) })
+    }
 
     /** A tag providers use for a country or language, such as US, UK, EN or USA. */
     fun isKnown(tag: String): Boolean = tag.uppercase() in known

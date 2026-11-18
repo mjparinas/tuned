@@ -13,8 +13,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyListScope
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
@@ -32,29 +30,20 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import app.tuned.R
 import app.tuned.data.Recordings.Recording
 import app.tuned.ui.common.focusRing
 import coil3.compose.AsyncImage
 
-/** Recordings of live channels on the Downloads page, newest first: a tap plays one, the bin deletes it. */
-internal fun LazyListScope.recordings(
-    list: List<Recording>,
-    title: @Composable () -> Unit,
-    onPlay: (Recording) -> Unit,
-    onDelete: (Recording) -> Unit,
-) {
-    if (list.isEmpty()) return
-    item(key = "recordings") { title() }
-    items(list, key = { "recording:${it.id}" }) { r -> RecordingRow(r, onPlay, onDelete) }
-}
-
+/** A recording of a live channel on the Downloads page, newest first: a tap plays it, the bin deletes it. */
 @Composable
-private fun RecordingRow(
+internal fun RecordingRow(
     r: Recording,
     onPlay: (Recording) -> Unit,
     onDelete: (Recording) -> Unit,
+    inset: Dp = 16.dp,
 ) {
     val context = LocalContext.current
     Row(
@@ -62,7 +51,7 @@ private fun RecordingRow(
             .fillMaxWidth()
             .focusRing(RectangleShape, MaterialTheme.colorScheme.primary)
             .clickable { onPlay(r) }
-            .padding(start = 16.dp, end = 4.dp, top = 8.dp, bottom = 8.dp),
+            .padding(start = inset, end = 4.dp, top = 8.dp, bottom = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Box(

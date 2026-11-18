@@ -49,6 +49,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -176,6 +177,7 @@ fun ProfilesScreen(
     val askAtStart by vm.askAtStart.collectAsStateWithLifecycle()
     val list = profiles ?: return
     val kidsNow = current?.kids == true
+    val context = LocalContext.current
     var managing by remember { mutableStateOf(!atStart && list.size == 1) }
     var ask by remember { mutableStateOf<PinAsk?>(null) }
     var editing by remember { mutableStateOf<ProfileEntity?>(null) }
@@ -250,7 +252,10 @@ fun ProfilesScreen(
             }
             if (!kidsNow && managing) {
                 item(key = "add") {
-                    AddTile(onClick = { editing = newProfile(list.size) })
+                    AddTile(onClick = {
+                        // A second profile is Premium (docs/decisions/premium.md).
+                        if (list.isEmpty() || context.container.premium.allow(context)) editing = newProfile(list.size)
+                    })
                 }
             }
             if (managing && list.size > 1) {

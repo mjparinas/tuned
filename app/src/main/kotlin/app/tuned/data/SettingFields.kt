@@ -107,6 +107,7 @@ internal val SETTING_FIELDS: List<SettingField<*, *>> =
         bool("show_guide_in_list", { showGuideInList }) { copy(showGuideInList = it) },
         bool("live_grid", { liveGrid }) { copy(liveGrid = it) },
         bool("channel_numbers", { channelNumbers }) { copy(channelNumbers = it) },
+        bool("always_show_scrollbar", { alwaysShowScrollbar }) { copy(alwaysShowScrollbar = it) },
         bool("start_on_last_channel", { startOnLastChannel }) { copy(startOnLastChannel = it) },
         bool("pull_to_refresh", { pullToRefresh }) { copy(pullToRefresh = it) },
         // What's hidden
