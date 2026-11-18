@@ -13,6 +13,8 @@ const val TARGET_PACKAGE = "app.tuned"
 private const val SIGN_IN_TIMEOUT_MS = 120_000L
 private const val SCREEN_TIMEOUT_MS = 15_000L
 private const val PLAY_MS = 3_000L
+private const val BACK_TRIES = 3
+private const val BACK_WAIT_MS = 3_000L
 
 /** Starts the fake provider with the clip from this test app's assets. */
 fun startFakeProvider() {
@@ -57,8 +59,20 @@ fun MacrobenchmarkScope.browseAndPlay() {
     anyChannel().click()
     device.waitForIdle()
     Thread.sleep(PLAY_MS)
-    device.pressBack()
+    leavePlayer()
     anyChannel()
+}
+
+/**
+ * Back out of the player. The first full-screen video shows Android's "Viewing full screen" note, which takes the
+ * first Back, so dismiss it and press again until the list shows.
+ */
+private fun MacrobenchmarkScope.leavePlayer() {
+    repeat(BACK_TRIES) {
+        device.findObject(By.text("GOT IT"))?.click()
+        device.pressBack()
+        if (device.wait(Until.hasObject(By.textStartsWith("Channel ")), BACK_WAIT_MS)) return
+    }
 }
 
 /** Whichever channel is on screen; the tabs are scrolled by now, so the first one may not be. */
