@@ -274,7 +274,9 @@ internal class CastCopy(
             if (decoderDone) return
             val index = decoder.dequeueOutputBuffer(info, TIMEOUT_US)
             when {
-                index == MediaCodec.INFO_OUTPUT_FORMAT_CHANGED -> startEncoder(decoder.outputFormat)
+                index == MediaCodec.INFO_OUTPUT_FORMAT_CHANGED -> {
+                    startEncoder(decoder.outputFormat)
+                }
 
                 index >= 0 -> {
                     if (info.size > 0) {
@@ -381,7 +383,9 @@ internal class CastCopy(
             }
             val index = enc.dequeueOutputBuffer(info, TIMEOUT_US)
             when {
-                index == MediaCodec.INFO_OUTPUT_FORMAT_CHANGED -> format = enc.outputFormat
+                index == MediaCodec.INFO_OUTPUT_FORMAT_CHANGED -> {
+                    format = enc.outputFormat
+                }
 
                 index >= 0 -> {
                     val isConfig = info.flags and MediaCodec.BUFFER_FLAG_CODEC_CONFIG != 0
