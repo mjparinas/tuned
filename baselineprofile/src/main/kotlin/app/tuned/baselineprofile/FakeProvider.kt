@@ -34,7 +34,8 @@ object FakeProvider {
         if (server != null) return
         val socket = ServerSocket()
         socket.reuseAddress = true
-        socket.bind(InetSocketAddress(InetAddress.getLoopbackAddress(), PORT))
+        // IPv4 on purpose: Android's getLoopbackAddress() is ::1, and the playlist's links say 127.0.0.1.
+        socket.bind(InetSocketAddress(InetAddress.getByName("127.0.0.1"), PORT))
         server = socket
         thread(isDaemon = true, name = "fake-provider") {
             while (!socket.isClosed) {
