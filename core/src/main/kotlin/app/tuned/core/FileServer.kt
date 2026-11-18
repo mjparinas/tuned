@@ -113,7 +113,9 @@ class FileServer(
                 respond(out, "404 Not Found", emptyMap())
             }
 
-            else -> sendFile(out, file, method == "HEAD", headers["range"])
+            else -> {
+                sendFile(out, file, method == "HEAD", headers["range"])
+            }
         }
         out.flush()
     }
