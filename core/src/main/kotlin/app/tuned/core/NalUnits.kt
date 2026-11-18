@@ -1,6 +1,7 @@
 package app.tuned.core
 
 import java.io.ByteArrayOutputStream
+import java.nio.ByteBuffer
 
 /**
  * H.264 and HEVC pictures as an MP4 holds them, for casting a saved file as a stream made on the fly ([Fmp4]).
@@ -31,9 +32,7 @@ object NalUnits {
         var at = 0
         while (at < data.size) {
             if (at + LENGTH_BYTES > data.size) return null
-            val size =
-                ((data[at].toLong() and 0xFF) shl 24) or ((data[at + 1].toLong() and 0xFF) shl 16) or
-                    ((data[at + 2].toLong() and 0xFF) shl 8) or (data[at + 3].toLong() and 0xFF)
+            val size = ByteBuffer.wrap(data, at, LENGTH_BYTES).int.toLong() and 0xFFFFFFFFL
             if (size <= 0 || at + LENGTH_BYTES + size > data.size) return null
             units += data.copyOfRange(at + LENGTH_BYTES, at + LENGTH_BYTES + size.toInt())
             at += LENGTH_BYTES + size.toInt()

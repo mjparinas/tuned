@@ -26,10 +26,11 @@ internal class SoundPieces(
     private val track: Int,
     private val format: MediaFormat,
 ) : Closeable {
-    private val ex = MediaExtractor().apply {
-        setDataSource(source.path)
-        selectTrack(track)
-    }
+    private val ex =
+        MediaExtractor().apply {
+            setDataSource(source.path)
+            selectTrack(track)
+        }
     private var decoder: MediaCodec? = null
     private var encoder: MediaCodec? = null
     private val info = MediaCodec.BufferInfo()

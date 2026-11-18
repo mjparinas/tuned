@@ -346,7 +346,11 @@ object Fmp4 {
         body: Writer.() -> Unit,
     ): ByteArray {
         val content = Writer().apply(body).toByteArray()
-        return Writer().u32((BOX_HEADER + content.size).toLong()).ascii(type).bytes(content).toByteArray()
+        return Writer()
+            .u32((BOX_HEADER + content.size).toLong())
+            .ascii(type)
+            .bytes(content)
+            .toByteArray()
     }
 
     private fun fullBox(

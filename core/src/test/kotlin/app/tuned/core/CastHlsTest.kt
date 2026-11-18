@@ -1,5 +1,6 @@
 package app.tuned.core
 
+import java.nio.ByteBuffer
 import kotlin.test.Test
 import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
@@ -59,15 +60,16 @@ class CastHlsTest {
     @Test
     fun anHevcSetupIsReadForProfileLevelAndBitDepth() {
         // VPS, SPS and PPS of a 10-bit 640x360 clip from x265 (Main 10, level 2.1).
-        val csd0 = hex("0000000140010c01ffff02200000030090000003000003003f959809") +
-            hex("000000014201010220000003009000000300000300" + "3fa005020169365959a4932bc05a020000030002000003003010") +
-            hex("000000014401c172b46240")
-        val sps = NalUnits.hevcSps(NalUnits.split(csd0)[1])
-        assertEquals(2, sps.profile) // Main 10
-        assertEquals(63, sps.level)
-        assertEquals(1, sps.chromaFormat)
-        assertEquals(10, sps.lumaBitDepth)
-        assertEquals(10, sps.chromaBitDepth)
+        val vps = "0000000140010c01ffff02200000030090000003000003003f959809"
+        val sps = "0000000142010102200000030090000003000003003fa005020169365959a4932bc05a020000030002000003003010"
+        val pps = "000000014401c172b46240"
+        val csd0 = hex(vps + sps + pps)
+        val read = NalUnits.hevcSps(NalUnits.split(csd0)[1])
+        assertEquals(2, read.profile) // Main 10
+        assertEquals(63, read.level)
+        assertEquals(1, read.chromaFormat)
+        assertEquals(10, read.lumaBitDepth)
+        assertEquals(10, read.chromaBitDepth)
         val hvcC = NalUnits.hvcC(csd0)
         assertEquals(1, hvcC[0].toInt())
         assertEquals(2, hvcC[1].toInt() and 0x1F)
@@ -114,8 +116,7 @@ class CastHlsTest {
     private fun int(
         b: ByteArray,
         at: Int,
-    ): Int = ((b[at].toInt() and 0xFF) shl 24) or ((b[at + 1].toInt() and 0xFF) shl 16) or
-        ((b[at + 2].toInt() and 0xFF) shl 8) or (b[at + 3].toInt() and 0xFF)
+    ): Int = ByteBuffer.wrap(b, at, 4).int
 
     /** Where each box of [type] starts, found by its name. */
     private fun find(

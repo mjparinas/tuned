@@ -42,8 +42,14 @@ internal class CastStream private constructor(
     override fun type(file: String): String = CastHls.mimeFor(file)
 
     override fun bytes(file: String): ByteArray? = when (file) {
-        CastHls.PLAYLIST -> playlist
-        CastHls.INIT -> init
+        CastHls.PLAYLIST -> {
+            playlist
+        }
+
+        CastHls.INIT -> {
+            init
+        }
+
         else -> {
             CastHls.pieceIndex(file)?.takeIf { it < starts.size }?.let { k ->
                 // A failure is logged and the TV told there is no such piece, rather than stopping the server.
