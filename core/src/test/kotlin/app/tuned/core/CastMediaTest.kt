@@ -2,7 +2,9 @@ package app.tuned.core
 
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 class CastMediaTest {
     @Test
@@ -26,6 +28,14 @@ class CastMediaTest {
         )
         assertEquals("application/x-mpegURL", CastMedia.forCast("https://cdn.example/a/b/index.m3u8?token=1", live = true).mimeType)
         assertEquals("video/*", CastMedia.forCast("https://cdn.example/stream", live = true).mimeType)
+    }
+
+    @Test
+    fun aSavedFileStreamedFromThePhoneIsHlsInMp4Pieces() {
+        val media = CastMedia.phoneStream("http://192.168.0.71:4000/k/42/index.m3u8")
+        assertEquals("application/x-mpegURL", media.mimeType)
+        assertTrue(media.fmp4)
+        assertFalse(CastMedia.forCast("http://tv.example/u/p/9", live = true).fmp4)
     }
 
     @Test

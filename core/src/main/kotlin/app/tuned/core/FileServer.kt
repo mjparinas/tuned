@@ -22,13 +22,15 @@ import java.util.concurrent.atomic.AtomicInteger
  * or DLNA TV asks for when it starts and seeks.
  *
  * Only files [share]d are served, each under a path with a random part, so another device on the network can't guess
- * one. One request per connection keeps it simple; TVs open a new one for each range.
+ * one; files a stream makes as the TV asks for them ([Made]) are served the same way. One request per connection
+ * keeps it simple; TVs open a new one for each range.
  */
 class FileServer(
     private val log: (String) -> Unit = {},
 ) : Closeable {
     private val socket = ServerSocket(0)
     private val files = ConcurrentHashMap<String, File>()
+    private val made = ConcurrentHashMap<String, Made>()
     private val key = randomKey()
     private val handlers = AtomicInteger()
 
@@ -45,8 +47,33 @@ class FileServer(
         return path
     }
 
+    /** Files that are made when asked for, such as a stream's playlist and pieces ([CastHls]). */
+    interface Made {
+        /** The bytes of [file], or null when there is no such file. Called on the request's own thread. */
+        fun bytes(file: String): ByteArray?
+
+        fun type(file: String): String
+    }
+
+    /** Serves [source]'s files and returns the folder they are under on this server, such as `/k3x…/42/`. */
+    fun share(
+        name: String,
+        source: Made,
+    ): String {
+        val folder = "/$key/" + URLEncoder.encode(name, Charsets.UTF_8).replace("+", "%20") + "/"
+        made[folder] = source
+        return folder
+    }
+
+    /** Stops serving what [share] returned [path] for. */
+    fun unshare(path: String) {
+        files.remove(path)
+        made.remove(path)
+    }
+
     override fun close() {
         files.clear()
+        made.clear()
         try {
             socket.close()
         } catch (e: IOException) {
@@ -99,6 +126,8 @@ class FileServer(
         val path = parts.getOrNull(1).orEmpty().substringBefore('?')
         val out = BufferedOutputStream(client.getOutputStream(), BUFFER)
         val file = files[path]?.takeIf { it.isFile }
+        val folder = path.substringBeforeLast('/') + "/"
+        val source = if (file == null) made[folder] else null
         when {
             method == "OPTIONS" -> {
                 respond(out, "204 No Content", emptyMap())
@@ -106,6 +135,10 @@ class FileServer(
 
             method != "GET" && method != "HEAD" -> {
                 respond(out, "405 Method Not Allowed", emptyMap())
+            }
+
+            source != null -> {
+                sendMade(out, source, path.substringAfterLast('/'), method == "HEAD", headers["range"])
             }
 
             file == null -> {
@@ -153,6 +186,42 @@ class FileServer(
         }
     }
 
+    private fun sendMade(
+        out: OutputStream,
+        source: Made,
+        name: String,
+        headOnly: Boolean,
+        rangeHeader: String?,
+    ) {
+        val started = System.nanoTime()
+        val bytes =
+            try {
+                source.bytes(name)
+            } catch (e: IllegalStateException) {
+                log("Couldn't make $name: $e")
+                return respond(out, "500 Internal Server Error", emptyMap())
+            } catch (e: IllegalArgumentException) {
+                log("Couldn't make $name: $e")
+                return respond(out, "500 Internal Server Error", emptyMap())
+            }
+        if (bytes == null) {
+            log("Asked for $name, which isn't part of the stream")
+            return respond(out, "404 Not Found", emptyMap())
+        }
+        val length = bytes.size.toLong()
+        val type = mapOf("Content-Type" to source.type(name), "Cache-Control" to "no-cache")
+        val range = ByteRanges.parse(rangeHeader, length)
+        if (range == ByteRanges.UNSATISFIABLE) {
+            return respond(out, "416 Range Not Satisfiable", type + ("Content-Range" to "bytes */$length"))
+        }
+        val (start, end) = range ?: (0L to length - 1)
+        val count = (end - start + 1).coerceAtLeast(0)
+        val contentRange = if (range != null) mapOf("Content-Range" to "bytes $start-$end/$length") else emptyMap()
+        log("${if (headOnly) "HEAD" else "GET"} $name: $length bytes, made in ${(System.nanoTime() - started) / NS_PER_MS} ms")
+        respond(out, if (range != null) "206 Partial Content" else "200 OK", type + ("Content-Length" to count.toString()) + contentRange)
+        if (!headOnly && count > 0) out.write(bytes, start.toInt(), count.toInt())
+    }
+
     private fun respond(
         out: OutputStream,
         status: String,
@@ -198,6 +267,7 @@ class FileServer(
         const val MAX_LINE = 8 * 1024
         const val MAX_HANDLERS = 16
         const val KEY_BYTES = 12
+        const val NS_PER_MS = 1_000_000L
 
         fun randomKey(): String {
             val bytes = ByteArray(KEY_BYTES).also { SecureRandom().nextBytes(it) }
