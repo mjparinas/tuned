@@ -21,3 +21,5 @@
 **Shows, then seasons, then episodes** (Melvin, 2026-11-17: "if it's a TV show, it should just show that one show with the TV show poster", then its seasons, then its episodes "with screenshots"). The Downloads page lists each show once with its poster (the one on the Shows tab) and a line such as "5 episodes · 1.7 GB · 2 downloading". A tap opens its seasons, each with the picture of its first episode; a tap on a season opens its episodes in order, each with its screenshot, playing on a tap or showing progress, pause and cancel. Back goes up one level. Films are listed under Movies with their own controls, those on their way first. An episode whose show has left the playlist is listed with the films. Shows still downloading come first, then the most recently saved.
 
 **Space** (Melvin, 2026-11-17). The top of the page says how much the downloads take and how much space is left on the device, with a bar.
+
+**Recordings** (2026-11-17) of live channels sit in their own part of the Downloads page, under the films; see [Player › Recording](player.md#recording-2026-11-17).

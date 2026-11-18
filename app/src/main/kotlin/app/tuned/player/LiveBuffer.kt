@@ -37,6 +37,19 @@ internal class LiveBuffer(
     private var nextDiscontinuity = false
     private var out: FileOutputStream? = null
     private var segmenter = newSegmenter()
+    private var recording: Recorder? = null
+
+    /** Where a recording ([LiveRecorder]) gets the channel's bytes, on the same connection as the player. */
+    interface Recorder {
+        fun write(
+            data: ByteArray,
+            offset: Int,
+            length: Int,
+        )
+
+        /** The channel changed or the player closed: the recording is over. */
+        fun end()
+    }
 
     /** The stream being kept, or null before the first one. */
     @Volatile
@@ -55,6 +68,7 @@ internal class LiveBuffer(
 
     /** Starts afresh for another channel: everything kept so far is deleted. */
     fun reset(uri: Uri) = synchronized(lock) {
+        stopRecording()
         closePiece()
         dir.listFiles()?.forEach { it.delete() }
         dir.mkdirs()
@@ -78,9 +92,26 @@ internal class LiveBuffer(
         data: ByteArray,
         offset: Int,
         length: Int,
-    ) = synchronized(lock) { segmenter.feed(data, offset, length) }
+    ) = synchronized(lock) {
+        recording?.write(data, offset, length)
+        // Pause and rewind off: the stream still passes through, for recording, but nothing is kept.
+        if (keepMs > 0) segmenter.feed(data, offset, length)
+    }
+
+    /** Sends the channel's bytes to [r] from now on, until [stopRecording] or the channel changes. */
+    fun startRecording(r: Recorder) = synchronized(lock) {
+        stopRecording()
+        recording = r
+    }
+
+    fun stopRecording() = synchronized(lock) {
+        val r = recording ?: return@synchronized
+        recording = null
+        r.end()
+    }
 
     fun release() = synchronized(lock) {
+        stopRecording()
         closePiece()
         dir.deleteRecursively()
     }
