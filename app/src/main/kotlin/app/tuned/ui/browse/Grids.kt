@@ -53,6 +53,7 @@ import app.tuned.R
 import app.tuned.core.ContentKind
 import app.tuned.core.FastScroll
 import app.tuned.core.ScreenLayout
+import app.tuned.core.Titles
 import app.tuned.data.db.ContinueRow
 import app.tuned.data.db.ItemEntity
 import app.tuned.data.db.ShowSummary
@@ -104,7 +105,7 @@ internal fun MovieGrid(
                     val done = movie.id in watched
                     val saved = WatchLaterEntity.movieKey(movie.id) in later
                     Poster(
-                        title = movie.name,
+                        title = Titles.display(movie.name),
                         image = movie.logo,
                         favourite = favourite,
                         rating = rating,
@@ -159,7 +160,7 @@ internal fun ShowGrid(
                 } else {
                     val rating by produceState<Double?>(null, show.showName) { value = vm.rating(show.showName, tv = true) }
                     Poster(
-                        title = show.showName,
+                        title = Titles.display(show.showName),
                         image = show.logo,
                         rating = rating,
                         subtitle =
@@ -261,15 +262,15 @@ private fun ContinueCard(
     val title =
         when {
             row.showName != null && episodeName != null -> {
-                stringResource(R.string.continue_episode_named, row.showName, episodeName)
+                stringResource(R.string.continue_episode_named, Titles.display(row.showName), episodeName)
             }
 
             row.showName != null && row.season != null && row.episode != null -> {
-                stringResource(R.string.continue_episode, row.showName, row.season, row.episode)
+                stringResource(R.string.continue_episode, Titles.display(row.showName), row.season, row.episode)
             }
 
             else -> {
-                row.name
+                Titles.display(row.name)
             }
         }
     Column(

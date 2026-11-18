@@ -32,8 +32,11 @@ class RegionsTest {
     }
 
     @Test
-    fun `tvg-country wins and the channel name is the fallback`() {
-        assertEquals("CA", Regions.detect("US| News", "CA;US", "x"))
+    fun `the category's country wins over tvg-country, and the channel name is the fallback`() {
+        // The category is what people see and hide by (Melvin, 2026-11-18): "|EXYU| ..." hides with Ex-Yugoslavia.
+        assertEquals("US", Regions.detect("US| News", "CA;US", "x"))
+        assertEquals("EX", Regions.detect("|EXYU| STRANI FILMOVI", "HR", "Ex - R.M.N. (2022)"))
+        assertEquals("HR", Regions.detect("Filmovi", "HR", "x"))
         assertEquals("DE", Regions.detect("News", null, "DE: Das Erste"))
         assertEquals("Canada", Regions.displayName("CA"))
         assertEquals("ZZ", Regions.displayName("ZZ"))
@@ -65,6 +68,18 @@ class RegionsTest {
         assertEquals("DE", group("EUROPE | DE Sports"))
         assertEquals("ASIA", group("ASIA | Movies"))
         assertEquals("Asia", Regions.displayName("ASIA"))
+    }
+
+    @Test
+    fun `countries in their own language and the nordic area count`() {
+        assertEquals("SE", group("SVERIGE | Sport"))
+        assertEquals("SE", group("SVENSKA KANALER"))
+        assertEquals("NO", group("NORGE: Film"))
+        assertEquals("DK", group("DANMARK SPORT"))
+        assertEquals("SE", group("NORDIC | SE Viaplay"))
+        assertEquals("NORDIC", group("NORDIC FILM"))
+        assertEquals("NORDIC", group("SCANDINAVIA | Kids"))
+        assertEquals("SE", group("SWEDEN HIGHLIGHTS"))
     }
 
     @Test
@@ -105,7 +120,7 @@ class RegionsTest {
         assertEquals("US", Regions.detect("US| Movies", null, "IT: Chapter Two"))
         assertEquals("US", Regions.detect("US| Sports", null, "VIP | ESPN"))
         assertEquals("US", Regions.detect("US| Sports", null, "NFL | Week 1"))
-        // tvg-country still wins.
-        assertEquals("CA", Regions.detect("US| News", "CA", "HINDI| Aaj Tak"))
+        // The name's own tag beats tvg-country too, which now comes after the category.
+        assertEquals("IN", Regions.detect("US| News", "CA", "HINDI| Aaj Tak"))
     }
 }

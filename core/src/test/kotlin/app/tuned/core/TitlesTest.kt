@@ -19,4 +19,14 @@ class TitlesTest {
         assertEquals("ET", Titles.display("ET"))
         assertEquals("EN -", Titles.display("EN -"))
     }
+
+    @Test
+    fun `ex-yu and space-separated country tags come off`() {
+        assertEquals("Dogtanian: One for All", Titles.display("Ex - Dogtanian: One for All"))
+        assertEquals("R.M.N. (2022)", Titles.display("EXYU - R.M.N. (2022)"))
+        assertEquals("MIxed By Erry", Titles.display("ES  MIxed By Erry"))
+        assertEquals("Exit - The Movie", Titles.display("Exit - The Movie"))
+        assertEquals("IT Crowd", Titles.display("IT Crowd"))
+        assertEquals("ZZ Top", Titles.display("ZZ  Top"))
+    }
 }

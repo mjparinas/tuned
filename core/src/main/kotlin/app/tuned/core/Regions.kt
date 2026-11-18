@@ -123,13 +123,21 @@ object Regions {
             "AFR" to "Africa",
             "ASIA" to "Asia",
             "EUR" to "Europe",
+            "NORDIC" to "Nordic",
         )
 
     /**
      * Continents providers put in front of a country: "ASIA | INDIA MOVIES", "EUROPE | DE Sports". The country after
      * one wins; a continent with nothing more specific after it is the region itself, so it still gets a switch.
      */
-    private val areas = mapOf("ASIA" to "ASIA", "EUROPE" to "EUR", "AFRICA" to "AFR")
+    private val areas =
+        mapOf(
+            "ASIA" to "ASIA",
+            "EUROPE" to "EUR",
+            "AFRICA" to "AFR",
+            "NORDIC" to "NORDIC",
+            "SCANDINAVIA" to "NORDIC",
+        )
 
     /** Every tag that may name a region: the ISO country codes, plus the language and area tags providers add. */
     private val known: Set<String> =
@@ -214,28 +222,55 @@ object Regions {
                 "AFRICAN" to "AFR",
                 "EX YU" to "EX",
                 "EXYU" to "EX",
+                // Countries in their own language, as providers for that country write them: "SVERIGE | Sport".
+                "SVERIGE" to "SE",
+                "SVENSKA" to "SE",
+                "NORGE" to "NO",
+                "NORSK" to "NO",
+                "DANMARK" to "DK",
+                "DANSK" to "DK",
+                "SUOMI" to "FI",
+                "DEUTSCHLAND" to "DE",
+                "ESPAÑA" to "ES",
+                "ESPANA" to "ES",
+                "ITALIA" to "IT",
+                "NEDERLAND" to "NL",
+                "POLSKA" to "PL",
+                "TÜRKIYE" to "TR",
+                "TURKIYE" to "TR",
+                "HRVATSKA" to "HR",
+                "SRBIJA" to "RS",
+                "ROMANIA" to "RO",
+                "MAGYAR" to "HU",
+                "ÖSTERREICH" to "AT",
+                "SCHWEIZ" to "CH",
+                // Areas as words, for a name with no symbol after it ("NORDIC FILM"); with a symbol, [areas] reads them.
+                "ASIA" to "ASIA",
+                "NORDIC" to "NORDIC",
+                "SCANDINAVIA" to "NORDIC",
+                "SCANDINAVIAN" to "NORDIC",
             )
 
     /**
-     * The region of one stream. `tvg-country` wins when it names a known country; then a flag or tag at the start of
-     * the category or the name; then a tag in brackets at the end ("ESPN (US)"); then `tvg-language`, read as the tag
-     * that speaks it, so the language switches still work for playlists that only say "English".
-     *
-     * A stream whose own name starts with a tag and a bar ("HINDI| Sony Max") is read by that tag before the category:
-     * providers file other countries' channels under their own ("US| MOVIES NETWORK"), and the name is the more
-     * specific of the two (Melvin, 2026-11-18: Hindi channels showing with only US and Canada on).
+     * The region of one stream, most specific first. A stream whose own name starts with a tag and a bar ("HINDI| Sony
+     * Max") is read by that tag: providers file other countries' channels under their own ("US| MOVIES NETWORK";
+     * Melvin, 2026-11-18: Hindi channels showing with only US and Canada on). Then the category, since it is what people
+     * see and hide by (Melvin, 2026-11-18: a "|EXYU| ..." category must hide with Ex-Yugoslavia even when its films carry
+     * `tvg-country="HR"`): a flag or tag at its start, a category that is only a country, or a country written out at its
+     * start. Then `tvg-country`, when it names a known country; then the same in the name, a tag in brackets at the end
+     * ("ESPN (US)"), and finally `tvg-language`, read as the tag that speaks it.
      */
     fun detect(
         group: String,
         tvgCountry: String?,
         name: String,
         tvgLanguage: String? = null,
-    ): String? = country(tvgCountry)
-        ?: ownTag(name)
+    ): String? = ownTag(name)
         ?: flag(group)
         ?: prefix(group)
         ?: whole(group)
         ?: leading(group)
+        ?: country(tvgCountry)
         ?: flag(name)
         ?: prefix(name)
         ?: suffix(name)
