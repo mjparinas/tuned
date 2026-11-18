@@ -19,8 +19,8 @@ The first Settings screen is a short list of pages, each with an icon and a line
 
 No setting was removed or renamed, so nobody loses a choice they made. Settings that looked mergeable (seek back and forward, playlist and guide refresh) have different defaults and choices, so they stay separate.
 
-
 **Search** (Melvin, 2026-11-18: "build all three", from the UI review). A search box sits at the top of Settings' first screen. Typing shows every matching setting from every page under its page's name, matched by every typed word against the row's title and what it currently says, ignoring case and accents. The results are the pages' own rows, so a switch flips right there and a choice opens its dialog. A page whose name matches is listed as a row that opens it, and so is Captions. Each row widget (`SettingRow`, `SwitchRow`, `ChoiceRow`, `SliderRow`, `ColourRow`) checks the query itself (`SettingsSearch.kt`), so a new setting is searchable with no list to keep up to date. A custom row that isn't built on those widgets calls `searchHides` itself, as the accent colours row does.
+
 ## How it's built
 
 Each page is its own file in `ui/settings/` (`SettingsPlayback.kt` and so on), listed in the `SettingsPage` enum, and opened with `SettingsPageRoute`. A new setting goes in its page's file; a new page is an enum entry, a branch in `SettingsPageContent` and a file. Rows that open another screen pass its route to `onOpen`. Stored settings are declared once each in `data/SettingFields.kt`.
