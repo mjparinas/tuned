@@ -477,7 +477,7 @@ private fun LiveTab(
     if (settings.liveGrid) {
         GuideGridView(vm.channels.collectAsLazyPagingItems(), settings.guideDays, onPlay, onOpenGuide)
     } else {
-        LiveList(vm, settings.showGuideInList, onPlay, onOpenGuide)
+        LiveList(vm, settings.showGuideInList, settings.channelNumbers, onPlay, onOpenGuide)
     }
 }
 
@@ -486,6 +486,7 @@ private fun LiveTab(
 private fun LiveList(
     vm: BrowseViewModel,
     showGuide: Boolean,
+    showNumbers: Boolean,
     onPlay: (Long) -> Unit,
     onOpenGuide: (Long) -> Unit,
 ) {
@@ -509,6 +510,7 @@ private fun LiveList(
                     channel = channel,
                     favourite = favourite,
                     showGuide = showGuide,
+                    showNumber = showNumbers,
                     onPlay = { onPlay(channel.id) },
                     onGuide = { onOpenGuide(channel.id) },
                     onToggleFavourite = { vm.toggleFavourite(channel.id, favourite) },
@@ -539,6 +541,7 @@ private fun ChannelRow(
     channel: ChannelWithNow,
     favourite: Boolean,
     showGuide: Boolean,
+    showNumber: Boolean,
     onPlay: () -> Unit,
     onGuide: () -> Unit,
     onToggleFavourite: () -> Unit,
@@ -558,6 +561,14 @@ private fun ChannelRow(
             Spacer(Modifier.width(14.dp))
             Column(Modifier.weight(1f)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
+                    if (showNumber && channel.number > 0) {
+                        Text(
+                            channel.number.toString(),
+                            style = MaterialTheme.typography.labelLarge,
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.padding(end = 8.dp),
+                        )
+                    }
                     Text(
                         channel.name,
                         style = MaterialTheme.typography.titleSmall,

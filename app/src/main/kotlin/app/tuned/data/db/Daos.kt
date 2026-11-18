@@ -277,7 +277,7 @@ interface ItemDao {
     /** Search everywhere: the first few live channels for a search (names, or what's on now and within the hour). */
     @Query(
         """
-        SELECT i.id, i.name, i.logo, i.groupName, i.tvgId,
+        SELECT i.id, i.name, i.logo, i.groupName, i.tvgId, i.number,
             p.title AS nowTitle, p.start AS nowStart, p.stop AS nowStop,
             (f.itemId IS NOT NULL) AS favourite
         FROM items i
@@ -986,7 +986,7 @@ interface ShowDao {
 
 /** What a Live TV row shows: the channel and what's on now. */
 private const val CHANNEL_COLUMNS =
-    "i.id, i.name, i.logo, i.groupName, i.tvgId, p.title AS nowTitle, p.start AS nowStart, p.stop AS nowStop"
+    "i.id, i.name, i.logo, i.groupName, i.tvgId, i.number, p.title AS nowTitle, p.start AS nowStart, p.stop AS nowStop"
 
 /**
  * What's on now: the latest programme started on the channel, found through the (channelId, start) index. One row per
@@ -1010,3 +1010,17 @@ private const val CHANNEL_FILTER =
         // An event search ("UFC") also finds the channels showing it now or within the hour.
         "SELECT channelId FROM programmes WHERE start > :now - 86400000 AND start < :now + 3600000 AND stop > :now " +
         "AND title LIKE '%' || :query || '%'))"
+
+/** Live channels' numbers ([ChannelNumbers]), for typing one on the remote. */
+@Dao
+interface ChannelNumberDao {
+    @Query("SELECT EXISTS(SELECT 1 FROM items WHERE kind = 0 AND number = 0)")
+    suspend fun hasUnnumbered(): Boolean
+
+    @Query("SELECT id FROM items WHERE kind = 0 ORDER BY sortOrder")
+    suspend fun liveIdsInOrder(): List<Long>
+
+    /** The live channel with number [number] (typed on the remote), through the (kind, number) index. */
+    @Query("SELECT * FROM items WHERE kind = 0 AND number = :number LIMIT 1")
+    suspend fun liveByNumber(number: Int): ItemEntity?
+}
