@@ -4,6 +4,7 @@ import kotlin.test.Test
 import kotlin.test.assertContentEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
+import kotlin.test.assertTrue
 
 class PassphraseCryptoTest {
     private val plain = """{"server":"http://tv.example","password":"hunter22"}""".toByteArray()
@@ -34,5 +35,12 @@ class PassphraseCryptoTest {
     @Test
     fun otherFilesAreNotBackups() {
         assertFailsWith<PassphraseCrypto.NotOurs> { PassphraseCrypto.open("#EXTM3U\n".toByteArray(), "x".toCharArray()) }
+    }
+
+    @Test
+    fun aPlainSyncCopyIsNotSealed() {
+        assertTrue(PassphraseCrypto.isSealed(PassphraseCrypto.seal("x".toByteArray(), "correct horse".toCharArray(), rounds = 1_000)))
+        assertFalse(PassphraseCrypto.isSealed("{\"version\":1}".toByteArray()))
+        assertFalse(PassphraseCrypto.isSealed(ByteArray(0)))
     }
 }
