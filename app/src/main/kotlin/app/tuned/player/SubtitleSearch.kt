@@ -35,11 +35,40 @@ class SubtitleSearch(
     private val activity: ComponentActivity,
     private val repository: SubtitleRepository,
     private val player: () -> ExoPlayer?,
-    private val current: () -> ItemEntity?,
+    private val queue: () -> List<ItemEntity>,
     private val settings: () -> AppSettings,
     private val casting: () -> Boolean,
     private val say: (String) -> Unit,
 ) {
+    /** The film or episode playing now. */
+    private fun current(): ItemEntity? = player()
+        ?.currentMediaItem
+        ?.mediaId
+        ?.toLongOrNull()
+        ?.let { id -> queue().firstOrNull { it.id == id } }
+
+    /**
+     * Subtitles fetched before for [items], by item id, so they come back with their film with no download; when
+     * [startId] has one, captions turn on in its language.
+     */
+    suspend fun restore(
+        exo: ExoPlayer,
+        items: List<ItemEntity>,
+        startId: Long,
+    ): Map<Long, File> {
+        if (items.none(::onDemand)) return emptyMap()
+        val saved = repository.saved(items.map { it.id })
+        saved[startId]?.let { file ->
+            exo.trackSelectionParameters =
+                exo.trackSelectionParameters
+                    .buildUpon()
+                    .setTrackTypeDisabled(C.TRACK_TYPE_TEXT, false)
+                    .setPreferredTextLanguage(languageOf(file))
+                    .build()
+        }
+        return saved
+    }
+
     /** Items already searched for by themselves this time, so a video with nothing to find is asked about once. */
     private val tried = mutableSetOf<Long>()
 
@@ -166,7 +195,7 @@ class SubtitleSearch(
         /** A downloaded file as a subtitle track of its video, chosen by default. */
         fun track(
             file: File,
-            language: String,
+            language: String = languageOf(file),
         ): MediaItem.SubtitleConfiguration = MediaItem.SubtitleConfiguration
             .Builder(file.toUri())
             .setMimeType(MimeTypes.APPLICATION_SUBRIP)

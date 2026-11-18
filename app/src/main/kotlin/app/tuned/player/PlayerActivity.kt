@@ -111,21 +111,7 @@ class PlayerActivity : FragmentActivity() {
     private var savedFiles: Map<Long, File> = emptyMap()
     private val subtitleTiming = SubtitleTiming()
     private val subtitleSearch by lazy {
-        SubtitleSearch(
-            activity = this,
-            repository = container.subtitles,
-            player = { player },
-            current = {
-                player
-                    ?.currentMediaItem
-                    ?.mediaId
-                    ?.toLongOrNull()
-                    ?.let { id -> queue.firstOrNull { it.id == id } }
-            },
-            settings = { settings },
-            casting = { cast?.casting == true },
-            say = ::flash,
-        )
+        SubtitleSearch(this, container.subtitles, { player }, { queue }, { settings }, { cast?.casting == true }, ::flash)
     }
     private var reconnect: ConnectivityManager.NetworkCallback? = null
     private var autoTune: AutoTune? = null
@@ -471,7 +457,7 @@ class PlayerActivity : FragmentActivity() {
             playerView.setShowNextButton(queue.size > 1)
             playerView.setShowPreviousButton(queue.size > 1)
         }
-        val subtitles = savedSubtitles(exo, live, item.id)
+        val subtitles = subtitleSearch.restore(exo, queue, item.id)
         val mediaItems = queue.map { it.toMediaItem(local[it.id], subtitles[it.id]) }
         val index = queue.indexOfFirst { it.id == item.id }.coerceAtLeast(0)
         val resumeAt = if (!live && settings.resumePlayback) resumePosition(item.id) else C.TIME_UNSET
@@ -753,28 +739,6 @@ class PlayerActivity : FragmentActivity() {
         container.db.library().saveProgress(HistoryEntity(id, exo.currentPosition, duration, System.currentTimeMillis()))
     }
 
-    /**
-     * Subtitles fetched from OpenSubtitles before come back with their film, with no download; the one starting now
-     * turns captions on in its language.
-     */
-    private suspend fun savedSubtitles(
-        exo: ExoPlayer,
-        live: Boolean,
-        startId: Long,
-    ): Map<Long, File> {
-        if (live) return emptyMap()
-        val saved = container.subtitles.saved(queue.map { it.id })
-        saved[startId]?.let { file ->
-            exo.trackSelectionParameters =
-                exo.trackSelectionParameters
-                    .buildUpon()
-                    .setTrackTypeDisabled(C.TRACK_TYPE_TEXT, false)
-                    .setPreferredTextLanguage(SubtitleSearch.languageOf(file))
-                    .build()
-        }
-        return saved
-    }
-
     private fun live(): Boolean = queue.firstOrNull()?.kind == ContentKind.LIVE.code
 
     private fun ItemEntity.toMediaItem(
@@ -793,7 +757,7 @@ class PlayerActivity : FragmentActivity() {
             .setMediaId(id.toString())
             .setUri(file?.toUri() ?: link.url.toUri())
             .setMediaMetadata(MediaMetadata.Builder().setTitle(name).build())
-            .apply { subtitles?.let { setSubtitleConfigurations(listOf(SubtitleSearch.track(it, SubtitleSearch.languageOf(it)))) } }
+            .apply { subtitles?.let { setSubtitleConfigurations(listOf(SubtitleSearch.track(it))) } }
             .build()
     }
 
