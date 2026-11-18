@@ -230,8 +230,8 @@ fun HomeScreen(
                 val lists: @Composable () -> Unit = {
                     when (tab.kind) {
                         ContentKind.LIVE -> LiveTab(vm, settings, onPlay, openGuide)
-                        ContentKind.MOVIE -> MovieGrid(vm, onPlay, openMovie)
-                        ContentKind.SERIES -> ShowGrid(vm, openShow, onPlay)
+                        ContentKind.MOVIE -> MovieGrid(vm, onPlay, openMovie, settings.alwaysShowScrollbar)
+                        ContentKind.SERIES -> ShowGrid(vm, openShow, onPlay, settings.alwaysShowScrollbar)
                     }
                 }
                 // Pull to refresh is a setting, off by default; Settings › Refresh now always works.

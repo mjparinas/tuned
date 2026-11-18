@@ -10,6 +10,17 @@ Melvin (2026-11-17): "prioritize speed and efficiency when using the app."
 - **Player start.** Fast-start TS extractor flags, a Fast start buffer mode, and Media3's own PlayerView.
 - **Release builds** are shrunk with R8 and ship a baseline profile installer (profileinstaller).
 
+## Scroll bar on long lists (Melvin, 2026-11-18)
+
+Melvin: "since there are so many channels, on the live tv page, moves and shows page, i dont see any scroll bars on the right side indicating how much left i can scroll".
+
+- Live TV, Movies and Shows have a scroll bar down the right (`ui/common/FastScrollbar.kt`, maths in `core/FastScroll.kt`). It shows while the list moves and fades 1.2 seconds after; Settings › Channels and lists › Always show the scroll bar keeps it on (off by default, so the list stays clean).
+- The thumb is a fixed 48 dp, not sized to the share on screen, because with 40,000 channels that share would be a sliver. Its place is how far down the top row is.
+- Dragging the thumb jumps straight to the row under the finger, so a long list is crossed in one move. A bubble beside it names the category there (playlists list streams category by category), with the channel number in front on Live TV when numbers are on. The bubble reads only rows already loaded (`peekOrNull`), so dragging never asks the database for more than the jump itself; Room's paging with placeholders loads just the page landed on.
+- Only a list longer than three screens gets one. Only the visible thumb takes a finger, so the hearts and guide buttons at the right of each row stay tappable while it's hidden.
+- Speed: the thumb's position and fade are read in layout and draw only, so scrolling doesn't recompose the bar. On a TV it shows while the D-pad scrolls and never takes focus.
+- The grid guide keeps its own scrolling and has no bar.
+
 ## Speed audit (Melvin, 2026-11-17: "speed for all functions in the app is important")
 
 Measured on a copy the size of a big playlist (40,000 channels, 90,000 films, 350,000 episodes in 14,000 shows, 480,000 programmes), on a desktop CPU; a phone is roughly 3 to 5 times slower. Room's paged lists run a count and then a page, so a tab opening costs both.

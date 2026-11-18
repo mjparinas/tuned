@@ -138,6 +138,8 @@ data class AppSettings(
     val liveGrid: Boolean = false,
     /** Numbers beside live channels, for typing one on the remote (Settings › Lists). */
     val channelNumbers: Boolean = true,
+    /** Keep the scroll bar on Live TV, Movies and Shows on screen, instead of only while the list moves (Settings › Lists). */
+    val alwaysShowScrollbar: Boolean = false,
     /** Open straight into the last live channel at launch, as a cable box does (Settings › Start on the last channel). */
     val startOnLastChannel: Boolean = false,
     /** Look for a newer release on GitHub at start (copies from Play update through Play either way). */
