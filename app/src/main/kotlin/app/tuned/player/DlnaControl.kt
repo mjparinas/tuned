@@ -8,6 +8,7 @@ import app.tuned.container
 import app.tuned.core.Dlna
 import app.tuned.core.StreamLink
 import app.tuned.data.db.ItemEntity
+import app.tuned.diagnostics.AppLog
 import app.tuned.diagnostics.attempt
 import app.tuned.diagnostics.loggingHandler
 import kotlinx.coroutines.Dispatchers
@@ -74,7 +75,9 @@ class DlnaControl(
     }
 
     private fun take(route: MediaRouter.RouteInfo) {
-        controlUrl = route.extras?.getString(DlnaRouteProvider.EXTRA_CONTROL) ?: return
+        controlUrl = route.extras?.getString(DlnaRouteProvider.EXTRA_CONTROL)
+        if (controlUrl == null) return AppLog.w("Dlna", "${route.name} has no control address, so it can't be cast to")
+        AppLog.i("Dlna") { "Casting to ${route.name}" }
         onStarted(route.name)
     }
 
@@ -86,6 +89,7 @@ class DlnaControl(
     ) {
         send(Dlna.stop(), "Stop")
         val url = StreamLink.address(item.url) // a TV takes no extra headers
+        AppLog.i("Dlna") { "Sending to the TV: $url (${Dlna.mimeFor(url)}), live=$live, from ${positionMs / 1000} s" }
         send(Dlna.setUri(url, item.name, Dlna.mimeFor(url)), "SetAVTransportURI")
         send(Dlna.play(), "Play")
         if (!live && positionMs > 0) send(Dlna.seek(positionMs), "Seek")
@@ -110,7 +114,15 @@ class DlnaControl(
                         .post(body.toRequestBody(SOAP))
                         .build()
                 // A TV that refuses one step (Stop when idle, Seek on a live stream) still plays.
-                attempt("Dlna", "The TV refused $action") { http.newCall(request).execute().close() }
+                attempt("Dlna", "The TV refused $action") {
+                    http.newCall(request).execute().use { response ->
+                        if (response.isSuccessful) {
+                            AppLog.i("Dlna") { "$action: ${response.code}" }
+                        } else {
+                            AppLog.w("Dlna", "The TV answered $action with ${response.code} ${response.message}")
+                        }
+                    }
+                }
             }
         }
     }

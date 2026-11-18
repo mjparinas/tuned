@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="cast_playing_on">Playing on %1$s</string>
+    <string name="cast_failed">%1$s couldn\'t play this. Settings › Developer › Logs has the details.</string>
 </resources>
