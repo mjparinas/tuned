@@ -45,8 +45,9 @@ jobs:
         run: |
           find baselineprofile/build/outputs -name '*.xml' -path '*androidTest-results*' -print0 \
             | xargs -0 -r grep -h -A30 '<failure' | head -200 || true
-          find baselineprofile/build/outputs -name 'logcat-*.txt' -print0 \
-            | xargs -0 -r grep -h -E 'AndroidRuntime|TestRunner|app.tuned|Tuned' | tail -150 || true
+          find baselineprofile/build -iname '*logcat*' | head -20
+          find baselineprofile/build -iname '*logcat*' -type f -print0 \
+            | xargs -0 -r grep -h -E ' [EW] |AndroidRuntime|app\.tuned' | grep -v -E 'TestRunner|ActivityManager: Process' | tail -200 || true
       - name: Write the numbers to the summary
         if: ${{ !cancelled() }}
         run: node scripts/startup-summary.mjs baselineprofile/build >> "$GITHUB_STEP_SUMMARY"

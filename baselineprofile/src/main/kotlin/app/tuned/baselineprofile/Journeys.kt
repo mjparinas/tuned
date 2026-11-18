@@ -5,6 +5,7 @@ import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.By
 import androidx.test.uiautomator.Direction
 import androidx.test.uiautomator.Until
+import java.io.ByteArrayOutputStream
 
 /** The release app's id; the benchmark build type keeps it. */
 const val TARGET_PACKAGE = "app.tuned"
@@ -35,7 +36,16 @@ fun MacrobenchmarkScope.signInIfNeeded() {
 }
 
 fun MacrobenchmarkScope.waitForChannels(timeoutMs: Long = SCREEN_TIMEOUT_MS) {
-    checkNotNull(device.wait(Until.findObject(By.text(FakeProvider.FIRST_CHANNEL)), timeoutMs)) { "Live TV never listed the channels" }
+    checkNotNull(device.wait(Until.findObject(By.text(FakeProvider.FIRST_CHANNEL)), timeoutMs)) {
+        "Live TV never listed the channels. On screen: ${onScreen()}"
+    }
+}
+
+/** The text on screen, for a failure message, so a failed run says where it stopped. */
+private fun MacrobenchmarkScope.onScreen(): String {
+    val dump = ByteArrayOutputStream()
+    device.dumpWindowHierarchy(dump)
+    return Regex("""(?:text|content-desc)="([^"]+)"""").findAll(dump.toString()).map { it.groupValues[1] }.joinToString(" | ")
 }
 
 /** Live TV, Movies and Shows scrolled, then a channel played and closed: what people do in the first minute. */
