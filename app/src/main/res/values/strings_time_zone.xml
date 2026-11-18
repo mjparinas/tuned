@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_time_zone">Time zone</string>
+    <!-- %1$s: the phone's zone as the list shows it, such as "Vancouver · PST (UTC−8)". -->
+    <string name="settings_time_zone_device">Same as this device (%1$s)</string>
+    <!-- %1$s: a time zone's short name, such as "PST". -->
+    <string name="events_zone">Times in %1$s</string>
+    <!-- The guide's corner: %1$s is "Today" or a weekday, %2$s the zone's short name, such as "PST". -->
+    <string name="grid_day_zone">%1$s · %2$s</string>
+</resources>

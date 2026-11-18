@@ -8,6 +8,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -21,10 +22,12 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import app.tuned.R
 import app.tuned.container
+import app.tuned.core.TimeZones
 import app.tuned.data.AppSettings
 import app.tuned.data.CastMember
 import app.tuned.diagnostics.launchSafely
 import app.tuned.player.PlayerActivity
+import app.tuned.ui.common.LocalTimeZone
 import app.tuned.ui.common.WithOfflineBanner
 import app.tuned.ui.theme.TunedTheme
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -73,7 +76,9 @@ class MainActivity : ComponentActivity() {
                 pureBlack = current.pureBlack,
                 accent = current.accent,
             ) {
-                Navigation(current, signedIn)
+                CompositionLocalProvider(LocalTimeZone provides TimeZones.resolve(current.timeZone)) {
+                    Navigation(current, signedIn)
+                }
             }
         }
     }

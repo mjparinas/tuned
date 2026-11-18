@@ -4,7 +4,6 @@ import android.content.Context
 import androidx.work.WorkInfo
 import androidx.work.WorkManager
 import app.tuned.data.AccountRepository
-import app.tuned.data.BackupRepository
 import app.tuned.data.ChannelScanner
 import app.tuned.data.CloudSyncRepository
 import app.tuned.data.Connectivity
@@ -22,6 +21,7 @@ import app.tuned.data.Recordings
 import app.tuned.data.SavedArtwork
 import app.tuned.data.SettingsRepository
 import app.tuned.data.SubtitleRepository
+import app.tuned.data.SyncCopyRepository
 import app.tuned.data.SyncRepository
 import app.tuned.data.TraktAccount
 import app.tuned.data.TuneRepository
@@ -49,7 +49,7 @@ import java.util.concurrent.TimeUnit
 class AppContainer(
     private val context: Context,
 ) {
-    /** A failure in background work is logged (Settings › Developer › Logs), never a crash. */
+    /** A failure in background work is logged (Settings › Updates and advanced › Logs), never a crash. */
     val appScope = CoroutineScope(SupervisorJob() + loggingHandler("App"))
     val settings = SettingsRepository(context)
     val credentials = CredentialStore(context)
@@ -67,9 +67,9 @@ class AppContainer(
     val scheduler = SyncScheduler(context)
     val guideFixes by lazy { GuideFixRepository(db, sync, scheduler, credentials) }
     val updates by lazy { GitHubUpdates(context, http) }
-    val backup by lazy { BackupRepository(credentials, settings, db) }
+    val syncCopy by lazy { SyncCopyRepository(credentials, settings, db) }
     val cloudSync by lazy {
-        CloudSyncRepository(context, GoogleDrive(context, http), backup) { scheduler.refreshNow(first = true) }
+        CloudSyncRepository(context, GoogleDrive(context, http), syncCopy) { scheduler.refreshNow(first = true) }
     }
     val reminders by lazy { Reminders(context) }
     val events by lazy { EventsRepository(db, settings, reminders) }

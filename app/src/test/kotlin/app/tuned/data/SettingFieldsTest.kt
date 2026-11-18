@@ -83,7 +83,6 @@ class SettingFieldsTest {
             profileId = 9,
             kidsProfile = true,
             profileCount = 3,
-            developerMode = true,
         )
 
     @Test
@@ -179,11 +178,11 @@ class SettingFieldsTest {
                 "last_guide_sync",
                 "last_sync_error",
                 "server_timezone",
+                "time_zone",
                 "ask_profile_at_start",
                 "profile_id",
                 "kids_profile",
                 "profile_count",
-                "developer_mode",
             )
         assertTrue(names.containsAll(known), "missing: ${known - names}")
     }

@@ -6,8 +6,6 @@ import android.content.Intent
 import android.content.pm.ActivityInfo
 import android.content.res.Configuration
 import android.graphics.Color
-import android.net.ConnectivityManager
-import android.net.Network
 import android.os.Build
 import android.os.Bundle
 import android.view.Gravity
@@ -23,7 +21,6 @@ import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.lifecycleScope
 import androidx.media3.common.AudioAttributes
 import androidx.media3.common.C
-import androidx.media3.common.ForwardingPlayer
 import androidx.media3.common.MediaItem
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
@@ -46,9 +43,7 @@ import app.tuned.core.Titles
 import app.tuned.data.AppSettings
 import app.tuned.data.db.HistoryEntity
 import app.tuned.data.db.ItemEntity
-import app.tuned.data.hiddenKeys
 import app.tuned.diagnostics.AppLog
-import app.tuned.diagnostics.attempt
 import app.tuned.diagnostics.launchSafely
 import app.tuned.premium.Premium
 import app.tuned.work.TvHome
@@ -105,7 +100,18 @@ class PlayerActivity : FragmentActivity() {
     private val subtitleSearch by lazy {
         SubtitleSearch(this, container.subtitles, { player }, { queue }, { settings }, { cast?.casting == true }, ::flash)
     }
-    private var reconnect: ConnectivityManager.NetworkCallback? = null
+    private val reconnect by lazy {
+        ReconnectWhenOnline(this) {
+            lifecycleScope.launchSafely("Player") {
+                val p = player ?: return@launchSafely
+                if (cast?.casting != true && (p.playerError != null || p.playbackState == Player.STATE_IDLE)) {
+                    liveRetries = 0
+                    flash(getString(R.string.player_reconnecting))
+                    p.prepare()
+                }
+            }
+        }
+    }
     private var autoTune: AutoTune? = null
     private val tuneNext by lazy {
         TuneNext(
@@ -171,7 +177,7 @@ class PlayerActivity : FragmentActivity() {
                             exo.seekTo(index, C.TIME_UNSET)
                         } else if (exo != null) {
                             // Another group: its channels become next and previous. The same player, so one stream.
-                            queue = siblings(item)
+                            queue = playerSiblings(container.db, settings, item)
                             val at = queue.indexOfFirst { it.id == item.id }.coerceAtLeast(0)
                             exo.setMediaItems(queue.map { it.toMediaItem(null, streamHeaders) }, at, C.TIME_UNSET)
                             exo.prepare()
@@ -251,7 +257,7 @@ class PlayerActivity : FragmentActivity() {
             if (settings.landscapePlayback) requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
             tools.applyFit(settings.videoFit)
             if (settings.playerGestures) setUpGestures()
-            if (settings.autoReconnect) reconnectWhenOnline()
+            if (settings.autoReconnect) reconnect.start()
             val query = intent.getStringExtra(EXTRA_TUNE)
             if (query != null) {
                 startTune(query)
@@ -281,7 +287,7 @@ class PlayerActivity : FragmentActivity() {
                 return@launchSafely
             }
             // A recording plays on its own; next and previous would leave it for live channels.
-            queue = if (item.id == CatchUpLinks.ID) listOf(item) else siblings(item)
+            queue = if (item.id == CatchUpLinks.ID) listOf(item) else playerSiblings(container.db, settings, item)
             start(item)
         }
     }
@@ -436,38 +442,6 @@ class PlayerActivity : FragmentActivity() {
             }
     }
 
-    /**
-     * When the connection comes back (Wi-Fi to mobile, a tunnel, a router restart), a stream that stopped on an error
-     * starts again by itself, from where it was for films and episodes.
-     */
-    private fun reconnectWhenOnline() {
-        val cm = getSystemService(ConnectivityManager::class.java) ?: return
-        val callback =
-            object : ConnectivityManager.NetworkCallback() {
-                override fun onAvailable(network: Network) {
-                    lifecycleScope.launchSafely("Player") {
-                        val p = player ?: return@launchSafely
-                        if (cast?.casting != true && (p.playerError != null || p.playbackState == Player.STATE_IDLE)) {
-                            liveRetries = 0
-                            flash(getString(R.string.player_reconnecting))
-                            p.prepare()
-                        }
-                    }
-                }
-            }
-        attempt("Player", "Couldn't watch the network") { cm.registerDefaultNetworkCallback(callback) }.onSuccess { reconnect = callback }
-    }
-
-    /** Live: the other channels in the same category, so next/previous flips channels. Shows: the show's episodes. */
-    private suspend fun siblings(item: ItemEntity): List<ItemEntity> {
-        val items = container.db.items()
-        return when (ContentKind.fromCode(item.kind)) {
-            ContentKind.LIVE -> items.channelsInGroup(item.groupName, settings.hiddenKeys(), settings.showAdult)
-            ContentKind.SERIES -> item.showKey?.let { items.episodesNow(it) }.orEmpty()
-            ContentKind.MOVIE -> emptyList()
-        }.ifEmpty { listOf(item) }
-    }
-
     /** Auto-tune: queue the channels for an event, best first, and let [AutoTune] find one that plays. */
     private suspend fun startTune(query: String) {
         val ids = container.tune.candidates(query)
@@ -510,7 +484,7 @@ class PlayerActivity : FragmentActivity() {
         val exo = buildPlayer(live)
         player = exo
         trakt.attach(exo)
-        playerView.player = ViewPlayer(exo)
+        playerView.player = ViewPlayer(exo, { cast }, { statusView.visibility = View.GONE }, ::pauseLive)
         playerView.setControllerShowTimeoutMs(settings.controlsTimeoutMs)
         playerView.setShowNextButton(queue.size > 1)
         playerView.setShowPreviousButton(queue.size > 1)
@@ -757,47 +731,14 @@ class PlayerActivity : FragmentActivity() {
         }
     }
 
-    /** What the on-screen controls drive: the phone's player, or the TV's play and pause while casting. */
-    private inner class ViewPlayer(
-        private val exo: ExoPlayer,
-    ) : ForwardingPlayer(exo) {
-        override fun prepare() {
-            if (cast?.casting != true) super.prepare()
-        }
-
-        override fun play() {
-            when {
-                cast?.casting == true -> {
-                    cast?.play()
-                }
-
-                playbackState == Player.STATE_IDLE -> {
-                    // Held because the account was full, or stopped: pressing play starts it.
-                    statusView.visibility = View.GONE
-                    super.prepare()
-                    super.play()
-                }
-
-                else -> {
-                    super.play()
-                }
-            }
-        }
-
-        override fun pause() {
-            when {
-                cast?.casting == true -> cast?.pause()
-
-                // A live channel pauses into the copy kept on the device, so it can carry on, rewind or catch up.
-                live() && timeshift.shift(exo) -> Unit
-
-                else -> super.pause()
-            }
-        }
-    }
-
     private fun live(): Boolean = queue.firstOrNull()?.kind == ContentKind.LIVE.code
 
+<<<<<<< HEAD
+=======
+    /** A live channel pauses into the copy kept on the device, so it can carry on, rewind or catch up. */
+    private fun pauseLive(exo: ExoPlayer): Boolean = live() && timeshift.shift(exo)
+
+>>>>>>> origin/staging
     override fun onUserLeaveHint() {
         super.onUserLeaveHint()
         // Android 12+ enters picture-in-picture by itself (setAutoEnterEnabled); older versions need asking.
@@ -866,7 +807,7 @@ class PlayerActivity : FragmentActivity() {
         dial.release()
         cast?.release()
         container.appScope.launch { container.offline.start() }
-        reconnect?.let { cb -> runCatching { getSystemService(ConnectivityManager::class.java)?.unregisterNetworkCallback(cb) } }
+        reconnect.stop()
         player?.release()
         player = null
         container.account.noStreamSince = System.currentTimeMillis()

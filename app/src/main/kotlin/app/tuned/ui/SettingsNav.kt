@@ -31,7 +31,7 @@ import kotlinx.serialization.Serializable
 
 @Serializable data object FavouriteOrderRoute
 
-/** Settings › Developer › Logs. */
+/** Settings › Updates and advanced › Logs. */
 @Serializable data object DeveloperLogRoute
 
 /** Settings, its pages and the screens they open. */

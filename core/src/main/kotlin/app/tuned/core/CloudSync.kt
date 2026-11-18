@@ -1,7 +1,6 @@
 package app.tuned.core
 
-import javax.crypto.Mac
-import javax.crypto.spec.SecretKeySpec
+import java.security.MessageDigest
 
 /**
  * The rules of sync between devices (phone and TV) through the person's Google Drive app folder: what one run does, and
@@ -37,18 +36,8 @@ object CloudSync {
         }
     }
 
-    /**
-     * A fingerprint of the synced copy keyed with the sync passphrase, so the one stored beside the file in Drive says
-     * nothing about what is inside it (the copy holds logins).
-     */
-    fun fingerprint(
-        plain: ByteArray,
-        passphrase: CharArray,
-    ): String {
-        val mac = Mac.getInstance(HMAC)
-        mac.init(SecretKeySpec(String(passphrase).toByteArray(), HMAC))
-        return mac.doFinal(plain).joinToString("") { "%02x".format(it) }
-    }
+    /** A fingerprint of the synced copy (SHA-256), stored beside the file in Drive to tell whether it changed. */
+    fun fingerprint(plain: ByteArray): String = MessageDigest.getInstance("SHA-256").digest(plain).joinToString("") { "%02x".format(it) }
 
     enum class Poll { SIGNED_IN, WAIT, SLOW_DOWN, DENIED, EXPIRED, FAILED }
 
@@ -112,11 +101,16 @@ object CloudSync {
         body: String,
     ): Boolean = status == HTTP_FORBIDDEN && ("accessNotConfigured" in body || "SERVICE_DISABLED" in body)
 
-    /** The one scope asked for: a folder in the person's Drive that only Tuned can see, nothing else of theirs. */
-    const val SCOPE = "https://www.googleapis.com/auth/drive.appdata"
-    const val FILE_NAME = "tuned-sync"
+    /**
+     * The one scope asked for: only the files Tuned itself created in the person's Drive, nothing else of theirs.
+     * Not `drive.appdata` (the hidden app folder): Google's sign-in with a code refuses it ("Invalid device flow
+     * scope"), and that sign-in is the one Tuned uses on phones and TVs alike.
+     */
+    const val SCOPE = "https://www.googleapis.com/auth/drive.file"
 
-    private const val HMAC = "HmacSHA256"
+    /** The synced copy's name in the person's Drive. */
+    const val FILE_NAME = "Tuned sync"
+
     private const val HTTP_OK = 200
     private const val HTTP_FORBIDDEN = 403
 }

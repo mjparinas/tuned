@@ -2,7 +2,9 @@ package app.tuned.core
 
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 class RegionsTest {
     private fun group(g: String) = Regions.detect(g, null, "Some Channel")
@@ -35,6 +37,8 @@ class RegionsTest {
         assertEquals("DE", Regions.detect("News", null, "DE: Das Erste"))
         assertEquals("Canada", Regions.displayName("CA"))
         assertEquals("ZZ", Regions.displayName("ZZ"))
+        // Codes Tuned has no short name for still read as a country, so they sort and search by name too.
+        assertTrue(Regions.displayName("CI").startsWith("C") && Regions.displayName("CI") != "CI")
     }
 
     @Test
@@ -77,5 +81,31 @@ class RegionsTest {
             listOf("AF", "CA", "CI", "FR", "UK", "US"),
             Regions.sortedByName(byCount) { it.first }.map { it.first },
         )
+    }
+
+    @Test
+    fun `search finds a country by name or tag, ignoring case and accents`() {
+        assertTrue(Regions.regionMatches("can", "CA"))
+        assertTrue(Regions.regionMatches("ca", "CA"))
+        assertTrue(Regions.regionMatches("cote", "CI"))
+        assertTrue(Regions.regionMatches("  KINGDOM ", "UK"))
+        assertTrue(Regions.regionMatches("", "FR"))
+        assertFalse(Regions.regionMatches("germany", "FR"))
+        assertTrue(Regions.matchesSearch("espa", listOf("Español")))
+        assertFalse(Regions.matchesSearch("french", listOf("English", "US", "UK")))
+    }
+
+    @Test
+    fun `a tag and a bar in the stream's own name beats the category`() {
+        // Melvin, 2026-11-18: Hindi channels filed under "US| MOVIES NETWORK" showed with only US and Canada on.
+        assertEquals("IN", Regions.detect("US| MOVIES NETWORK", null, "HINDI| & PICTURES FHD"))
+        assertEquals("IN", Regions.detect("US| MOVIES NETWORK", null, "IN | Colors Cineplex"))
+        assertEquals("US", Regions.detect("US| MOVIES NETWORK", null, "US| THE FILM DETECTIVE"))
+        // A colon, a quality tag or an unknown word in front of the bar leaves the category in charge.
+        assertEquals("US", Regions.detect("US| Movies", null, "IT: Chapter Two"))
+        assertEquals("US", Regions.detect("US| Sports", null, "VIP | ESPN"))
+        assertEquals("US", Regions.detect("US| Sports", null, "NFL | Week 1"))
+        // tvg-country still wins.
+        assertEquals("CA", Regions.detect("US| News", "CA", "HINDI| Aaj Tak"))
     }
 }

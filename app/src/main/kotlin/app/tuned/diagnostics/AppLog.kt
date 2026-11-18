@@ -34,9 +34,9 @@ data class LogEntry(
 }
 
 /**
- * The app's own log, kept in memory for Settings › Developer › Logs and for crash reports ([CrashReporter]).
- * Warnings and errors are always kept (a few hundred lines cost nothing); debug and info lines only in developer
- * mode ([verbose]), and their text is built lazily so they cost nothing when it's off.
+ * The app's own log, kept in memory for Settings › Updates and advanced › Logs and for crash reports ([CrashReporter]).
+ * Every level is kept, always: the detailed lines come only from sync and casting, so they are few, and their text is
+ * built lazily.
  *
  * Every line goes through [scrub] first: the login in use and any login-shaped part of an address become `•••`,
  * so a log can be shared without giving the account away (docs/decisions/security.md).
@@ -53,9 +53,6 @@ object AppLog {
     /** Ticks on every new line, so an open log viewer can refresh. */
     val changes: StateFlow<Long> = _changes.asStateFlow()
 
-    /** Developer mode: also keep debug and info lines. */
-    @Volatile var verbose: Boolean = false
-
     @Volatile private var secrets: List<String> = emptyList()
 
     /** The login in use, so it is masked even where it doesn't look like one. Values shorter than 3 are ignored. */
@@ -67,14 +64,14 @@ object AppLog {
         tag: String,
         message: () -> String,
     ) {
-        if (verbose || BuildConfig.DEBUG) add(LogLevel.DEBUG, tag, message(), null)
+        add(LogLevel.DEBUG, tag, message(), null)
     }
 
     fun i(
         tag: String,
         message: () -> String,
     ) {
-        if (verbose || BuildConfig.DEBUG) add(LogLevel.INFO, tag, message(), null)
+        add(LogLevel.INFO, tag, message(), null)
     }
 
     fun w(

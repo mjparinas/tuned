@@ -68,6 +68,7 @@
     <string name="regions_help">Turn a language or country off to hide its channels, movies and shows everywhere, search included. A language covers the countries that speak it, so English covers US, UK, Canada and the rest.</string>
     <string name="regions_show_all">Show all</string>
     <string name="regions_hide_all">Hide all</string>
+    <string name="regions_search">Search languages and countries</string>
     <string name="settings_show_adult">Show adult categories</string>
     <string name="settings_show_adult_summary">Hidden until unlocked with your PIN. Locks again 5 minutes after you leave the app.</string>
     <string name="settings_show_adult_summary_no_pin">Hidden. Turning this on asks you to set a PIN first.</string>
@@ -167,9 +168,7 @@
     <string name="settings_pure_black_summary">True black in dark mode, for OLED screens</string>
 
     <string name="settings_advanced">Advanced</string>
-    <string name="settings_developer">Developer</string>
-    <string name="settings_developer_mode">Developer mode</string>
-    <string name="settings_developer_mode_summary">Keep a detailed log of what Tuned does and show it here, to find out what went wrong. Crash reports are saved either way.</string>
+    <string name="settings_header_troubleshooting">Troubleshooting</string>
     <string name="settings_logs_summary">Crash reports and the recent log, to read, copy or share. Logins are left out.</string>
     <string name="logs_title">Logs</string>
     <string name="logs_copy">Copy log</string>

@@ -39,11 +39,10 @@ class CloudSyncTest {
     }
 
     @Test
-    fun theFingerprintDependsOnThePassphrase() {
-        val plain = "same".toByteArray()
-        val one = CloudSync.fingerprint(plain, "passphrase1".toCharArray())
-        assertEquals(one, CloudSync.fingerprint(plain, "passphrase1".toCharArray()))
-        assertNotEquals(one, CloudSync.fingerprint(plain, "passphrase2".toCharArray()))
+    fun theFingerprintChangesWithTheCopy() {
+        val one = CloudSync.fingerprint("same".toByteArray())
+        assertEquals(one, CloudSync.fingerprint("same".toByteArray()))
+        assertNotEquals(one, CloudSync.fingerprint("other".toByteArray()))
     }
 
     @Test
@@ -54,6 +53,13 @@ class CloudSyncTest {
         assertEquals(CloudSync.Poll.DENIED, CloudSync.poll(403, "access_denied"))
         assertEquals(CloudSync.Poll.EXPIRED, CloudSync.poll(400, "expired_token"))
         assertEquals(CloudSync.Poll.FAILED, CloudSync.poll(500, null))
+    }
+
+    @Test
+    fun asksForAScopeGooglesCodeSignInAllows() {
+        // Google answers drive.appdata with "invalid_scope: Invalid device flow scope" (2026-11-18), so sync never signed in.
+        assertNotEquals("https://www.googleapis.com/auth/drive.appdata", CloudSync.SCOPE)
+        assertEquals("https://www.googleapis.com/auth/drive.file", CloudSync.SCOPE)
     }
 
     @Test

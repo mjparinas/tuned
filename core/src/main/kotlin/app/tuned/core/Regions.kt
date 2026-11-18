@@ -1,6 +1,7 @@
 package app.tuned.core
 
 import java.text.Collator
+import java.text.Normalizer
 import java.util.Locale
 
 /**
@@ -219,6 +220,10 @@ object Regions {
      * The region of one stream. `tvg-country` wins when it names a known country; then a flag or tag at the start of
      * the category or the name; then a tag in brackets at the end ("ESPN (US)"); then `tvg-language`, read as the tag
      * that speaks it, so the language switches still work for playlists that only say "English".
+     *
+     * A stream whose own name starts with a tag and a bar ("HINDI| Sony Max") is read by that tag before the category:
+     * providers file other countries' channels under their own ("US| MOVIES NETWORK"), and the name is the more
+     * specific of the two (Melvin, 2026-11-18: Hindi channels showing with only US and Canada on).
      */
     fun detect(
         group: String,
@@ -226,6 +231,7 @@ object Regions {
         name: String,
         tvgLanguage: String? = null,
     ): String? = country(tvgCountry)
+        ?: ownTag(name)
         ?: flag(group)
         ?: prefix(group)
         ?: whole(group)
@@ -236,7 +242,18 @@ object Regions {
         ?: suffix(group)
         ?: language(tvgLanguage)
 
-    fun displayName(region: String): String = names[region] ?: region
+    /** The name people read: Tuned's own short names first, then the JDK's English name for any other ISO code. */
+    fun displayName(region: String): String = names[region] ?: isoNames[region] ?: region
+
+    private val isoNames: Map<String, String> by lazy {
+        Locale.getISOCountries().associateWith {
+            Locale
+                .Builder()
+                .setRegion(it)
+                .build()
+                .getDisplayCountry(Locale.ENGLISH)
+        }
+    }
 
     /**
      * Regions in A to Z order of the name people read ("Canada" before "France"), not by how many streams each has
@@ -249,6 +266,29 @@ object Regions {
         val collator = Collator.getInstance(Locale.ENGLISH).apply { strength = Collator.PRIMARY }
         return items.sortedWith(compareBy(collator) { item: T -> displayName(region(item)) }.thenBy { region(it) })
     }
+
+    /**
+     * Whether the search on Settings › Countries and languages finds this text (Melvin, 2026-11-18: "countries and
+     * languages should have a real time search"). Case and accents don't matter, so "cote" finds "Côte d'Ivoire", and a
+     * blank search finds everything.
+     */
+    fun matchesSearch(
+        query: String,
+        texts: Iterable<String>,
+    ): Boolean {
+        val q = fold(query.trim())
+        return q.isEmpty() || texts.any { fold(it).contains(q) }
+    }
+
+    /** A country or region tag matches by its name ("Canada") or the tag itself ("CA"). */
+    fun regionMatches(
+        query: String,
+        region: String,
+    ): Boolean = matchesSearch(query, listOf(displayName(region), region))
+
+    private val marks = Regex("\\p{Mn}+")
+
+    private fun fold(text: String): String = marks.replace(Normalizer.normalize(text, Normalizer.Form.NFD), "").lowercase(Locale.ROOT)
 
     /** A tag providers use for a country or language, such as US, UK, EN or USA. */
     fun isKnown(tag: String): Boolean = tag.uppercase() in known
@@ -330,6 +370,21 @@ object Regions {
     /** Names that start other things: "Georgia Bulldogs", "Jordan", "America's Got Talent", "Jersey Shore". */
     private val ambiguous =
         setOf("GEORGIA", "JORDAN", "CHAD", "JERSEY", "AMERICA", "LATIN", "ARAB", "MONACO", "DOMINICA", "NIGER", "MALI", "GUERNSEY")
+
+    /** "HINDI| & PICTURES", "US┃ STAR LIFE": a tag or language name, then a bar. A colon is not enough ("IT: Chapter Two"). */
+    private val barTag = Regex("""^\s*([\p{L} ]{2,20}?)\s*[|┃│]""")
+
+    private fun ownTag(name: String): String? {
+        val part =
+            barTag
+                .find(name)
+                ?.groupValues
+                ?.get(1)
+                ?.trim()
+                ?.uppercase() ?: return null
+        if (part in notRegions) return null
+        return if (token.matches(part) && part in known) normalize(part) else wordTags[part]
+    }
 
     private fun suffix(text: String): String? = bracketSuffix
         .find(text)

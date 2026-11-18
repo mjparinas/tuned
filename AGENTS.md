@@ -78,7 +78,7 @@ One file per topic in `docs/decisions/`, A to Z. Add a line when you add a topic
 - [Auto-tune](docs/decisions/auto-tune.md): finding a working English stream for a live event, one connection at a time.
 - [Branding](docs/decisions/branding.md): name, icon, colours, themes.
 - [Channel scan](docs/decisions/channel-scan.md): finding dead channels without blaming them for the internet or the server.
-- [Diagnostics](docs/decisions/diagnostics.md): crash reports, `launchSafely` and `attempt`, the developer log, keeping logins out of it.
+- [Diagnostics](docs/decisions/diagnostics.md): crash reports, `launchSafely` and `attempt`, the log in Settings, keeping logins out of it.
 - [Large screens](docs/decisions/large-screens.md): navigation rail, list and detail panes, the guide beside the player on tablets.
 - [Live events](docs/decisions/events.md): today's games and fights from the guide, Tune, following and alerts.
 - [Offline downloads](docs/decisions/offline.md): saving films and episodes, one connection at a time.
@@ -89,10 +89,10 @@ One file per topic in `docs/decisions/`, A to Z. Add a line when you add a topic
 - [Premium](docs/decisions/premium.md): the free app, the Premium unlock, prices, the GitHub and store builds, store policy.
 - [Profiles](docs/decisions/profiles.md): who's watching, kids profiles, profile PINs.
 - [Scope](docs/decisions/scope.md): what Tuned will never do, and what's decided but not built yet.
-- [Security](docs/decisions/security.md): login storage, cleartext HTTP, backups.
+- [Security](docs/decisions/security.md): login storage, cleartext HTTP, Android backup off (backup files removed 2026-11-18).
 - [Settings](docs/decisions/settings.md): the pages of Settings and what goes where.
 - [Speed](docs/decisions/speed.md): what keeps the app fast, and the budget.
-- [Sync](docs/decisions/sync.md): phone and TV kept the same through Google Drive's app folder, locked with a passphrase.
+- [Sync](docs/decisions/sync.md): phone and TV kept the same through one file in Google Drive (`drive.file`), with no passphrase.
 - [Trakt](docs/decisions/trakt.md): signing in with a code, scrobbling films and episodes, the app's keys.
 - [TV](docs/decisions/tv.md): Android TV launcher, focus outlines, remote keys in the player.
 - [Updates](docs/decisions/updates.md): GitHub Releases updater now, Play in-app updates later, semver tags.

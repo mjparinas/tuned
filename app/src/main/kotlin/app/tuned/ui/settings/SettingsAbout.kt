@@ -43,18 +43,11 @@ internal fun AboutPage(
             vm.update { it.copy(userAgent = ua.trim()) }
         }
     }
-    SectionHeader(stringResource(R.string.settings_developer))
-    SwitchRow(
-        stringResource(R.string.settings_developer_mode),
-        settings.developerMode,
-        stringResource(R.string.settings_developer_mode_summary),
-    ) { on -> vm.update { it.copy(developerMode = on) } }
-    if (settings.developerMode) {
-        SettingRow(
-            stringResource(R.string.logs_title),
-            stringResource(R.string.settings_logs_summary),
-            onClick = { onOpen(DeveloperLogRoute) },
-            trailing = { Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null) },
-        )
-    }
+    SectionHeader(stringResource(R.string.settings_header_troubleshooting))
+    SettingRow(
+        stringResource(R.string.logs_title),
+        stringResource(R.string.settings_logs_summary),
+        onClick = { onOpen(DeveloperLogRoute) },
+        trailing = { Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null) },
+    )
 }

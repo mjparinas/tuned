@@ -2,8 +2,8 @@ package app.tuned.data
 
 import android.content.Context
 import androidx.core.content.edit
-import app.tuned.core.BackupCrypto
 import app.tuned.core.CloudSync
+import app.tuned.core.PassphraseCrypto
 import app.tuned.diagnostics.AppLog
 import app.tuned.diagnostics.attempt
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -15,20 +15,20 @@ import java.io.IOException
 
 /**
  * Sync between devices (from the app audit, item 13; Melvin chose his Google account's Drive app folder, 2026-11-17):
- * the saved playlists, settings, favourites and watch later ([BackupRepository.syncCopy]) kept the same on a phone and
- * a TV. The copy is sealed with a passphrase the person chooses ([BackupCrypto], the same as backup files) before it
- * leaves the device, so Google holds only ciphertext. Each run takes the other device's copy or sends this one's
+ * the saved playlists, settings, favourites and watch later ([SyncCopyRepository.syncCopy]) kept the same on a phone and
+ * a TV. The copy goes to one file in the person's Drive as it is, with no passphrase (Melvin, 2026-11-18: "i dont think we
+ * need encryption"), so signing in to Google is all a device needs. Each run takes the other device's copy or sends this one's
  * ([CloudSync.decide]); everything works offline and catches up on the next run.
  */
 class CloudSyncRepository(
     context: Context,
     /** The Google account: signing in, and the copy in Drive. */
     val drive: GoogleDrive,
-    private val backup: BackupRepository,
+    private val syncCopy: SyncCopyRepository,
     /** A pulled copy signed this device in: start its first download. */
     private val onSignedIn: () -> Unit,
 ) {
-    enum class Problem { NONE, OFFLINE, PASSPHRASE, DRIVE_API_OFF }
+    enum class Problem { NONE, OFFLINE, DRIVE_API_OFF }
 
     data class Status(
         val lastSyncAt: Long,
@@ -42,29 +42,13 @@ class CloudSyncRepository(
     val available: Boolean get() = drive.available
     val signedIn: StateFlow<Boolean> = drive.signedIn
 
-    private val hasPassphraseFlow = MutableStateFlow(prefs.contains(KEY_PASSPHRASE))
-    val hasPassphrase: StateFlow<Boolean> = hasPassphraseFlow.asStateFlow()
-
     private val statusFlow = MutableStateFlow(Status(prefs.getLong(KEY_LAST_SYNC, 0), Problem.NONE))
     val status: StateFlow<Status> = statusFlow.asStateFlow()
 
-    /** Keeps [passphrase] sealed on this device, so later runs need no typing. Every device uses the same one. */
-    fun setPassphrase(passphrase: String) {
-        prefs.edit {
-            putString(KEY_PASSPHRASE, box.seal(passphrase))
-            // A new passphrase changes every fingerprint: start over as a device that hasn't synced.
-            remove(KEY_SYNCED)
-            remove(KEY_NOTICED)
-        }
-        hasPassphraseFlow.value = true
-        statusFlow.value = statusFlow.value.copy(problem = Problem.NONE)
-    }
-
-    /** Stops syncing here: signs out of Google and forgets the passphrase. What is on the device stays. */
+    /** Stops syncing here: signs out of Google. What is on the device stays. */
     suspend fun stop() {
         drive.signOut()
         prefs.edit { clear() }
-        hasPassphraseFlow.value = false
         statusFlow.value = Status(0, Problem.NONE)
     }
 
@@ -74,16 +58,11 @@ class CloudSyncRepository(
      */
     suspend fun run(): Boolean = lock.withLock {
         if (!drive.available || !drive.signedIn.value) return@withLock true
-        val passphrase = passphrase() ?: return@withLock true
         try {
-            sync(passphrase)
+            sync()
             val now = System.currentTimeMillis()
             prefs.edit { putLong(KEY_LAST_SYNC, now) }
             statusFlow.value = Status(now, Problem.NONE)
-            true
-        } catch (_: BackupCrypto.WrongPassphrase) {
-            AppLog.w(TAG, "The sync passphrase doesn't open the copy in Drive")
-            statusFlow.value = statusFlow.value.copy(problem = Problem.PASSPHRASE)
             true
         } catch (e: GoogleDrive.DriveApiOff) {
             AppLog.w(TAG, "Google Drive turned the request down", e)
@@ -96,9 +75,9 @@ class CloudSyncRepository(
         }
     }
 
-    private suspend fun sync(passphrase: CharArray) {
-        val plain = backup.syncCopy()
-        val local = CloudSync.fingerprint(plain, passphrase)
+    private suspend fun sync() {
+        val plain = syncCopy.syncCopy()
+        val local = CloudSync.fingerprint(plain)
         val synced = prefs.getString(KEY_SYNCED, null)
         if (local != synced && prefs.getString(KEY_NOTICED, null) != local) {
             // The first run that sees this change: remember when, for "the newer change wins".
@@ -115,21 +94,21 @@ class CloudSyncRepository(
             }
 
             CloudSync.Step.PUSH -> {
-                push(plain, local, passphrase, remote?.id)
+                push(plain, local, remote?.id)
             }
 
             CloudSync.Step.PULL -> {
                 val found = requireNotNull(remote)
-                val opened =
+                val signedIn =
                     try {
-                        BackupCrypto.open(drive.download(found.id), passphrase)
-                    } catch (_: BackupCrypto.NotABackup) {
-                        // A damaged copy in Drive: this device's replaces it rather than leaving sync stuck.
-                        AppLog.w(TAG, "The copy in Drive is damaged; sending this device's")
-                        push(plain, local, passphrase, found.id)
+                        syncCopy.applySyncCopy(readable(drive.download(found.id)))
+                    } catch (_: PassphraseCrypto.NotOurs) {
+                        // A damaged copy, or a locked one this device can't open: this device's replaces it rather
+                        // than leaving sync stuck.
+                        AppLog.w(TAG, "Couldn't read the copy in Drive; sending this device's")
+                        push(plain, local, found.id)
                         return
                     }
-                val signedIn = backup.applySyncCopy(opened)
                 markSynced(requireNotNull(found.fingerprint))
                 if (signedIn) onSignedIn()
             }
@@ -139,11 +118,26 @@ class CloudSyncRepository(
     private suspend fun push(
         plain: ByteArray,
         fingerprint: String,
-        passphrase: CharArray,
         existing: String?,
     ) {
-        drive.upload(BackupCrypto.seal(plain, passphrase), fingerprint, System.currentTimeMillis(), existing)
+        drive.upload(plain, fingerprint, System.currentTimeMillis(), existing)
         markSynced(fingerprint)
+        // Drive now holds a plain copy, so the passphrase an older version kept is no longer needed.
+        prefs.edit { remove(KEY_LEGACY_PASSPHRASE) }
+    }
+
+    /**
+     * The copy as plain bytes. One an older version locked with a passphrase opens with the passphrase this device
+     * still holds from then; without it, or with the wrong one, it counts as unreadable ([PassphraseCrypto.NotOurs]).
+     */
+    private fun readable(bytes: ByteArray): ByteArray {
+        if (!PassphraseCrypto.isSealed(bytes)) return bytes
+        val passphrase = legacyPassphrase() ?: throw PassphraseCrypto.NotOurs()
+        return try {
+            PassphraseCrypto.open(bytes, passphrase)
+        } catch (_: PassphraseCrypto.WrongPassphrase) {
+            throw PassphraseCrypto.NotOurs()
+        }
     }
 
     private fun markSynced(fingerprint: String) = prefs.edit {
@@ -151,14 +145,16 @@ class CloudSyncRepository(
         putString(KEY_NOTICED, fingerprint)
     }
 
-    private fun passphrase(): CharArray? {
-        val blob = prefs.getString(KEY_PASSPHRASE, null) ?: return null
+    private fun legacyPassphrase(): CharArray? {
+        val blob = prefs.getString(KEY_LEGACY_PASSPHRASE, null) ?: return null
         return attempt(TAG, "Couldn't read the sync passphrase") { box.open(blob).toCharArray() }.getOrNull()
     }
 
     private companion object {
         const val TAG = "CloudSync"
-        const val KEY_PASSPHRASE = "passphrase"
+
+        /** Kept by versions before 2026-11-18, which locked the copy; read only to open such a copy once. */
+        const val KEY_LEGACY_PASSPHRASE = "passphrase"
         const val KEY_SYNCED = "synced"
         const val KEY_NOTICED = "noticed"
         const val KEY_CHANGED_AT = "changedAt"
