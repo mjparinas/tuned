@@ -22,8 +22,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.paging.LazyPagingItems
 import androidx.paging.LoadState
+import androidx.paging.compose.LazyPagingItems
 import app.tuned.R
 import app.tuned.core.ContentKind
 
