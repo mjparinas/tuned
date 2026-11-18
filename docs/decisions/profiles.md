@@ -8,7 +8,7 @@ Each profile has its own **favourites, watch history (Continue Watching and watc
 
 - The profiles live in Room (`profiles`), and the one in use is a single row in `current_profile`. Every list query reads that row in SQL, so a switch refreshes every list, pager and Continue Watching row at once with no code passing a profile id around. Writes go through DAO methods that stamp the profile in use.
 - The profile in use is mirrored into DataStore (`profile_id`, `kids_profile`, `profile_count`) so the first frame knows it without opening the database. `ProfileRepository` writes both and puts the mirror right at start. The mirror is never backed up.
-- Upgrading (database version 10) gives everything already saved to the first profile, named "Me" until renamed.
+- Upgrading (database version 13) gives everything already saved to the first profile, named "Me" until renamed.
 
 ## Kids profiles
 
