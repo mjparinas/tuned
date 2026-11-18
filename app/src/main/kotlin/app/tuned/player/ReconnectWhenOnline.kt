@@ -7,8 +7,8 @@ import app.tuned.diagnostics.attempt
 
 /**
  * When the connection comes back (Wi-Fi to mobile, a tunnel, a router restart), [onOnline] runs (on Android's network
- * thread), so a stream that stopped on an error starts again by itself, from where it was for films and episodes. Moved out of `PlayerActivity` so the
- * activity only starts and stops it.
+ * thread), so a stream that stopped on an error starts again by itself, from where it was for films and episodes.
+ * Moved out of `PlayerActivity` so the activity only starts and stops it.
  */
 class ReconnectWhenOnline(
     private val context: Context,

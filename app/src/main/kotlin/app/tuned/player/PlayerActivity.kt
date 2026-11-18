@@ -484,8 +484,7 @@ class PlayerActivity : FragmentActivity() {
         val exo = buildPlayer(live)
         player = exo
         trakt.attach(exo)
-        playerView.player =
-            ViewPlayer(exo, { cast }, { statusView.visibility = View.GONE }) { live() && timeshift.shift(it) }
+        playerView.player = ViewPlayer(exo, { cast }, { statusView.visibility = View.GONE }, ::pauseLive)
         playerView.setControllerShowTimeoutMs(settings.controlsTimeoutMs)
         playerView.setShowNextButton(queue.size > 1)
         playerView.setShowPreviousButton(queue.size > 1)
@@ -733,6 +732,9 @@ class PlayerActivity : FragmentActivity() {
     }
 
     private fun live(): Boolean = queue.firstOrNull()?.kind == ContentKind.LIVE.code
+
+    /** A live channel pauses into the copy kept on the device, so it can carry on, rewind or catch up. */
+    private fun pauseLive(exo: ExoPlayer): Boolean = live() && timeshift.shift(exo)
 
     override fun onUserLeaveHint() {
         super.onUserLeaveHint()
