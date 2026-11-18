@@ -9,7 +9,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -429,7 +429,7 @@ fun AddPlaylistScreen(
 
                 Credentials.Kind.File -> {
                     Hint(R.string.add_file_hint)
-                    OutlinedButton(onClick = { pick.launch(arrayOf("*/*")) }, modifier = field.height(52.dp)) {
+                    OutlinedButton(onClick = { pick.launch(arrayOf("*/*")) }, modifier = field.heightIn(min = 52.dp)) {
                         Icon(Icons.Filled.FolderOpen, contentDescription = null, modifier = Modifier.padding(end = 8.dp))
                         Text(
                             when {
@@ -465,7 +465,7 @@ fun AddPlaylistScreen(
                 )
             }
             state.error?.let { Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyMedium) }
-            Button(onClick = submit, enabled = canSubmit, modifier = field.height(52.dp)) {
+            Button(onClick = submit, enabled = canSubmit, modifier = field.heightIn(min = 52.dp)) {
                 if (state.busy) {
                     CircularProgressIndicator(modifier = Modifier.size(22.dp), strokeWidth = 2.dp)
                 } else {

@@ -109,7 +109,7 @@ private fun AccentRow(
     }
 }
 
-private fun accentLabel(accent: Accent): Int = when (accent) {
+internal fun accentLabel(accent: Accent): Int = when (accent) {
     Accent.VIOLET -> R.string.accent_violet
     Accent.BLUE -> R.string.accent_blue
     Accent.TEAL -> R.string.accent_teal

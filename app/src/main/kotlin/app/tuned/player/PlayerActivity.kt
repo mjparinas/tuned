@@ -493,7 +493,7 @@ class PlayerActivity : FragmentActivity() {
         playerView.player = shown
         // Media buttons and the Assistant act through the same player as the on-screen controls.
         session.attach(shown)
-        playerView.setControllerShowTimeoutMs(settings.controlsTimeoutMs)
+        playerView.setControllerShowTimeoutMs(AccessibleControls.timeoutMs(this, settings.controlsTimeoutMs))
         playerView.setShowNextButton(queue.size > 1)
         playerView.setShowPreviousButton(queue.size > 1)
         // Live channels can rewind and catch up once paused (see [LiveTimeshift]); the buttons are greyed out until then.

@@ -15,6 +15,7 @@ import android.widget.LinearLayout
 import android.widget.ListView
 import android.widget.TextView
 import androidx.annotation.OptIn
+import androidx.core.view.ViewCompat
 import androidx.core.view.isVisible
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
@@ -176,6 +177,8 @@ class MiniGuide(
             showLogo(logo, channel.logo)
             name.text = channel.name
             name.setTextColor(if (playing) PLAYING_COLOUR else Color.WHITE)
+            // The colour alone doesn't reach a screen reader, so the playing channel says so too.
+            ViewCompat.setStateDescription(row, if (playing) activity.getString(R.string.a11y_playing) else null)
             val title = channel.tvgId?.let(onNow::get)
             now.text = title.orEmpty()
             now.visibility = if (title == null) View.GONE else View.VISIBLE
