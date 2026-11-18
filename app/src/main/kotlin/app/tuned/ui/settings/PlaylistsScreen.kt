@@ -71,7 +71,7 @@ class PlaylistsViewModel(
         onDone: () -> Unit,
     ) {
         viewModelScope.launchSafely("Playlists") {
-            container.useLogin(login)
+            container.session.useLogin(login)
             current.value = login
             onDone()
         }
@@ -93,7 +93,7 @@ class PlaylistsViewModel(
     ) {
         val wasActive = current.value?.samePlaylist(login) == true
         viewModelScope.launchSafely("Playlists") {
-            val empty = container.removePlaylist(login)
+            val empty = container.session.removePlaylist(login)
             reload()
             when {
                 empty -> onEmpty()

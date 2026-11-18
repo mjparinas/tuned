@@ -91,7 +91,7 @@ class SettingsViewModel(
     /** Signing out forgets the login, the cached playlist and guide, and stops background refreshes. */
     fun signOut(onDone: () -> Unit) {
         viewModelScope.launchSafely("Settings") {
-            container.signOut()
+            container.session.signOut()
             onDone()
         }
     }
