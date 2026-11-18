@@ -65,6 +65,13 @@ object StreamInfo {
         bitrate: Int,
     ): String = listOfNotNull(if (height > 0) "${height}p" else null, bitrate(bitrate)).joinToString(" · ")
 
+    /**
+     * Whether a stream's video renditions, as (height, bitrate), give a real choice: two or more that the picker
+     * would label differently. A single TS rendition, or copies of one, is no choice.
+     */
+    fun hasQualityChoice(renditions: List<Pair<Int, Int>>): Boolean =
+        renditions.map { (height, bitrate) -> quality(height, bitrate) }.distinct().size > 1
+
     private fun formatNumber(value: Float): String =
         if (value == value.toInt().toFloat()) value.toInt().toString() else String.format(Locale.ROOT, "%.1f", value)
 }

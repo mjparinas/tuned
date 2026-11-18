@@ -121,11 +121,19 @@ object Regions {
             "VN" to "Vietnam",
             "ZA" to "South Africa",
             "AFR" to "Africa",
+            "ASIA" to "Asia",
+            "EUR" to "Europe",
         )
+
+    /**
+     * Continents providers put in front of a country: "ASIA | INDIA MOVIES", "EUROPE | DE Sports". The country after
+     * one wins; a continent with nothing more specific after it is the region itself, so it still gets a switch.
+     */
+    private val areas = mapOf("ASIA" to "ASIA", "EUROPE" to "EUR", "AFRICA" to "AFR")
 
     /** Every tag that may name a region: the ISO country codes, plus the language and area tags providers add. */
     private val known: Set<String> =
-        (Locale.getISOCountries().toSet() + names.keys + aliases.keys + "UK") - notRegions
+        (Locale.getISOCountries().toSet() + names.keys + aliases.keys + "UK" + "EUR") - notRegions
 
     /**
      * Whole words providers write instead of a code: "United States | News", "ENGLISH | Movies", "Canada: News",
@@ -222,6 +230,7 @@ object Regions {
         ?: flag(group)
         ?: prefix(group)
         ?: whole(group)
+        ?: leading(group)
         ?: flag(name)
         ?: prefix(name)
         ?: suffix(name)
@@ -321,6 +330,31 @@ object Regions {
         return wordTags[text] ?: text.takeIf { it.length in 2..3 && it in known }?.let(::normalize)
     }
 
+    /**
+     * A country or language written out at the start, with no symbol after it: "SWEDEN HANDBOLLSLIGAN PPV",
+     * "INDIA MOVIES", "UNITED STATES NEWS". Only whole names of four letters or more count, so a code ("US Open") still
+     * needs a symbol, and names that are also common words or places elsewhere ([ambiguous]) never do.
+     */
+    private fun leading(text: String): String? {
+        val words =
+            spaces
+                .replace(separators.replace(text, " "), " ")
+                .trim()
+                .uppercase()
+                .split(' ')
+        if (words.size < 2) return null
+        for (n in minOf(3, words.size - 1) downTo 1) {
+            val name = words.take(n).joinToString(" ")
+            if (name.length < 4 || name in ambiguous) continue
+            wordTags[name]?.let { return it }
+        }
+        return null
+    }
+
+    /** Names that start other things: "Georgia Bulldogs", "Jordan", "America's Got Talent", "Jersey Shore". */
+    private val ambiguous =
+        setOf("GEORGIA", "JORDAN", "CHAD", "JERSEY", "AMERICA", "LATIN", "ARAB", "MONACO", "DOMINICA", "NIGER", "MALI", "GUERNSEY")
+
     private fun suffix(text: String): String? = bracketSuffix
         .find(text)
         ?.groupValues
@@ -338,14 +372,21 @@ object Regions {
                 .filter { it.isNotEmpty() }
         if (parts.size < 2) return null // "CNN" alone is a name; a tag needs a separator after it.
         var skipped = false
+        var area: String? = null
         for (part in parts.take(3)) {
             if (part.uppercase() in notRegions || quality.matches(part)) {
                 skipped = true // "4K | US Movies": look past the quality tag.
                 continue
             }
-            return tag(part, skipped)
+            val continent = areas[part.uppercase()]
+            if (continent != null && area == null) {
+                area = continent // "ASIA | INDIA MOVIES": look past the continent for the country.
+                skipped = true
+                continue
+            }
+            return tag(part, skipped) ?: area
         }
-        return null
+        return area
     }
 
     /** The region one part of a category names, if any. [afterQuality] lets "US Movies" (after "4K |") read US. */
@@ -358,6 +399,8 @@ object Regions {
         val words = part.split(' ')
         val firstWord = words.first()
         val isTag = token.matches(firstWord) && firstWord in known
+        // After a quality tag or a continent, a country written out leads the rest: "ASIA | INDIA MOVIES".
+        if (afterQuality && !isTag) leading(part)?.let { return it }
         // "CA FR | Quebec": a part made only of tags is the first of them.
         val allTags = words.size > 1 && words.all { token.matches(it) && it in known }
         return if (isTag && (allTags || (afterQuality && firstWord.length == 2))) normalize(firstWord) else null

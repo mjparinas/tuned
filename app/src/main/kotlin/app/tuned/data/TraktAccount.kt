@@ -161,7 +161,8 @@ class TraktAccount(
             }
         val answer = post("/scrobble/$action", body, token)
         if (answer != null && answer.first !in HTTP_OK..HTTP_LAST_OK && answer.first != HTTP_CONFLICT) {
-            AppLog.w(TAG, "Trakt didn't take the $action (HTTP ${answer.first})")
+            // Trakt's answer says what it didn't like (it holds no token), so the log can show why.
+            AppLog.w(TAG, "Trakt didn't take the $action at $progress% (HTTP ${answer.first}): ${answer.second.take(MAX_ERROR)}")
         }
     }
 
@@ -273,6 +274,7 @@ class TraktAccount(
 
     private companion object {
         const val TAG = "Trakt"
+        const val MAX_ERROR = 300
         const val KEY_SESSION = "session"
         const val KEY_SCROBBLE = "scrobble"
         const val MS = 1_000L

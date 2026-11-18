@@ -40,6 +40,38 @@ class RegionsTest {
     }
 
     @Test
+    fun `a country written out at the start counts without a symbol`() {
+        assertEquals("SE", group("SWEDEN HANDBOLLSLIGAN PPV"))
+        assertEquals("SE", group("SWEDEN SVENSKA KANALER"))
+        assertEquals("IN", group("INDIA MOVIES"))
+        assertEquals("US", group("UNITED STATES NEWS"))
+        assertEquals("KR", group("SOUTH KOREA DRAMA"))
+    }
+
+    @Test
+    fun `codes and names that start other things still need a symbol`() {
+        assertNull(group("US Open"))
+        assertNull(group("USA Network"))
+        assertNull(group("Georgia Bulldogs"))
+        assertNull(group("Jersey Shore"))
+        assertNull(group("America's Got Talent"))
+    }
+
+    @Test
+    fun `the country after a continent wins`() {
+        assertEquals("IN", group("ASIA | INDIA MOVIES"))
+        assertEquals("DE", group("EUROPE | DE Sports"))
+        assertEquals("ASIA", group("ASIA | Movies"))
+        assertEquals("Asia", Regions.displayName("ASIA"))
+    }
+
+    @Test
+    fun `ex-yu and plain prefixes still read as before`() {
+        assertEquals("EX", group("|EXYU| STRANI FILMOVI 1950-2022"))
+        assertEquals("US", group("|US| MOVIES NETWORK"))
+    }
+
+    @Test
     fun `countries sort by name, not by stream count`() {
         // Busiest first, as the database returns them; "Côte d'Ivoire" sorts as if the accent weren't there.
         val byCount = listOf("US" to 900, "UK" to 500, "FR" to 300, "CI" to 200, "CA" to 50, "AF" to 1)

@@ -6,6 +6,7 @@ import app.tuned.core.Search
 import app.tuned.core.TuneCandidate
 import app.tuned.core.Tuner
 import app.tuned.data.db.ChannelHealthEntity
+import app.tuned.data.db.ItemEntity
 import app.tuned.data.db.TunedDatabase
 import kotlinx.coroutines.flow.first
 
@@ -65,25 +66,49 @@ class TuneRepository(
         val s = settings.settings.first()
         if (!s.backupCopies) return emptyList()
         val item = db.items().get(id) ?: return emptyList()
+        return Tuner.rank(copyCandidates(item, s), System.currentTimeMillis()).map { it.id }
+    }
+
+    /**
+     * For the HQ button (Melvin, 2026-11-18): the channel itself and the best copy of each other picture quality
+     * ([ChannelCopies.picture]), sharpest first. Fewer than two means there is nothing to switch to. Unlike [copies]
+     * this doesn't need backup copies switched on, since the person picks the copy themselves.
+     */
+    suspend fun qualityCopies(id: Long): List<QualityCopy> {
+        val s = settings.settings.first()
+        val item = db.items().get(id) ?: return emptyList()
+        val own = ChannelCopies.picture(item.name)
+        val others =
+            Tuner
+                .rank(copyCandidates(item, s), System.currentTimeMillis())
+                .map { QualityCopy(it.id, it.name, ChannelCopies.picture(it.name)) }
+                .filter { it.picture != own }
+                .distinctBy { it.picture }
+        if (others.isEmpty()) return emptyList()
+        return (others + QualityCopy(item.id, item.name, own)).sortedByDescending { it.picture }
+    }
+
+    private suspend fun copyCandidates(
+        item: ItemEntity,
+        s: AppSettings,
+    ): List<TuneCandidate> {
         val key = ChannelCopies.key(item.name) ?: return emptyList()
-        val rows = db.items().copyCandidates(id, Search.match(key), s.hiddenKeys(), s.showAdult)
-        val candidates =
-            rows
-                .filter { ChannelCopies.key(it.name) == key && ChannelCopies.sameRegion(it.region, item.region) }
-                .map {
-                    TuneCandidate(
-                        id = it.id,
-                        name = it.name,
-                        group = it.groupName,
-                        region = it.region,
-                        nameMatch = true,
-                        guideMatch = false,
-                        okAt = it.okAt ?: 0,
-                        deadAt = it.deadAt ?: 0,
-                        height = it.height ?: 0,
-                    )
-                }
-        return Tuner.rank(candidates, System.currentTimeMillis()).map { it.id }
+        val rows = db.items().copyCandidates(item.id, Search.match(key), s.hiddenKeys(), s.showAdult)
+        return rows
+            .filter { ChannelCopies.key(it.name) == key && ChannelCopies.sameRegion(it.region, item.region) }
+            .map {
+                TuneCandidate(
+                    id = it.id,
+                    name = it.name,
+                    group = it.groupName,
+                    region = it.region,
+                    nameMatch = true,
+                    guideMatch = false,
+                    okAt = it.okAt ?: 0,
+                    deadAt = it.deadAt ?: 0,
+                    height = it.height ?: 0,
+                )
+            }
     }
 
     suspend fun played(
@@ -98,6 +123,13 @@ class TuneRepository(
         val old = db.library().health(id)
         db.library().saveHealth(ChannelHealthEntity(id, old?.okAt ?: 0, System.currentTimeMillis(), old?.height ?: 0))
     }
+
+    /** A copy of a channel and how sharp its picture is ([ChannelCopies.picture]). */
+    data class QualityCopy(
+        val id: Long,
+        val name: String,
+        val picture: Int,
+    )
 
     private companion object {
         const val HOUR = 3_600_000L

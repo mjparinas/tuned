@@ -2,10 +2,13 @@ package app.tuned.ui.settings
 
 import android.text.format.DateUtils
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import app.tuned.R
+import app.tuned.core.TimeZones
 import app.tuned.data.AppSettings
+import java.time.ZoneId
 
 @Composable
 internal fun GuidePage(
@@ -47,6 +50,7 @@ internal fun GuidePage(
         label = { d -> pluralStringResource(R.plurals.days, d, d) },
     ) { d -> vm.update { it.copy(guideDays = d) } }
     GuideFixRows(settings)
+    TimeZoneRow(settings, vm)
     ChoiceRow(
         stringResource(R.string.settings_reminder_lead),
         listOf(0, 1, 5, 10, 15, 30),
@@ -61,6 +65,30 @@ internal fun GuidePage(
             }
         },
     ) { m -> vm.update { it.copy(reminderLeadMinutes = m) } }
+}
+
+/** Which zone guide and event times show in; follows the phone unless a zone is picked (Melvin, 2026-11-18). */
+@Composable
+private fun TimeZoneRow(
+    settings: AppSettings,
+    vm: SettingsViewModel,
+) {
+    val locale = LocalConfiguration.current.locales[0]
+    val now = System.currentTimeMillis()
+    val choices = listOf(TimeZones.DEVICE) + (TimeZones.CHOICES + settings.timeZone).filter { it.isNotBlank() }.distinct()
+    val selected = settings.timeZone.takeIf { it in choices } ?: TimeZones.DEVICE
+    ChoiceRow(
+        stringResource(R.string.settings_time_zone),
+        choices,
+        selected,
+        label = { id ->
+            if (id == TimeZones.DEVICE) {
+                stringResource(R.string.settings_time_zone_device, TimeZones.label(ZoneId.systemDefault().id, now, locale))
+            } else {
+                TimeZones.label(id, now, locale)
+            }
+        },
+    ) { id -> vm.update { it.copy(timeZone = id) } }
 }
 
 @Composable

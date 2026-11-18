@@ -19,7 +19,7 @@ internal class SettingField<S : Any, T>(
     private val set: AppSettings.(T) -> AppSettings,
     private val toStored: (T) -> S,
     private val fromStored: (S) -> T?,
-    /** Belongs to this phone (sync times, the open tab), so a backup leaves it out. */
+    /** Belongs to this phone (sync times, the open tab), so sync leaves it out. */
     val deviceOnly: Boolean = false,
 ) {
     /** A missing or unreadable value keeps what [s] has, which is the default. */
@@ -91,7 +91,7 @@ private fun AppSettings.cc(change: CaptionStyle.() -> CaptionStyle) = copy(capti
 
 /**
  * Every stored setting, grouped by area. Add a new one inside its area rather than at the end, so features in
- * different areas don't touch the same lines. Key names are on people's phones and in backups: never rename one.
+ * different areas don't touch the same lines. Key names are on people's phones and in synced copies: never rename one.
  * `showAdult` isn't here: it lives in memory only (see [SettingsRepository]).
  */
 internal val SETTING_FIELDS: List<SettingField<*, *>> =
@@ -112,6 +112,7 @@ internal val SETTING_FIELDS: List<SettingField<*, *>> =
         bool("pull_to_refresh", { pullToRefresh }) { copy(pullToRefresh = it) },
         // What's hidden
         stringSet("hidden_regions", { hiddenRegions }) { copy(hiddenRegions = it) },
+        stringSet("seen_regions", { seenRegions }) { copy(seenRegions = it) }.notBackedUp(),
         stringSet("hidden_groups", { hiddenGroups }) { copy(hiddenGroups = it) },
         bool("hide_dead_channels", { hideDeadChannels }) { copy(hideDeadChannels = it) },
         bool("hide_failed_on_play", { hideFailedOnPlay }) { copy(hideFailedOnPlay = it) },
@@ -125,6 +126,7 @@ internal val SETTING_FIELDS: List<SettingField<*, *>> =
         int("reminder_lead_minutes", { reminderLeadMinutes }) { copy(reminderLeadMinutes = it) },
         int("guide_days", { guideDays }) { copy(guideDays = it) },
         int("guide_offset_minutes", { guideOffsetMinutes }) { copy(guideOffsetMinutes = it) },
+        string("time_zone", { timeZone }) { copy(timeZone = it) },
         bool("unmetered_only", { unmeteredOnly }) { copy(unmeteredOnly = it) },
         long("last_playlist_sync", { lastPlaylistSync }) { copy(lastPlaylistSync = it) }.notBackedUp(),
         long("last_guide_sync", { lastGuideSync }) { copy(lastGuideSync = it) }.notBackedUp(),
@@ -168,7 +170,7 @@ internal val SETTING_FIELDS: List<SettingField<*, *>> =
         // Ratings, network and updates
         string("user_agent", { userAgent }) { copy(userAgent = it) },
         bool("check_updates", { checkUpdates }) { copy(checkUpdates = it) },
-        // Profiles: mirrored from the database, which a backup doesn't hold
+        // Profiles: mirrored from the database, which sync doesn't carry
         bool("ask_profile_at_start", { askProfileAtStart }) { copy(askProfileAtStart = it) },
         long("profile_id", { profileId }) { copy(profileId = it) }.notBackedUp(),
         bool("kids_profile", { kidsProfile }) { copy(kidsProfile = it) }.notBackedUp(),
