@@ -48,6 +48,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
+import app.tuned.BuildConfig
 import app.tuned.R
 import app.tuned.container
 import app.tuned.core.PlaylistLink
@@ -72,7 +73,8 @@ import java.util.UUID
 import java.util.concurrent.TimeUnit
 
 /** The default server; editable here and in Settings › Playlists (Melvin, 2026-11-17). */
-const val DEFAULT_SERVER = "http://eros4k.ddns.net"
+/** Filled in at sign-in in GitHub builds; empty in store builds, which never name a provider (docs/decisions/premium.md). */
+val DEFAULT_SERVER: String = BuildConfig.DEFAULT_SERVER
 
 /** What the form holds, before it becomes a [Credentials]. */
 data class PlaylistDraft(

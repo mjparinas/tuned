@@ -5,11 +5,11 @@ Tuned is a native Android IPTV player. It signs in to an Xtream Codes-style serv
 ## Commands
 
 ```bash
-./gradlew :app:assembleDebug          # debug APK: app/build/outputs/apk/debug/app-debug.apk (id app.tuned.debug)
+./gradlew :app:assembleGithubDebug    # debug APK: app/build/outputs/apk/github/debug/app-github-debug.apk (id app.tuned.debug)
 ./gradlew :core:test                  # parser and rule tests, plain JVM, seconds
-./gradlew :app:testDebugUnitTest      # app unit tests
+./gradlew :app:testGithubDebugUnitTest # app unit tests
 ./gradlew spotlessApply               # format Kotlin (ktlint); CI runs spotlessCheck
-./gradlew detekt :app:lintDebug       # static analysis and Android Lint; any finding fails
+./gradlew detekt :app:lintGithubDebug # static analysis and Android Lint; any finding fails
 npm ci && npm run format              # Prettier for YAML, JSON and Markdown; CI runs format:check
 ```
 
@@ -20,7 +20,8 @@ Kotlin, Jetpack Compose with Material 3, Navigation Compose (type-safe routes), 
 ## Modules
 
 - `:core`: plain Kotlin, no Android. The M3U and XMLTV parsers, sorting streams into Live TV, Movies and Shows, country detection, episode numbering, Xtream URLs. Anything that can be tested without a device goes here, with a test.
-- `:app`: the Android app. `data/` (Room, DataStore settings, encrypted login, sync), `work/` (background refresh), `player/` (PlayerActivity), `ui/` (Compose screens, one screen and its ViewModel per file).
+- `:app`: the Android app, in two builds ([premium](docs/decisions/premium.md)): `github` (GitHub Releases, updates itself, everything unlocked) and `play` (Google Play and other stores: no self-updater, no default server, Premium sold through Play Billing). Store builds never name a provider, channel or sports brand, in the app or the listing.
+- `:app` folders: `data/` (Room, DataStore settings, encrypted login, sync), `work/` (background refresh), `player/` (PlayerActivity), `ui/` (Compose screens, one screen and its ViewModel per file).
 
 ## Product rules
 
@@ -83,6 +84,7 @@ One file per topic in `docs/decisions/`, A to Z. Add a line when you add a topic
 - [People](docs/decisions/people.md): actor filmography pages, oldest first, with what is in the playlist marked.
 - [Playlist and guide](docs/decisions/playlist.md): Xtream URLs, how streams are sorted, countries and adult categories across providers, refresh.
 - [Player](docs/decisions/player.md): Media3 setup, controls, captions, audio, cast, backup copies, TMDB details.
+- [Premium](docs/decisions/premium.md): the free app, the Premium unlock, prices, the GitHub and store builds, store policy.
 - [Profiles](docs/decisions/profiles.md): who's watching, kids profiles, profile PINs.
 - [Scope](docs/decisions/scope.md): what Tuned will never do, and what's decided but not built yet.
 - [Security](docs/decisions/security.md): login storage, cleartext HTTP, backups.
