@@ -17,19 +17,11 @@
     <string name="cloud_sync_other">Google couldn\'t sign you in. Try again in a moment.</string>
     <string name="cloud_sync_google_said">Google said: %1$s</string>
     <string name="cloud_sync_try_again">Try again</string>
-    <string name="cloud_sync_passphrase_help">Your playlists, including their logins, are locked with this passphrase before they leave the device, so only your devices can read them. Use the same passphrase on every device. It can\'t be recovered.</string>
-    <string name="cloud_sync_set_passphrase">Enter the sync passphrase</string>
-    <string name="cloud_sync_set_passphrase_summary">Needed before this device can sync</string>
     <string name="cloud_sync_now">Sync now</string>
     <string name="cloud_sync_never">Not synced yet</string>
     <string name="cloud_sync_last">Last synced %1$s</string>
     <string name="cloud_sync_offline">Couldn\'t reach Google Drive. It will try again.</string>
     <string name="cloud_sync_drive_api_off">Google Drive is turned off for this app on Google\'s side.</string>
-    <string name="cloud_sync_wrong_passphrase">This passphrase doesn\'t match the one on your other devices. Tap to enter it again.</string>
     <string name="cloud_sync_stop">Stop syncing</string>
     <string name="cloud_sync_stop_summary">Signs this device out of Google. What\'s on it stays.</string>
-    <string name="passphrase_new">Choose a passphrase</string>
-    <string name="passphrase">Passphrase</string>
-    <string name="passphrase_again">Passphrase again</string>
-    <string name="passphrase_continue">Continue</string>
 </resources>

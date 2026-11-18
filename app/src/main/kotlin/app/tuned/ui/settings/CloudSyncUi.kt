@@ -11,11 +11,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -47,7 +43,6 @@ class CloudSyncViewModel(
     private val drive = sync.drive
     val available = sync.available
     val signedIn = sync.signedIn
-    val hasPassphrase = sync.hasPassphrase
     val status = sync.status
 
     /** Signing in: the code on screen, then how it ended. */
@@ -79,19 +74,16 @@ class CloudSyncViewModel(
                     return@launchSafely
                 }
                 signInFlow.value = SignIn.Code(code)
-                // Signed in (no failure): straight on to the passphrase, so the dialog closes and that one opens.
-                signInFlow.value = drive.awaitSignIn(code)?.let { SignIn.Ended(it) }
+                // Signed in (no failure): the dialog closes and the first sync starts.
+                val failure = drive.awaitSignIn(code)
+                signInFlow.value = failure?.let { SignIn.Ended(it) }
+                if (failure == null) syncNow()
             }
     }
 
     fun closeSignIn() {
         job?.cancel()
         signInFlow.value = null
-    }
-
-    fun setPassphrase(passphrase: String) {
-        sync.setPassphrase(passphrase)
-        syncNow()
     }
 
     fun syncNow() = CloudSyncWorker.schedule(app)
@@ -107,17 +99,15 @@ class CloudSyncViewModel(
 
 /**
  * Settings › Playlists and account › Sync between devices (from the app audit, item 13): sign in to Google with a
- * code, choose the passphrase that locks the synced copy, see when it last synced, stop. Hidden in builds without the
+ * code, see when it last synced, stop. Hidden in builds without the
  * app's Google keys.
  */
 @Composable
 fun CloudSyncRows(vm: CloudSyncViewModel = viewModel()) {
     if (!vm.available) return
     val signedIn by vm.signedIn.collectAsStateWithLifecycle()
-    val hasPassphrase by vm.hasPassphrase.collectAsStateWithLifecycle()
     val status by vm.status.collectAsStateWithLifecycle()
     val signIn by vm.signIn.collectAsStateWithLifecycle()
-    var askPassphrase by remember { mutableStateOf(false) }
     SectionHeader(stringResource(R.string.cloud_sync))
     when {
         // Sync is Premium (docs/decisions/premium.md).
@@ -133,12 +123,6 @@ fun CloudSyncRows(vm: CloudSyncViewModel = viewModel()) {
             )
         }
 
-        !hasPassphrase || status.problem == CloudSyncRepository.Problem.PASSPHRASE -> {
-            val summary =
-                if (hasPassphrase) R.string.cloud_sync_wrong_passphrase else R.string.cloud_sync_set_passphrase_summary
-            SettingRow(stringResource(R.string.cloud_sync_set_passphrase), stringResource(summary), onClick = { askPassphrase = true })
-        }
-
         else -> {
             SettingRow(stringResource(R.string.cloud_sync_now), statusText(status), onClick = vm::syncNow)
         }
@@ -147,17 +131,6 @@ fun CloudSyncRows(vm: CloudSyncViewModel = viewModel()) {
         SettingRow(stringResource(R.string.cloud_sync_stop), stringResource(R.string.cloud_sync_stop_summary), onClick = vm::stop)
     }
     signIn?.let { SignInDialog(it, onRetry = vm::startSignIn, onClose = vm::closeSignIn) }
-    // Just signed in: straight on to the passphrase.
-    LaunchedEffect(signedIn, hasPassphrase) { if (signedIn && !hasPassphrase) askPassphrase = true }
-    if (askPassphrase) {
-        PassphraseDialog(
-            help = stringResource(R.string.cloud_sync_passphrase_help),
-            onDismiss = { askPassphrase = false },
-        ) { passphrase ->
-            askPassphrase = false
-            vm.setPassphrase(passphrase)
-        }
-    }
 }
 
 @Composable
