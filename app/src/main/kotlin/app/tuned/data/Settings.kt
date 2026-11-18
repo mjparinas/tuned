@@ -136,6 +136,8 @@ data class AppSettings(
     val showGuideInList: Boolean = true,
     /** Live TV as a grid guide (channels down the side, time across the top) instead of a list. */
     val liveGrid: Boolean = false,
+    /** Numbers beside live channels, for typing one on the remote (Settings › Lists). */
+    val channelNumbers: Boolean = true,
     /** Look for a newer release on GitHub at start (copies from Play update through Play either way). */
     val checkUpdates: Boolean = true,
     val captions: CaptionStyle = CaptionStyle(),
@@ -323,6 +325,7 @@ class SettingsRepository(
             tmdbKey = p[K.tmdbKey] ?: d.tmdbKey,
             showGuideInList = p[K.showGuideInList] ?: d.showGuideInList,
             liveGrid = p[K.liveGrid] ?: d.liveGrid,
+            channelNumbers = p[K.channelNumbers] ?: d.channelNumbers,
             checkUpdates = p[K.checkUpdates] ?: d.checkUpdates,
             captions =
                 CaptionStyle(
@@ -398,6 +401,7 @@ class SettingsRepository(
         p[K.tmdbKey] = s.tmdbKey
         p[K.showGuideInList] = s.showGuideInList
         p[K.liveGrid] = s.liveGrid
+        p[K.channelNumbers] = s.channelNumbers
         p[K.checkUpdates] = s.checkUpdates
         val c = s.captions
         p[K.ccEnabled] = c.enabled
@@ -473,6 +477,7 @@ class SettingsRepository(
         val tmdbKey = stringPreferencesKey("tmdb_key")
         val showGuideInList = booleanPreferencesKey("show_guide_in_list")
         val liveGrid = booleanPreferencesKey("live_grid")
+        val channelNumbers = booleanPreferencesKey("channel_numbers")
         val checkUpdates = booleanPreferencesKey("check_updates")
         val ccEnabled = booleanPreferencesKey("cc_enabled")
         val ccLanguage = stringPreferencesKey("cc_language")

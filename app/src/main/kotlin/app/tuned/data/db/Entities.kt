@@ -16,6 +16,7 @@ import androidx.room.PrimaryKey
         Index(value = ["kind", "showKey", "season", "episode"]),
         Index(value = ["tvgId"]),
         Index(value = ["region"]),
+        Index(value = ["kind", "number"]),
     ],
 )
 data class ItemEntity(
@@ -34,6 +35,8 @@ data class ItemEntity(
     val season: Int?,
     val episode: Int?,
     val sortOrder: Int,
+    /** Live channels' numbers, 1 up in playlist order, for typing a number on the remote (0 for films and episodes). */
+    @ColumnInfo(defaultValue = "0") val number: Int = 0,
 )
 
 /**
@@ -263,6 +266,8 @@ data class ChannelWithNow(
     @ColumnInfo(name = "nowStart") val nowStart: Long?,
     @ColumnInfo(name = "nowStop") val nowStop: Long?,
     @ColumnInfo(name = "favourite") val favourite: Boolean,
+    /** The channel's number ([ItemEntity.number]); 0 until numbered. */
+    val number: Int = 0,
 )
 
 /** A movie or episode to pick up where it was left. */

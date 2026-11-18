@@ -28,7 +28,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         GuideFixEntity::class,
         GuideChannelEntity::class,
     ],
-    version = 14,
+    version = 15,
     exportSchema = true,
 )
 abstract class TunedDatabase : RoomDatabase() {
@@ -76,6 +76,7 @@ abstract class TunedDatabase : RoomDatabase() {
                 MIGRATION_11_12,
                 MIGRATION_12_13,
                 MIGRATION_13_14,
+                MIGRATION_14_15,
             ).addCallback(FirstProfile)
             // Going back to an older release (installing an older APK) can't keep a newer database: start it afresh
             // rather than crash on every launch. Upgrades always migrate, above.
@@ -237,6 +238,15 @@ abstract class TunedDatabase : RoomDatabase() {
                     db.execSQL(
                         "CREATE TABLE IF NOT EXISTS `guide_channels` (`id` TEXT NOT NULL, `name` TEXT NOT NULL, PRIMARY KEY(`id`))",
                     )
+                }
+            }
+
+        /** Adds channel numbers. They are filled in the background ([ChannelNumbers.fillIfMissing]) and by each refresh. */
+        val MIGRATION_14_15 =
+            object : Migration(14, 15) {
+                override fun migrate(db: SupportSQLiteDatabase) {
+                    db.execSQL("ALTER TABLE `items` ADD COLUMN `number` INTEGER NOT NULL DEFAULT 0")
+                    db.execSQL("CREATE INDEX IF NOT EXISTS `index_items_kind_number` ON `items` (`kind`, `number`)")
                 }
             }
 

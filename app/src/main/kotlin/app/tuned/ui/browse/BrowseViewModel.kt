@@ -13,6 +13,7 @@ import app.tuned.core.HiddenGroups
 import app.tuned.core.Search
 import app.tuned.data.AppSettings
 import app.tuned.data.SyncProgress
+import app.tuned.data.db.ChannelNumbers
 import app.tuned.data.db.ChannelWithNow
 import app.tuned.data.db.ContinueRow
 import app.tuned.data.db.GroupCount
@@ -72,6 +73,8 @@ class BrowseViewModel(
         viewModelScope.launchSafely("BrowseViewModel") { container.account.refreshIfOld() }
         // Sports, PPV and event channels are never hidden as dead: bring back any hidden before that rule, or renamed since.
         viewModelScope.launchSafely("BrowseViewModel") { container.channelScan.releaseEventChannels() }
+        // A cache from before channel numbers: number it once, in the background.
+        viewModelScope.launchSafely("BrowseViewModel") { ChannelNumbers.fillIfMissing(container.db) }
     }
 
     private val filters = mutableMapOf<ContentKind, MutableStateFlow<Filter>>()

@@ -281,10 +281,12 @@ class SyncRepository(
         writer.begin()
         try {
             val batch = ArrayList<ItemEntity>(BATCH)
+            var live = 0
             fill { entry ->
-                val row = entry.toRow()
-                if (writer.accept(row.id)) {
-                    batch += row
+                val parsed = entry.toRow()
+                if (writer.accept(parsed.id)) {
+                    // Live channels are numbered 1 up in playlist order, for typing a number on the remote.
+                    batch += if (parsed.kind == ContentKind.LIVE.code) parsed.copy(number = ++live) else parsed
                     if (batch.size == BATCH) {
                         writer.add(batch.toList())
                         batch.clear()

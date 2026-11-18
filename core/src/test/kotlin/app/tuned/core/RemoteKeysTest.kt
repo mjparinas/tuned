@@ -41,4 +41,19 @@ class RemoteKeysTest {
         assertEquals(Action.NONE, RemoteKeys.action(RemoteKeys.CHANNEL_UP, live = false, controlsShown = false))
         assertEquals(Action.NONE, RemoteKeys.action(RemoteKeys.GUIDE, live = false, controlsShown = false))
     }
+
+    @Test
+    fun numberKeysTypeAChannelNumber() {
+        assertEquals(0, RemoteKeys.digit(RemoteKeys.DIGIT_0))
+        assertEquals(9, RemoteKeys.digit(RemoteKeys.NUMPAD_9))
+        assertEquals(null, RemoteKeys.digit(RemoteKeys.DPAD_UP))
+        assertEquals("12", RemoteKeys.typeDigit("1", 2))
+        assertEquals("23456", RemoteKeys.typeDigit("12345", 6))
+    }
+
+    @Test
+    fun lastChannelFlipsBackOnLiveTvOnly() {
+        assertEquals(Action.LAST_CHANNEL, RemoteKeys.action(RemoteKeys.LAST_CHANNEL, live = true, controlsShown = true))
+        assertEquals(Action.NONE, RemoteKeys.action(RemoteKeys.LAST_CHANNEL, live = false, controlsShown = false))
+    }
 }

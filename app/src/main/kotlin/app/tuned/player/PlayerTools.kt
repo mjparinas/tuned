@@ -55,11 +55,14 @@ class PlayerTools(
         val onFitChanged: (VideoFit) -> Unit,
         val subtitles: SubtitleTiming,
         val casting: () -> Boolean,
+        /** Typing a channel number and flipping back, on live TV. */
+        val dial: ChannelDial,
     )
 
     private val density = activity.resources.displayMetrics.density
     private val guide = MiniGuide(activity, hooks.player, hooks.queue, beside = listOf(playerView, overlay), onClosed = { syncBack() })
     private val guideButton = button(R.drawable.ic_player_guide, R.string.player_guide) { toggleGuide() }
+    private val flipButton = button(R.drawable.ic_player_flip_back, R.string.player_flip_back) { hooks.dial.flipBack() }
     private val unlockButton =
         button(R.drawable.ic_player_lock, R.string.player_unlock) { unlock() }.apply {
             visibility = View.GONE
@@ -98,6 +101,7 @@ class PlayerTools(
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
             addView(guideButton)
+            addView(flipButton)
             addView(button(R.drawable.ic_player_aspect, R.string.player_fit) { nextFit() })
             addView(button(R.drawable.ic_player_quality, R.string.player_quality) { pickQuality() })
             addView(button(R.drawable.ic_player_subtitle_timing, R.string.subtitle_timing) { pickSubtitleTiming() })
@@ -143,6 +147,7 @@ class PlayerTools(
     fun onControls(visibility: Int) {
         if (visibility == View.VISIBLE) {
             guideButton.visibility = if (hooks.isLive() && hooks.queue().size > 1) View.VISIBLE else View.GONE
+            flipButton.visibility = if (hooks.isLive() && hooks.dial.canFlipBack) View.VISIBLE else View.GONE
         }
     }
 
@@ -177,6 +182,11 @@ class PlayerTools(
     fun onKey(event: KeyEvent): Boolean {
         val guideKey = event.keyCode == RemoteKeys.GUIDE || event.keyCode == RemoteKeys.MENU
         if (locked || (guide.isOpen && !guideKey)) return false
+        val digit = RemoteKeys.digit(event.keyCode)
+        if (digit != null && hooks.isLive()) {
+            if (event.action == KeyEvent.ACTION_DOWN && event.repeatCount == 0) hooks.dial.type(digit)
+            return true
+        }
         val action = RemoteKeys.action(event.keyCode, hooks.isLive(), playerView.isControllerFullyVisible)
         if (action == RemoteKeys.Action.NONE) return false
         val seek = action == RemoteKeys.Action.SEEK_FORWARD || action == RemoteKeys.Action.SEEK_BACK
@@ -216,6 +226,10 @@ class PlayerTools(
 
             RemoteKeys.Action.INFO -> {
                 toggleInfo()
+            }
+
+            RemoteKeys.Action.LAST_CHANNEL -> {
+                hooks.dial.flipBack()
             }
 
             RemoteKeys.Action.NONE -> {}

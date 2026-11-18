@@ -142,6 +142,35 @@ class PlayerActivity : FragmentActivity() {
                 ),
         )
     }
+    /** Typing a channel number and flipping back; see [ChannelDial]. */
+    private val dial by lazy {
+        ChannelDial(
+            scope = lifecycleScope,
+            hooks =
+                ChannelDial.Hooks(
+                    find = { n -> container.db.items().liveByNumber(n) },
+                    get = { id -> container.db.items().get(id) },
+                    jump = { item ->
+                        val exo = player
+                        val index = queue.indexOfFirst { it.id == item.id }
+                        if (exo != null && index >= 0) {
+                            exo.seekTo(index, C.TIME_UNSET)
+                        } else if (exo != null) {
+                            // Another group: its channels become next and previous. The same player, so one stream.
+                            queue = siblings(item)
+                            val at = queue.indexOfFirst { it.id == item.id }.coerceAtLeast(0)
+                            exo.setMediaItems(queue.map { it.toMediaItem(null) }, at, C.TIME_UNSET)
+                            exo.prepare()
+                            exo.playWhenReady = true
+                            playerView.setShowNextButton(queue.size > 1)
+                            playerView.setShowPreviousButton(queue.size > 1)
+                        }
+                    },
+                    say = ::flash,
+                    noSuchChannel = { n -> getString(R.string.player_no_channel_number, n) },
+                ),
+        )
+    }
     private lateinit var statusView: TextView
     private val audioCheck by lazy {
         AudioCheck { codec -> Toast.makeText(this, getString(R.string.player_no_sound, codec), Toast.LENGTH_LONG).show() }
@@ -308,6 +337,7 @@ class PlayerActivity : FragmentActivity() {
                         },
                         subtitles = subtitleTiming,
                         casting = { cast?.casting == true },
+                        dial = dial,
                     ),
             )
         overlay.addView(tools.toolbar)
@@ -473,6 +503,7 @@ class PlayerActivity : FragmentActivity() {
             exo.playWhenReady = true
         }
         updateOverlay(queue[index])
+        if (live) dial.onChannel(queue[index].id)
         if (!live) progressJob = lifecycleScope.launchSafely("Player") { saveProgressEvery(exo) }
         if (live && autoTune == null && item.id != CatchUpLinks.ID) backups.attach(exo)
     }
@@ -548,6 +579,7 @@ class PlayerActivity : FragmentActivity() {
             liveRetries = 0
             pictured = false
             player?.let(timeshift::onChannelChanged)
+            if (live) dial.onChannel(id)
             // Flipping to another channel ends the search for a copy of the last one.
             backups.onChannelChanged(id)
         }
@@ -847,6 +879,7 @@ class PlayerActivity : FragmentActivity() {
         timeshift.release()
         gestures?.release()
         tools.release()
+        dial.release()
         cast?.release()
         container.appScope.launch { container.offline.start() }
         reconnect?.let { cb -> runCatching { getSystemService(ConnectivityManager::class.java)?.unregisterNetworkCallback(cb) } }

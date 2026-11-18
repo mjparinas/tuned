@@ -17,8 +17,31 @@ object RemoteKeys {
     const val CHANNEL_UP = 166
     const val CHANNEL_DOWN = 167
     const val GUIDE = 172
+    const val DIGIT_0 = 7
+    const val DIGIT_9 = 16
+    const val NUMPAD_0 = 144
+    const val NUMPAD_9 = 153
+    const val LAST_CHANNEL = 229
 
-    enum class Action { NONE, NEXT_CHANNEL, PREVIOUS_CHANNEL, SEEK_FORWARD, SEEK_BACK, GUIDE, INFO }
+    enum class Action { NONE, NEXT_CHANNEL, PREVIOUS_CHANNEL, SEEK_FORWARD, SEEK_BACK, GUIDE, INFO, LAST_CHANNEL }
+
+    /** The digit a number key types (the row above the letters or the number pad), or null. */
+    fun digit(keyCode: Int): Int? = when (keyCode) {
+        in DIGIT_0..DIGIT_9 -> keyCode - DIGIT_0
+        in NUMPAD_0..NUMPAD_9 -> keyCode - NUMPAD_0
+        else -> null
+    }
+
+    /** Typing a channel number: [typed] so far plus [digit], at most [MAX_DIGITS] long. */
+    fun typeDigit(
+        typed: String,
+        digit: Int,
+    ): String = (typed + digit).takeLast(MAX_DIGITS)
+
+    const val MAX_DIGITS = 5
+
+    /** How long after the last digit the player changes channel. */
+    const val NUMBER_WAIT_MS = 1_500L
 
     /**
      * The action for [keyCode]. The arrows only act while the controls are hidden, so that once they show the arrows
@@ -34,6 +57,7 @@ object RemoteKeys {
         CHANNEL_DOWN, PAGE_DOWN -> if (live) Action.PREVIOUS_CHANNEL else Action.NONE
         GUIDE, MENU -> if (live) Action.GUIDE else Action.NONE
         INFO -> Action.INFO
+        LAST_CHANNEL -> if (live) Action.LAST_CHANNEL else Action.NONE
         else -> if (controlsShown) Action.NONE else arrow(keyCode, live)
     }
 
