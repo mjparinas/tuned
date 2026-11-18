@@ -5,6 +5,7 @@ plugins {
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.ksp)
     alias(libs.plugins.room)
+    alias(libs.plugins.androidx.baselineprofile)
 }
 
 android {
@@ -126,6 +127,22 @@ kotlin {
     jvmToolchain(21)
     compilerOptions {
         optIn.addAll("androidx.media3.common.util.UnstableApi", "androidx.compose.material3.ExperimentalMaterial3Api")
+    }
+}
+
+// The baseline profile (docs/decisions/speed.md) is generated on an emulator by .github/workflows/baseline-profile.yml
+// and committed under src/main/generated/, so release builds of both stores compile the first minute's code at install. It
+// is recorded on the github build, whose code is the same as play's apart from the updater and billing. Normal
+// builds only read it; they never start an emulator.
+baselineProfile {
+    automaticGenerationDuringBuild = false
+    saveInSrc = true
+    mergeIntoMain = true
+    // Puts the startup code together at the front of the dex file too, so less of it is read from storage.
+    dexLayoutOptimization = true
+    // Only the github build is driven on the emulator; mergeIntoMain gives the play build the same profile.
+    variants {
+        create("github") { from(project(":baselineprofile")) }
     }
 }
 

@@ -10,6 +10,7 @@ Tuned is a native Android IPTV player. It signs in to an Xtream Codes-style serv
 ./gradlew :app:testGithubDebugUnitTest # app unit tests
 ./gradlew spotlessApply               # format Kotlin (ktlint); CI runs spotlessCheck
 ./gradlew detekt :app:lintGithubDebug # static analysis and Android Lint; any finding fails
+./gradlew :app:generateGithubReleaseBaselineProfile  # baseline profile on an emulator (Baseline profile workflow does it in CI)
 npm ci && npm run format              # Prettier for YAML, JSON and Markdown; CI runs format:check
 ```
 
@@ -22,6 +23,7 @@ Kotlin, Jetpack Compose with Material 3, Navigation Compose (type-safe routes), 
 - `:core`: plain Kotlin, no Android. The M3U and XMLTV parsers, sorting streams into Live TV, Movies and Shows, country detection, episode numbering, Xtream URLs. Anything that can be tested without a device goes here, with a test.
 - `:app`: the Android app, in two builds ([premium](docs/decisions/premium.md)): `github` (GitHub Releases, updates itself, everything unlocked) and `play` (Google Play and other stores: no self-updater, no default server, Premium sold through Play Billing). Store builds never name a provider, channel or sports brand, in the app or the listing.
 - `:app` folders: `data/` (Room, DataStore settings, encrypted login, sync), `work/` (background refresh), `player/` (PlayerActivity), `ui/` (Compose screens, one screen and its ViewModel per file).
+- `:baselineprofile`: drives the release app on an emulator to write its baseline profile and measure cold start ([speed](docs/decisions/speed.md)).
 
 ## Product rules
 
