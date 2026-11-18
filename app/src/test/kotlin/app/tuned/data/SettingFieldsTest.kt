@@ -179,6 +179,7 @@ class SettingFieldsTest {
                 "last_guide_sync",
                 "last_sync_error",
                 "server_timezone",
+                "time_zone",
                 "ask_profile_at_start",
                 "profile_id",
                 "kids_profile",

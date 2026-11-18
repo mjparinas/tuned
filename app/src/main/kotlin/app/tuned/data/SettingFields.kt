@@ -126,6 +126,7 @@ internal val SETTING_FIELDS: List<SettingField<*, *>> =
         int("reminder_lead_minutes", { reminderLeadMinutes }) { copy(reminderLeadMinutes = it) },
         int("guide_days", { guideDays }) { copy(guideDays = it) },
         int("guide_offset_minutes", { guideOffsetMinutes }) { copy(guideOffsetMinutes = it) },
+        string("time_zone", { timeZone }) { copy(timeZone = it) },
         bool("unmetered_only", { unmeteredOnly }) { copy(unmeteredOnly = it) },
         long("last_playlist_sync", { lastPlaylistSync }) { copy(lastPlaylistSync = it) }.notBackedUp(),
         long("last_guide_sync", { lastGuideSync }) { copy(lastGuideSync = it) }.notBackedUp(),
