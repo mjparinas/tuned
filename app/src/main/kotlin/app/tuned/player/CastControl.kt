@@ -10,6 +10,7 @@ import androidx.media3.exoplayer.ExoPlayer
 import androidx.mediarouter.app.MediaRouteButton
 import androidx.mediarouter.media.MediaRouteSelector
 import app.tuned.R
+import app.tuned.core.CastCodecs
 import app.tuned.core.CastMedia
 import app.tuned.core.FileServer
 import app.tuned.core.StreamLink
@@ -90,7 +91,13 @@ class CastControl(
             }
 
             override fun onMediaError(error: MediaError) {
-                AppLog.w(TAG, "The TV reported a media error: ${error.type}, reason ${error.reason}, code ${error.detailedErrorCode}")
+                AppLog.w(
+                    TAG,
+                    "The TV reported a media error: ${error.type}, reason ${error.reason}, code ${error.detailedErrorCode}" +
+                        " (${CastCodecs.describeError(error.detailedErrorCode)}), extra ${error.customData}",
+                )
+                // Say so over the video rather than leave "Playing on SHIELD" showing over nothing.
+                session?.let { onStatus(activity.getString(R.string.cast_failed, name(it))) }
             }
         }
 
@@ -383,7 +390,6 @@ class CastControl(
     fun release() {
         retry?.cancel()
         preparing?.cancel()
-        copies.clear()
         stopServing()
         session?.remoteMediaClient?.unregisterCallback(mediaCallback)
         context?.sessionManager?.removeSessionManagerListener(listener, CastSession::class.java)
