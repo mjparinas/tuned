@@ -143,6 +143,24 @@ class PlayerActivity : FragmentActivity() {
         )
     }
 
+    /** The HQ button's copies of the live channel in other picture qualities; see [QualityCopies]. */
+    private val qualityCopies: QualityCopies by lazy {
+        QualityCopies(
+            scope = lifecycleScope,
+            tune = container.tune,
+            hooks =
+                QualityCopies.Hooks(
+                    casting = { cast?.casting == true },
+                    switchTo = { id ->
+                        player?.let { backups.swapTo(it, id) }
+                        backups.onChannelChanged(id)
+                        qualityCopies.onChannel(id)
+                    },
+                    changed = { if (::tools.isInitialized) tools.refreshQuality() },
+                ),
+        )
+    }
+
     /** Typing a channel number and flipping back; see [ChannelDial]. */
     private val dial by lazy {
         ChannelDial(
@@ -396,6 +414,7 @@ class PlayerActivity : FragmentActivity() {
                         casting = { cast?.casting == true },
                         dial = dial,
                     ),
+                copies = qualityCopies,
             )
         overlay.addView(tools.toolbar)
         tools.addButton(subtitleSearch.button)
@@ -649,6 +668,7 @@ class PlayerActivity : FragmentActivity() {
             if (live) dial.onChannel(id)
             // Flipping to another channel ends the search for a copy of the last one.
             backups.onChannelChanged(id)
+            qualityCopies.onChannel(if (live && id != CatchUpLinks.ID) id else null)
         }
 
         override fun onRenderedFirstFrame() {
@@ -714,6 +734,7 @@ class PlayerActivity : FragmentActivity() {
 
         override fun onTracksChanged(tracks: Tracks) {
             player?.let { audioCheck.onTracks(it, tracks) }
+            tools.onTracks(tracks)
         }
 
         override fun onVideoSizeChanged(videoSize: VideoSize) {
