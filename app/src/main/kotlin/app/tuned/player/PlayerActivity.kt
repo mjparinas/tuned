@@ -187,6 +187,14 @@ class PlayerActivity : FragmentActivity() {
         )
     }
 
+    private val jumpToLive by lazy {
+        JumpToLive(
+            activity = this,
+            behind = { timeshift.behind && cast?.casting != true },
+            goLive = { player?.let(timeshift::goLive) == true },
+        )
+    }
+
     private val recorder by lazy {
         LiveRecorder(
             this,
@@ -330,6 +338,7 @@ class PlayerActivity : FragmentActivity() {
         tools.attach(root)
         recorder.attach(root)
         skipIntro.attach(root)
+        jumpToLive.attach(root)
         tuneNext.attach(root)
         levelBars.attach(root)
         // The title shows and hides with the controls, so a tap reveals everything and the video is otherwise bare.
@@ -338,6 +347,7 @@ class PlayerActivity : FragmentActivity() {
                 overlay.visibility = visibility
                 tools.onControls(visibility)
                 recorder.onControls(visibility)
+                jumpToLive.onControls(visibility)
                 tuneNext.onControls(visibility)
             },
         )
@@ -819,6 +829,7 @@ class PlayerActivity : FragmentActivity() {
         super.onPictureInPictureModeChanged(isInPictureInPictureMode, newConfig)
         playerView.useController = !isInPictureInPictureMode && !tools.locked
         recorder.hideMark(isInPictureInPictureMode)
+        jumpToLive.hide(isInPictureInPictureMode)
         if (isInPictureInPictureMode) {
             playerView.hideController()
             overlay.visibility = View.GONE
