@@ -52,6 +52,8 @@ import app.tuned.BuildConfig
 import app.tuned.R
 import app.tuned.container
 import app.tuned.core.ContentKind
+import app.tuned.core.StreamLink
+import app.tuned.core.Titles
 import app.tuned.data.AppSettings
 import app.tuned.data.db.HistoryEntity
 import app.tuned.data.db.ItemEntity
@@ -64,6 +66,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import java.io.File
+import java.util.concurrent.ConcurrentHashMap
 
 /**
  * Full-screen playback. Nothing on screen but the video until a tap shows the standard Media3 controls: play and
@@ -80,6 +83,9 @@ class PlayerActivity : FragmentActivity() {
     private lateinit var subtitleView: TextView
     private var settings = AppSettings()
     private var queue: List<ItemEntity> = emptyList()
+
+    /** Headers the playlist asks for, by stream host; read by the player's network requests on their own threads. */
+    private val streamHeaders = ConcurrentHashMap<String, Map<String, String>>()
     private var progressJob: Job? = null
     private var liveRetries = 0
     private var gestures: PlayerGestures? = null
@@ -467,9 +473,17 @@ class PlayerActivity : FragmentActivity() {
     }
 
     private fun buildPlayer(live: Boolean): ExoPlayer {
-        // Streams over OkHttp (through the live rewind copy on live TV), saved downloads from the device.
+        // Streams over OkHttp (through the live rewind copy on live TV), with the headers the playlist asks for;
+        // saved downloads from the device.
         val agent = settings.userAgent.ifBlank { "Tuned/${BuildConfig.VERSION_NAME}" }
-        val http = PlayerSources.factory(this, container.http, agent) { network -> if (live) timeshift.factory(network) else network }
+        val http =
+            PlayerSources.factory(
+                this,
+                container.http,
+                agent,
+                headers = { uri -> uri.host?.let(streamHeaders::get).orEmpty() },
+                network = { network -> if (live) timeshift.factory(network) else network },
+            )
         // TS streams from IPTV servers often start on a non-IDR frame; these flags start them sooner.
         val extractors =
             DefaultExtractorsFactory().setTsExtractorFlags(
@@ -611,6 +625,22 @@ class PlayerActivity : FragmentActivity() {
     private fun updateOverlay(item: ItemEntity) {
         titleView.text = item.name
         subtitleView.text = item.groupName
+        // The episode's TMDB name, from the device at once when the show's page was opened, else one cached
+        // TMDB request. Playback never waits for it, and it stays out of its own function because detekt caps
+        // this class at 30.
+        val show = item.showName
+        val season = item.season
+        val episode = item.episode
+        if (show != null && season != null && episode != null) {
+            lifecycleScope.launchSafely("Player") {
+                val info = container.metadata.cachedEpisode(show, season, episode) ?: container.metadata.episode(show, season, episode)
+                // Moved on to the next episode meanwhile: that one has its own lookup.
+                if (info?.name != null && player?.currentMediaItem?.mediaId == item.id.toString()) {
+                    titleView.text = info.name
+                    subtitleView.text = getString(R.string.continue_episode, Titles.display(show), season, episode)
+                }
+            }
+        }
         if (ContentKind.fromCode(item.kind) == ContentKind.LIVE) rememberChannel(item.id)
         val tvgId = item.tvgId ?: return
         if (ContentKind.fromCode(item.kind) != ContentKind.LIVE) return
@@ -699,12 +729,21 @@ class PlayerActivity : FragmentActivity() {
 
     private fun live(): Boolean = queue.firstOrNull()?.kind == ContentKind.LIVE.code
 
-    private fun ItemEntity.toMediaItem(file: File?): MediaItem = MediaItem
-        .Builder()
-        .setMediaId(id.toString())
-        .setUri(file?.toUri() ?: url.toUri())
-        .setMediaMetadata(MediaMetadata.Builder().setTitle(name).build())
-        .build()
+    private fun ItemEntity.toMediaItem(file: File?): MediaItem {
+        val link = StreamLink.split(url)
+        if (file == null && link.headers.isNotEmpty()) {
+            link.url
+                .toUri()
+                .host
+                ?.let { streamHeaders[it] = link.headers }
+        }
+        return MediaItem
+            .Builder()
+            .setMediaId(id.toString())
+            .setUri(file?.toUri() ?: link.url.toUri())
+            .setMediaMetadata(MediaMetadata.Builder().setTitle(name).build())
+            .build()
+    }
 
     private fun hideSystemBars() {
         WindowCompat.setDecorFitsSystemWindows(window, false)

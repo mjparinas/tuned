@@ -252,6 +252,11 @@ fun SettingsScreen(
             }
             pinDialog?.let { mode -> PinDialog(mode, vm, onDone = { pinDialog = null }) }
             SwitchRow(
+                stringResource(R.string.settings_hide_247),
+                settings.hide247,
+                stringResource(R.string.settings_hide_247_summary),
+            ) { on -> vm.update { it.copy(hide247 = on) } }
+            SwitchRow(
                 stringResource(R.string.settings_guide_in_list),
                 settings.showGuideInList,
             ) { on -> vm.update { it.copy(showGuideInList = on) } }

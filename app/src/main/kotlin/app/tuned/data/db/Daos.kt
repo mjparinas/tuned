@@ -108,6 +108,10 @@ interface ItemDao {
             AND NOT ('scan:dead' IN (:hidden) AND i.id IN (SELECT itemId FROM channel_scan WHERE hidden = 1))
             AND NOT ('placeholder' IN (:hidden) AND i.kind = 0
                 AND ((' ' || i.searchName) GLOB '* no event*' OR (' ' || i.searchName) GLOB '* no live event*'))
+            AND NOT ('247' IN (:hidden) AND i.kind = 0
+                AND ((' ' || lower(i.groupName || ' ' || i.name) || ' ') GLOB '*[^0-9]24[/ x-]7[^0-9]*'
+                    OR (' ' || lower(i.groupName || ' ' || i.name) || ' ') GLOB '*[^0-9]247[^0-9]*'
+                    OR (' ' || lower(i.groupName || ' ' || i.name) || ' ') GLOB '*[^0-9]24 / 7[^0-9]*'))
             AND (:adult OR i.adult = 0)
             AND h.durationMs > 0 AND h.positionMs > 30000 AND h.positionMs < h.durationMs * 95 / 100
         ORDER BY h.watchedAt DESC
@@ -128,6 +132,10 @@ interface ItemDao {
             AND NOT ('scan:dead' IN (:hidden) AND i.id IN (SELECT itemId FROM channel_scan WHERE hidden = 1))
             AND NOT ('placeholder' IN (:hidden) AND i.kind = 0
                 AND ((' ' || i.searchName) GLOB '* no event*' OR (' ' || i.searchName) GLOB '* no live event*'))
+            AND NOT ('247' IN (:hidden) AND i.kind = 0
+                AND ((' ' || lower(i.groupName || ' ' || i.name) || ' ') GLOB '*[^0-9]24[/ x-]7[^0-9]*'
+                    OR (' ' || lower(i.groupName || ' ' || i.name) || ' ') GLOB '*[^0-9]247[^0-9]*'
+                    OR (' ' || lower(i.groupName || ' ' || i.name) || ' ') GLOB '*[^0-9]24 / 7[^0-9]*'))
             AND (:adult OR i.adult = 0)
             AND (:group IS NULL OR i.groupName = :group)
             AND (:favouritesOnly = 0 OR i.id IN (SELECT itemId FROM favourites))
@@ -156,6 +164,10 @@ interface ItemDao {
             AND NOT ('scan:dead' IN (:hidden) AND i.id IN (SELECT itemId FROM channel_scan WHERE hidden = 1))
             AND NOT ('placeholder' IN (:hidden) AND i.kind = 0
                 AND ((' ' || i.searchName) GLOB '* no event*' OR (' ' || i.searchName) GLOB '* no live event*'))
+            AND NOT ('247' IN (:hidden) AND i.kind = 0
+                AND ((' ' || lower(i.groupName || ' ' || i.name) || ' ') GLOB '*[^0-9]24[/ x-]7[^0-9]*'
+                    OR (' ' || lower(i.groupName || ' ' || i.name) || ' ') GLOB '*[^0-9]247[^0-9]*'
+                    OR (' ' || lower(i.groupName || ' ' || i.name) || ' ') GLOB '*[^0-9]24 / 7[^0-9]*'))
             AND (:adult OR i.adult = 0)
             AND (:group IS NULL OR i.groupName = :group)
             AND (:favouritesOnly = 0 OR i.id IN (SELECT itemId FROM favourites))
@@ -189,6 +201,10 @@ interface ItemDao {
             AND NOT ('scan:dead' IN (:hidden) AND i.id IN (SELECT itemId FROM channel_scan WHERE hidden = 1))
             AND NOT ('placeholder' IN (:hidden) AND i.kind = 0
                 AND ((' ' || i.searchName) GLOB '* no event*' OR (' ' || i.searchName) GLOB '* no live event*'))
+            AND NOT ('247' IN (:hidden) AND i.kind = 0
+                AND ((' ' || lower(i.groupName || ' ' || i.name) || ' ') GLOB '*[^0-9]24[/ x-]7[^0-9]*'
+                    OR (' ' || lower(i.groupName || ' ' || i.name) || ' ') GLOB '*[^0-9]247[^0-9]*'
+                    OR (' ' || lower(i.groupName || ' ' || i.name) || ' ') GLOB '*[^0-9]24 / 7[^0-9]*'))
             AND (:adult OR i.adult = 0)
             AND (i.id IN (SELECT docid FROM items_fts WHERE items_fts MATCH :match) OR i.tvgId IN (
                 SELECT channelId FROM programmes
@@ -215,6 +231,10 @@ interface ItemDao {
             AND NOT ('scan:dead' IN (:hidden) AND i.id IN (SELECT itemId FROM channel_scan WHERE hidden = 1))
             AND NOT ('placeholder' IN (:hidden) AND i.kind = 0
                 AND ((' ' || i.searchName) GLOB '* no event*' OR (' ' || i.searchName) GLOB '* no live event*'))
+            AND NOT ('247' IN (:hidden) AND i.kind = 0
+                AND ((' ' || lower(i.groupName || ' ' || i.name) || ' ') GLOB '*[^0-9]24[/ x-]7[^0-9]*'
+                    OR (' ' || lower(i.groupName || ' ' || i.name) || ' ') GLOB '*[^0-9]247[^0-9]*'
+                    OR (' ' || lower(i.groupName || ' ' || i.name) || ' ') GLOB '*[^0-9]24 / 7[^0-9]*'))
             AND (:adult OR i.adult = 0)
         ORDER BY i.sortOrder
         LIMIT :limit
@@ -238,6 +258,10 @@ interface ItemDao {
             AND NOT ('scan:dead' IN (:hidden) AND i.id IN (SELECT itemId FROM channel_scan WHERE hidden = 1))
             AND NOT ('placeholder' IN (:hidden) AND i.kind = 0
                 AND ((' ' || i.searchName) GLOB '* no event*' OR (' ' || i.searchName) GLOB '* no live event*'))
+            AND NOT ('247' IN (:hidden) AND i.kind = 0
+                AND ((' ' || lower(i.groupName || ' ' || i.name) || ' ') GLOB '*[^0-9]24[/ x-]7[^0-9]*'
+                    OR (' ' || lower(i.groupName || ' ' || i.name) || ' ') GLOB '*[^0-9]247[^0-9]*'
+                    OR (' ' || lower(i.groupName || ' ' || i.name) || ' ') GLOB '*[^0-9]24 / 7[^0-9]*'))
             AND (:adult OR i.adult = 0)
         GROUP BY showKey
         ORDER BY MIN(sortOrder)
@@ -264,6 +288,10 @@ interface ItemDao {
             AND NOT ('scan:dead' IN (:hidden) AND id IN (SELECT itemId FROM channel_scan WHERE hidden = 1)) AND (:adult OR adult = 0)
             AND NOT ('placeholder' IN (:hidden) AND kind = 0
                 AND ((' ' || searchName) GLOB '* no event*' OR (' ' || searchName) GLOB '* no live event*'))
+            AND NOT ('247' IN (:hidden) AND kind = 0
+                AND ((' ' || lower(groupName || ' ' || name) || ' ') GLOB '*[^0-9]24[/ x-]7[^0-9]*'
+                    OR (' ' || lower(groupName || ' ' || name) || ' ') GLOB '*[^0-9]247[^0-9]*'
+                    OR (' ' || lower(groupName || ' ' || name) || ' ') GLOB '*[^0-9]24 / 7[^0-9]*'))
         ORDER BY sortOrder
         """,
     )
@@ -280,6 +308,10 @@ interface ItemDao {
             AND NOT ('scan:dead' IN (:hidden) AND id IN (SELECT itemId FROM channel_scan WHERE hidden = 1)) AND (:adult OR adult = 0)
             AND NOT ('placeholder' IN (:hidden) AND kind = 0
                 AND ((' ' || searchName) GLOB '* no event*' OR (' ' || searchName) GLOB '* no live event*'))
+            AND NOT ('247' IN (:hidden) AND kind = 0
+                AND ((' ' || lower(groupName || ' ' || name) || ' ') GLOB '*[^0-9]24[/ x-]7[^0-9]*'
+                    OR (' ' || lower(groupName || ' ' || name) || ' ') GLOB '*[^0-9]247[^0-9]*'
+                    OR (' ' || lower(groupName || ' ' || name) || ' ') GLOB '*[^0-9]24 / 7[^0-9]*'))
         GROUP BY groupName ORDER BY MIN(sortOrder)
         """,
     )
@@ -346,6 +378,10 @@ interface ItemDao {
             AND NOT ('scan:dead' IN (:hidden) AND i.id IN (SELECT itemId FROM channel_scan WHERE hidden = 1))
             AND NOT ('placeholder' IN (:hidden) AND i.kind = 0
                 AND ((' ' || i.searchName) GLOB '* no event*' OR (' ' || i.searchName) GLOB '* no live event*'))
+            AND NOT ('247' IN (:hidden) AND i.kind = 0
+                AND ((' ' || lower(i.groupName || ' ' || i.name) || ' ') GLOB '*[^0-9]24[/ x-]7[^0-9]*'
+                    OR (' ' || lower(i.groupName || ' ' || i.name) || ' ') GLOB '*[^0-9]247[^0-9]*'
+                    OR (' ' || lower(i.groupName || ' ' || i.name) || ' ') GLOB '*[^0-9]24 / 7[^0-9]*'))
             AND (:adult OR i.adult = 0)
         ORDER BY i.sortOrder
         LIMIT 200
@@ -549,6 +585,14 @@ interface CatchUpDao {
 
     @Query("SELECT days FROM catchup WHERE streamId = :streamId")
     fun days(streamId: String): Flow<Int?>
+
+    // What the Xtream API says about live channels, beside their catch-up days: both come from get_live_streams.
+    @Query("SELECT id, url FROM items WHERE kind = 0")
+    suspend fun liveUrls(): List<ItemUrl>
+
+    /** Marks live channels the server itself calls adult (Xtream `is_adult`), whatever their category says. */
+    @Query("UPDATE items SET adult = 1 WHERE id IN (:ids)")
+    suspend fun markAdult(ids: List<Long>)
 }
 
 @Dao
@@ -641,6 +685,10 @@ interface ChannelScanDao {
         WHERE kind = 0 AND (region IS NULL OR region NOT IN (:hidden)) AND ('g:' || kind || ':' || groupName) NOT IN (:hidden)
             AND NOT ('placeholder' IN (:hidden)
                 AND ((' ' || searchName) GLOB '* no event*' OR (' ' || searchName) GLOB '* no live event*'))
+            AND NOT ('247' IN (:hidden) AND kind = 0
+                AND ((' ' || lower(groupName || ' ' || name) || ' ') GLOB '*[^0-9]24[/ x-]7[^0-9]*'
+                    OR (' ' || lower(groupName || ' ' || name) || ' ') GLOB '*[^0-9]247[^0-9]*'
+                    OR (' ' || lower(groupName || ' ' || name) || ' ') GLOB '*[^0-9]24 / 7[^0-9]*'))
             AND (:adult OR adult = 0)
         ORDER BY sortOrder
         """,
@@ -733,6 +781,29 @@ interface ShowDao {
         hidden: List<String>,
         adult: Boolean,
     ): Flow<List<GroupCount>>
+
+    /**
+     * Episodes already fetched for shows read from the Xtream API (`core/XtreamApi`): every episode with a real link.
+     * A refresh keeps them in place of the show's stand-in row, so an opened show doesn't fold back to one row.
+     */
+    @Query("SELECT * FROM items WHERE kind = 2 AND url NOT LIKE 'xtream-series:%'")
+    suspend fun fetchedEpisodes(): List<ItemEntity>
+
+    /** Swaps a show's stand-in row for its episodes, in one go so the show page never sees neither. */
+    @Transaction
+    suspend fun replaceStandIn(
+        standInId: Long,
+        episodes: List<ItemEntity>,
+    ) {
+        insertEpisodes(episodes)
+        deleteItem(standInId)
+    }
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertEpisodes(items: List<ItemEntity>)
+
+    @Query("DELETE FROM items WHERE id = :id")
+    suspend fun deleteItem(id: Long)
 }
 
 /** What a Live TV row shows: the channel and what's on now. */
@@ -753,6 +824,9 @@ private const val CHANNEL_FILTER =
         "AND NOT ('scan:dead' IN (:hidden) AND i.id IN (SELECT itemId FROM channel_scan WHERE hidden = 1)) " +
         "AND NOT ('placeholder' IN (:hidden) AND ((' ' || i.searchName) GLOB '* no event*' " +
         "OR (' ' || i.searchName) GLOB '* no live event*')) " +
+        "AND NOT ('247' IN (:hidden) AND ((' ' || lower(i.groupName || ' ' || i.name) || ' ') GLOB '*[^0-9]24[/ x-]7[^0-9]*' " +
+        "OR (' ' || lower(i.groupName || ' ' || i.name) || ' ') GLOB '*[^0-9]247[^0-9]*' " +
+        "OR (' ' || lower(i.groupName || ' ' || i.name) || ' ') GLOB '*[^0-9]24 / 7[^0-9]*')) " +
         "AND (:adult OR i.adult = 0) AND (:group IS NULL OR i.groupName = :group) " +
         "AND (:query = '' OR i.id IN (SELECT docid FROM items_fts WHERE items_fts MATCH :match) OR i.tvgId IN (" +
         // An event search ("UFC") also finds the channels showing it now or within the hour.

@@ -6,6 +6,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.mediarouter.media.MediaRouter
 import app.tuned.container
 import app.tuned.core.Dlna
+import app.tuned.core.StreamLink
 import app.tuned.data.db.ItemEntity
 import app.tuned.diagnostics.attempt
 import app.tuned.diagnostics.loggingHandler
@@ -84,7 +85,8 @@ class DlnaControl(
         positionMs: Long,
     ) {
         send(Dlna.stop(), "Stop")
-        send(Dlna.setUri(item.url, item.name, Dlna.mimeFor(item.url)), "SetAVTransportURI")
+        val url = StreamLink.address(item.url) // a TV takes no extra headers
+        send(Dlna.setUri(url, item.name, Dlna.mimeFor(url)), "SetAVTransportURI")
         send(Dlna.play(), "Play")
         if (!live && positionMs > 0) send(Dlna.seek(positionMs), "Seek")
     }

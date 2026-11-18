@@ -171,7 +171,8 @@ class ProviderFormatsTest {
         val (news, sports, kids) = list
         assertEquals("US", news.region)
         assertEquals(ContentKind.LIVE, news.kind)
-        assertEquals("https://cdn.example/news/index.m3u8", news.url)
+        assertEquals("https://cdn.example/news/index.m3u8", StreamLink.address(news.url))
+        assertEquals("Mozilla/5.0", StreamLink.split(news.url).headers["User-Agent"])
         assertEquals("Deportes Uno", sports.name)
         assertEquals("Sports", sports.group)
         assertEquals("Deportes.mx", sports.tvgId)

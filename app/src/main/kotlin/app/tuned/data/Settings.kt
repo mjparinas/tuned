@@ -16,6 +16,7 @@ import androidx.datastore.preferences.preferencesDataStore
 import app.tuned.core.ChannelScan
 import app.tuned.core.PinHash
 import app.tuned.core.Placeholders
+import app.tuned.core.RoundTheClock
 import app.tuned.diagnostics.AppLog
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -111,6 +112,8 @@ data class AppSettings(
     val liveRewindMinutes: Int = 30,
     /** Leave out empty event slots ("NO EVENT STREAMING"); see [Placeholders]. Melvin, 2026-11-17: hide them. */
     val hidePlaceholders: Boolean = true,
+    /** Leave out round-the-clock "24/7" channels; see [RoundTheClock]. Melvin, 2026-11-17. Off by default. */
+    val hide247: Boolean = false,
     val pictureInPicture: Boolean = true,
     val playerGestures: Boolean = true,
     val autoReconnect: Boolean = true,
@@ -146,7 +149,12 @@ data class AppSettings(
 
 /** Hidden countries, hidden groups and the channel filters together: the one list every query filters by. */
 fun AppSettings.hiddenKeys(): List<String> {
-    val filters = listOfNotNull(ChannelScan.HIDDEN_KEY.takeIf { hideDeadChannels }, Placeholders.HIDDEN_KEY.takeIf { hidePlaceholders })
+    val filters =
+        listOfNotNull(
+            ChannelScan.HIDDEN_KEY.takeIf { hideDeadChannels },
+            Placeholders.HIDDEN_KEY.takeIf { hidePlaceholders },
+            RoundTheClock.HIDDEN_KEY.takeIf { hide247 },
+        )
     return (hiddenRegions + hiddenGroups + filters).sorted()
 }
 
@@ -270,6 +278,7 @@ class SettingsRepository(
             matchFrameRate = p[K.matchFrameRate] ?: d.matchFrameRate,
             liveRewindMinutes = p[K.liveRewindMinutes] ?: d.liveRewindMinutes,
             hidePlaceholders = p[K.hidePlaceholders] ?: d.hidePlaceholders,
+            hide247 = p[K.hide247] ?: d.hide247,
             pictureInPicture = p[K.pictureInPicture] ?: d.pictureInPicture,
             playerGestures = p[K.playerGestures] ?: d.playerGestures,
             autoReconnect = p[K.autoReconnect] ?: d.autoReconnect,
@@ -340,6 +349,7 @@ class SettingsRepository(
         p[K.matchFrameRate] = s.matchFrameRate
         p[K.liveRewindMinutes] = s.liveRewindMinutes
         p[K.hidePlaceholders] = s.hidePlaceholders
+        p[K.hide247] = s.hide247
         p[K.pictureInPicture] = s.pictureInPicture
         p[K.playerGestures] = s.playerGestures
         p[K.autoReconnect] = s.autoReconnect
@@ -410,6 +420,7 @@ class SettingsRepository(
         val matchFrameRate = booleanPreferencesKey("match_frame_rate")
         val liveRewindMinutes = intPreferencesKey("live_rewind_minutes")
         val hidePlaceholders = booleanPreferencesKey("hide_placeholders")
+        val hide247 = booleanPreferencesKey("hide_247")
         val pictureInPicture = booleanPreferencesKey("picture_in_picture")
         val playerGestures = booleanPreferencesKey("player_gestures")
         val autoReconnect = booleanPreferencesKey("auto_reconnect")
