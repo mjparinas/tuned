@@ -55,6 +55,7 @@ baselineProfile {
 }
 
 dependencies {
+    implementation(project(":fakeprovider"))
     implementation(libs.androidx.test.junit)
     implementation(libs.androidx.uiautomator)
     implementation(libs.androidx.benchmark.macro.junit4)

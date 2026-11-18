@@ -33,7 +33,7 @@ detekt {
     allRules = false
     parallel = true
     config.setFrom(files("config/detekt/detekt.yml"))
-    source.setFrom(files("core/src", "app/src", "baselineprofile/src"))
+    source.setFrom(files("core/src", "app/src", "baselineprofile/src", "smoketest/src", "fakeprovider/src"))
 }
 
 tasks.withType<io.gitlab.arturbosch.detekt.Detekt>().configureEach {
