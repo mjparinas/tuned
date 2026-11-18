@@ -148,7 +148,7 @@ class GoogleDrive(
                 }
 
                 CloudSync.Poll.WAIT -> {
-                    Unit
+                    // Not entered yet: ask again after the wait.
                 }
 
                 else -> {
@@ -253,15 +253,17 @@ class GoogleDrive(
         return withContext(Dispatchers.IO) {
             http.newCall(request.header("Authorization", "Bearer $token").build()).execute().use { r ->
                 if (r.code == HTTP_UNAUTHORIZED) access = null
-                if (!r.isSuccessful) {
-                    val body = r.body.string()
-                    if (CloudSync.driveApiOff(r.code, body)) throw DriveApiOff()
-                    throw IOException("Google Drive answered HTTP ${r.code}")
-                }
+                if (!r.isSuccessful) throw driveError(r.code, r.body.string())
                 read(r)
             }
         }
     }
+
+    /** Drive's refusal as an exception: its own kind when the Drive API is off, otherwise a plain [IOException]. */
+    private fun driveError(
+        status: Int,
+        body: String,
+    ): IOException = if (CloudSync.driveApiOff(status, body)) DriveApiOff() else IOException("Google Drive answered HTTP $status")
 
     /** An access token good for at least a minute, renewed from the refresh token when it isn't. */
     private suspend fun token(): String? = refreshing.withLock {
