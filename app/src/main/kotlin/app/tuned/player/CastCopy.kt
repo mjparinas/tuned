@@ -326,9 +326,14 @@ internal class CastCopy(
                     bytes
                 } else {
                     val samples = ShortArray(bytes.size / 2)
-                    ByteBuffer.wrap(bytes).order(ByteOrder.nativeOrder()).asShortBuffer().get(samples)
+                    val input = ByteBuffer.wrap(bytes)
+                    input.order(ByteOrder.nativeOrder())
+                    input.asShortBuffer().get(samples)
                     val mixed = CastCodecs.downmix(samples, inChannels)
-                    ByteBuffer.allocate(mixed.size * 2).order(ByteOrder.nativeOrder()).also { it.asShortBuffer().put(mixed) }.array()
+                    val output = ByteBuffer.allocate(mixed.size * 2)
+                    output.order(ByteOrder.nativeOrder())
+                    output.asShortBuffer().put(mixed)
+                    output.array()
                 }
             pcm.addLast(kept)
             pcmBytes += kept.size
