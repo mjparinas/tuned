@@ -187,6 +187,14 @@ class PlayerActivity : FragmentActivity() {
         )
     }
 
+    private val jumpToLive by lazy {
+        JumpToLive(
+            activity = this,
+            behind = { timeshift.behind && cast?.casting != true },
+            goLive = { player?.let(timeshift::goLive) == true },
+        )
+    }
+
     private val recorder by lazy {
         LiveRecorder(
             this,
@@ -327,21 +335,28 @@ class PlayerActivity : FragmentActivity() {
             statusView,
             FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT, Gravity.CENTER),
         )
-        tools.attach(root)
-        recorder.attach(root)
-        skipIntro.attach(root)
-        tuneNext.attach(root)
-        levelBars.attach(root)
+        attachFeatures(root)
         // The title shows and hides with the controls, so a tap reveals everything and the video is otherwise bare.
         playerView.setControllerVisibilityListener(
             PlayerView.ControllerVisibilityListener { visibility ->
                 overlay.visibility = visibility
                 tools.onControls(visibility)
                 recorder.onControls(visibility)
+                jumpToLive.onControls(visibility)
                 tuneNext.onControls(visibility)
             },
         )
         setContentView(root)
+    }
+
+    /** The player features drawn over the video, each in its own file. */
+    private fun attachFeatures(root: FrameLayout) {
+        tools.attach(root)
+        recorder.attach(root)
+        skipIntro.attach(root)
+        jumpToLive.attach(root)
+        tuneNext.attach(root)
+        levelBars.attach(root)
     }
 
     private fun backButton() = ImageButton(this).apply {
@@ -819,6 +834,7 @@ class PlayerActivity : FragmentActivity() {
         super.onPictureInPictureModeChanged(isInPictureInPictureMode, newConfig)
         playerView.useController = !isInPictureInPictureMode && !tools.locked
         recorder.hideMark(isInPictureInPictureMode)
+        jumpToLive.hide(isInPictureInPictureMode)
         if (isInPictureInPictureMode) {
             playerView.hideController()
             overlay.visibility = View.GONE
