@@ -56,7 +56,6 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import app.tuned.BuildConfig
 import app.tuned.R
 import app.tuned.container
-import app.tuned.core.Search
 import app.tuned.data.AppSettings
 import app.tuned.diagnostics.launchSafely
 import app.tuned.ui.CaptionSettingsRoute
@@ -133,7 +132,7 @@ enum class SettingsPage(
 
 /**
  * Settings' first screen: one row per page, plus captions, a page of its own. Downloads is in the home screen's bar,
- * so it has no row here (Melvin, 2026-11-18). A search box on top finds any setting on any page ([SettingsSearch]).
+ * so it has no row here (Melvin, 2026-11-18). A search box on top finds any setting on any page (`SettingsSearch.kt`).
  */
 @Composable
 fun SettingsScreen(
@@ -146,7 +145,7 @@ fun SettingsScreen(
     SettingsScaffold(stringResource(R.string.settings), onBack) {
         var query by rememberSaveable { mutableStateOf("") }
         SettingsSearchField(query) { query = it }
-        val words = remember(query) { Search.normalize(query).split(' ').filter { it.isNotEmpty() } }
+        val words = remember(query) { settingsWords(query) }
         if (words.isNotEmpty()) {
             SettingsResults(words, settings, vm, onOpen, onSignedOut)
             return@SettingsScaffold
@@ -218,13 +217,12 @@ private fun SettingsResults(
     onOpen: (route: Any) -> Unit,
     onSignedOut: () -> Unit,
 ) {
-    fun matches(text: String) = Search.normalize(text).let { t -> words.all { it in t } }
     // Kept across keystrokes: each row's effect leaves its old query's count and joins the new one in the same frame,
     // so "No settings match" never flickers while typing.
     val counts = remember { SettingsPage.entries.associateWith { mutableIntStateOf(0) } }
     var shown = 0
     val captions = stringResource(R.string.settings_captions)
-    if (matches(captions)) {
+    if (hasWords(captions, words)) {
         shown++
         IconRow(
             Icons.Filled.ClosedCaption,
@@ -235,7 +233,7 @@ private fun SettingsResults(
     SettingsPage.entries.forEach { page ->
         val count = counts.getValue(page)
         val title = stringResource(page.title)
-        val pageMatches = matches(title)
+        val pageMatches = hasWords(title, words)
         if (count.intValue > 0 || pageMatches) SectionHeader(title)
         if (pageMatches) {
             shown++

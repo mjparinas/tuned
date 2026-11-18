@@ -24,8 +24,7 @@ internal val LocalSettingsQuery = staticCompositionLocalOf<SettingsQuery?> { nul
 @Composable
 internal fun searchHides(vararg texts: String?): Boolean {
     val query = LocalSettingsQuery.current ?: return false
-    val haystack = Search.normalize(texts.filterNotNull().joinToString(" "))
-    val found = query.words.all { it in haystack }
+    val found = hasWords(texts.filterNotNull().joinToString(" "), query.words)
     if (found) {
         DisposableEffect(query) {
             query.matches.intValue++
@@ -34,6 +33,15 @@ internal fun searchHides(vararg texts: String?): Boolean {
     }
     return !found
 }
+
+/** The typed words, as [SettingsQuery.words] holds them; none for a blank box. */
+internal fun settingsWords(typed: String): List<String> = Search.normalize(typed).split(' ').filter { it.isNotEmpty() }
+
+/** True when [text] has every one of [words]. */
+internal fun hasWords(
+    text: String,
+    words: List<String>,
+): Boolean = Search.normalize(text).let { t -> words.all { it in t } }
 
 /** True while a search is on, when headers and anything that isn't a setting step aside. */
 @Composable
