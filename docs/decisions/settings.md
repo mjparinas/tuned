@@ -15,7 +15,7 @@ The first Settings screen is a short list of pages, each with an icon and a line
 - **When a channel fails**: auto-reconnect, backup copies, channel health, and auto-tune's wait and quality. These were spread across Playback, Content and Auto-tune; they answer one question.
 - **Appearance**: theme, dynamic colour, accent, pure black.
 - **Downloads**: opens the downloads page directly.
-- **Updates and advanced**: update checks, the TMDB key, the user agent and developer mode.
+- **Updates and advanced**: update checks, the user agent and developer mode. (The TMDB key moved out of Settings into a build secret on 2026-11-18; see [player](player.md).)
 
 No setting was removed or renamed, so nobody loses a choice they made. Settings that looked mergeable (seek back and forward, playlist and guide refresh) have different defaults and choices, so they stay separate.
 

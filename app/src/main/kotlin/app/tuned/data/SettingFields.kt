@@ -165,7 +165,6 @@ internal val SETTING_FIELDS: List<SettingField<*, *>> =
         float("cc_bottom", { captions.bottomPadding }) { cc { copy(bottomPadding = it) } },
         bool("auto_subtitles", { autoSubtitles }) { copy(autoSubtitles = it) },
         // Ratings, network and updates
-        string("tmdb_key", { tmdbKey }) { copy(tmdbKey = it) },
         string("user_agent", { userAgent }) { copy(userAgent = it) },
         bool("check_updates", { checkUpdates }) { copy(checkUpdates = it) },
         // Profiles: mirrored from the database, which a backup doesn't hold

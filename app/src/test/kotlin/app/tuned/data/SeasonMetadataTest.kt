@@ -48,8 +48,9 @@ class SeasonMetadataTest {
                         .build(),
                 )
             }.build()
-    private val settings = SettingsRepository(context)
-    private val repo = MetadataRepository(http, settings, db.metadata(), CoroutineScope(SupervisorJob()), online = { true })
+    private val repo = repo("abc")
+
+    private fun repo(key: String) = MetadataRepository(http, key, db.metadata(), CoroutineScope(SupervisorJob()), online = { true })
 
     @After
     fun close() {
@@ -59,7 +60,6 @@ class SeasonMetadataTest {
 
     @Test
     fun aSeasonIsAskedForOnceAndThenComesFromTheDevice() = runTest {
-        settings.update { it.copy(tmdbKey = "abc") }
         server.enqueue(MockResponse.Builder().body(SEASON).build())
 
         val first = repo.season(456, 4)
@@ -79,7 +79,6 @@ class SeasonMetadataTest {
 
     @Test
     fun aSeasonTmdbDoesNotHaveIsRememberedAsMissing() = runTest {
-        settings.update { it.copy(tmdbKey = "abc") }
         server.enqueue(MockResponse.Builder().code(404).build())
 
         assertNull(repo.season(456, 30))
@@ -89,7 +88,6 @@ class SeasonMetadataTest {
 
     @Test
     fun anEpisodeIsNamedFromTheShowsNameAndThenFromTheDevice() = runTest {
-        settings.update { it.copy(tmdbKey = "abc") }
         assertNull(repo.cachedEpisode("EN - The Simpsons (1989)", 4, 1))
         server.enqueue(MockResponse.Builder().body("""{"results":[{"id":456,"name":"The Simpsons"}]}""").build())
         server.enqueue(MockResponse.Builder().body(SEASON).build())
@@ -106,8 +104,7 @@ class SeasonMetadataTest {
 
     @Test
     fun withoutAKeyNothingIsAsked() = runTest {
-        settings.update { it.copy(tmdbKey = "") }
-        assertNull(repo.season(456, 4))
+        assertNull(repo("").season(456, 4))
         assertEquals(0, server.requestCount)
     }
 
