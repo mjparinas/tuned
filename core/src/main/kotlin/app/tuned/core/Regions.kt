@@ -375,7 +375,13 @@ object Regions {
     private val barTag = Regex("""^\s*([\p{L} ]{2,20}?)\s*[|┃│]""")
 
     private fun ownTag(name: String): String? {
-        val part = barTag.find(name)?.groupValues?.get(1)?.trim()?.uppercase() ?: return null
+        val part =
+            barTag
+                .find(name)
+                ?.groupValues
+                ?.get(1)
+                ?.trim()
+                ?.uppercase() ?: return null
         if (part in notRegions) return null
         return if (token.matches(part) && part in known) normalize(part) else wordTags[part]
     }
