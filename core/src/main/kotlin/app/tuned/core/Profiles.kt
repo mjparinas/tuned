@@ -28,6 +28,23 @@ object KidsContent {
     }
 }
 
+/**
+ * Whether the player may open a stream, whatever asked for it (docs/decisions/profiles.md). The lists already hide
+ * locked adult categories and, on a kids profile, everything but kids and family, but the player is also opened by the
+ * quick-settings tile, the favourites widget, Android TV's home screen cards and other apps' play intents, which skip
+ * the lists. Without this check the tile reopened an adult channel after the parental unlock had ended.
+ */
+object PlayGate {
+    fun allowed(
+        adult: Boolean,
+        group: String,
+        name: String,
+        live: Boolean,
+        showAdult: Boolean,
+        kidsProfile: Boolean,
+    ): Boolean = (!adult || (showAdult && !kidsProfile)) && (!kidsProfile || KidsContent.isKids(group, name, live))
+}
+
 /** Which PIN, if any, stands between the profile in use and the one picked. */
 enum class ProfileLock { NONE, PROFILE, PARENTAL }
 

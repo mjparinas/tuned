@@ -19,6 +19,26 @@ class ProfilesTest {
     }
 
     @Test
+    fun playerRefusesWhatTheListsHide() {
+        fun allowed(
+            adult: Boolean,
+            group: String,
+            name: String,
+            unlocked: Boolean,
+            kids: Boolean,
+        ) = PlayGate.allowed(adult, group, name, live = true, showAdult = unlocked, kidsProfile = kids)
+
+        // Adult channels need the parental unlock, and a kids profile never plays them.
+        assertFalse(allowed(adult = true, group = "XXX", name = "Adult 1", unlocked = false, kids = false))
+        assertTrue(allowed(adult = true, group = "XXX", name = "Adult 1", unlocked = true, kids = false))
+        assertFalse(allowed(adult = true, group = "Kids XXX", name = "Adult 1", unlocked = true, kids = true))
+        // A kids profile plays kids and family streams only.
+        assertTrue(allowed(adult = false, group = "CA | General", name = "Disney Junior", unlocked = false, kids = true))
+        assertFalse(allowed(adult = false, group = "Sports", name = "TSN 1", unlocked = false, kids = true))
+        assertTrue(allowed(adult = false, group = "Sports", name = "TSN 1", unlocked = false, kids = false))
+    }
+
+    @Test
     fun leavingAKidsProfileNeedsAPin() {
         assertEquals(ProfileLock.PARENTAL, ProfileRules.lockFor(fromKids = true, toKids = false, toHasPin = false, parentalPinSet = true))
         assertEquals(ProfileLock.PROFILE, ProfileRules.lockFor(fromKids = true, toKids = false, toHasPin = true, parentalPinSet = true))

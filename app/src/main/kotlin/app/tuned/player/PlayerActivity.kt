@@ -39,6 +39,7 @@ import app.tuned.BuildConfig
 import app.tuned.R
 import app.tuned.container
 import app.tuned.core.ContentKind
+import app.tuned.core.PlayGate
 import app.tuned.core.Titles
 import app.tuned.data.AppSettings
 import app.tuned.data.db.HistoryEntity
@@ -290,6 +291,12 @@ class PlayerActivity : FragmentActivity() {
                 finish()
                 return@launchSafely
             }
+            // The tile, the widget, TV home cards and other apps' play intents skip the lists' filters.
+            if (channel != null && recording == 0L && !mayPlay(channel)) {
+                Toast.makeText(this@PlayerActivity, R.string.player_not_allowed, Toast.LENGTH_LONG).show()
+                finish()
+                return@launchSafely
+            }
             // A recording plays on its own; next and previous would leave it for live channels.
             queue = if (item.id == CatchUpLinks.ID) listOf(item) else playerSiblings(container.db, settings, item)
             start(item)
@@ -482,6 +489,15 @@ class PlayerActivity : FragmentActivity() {
         exo.addListener(tuner)
         tuner.begin()
     }
+
+    private fun mayPlay(item: ItemEntity): Boolean = PlayGate.allowed(
+        item.adult,
+        item.groupName,
+        item.name,
+        live = item.kind == ContentKind.LIVE.code,
+        showAdult = settings.showAdult,
+        kidsProfile = settings.kidsProfile,
+    )
 
     private suspend fun start(item: ItemEntity) {
         val kind = ContentKind.fromCode(item.kind)

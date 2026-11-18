@@ -4,6 +4,10 @@
 
 **Never in chat, logs or the repo.** Nobody asks for the login outside the app. Errors that might contain a URL pass through `XtreamUrls.redact`. `.gitignore` blocks playlists, guides and `.env` files. Testing against the real server uses a local `.env` on Melvin's machine.
 
+**Masking the login in logs** also covers its link form (`p%40ss` for `p@ss`, 2026-11-18): an Xtream playlist's live links are `http://host/<user>/<pass>/<id>`, with no `/live/` for the pattern scrubber to spot, so a password with symbols in it reached the log in Settings.
+
+**Third-party CI actions that receive a secret are pinned to a commit**, not a tag (2026-11-18), so a moved tag can't swap in other code: today that is the Play upload action, which holds the Play service account.
+
 **Backups are off** (`allowBackup=false` and data extraction rules that exclude everything), so neither the encrypted login nor the cached URLs (which contain it) reach a cloud backup or a device transfer.
 
 **Backup files: removed** (Melvin, 2026-11-18: "Remove the file back up feature"). Settings › Back up and Restore, and "Restore from a backup" on the welcome screen, are gone; moving to a new phone or a TV is sync between devices ([sync](sync.md)). Files made with it no longer open. Its encryption stays as `core/PassphraseCrypto` (AES-256-GCM, PBKDF2-SHA256 with 310,000 rounds and a fresh salt each time, header authenticated), which now only reads sync copies older versions locked.
