@@ -335,12 +335,7 @@ class PlayerActivity : FragmentActivity() {
             statusView,
             FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT, Gravity.CENTER),
         )
-        tools.attach(root)
-        recorder.attach(root)
-        skipIntro.attach(root)
-        jumpToLive.attach(root)
-        tuneNext.attach(root)
-        levelBars.attach(root)
+        attachFeatures(root)
         // The title shows and hides with the controls, so a tap reveals everything and the video is otherwise bare.
         playerView.setControllerVisibilityListener(
             PlayerView.ControllerVisibilityListener { visibility ->
@@ -352,6 +347,16 @@ class PlayerActivity : FragmentActivity() {
             },
         )
         setContentView(root)
+    }
+
+    /** The player features drawn over the video, each in its own file. */
+    private fun attachFeatures(root: FrameLayout) {
+        tools.attach(root)
+        recorder.attach(root)
+        skipIntro.attach(root)
+        jumpToLive.attach(root)
+        tuneNext.attach(root)
+        levelBars.attach(root)
     }
 
     private fun backButton() = ImageButton(this).apply {
