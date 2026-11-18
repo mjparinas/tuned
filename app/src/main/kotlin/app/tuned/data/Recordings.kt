@@ -2,6 +2,7 @@ package app.tuned.data
 
 import android.content.Context
 import android.net.Uri
+import android.os.storage.StorageManager
 import app.tuned.core.ContentKind
 import app.tuned.data.db.ItemEntity
 import app.tuned.diagnostics.attempt
@@ -27,6 +28,8 @@ import java.util.concurrent.atomic.AtomicBoolean
 class Recordings(
     context: Context,
 ) {
+    private val storage = context.getSystemService(StorageManager::class.java)
+
     @Serializable
     data class Recording(
         /** When it started (epoch ms), which also names its files. */
@@ -84,7 +87,9 @@ class Recordings(
     fun file(r: Recording): File = File(dir, "${r.id}$VIDEO")
 
     /** Room left for recordings, so one can stop before the storage fills up. */
-    fun freeBytes(): Long = dir.usableSpace
+    fun freeBytes(): Long =
+        attempt(TAG, "Couldn't check the free space") { storage.getAllocatableBytes(storage.getUuidForPath(dir)) }
+            .getOrElse { dir.freeSpace }
 
     /** Starts the files for [r]: its details now, its video as it arrives. */
     fun begin(r: Recording): File {

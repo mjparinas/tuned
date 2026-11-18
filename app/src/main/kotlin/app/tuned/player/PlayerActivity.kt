@@ -520,8 +520,7 @@ class PlayerActivity : FragmentActivity() {
         // Every connection on the account is in use on another device: opening one more could go over the limit, so
         // wait for the person to press play (Settings › Account shows the same numbers). A saved file opens no
         // connection, so it never waits.
-        val onDevice = queue[index].id in local || queue[index].url.startsWith("file:")
-        val full = if (castNow == null && !onDevice) container.account.fullElsewhere() else null
+        val full = if (castNow == null && !playsFromDevice(queue[index], local)) container.account.fullElsewhere() else null
         if (castNow != null) {
             // Already casting: this goes to the TV, and the phone opens no stream of its own.
             castNow.load(queue[index], live, resumeAt)
@@ -537,6 +536,12 @@ class PlayerActivity : FragmentActivity() {
         if (!live) progressJob = lifecycleScope.launchSafely("Player") { progress.saveProgressEvery(exo) }
         if (live && autoTune == null && item.id != CatchUpLinks.ID) backups.attach(exo)
     }
+
+    /** A saved download or a recording, which play from the device and open no connection. */
+    private fun playsFromDevice(
+        item: ItemEntity,
+        saved: Map<Long, *>,
+    ): Boolean = item.id in saved || item.url.startsWith("file:")
 
     private fun buildPlayer(live: Boolean): ExoPlayer {
         // Streams over OkHttp (through the live rewind copy on live TV), with the headers the playlist asks for;
