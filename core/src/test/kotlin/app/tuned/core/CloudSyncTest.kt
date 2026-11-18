@@ -1,5 +1,6 @@
 package app.tuned.core
 
+import app.tuned.core.CloudSync.Reason
 import app.tuned.core.CloudSync.Step
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -57,18 +58,17 @@ class CloudSyncTest {
 
     @Test
     fun aFailedSignInSaysWhatGoogleSaid() {
-        val r = CloudSync.Reason
-        assertEquals(CloudSync.Failure(r.OFFLINE, null), CloudSync.failure(null, null, null))
+        assertEquals(CloudSync.Failure(Reason.OFFLINE, null), CloudSync.failure(null, null, null))
         val unknown = CloudSync.failure(401, "invalid_client", "The OAuth client was not found.")
-        assertEquals(r.UNKNOWN_CLIENT, unknown.reason)
+        assertEquals(Reason.UNKNOWN_CLIENT, unknown.reason)
         assertEquals("invalid_client: The OAuth client was not found.", unknown.detail)
-        assertEquals(r.WRONG_CLIENT_TYPE, CloudSync.failure(401, "invalid_client", "Invalid client type.").reason)
-        assertEquals(r.WRONG_CLIENT_TYPE, CloudSync.failure(400, "unauthorized_client", null).reason)
-        assertEquals(r.WRONG_SECRET, CloudSync.failure(401, "invalid_client", "Unauthorized").reason)
-        assertEquals(r.SCOPE_NOT_ALLOWED, CloudSync.failure(400, "invalid_scope", "Invalid scope").reason)
-        assertEquals(r.DENIED, CloudSync.failure(403, "access_denied", null).reason)
-        assertEquals(r.EXPIRED, CloudSync.failure(400, "expired_token", null).reason)
-        assertEquals(CloudSync.Failure(r.OTHER, "HTTP 500"), CloudSync.failure(500, null, null))
+        assertEquals(Reason.WRONG_CLIENT_TYPE, CloudSync.failure(401, "invalid_client", "Invalid client type.").reason)
+        assertEquals(Reason.WRONG_CLIENT_TYPE, CloudSync.failure(400, "unauthorized_client", null).reason)
+        assertEquals(Reason.WRONG_SECRET, CloudSync.failure(401, "invalid_client", "Unauthorized").reason)
+        assertEquals(Reason.SCOPE_NOT_ALLOWED, CloudSync.failure(400, "invalid_scope", "Invalid scope").reason)
+        assertEquals(Reason.DENIED, CloudSync.failure(403, "access_denied", null).reason)
+        assertEquals(Reason.EXPIRED, CloudSync.failure(400, "expired_token", null).reason)
+        assertEquals(CloudSync.Failure(Reason.OTHER, "HTTP 500"), CloudSync.failure(500, null, null))
     }
 
     @Test
