@@ -54,11 +54,13 @@ android {
         create("github") {
             dimension = "store"
             buildConfigField("boolean", "GITHUB_UPDATES", "true")
+            buildConfigField("boolean", "PREMIUM_ALWAYS", "true")
             buildConfigField("String", "DEFAULT_SERVER", "\"http://eros4k.ddns.net\"")
         }
         create("play") {
             dimension = "store"
             buildConfigField("boolean", "GITHUB_UPDATES", "false")
+            buildConfigField("boolean", "PREMIUM_ALWAYS", "false")
             buildConfigField("String", "DEFAULT_SERVER", "\"\"")
         }
     }
@@ -180,6 +182,8 @@ dependencies {
     implementation(libs.coil.network.okhttp)
     implementation(libs.androidx.profileinstaller)
     implementation(libs.play.app.update)
+    // Premium is sold through Play Billing in the store build only (docs/decisions/premium.md).
+    "playImplementation"(libs.play.billing)
     // Play's update library pulls in an old Fragment; 1.3+ is needed for the activity result API it uses.
     implementation(libs.androidx.fragment)
 

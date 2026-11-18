@@ -25,12 +25,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import app.tuned.R
+import app.tuned.container
 import app.tuned.data.Accent
 import app.tuned.data.AppSettings
 import app.tuned.data.ThemeMode
@@ -57,7 +59,11 @@ internal fun AppearancePage(
         ) { on -> vm.update { it.copy(dynamicColour = on) } }
     }
     if (!settings.dynamicColour || Build.VERSION.SDK_INT < Build.VERSION_CODES.S) {
-        AccentRow(settings.accent) { a -> vm.update { it.copy(accent = a) } }
+        // The default accent is free; the others are Premium (docs/decisions/premium.md).
+        val context = LocalContext.current
+        AccentRow(settings.accent) { a ->
+            if (a == Accent.VIOLET || context.container.premium.allow(context)) vm.update { it.copy(accent = a) }
+        }
     }
     SwitchRow(
         stringResource(R.string.settings_pure_black),

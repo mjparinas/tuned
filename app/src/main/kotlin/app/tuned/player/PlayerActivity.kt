@@ -55,6 +55,7 @@ import app.tuned.data.hiddenKeys
 import app.tuned.diagnostics.AppLog
 import app.tuned.diagnostics.attempt
 import app.tuned.diagnostics.launchSafely
+import app.tuned.premium.Premium
 import app.tuned.work.TvHome
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -181,7 +182,8 @@ class PlayerActivity : FragmentActivity() {
             scope = lifecycleScope,
             http = container.http,
             userAgent = { settings.userAgent.ifBlank { "Tuned/${BuildConfig.VERSION_NAME}" } },
-            keepMinutes = { settings.liveRewindMinutes },
+            // Pause and rewind live TV is Premium (docs/decisions/premium.md).
+            keepMinutes = { if (container.premium.unlocked.value) settings.liveRewindMinutes else 0 },
         )
     }
 
@@ -198,6 +200,8 @@ class PlayerActivity : FragmentActivity() {
                 stream = timeshift::stream,
                 casting = { cast?.casting == true },
                 say = ::flash,
+                locked = { !container.premium.unlocked.value },
+                unlock = { Premium.open(this) },
             ),
         )
     }

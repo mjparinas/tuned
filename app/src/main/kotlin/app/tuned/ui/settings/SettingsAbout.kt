@@ -12,6 +12,7 @@ import androidx.compose.ui.res.stringResource
 import app.tuned.BuildConfig
 import app.tuned.R
 import app.tuned.data.AppSettings
+import app.tuned.premium.PremiumRow
 import app.tuned.ui.DeveloperLogRoute
 
 @Composable
@@ -20,6 +21,7 @@ internal fun AboutPage(
     vm: SettingsViewModel,
     onOpen: (Any) -> Unit,
 ) {
+    PremiumRow()
     // Store builds update through their store, so there is nothing to turn on or off here.
     if (BuildConfig.GITHUB_UPDATES) {
         SwitchRow(

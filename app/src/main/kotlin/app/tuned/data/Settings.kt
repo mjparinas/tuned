@@ -115,7 +115,7 @@ data class AppSettings(
     val liveRewindMinutes: Int = 30,
     /** Leave out empty event slots ("NO EVENT STREAMING"); see [Placeholders]. Melvin, 2026-11-17: hide them. */
     val hidePlaceholders: Boolean = true,
-    /** Leave out round-the-clock "24/7" channels; see [RoundTheClock]. Melvin, 2026-11-17. Off by default. */
+    /** Leave out round-the-clock "24/7" channels, films and shows; see [RoundTheClock]. Melvin, 2026-11-17 and 11-18. Off by default. */
     val hide247: Boolean = false,
     val pictureInPicture: Boolean = true,
     val playerGestures: Boolean = true,
@@ -140,6 +140,8 @@ data class AppSettings(
     val liveGrid: Boolean = false,
     /** Numbers beside live channels, for typing one on the remote (Settings › Lists). */
     val channelNumbers: Boolean = true,
+    /** Keep the scroll bar on Live TV, Movies and Shows on screen, instead of only while the list moves (Settings › Lists). */
+    val alwaysShowScrollbar: Boolean = false,
     /** Open straight into the last live channel at launch, as a cable box does (Settings › Start on the last channel). */
     val startOnLastChannel: Boolean = false,
     /** Look for a newer release on GitHub at start (copies from Play update through Play either way). */

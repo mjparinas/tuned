@@ -1,5 +1,6 @@
 package app.tuned.ui.offline
 
+import app.tuned.core.Titles
 import app.tuned.data.db.DownloadEntity
 import app.tuned.data.db.DownloadRow
 
@@ -11,6 +12,9 @@ data class ShowDownloads(
     val seasons: List<SeasonDownloads>,
 ) {
     val rows: List<DownloadRow> get() = seasons.flatMap { it.rows }
+
+    /** How many of its episodes are saved, from 0 to 1, for the bar under its poster while some are on their way. */
+    val savedFraction: Float get() = rows.count { it.download.state == DownloadEntity.DONE }.toFloat() / rows.size.coerceAtLeast(1)
 }
 
 /** A season of a show, opening onto its episodes in order. */
@@ -53,7 +57,8 @@ data class DownloadLibrary(
                                 .map { (season, eps) -> SeasonDownloads(season, eps.sortedWith(byEpisode)) }
                         ShowDownloads(
                             showKey = key,
-                            name = list.firstNotNullOfOrNull { it.showName } ?: key,
+                            // Without the provider's language tag: "The Simpsons", not "EN - The Simpsons" (Melvin, 2026-11-18).
+                            name = Titles.display(list.firstNotNullOfOrNull { it.showName } ?: key),
                             poster = list.firstNotNullOfOrNull { it.showLogo } ?: seasons.firstNotNullOfOrNull { it.picture },
                             seasons = seasons,
                         )

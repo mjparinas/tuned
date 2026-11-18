@@ -84,6 +84,12 @@
             android:launchMode="singleTask"
             android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout|keyboard|keyboardHidden|navigation|uiMode" />
 
+        <!-- The one Premium screen (docs/decisions/premium.md). -->
+        <activity
+            android:name=".premium.PremiumActivity"
+            android:exported="false"
+            android:theme="@style/Theme.Tuned" />
+
         <!-- WorkManager's foreground service, typed for Android 14+. -->
         <service
             android:name="androidx.work.impl.foreground.SystemForegroundService"
