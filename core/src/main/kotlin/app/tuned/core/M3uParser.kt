@@ -52,6 +52,12 @@ object M3uParser {
                     Unit
                 }
 
+                // Only a link is a stream. A server that won't send the playlist often answers with an HTML page
+                // ("Access denied"); its lines must read as an empty playlist, not as streams called "<html>".
+                "://" !in line -> {
+                    Unit
+                }
+
                 else -> {
                     // Headers from #EXTVLCOPT lines and from Kodi's "link|User-Agent=…" form, kept in Kodi's form.
                     val parts = StreamLink.split(line)

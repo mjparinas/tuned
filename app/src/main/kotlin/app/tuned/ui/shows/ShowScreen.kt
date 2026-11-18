@@ -96,6 +96,8 @@ class ShowViewModel(
     fun load(showKey: String) {
         if (key.value == showKey) return
         key.value = showKey
+        // A show read from the Xtream API fetches its episodes the first time it opens (core/XtreamApi).
+        viewModelScope.launchSafely("Show") { getApplication<Application>().container.sync.loadShow(showKey) }
         viewModelScope.launchSafely("Show") {
             val list = db.items().episodes(showKey).first { it.isNotEmpty() }
             val seen = db.seenEpisodes().seen(showKey).toSet()
