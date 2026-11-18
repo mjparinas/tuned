@@ -64,6 +64,13 @@ class XmltvParserTest {
     }
 
     @Test
+    fun `an offset without a space before it still counts`() {
+        // 06:00 at +0100 is 05:00 UTC; read as UTC it was an hour late.
+        assertEquals(XmltvParser.parseTime("20261117050000 +0000"), XmltvParser.parseTime("20261117060000+0100"))
+        assertEquals(XmltvParser.parseTime("20261117110000"), XmltvParser.parseTime("202611170600-0500"))
+    }
+
+    @Test
     fun `bad times are rejected`() {
         assertNull(XmltvParser.parseTime("tomorrow"))
         assertEquals(0L, XmltvParser.parseTime("197001010000"))

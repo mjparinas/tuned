@@ -25,7 +25,7 @@
 
 **Start speed.** TS streams use the extractor flags that allow non-IDR key frames and detect access units, so live channels start sooner. Buffering has three modes (Fast start, Balanced, Smooth). OkHttp is the data source, shared with the rest of the app, with an optional custom user agent.
 
-**Live streams that drop** are retried quietly up to three times (1.5 s, 3 s, 4.5 s) before an error shows. Falling behind the live window jumps back to live.
+**Live streams that drop** are retried quietly up to five times (1.5 s, 3 s and so on to 7.5 s) before an error shows; a live channel that never showed a picture gets one retry before its backup copies are tried. Falling behind the live window jumps back to live.
 
 **The channel you open is the one that plays** (2026-11-18). Next and previous walk the channel's category as the lists show it, so a channel the category hides (one the scan found dead, a 24/7 channel with those hidden, a hidden country) is put first in the queue when it is opened from Favourites, Search, the guide or the widget. Before, the player fell back to the category's first channel and played something else.
 

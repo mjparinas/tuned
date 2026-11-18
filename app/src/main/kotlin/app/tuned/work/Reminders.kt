@@ -92,6 +92,16 @@ class Reminders(
             channelId: Long,
             start: Long,
         ): String = "$channelId@$start"
+
+        /**
+         * One reminder's notification and tap. Two alerts on one channel (two fights on the same pay-per-view channel)
+         * once shared a tap keyed by the channel alone, and Android kept only the last one's extras: tapping the first
+         * alert tuned the second event.
+         */
+        fun requestCode(
+            channelId: Long,
+            start: Long,
+        ): Int = key(channelId, start).hashCode()
     }
 }
 
@@ -119,7 +129,7 @@ class ReminderWorker(
         val open =
             PendingIntent.getActivity(
                 ctx,
-                channelId.hashCode(),
+                Reminders.requestCode(channelId, start),
                 if (tune != null) PlayerActivity.tuneIntent(ctx, tune) else PlayerActivity.intent(ctx, channelId),
                 PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
             )
@@ -136,7 +146,7 @@ class ReminderWorker(
                 .setContentIntent(open)
                 .setAutoCancel(true)
                 .build()
-        NotificationManagerCompat.from(ctx).notify(Reminders.key(channelId, start).hashCode(), notification)
+        NotificationManagerCompat.from(ctx).notify(Reminders.requestCode(channelId, start), notification)
         return Result.success()
     }
 

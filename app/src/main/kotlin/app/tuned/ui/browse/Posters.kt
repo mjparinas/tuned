@@ -79,7 +79,11 @@ fun Poster(
         Modifier
             .clip(RoundedCornerShape(10.dp))
             .focusRing(RoundedCornerShape(10.dp), MaterialTheme.colorScheme.primary)
-            .combinedClickable(onClick = onClick, onLongClick = if (hasMenu) ({ menu = true }) else null),
+            .combinedClickable(
+                onClick = onClick,
+                onLongClickLabel = if (hasMenu) stringResource(R.string.a11y_more_options) else null,
+                onLongClick = if (hasMenu) ({ menu = true }) else null,
+            ),
     ) {
         Box {
             AsyncImage(
@@ -97,7 +101,7 @@ fun Poster(
             if (favourite) {
                 Icon(
                     Icons.Filled.Favorite,
-                    null,
+                    stringResource(R.string.a11y_favourite),
                     Modifier.align(Alignment.TopEnd).padding(6.dp).size(18.dp),
                     tint = MaterialTheme.colorScheme.primary,
                 )
