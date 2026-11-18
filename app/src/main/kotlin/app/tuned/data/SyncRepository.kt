@@ -125,7 +125,7 @@ class SyncRepository(
                     val print = fingerprint()
                     // The same file as last time changes nothing: keep the cache and skip the minutes of saving.
                     if (memo.unchanged(print, db.items().any())) {
-                        AppLog.i(TAG_SYNC, "The playlist hasn't changed since the last refresh; keeping the cache")
+                        AppLog.i(TAG_SYNC) { "The playlist hasn't changed since the last refresh; keeping the cache" }
                         return@download db.items().count()
                     }
                     var fromOneFile = true
