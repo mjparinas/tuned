@@ -29,7 +29,7 @@ import java.util.Locale
 /**
  * Subtitle search (Melvin, 2026-11-17): for films and episodes whose stream has no subtitles, the player's subtitle
  * search button lists matching files from OpenSubtitles.com and adds the one picked. With captions on, a video that
- * has none fetches the best match by itself (Settings › Subtitles). The button shows only once an API key is set.
+ * has none fetches the best match by itself (Settings › Subtitles). The button shows only in builds with the key.
  * Downloaded files are kept by item, so the same film shows them again with no download.
  */
 @OptIn(UnstableApi::class)
@@ -78,14 +78,10 @@ class SubtitleSearch(
     /** Items already searched for by themselves this time, so a video with nothing to find is asked about once. */
     private val tried = mutableSetOf<Long>()
 
-    @Volatile private var hasKey = false
+    /** Whether this build has an OpenSubtitles key; the button stays hidden without one. */
+    private val hasKey = repository.hasKey()
 
-    /** Reads whether a key is set; the button stays hidden without one. */
-    suspend fun refresh() {
-        hasKey = repository.hasKey()
-    }
-
-    /** Shown with the controls for films and episodes, once a key is set. */
+    /** Shown with the controls for films and episodes, in builds with the key. */
     val button: ImageButton =
         ImageButton(activity).apply {
             setImageResource(R.drawable.ic_player_subtitle_search)

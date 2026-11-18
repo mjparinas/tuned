@@ -20,8 +20,8 @@ import java.io.IOException
 
 /**
  * Subtitle search (Melvin, 2026-11-17): fetches subtitles from OpenSubtitles.com for films and episodes whose stream
- * has none, with the person's own API key from Settings › Subtitles. Without a key nothing is asked and the player
- * shows no search button. Every downloaded file is kept on the device by item, so the same film needs no second
+ * has none, with the app's key from the OPENSUBTITLES_API_KEY build secret. A build without it asks nothing and the
+ * player shows no search button. Every downloaded file is kept on the device by item, so the same film needs no second
  * download (OpenSubtitles allows only a few a day).
  */
 class SubtitleRepository(
@@ -50,7 +50,7 @@ class SubtitleRepository(
         val account: SubtitleAccount,
     )
 
-    suspend fun hasKey(): Boolean = key().isNotEmpty()
+    fun hasKey(): Boolean = key().isNotEmpty()
 
     /** The search for [item]: a film by title and year, an episode by its show, season and number. */
     suspend fun searchFor(item: ItemEntity): OpenSubtitles.Search {
@@ -153,10 +153,7 @@ class SubtitleRepository(
         return Token(value, answer.baseUrl?.takeIf { it.isNotBlank() } ?: DEFAULT_HOST, account).also { token = it }
     }
 
-    private suspend fun key() = settings.settings
-        .first()
-        .openSubtitlesKey
-        .trim()
+    private fun key() = BuildConfig.OPENSUBTITLES_API_KEY
 
     private fun userAgent() = OpenSubtitles.userAgent(BuildConfig.VERSION_NAME)
 

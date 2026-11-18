@@ -17,14 +17,15 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import app.tuned.BuildConfig
 import app.tuned.R
 import app.tuned.container
 import app.tuned.data.AppSettings
 import app.tuned.data.SubtitleAccount
 
 /**
- * Settings › Subtitles: the person's own OpenSubtitles.com API key (the player's subtitle search stays hidden without
- * one), whether a video with no subtitles fetches them by itself, and an optional account for a higher daily limit.
+ * Settings › Subtitles, only in builds with the OpenSubtitles.com key (OPENSUBTITLES_API_KEY): whether a video with no
+ * subtitles fetches them by itself, and an optional account for a higher daily limit.
  * The account is kept encrypted with the login, never in settings or backups.
  */
 @Composable
@@ -32,25 +33,8 @@ fun SubtitleSettings(
     settings: AppSettings,
     update: ((AppSettings) -> AppSettings) -> Unit,
 ) {
+    if (BuildConfig.OPENSUBTITLES_API_KEY.isEmpty()) return
     SectionHeader(stringResource(R.string.settings_subtitles))
-    var editKey by remember { mutableStateOf(false) }
-    SettingRow(
-        stringResource(R.string.settings_opensubtitles_key),
-        if (settings.openSubtitlesKey.isBlank()) {
-            stringResource(R.string.settings_opensubtitles_key_summary)
-        } else {
-            stringResource(R.string.settings_opensubtitles_key_set)
-        },
-        onClick = { editKey = true },
-    )
-    if (editKey) {
-        TextDialog(
-            stringResource(R.string.settings_opensubtitles_key),
-            settings.openSubtitlesKey,
-            onDismiss = { editKey = false },
-        ) { key -> update { it.copy(openSubtitlesKey = key.trim()) } }
-    }
-    if (settings.openSubtitlesKey.isBlank()) return
     SwitchRow(
         stringResource(R.string.settings_auto_subtitles),
         settings.autoSubtitles,

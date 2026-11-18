@@ -18,6 +18,9 @@ android {
         // Release builds take these from the workflow (run number and package.json), like Liftsmith.
         versionCode = (System.getenv("VERSION_CODE") ?: "1").toInt()
         versionName = System.getenv("VERSION_NAME") ?: "0.1.0"
+        // Subtitle search's OpenSubtitles.com key, from the OPENSUBTITLES_API_KEY secret; builds without it hide the search.
+        val openSubtitlesKey = System.getenv("OPENSUBTITLES_API_KEY").orEmpty().trim()
+        buildConfigField("String", "OPENSUBTITLES_API_KEY", "\"$openSubtitlesKey\"")
     }
 
     signingConfigs {

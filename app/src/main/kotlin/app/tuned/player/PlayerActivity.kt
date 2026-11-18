@@ -204,7 +204,6 @@ class PlayerActivity : FragmentActivity() {
             tools.applyFit(settings.videoFit)
             if (settings.playerGestures) setUpGestures()
             if (settings.autoReconnect) reconnectWhenOnline()
-            subtitleSearch.refresh()
             val query = intent.getStringExtra(EXTRA_TUNE)
             if (query != null) {
                 startTune(query)

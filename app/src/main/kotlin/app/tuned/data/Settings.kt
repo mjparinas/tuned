@@ -133,8 +133,6 @@ data class AppSettings(
     val userAgent: String = "",
     /** The person's own TMDB key (v3 key or v4 read token) for ratings and trailers; blank turns them off. */
     val tmdbKey: String = "",
-    /** The person's own OpenSubtitles.com API key for subtitle search; blank hides it. */
-    val openSubtitlesKey: String = "",
     /** With captions on, a film or episode with no subtitles of its own fetches the best match by itself. */
     val autoSubtitles: Boolean = true,
     val showGuideInList: Boolean = true,
@@ -329,7 +327,6 @@ class SettingsRepository(
             skipIntroMs = p[K.skipIntroMs] ?: d.skipIntroMs,
             userAgent = p[K.userAgent] ?: d.userAgent,
             tmdbKey = p[K.tmdbKey] ?: d.tmdbKey,
-            openSubtitlesKey = p[K.openSubtitlesKey] ?: d.openSubtitlesKey,
             autoSubtitles = p[K.autoSubtitles] ?: d.autoSubtitles,
             showGuideInList = p[K.showGuideInList] ?: d.showGuideInList,
             liveGrid = p[K.liveGrid] ?: d.liveGrid,
@@ -408,7 +405,7 @@ class SettingsRepository(
         p[K.skipIntroMs] = s.skipIntroMs
         p[K.userAgent] = s.userAgent
         p[K.tmdbKey] = s.tmdbKey
-        p[K.openSubtitlesKey] = s.openSubtitlesKey
+        p.remove(K.openSubtitlesKey) // a key typed in before it was built in, which nothing reads any more
         p[K.autoSubtitles] = s.autoSubtitles
         p[K.showGuideInList] = s.showGuideInList
         p[K.liveGrid] = s.liveGrid
@@ -487,6 +484,7 @@ class SettingsRepository(
         val skipIntroMs = longPreferencesKey("skip_intro_ms")
         val userAgent = stringPreferencesKey("user_agent")
         val tmdbKey = stringPreferencesKey("tmdb_key")
+        /** Removed: the key is built in now (OPENSUBTITLES_API_KEY); only kept to clear what an earlier build stored. */
         val openSubtitlesKey = stringPreferencesKey("opensubtitles_key")
         val autoSubtitles = booleanPreferencesKey("auto_subtitles")
         val showGuideInList = booleanPreferencesKey("show_guide_in_list")

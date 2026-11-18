@@ -6,8 +6,8 @@
     <string name="subtitle_search_added">Subtitles added from OpenSubtitles</string>
     <string name="subtitle_search_none">No subtitles found for this video</string>
     <string name="subtitle_search_not_casting">Finding subtitles isn\'t available while casting</string>
-    <string name="subtitle_search_no_key">Add an OpenSubtitles key in Settings › Subtitles first</string>
-    <string name="subtitle_search_bad_key">OpenSubtitles turned down the key. Check it in Settings › Subtitles.</string>
+    <string name="subtitle_search_no_key">Subtitle search isn\'t available in this build</string>
+    <string name="subtitle_search_bad_key">OpenSubtitles turned down this app\'s key. Try again after the next update.</string>
     <string name="subtitle_search_bad_account">OpenSubtitles turned down the sign-in. Check it in Settings › Subtitles.</string>
     <string name="subtitle_search_limit">Today\'s OpenSubtitles download limit is used up. Try again tomorrow.</string>
     <string name="subtitle_search_offline">Couldn\'t reach OpenSubtitles. Try again in a moment.</string>
@@ -19,9 +19,6 @@
     </plurals>
 
     <string name="settings_subtitles">Subtitles</string>
-    <string name="settings_opensubtitles_key">OpenSubtitles key</string>
-    <string name="settings_opensubtitles_key_summary">Your own free API key from opensubtitles.com, to find subtitles for films and episodes that have none</string>
-    <string name="settings_opensubtitles_key_set">Set</string>
     <string name="settings_auto_subtitles">Find subtitles automatically</string>
     <string name="settings_auto_subtitles_summary">With captions on, a film or episode with no subtitles gets the best match by itself</string>
     <string name="settings_opensubtitles_account">OpenSubtitles account</string>
