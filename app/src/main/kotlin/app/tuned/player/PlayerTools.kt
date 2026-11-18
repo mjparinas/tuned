@@ -7,12 +7,14 @@ import android.graphics.Color
 import android.util.TypedValue
 import android.view.Gravity
 import android.view.KeyEvent
+import android.view.Menu
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
 import android.widget.ImageButton
 import android.widget.LinearLayout
+import android.widget.PopupMenu
 import android.widget.TextView
 import androidx.activity.ComponentActivity
 import androidx.activity.OnBackPressedCallback
@@ -111,15 +113,34 @@ class PlayerTools(
             gravity = Gravity.CENTER_VERTICAL
             addView(guideButton)
             addView(flipButton)
-            addView(button(R.drawable.ic_player_aspect, R.string.player_fit) { nextFit() })
             addView(qualityButton)
-            addView(button(R.drawable.ic_player_info, R.string.player_info) { toggleInfo() })
-            addView(button(R.drawable.ic_player_open_with, R.string.player_open_with) { openElsewhere() })
-            addView(button(R.drawable.ic_player_lock, R.string.player_lock) { lock() })
+            addView(button(R.drawable.ic_player_more, R.string.player_more) { view -> showMore(view) })
         }
 
     /** Moves the captions earlier or later; placed beside the CC button by the player. */
     val subtitleTimingButton: ImageButton = button(R.drawable.ic_player_subtitle_timing, R.string.subtitle_timing) { pickSubtitleTiming() }
+
+    /**
+     * The tools used now and then sit behind one More button, so the top row keeps to what's used while watching
+     * (cast, record, channels, flip back, quality): up to nine buttons were in that row (2026-11-18, Melvin's UI review).
+     */
+    private fun showMore(anchor: View) {
+        val items =
+            listOf(
+                R.string.player_fit to ::nextFit,
+                R.string.player_info to ::toggleInfo,
+                R.string.player_open_with to ::openElsewhere,
+                R.string.player_lock to ::lock,
+            )
+        PopupMenu(activity, anchor).apply {
+            items.forEachIndexed { index, (label, _) -> menu.add(Menu.NONE, index, index, label) }
+            setOnMenuItemClickListener { item ->
+                items.getOrNull(item.itemId)?.second?.invoke()
+                true
+            }
+            show()
+        }
+    }
 
     /** Puts another button (the cast button) at the start of the toolbar. */
     fun addButton(view: View) {
@@ -465,7 +486,7 @@ class PlayerTools(
     private fun button(
         icon: Int,
         label: Int,
-        onClick: () -> Unit,
+        onClick: (View) -> Unit,
     ) = ImageButton(activity).apply {
         setImageResource(icon)
         contentDescription = activity.getString(label)
@@ -474,7 +495,7 @@ class PlayerTools(
         setBackgroundResource(ripple.resourceId)
         val pad = (12 * density).toInt()
         setPadding(pad, pad, pad, pad)
-        setOnClickListener { onClick() }
+        setOnClickListener { onClick(it) }
     }
 
     private companion object {

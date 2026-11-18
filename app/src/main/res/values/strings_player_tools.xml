@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="player_fit">Fit</string>
+    <string name="player_more">More</string>
     <string name="player_fit_fit">Fit to screen</string>
     <string name="player_fit_zoom">Zoom to fill</string>
     <string name="player_fit_stretch">Stretch</string>

@@ -46,6 +46,7 @@ import app.tuned.R
 
 @Composable
 fun SectionHeader(text: String) {
+    if (searching()) return
     Text(
         text,
         style = MaterialTheme.typography.labelLarge,
@@ -62,6 +63,7 @@ fun SettingRow(
     onClick: (() -> Unit)? = null,
     trailing: @Composable (() -> Unit)? = null,
 ) {
+    if (searchHides(title, summary)) return
     Row(
         Modifier
             .fillMaxWidth()
@@ -89,6 +91,7 @@ fun SwitchRow(
     summary: String? = null,
     onChange: (Boolean) -> Unit,
 ) {
+    if (searchHides(title, summary)) return
     Row(
         Modifier
             .fillMaxWidth()
@@ -158,6 +161,7 @@ fun SliderRow(
     label: (Float) -> String,
     onChange: (Float) -> Unit,
 ) {
+    if (searchHides(title)) return
     var current by remember(value) { mutableFloatStateOf(value) }
     Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp)) {
         Row {
@@ -208,6 +212,7 @@ fun ColourRow(
     colours: List<Int> = captionPalette,
     onSelect: (Int) -> Unit,
 ) {
+    if (searchHides(title)) return
     Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 10.dp)) {
         Text(title, style = MaterialTheme.typography.bodyLarge)
         FlowRow(

@@ -86,6 +86,7 @@ private fun AccentRow(
     selected: Accent,
     onPick: (Accent) -> Unit,
 ) {
+    if (searchHides(stringResource(R.string.settings_accent))) return
     Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp)) {
         Text(stringResource(R.string.settings_accent), style = MaterialTheme.typography.bodyLarge)
         Spacer(Modifier.height(12.dp))
