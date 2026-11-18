@@ -62,7 +62,12 @@ object AppLog {
      * `http://host/<user>/<pass>/<id>` with no `/live/` for [LogScrubber] to spot.
      */
     fun setSecrets(vararg values: String) {
-        secrets = values.flatMap(::linkForms).filter { it.length >= 3 }.distinct().sortedByDescending { it.length }
+        secrets =
+            values
+                .flatMap(::linkForms)
+                .filter { it.length >= 3 }
+                .distinct()
+                .sortedByDescending { it.length }
     }
 
     /** [value] as is and as it appears inside a link. The String overload: the Charset one needs Android 13. */
