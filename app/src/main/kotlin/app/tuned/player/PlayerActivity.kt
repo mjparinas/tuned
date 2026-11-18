@@ -144,7 +144,7 @@ class PlayerActivity : FragmentActivity() {
     }
 
     /** The HQ button's copies of the live channel in other picture qualities; see [QualityCopies]. */
-    private val qualityCopies by lazy {
+    private val qualityCopies: QualityCopies by lazy {
         QualityCopies(
             scope = lifecycleScope,
             tune = container.tune,

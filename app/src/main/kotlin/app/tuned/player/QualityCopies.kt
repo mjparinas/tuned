@@ -15,7 +15,7 @@ import kotlinx.coroutines.Job
  * so for the channel playing this finds the best copy of each other quality, and the button switches to one. The old
  * stream closes before the copy opens ([Backups.swapTo]), so there is still one connection.
  */
-internal class QualityCopies(
+class QualityCopies(
     private val scope: CoroutineScope,
     private val tune: TuneRepository,
     private val hooks: Hooks,
