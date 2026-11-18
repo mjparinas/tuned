@@ -9,8 +9,20 @@ import kotlin.test.assertTrue
 class AvatarsTest {
     @Test
     fun keysAreUniqueAndTheSetsAreSplitByPremium() {
-        assertEquals(Avatars.all.size, Avatars.all.map { it.key }.toSet().size)
-        assertEquals(Avatars.all.size, Avatars.all.map { it.glyph }.toSet().size)
+        assertEquals(
+            Avatars.all.size,
+            Avatars.all
+                .map { it.key }
+                .toSet()
+                .size,
+        )
+        assertEquals(
+            Avatars.all.size,
+            Avatars.all
+                .map { it.glyph }
+                .toSet()
+                .size,
+        )
         assertTrue(Avatars.free.none { it.premium })
         assertTrue(Avatars.premium.all { it.premium })
         assertTrue(Avatars.free.isNotEmpty() && Avatars.premium.isNotEmpty())

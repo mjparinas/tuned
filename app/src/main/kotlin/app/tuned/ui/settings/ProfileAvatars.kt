@@ -197,7 +197,11 @@ private fun AvatarOption(
         )
         if (locked) {
             Box(
-                Modifier.align(Alignment.BottomEnd).size(18.dp).clip(CircleShape).background(MaterialTheme.colorScheme.surface),
+                Modifier
+                    .align(Alignment.BottomEnd)
+                    .size(18.dp)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.surface),
                 contentAlignment = Alignment.Center,
             ) { Icon(Icons.Filled.Lock, contentDescription = null, modifier = Modifier.size(12.dp)) }
         }
