@@ -61,6 +61,8 @@ class PlayerTools(
         val casting: () -> Boolean,
         /** Typing a channel number and flipping back, on live TV. */
         val dial: ChannelDial,
+        /** The channel's copies in other picture qualities, for the HQ button. */
+        val copies: QualityCopies,
     )
 
     private val density = activity.resources.displayMetrics.density
@@ -153,19 +155,31 @@ class PlayerTools(
     /** Called as the controls show or hide: the channels button only makes sense with channels to flip through. */
     fun onControls(visibility: Int) {
         if (visibility == View.VISIBLE) {
+            refreshQuality()
             guideButton.visibility = if (hooks.isLive() && hooks.queue().size > 1) View.VISIBLE else View.GONE
             flipButton.visibility = if (hooks.isLive() && hooks.dial.canFlipBack) View.VISIBLE else View.GONE
         }
     }
 
+    private var tracks: Tracks = Tracks.EMPTY
+
     /**
-     * The quality button shows only when the stream offers more than one picture to choose from (an HLS stream with
-     * several renditions). Most IPTV channels are one TS rendition, where the button could only say so (Melvin,
-     * 2026-11-18: "otherwise the hq button is useless").
+     * The quality (HQ) button shows only when there is something to switch to (Melvin, 2026-11-18: "otherwise the hq
+     * button is useless"): another copy of the channel in a different picture quality ([QualityCopies]), or a stream
+     * with several renditions of its own (an HLS stream). Most IPTV channels are one TS rendition with no copies.
      */
     fun onTracks(tracks: Tracks) {
-        qualityButton.isVisible = StreamInfo.hasQualityChoice(qualityOptions(tracks).map { it.height to it.bitrate })
+        this.tracks = tracks
+        refreshQuality()
     }
+
+    /** The copies or the stream changed, or the controls showed. */
+    fun refreshQuality() {
+        qualityButton.isVisible = renditionChoice(tracks) || hooks.copies.available
+    }
+
+    private fun renditionChoice(tracks: Tracks): Boolean =
+        StreamInfo.hasQualityChoice(qualityOptions(tracks).map { it.height to it.bitrate })
 
     private class QualityOption(
         val group: Tracks.Group,
@@ -422,7 +436,8 @@ class PlayerTools(
         val p = hooks.player() ?: return
         val options = qualityOptions(p.currentTracks)
         if (!StreamInfo.hasQualityChoice(options.map { it.height to it.bitrate })) {
-            hooks.say(activity.getString(R.string.player_quality_only_one))
+            // One rendition: the choice is between the channel's copies, if it has any.
+            if (hooks.copies.available) hooks.copies.pick(activity) else hooks.say(activity.getString(R.string.player_quality_only_one))
             return
         }
         val chosen =
