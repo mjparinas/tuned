@@ -282,6 +282,7 @@ fun SettingsScreen(
                 settings.guideDays,
                 label = { d -> pluralStringResource(R.plurals.days, d, d) },
             ) { d -> vm.update { it.copy(guideDays = d) } }
+            GuideFixRows(settings)
             ChoiceRow(
                 stringResource(R.string.settings_reminder_lead),
                 listOf(0, 1, 5, 10, 15, 30),

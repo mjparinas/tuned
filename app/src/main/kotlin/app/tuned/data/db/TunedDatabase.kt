@@ -25,8 +25,10 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         TmdbSeasonEntity::class,
         ProfileEntity::class,
         CurrentProfileEntity::class,
+        GuideFixEntity::class,
+        GuideChannelEntity::class,
     ],
-    version = 13,
+    version = 14,
     exportSchema = true,
 )
 abstract class TunedDatabase : RoomDatabase() {
@@ -52,6 +54,8 @@ abstract class TunedDatabase : RoomDatabase() {
 
     abstract fun profiles(): ProfileDao
 
+    abstract fun guideFixes(): GuideFixDao
+
     companion object {
         fun create(context: Context): TunedDatabase = Room
             .databaseBuilder(context, TunedDatabase::class.java, "tuned.db")
@@ -71,6 +75,7 @@ abstract class TunedDatabase : RoomDatabase() {
                 MIGRATION_10_11,
                 MIGRATION_11_12,
                 MIGRATION_12_13,
+                MIGRATION_13_14,
             ).addCallback(FirstProfile)
             // Going back to an older release (installing an older APK) can't keep a newer database: start it afresh
             // rather than crash on every launch. Upgrades always migrate, above.
@@ -217,6 +222,20 @@ abstract class TunedDatabase : RoomDatabase() {
                     db.execSQL(
                         "CREATE TABLE IF NOT EXISTS `tmdb_seasons` (`cacheKey` TEXT NOT NULL, `found` INTEGER NOT NULL, " +
                             "`episodes` TEXT NOT NULL, `fetchedAt` INTEGER NOT NULL, PRIMARY KEY(`cacheKey`))",
+                    )
+                }
+            }
+
+        /** Adds guide fixes: a channel's own guide entry or time offset, and the guide's channel list to pick from. */
+        val MIGRATION_13_14 =
+            object : Migration(13, 14) {
+                override fun migrate(db: SupportSQLiteDatabase) {
+                    db.execSQL(
+                        "CREATE TABLE IF NOT EXISTS `guide_fixes` (`itemId` INTEGER NOT NULL, `guideId` TEXT, " +
+                            "`offsetMinutes` INTEGER NOT NULL, `playlistTvgId` TEXT, PRIMARY KEY(`itemId`))",
+                    )
+                    db.execSQL(
+                        "CREATE TABLE IF NOT EXISTS `guide_channels` (`id` TEXT NOT NULL, `name` TEXT NOT NULL, PRIMARY KEY(`id`))",
                     )
                 }
             }

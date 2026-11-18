@@ -48,6 +48,16 @@ class XmltvParserTest {
     }
 
     @Test
+    fun `lists the guide's channels with their names`() {
+        val parser = KXmlParser()
+        parser.setInput(ByteArrayInputStream(guide.toByteArray()), "UTF-8")
+        val channels = mutableListOf<Pair<String, String>>()
+        val count = XmltvParser.programmes(parser, keep = { id, _, _ -> id == "cnn.us" }) { id, name -> channels += id to name }.count()
+        assertEquals(listOf("cnn.us" to "CNN"), channels)
+        assertEquals(2, count)
+    }
+
+    @Test
     fun `reads gzipped guides`() {
         val zipped = ByteArrayOutputStream().also { GZIPOutputStream(it).use { gz -> gz.write(guide.toByteArray()) } }.toByteArray()
         assertEquals(2, parse(zipped).size)
