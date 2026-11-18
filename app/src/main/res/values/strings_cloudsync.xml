@@ -21,4 +21,8 @@
     <string name="cloud_sync_wrong_passphrase">This passphrase doesn\'t match the one on your other devices. Tap to enter it again.</string>
     <string name="cloud_sync_stop">Stop syncing</string>
     <string name="cloud_sync_stop_summary">Signs this device out of Google. What\'s on it stays.</string>
+    <string name="passphrase_new">Choose a passphrase</string>
+    <string name="passphrase">Passphrase</string>
+    <string name="passphrase_again">Passphrase again</string>
+    <string name="passphrase_continue">Continue</string>
 </resources>

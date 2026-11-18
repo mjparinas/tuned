@@ -146,10 +146,8 @@ fun CloudSyncRows(vm: CloudSyncViewModel = viewModel()) {
     LaunchedEffect(signedIn, hasPassphrase) { if (signedIn && !hasPassphrase) askPassphrase = true }
     if (askPassphrase) {
         PassphraseDialog(
-            create = true,
-            wrong = false,
-            onDismiss = { askPassphrase = false },
             help = stringResource(R.string.cloud_sync_passphrase_help),
+            onDismiss = { askPassphrase = false },
         ) { passphrase ->
             askPassphrase = false
             vm.setPassphrase(passphrase)

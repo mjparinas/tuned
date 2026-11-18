@@ -4,7 +4,7 @@ import android.content.Context
 import androidx.work.WorkInfo
 import androidx.work.WorkManager
 import app.tuned.data.AccountRepository
-import app.tuned.data.BackupRepository
+import app.tuned.data.SyncCopyRepository
 import app.tuned.data.ChannelScanner
 import app.tuned.data.CloudSyncRepository
 import app.tuned.data.Connectivity
@@ -66,9 +66,9 @@ class AppContainer(
     val scheduler = SyncScheduler(context)
     val guideFixes by lazy { GuideFixRepository(db, sync, scheduler, credentials) }
     val updates by lazy { GitHubUpdates(context, http) }
-    val backup by lazy { BackupRepository(credentials, settings, db) }
+    val syncCopy by lazy { SyncCopyRepository(credentials, settings, db) }
     val cloudSync by lazy {
-        CloudSyncRepository(context, GoogleDrive(context, http), backup) { scheduler.refreshNow(first = true) }
+        CloudSyncRepository(context, GoogleDrive(context, http), syncCopy) { scheduler.refreshNow(first = true) }
     }
     val reminders by lazy { Reminders(context) }
     val events by lazy { EventsRepository(db, settings, reminders) }

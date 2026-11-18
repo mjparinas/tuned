@@ -36,7 +36,6 @@ import app.tuned.R
 import app.tuned.data.Credentials
 import app.tuned.ui.common.BackTopBar
 import app.tuned.ui.common.focusRing
-import app.tuned.ui.settings.RestoreButton
 
 /**
  * The first thing a new install shows, and Settings › Playlists › Add: one question, "what kind of playlist?", with
@@ -47,7 +46,6 @@ import app.tuned.ui.settings.RestoreButton
 fun WelcomeScreen(
     firstRun: Boolean,
     onPick: (Credentials.Kind) -> Unit,
-    onRestored: () -> Unit,
     onBack: () -> Unit,
 ) {
     Scaffold(topBar = { if (!firstRun) BackTopBar(stringResource(R.string.playlists_add), onBack) }) { padding ->
@@ -84,7 +82,6 @@ fun WelcomeScreen(
             KindCard(Icons.Filled.FolderOpen, R.string.kind_file, R.string.kind_file_summary) { onPick(Credentials.Kind.File) }
             if (firstRun) {
                 Spacer(Modifier.height(4.dp))
-                RestoreButton(onRestoredLogin = onRestored)
                 Text(
                     stringResource(R.string.login_privacy),
                     style = MaterialTheme.typography.bodySmall,
