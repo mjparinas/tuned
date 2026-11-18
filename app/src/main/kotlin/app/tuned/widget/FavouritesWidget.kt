@@ -47,11 +47,13 @@ class FavouritesWidget : GlanceAppWidget() {
     private suspend fun load(context: Context): List<Row> {
         val c = context.container
         if (c.credentials.load() == null) return emptyList()
+        val settings = c.settings.settings.first()
         val favourites =
             c.db
                 .library()
                 .favouriteChannels()
                 .first()
+                .filter { it.allowed(settings) }
                 .take(MAX_ROWS)
         val ids = favourites.mapNotNull { it.tvgId }.distinct()
         val now = System.currentTimeMillis()

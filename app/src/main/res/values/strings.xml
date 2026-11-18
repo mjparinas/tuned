@@ -45,6 +45,7 @@
 
     <string name="player_now">Now: %1$s</string>
     <string name="player_next">Next: %1$s</string>
+    <string name="player_locked">This is locked on this profile. Open Tuned to unlock it.</string>
     <string name="player_error">Can\'t play this stream (%1$s)</string>
 
     <string name="sync_channel">Refreshing channels</string>

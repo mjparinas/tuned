@@ -6,6 +6,7 @@ import app.tuned.core.LogScrubber
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import java.net.URLEncoder
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -55,9 +56,18 @@ object AppLog {
 
     @Volatile private var secrets: List<String> = emptyList()
 
-    /** The login in use, so it is masked even where it doesn't look like one. Values shorter than 3 are ignored. */
+    /**
+     * The login in use, so it is masked even where it doesn't look like one. Values shorter than 3 are ignored. Each is
+     * also masked as it appears inside a link (`p%40ss` for `p@ss`), because an Xtream playlist's live links are
+     * `http://host/<user>/<pass>/<id>` with no `/live/` for [LogScrubber] to spot.
+     */
     fun setSecrets(vararg values: String) {
-        secrets = values.filter { it.length >= 3 }.distinct().sortedByDescending { it.length }
+        secrets =
+            values
+                .flatMap { listOf(it, URLEncoder.encode(it, Charsets.UTF_8), URLEncoder.encode(it, Charsets.UTF_8).replace("+", "%20")) }
+                .filter { it.length >= 3 }
+                .distinct()
+                .sortedByDescending { it.length }
     }
 
     fun d(

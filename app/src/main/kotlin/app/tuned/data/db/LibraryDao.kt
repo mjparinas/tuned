@@ -33,7 +33,7 @@ interface LibraryDao {
     /** Favourite channels in the order they're shown, for Settings › Order favourites. */
     @Query(
         """
-        SELECT i.id, i.name, i.logo, i.tvgId FROM favourites f JOIN items i ON i.id = f.itemId
+        SELECT i.id, i.name, i.logo, i.tvgId, i.groupName, i.adult FROM favourites f JOIN items i ON i.id = f.itemId
         WHERE i.kind = 0 AND f.profileId = $ME
         GROUP BY i.id
         ORDER BY f.position, i.sortOrder
