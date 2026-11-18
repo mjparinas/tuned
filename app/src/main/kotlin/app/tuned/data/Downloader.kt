@@ -16,6 +16,7 @@ import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.coroutines.coroutineContext
 
 /**
@@ -144,45 +145,50 @@ class Downloader(
                 .apply { if (resume && validator != null) header("Range", "bytes=$have-").header("If-Range", validator) }
                 .build()
         val call = http.newCall(request)
-        hangUpWhenStopped(call) { call.execute() }.use { response ->
-            val complete = response.code == HTTP_RANGE_NOT_SATISFIABLE && resume && have == state.total
-            if (!complete) {
-                if (!response.isSuccessful) throw HttpError(response.code)
-                val append = resume && response.code == HTTP_PARTIAL
-                state.validator = response.validator()
-                state.total =
-                    if (append) {
-                        response.header("Content-Range")?.substringAfter('/')?.toLongOrNull() ?: -1L
-                    } else {
-                        response.body.contentLength()
-                    }
-                state.save()
-                save(response, part, append, state.total, progress)
+        hangUpWhenStopped(call) {
+            call.execute().use { response ->
+                val complete = response.code == HTTP_RANGE_NOT_SATISFIABLE && resume && have == state.total
+                if (!complete) {
+                    if (!response.isSuccessful) throw HttpError(response.code)
+                    val append = resume && response.code == HTTP_PARTIAL
+                    state.validator = response.validator()
+                    state.total =
+                        if (append) {
+                            response.header("Content-Range")?.substringAfter('/')?.toLongOrNull() ?: -1L
+                        } else {
+                            response.body.contentLength()
+                        }
+                    state.save()
+                    save(response, part, append, state.total, progress)
+                }
             }
         }
         if (state.total >= 0 && part.length() != state.total) throw IOException("The download ended early")
     }
 
     /**
-     * Runs [block] (a blocking read on [call]) and hangs the call up the moment this coroutine is stopped. A stopped
-     * download used to keep its connection until the server sent its next bytes, which on a stalled server is up to
-     * the read timeout, so the player could open its stream beside it (one connection, ever).
+     * Runs [block] (the request on [call] and reading its body) and hangs the call up the moment this coroutine is
+     * stopped. A stopped download used to keep its connection until the server sent its next bytes, which on a stalled
+     * server is up to the read timeout, so the player could open its stream beside it (one connection, ever).
      */
     private suspend fun <T> hangUpWhenStopped(
         call: Call,
-        block: () -> T,
+        block: suspend () -> T,
     ): T = coroutineScope {
+        val finished = AtomicBoolean()
         val watcher =
             launch(start = CoroutineStart.UNDISPATCHED) {
                 try {
                     awaitCancellation()
                 } finally {
-                    call.cancel()
+                    // Only a stop hangs up; a finished read closes the call itself.
+                    if (!finished.get()) call.cancel()
                 }
             }
         try {
             block()
         } finally {
+            finished.set(true)
             watcher.cancel()
         }
     }
