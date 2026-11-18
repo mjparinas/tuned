@@ -23,6 +23,19 @@ android {
         buildConfigField("String", "OPENSUBTITLES_API_KEY", "\"$openSubtitlesKey\"")
         // The app's TMDB key (a v4 read token or v3 key) from the release secret, never committed; without it TMDB is off.
         buildConfigField("String", "TMDB_API_KEY", "\"${System.getenv("TMDB_API_KEY").orEmpty()}\"")
+        // The commit this build came from, shown as plain text at the bottom of Settings (Melvin, 2026-11-18). CI and Release
+        // pass GIT_COMMIT (a pull request's own head, not GitHub's merge commit); local builds ask git. Empty hides the line.
+        val gitCommit =
+            System.getenv("GIT_COMMIT")?.takeIf { it.isNotBlank() }
+                ?: runCatching {
+                    providers
+                        .exec {
+                            commandLine("git", "rev-parse", "HEAD")
+                            isIgnoreExitValue = true
+                        }.standardOutput.asText
+                        .get()
+                }.getOrNull()
+        buildConfigField("String", "GIT_COMMIT", "\"${gitCommit.orEmpty().trim().take(7)}\"")
     }
 
     signingConfigs {

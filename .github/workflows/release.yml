@@ -54,6 +54,7 @@ jobs:
           TMDB_API_KEY: ${{ secrets.TMDB_API_KEY }}
           VERSION_CODE: ${{ steps.v.outputs.code }}
           VERSION_NAME: ${{ steps.v.outputs.version }}
+          GIT_COMMIT: ${{ github.sha }}
         run: |
           echo "$ANDROID_KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/upload.jks"
           ANDROID_KEYSTORE_PATH="$RUNNER_TEMP/upload.jks" ./gradlew :app:assembleRelease :app:bundleRelease
