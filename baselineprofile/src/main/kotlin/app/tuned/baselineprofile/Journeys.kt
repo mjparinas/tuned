@@ -1,10 +1,10 @@
 package app.tuned.baselineprofile
 
 import androidx.benchmark.macro.MacrobenchmarkScope
-import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.By
 import androidx.test.uiautomator.Direction
 import androidx.test.uiautomator.Until
+import app.tuned.fakeprovider.FakeProvider
 import java.io.ByteArrayOutputStream
 
 /** The release app's id; the benchmark build type keeps it. */
@@ -16,11 +16,7 @@ private const val PLAY_MS = 3_000L
 private const val BACK_TRIES = 3
 private const val BACK_WAIT_MS = 3_000L
 
-/** Starts the fake provider with the clip from this test app's assets. */
-fun startFakeProvider() {
-    val assets = InstrumentationRegistry.getInstrumentation().context.assets
-    FakeProvider.start(assets.open("clip.mpegts").use { it.readBytes() })
-}
+fun startFakeProvider() = FakeProvider.start()
 
 /**
  * Adds the fake provider's playlist link the first time the app opens on this install, then waits for the cached

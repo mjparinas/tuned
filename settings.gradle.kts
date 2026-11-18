@@ -27,3 +27,6 @@ include(":core")
 include(":app")
 // Generates the app's baseline profile and measures cold start on an emulator (docs/decisions/speed.md).
 include(":baselineprofile")
+// The device smoke test CI runs on an emulator, and the fake provider both device tests use.
+include(":smoketest")
+include(":fakeprovider")

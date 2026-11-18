@@ -1,16 +1,21 @@
-package app.tuned.baselineprofile
+package app.tuned.fakeprovider
 
 import java.io.IOException
+import java.io.OutputStream
 import java.net.InetAddress
 import java.net.InetSocketAddress
 import java.net.ServerSocket
 import java.net.Socket
+import java.util.Collections
+import java.util.concurrent.atomic.AtomicInteger
 import kotlin.concurrent.thread
 
 /**
- * A stand-in IPTV provider on the loopback, so the journeys sign in, list and play without a real login (none is
- * ever committed). It serves one playlist the size of a mid-sized provider's and the same short clip for every
- * stream. It runs inside the test app; the app under test reaches it at 127.0.0.1 like any plain-HTTP server.
+ * A stand-in IPTV provider on the loopback, so the device tests sign in, list and play without a real login (none is
+ * ever committed). It serves one playlist the size of a mid-sized provider's and, for every stream, a 30 second
+ * clip sent at about the speed it plays, as a live channel arrives. It counts the stream connections open at once,
+ * so a test can hold the app to its one-connection rule. It runs inside the test app; the app under test reaches it
+ * at 127.0.0.1 like any plain-HTTP server.
  */
 object FakeProvider {
     private const val PORT = 8765
@@ -19,6 +24,9 @@ object FakeProvider {
     private const val SHOWS = 40
     private const val SEASONS = 2
     private const val EPISODES = 8
+    private const val CLIP_SECONDS = 30
+    private const val CHUNK = 8 * 1024
+    private const val MS_PER_SECOND = 1000L
     private val GROUPS = listOf("News", "Sports", "Kids", "Music", "Documentaries", "Entertainment", "Local", "Weather")
     private const val BASE = "http://127.0.0.1:$PORT"
 
@@ -28,9 +36,21 @@ object FakeProvider {
     const val FIRST_CHANNEL = "Channel 0001"
 
     private var server: ServerSocket? = null
+    private val clip: ByteArray by lazy {
+        requireNotNull(FakeProvider::class.java.getResourceAsStream("/clip.mpegts")).use { it.readBytes() }
+    }
+
+    private val open = AtomicInteger()
+    private val most = AtomicInteger()
+
+    /** Every stream path asked for, in order (`/live/demo/demo/1.ts`). */
+    val streamsRequested: MutableList<String> = Collections.synchronizedList(ArrayList())
+
+    /** The most stream connections that were open at the same moment since [reset]. */
+    val mostOpenAtOnce: Int get() = most.get()
 
     @Synchronized
-    fun start(clip: ByteArray) {
+    fun start() {
         if (server != null) return
         val socket = ServerSocket()
         socket.reuseAddress = true
@@ -45,35 +65,62 @@ object FakeProvider {
                     } catch (_: IOException) {
                         break
                     }
-                thread(isDaemon = true, name = "fake-provider-client") { client.use { serve(it, clip) } }
+                thread(isDaemon = true, name = "fake-provider-client") { client.use(::serve) }
             }
         }
     }
 
-    private fun serve(
-        client: Socket,
-        clip: ByteArray,
-    ) {
+    fun reset() {
+        streamsRequested.clear()
+        most.set(open.get())
+    }
+
+    private fun serve(client: Socket) {
         try {
             val reader = client.getInputStream().bufferedReader()
             val path = reader.readLine()?.split(' ')?.getOrNull(1) ?: return
             while (reader.readLine()?.isNotEmpty() == true) {
                 // Headers aren't needed.
             }
-            val (type, body) =
-                when {
-                    path.startsWith("/playlist") -> "audio/x-mpegurl" to playlist
-                    else -> "video/mp2t" to clip
-                }
             val out = client.getOutputStream()
-            val head = "HTTP/1.1 200 OK\r\nContent-Type: $type\r\nContent-Length: ${body.size}\r\nConnection: close\r\n\r\n"
-            out.write(head.toByteArray())
-            out.write(body)
+            if (path.startsWith("/playlist")) {
+                out.write(head("audio/x-mpegurl", playlist.size))
+                out.write(playlist)
+            } else {
+                stream(path, out)
+            }
             out.flush()
         } catch (_: IOException) {
             // The player hung up mid-clip, as it does when a channel changes.
         }
     }
+
+    private fun stream(
+        path: String,
+        out: OutputStream,
+    ) {
+        streamsRequested += path
+        most.accumulateAndGet(open.incrementAndGet(), ::maxOf)
+        try {
+            out.write(head("video/mp2t", clip.size))
+            // About as fast as it plays, so the connection stays open the way a live channel's does.
+            val pause = CLIP_SECONDS * MS_PER_SECOND * CHUNK / clip.size
+            var at = 0
+            while (at < clip.size) {
+                val n = minOf(CHUNK, clip.size - at)
+                out.write(clip, at, n)
+                at += n
+                Thread.sleep(pause)
+            }
+        } finally {
+            open.decrementAndGet()
+        }
+    }
+
+    private fun head(
+        type: String,
+        length: Int,
+    ) = "HTTP/1.1 200 OK\r\nContent-Type: $type\r\nContent-Length: $length\r\nConnection: close\r\n\r\n".toByteArray()
 
     private val playlist: ByteArray by lazy {
         buildString {
