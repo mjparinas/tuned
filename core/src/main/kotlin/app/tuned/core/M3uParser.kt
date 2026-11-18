@@ -25,6 +25,7 @@ object M3uParser {
         var pending: ExtInf? = null
         var extGroup: String? = null
         val headers = LinkedHashMap<String, String>()
+        var shift: String? = null // the header's tvg-shift, for channels that don't give their own
         var count = 0
         while (true) {
             val raw = reader.readLine() ?: break
@@ -32,6 +33,10 @@ object M3uParser {
             when {
                 line.isEmpty() -> {
                     Unit
+                }
+
+                line.startsWith("#EXTM3U", ignoreCase = true) -> {
+                    shift = parseExtInf("#EXTM3U:0 " + line.substring("#EXTM3U".length)).attributes["tvg-shift"]
                 }
 
                 line.startsWith("#EXTINF", ignoreCase = true) -> {
@@ -63,7 +68,7 @@ object M3uParser {
                     val parts = StreamLink.split(line)
                     val link = StreamLink.join(parts.url, headers + parts.headers)
                     val info = pending ?: ExtInf(title = parts.url.substringAfterLast('/'), attributes = emptyMap())
-                    yield(toEntry(info, extGroup, link, count))
+                    yield(toEntry(info, extGroup, link, count, shift))
                     count++
                     pending = null
                     extGroup = null
@@ -124,6 +129,7 @@ object M3uParser {
         extGroup: String?,
         url: String,
         order: Int,
+        shift: String?,
     ): PlaylistEntry {
         val a = info.attributes
         val name = info.title.ifBlank { a["tvg-name"].orEmpty() }.ifBlank { StreamLink.address(url).substringAfterLast('/') }
@@ -134,7 +140,7 @@ object M3uParser {
             url = url,
             kind = kind,
             group = group,
-            tvgId = a["tvg-id"]?.takeIf { it.isNotBlank() },
+            tvgId = GuideShift.tag(a["tvg-id"]?.takeIf { it.isNotBlank() }, a["tvg-shift"] ?: shift),
             logo = a["tvg-logo"]?.takeIf { it.isNotBlank() },
             region = Regions.detect(group, a["tvg-country"], name, a["tvg-language"]),
             adult = Classifier.isAdult(group, name),
