@@ -1,13 +1,16 @@
 package app.tuned.player
 
+import androidx.annotation.OptIn
 import androidx.media3.common.ForwardingPlayer
 import androidx.media3.common.Player
+import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
 
 /**
  * What the on-screen controls drive: the phone's player, or the TV's play and pause while casting. Moved out of
  * `PlayerActivity`, which passes in what it knows.
  */
+@OptIn(UnstableApi::class)
 class ViewPlayer(
     private val exo: ExoPlayer,
     private val cast: () -> CastControl?,
