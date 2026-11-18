@@ -1,9 +1,14 @@
 package app.tuned.data
 
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.awaitCancellation
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import okhttp3.Call
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.Response
@@ -11,6 +16,7 @@ import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.coroutines.coroutineContext
 
 /**
@@ -89,6 +95,8 @@ class Downloader(
             stalls = if (after > before) 1 else stalls + 1
             if (stalls < maxStalls) delay(backoffMs(stalls))
         }
+        // Stopped (the player opened) rather than failed: say so, so the download isn't marked failed.
+        coroutineContext.ensureActive()
         // A saved download keeps what it has for the next try; anything else starts clean next time.
         if (!keepPart) part.delete()
         throw lastError ?: IOException("Couldn't download")
@@ -136,23 +144,53 @@ class Downloader(
                 .apply { if (userAgent.isNotBlank()) header("User-Agent", userAgent) }
                 .apply { if (resume && validator != null) header("Range", "bytes=$have-").header("If-Range", validator) }
                 .build()
-        http.newCall(request).execute().use { response ->
-            val complete = response.code == HTTP_RANGE_NOT_SATISFIABLE && resume && have == state.total
-            if (!complete) {
-                if (!response.isSuccessful) throw HttpError(response.code)
-                val append = resume && response.code == HTTP_PARTIAL
-                state.validator = response.validator()
-                state.total =
-                    if (append) {
-                        response.header("Content-Range")?.substringAfter('/')?.toLongOrNull() ?: -1L
-                    } else {
-                        response.body.contentLength()
-                    }
-                state.save()
-                save(response, part, append, state.total, progress)
+        val call = http.newCall(request)
+        hangUpWhenStopped(call) {
+            call.execute().use { response ->
+                val complete = response.code == HTTP_RANGE_NOT_SATISFIABLE && resume && have == state.total
+                if (!complete) {
+                    if (!response.isSuccessful) throw HttpError(response.code)
+                    val append = resume && response.code == HTTP_PARTIAL
+                    state.validator = response.validator()
+                    state.total =
+                        if (append) {
+                            response.header("Content-Range")?.substringAfter('/')?.toLongOrNull() ?: -1L
+                        } else {
+                            response.body.contentLength()
+                        }
+                    state.save()
+                    save(response, part, append, state.total, progress)
+                }
             }
         }
         if (state.total >= 0 && part.length() != state.total) throw IOException("The download ended early")
+    }
+
+    /**
+     * Runs [block] (the request on [call] and reading its body) and hangs the call up the moment this coroutine is
+     * stopped. A stopped download used to keep its connection until the server sent its next bytes, which on a stalled
+     * server is up to the read timeout, so the player could open its stream beside it (one connection, ever).
+     */
+    private suspend fun <T> hangUpWhenStopped(
+        call: Call,
+        block: suspend () -> T,
+    ): T = coroutineScope {
+        val finished = AtomicBoolean()
+        val watcher =
+            launch(start = CoroutineStart.UNDISPATCHED) {
+                try {
+                    awaitCancellation()
+                } finally {
+                    // Only a stop hangs up; a finished read closes the call itself.
+                    if (!finished.get()) call.cancel()
+                }
+            }
+        try {
+            block()
+        } finally {
+            finished.set(true)
+            watcher.cancel()
+        }
     }
 
     private suspend fun save(

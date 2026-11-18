@@ -51,6 +51,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 import java.io.File
 import java.util.concurrent.ConcurrentHashMap
 
@@ -250,6 +251,8 @@ class PlayerActivity : FragmentActivity() {
         // One connection to the provider at a time: downloads and channel scans wait while anything plays.
         container.playerOpen.value = true
         container.offline.pause()
+        // A cast outlives this screen; downloads keep waiting while a TV plays.
+        container.tvCasting.watch()
         buildViews()
         hideSystemBars(window)
         // Nothing to show if the channel can't be read: log it and close rather than sit on a black screen.
@@ -524,6 +527,9 @@ class PlayerActivity : FragmentActivity() {
             showStatus(getString(R.string.account_full_wait, full.activeConnections ?: 0, full.maxConnections ?: 0))
             playerView.showController()
         } else {
+            // A download stopped as the player opened hangs up first, so the provider never sees two connections. It
+            // takes a moment at most, and only when a download was running.
+            withTimeoutOrNull(DOWNLOAD_STOP_MS) { container.downloadOpen.first { !it } }
             exo.prepare()
             exo.playWhenReady = true
         }
@@ -843,6 +849,7 @@ class PlayerActivity : FragmentActivity() {
         internal const val EXTRA_RECORDING = "recording"
         private const val MAX_RETRIES = 5
         private const val FLASH_MS = 900L
+        private const val DOWNLOAD_STOP_MS = 2_000L
 
         fun intent(
             context: Context,
