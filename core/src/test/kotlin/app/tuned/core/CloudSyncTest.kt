@@ -56,6 +56,13 @@ class CloudSyncTest {
     }
 
     @Test
+    fun asksForAScopeGooglesCodeSignInAllows() {
+        // Google answers drive.appdata with "invalid_scope: Invalid device flow scope" (2026-11-18), so sync never signed in.
+        assertNotEquals("https://www.googleapis.com/auth/drive.appdata", CloudSync.SCOPE)
+        assertEquals("https://www.googleapis.com/auth/drive.file", CloudSync.SCOPE)
+    }
+
+    @Test
     fun aFailedSignInSaysWhatGoogleSaid() {
         assertEquals(CloudSync.Failure(Reason.OFFLINE, null), CloudSync.failure(null, null, null))
         val unknown = CloudSync.failure(401, "invalid_client", "The OAuth client was not found.")
