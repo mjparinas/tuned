@@ -61,6 +61,7 @@ import app.tuned.data.hiddenKeys
 import app.tuned.diagnostics.AppLog
 import app.tuned.diagnostics.attempt
 import app.tuned.diagnostics.launchSafely
+import app.tuned.work.TvHome
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
@@ -862,6 +863,7 @@ class PlayerActivity : FragmentActivity() {
             if (id != null && id != CatchUpLinks.ID && duration > 0 && !live()) {
                 container.appScope.launch {
                     container.db.library().saveProgress(HistoryEntity(id, position, duration, System.currentTimeMillis()))
+                    TvHome.schedule(applicationContext) // the TV home screen's Continue watching row
                 }
             }
         }

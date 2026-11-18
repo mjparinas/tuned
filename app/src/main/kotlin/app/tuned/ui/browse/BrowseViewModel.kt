@@ -22,6 +22,7 @@ import app.tuned.data.db.ProfileEntity
 import app.tuned.data.db.ShowSummary
 import app.tuned.data.hiddenKeys
 import app.tuned.diagnostics.launchSafely
+import app.tuned.work.TvHome
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.delay
@@ -75,6 +76,8 @@ class BrowseViewModel(
         viewModelScope.launchSafely("BrowseViewModel") { container.channelScan.releaseEventChannels() }
         // A cache from before channel numbers: number it once, in the background.
         viewModelScope.launchSafely("BrowseViewModel") { ChannelNumbers.fillIfMissing(container.db) }
+        // The Android TV home screen rows (Continue watching, favourites); nothing on phones.
+        TvHome.schedule(app)
     }
 
     private val filters = mutableMapOf<ContentKind, MutableStateFlow<Filter>>()
