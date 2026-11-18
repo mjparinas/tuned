@@ -10,20 +10,15 @@ import android.net.ConnectivityManager
 import android.net.Network
 import android.os.Build
 import android.os.Bundle
-import android.util.TypedValue
 import android.view.Gravity
 import android.view.KeyEvent
 import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
-import android.widget.ImageButton
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
 import androidx.annotation.OptIn
-import androidx.core.view.WindowCompat
-import androidx.core.view.WindowInsetsCompat
-import androidx.core.view.WindowInsetsControllerCompat
 import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.lifecycleScope
 import androidx.media3.common.AudioAttributes
@@ -249,7 +244,7 @@ class PlayerActivity : FragmentActivity() {
         container.playerOpen.value = true
         container.offline.pause()
         buildViews()
-        hideSystemBars()
+        hideSystemBars(window)
         // Nothing to show if the channel can't be read: log it and close rather than sit on a black screen.
         lifecycleScope.launchSafely("Player", onError = { finish() }) {
             settings = container.settings.settings.first()
@@ -299,20 +294,11 @@ class PlayerActivity : FragmentActivity() {
                 setShowBuffering(PlayerView.SHOW_BUFFERING_WHEN_PLAYING)
                 setShowSubtitleButton(true)
             }
-        titleView =
-            TextView(this).apply {
-                setTextColor(Color.WHITE)
-                textSize = 18f
-                setTypeface(typeface, android.graphics.Typeface.BOLD)
-            }
-        subtitleView =
-            TextView(this).apply {
-                setTextColor(0xCCFFFFFF.toInt())
-                textSize = 14f
-            }
+        titleView = titleText(this)
+        subtitleView = subtitleText(this)
         val density = resources.displayMetrics.density
         // Back sits with the title, so it shows whenever the controls do (system back and gestures work too).
-        val back = backButton()
+        val back = backButton(this) { onBackPressedDispatcher.onBackPressed() }
         val titles =
             LinearLayout(this).apply {
                 orientation = LinearLayout.VERTICAL
@@ -335,15 +321,7 @@ class PlayerActivity : FragmentActivity() {
                 gravity = Gravity.CENTER_VERTICAL
             }
         setUpTools()
-        statusView =
-            TextView(this).apply {
-                setTextColor(Color.WHITE)
-                textSize = 14f
-                visibility = View.GONE
-                setBackgroundColor(0x99000000.toInt())
-                val pad = (12 * resources.displayMetrics.density).toInt()
-                setPadding(pad * 2, pad, pad * 2, pad)
-            }
+        statusView = statusText(this)
         // TV remote buttons go to the tools before the player's own controls; see [PlayerTools.onKey].
         val root =
             object : FrameLayout(this) {
@@ -380,17 +358,6 @@ class PlayerActivity : FragmentActivity() {
         jumpToLive.attach(root)
         tuneNext.attach(root)
         levelBars.attach(root)
-    }
-
-    private fun backButton() = ImageButton(this).apply {
-        setImageResource(R.drawable.ic_arrow_back)
-        contentDescription = getString(R.string.back)
-        val ripple = TypedValue()
-        theme.resolveAttribute(android.R.attr.selectableItemBackgroundBorderless, ripple, true)
-        setBackgroundResource(ripple.resourceId)
-        val pad = (12 * resources.displayMetrics.density).toInt()
-        setPadding(pad, pad, pad, pad)
-        setOnClickListener { onBackPressedDispatcher.onBackPressed() }
     }
 
     /** The buttons at the top right (channels, aspect, quality, info, lock); see [PlayerTools]. */
@@ -831,14 +798,6 @@ class PlayerActivity : FragmentActivity() {
 
     private fun live(): Boolean = queue.firstOrNull()?.kind == ContentKind.LIVE.code
 
-    private fun hideSystemBars() {
-        WindowCompat.setDecorFitsSystemWindows(window, false)
-        WindowCompat.getInsetsController(window, window.decorView).apply {
-            hide(WindowInsetsCompat.Type.systemBars())
-            systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
-        }
-    }
-
     override fun onUserLeaveHint() {
         super.onUserLeaveHint()
         // Android 12+ enters picture-in-picture by itself (setAutoEnterEnabled); older versions need asking.
@@ -870,7 +829,7 @@ class PlayerActivity : FragmentActivity() {
 
     override fun onWindowFocusChanged(hasFocus: Boolean) {
         super.onWindowFocusChanged(hasFocus)
-        if (hasFocus) hideSystemBars()
+        if (hasFocus) hideSystemBars(window)
     }
 
     override fun onStop() {
