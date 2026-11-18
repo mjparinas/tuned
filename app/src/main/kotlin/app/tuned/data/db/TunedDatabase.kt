@@ -58,6 +58,8 @@ abstract class TunedDatabase : RoomDatabase() {
 
     abstract fun channelNumbers(): ChannelNumberDao
 
+    abstract fun liveFilters(): LiveFilterDao
+
     companion object {
         fun create(context: Context): TunedDatabase = Room
             .databaseBuilder(context, TunedDatabase::class.java, "tuned.db")

@@ -440,6 +440,8 @@ private fun CategoryChips(
                 )
             }
         }
+        // Live TV's quick filters (Sports, PPV, a country or a language) narrow whichever chip is chosen.
+        if (kind == ContentKind.LIVE) item(key = "quick") { LiveQuickChip(vm) }
         item(key = "all") {
             FilterChip(selected = filter == Filter.All, onClick = {
                 filterFlow.value = Filter.All

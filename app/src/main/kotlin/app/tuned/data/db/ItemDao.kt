@@ -57,8 +57,9 @@ interface ItemDao {
     suspend fun liveLinks(): List<LiveLink>
 
     /** Live TV in playlist order. Paged, so it reads only the rows on screen, straight down the (kind, sortOrder) index. */
+    @Suppress("LongParameterList") // Every Live TV filter is a parameter of the one query, so the list stays one read.
     @Query(
-        "SELECT $CHANNEL_COLUMNS, 0 AS favourite FROM items i $NOW_JOIN WHERE $CHANNEL_FILTER ORDER BY i.sortOrder",
+        "SELECT $CHANNEL_COLUMNS, 0 AS favourite FROM items i $NOW_JOIN WHERE $CHANNEL_FILTER $LIVE_QUICK ORDER BY i.sortOrder",
     )
     fun channels(
         now: Long,
@@ -67,12 +68,15 @@ interface ItemDao {
         group: String?,
         query: String,
         match: String,
+        topic: String,
+        quick: List<String>,
     ): PagingSource<Int, ChannelWithNow>
 
     /** Favourite channels, in their own order (Settings › Order favourites). */
+    @Suppress("LongParameterList") // Every Live TV filter is a parameter of the one query, so the list stays one read.
     @Query(
         "SELECT $CHANNEL_COLUMNS, 1 AS favourite FROM items i JOIN favourites f ON f.itemId = i.id AND f.profileId = $ME $NOW_JOIN " +
-            "WHERE $CHANNEL_FILTER ORDER BY f.position",
+            "WHERE $CHANNEL_FILTER $LIVE_QUICK ORDER BY f.position",
     )
     fun favouriteChannels(
         now: Long,
@@ -81,12 +85,15 @@ interface ItemDao {
         group: String?,
         query: String,
         match: String,
+        topic: String,
+        quick: List<String>,
     ): PagingSource<Int, ChannelWithNow>
 
     /** Channels watched lately, latest first. */
+    @Suppress("LongParameterList") // Every Live TV filter is a parameter of the one query, so the list stays one read.
     @Query(
         "SELECT $CHANNEL_COLUMNS, 0 AS favourite FROM items i JOIN history h ON h.itemId = i.id AND h.profileId = $ME $NOW_JOIN " +
-            "WHERE $CHANNEL_FILTER ORDER BY h.watchedAt DESC",
+            "WHERE $CHANNEL_FILTER $LIVE_QUICK ORDER BY h.watchedAt DESC",
     )
     fun recentChannels(
         now: Long,
@@ -95,6 +102,8 @@ interface ItemDao {
         group: String?,
         query: String,
         match: String,
+        topic: String,
+        quick: List<String>,
     ): PagingSource<Int, ChannelWithNow>
 
     /** Movies or episodes started and not finished, last watched first, for the Continue Watching row. */

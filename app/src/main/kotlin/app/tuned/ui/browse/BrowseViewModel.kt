@@ -19,6 +19,7 @@ import app.tuned.data.db.ContinueRow
 import app.tuned.data.db.GroupCount
 import app.tuned.data.db.ItemEntity
 import app.tuned.data.db.ProfileEntity
+import app.tuned.data.db.RegionCount
 import app.tuned.data.db.ShowSummary
 import app.tuned.data.hiddenKeys
 import app.tuned.diagnostics.launchSafely
@@ -82,6 +83,7 @@ class BrowseViewModel(
 
     private val filters = mutableMapOf<ContentKind, MutableStateFlow<Filter>>()
     private val searches = mutableMapOf<ContentKind, MutableStateFlow<String>>()
+    private val groupFlows = mutableMapOf<ContentKind, StateFlow<List<GroupCount>>>()
 
     fun filter(kind: ContentKind): MutableStateFlow<Filter> = filters.getOrPut(kind) { MutableStateFlow(Filter.All) }
 
@@ -110,16 +112,33 @@ class BrowseViewModel(
 
     private val config = PagingConfig(pageSize = 60, prefetchDistance = 60, enablePlaceholders = true, initialLoadSize = 120)
 
+    /** Live TV's quick filters (Sports, PPV, a country or a language), on top of the chip chosen. */
+    val liveQuick = MutableStateFlow(LiveQuick())
+
+    /** The countries the quick filters can offer: those among the live channels on show. Read only while the sheet is open. */
+    val liveRegions: StateFlow<List<RegionCount>> =
+        settings
+            .map { it?.hiddenKeys().orEmpty() to (it?.showAdult ?: false) }
+            .distinctUntilChanged()
+            .flatMapLatest { (hidden, adult) -> container.db.liveFilters().liveRegions(hidden, adult) }
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
     val channels: Flow<PagingData<ChannelWithNow>> =
-        query(ContentKind.LIVE)
-            .flatMapLatest { q ->
+        combine(
+            query(ContentKind.LIVE),
+            liveQuick,
+            groups(ContentKind.LIVE).map { list -> list.map { it.groupName } }.distinctUntilChanged(),
+        ) { q, quick, groups -> Triple(q, quick.topicQuery, quick.keys(groups)) }
+            // The categories only change the keys while Sports or PPV is chosen; otherwise the list isn't reloaded.
+            .distinctUntilChanged()
+            .flatMapLatest { (q, topic, quick) ->
                 Pager(config) {
                     val group = (q.filter as? Filter.Group)?.name
                     val match = Search.match(q.search)
                     when (q.filter) {
-                        Filter.Favourites -> items.favouriteChannels(q.now, q.hidden, q.adult, group, q.search, match)
-                        Filter.Recent -> items.recentChannels(q.now, q.hidden, q.adult, group, q.search, match)
-                        else -> items.channels(q.now, q.hidden, q.adult, group, q.search, match)
+                        Filter.Favourites -> items.favouriteChannels(q.now, q.hidden, q.adult, group, q.search, match, topic, quick)
+                        Filter.Recent -> items.recentChannels(q.now, q.hidden, q.adult, group, q.search, match, topic, quick)
+                        else -> items.channels(q.now, q.hidden, q.adult, group, q.search, match, topic, quick)
                     }
                 }.flow
             }.cachedIn(viewModelScope)
@@ -182,8 +201,6 @@ class BrowseViewModel(
             info?.name?.let { name -> episodeNames.value += row.id to name }
         }
     }
-
-    private val groupFlows = mutableMapOf<ContentKind, StateFlow<List<GroupCount>>>()
 
     fun groups(kind: ContentKind): StateFlow<List<GroupCount>> = groupFlows.getOrPut(kind) {
         settings

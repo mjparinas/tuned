@@ -1,0 +1,267 @@
+package app.tuned.ui.browse
+
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Tune
+import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.CustomAccessibilityAction
+import androidx.compose.ui.semantics.customActions
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.paging.LoadState
+import androidx.paging.compose.LazyPagingItems
+import app.tuned.R
+import app.tuned.core.ContentKind
+import app.tuned.core.LiveTopic
+import app.tuned.core.RegionLanguages
+import app.tuned.core.Regions
+import app.tuned.ui.settings.languageName
+
+/** Where the channels come from: one country, or every country in the playlist that speaks a language ([RegionLanguages]). */
+sealed interface LivePlace {
+    val tags: List<String>
+
+    data class Country(
+        val tag: String,
+    ) : LivePlace {
+        override val tags: List<String> get() = listOf(tag)
+    }
+
+    data class Language(
+        val code: String,
+        override val tags: List<String>,
+    ) : LivePlace
+}
+
+/** Live TV's quick filters: at most one kind of channel and one country or language, narrowing together. */
+data class LiveQuick(
+    val topic: LiveTopic? = null,
+    val place: LivePlace? = null,
+) {
+    val isEmpty: Boolean get() = topic == null && place == null
+
+    /** The full-text query [app.tuned.data.db.LIVE_QUICK] reads for the topic, or '' for any channel. */
+    val topicQuery: String get() = topic?.fullText.orEmpty()
+
+    /**
+     * The keys [app.tuned.data.db.LIVE_QUICK] reads: the [groups] (Live TV's categories) that match the topic, then the
+     * country tags, or "any" for every country. At most [MAX_GROUPS] categories, so the query stays under SQLite's
+     * limit of 999 values on older phones.
+     */
+    fun keys(groups: List<String>): List<String> {
+        val topicGroups = topic?.let { t -> groups.filter { t.matches(it) }.take(MAX_GROUPS).map { "g:$it" } }.orEmpty()
+        return topicGroups + (place?.tags ?: listOf(ANY))
+    }
+
+    companion object {
+        const val ANY = "any"
+        private const val MAX_GROUPS = 800
+    }
+}
+
+/**
+ * The Filters chip in Live TV's row of categories. It names what is chosen ("Sports · Canada"), opens the sheet to
+ * choose, and has a cross to clear, which is also an action on the chip for a screen reader.
+ */
+@Composable
+internal fun LiveQuickChip(vm: BrowseViewModel) {
+    val quick by vm.liveQuick.collectAsStateWithLifecycle()
+    var open by rememberSaveable { mutableStateOf(false) }
+    val clearLabel = stringResource(R.string.live_filters_clear)
+    val clear = { vm.liveQuick.value = LiveQuick() }
+    FilterChip(
+        selected = !quick.isEmpty,
+        onClick = { open = true },
+        leadingIcon = { Icon(Icons.Filled.Tune, contentDescription = null, modifier = Modifier.size(16.dp)) },
+        label = { Text(quickLabel(quick) ?: stringResource(R.string.live_filters)) },
+        modifier =
+            if (quick.isEmpty) {
+                Modifier
+            } else {
+                Modifier.semantics {
+                    customActions =
+                        listOf(
+                            CustomAccessibilityAction(clearLabel) {
+                                clear()
+                                true
+                            },
+                        )
+                }
+            },
+        trailingIcon =
+            if (quick.isEmpty) {
+                null
+            } else {
+                { Icon(Icons.Filled.Close, contentDescription = clearLabel, modifier = Modifier.size(18.dp).clickable(onClick = clear)) }
+            },
+    )
+    if (open) LiveFiltersSheet(vm, quick) { open = false }
+}
+
+@Composable
+private fun quickLabel(quick: LiveQuick): String? {
+    val topic = quick.topic?.let { stringResource(topicLabel(it)) }
+    val place = quick.place?.let { placeName(it) }
+    return listOfNotNull(topic, place).takeIf { it.isNotEmpty() }?.joinToString(" · ")
+}
+
+private fun topicLabel(topic: LiveTopic): Int = when (topic) {
+    LiveTopic.SPORTS -> R.string.live_filter_sports
+    LiveTopic.PPV -> R.string.live_filter_ppv
+}
+
+@Composable
+private fun placeName(place: LivePlace): String = when (place) {
+    is LivePlace.Country -> Regions.displayName(place.tag)
+    is LivePlace.Language -> languageName(place.code)
+}
+
+/**
+ * Chooses the quick filters. Each tap applies at once, so the list behind updates while the sheet is open; a second
+ * tap on a chosen chip takes it off. Languages and countries show only when the playlist has more than one.
+ */
+@Composable
+private fun LiveFiltersSheet(
+    vm: BrowseViewModel,
+    quick: LiveQuick,
+    onDismiss: () -> Unit,
+) {
+    val regions by vm.liveRegions.collectAsStateWithLifecycle()
+    val languages = remember(regions) { RegionLanguages.group(regions.map { it.region }) }
+    val countries = remember(regions) { Regions.sortedByName(regions) { it.region } }
+    val set = { q: LiveQuick -> vm.liveQuick.value = q }
+    ModalBottomSheet(onDismissRequest = onDismiss) {
+        LazyColumn(
+            contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 24.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            item(key = "head") {
+                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        stringResource(R.string.live_filters_title),
+                        style = MaterialTheme.typography.titleLarge,
+                        modifier = Modifier.weight(1f).semantics { heading() },
+                    )
+                    if (!quick.isEmpty) TextButton(onClick = { set(LiveQuick()) }) { Text(stringResource(R.string.live_filters_clear)) }
+                    TextButton(onClick = onDismiss) { Text(stringResource(R.string.live_filters_done)) }
+                }
+            }
+            item(key = "topics") {
+                Section(stringResource(R.string.live_filters_type)) {
+                    LiveTopic.entries.forEach { t ->
+                        val on = quick.topic == t
+                        FilterChip(
+                            selected = on,
+                            onClick = { set(quick.copy(topic = if (on) null else t)) },
+                            label = { Text(stringResource(topicLabel(t))) },
+                        )
+                    }
+                }
+            }
+            if (languages.size > 1) {
+                item(key = "languages") {
+                    Section(stringResource(R.string.live_filters_language)) {
+                        languages.forEach { (code, tags) ->
+                            val on = (quick.place as? LivePlace.Language)?.code == code
+                            FilterChip(
+                                selected = on,
+                                onClick = { set(quick.copy(place = if (on) null else LivePlace.Language(code, tags))) },
+                                label = { Text(languageName(code)) },
+                            )
+                        }
+                    }
+                }
+            }
+            if (countries.size > 1) {
+                item(key = "countries") {
+                    Section(stringResource(R.string.live_filters_country)) {
+                        countries.forEach { r ->
+                            val place = LivePlace.Country(r.region)
+                            val on = quick.place == place
+                            FilterChip(
+                                selected = on,
+                                onClick = { set(quick.copy(place = if (on) null else place)) },
+                                label = { Text(Regions.displayName(r.region)) },
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun Section(
+    title: String,
+    chips: @Composable () -> Unit,
+) {
+    Column {
+        Text(
+            title,
+            style = MaterialTheme.typography.titleSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(top = 8.dp, bottom = 4.dp).semantics { heading() },
+        )
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) { chips() }
+    }
+}
+
+/**
+ * Quick filters that leave Live TV empty aren't a dead end: the list says so and offers to clear them. A search that
+ * finds nothing is [NoMatches]'s, so this shows only without one.
+ */
+@Composable
+internal fun NoQuickMatches(
+    items: LazyPagingItems<*>,
+    vm: BrowseViewModel,
+) {
+    val quick by vm.liveQuick.collectAsStateWithLifecycle()
+    val search by vm.search(ContentKind.LIVE).collectAsStateWithLifecycle()
+    val empty = items.itemCount == 0 && items.loadState.refresh is LoadState.NotLoading
+    if (!empty || quick.isEmpty || search.isNotBlank()) return
+    Column(
+        Modifier.fillMaxSize().padding(32.dp),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Text(
+            stringResource(R.string.live_filters_none),
+            style = MaterialTheme.typography.titleMedium,
+            textAlign = TextAlign.Center,
+        )
+        Spacer(Modifier.height(16.dp))
+        FilledTonalButton(onClick = { vm.liveQuick.value = LiveQuick() }) { Text(stringResource(R.string.live_filters_clear)) }
+    }
+}
