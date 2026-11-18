@@ -122,7 +122,8 @@ class AddPlaylistViewModel(
                         }
 
                         is Built.Ok -> {
-                            result.login
+                            // Extra guide links are set in Settings › Guide, so an edit keeps them.
+                            result.login.copy(extraGuides = editing?.extraGuides.orEmpty())
                         }
                     }
                 val active = container.credentials.load()
@@ -176,7 +177,7 @@ class AddPlaylistViewModel(
                     // A pasted Xtream link signs in properly, so catch-up and account status work too.
                     is PlaylistLink.Xtream -> xtream(Credentials(link.server, link.username, link.password, guideUrl = guide, name = name))
 
-                    is PlaylistLink.M3u -> Built.Ok(Credentials("", "", "", link.url, guide, name))
+                    is PlaylistLink.M3u -> Built.Ok(Credentials("", "", "", link.url, guide, name = name))
                 }
             }
 
@@ -187,7 +188,7 @@ class AddPlaylistViewModel(
                         editing != null -> editing.playlistUrl
                         else -> return Built.Error(app.getString(R.string.add_pick_file))
                     }
-                Built.Ok(Credentials("", "", "", url, guide, name.ifBlank { file?.let(::displayName).orEmpty() }))
+                Built.Ok(Credentials("", "", "", url, guide, name = name.ifBlank { file?.let(::displayName).orEmpty() }))
             }
         }
     }

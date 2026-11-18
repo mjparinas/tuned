@@ -79,6 +79,7 @@ One file per topic in `docs/decisions/`, A to Z. Add a line when you add a topic
 - [People](docs/decisions/people.md): actor filmography pages, oldest first, with what is in the playlist marked.
 - [Playlist and guide](docs/decisions/playlist.md): Xtream URLs, how streams are sorted, countries and adult categories across providers, refresh.
 - [Player](docs/decisions/player.md): Media3 setup, controls, captions, audio, cast, backup copies, TMDB details.
+- [Profiles](docs/decisions/profiles.md): who's watching, kids profiles, profile PINs.
 - [Scope](docs/decisions/scope.md): what Tuned will never do, and what's decided but not built yet.
 - [Security](docs/decisions/security.md): login storage, cleartext HTTP, backups.
 - [Speed](docs/decisions/speed.md): what keeps the app fast, and the budget.

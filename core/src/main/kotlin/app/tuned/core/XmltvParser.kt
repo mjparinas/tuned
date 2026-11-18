@@ -26,10 +26,16 @@ object XmltvParser {
     fun programmes(
         parser: XmlPullParser,
         keep: (channelId: String, start: Long, stop: Long) -> Boolean,
+        /** Each `<channel>` and its first display name, for picking a guide entry by hand. */
+        onChannel: (id: String, name: String) -> Unit = { _, _ -> },
     ): Sequence<Programme> = sequence {
         var event = parser.eventType
         while (event != XmlPullParser.END_DOCUMENT) {
-            if (event == XmlPullParser.START_TAG && parser.name == "programme") {
+            if (event == XmlPullParser.START_TAG && parser.name == "channel") {
+                val id = parser.getAttributeValue(null, "id")
+                val name = readFirst(parser, "display-name")
+                if (!id.isNullOrBlank()) onChannel(id, name?.trim()?.ifBlank { null } ?: id)
+            } else if (event == XmlPullParser.START_TAG && parser.name == "programme") {
                 val channel = parser.getAttributeValue(null, "channel")
                 val start = parser.getAttributeValue(null, "start")?.let(::parseTime)
                 val stop = parser.getAttributeValue(null, "stop")?.let(::parseTime)
@@ -69,6 +75,32 @@ object XmltvParser {
             }
         }
         return (title?.trim() ?: "") to desc?.trim()
+    }
+
+    /** The text of the first [tag] inside the current element; stops at its end tag. */
+    private fun readFirst(
+        parser: XmlPullParser,
+        tag: String,
+    ): String? {
+        var found: String? = null
+        var depth = 1
+        while (depth > 0) {
+            when (parser.next()) {
+                XmlPullParser.START_TAG -> {
+                    depth++
+                    if (parser.name == tag && found == null) found = readText(parser).also { depth-- }
+                }
+
+                XmlPullParser.END_TAG -> {
+                    depth--
+                }
+
+                XmlPullParser.END_DOCUMENT -> {
+                    depth = 0
+                }
+            }
+        }
+        return found
     }
 
     private fun readText(parser: XmlPullParser): String {

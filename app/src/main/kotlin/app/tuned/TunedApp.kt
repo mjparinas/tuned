@@ -15,10 +15,12 @@ import app.tuned.data.Connectivity
 import app.tuned.data.CredentialStore
 import app.tuned.data.Credentials
 import app.tuned.data.EventsRepository
+import app.tuned.data.GuideFixRepository
 import app.tuned.data.MetadataRepository
 import app.tuned.data.Offline
 import app.tuned.data.PeopleRepository
 import app.tuned.data.Picks
+import app.tuned.data.ProfileRepository
 import app.tuned.data.SavedArtwork
 import app.tuned.data.SettingsRepository
 import app.tuned.data.SyncRepository
@@ -27,6 +29,7 @@ import app.tuned.data.db.TunedDatabase
 import app.tuned.diagnostics.AppLog
 import app.tuned.diagnostics.CrashReporter
 import app.tuned.diagnostics.attempt
+import app.tuned.diagnostics.launchSafely
 import app.tuned.diagnostics.loggingHandler
 import app.tuned.updates.GitHubUpdates
 import app.tuned.work.OfflineWorker
@@ -80,6 +83,7 @@ class AppContainer(
     val sync by lazy { SyncRepository(db, http, credentials, settings, context.noBackupFilesDir.resolve("sync")) }
     val tune by lazy { TuneRepository(db, settings) }
     val scheduler = SyncScheduler(context)
+    val guideFixes by lazy { GuideFixRepository(db, sync, scheduler, credentials) }
     val updates by lazy { GitHubUpdates(context, http) }
     val backup by lazy { BackupRepository(credentials, settings, db) }
     val reminders by lazy { Reminders(context) }
@@ -90,6 +94,7 @@ class AppContainer(
     val metadata by lazy { MetadataRepository(http, settings, db.metadata(), appScope, connectivity::onlineNow) }
     val savedArtwork by lazy { SavedArtwork(context, db, metadata) }
     val people by lazy { PeopleRepository(http, settings, db.metadata(), connectivity::onlineNow) }
+    val profiles by lazy { ProfileRepository(db, settings) }
 
     /** True while the player is open; downloads and channel scans hold back so only one stream is ever open. */
     val playerOpen = MutableStateFlow(false)
@@ -194,6 +199,7 @@ class TunedApp :
         }
         container = AppContainer(this)
         lockAdultWhenAway()
+        container.appScope.launchSafely("Profiles") { container.profiles.sync() }
         container.appScope.launch {
             container.settings.settings
                 .map { it.developerMode }

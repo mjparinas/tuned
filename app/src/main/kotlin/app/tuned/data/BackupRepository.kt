@@ -57,12 +57,13 @@ class BackupRepository(
         val password: String,
         val playlistUrl: String = "",
         val guideUrl: String = "",
+        val extraGuides: List<String> = emptyList(),
         val name: String = "",
     ) {
-        fun toCredentials() = Credentials(server, username, password, playlistUrl, guideUrl, name)
+        fun toCredentials() = Credentials(server, username, password, playlistUrl, guideUrl, extraGuides, name)
     }
 
-    private fun Credentials.toLogin() = Login(server, username, password, playlistUrl, guideUrl, name)
+    private fun Credentials.toLogin() = Login(server, username, password, playlistUrl, guideUrl, extraGuides, name)
 
     @Serializable
     private data class Favourite(

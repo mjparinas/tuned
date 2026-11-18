@@ -17,6 +17,7 @@ import app.tuned.data.db.ChannelWithNow
 import app.tuned.data.db.ContinueRow
 import app.tuned.data.db.GroupCount
 import app.tuned.data.db.ItemEntity
+import app.tuned.data.db.ProfileEntity
 import app.tuned.data.db.ShowSummary
 import app.tuned.data.hiddenKeys
 import app.tuned.diagnostics.launchSafely
@@ -81,6 +82,9 @@ class BrowseViewModel(
     fun search(kind: ContentKind): MutableStateFlow<String> = searches.getOrPut(kind) { MutableStateFlow("") }
 
     private val settings: StateFlow<AppSettings?> = container.settings.settings.stateIn(viewModelScope, SharingStarted.Eagerly, null)
+
+    /** The profile in use, for the profile button. */
+    val profile: StateFlow<ProfileEntity?> = container.profiles.current.stateIn(viewModelScope, SharingStarted.Eagerly, null)
 
     /** The guide's "now" moves on; re-read it every five minutes so "on now" stays true. */
     private val clock: Flow<Long> =

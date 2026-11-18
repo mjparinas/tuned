@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="guide_fix_title">Fix this channel\'s guide</string>
+    <string name="guide_fix_summary">For a channel whose times are off, or whose guide shows the wrong channel. The fix stays when the playlist refreshes.</string>
+    <string name="guide_fix_remove">Undo fix</string>
+    <string name="guide_fix_offset">Move the times</string>
+    <string name="guide_fix_earlier">Earlier</string>
+    <string name="guide_fix_later">Later</string>
+    <string name="guide_fix_no_offset">No change</string>
+    <string name="guide_fix_entry">Guide entry</string>
+    <string name="guide_fix_entry_playlist">The playlist\'s own</string>
+    <string name="guide_fix_choose">Choose another</string>
+    <string name="guide_fix_entry_reset">Use the playlist\'s</string>
+    <string name="guide_fix_search">Search the guide\'s channels</string>
+    <string name="guide_fix_no_results">No guide channel matches. If the guide hasn\'t finished downloading yet, try again later.</string>
+    <string name="settings_guide_offset">Guide time offset</string>
+    <string name="settings_extra_guides">Extra guide links</string>
+    <string name="settings_extra_guides_none">None</string>
+    <plurals name="settings_extra_guides_count">
+        <item quantity="one">%d link</item>
+        <item quantity="other">%d links</item>
+    </plurals>
+    <string name="settings_extra_guides_summary">XMLTV links read after the provider\'s guide, to fill channels it leaves empty. Saving reads the guide again.</string>
+    <string name="settings_extra_guides_remove">Remove link</string>
+    <string name="settings_extra_guides_add">Add a link (https://…)</string>
+</resources>

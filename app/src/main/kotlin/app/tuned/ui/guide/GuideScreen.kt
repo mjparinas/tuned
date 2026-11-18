@@ -22,6 +22,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.EditCalendar
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Notifications
@@ -85,6 +86,12 @@ class GuideViewModel(
 
     fun load(id: Long) {
         if (channel.value?.id == id) return
+        viewModelScope.launchSafely("Guide") { channel.value = db.items().get(id) }
+    }
+
+    /** After a guide fix: the channel's guide id may have changed, so read it again. */
+    fun reload() {
+        val id = channel.value?.id ?: return
         viewModelScope.launchSafely("Guide") { channel.value = db.items().get(id) }
     }
 
@@ -175,9 +182,15 @@ fun GuideScreen(
         }
     }
 
+    var fixing by remember { mutableStateOf(false) }
+    channel?.takeIf { fixing }?.let { c -> GuideFixDialog(c, onDismiss = { fixing = false }, onSaved = vm::reload) }
+
     Scaffold(
         topBar = {
             BackTopBar(channel?.name.orEmpty(), onBack) {
+                IconButton(onClick = { fixing = true }, enabled = channel != null) {
+                    Icon(Icons.Filled.EditCalendar, contentDescription = stringResource(R.string.guide_fix_title))
+                }
                 IconButton(onClick = vm::toggleFavourite) {
                     Icon(
                         if (favourite) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,

@@ -93,6 +93,8 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -111,6 +113,7 @@ import app.tuned.data.SyncProgress
 import app.tuned.data.db.ChannelWithNow
 import app.tuned.data.db.ContinueRow
 import app.tuned.data.db.ItemEntity
+import app.tuned.data.db.ProfileEntity
 import app.tuned.data.db.ShowSummary
 import app.tuned.data.db.WatchLaterEntity
 import app.tuned.ui.SyncText
@@ -125,6 +128,7 @@ import app.tuned.ui.guide.GuideGridView
 import app.tuned.ui.library.LibraryViewModel
 import app.tuned.ui.library.watchLaterRow
 import app.tuned.ui.offline.DownloadsViewModel
+import app.tuned.ui.settings.ProfileBadge
 import app.tuned.updates.GitHubUpdates
 import coil3.compose.AsyncImage
 
@@ -151,6 +155,7 @@ fun HomeScreen(
     onOpenMovie: (Long) -> Unit,
     onOpenPerson: (CastMember) -> Unit,
     onOpenSettings: () -> Unit,
+    onOpenProfiles: () -> Unit,
     onOpenSearch: () -> Unit,
     onOpenDownloads: () -> Unit,
     onOpenEvents: () -> Unit,
@@ -172,6 +177,7 @@ fun HomeScreen(
     val lastError by vm.lastError.collectAsStateWithLifecycle()
     val progress by vm.progress.collectAsStateWithLifecycle()
     val liveSearch by vm.search(ContentKind.LIVE).collectAsStateWithLifecycle()
+    val profile by vm.profile.collectAsStateWithLifecycle()
     val widthDp = windowWidthDp()
     val rail = ScreenLayout.rail(widthDp)
     val panes = ScreenLayout.panes(widthDp)
@@ -222,7 +228,10 @@ fun HomeScreen(
                     grid = if (tab.kind == ContentKind.LIVE) settings.liveGrid else null,
                     onToggleGrid = { vm.setLiveGrid(!settings.liveGrid) },
                     onOpenSearch = onOpenSearch,
-                    onOpenSettings = onOpenSettings,
+                    // A kids profile has no way into Settings; switching profile (with a PIN) is the way out.
+                    onOpenSettings = onOpenSettings.takeUnless { settings.kidsProfile },
+                    profile = profile.takeIf { settings.profileCount > 1 },
+                    onOpenProfiles = onOpenProfiles,
                     onOpenEvents = onOpenEvents.takeIf { tab.kind == ContentKind.LIVE },
                 )
             },
@@ -318,10 +327,13 @@ private fun SearchBarRow(
     grid: Boolean?,
     onToggleGrid: () -> Unit,
     onOpenSearch: () -> Unit,
-    onOpenSettings: () -> Unit,
+    onOpenSettings: (() -> Unit)?,
+    profile: ProfileEntity?,
+    onOpenProfiles: () -> Unit,
     /** Live Events, shown on the Live TV tab only. */
     onOpenEvents: (() -> Unit)?,
 ) {
+    val switchLabel = stringResource(R.string.profile_switch)
     Surface(color = MaterialTheme.colorScheme.surface) {
         Row(
             Modifier
@@ -370,8 +382,15 @@ private fun SearchBarRow(
             IconButton(onClick = onOpenSearch) {
                 Icon(Icons.Filled.TravelExplore, contentDescription = stringResource(R.string.search_everything))
             }
-            IconButton(onClick = onOpenSettings) {
-                Icon(Icons.Filled.Settings, contentDescription = stringResource(R.string.settings))
+            if (profile != null) {
+                IconButton(onClick = onOpenProfiles) {
+                    Box(Modifier.semantics { contentDescription = switchLabel }) { ProfileBadge(profile, size = 28.dp) }
+                }
+            }
+            if (onOpenSettings != null) {
+                IconButton(onClick = onOpenSettings) {
+                    Icon(Icons.Filled.Settings, contentDescription = stringResource(R.string.settings))
+                }
             }
         }
     }
