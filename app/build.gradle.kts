@@ -21,6 +21,8 @@ android {
         // Subtitle search's OpenSubtitles.com key, from the OPENSUBTITLES_API_KEY secret; builds without it hide the search.
         val openSubtitlesKey = System.getenv("OPENSUBTITLES_API_KEY").orEmpty().trim()
         buildConfigField("String", "OPENSUBTITLES_API_KEY", "\"$openSubtitlesKey\"")
+        // The app's TMDB key (a v4 read token or v3 key) from the release secret, never committed; without it TMDB is off.
+        buildConfigField("String", "TMDB_API_KEY", "\"${System.getenv("TMDB_API_KEY").orEmpty()}\"")
     }
 
     signingConfigs {

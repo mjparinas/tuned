@@ -8,7 +8,6 @@ import app.tuned.data.db.TmdbSeasonEntity
 import app.tuned.diagnostics.launchSafely
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
@@ -67,7 +66,8 @@ data class Metadata(
  */
 class MetadataRepository(
     private val http: OkHttpClient,
-    private val settings: SettingsRepository,
+    /** The app's TMDB key (v3 key or v4 read token), built in from the release secret; blank turns TMDB off. */
+    private val apiKey: String,
     private val dao: MetadataDao,
     private val scope: CoroutineScope,
     private val online: () -> Boolean,
@@ -77,10 +77,7 @@ class MetadataRepository(
     /** One lookup per title at a time, so a grid asking for the same poster twice makes one request. */
     private val locks = ConcurrentHashMap<String, Mutex>()
 
-    suspend fun hasKey(): Boolean = settings.settings
-        .first()
-        .tmdbKey
-        .isNotBlank()
+    fun hasKey(): Boolean = apiKey.isNotBlank()
 
     /** The TMDB id the device already knows for [name], without asking the network (subtitle search matches by it). */
     suspend fun knownId(
@@ -163,11 +160,6 @@ class MetadataRepository(
         full: Boolean,
         old: MetadataEntity?,
     ): Metadata? {
-        val apiKey =
-            settings.settings
-                .first()
-                .tmdbKey
-                .trim()
         if (apiKey.isEmpty()) return old?.takeIf { it.found }?.toMetadata()
         val row =
             try {
@@ -252,11 +244,6 @@ class MetadataRepository(
             if (row != null && now - row.fetchedAt < if (row.found) KEEP_SEASON_MS else MetadataCache.KEEP_MISSING_MS) {
                 return@withLock row.toEpisodes()
             }
-            val apiKey =
-                settings.settings
-                    .first()
-                    .tmdbKey
-                    .trim()
             // Offline, or without a key: what the device has, and nothing asked.
             if (apiKey.isEmpty() || !online()) return@withLock row?.toEpisodes()
             val fresh =

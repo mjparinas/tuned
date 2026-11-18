@@ -6,7 +6,6 @@ import app.tuned.data.db.MetadataDao
 import app.tuned.data.db.MetadataEntity
 import app.tuned.diagnostics.AppLog
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -33,7 +32,8 @@ data class Person(
  */
 class PeopleRepository(
     private val http: OkHttpClient,
-    private val settings: SettingsRepository,
+    /** The app's built-in TMDB key; blank turns TMDB off. */
+    private val tmdbKey: String,
     private val dao: MetadataDao,
     /** False while the device is offline: the cached page is shown and TMDB isn't asked. */
     private val online: () -> Boolean = { true },
@@ -59,11 +59,7 @@ class PeopleRepository(
         return fetch { get<Results<Found>>(Tmdb.searchPerson(name, key), key).results.firstOrNull()?.id }
     }
 
-    private suspend fun apiKey(): String? = settings.settings
-        .first()
-        .tmdbKey
-        .trim()
-        .ifEmpty { null }
+    private fun apiKey(): String? = tmdbKey.ifBlank { null }
 
     private suspend fun <T> fetch(block: () -> T): T? = withContext(Dispatchers.IO) {
         try {

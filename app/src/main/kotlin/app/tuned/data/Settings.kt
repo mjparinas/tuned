@@ -131,8 +131,6 @@ data class AppSettings(
     /** How far "Skip intro" jumps on a show it hasn't learned yet; 0 hides the button. */
     val skipIntroMs: Long = 85_000,
     val userAgent: String = "",
-    /** The person's own TMDB key (v3 key or v4 read token) for ratings and trailers; blank turns them off. */
-    val tmdbKey: String = "",
     /** With captions on, a film or episode with no subtitles of its own fetches the best match by itself. */
     val autoSubtitles: Boolean = true,
     val showGuideInList: Boolean = true,
@@ -281,10 +279,16 @@ class SettingsRepository(
     private fun write(
         p: MutablePreferences,
         s: AppSettings,
-    ) = SETTING_FIELDS.forEach { it.write(p, s) }
+    ) {
+        SETTING_FIELDS.forEach { it.write(p, s) }
+        p.remove(K.oldTmdbKey)
+    }
 
     private object K {
         val adultPin = stringPreferencesKey("adult_pin")
+
+        /** The per-device TMDB key from before it was built in; deleted on the next save, so it leaves backups too. */
+        val oldTmdbKey = stringPreferencesKey("tmdb_key")
     }
 
     private companion object {
