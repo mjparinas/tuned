@@ -45,7 +45,11 @@ class ChannelDial(
                 typed = ""
                 if (number == null || number == 0) return@launchSafely
                 val channel = hooks.find(number)
-                if (channel == null) hooks.say(hooks.noSuchChannel(number)) else if (channel.id != current) hooks.jump(channel)
+                if (channel == null) {
+                    hooks.say(hooks.noSuchChannel(number))
+                } else if (channel.id != current) {
+                    hooks.jump(channel)
+                }
             }
     }
 

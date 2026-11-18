@@ -142,6 +142,7 @@ class PlayerActivity : FragmentActivity() {
                 ),
         )
     }
+
     /** Typing a channel number and flipping back; see [ChannelDial]. */
     private val dial by lazy {
         ChannelDial(
