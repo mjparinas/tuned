@@ -158,17 +158,13 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - uses: ./.github/actions/setup-android
-      # The GitHub build's debug APK to install and try, plus unsigned release builds of both the GitHub and the store
-      # build, so R8 fails here on a missing keep rule, not in Release.
-      - run: ./gradlew :app:assembleGithubDebug :app:assembleRelease
+      # Unsigned release builds of both the GitHub and the store build, so R8 fails here on a missing keep rule, not in
+      # Release. No debug APK: Melvin
+      # (2026-11-18) installs only production releases, and lint and the unit tests already compile the debug variant.
+      - run: ./gradlew :app:assembleRelease
         env:
           # The commit shown at the bottom of Settings: a pull request's own head, not the merge commit GitHub builds.
           GIT_COMMIT: ${{ github.event.pull_request.head.sha || github.sha }}
-      - uses: actions/upload-artifact@v7
-        with:
-          name: tuned-debug-apk
-          path: app/build/outputs/apk/github/debug/app-github-debug.apk
-          retention-days: 7
 
   # Melvin, 2026-11-17: the decision record "should be updated and kept in sync every time new features are added
   # or removed". A pull request titled feat:, breaking (!), revert or remove must change AGENTS.md or docs/decisions/.
