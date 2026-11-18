@@ -63,6 +63,7 @@ import java.util.concurrent.ConcurrentHashMap
 @OptIn(UnstableApi::class)
 class PlayerActivity : FragmentActivity() {
     private var player: ExoPlayer? = null
+    private val session = PlayerSession(this) { settings.mediaButtons }
     private lateinit var playerView: PlayerView
     private lateinit var overlay: LinearLayout
     private lateinit var titleView: TextView
@@ -485,7 +486,10 @@ class PlayerActivity : FragmentActivity() {
         val exo = buildPlayer(live)
         player = exo
         trakt.attach(exo)
-        playerView.player = ViewPlayer(exo, { cast }, { statusView.visibility = View.GONE }, ::pauseLive)
+        val shown = ViewPlayer(exo, { cast }, { statusView.visibility = View.GONE }, ::pauseLive)
+        playerView.player = shown
+        // Media buttons and the Assistant act through the same player as the on-screen controls.
+        session.attach(shown)
         playerView.setControllerShowTimeoutMs(settings.controlsTimeoutMs)
         playerView.setShowNextButton(queue.size > 1)
         playerView.setShowPreviousButton(queue.size > 1)
@@ -820,6 +824,7 @@ class PlayerActivity : FragmentActivity() {
         dial.release()
         cast?.release()
         reconnect.stop()
+        session.release()
         // The stream closes before downloads carry on, so the provider never sees two connections.
         player?.release()
         player = null

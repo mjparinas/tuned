@@ -141,6 +141,7 @@ internal val SETTING_FIELDS: List<SettingField<*, *>> =
         bool("match_frame_rate", { matchFrameRate }) { copy(matchFrameRate = it) },
         int("live_rewind_minutes", { liveRewindMinutes }) { copy(liveRewindMinutes = it) },
         bool("picture_in_picture", { pictureInPicture }) { copy(pictureInPicture = it) },
+        bool("media_buttons", { mediaButtons }) { copy(mediaButtons = it) },
         bool("player_gestures", { playerGestures }) { copy(playerGestures = it) },
         bool("auto_reconnect", { autoReconnect }) { copy(autoReconnect = it) },
         bool("landscape_playback", { landscapePlayback }) { copy(landscapePlayback = it) },

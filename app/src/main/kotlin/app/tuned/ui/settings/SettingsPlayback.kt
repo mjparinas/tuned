@@ -77,6 +77,11 @@ internal fun PlaybackPage(
         vm.update { it.copy(pictureInPicture = on) }
     }
     SwitchRow(
+        stringResource(R.string.settings_media_buttons),
+        settings.mediaButtons,
+        stringResource(R.string.settings_media_buttons_summary),
+    ) { on -> vm.update { it.copy(mediaButtons = on) } }
+    SwitchRow(
         stringResource(R.string.settings_match_frame_rate),
         settings.matchFrameRate,
         stringResource(R.string.settings_match_frame_rate_summary),
