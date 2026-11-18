@@ -6,6 +6,7 @@ import app.tuned.core.CatchUp
 import app.tuned.core.ContentKind
 import app.tuned.core.EpisodeInfo
 import app.tuned.core.Episodes
+import app.tuned.core.GuideShift
 import app.tuned.core.M3uParser
 import app.tuned.core.PlaylistEntry
 import app.tuned.core.Search
@@ -323,7 +324,8 @@ class SyncRepository(
         days: Int,
         saved: (Int) -> Unit,
     ): Int {
-        val wanted = db.items().liveTvgIds().toHashSet()
+        // A channel with a tvg-shift has the guide id "id@shift…", and gets its own copy of that id's programmes.
+        val wanted = db.items().liveTvgIds().groupBy(GuideShift::base)
         if (wanted.isEmpty()) return 0
         val now = System.currentTimeMillis()
         val from = now - HOUR
@@ -345,13 +347,32 @@ class SyncRepository(
             parser.setInput(input, null)
             val batch = ArrayList<ProgrammeEntity>(BATCH)
             var count = 0
+
+            fun keep(
+                id: String,
+                start: Long,
+                stop: Long,
+            ): Boolean {
+                val shift = GuideShift.offset(id)
+                return stop + shift > (pastFrom[id] ?: from) && start + shift < until
+            }
             for (p in XmltvParser.programmes(
                 parser,
-            ) { id, start, stop -> stop > (pastFrom[id] ?: from) && start < until && id in wanted }) {
-                batch +=
-                    ProgrammeEntity(channelId = p.channelId, start = p.start, stop = p.stop, title = p.title, description = p.description)
-                count++
-                if (batch.size == BATCH) {
+            ) { id, start, stop -> wanted[id]?.any { keep(it, start, stop) } == true }) {
+                for (id in wanted[p.channelId].orEmpty()) {
+                    if (!keep(id, p.start, p.stop)) continue
+                    val shift = GuideShift.offset(id)
+                    batch +=
+                        ProgrammeEntity(
+                            channelId = id,
+                            start = p.start + shift,
+                            stop = p.stop + shift,
+                            title = p.title,
+                            description = p.description,
+                        )
+                    count++
+                }
+                if (batch.size >= BATCH) {
                     writer.add(batch.toList())
                     batch.clear()
                     saved(count)
