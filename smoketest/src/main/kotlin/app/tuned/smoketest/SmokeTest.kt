@@ -56,6 +56,54 @@ class SmokeTest {
         assertEquals("streams opened: ${FakeProvider.streamsRequested}", 1, FakeProvider.mostOpenAtOnce)
     }
 
+    /**
+     * Melvin, 2026-11-18: "If somebody is watching a show and they are downloading shows, the app should prioritize the
+     * stream and have the downloads wait. Remember only 1 stream at a time." A film downloads; playing a channel stops
+     * it before the channel's stream opens, and it carries on once the player closes.
+     */
+    @Test
+    fun aDownloadWaitsWhileAChannelPlays() {
+        launch()
+        signIn()
+        device.wait(Until.findObject(By.text("Movies")), SCREEN_MS).click()
+        val film = device.wait(Until.findObject(By.text(FakeProvider.FIRST_FILM)), SCREEN_MS)
+        checkNotNull(film) { "Movies never listed the films" }
+        film.click()
+        val download = device.wait(Until.findObject(By.desc("Download")), SCREEN_MS)
+        checkNotNull(download) { "The film page has no Download button" }
+        download.click()
+        awaitFilmRequests(1)
+
+        device.pressBack()
+        device.wait(Until.findObject(By.text("Live TV")), SCREEN_MS).click()
+        device.wait(Until.findObject(By.text(FakeProvider.FIRST_CHANNEL)), SCREEN_MS).click()
+        awaitStreams(1, channelsOnly = true)
+        Thread.sleep(PLAY_MS)
+        assertEquals("streams opened: ${FakeProvider.streamsRequested}", 1, FakeProvider.mostOpenAtOnce)
+
+        assertTrue("Back didn't return to Live TV", leavePlayer())
+        awaitFilmRequests(2)
+        Thread.sleep(PLAY_MS)
+        assertEquals("streams opened: ${FakeProvider.streamsRequested}", 1, FakeProvider.mostOpenAtOnce)
+    }
+
+    private fun signIn() {
+        device.wait(Until.findObject(By.text("Playlist link")), SCREEN_MS).click()
+        device.wait(Until.findObject(By.clazz("android.widget.EditText")), SCREEN_MS).text = FakeProvider.PLAYLIST_URL
+        device.findObject(By.text("Add playlist")).click()
+        checkNotNull(device.wait(Until.findObject(By.text(FakeProvider.FIRST_CHANNEL)), SIGN_IN_MS)) { "Live TV never listed the channels" }
+    }
+
+    /** Waits until the film has been asked for [count] times (the download, then again once it carries on). */
+    private fun awaitFilmRequests(count: Int) {
+        val until = System.currentTimeMillis() + DOWNLOAD_MS
+        while (System.currentTimeMillis() < until) {
+            if (FakeProvider.streamsRequested.count { it.startsWith("/movie/") } >= count) return
+            Thread.sleep(POLL_MS)
+        }
+        error("Waited for the film's download to be asked for $count times; asked for: ${FakeProvider.streamsRequested}")
+    }
+
     private fun launch() {
         val context = instrumentation.context
         val intent = checkNotNull(context.packageManager.getLaunchIntentForPackage(PACKAGE)) { "$PACKAGE isn't installed" }
@@ -77,11 +125,15 @@ class SmokeTest {
         return false
     }
 
-    /** Waits until [count] different channels have been asked for. */
-    private fun awaitStreams(count: Int) {
+    /** Waits until [count] different channels (or, without [channelsOnly], streams) have been asked for. */
+    private fun awaitStreams(
+        count: Int,
+        channelsOnly: Boolean = false,
+    ) {
         val until = System.currentTimeMillis() + STREAM_MS
         while (System.currentTimeMillis() < until) {
-            if (FakeProvider.streamsRequested.toSet().size >= count) return
+            val asked = FakeProvider.streamsRequested.filter { !channelsOnly || it.startsWith("/live/") }
+            if (asked.toSet().size >= count) return
             Thread.sleep(POLL_MS)
         }
         error("Waited for $count channels to play; asked for: ${FakeProvider.streamsRequested}")
@@ -92,6 +144,7 @@ class SmokeTest {
         const val SCREEN_MS = 15_000L
         const val SIGN_IN_MS = 120_000L
         const val STREAM_MS = 20_000L
+        const val DOWNLOAD_MS = 60_000L
         const val PLAY_MS = 3_000L
         const val POLL_MS = 200L
         const val BACK_TRIES = 3
