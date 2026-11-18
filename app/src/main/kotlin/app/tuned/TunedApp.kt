@@ -26,6 +26,7 @@ import app.tuned.data.TuneRepository
 import app.tuned.data.db.TunedDatabase
 import app.tuned.diagnostics.AppLog
 import app.tuned.diagnostics.CrashReporter
+import app.tuned.diagnostics.attempt
 import app.tuned.diagnostics.loggingHandler
 import app.tuned.updates.GitHubUpdates
 import app.tuned.work.OfflineWorker
@@ -143,7 +144,9 @@ class AppContainer(
             return true
         }
         credentials.forget(login)
-        if (login.kind == Credentials.Kind.File) runCatching { File(URI(login.playlistUrl)).delete() }
+        if (login.kind == Credentials.Kind.File) {
+            attempt("Playlists", "Couldn't delete the playlist file") { File(URI(login.playlistUrl)).delete() }
+        }
         if (active && next != null) useLogin(next)
         return false
     }

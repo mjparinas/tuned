@@ -32,7 +32,11 @@ sealed interface PlaylistLink {
             if (scheme != "http" && scheme != "https") return null
             val host = uri.host ?: return null
             if ('.' !in host && host != "localhost" && ':' !in host) return null
-            val file = uri.rawPath.orEmpty().substringAfterLast('/').lowercase()
+            val file =
+                uri.rawPath
+                    .orEmpty()
+                    .substringAfterLast('/')
+                    .lowercase()
             if (file in XTREAM_PATHS) {
                 val query = query(uri.rawQuery.orEmpty())
                 val user = query["username"].orEmpty()

@@ -56,6 +56,7 @@ import app.tuned.core.XtreamAccount
 import app.tuned.core.XtreamUrls
 import app.tuned.data.Credentials
 import app.tuned.diagnostics.AppLog
+import app.tuned.diagnostics.attempt
 import app.tuned.diagnostics.launchSafely
 import app.tuned.ui.common.BackTopBar
 import kotlinx.coroutines.Dispatchers
@@ -171,8 +172,10 @@ class AddPlaylistViewModel(
             Credentials.Kind.Link -> {
                 when (val link = PlaylistLink.parse(draft.link)) {
                     null -> Built.Error(app.getString(R.string.add_bad_link))
+
                     // A pasted Xtream link signs in properly, so catch-up and account status work too.
                     is PlaylistLink.Xtream -> xtream(Credentials(link.server, link.username, link.password, guideUrl = guide, name = name))
+
                     is PlaylistLink.M3u -> Built.Ok(Credentials("", "", "", link.url, guide, name))
                 }
             }
@@ -208,7 +211,7 @@ class AddPlaylistViewModel(
     private suspend fun copyIn(uri: Uri): String? = withContext(Dispatchers.IO) {
         val resolver = app.contentResolver
         val looksLikePlaylist =
-            runCatching {
+            attempt("Playlists", "Couldn't read the picked file") {
                 resolver.openInputStream(uri)?.use { input ->
                     val buffer = ByteArray(PEEK_BYTES)
                     val unzipped = Streams.maybeGunzip(input)
@@ -226,20 +229,22 @@ class AddPlaylistViewModel(
         val dir = container.playlistFiles.apply { mkdirs() }
         val target = File(dir, "${UUID.randomUUID()}.m3u")
         val copied =
-            runCatching {
+            attempt("Playlists", "Couldn't copy the picked file") {
                 resolver.openInputStream(uri)?.use { input -> target.outputStream().use { input.copyTo(it) } } != null
             }.getOrDefault(false)
         if (copied) target.toURI().toString() else null.also { target.delete() }
     }
 
     /** The picked file's name without its extension, to show and to name the playlist after. */
-    fun displayName(uri: Uri): String = runCatching {
-        app.contentResolver.query(uri, arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)?.use { cursor ->
-            if (cursor.moveToFirst()) cursor.getString(0) else null
-        }
-    }.getOrNull()
-        ?.substringBeforeLast('.')
-        .orEmpty()
+    fun displayName(uri: Uri): String {
+        val name =
+            attempt("Playlists", "Couldn't read the file's name") {
+                app.contentResolver.query(uri, arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)?.use { cursor ->
+                    if (cursor.moveToFirst()) cursor.getString(0) else null
+                }
+            }.getOrNull()
+        return name.orEmpty().substringBeforeLast('.')
+    }
 
     /** True or false when the server says whether it accepts the login, null when it doesn't answer the question. */
     private suspend fun check(login: Credentials): Boolean? = withContext(Dispatchers.IO) {
@@ -307,17 +312,18 @@ fun AddPlaylistScreen(
     var server by rememberSaveable { mutableStateOf(editing?.server?.takeIf { kind == Credentials.Kind.Xtream } ?: DEFAULT_SERVER) }
     var username by rememberSaveable { mutableStateOf(editing?.username.orEmpty()) }
     var password by rememberSaveable { mutableStateOf(editing?.password.orEmpty()) }
-    var link by rememberSaveable { mutableStateOf(editing?.playlistUrl?.takeIf { kind == Credentials.Kind.Link }.orEmpty()) }
+    var link by rememberSaveable { mutableStateOf(if (kind == Credentials.Kind.Link) editing?.playlistUrl.orEmpty() else "") }
     var guide by rememberSaveable { mutableStateOf(editing?.guideUrl.orEmpty()) }
     var file by rememberSaveable { mutableStateOf<Uri?>(null) }
     var fileName by rememberSaveable { mutableStateOf("") }
     var showPassword by rememberSaveable { mutableStateOf(false) }
-    val pick = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
-        if (uri != null) {
-            file = uri
-            fileName = vm.displayName(uri).ifBlank { uri.lastPathSegment.orEmpty() }
+    val pick =
+        rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+            if (uri != null) {
+                file = uri
+                fileName = vm.displayName(uri).ifBlank { uri.lastPathSegment.orEmpty() }
+            }
         }
-    }
     val linkKind = PlaylistLink.parse(link)
 
     val canSubmit =

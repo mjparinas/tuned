@@ -33,9 +33,9 @@ import app.tuned.ui.details.MovieScreen
 import app.tuned.ui.details.PersonScreen
 import app.tuned.ui.events.EventsScreen
 import app.tuned.ui.guide.GuideScreen
+import app.tuned.ui.offline.DownloadsScreen
 import app.tuned.ui.onboarding.AddPlaylistScreen
 import app.tuned.ui.onboarding.WelcomeScreen
-import app.tuned.ui.offline.DownloadsScreen
 import app.tuned.ui.search.SearchScreen
 import app.tuned.ui.settings.CaptionSettingsScreen
 import app.tuned.ui.settings.ChannelHealthScreen
