@@ -58,7 +58,10 @@ class SubtitleRepository(
         // The TMDB id from the details page, when the device has one, matches better than the name; never fetched here.
         val name = if (tv) item.showName ?: item.name else item.name
         val tmdbId = metadata.knownId(name, tv)
-        val language = settings.settings.first().captions.language
+        val language =
+            settings.settings
+                .first()
+                .captions.language
         return OpenSubtitles.search(item.name, if (tv) item.showName else null, item.season, item.episode, tmdbId, language)
     }
 
@@ -104,7 +107,14 @@ class SubtitleRepository(
                 .build()
         val answer: DownloadAnswer = call(request)
         val link = answer.link ?: throw Failed(Problem.LIMIT)
-        val text = fetch(Request.Builder().url(link).header("User-Agent", userAgent()).build())
+        val text =
+            fetch(
+                Request
+                    .Builder()
+                    .url(link)
+                    .header("User-Agent", userAgent())
+                    .build(),
+            )
         folder.mkdirs()
         val file = File(folder, OpenSubtitles.fileName(itemId, language))
         val partial = File(folder, file.name + ".part")
