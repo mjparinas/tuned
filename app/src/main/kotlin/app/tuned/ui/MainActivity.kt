@@ -70,9 +70,13 @@ class MainActivity : ComponentActivity() {
         splash.setKeepOnScreenCondition { settings.value == null }
         val signedIn = container.credentials.load() != null
         incomingSearch.value = searchQuery(intent)
+        // A card on the Android TV home screen ([app.tuned.work.TvHome]): play it, with the lists underneath.
+        val request = if (savedInstanceState == null && signedIn) playRequest(intent) else null
+        if (request != null) PlayerActivity.start(this, request)
         // Like a cable box: a fresh launch from the home screen goes straight into the last channel (a setting, off by
         // default). The lists are underneath, from the cache, for when the player closes.
-        if (savedInstanceState == null && signedIn && intent?.action == Intent.ACTION_MAIN && incomingSearch.value == null) {
+        val fresh = savedInstanceState == null && signedIn && intent?.action == Intent.ACTION_MAIN
+        if (request == null && fresh && incomingSearch.value == null) {
             lifecycleScope.launchSafely("Main") {
                 val prefs = container.settings.settings.first()
                 if (!prefs.startOnLastChannel) return@launchSafely
@@ -259,16 +263,8 @@ class MainActivity : ComponentActivity() {
                 SettingsScreen(
                     settings = current,
                     onBack = { nav.popBackStack() },
-                    onOpenCaptions = { nav.navigate(CaptionSettingsRoute) },
-                    onOpenRegions = { nav.navigate(RegionSettingsRoute) },
-                    onOpenHiddenGroups = { nav.navigate(HiddenGroupsRoute) },
-                    onOpenChannelHealth = { nav.navigate(ChannelHealthRoute) },
-                    onOpenFavouriteOrder = { nav.navigate(FavouriteOrderRoute) },
-                    onOpenDownloads = { nav.navigate(DownloadsRoute) },
-                    onOpenProfiles = { nav.navigate(ProfilesRoute()) },
-                    onOpenLogs = { nav.navigate(DeveloperLogRoute) },
+                    onOpen = { route -> nav.navigate(route) },
                     onSignedOut = openWelcome,
-                    onOpenPlaylists = { nav.navigate(PlaylistsRoute) },
                 )
             }
             composable<DeveloperLogRoute> { DeveloperLogScreen(onBack = { nav.popBackStack() }) }
@@ -315,6 +311,12 @@ class MainActivity : ComponentActivity() {
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         searchQuery(intent)?.let { incomingSearch.value = it }
+        playRequest(intent)?.let { PlayerActivity.start(this, it) }
+    }
+
+    private fun playRequest(intent: Intent?): Long? {
+        if (intent?.action != ACTION_PLAY) return null
+        return intent.getLongExtra(EXTRA_PLAY_ID, 0).takeIf { it != 0L }
     }
 
     /** "Search for UFC on Tuned" (Assistant), the TV remote's search, or the system search box. */
@@ -338,3 +340,7 @@ class MainActivity : ComponentActivity() {
 }
 
 private const val ASSISTANT_SEARCH = "com.google.android.gms.actions.SEARCH_ACTION"
+
+/** Plays item [EXTRA_PLAY_ID]: what the Android TV home screen's cards open. */
+const val ACTION_PLAY = "app.tuned.action.PLAY"
+const val EXTRA_PLAY_ID = "play_id"

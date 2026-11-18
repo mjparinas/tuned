@@ -126,6 +126,7 @@ dependencies {
     implementation(libs.androidx.paging.compose)
 
     implementation(libs.androidx.work.runtime)
+    implementation(libs.androidx.tvprovider)
     implementation(libs.androidx.datastore.preferences)
 
     implementation(libs.androidx.media3.exoplayer)
