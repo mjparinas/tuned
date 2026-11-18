@@ -49,7 +49,7 @@ import java.util.concurrent.TimeUnit
 class AppContainer(
     private val context: Context,
 ) {
-    /** A failure in background work is logged (Settings › Developer › Logs), never a crash. */
+    /** A failure in background work is logged (Settings › Updates and advanced › Logs), never a crash. */
     val appScope = CoroutineScope(SupervisorJob() + loggingHandler("App"))
     val settings = SettingsRepository(context)
     val credentials = CredentialStore(context)

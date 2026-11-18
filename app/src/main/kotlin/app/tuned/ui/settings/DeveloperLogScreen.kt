@@ -117,7 +117,7 @@ class DeveloperLogViewModel(
     }
 }
 
-/** Settings › Developer › Logs: crash reports and the recent log, to read, copy or share. Shown in developer mode. */
+/** Settings › Updates and advanced › Logs: crash reports and the recent log, to read, copy or share. Always shown. */
 @Composable
 fun DeveloperLogScreen(
     onBack: () -> Unit,

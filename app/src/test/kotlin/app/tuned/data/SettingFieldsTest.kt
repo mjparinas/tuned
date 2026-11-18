@@ -83,7 +83,6 @@ class SettingFieldsTest {
             profileId = 9,
             kidsProfile = true,
             profileCount = 3,
-            developerMode = true,
         )
 
     @Test
@@ -184,7 +183,6 @@ class SettingFieldsTest {
                 "profile_id",
                 "kids_profile",
                 "profile_count",
-                "developer_mode",
             )
         assertTrue(names.containsAll(known), "missing: ${known - names}")
     }

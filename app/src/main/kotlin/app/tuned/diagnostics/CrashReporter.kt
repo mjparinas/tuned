@@ -16,7 +16,7 @@ data class CrashReport(
 
 /**
  * Saves a report of any crash the app didn't handle, with the log lines that led up to it, so it can be read and
- * shared later from Settings › Developer › Logs. The crash itself still ends the app as it would have (an app left
+ * shared later from Settings › Updates and advanced › Logs. The crash itself still ends the app as it would have (an app left
  * running after one is in an unknown state), but nothing about it is lost. Reports stay on the device, at most
  * [KEEP] of them, and carry no login ([AppLog.scrub]).
  */
