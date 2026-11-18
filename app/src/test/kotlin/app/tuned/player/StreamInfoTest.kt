@@ -2,7 +2,9 @@ package app.tuned.player
 
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 class StreamInfoTest {
     @Test
@@ -22,6 +24,14 @@ class StreamInfoTest {
     fun unknownCodecsAreShownAsGiven() {
         assertEquals("x-weird", StreamInfo.codec("video/x-weird"))
         assertNull(StreamInfo.codec(null))
+    }
+
+    @Test
+    fun qualityChoiceNeedsTwoDifferentRenditions() {
+        assertFalse(StreamInfo.hasQualityChoice(emptyList()))
+        assertFalse(StreamInfo.hasQualityChoice(listOf(1080 to 6_200_000)))
+        assertFalse(StreamInfo.hasQualityChoice(listOf(1080 to 6_200_000, 1080 to 6_200_000)))
+        assertTrue(StreamInfo.hasQualityChoice(listOf(1080 to 6_200_000, 720 to 3_000_000)))
     }
 
     @Test
