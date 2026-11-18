@@ -11,6 +11,7 @@ import androidx.mediarouter.app.MediaRouteButton
 import androidx.mediarouter.media.MediaRouteSelector
 import app.tuned.R
 import app.tuned.core.CastCodecs
+import app.tuned.core.CastHls
 import app.tuned.core.CastMedia
 import app.tuned.core.FileServer
 import app.tuned.core.StreamLink
@@ -21,6 +22,8 @@ import app.tuned.diagnostics.launchSafely
 import app.tuned.ui.MainActivity
 import com.google.android.gms.cast.CastMediaControlIntent
 import com.google.android.gms.cast.CastStatusCodes
+import com.google.android.gms.cast.HlsSegmentFormat
+import com.google.android.gms.cast.HlsVideoSegmentFormat
 import com.google.android.gms.cast.MediaError
 import com.google.android.gms.cast.MediaInfo
 import com.google.android.gms.cast.MediaLoadRequestData
@@ -37,8 +40,12 @@ import com.google.android.gms.cast.framework.media.CastMediaOptions
 import com.google.android.gms.cast.framework.media.NotificationOptions
 import com.google.android.gms.cast.framework.media.RemoteMediaClient
 import com.google.android.gms.common.images.WebImage
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.withContext
 import java.io.File
 import java.net.Inet4Address
 import java.net.NetworkInterface
@@ -73,7 +80,8 @@ class CastControl(
     private var files: FileServer? = null
     private var preparing: Job? = null
     private var lastLoad: Pair<Long, Long>? = null
-    private val copies = CastCopy(File(activity.cacheDir, "cast"))
+    private var stream: CastStream? = null
+    private var streamFolder: String? = null
     private var lastPlayerState = MediaStatus.PLAYER_STATE_UNKNOWN
 
     /** What the TV says about the media: logged, so a cast that shows "No media selected" says why. */
@@ -235,6 +243,7 @@ class CastControl(
         lastLoad = item.id to now
         retry?.cancel()
         preparing?.cancel()
+        closeStream()
         val from = positionMs.coerceAtLeast(0)
         // A saved film or episode plays from the phone, never the provider ("saved before streamed").
         val saved = savedFile(item.id)
@@ -253,8 +262,9 @@ class CastControl(
     }
 
     /**
-     * A Chromecast gets a saved file as an MP4 it can play ([CastCopy]), made on the phone first when needed, with
-     * the progress over the video. DLNA TVs take MKV and Dolby sound, so they get the file as it is.
+     * A Chromecast gets a saved file as HLS the phone makes piece by piece while the TV plays ([CastStream]): the
+     * video as it is and the sound as stereo AAC, starting at once with nothing copied first. Video an MP4 can't hold
+     * goes as the file itself. DLNA TVs take MKV and Dolby sound, so they get the file as it is.
      */
     private fun sendSaved(
         item: ItemEntity,
@@ -264,16 +274,42 @@ class CastControl(
         val s = session ?: return AppLog.w(TAG, "Not connected to a TV, so nothing was sent")
         preparing =
             activity.lifecycleScope.launchSafely(TAG) {
-                // The copy reports from its own thread; the note is a view.
-                val file =
-                    copies.forCast(saved) { percent ->
-                        activity.runOnUiThread { onStatus(activity.getString(R.string.cast_preparing, name(s), percent)) }
+                // Not cancellable, so a stream opened just as another load starts is still closed below.
+                val made =
+                    withContext(Dispatchers.IO + NonCancellable) {
+                        attempt(TAG, "Couldn't read ${saved.name} to stream it") { CastStream.open(saved) }.getOrNull()
                     }
-                if (session !== s) return@launchSafely
-                onStatus(activity.getString(R.string.cast_playing_on, name(s)))
-                val url = serve(file) ?: return@launchSafely noWifi(file)
-                send(Request(item, false, positionMs, CastMedia.Media(url, CastMedia.mimeFor(file.name)), attempt = 1))
+                if (!isActive || session !== s) {
+                    made?.let { closeLater(it) }
+                    return@launchSafely
+                }
+                stream = made
+                val media =
+                    if (made != null) {
+                        val folder = serve(saved.nameWithoutExtension, made) ?: return@launchSafely noWifi(saved)
+                        streamFolder = folder.substringAfter("://").substringAfter('/').let { "/$it" }
+                        CastMedia.phoneStream(folder + CastHls.PLAYLIST)
+                    } else {
+                        CastMedia.Media(serve(saved) ?: return@launchSafely noWifi(saved), CastMedia.mimeFor(saved.name))
+                    }
+                send(Request(item, false, positionMs, media, attempt = 1))
             }
+    }
+
+    /** Stops serving the stream of the last saved file and closes it. */
+    private fun closeStream() {
+        streamFolder?.let { files?.unshare(it) }
+        streamFolder = null
+        stream?.let { closeLater(it) }
+        stream = null
+    }
+
+    /**
+     * Closes [old] on a thread of its own: it may be making a piece, and the player's coroutines are already
+     * cancelled when it closes.
+     */
+    private fun closeLater(old: CastStream) {
+        Thread({ old.close() }, "CastStream-close").start()
     }
 
     private fun noWifi(file: File) {
@@ -316,7 +352,13 @@ class CastControl(
                 .setStreamType(if (r.live) MediaInfo.STREAM_TYPE_LIVE else MediaInfo.STREAM_TYPE_BUFFERED)
                 .setContentType(r.media.mimeType)
                 .setMetadata(metadata)
-                .build()
+                .apply {
+                    // The receiver reads HLS pieces as MPEG-TS unless told they are fragmented MP4.
+                    if (r.media.fmp4) {
+                        setHlsSegmentFormat(HlsSegmentFormat.FMP4)
+                        setHlsVideoSegmentFormat(HlsVideoSegmentFormat.FMP4)
+                    }
+                }.build()
         client
             .load(
                 MediaLoadRequestData
@@ -354,13 +396,24 @@ class CastControl(
     /** The address a TV on the same Wi-Fi can fetch [file] from, or null when the phone has no local address. */
     private fun serve(file: File): String? {
         val host = localAddress() ?: return null
-        val server =
-            files ?: attempt(TAG, "Couldn't start sharing saved files") { FileServer { line -> AppLog.d(TAG) { line } } }
-                .getOrNull()
-                ?.also { files = it }
-                ?: return null
+        val server = server() ?: return null
         return "http://$host:${server.port}${server.share(file)}"
     }
+
+    /** The address of [stream]'s folder (ending in `/`) that a TV on the same Wi-Fi reads it from. */
+    private fun serve(
+        name: String,
+        stream: FileServer.Made,
+    ): String? {
+        val host = localAddress() ?: return null
+        val server = server() ?: return null
+        return "http://$host:${server.port}${server.share(name, stream)}"
+    }
+
+    private fun server(): FileServer? = files
+        ?: attempt(TAG, "Couldn't start sharing saved files") { FileServer { line -> AppLog.d(TAG) { line } } }
+            .getOrNull()
+            ?.also { files = it }
 
     /** The phone's address on the local network (Wi-Fi first), which the TV can reach. */
     private fun localAddress(): String? = attempt(TAG, "Couldn't read the phone's network address") {
@@ -375,6 +428,7 @@ class CastControl(
     }.getOrNull()
 
     private fun stopServing() {
+        closeStream()
         files?.close()
         files = null
     }
