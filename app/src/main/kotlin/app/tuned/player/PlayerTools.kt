@@ -48,6 +48,8 @@ class PlayerTools(
     private val playerView: PlayerView,
     private val overlay: View,
     private val hooks: Hooks,
+    /** The channel's copies in other picture qualities, for the HQ button. */
+    private val copies: QualityCopies,
 ) {
     /** What the tools need from the player screen, read when used so they always see the current player. */
     class Hooks(
@@ -61,8 +63,6 @@ class PlayerTools(
         val casting: () -> Boolean,
         /** Typing a channel number and flipping back, on live TV. */
         val dial: ChannelDial,
-        /** The channel's copies in other picture qualities, for the HQ button. */
-        val copies: QualityCopies,
     )
 
     private val density = activity.resources.displayMetrics.density
@@ -175,7 +175,7 @@ class PlayerTools(
 
     /** The copies or the stream changed, or the controls showed. */
     fun refreshQuality() {
-        qualityButton.isVisible = renditionChoice(tracks) || hooks.copies.available
+        qualityButton.isVisible = renditionChoice(tracks) || copies.available
     }
 
     private fun renditionChoice(tracks: Tracks): Boolean =
@@ -437,7 +437,7 @@ class PlayerTools(
         val options = qualityOptions(p.currentTracks)
         if (!StreamInfo.hasQualityChoice(options.map { it.height to it.bitrate })) {
             // One rendition: the choice is between the channel's copies, if it has any.
-            if (hooks.copies.available) hooks.copies.pick(activity) else hooks.say(activity.getString(R.string.player_quality_only_one))
+            if (copies.available) copies.pick(activity) else hooks.say(activity.getString(R.string.player_quality_only_one))
             return
         }
         val chosen =

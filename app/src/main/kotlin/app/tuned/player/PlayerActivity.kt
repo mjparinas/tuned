@@ -393,8 +393,8 @@ class PlayerActivity : FragmentActivity() {
                         subtitles = subtitleTiming,
                         casting = { cast?.casting == true },
                         dial = dial,
-                        copies = qualityCopies,
                     ),
+                copies = qualityCopies,
             )
         overlay.addView(tools.toolbar)
         tools.addButton(subtitleSearch.button)
