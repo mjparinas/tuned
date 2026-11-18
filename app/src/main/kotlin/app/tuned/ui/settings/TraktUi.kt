@@ -28,6 +28,8 @@ import app.tuned.core.Trakt
 import app.tuned.data.TraktAccount
 import app.tuned.diagnostics.launchSafely
 import app.tuned.diagnostics.startActivitySafely
+import app.tuned.premium.LockedRow
+import app.tuned.premium.premiumUnlocked
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -102,7 +104,12 @@ fun TraktRows(vm: TraktViewModel = viewModel()) {
     SectionHeader(stringResource(R.string.trakt))
     val signedIn = session
     if (signedIn == null) {
-        SettingRow(stringResource(R.string.trakt_sign_in), stringResource(R.string.trakt_sign_in_summary), onClick = vm::startSignIn)
+        // Trakt is Premium (docs/decisions/premium.md).
+        if (premiumUnlocked()) {
+            SettingRow(stringResource(R.string.trakt_sign_in), stringResource(R.string.trakt_sign_in_summary), onClick = vm::startSignIn)
+        } else {
+            LockedRow(stringResource(R.string.trakt_sign_in))
+        }
     } else {
         val name = signedIn.username ?: stringResource(R.string.trakt_account_unnamed)
         SettingRow(stringResource(R.string.trakt_signed_in, name), stringResource(R.string.trakt_sign_out), onClick = vm::signOut)
