@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Settings' pages, each opened from the first Settings screen. -->
+    <string name="settings_page_playlists">Playlists and account</string>
+    <string name="settings_page_playlists_summary">Your playlists, backup and sign out</string>
+    <string name="settings_page_profiles">Profiles and parental controls</string>
+    <string name="settings_page_profiles_summary">Who\'s watching, adult categories and the PIN</string>
+    <string name="settings_page_channels">Channels and lists</string>
+    <string name="settings_page_channels_summary">Start screen, guide view, numbers, and hidden countries and groups</string>
+    <string name="settings_page_guide">Guide and refresh</string>
+    <string name="settings_page_guide_summary">When the playlist and guide download, guide days and reminders</string>
+    <string name="settings_page_playback_summary">Audio, resume, skip intro, rewind and the player controls</string>
+    <string name="settings_page_reliability">When a channel fails</string>
+    <string name="settings_page_reliability_summary">Reconnecting, backup copies, auto-tune and channel health</string>
+    <string name="settings_page_appearance_summary">Theme, colours and pure black</string>
+    <string name="settings_page_about">Updates and advanced</string>
+    <string name="settings_page_about_summary">Updates, ratings key, user agent and developer tools</string>
+    <string name="settings_header_hidden">What\'s hidden</string>
+    <string name="settings_header_guide">Guide</string>
+    <string name="settings_header_screen">Screen and controls</string>
+</resources>

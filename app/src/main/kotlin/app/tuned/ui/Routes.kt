@@ -30,6 +30,11 @@ import kotlinx.serialization.Serializable
 
 @Serializable data object SettingsRoute
 
+/** One page of Settings, by its [app.tuned.ui.settings.SettingsPage] name. */
+@Serializable data class SettingsPageRoute(
+    val page: String,
+)
+
 @Serializable data object CaptionSettingsRoute
 
 @Serializable data object RegionSettingsRoute

@@ -46,6 +46,8 @@ import app.tuned.ui.settings.HiddenGroupsScreen
 import app.tuned.ui.settings.PlaylistsScreen
 import app.tuned.ui.settings.ProfilesScreen
 import app.tuned.ui.settings.RegionSettingsScreen
+import app.tuned.ui.settings.SettingsPage
+import app.tuned.ui.settings.SettingsPageScreen
 import app.tuned.ui.settings.SettingsScreen
 import app.tuned.ui.shows.ShowScreen
 import app.tuned.ui.theme.TunedTheme
@@ -260,7 +262,11 @@ class MainActivity : ComponentActivity() {
                 GuideScreen(itemId = entry.toRoute<GuideRoute>().itemId, onPlay = play, onBack = { nav.popBackStack() })
             }
             composable<SettingsRoute> {
-                SettingsScreen(
+                SettingsScreen(settings = current, onBack = { nav.popBackStack() }, onOpen = { route -> nav.navigate(route) })
+            }
+            composable<SettingsPageRoute> { entry ->
+                SettingsPageScreen(
+                    page = SettingsPage.valueOf(entry.toRoute<SettingsPageRoute>().page),
                     settings = current,
                     onBack = { nav.popBackStack() },
                     onOpen = { route -> nav.navigate(route) },
