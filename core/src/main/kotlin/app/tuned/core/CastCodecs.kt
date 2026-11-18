@@ -20,6 +20,28 @@ object CastCodecs {
         REMUX_NEW_AUDIO,
     }
 
+    /**
+     * Whether the copy made for an earlier cast (modified at [copyModified], null when there is none) is still good for
+     * a saved file modified at [sourceModified]. Copies are kept across casts and player visits (2026-11-18: closing
+     * the player used to delete it, so every cast of the same episode copied it again).
+     */
+    fun reuseCopy(
+        copyModified: Long?,
+        sourceModified: Long,
+    ): Boolean = copyModified != null && copyModified >= sourceModified
+
+    /** A Cast receiver's detailed error code in words, for the log. */
+    fun describeError(code: Int?): String = when (code) {
+        100 -> "media unknown"
+        101 -> "media aborted"
+        102 -> "the TV couldn't decode the picture or sound"
+        103 -> "network"
+        104 -> "source not supported"
+        110 -> "source buffer failure"
+        311 -> "manifest load failed"
+        else -> "code $code"
+    }
+
     /** Video an MP4 can hold and a Chromecast plays. */
     val VIDEO_FOR_MP4 = setOf("video/avc", "video/hevc")
 

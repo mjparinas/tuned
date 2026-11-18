@@ -36,7 +36,7 @@ internal class CastCopy(
         AppLog.i(TAG) { "${source.name}: video ${tracks.video}, sound ${tracks.audio} (${tracks.count} tracks), so $plan" }
         if (plan == CastCodecs.Plan.AS_IS) return@withContext source
         val target = File(dir, source.nameWithoutExtension + ".mp4")
-        if (target.isFile && target.lastModified() >= source.lastModified()) {
+        if (CastCodecs.reuseCopy(target.takeIf { it.isFile }?.lastModified(), source.lastModified())) {
             AppLog.i(TAG) { "Using the copy made before" }
             return@withContext target
         }
@@ -70,11 +70,6 @@ internal class CastCopy(
         target
     }
 
-    /** Drops the copy, when a cast ends. */
-    fun clear() {
-        dir.listFiles()?.forEach { it.delete() }
-    }
-
     private data class Tracks(
         val video: String?,
         val audio: String?,
@@ -85,7 +80,10 @@ internal class CastCopy(
         val ex = MediaExtractor()
         try {
             ex.setDataSource(source.path)
-            val mimes = (0 until ex.trackCount).map { ex.getTrackFormat(it).getString(MediaFormat.KEY_MIME).orEmpty() }
+            val formats = (0 until ex.trackCount).map { ex.getTrackFormat(it) }
+            // Every detail Android reads (profile, level, size, colour, channels), so a TV's refusal can be matched to it.
+            formats.forEachIndexed { i, f -> AppLog.i(TAG) { "${source.name} track $i: ${f.toString().take(MAX_FORMAT_CHARS)}" } }
+            val mimes = formats.map { it.getString(MediaFormat.KEY_MIME).orEmpty() }
             return Tracks(mimes.firstOrNull { it.startsWith("video/") }, mimes.firstOrNull { it.startsWith("audio/") }, mimes.size)
         } finally {
             ex.release()
@@ -439,6 +437,7 @@ internal class CastCopy(
         const val SPARE_BYTES = 200 * MB
         const val MS_PER_S = 1_000
         const val PERCENT = 100
+        const val MAX_FORMAT_CHARS = 600
         const val MIN_SAMPLE_BYTES = 8 * 1_048_576
 
         fun mime(format: MediaFormat): String = format.getString(MediaFormat.KEY_MIME).orEmpty()
