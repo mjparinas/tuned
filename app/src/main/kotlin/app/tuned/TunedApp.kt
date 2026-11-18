@@ -6,7 +6,6 @@ import android.os.StrictMode
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.ProcessLifecycleOwner
-import app.tuned.diagnostics.AppLog
 import app.tuned.diagnostics.CrashReporter
 import app.tuned.diagnostics.launchSafely
 import app.tuned.work.CloudSyncWorker
@@ -55,12 +54,6 @@ class TunedApp :
         lockAdultWhenAway()
         CloudSyncWorker.watch(this)
         container.appScope.launchSafely("Profiles") { container.profiles.sync() }
-        container.appScope.launch {
-            container.settings.settings
-                .map { it.developerMode }
-                .distinctUntilChanged()
-                .collect { AppLog.verbose = it }
-        }
         // Re-plan background refreshes whenever their settings change (not on every launch).
         container.appScope.launch {
             container.settings.settings

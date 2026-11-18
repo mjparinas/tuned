@@ -47,7 +47,7 @@ import java.net.NetworkInterface
  * the cast picks the stream back up on the phone. DLNA TVs show in the same picker ([DlnaControl]); phones without
  * Google Play services list only those.
  *
- * Every step goes to the log (Settings › Developer › Logs, logins masked): the session, the address and type sent, the
+ * Every step goes to the log (Settings › Updates and advanced › Logs, logins masked): the session, the address and type sent, the
  * TV's answer and any error it reports. A load the TV turns down is tried again after a pause ([CastMedia.retryDelayMs]),
  * since a provider can still count the phone's connection for a moment after it closes; if every try fails, the note
  * over the video says so.

@@ -1,4 +1,4 @@
-# Diagnostics: crashes, errors and the developer log
+# Diagnostics: crashes, errors and the log
 
 Melvin, 2026-11-17: "optimize for the app not crashing or being unreliable", and for anything unhandled, "a developers mode or debug mode in the settings where I can see the logs, and then I can use that to fix the app."
 
@@ -15,9 +15,10 @@ Melvin, 2026-11-17: "optimize for the app not crashing or being unreliable", and
 
 ## The log
 
-- `AppLog` keeps the last 1,000 lines in memory. Warnings and errors are always kept; debug and info lines only in developer mode, built lazily so they cost nothing otherwise. Debug builds mirror every line to logcat.
+- `AppLog` keeps the last 1,000 lines in memory. Every level is always kept (Melvin, 2026-11-18: "remove developer mode but keep logs"); the detailed debug and info lines come only from sync and casting, so they are few, and their text is built lazily. Debug builds mirror every line to logcat.
 - **No login ever reaches the log** ([security](security.md)). Every line goes through `AppLog.scrub`: `LogScrubber` (`:core`, tested) masks Xtream stream paths, `user:pass@` addresses and secret query values (`username`, `password`, `token`, `api_key`, …) without knowing the login, and the login in use is masked on top (set by `CredentialStore` on load and save, cleared on sign-out).
 
-## Settings › Developer
+## Settings › Updates and advanced › Logs
 
-- **Developer mode** (off by default, kept on this device only, not in backups) keeps the detailed log and shows **Logs**: crash reports, then the recent log newest first, with copy, share (plain text, up to 200,000 characters) and clear. Crash reports are saved whether or not it's on.
+- **Logs** is always there, under Troubleshooting: crash reports, then the recent log newest first, with copy, share (plain text, up to 200,000 characters) and clear.
+- **Developer mode was removed** (Melvin, 2026-11-18: "remove developer mode but keep logs"). It was a switch that kept the detailed log and showed Logs; now both are always on, so there is nothing to turn on before a problem can be looked into. The old stored `developer_mode` value is simply ignored.

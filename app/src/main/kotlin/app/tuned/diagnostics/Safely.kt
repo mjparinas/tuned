@@ -23,7 +23,7 @@ fun loggingHandler(
 
 /**
  * [launch] for work whose failure must not take the app down: a settings write, a database update, a tap's side
- * effect. The failure is logged (Settings › Developer › Logs) and the screen carries on. Work whose result the
+ * effect. The failure is logged (Settings › Updates and advanced › Logs) and the screen carries on. Work whose result the
  * person waits for should still handle its errors itself and say what went wrong.
  */
 fun CoroutineScope.launchSafely(

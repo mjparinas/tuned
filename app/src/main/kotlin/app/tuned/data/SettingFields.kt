@@ -173,6 +173,4 @@ internal val SETTING_FIELDS: List<SettingField<*, *>> =
         long("profile_id", { profileId }) { copy(profileId = it) }.notBackedUp(),
         bool("kids_profile", { kidsProfile }) { copy(kidsProfile = it) }.notBackedUp(),
         int("profile_count", { profileCount }) { copy(profileCount = it) }.notBackedUp(),
-        // Developer
-        bool("developer_mode", { developerMode }) { copy(developerMode = it) }.notBackedUp(),
     )

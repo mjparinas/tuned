@@ -167,9 +167,7 @@
     <string name="settings_pure_black_summary">True black in dark mode, for OLED screens</string>
 
     <string name="settings_advanced">Advanced</string>
-    <string name="settings_developer">Developer</string>
-    <string name="settings_developer_mode">Developer mode</string>
-    <string name="settings_developer_mode_summary">Keep a detailed log of what Tuned does and show it here, to find out what went wrong. Crash reports are saved either way.</string>
+    <string name="settings_header_troubleshooting">Troubleshooting</string>
     <string name="settings_logs_summary">Crash reports and the recent log, to read, copy or share. Logins are left out.</string>
     <string name="logs_title">Logs</string>
     <string name="logs_copy">Copy log</string>
