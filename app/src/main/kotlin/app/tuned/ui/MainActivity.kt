@@ -74,8 +74,11 @@ class MainActivity : ComponentActivity() {
         // default). The lists are underneath, from the cache, for when the player closes.
         if (savedInstanceState == null && signedIn && intent?.action == Intent.ACTION_MAIN && incomingSearch.value == null) {
             lifecycleScope.launchSafely("Main") {
-                if (!container.settings.settings.first().startOnLastChannel) return@launchSafely
-                container.db.items().lastWatchedChannel()?.let { PlayerActivity.start(this@MainActivity, it.id) }
+                val prefs = container.settings.settings.first()
+                if (!prefs.startOnLastChannel) return@launchSafely
+                val items = container.db.items()
+                val channel = items.lastWatchedChannel() ?: return@launchSafely
+                PlayerActivity.start(this@MainActivity, channel.id)
             }
         }
 
