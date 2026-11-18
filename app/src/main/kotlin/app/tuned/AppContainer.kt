@@ -4,7 +4,6 @@ import android.content.Context
 import androidx.work.WorkInfo
 import androidx.work.WorkManager
 import app.tuned.data.AccountRepository
-import app.tuned.data.SyncCopyRepository
 import app.tuned.data.ChannelScanner
 import app.tuned.data.CloudSyncRepository
 import app.tuned.data.Connectivity
@@ -22,6 +21,7 @@ import app.tuned.data.Recordings
 import app.tuned.data.SavedArtwork
 import app.tuned.data.SettingsRepository
 import app.tuned.data.SubtitleRepository
+import app.tuned.data.SyncCopyRepository
 import app.tuned.data.SyncRepository
 import app.tuned.data.TraktAccount
 import app.tuned.data.TuneRepository
