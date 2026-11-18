@@ -5,6 +5,7 @@ plugins {
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.ksp)
     alias(libs.plugins.room)
+    alias(libs.plugins.androidx.baselineprofile)
 }
 
 android {
@@ -102,6 +103,16 @@ kotlin {
     }
 }
 
+// The baseline profile (docs/decisions/speed.md) is generated on an emulator by .github/workflows/baseline-profile.yml
+// and committed under src/release/generated/, so release builds compile the first minute's code at install. Normal
+// builds only read it; they never start an emulator.
+baselineProfile {
+    automaticGenerationDuringBuild = false
+    saveInSrc = true
+    // Puts the startup code together at the front of the dex file too, so less of it is read from storage.
+    dexLayoutOptimization = true
+}
+
 // Room's plugin writes each variant's schema separately, so debug and release builds don't race on one file.
 room {
     schemaDirectory("$projectDir/schemas")
@@ -154,6 +165,7 @@ dependencies {
     implementation(libs.coil.compose)
     implementation(libs.coil.network.okhttp)
     implementation(libs.androidx.profileinstaller)
+    baselineProfile(project(":baselineprofile"))
     implementation(libs.play.app.update)
     // Play's update library pulls in an old Fragment; 1.3+ is needed for the activity result API it uses.
     implementation(libs.androidx.fragment)

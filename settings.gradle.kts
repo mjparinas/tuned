@@ -25,3 +25,5 @@ rootProject.name = "tuned"
 // :core is plain Kotlin (parsers, rules) so its tests run on the JVM in seconds; :app is the Android app.
 include(":core")
 include(":app")
+// Generates the app's baseline profile and measures cold start on an emulator (docs/decisions/speed.md).
+include(":baselineprofile")
