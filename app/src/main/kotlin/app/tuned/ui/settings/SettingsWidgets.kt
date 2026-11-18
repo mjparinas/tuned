@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
@@ -37,6 +38,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import app.tuned.R
 
@@ -46,7 +50,8 @@ fun SectionHeader(text: String) {
         text,
         style = MaterialTheme.typography.labelLarge,
         color = MaterialTheme.colorScheme.primary,
-        modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 24.dp, bottom = 4.dp),
+        // A heading, so a screen reader can jump from section to section.
+        modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 24.dp, bottom = 4.dp).semantics { heading() },
     )
 }
 
@@ -87,7 +92,8 @@ fun SwitchRow(
     Row(
         Modifier
             .fillMaxWidth()
-            .selectable(selected = checked, role = Role.Switch, onClick = { onChange(!checked) })
+            // Toggleable, not selectable: a screen reader then says "on" or "off" rather than "selected".
+            .toggleable(value = checked, role = Role.Switch, onValueChange = onChange)
             .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -181,6 +187,20 @@ val captionPalette =
         0xFF000000.toInt(),
     )
 
+/** A caption colour's name, for screen readers; one outside the palette is read as its hex code. */
+@Composable
+private fun colourName(colour: Int): String = when (colour or 0xFF000000.toInt()) {
+    0xFFFFFFFF.toInt() -> stringResource(R.string.colour_white)
+    0xFFFFFF00.toInt() -> stringResource(R.string.colour_yellow)
+    0xFF00FFFF.toInt() -> stringResource(R.string.colour_cyan)
+    0xFF00FF00.toInt() -> stringResource(R.string.colour_green)
+    0xFFFF00FF.toInt() -> stringResource(R.string.colour_magenta)
+    0xFFFF0000.toInt() -> stringResource(R.string.colour_red)
+    0xFF0000FF.toInt() -> stringResource(R.string.colour_blue)
+    0xFF000000.toInt() -> stringResource(R.string.colour_black)
+    else -> stringResource(R.string.colour_custom, "#%06X".format(colour and 0xFFFFFF))
+}
+
 @Composable
 fun ColourRow(
     title: String,
@@ -197,6 +217,7 @@ fun ColourRow(
         ) {
             colours.forEach { c ->
                 val on = (c or 0xFF000000.toInt()) == (selected or 0xFF000000.toInt())
+                val name = colourName(c)
                 Box(
                     Modifier
                         .size(36.dp)
@@ -206,7 +227,8 @@ fun ColourRow(
                             width = if (on) 3.dp else 1.dp,
                             color = if (on) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant,
                             shape = CircleShape,
-                        ).selectable(selected = on, role = Role.RadioButton, onClick = { onSelect(c) }),
+                        ).selectable(selected = on, role = Role.RadioButton, onClick = { onSelect(c) })
+                        .semantics { contentDescription = name },
                 )
             }
         }

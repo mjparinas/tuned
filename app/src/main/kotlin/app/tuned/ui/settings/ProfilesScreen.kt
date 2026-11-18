@@ -7,6 +7,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
@@ -23,6 +24,7 @@ import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -39,6 +41,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -51,6 +54,10 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -316,11 +323,15 @@ private fun ProfileTile(
     onClick: () -> Unit,
 ) {
     val shape = RoundedCornerShape(16.dp)
+    // The ring and the pencil are drawn, so a screen reader is told in words which profile is in use and what a tap does.
+    val current = stringResource(R.string.a11y_current_profile)
+    val edit = stringResource(R.string.a11y_edit)
     Column(
         Modifier
             .focusRing(shape, MaterialTheme.colorScheme.primary)
             .clip(shape)
-            .clickable(onClick = onClick)
+            .clickable(onClickLabel = if (managing) edit else null, onClick = onClick)
+            .semantics(mergeDescendants = true) { if (selected && !managing) stateDescription = current }
             .padding(8.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
@@ -448,15 +459,20 @@ private fun ProfileEditor(
                 Spacer(Modifier.height(12.dp))
                 Text(stringResource(R.string.profile_colour), style = MaterialTheme.typography.labelLarge)
                 Spacer(Modifier.height(8.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                // Wraps onto a second line when the dialog is narrow; each swatch brings its own room around it.
+                FlowRow {
                     Accent.entries.forEachIndexed { i, accent ->
+                        val swatchName = stringResource(accentLabel(accent))
                         Box(
                             Modifier
+                                // A 28dp swatch with room around it to take a finger (48dp), named for screen readers.
+                                .minimumInteractiveComponentSize()
                                 .focusRing(CircleShape, MaterialTheme.colorScheme.onSurface)
                                 .size(28.dp)
                                 .clip(CircleShape)
                                 .background(accent.swatch())
-                                .clickable { colour = i },
+                                .selectable(selected = i == colour, role = Role.RadioButton, onClick = { colour = i })
+                                .semantics { contentDescription = swatchName },
                             contentAlignment = Alignment.Center,
                         ) {
                             if (i == colour) {

@@ -151,8 +151,12 @@ private fun ChannelRow(
             Modifier
                 .fillMaxWidth()
                 .focusRing(MaterialTheme.shapes.medium, MaterialTheme.colorScheme.primary)
-                .combinedClickable(onClick = onPlay, onLongClick = { menu = true })
-                .padding(start = 10.dp, end = 4.dp, top = 10.dp, bottom = 10.dp),
+                .combinedClickable(
+                    onClickLabel = stringResource(R.string.a11y_play),
+                    onClick = onPlay,
+                    onLongClickLabel = stringResource(R.string.a11y_more_options),
+                    onLongClick = { menu = true },
+                ).padding(start = 10.dp, end = 4.dp, top = 10.dp, bottom = 10.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Logo(channel.logo, Modifier.size(width = 64.dp, height = 44.dp))
@@ -204,7 +208,8 @@ private fun ChannelRow(
             FavouriteButton(favourite, onToggleFavourite)
             if (channel.tvgId != null) {
                 IconButton(onClick = onGuide) {
-                    Icon(Icons.AutoMirrored.Filled.List, contentDescription = stringResource(R.string.guide_open))
+                    // Named with the channel, so a screen reader's list of buttons doesn't read "Guide" a hundred times.
+                    Icon(Icons.AutoMirrored.Filled.List, contentDescription = stringResource(R.string.a11y_guide_for, channel.name))
                 }
             }
         }

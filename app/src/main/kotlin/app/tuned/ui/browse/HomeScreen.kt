@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -70,7 +71,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.CustomAccessibilityAction
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.customActions
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -325,7 +328,7 @@ private fun SearchBarRow(
                         focusedIndicatorColor = Color.Transparent,
                         unfocusedIndicatorColor = Color.Transparent,
                     ),
-                modifier = Modifier.weight(1f).height(52.dp),
+                modifier = Modifier.weight(1f).heightIn(min = 52.dp),
             )
             // Live TV only: switch between the channel list and the grid guide.
             if (grid != null) {
@@ -397,10 +400,30 @@ private fun CategoryChips(
             val on = filter == Filter.Group(g.groupName)
             val context = LocalContext.current
             val hiddenMessage = stringResource(R.string.group_hidden, g.groupName)
+            val hideLabel = stringResource(R.string.group_hide)
+            val hide = {
+                vm.hideGroup(kind, g.groupName)
+                Toast.makeText(context, hiddenMessage, Toast.LENGTH_LONG).show()
+            }
             FilterChip(
                 selected = on,
                 onClick = { filterFlow.value = if (on) Filter.All else Filter.Group(g.groupName) },
                 label = { Text(g.groupName) },
+                // The small eye inside the chip is hard to reach with a screen reader, so hiding is also an action on the chip.
+                modifier =
+                    if (on) {
+                        Modifier.semantics {
+                            customActions =
+                                listOf(
+                                    CustomAccessibilityAction(hideLabel) {
+                                        hide()
+                                        true
+                                    },
+                                )
+                        }
+                    } else {
+                        Modifier
+                    },
                 // The chosen group can be hidden from here; Settings › Hidden groups brings it back.
                 trailingIcon =
                     if (on) {
@@ -409,15 +432,7 @@ private fun CategoryChips(
                                 Icons.Filled.VisibilityOff,
                                 contentDescription = stringResource(R.string.group_hide),
                                 modifier =
-                                    Modifier.size(18.dp).clickable {
-                                        vm.hideGroup(kind, g.groupName)
-                                        Toast
-                                            .makeText(
-                                                context,
-                                                hiddenMessage,
-                                                Toast.LENGTH_LONG,
-                                            ).show()
-                                    },
+                                    Modifier.size(18.dp).clickable(onClick = hide),
                             )
                         }
                     } else {
