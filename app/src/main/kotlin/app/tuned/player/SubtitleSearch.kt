@@ -1,7 +1,9 @@
 package app.tuned.player
 
 import android.app.AlertDialog
+import android.util.TypedValue
 import android.view.View
+import android.widget.ImageButton
 import androidx.activity.ComponentActivity
 import androidx.annotation.OptIn
 import androidx.core.net.toUri
@@ -84,7 +86,22 @@ class SubtitleSearch(
     }
 
     /** Shown with the controls for films and episodes, once a key is set. */
-    fun visibility(): Int = if (hasKey && current()?.let(::onDemand) == true) View.VISIBLE else View.GONE
+    val button: ImageButton =
+        ImageButton(activity).apply {
+            setImageResource(R.drawable.ic_player_subtitle_search)
+            contentDescription = activity.getString(R.string.subtitle_search)
+            val ripple = TypedValue()
+            activity.theme.resolveAttribute(android.R.attr.selectableItemBackgroundBorderless, ripple, true)
+            setBackgroundResource(ripple.resourceId)
+            val pad = (BUTTON_PADDING_DP * activity.resources.displayMetrics.density).toInt()
+            setPadding(pad, pad, pad, pad)
+            visibility = View.GONE
+            setOnClickListener { pick() }
+        }
+
+    private fun showButton() {
+        button.visibility = if (hasKey && current()?.let(::onDemand) == true) View.VISIBLE else View.GONE
+    }
 
     /** The toolbar button: search, list, and add the one picked. */
     fun pick() {
@@ -152,6 +169,7 @@ class SubtitleSearch(
     val listener =
         object : Player.Listener {
             override fun onTracksChanged(tracks: Tracks) {
+                showButton()
                 if (tracks.groups.isEmpty()) return
                 val item = current()?.takeIf(::onDemand) ?: return
                 val s = settings()
@@ -194,6 +212,7 @@ class SubtitleSearch(
 
     companion object {
         private const val MAX_RESULTS = 30
+        private const val BUTTON_PADDING_DP = 12
         private const val TAG = "SubtitleSearch"
 
         /** A downloaded file as a subtitle track of its video, chosen by default. */

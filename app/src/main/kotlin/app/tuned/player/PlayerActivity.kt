@@ -343,10 +343,10 @@ class PlayerActivity : FragmentActivity() {
                         subtitles = subtitleTiming,
                         casting = { cast?.casting == true },
                         dial = dial,
-                        subtitleSearch = subtitleSearch,
                     ),
             )
         overlay.addView(tools.toolbar)
+        tools.addButton(subtitleSearch.button)
         cast =
             CastControl(
                 activity = this,
