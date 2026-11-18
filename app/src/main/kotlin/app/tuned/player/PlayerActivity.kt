@@ -143,6 +143,24 @@ class PlayerActivity : FragmentActivity() {
         )
     }
 
+    /** The HQ button's copies of the live channel in other picture qualities; see [QualityCopies]. */
+    private val qualityCopies: QualityCopies by lazy {
+        QualityCopies(
+            scope = lifecycleScope,
+            tune = container.tune,
+            hooks =
+                QualityCopies.Hooks(
+                    casting = { cast?.casting == true },
+                    switchTo = { id ->
+                        player?.let { backups.swapTo(it, id) }
+                        backups.onChannelChanged(id)
+                        qualityCopies.onChannel(id)
+                    },
+                    changed = { if (::tools.isInitialized) tools.refreshQuality() },
+                ),
+        )
+    }
+
     /** Typing a channel number and flipping back; see [ChannelDial]. */
     private val dial by lazy {
         ChannelDial(
@@ -187,6 +205,14 @@ class PlayerActivity : FragmentActivity() {
         )
     }
 
+    private val jumpToLive by lazy {
+        JumpToLive(
+            activity = this,
+            behind = { timeshift.behind && cast?.casting != true },
+            goLive = { player?.let(timeshift::goLive) == true },
+        )
+    }
+
     private val recorder by lazy {
         LiveRecorder(
             this,
@@ -207,7 +233,12 @@ class PlayerActivity : FragmentActivity() {
     }
 
     private val trakt by lazy {
-        TraktScrobbler(container.trakt, container.appScope) { player?.let { queue.getOrNull(it.currentMediaItemIndex) } }
+        TraktScrobbler(
+            container.trakt,
+            container.appScope,
+            current = { player?.let { queue.getOrNull(it.currentMediaItemIndex) } },
+            elsewhere = { cast?.tvPosition() },
+        )
     }
 
     private val frameRate by lazy { FrameRateMatch(this) { settings.matchFrameRate && cast?.casting != true } }
@@ -327,21 +358,28 @@ class PlayerActivity : FragmentActivity() {
             statusView,
             FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT, Gravity.CENTER),
         )
-        tools.attach(root)
-        recorder.attach(root)
-        skipIntro.attach(root)
-        tuneNext.attach(root)
-        levelBars.attach(root)
+        attachFeatures(root)
         // The title shows and hides with the controls, so a tap reveals everything and the video is otherwise bare.
         playerView.setControllerVisibilityListener(
             PlayerView.ControllerVisibilityListener { visibility ->
                 overlay.visibility = visibility
                 tools.onControls(visibility)
                 recorder.onControls(visibility)
+                jumpToLive.onControls(visibility)
                 tuneNext.onControls(visibility)
             },
         )
         setContentView(root)
+    }
+
+    /** The player features drawn over the video, each in its own file. */
+    private fun attachFeatures(root: FrameLayout) {
+        tools.attach(root)
+        recorder.attach(root)
+        skipIntro.attach(root)
+        jumpToLive.attach(root)
+        tuneNext.attach(root)
+        levelBars.attach(root)
     }
 
     private fun backButton() = ImageButton(this).apply {
@@ -376,6 +414,7 @@ class PlayerActivity : FragmentActivity() {
                         casting = { cast?.casting == true },
                         dial = dial,
                     ),
+                copies = qualityCopies,
             )
         overlay.addView(tools.toolbar)
         tools.addButton(subtitleSearch.button)
@@ -391,7 +430,7 @@ class PlayerActivity : FragmentActivity() {
         tools.addButton(recorder.button)
     }
 
-    @SuppressLint("ClickableViewAccessibility") // PlayerGestures calls performClick on every tap
+    @SuppressLint("ClickableViewAccessibility") // PlayerGestures performs the click once a single tap is confirmed
     private fun setUpGestures() {
         val g =
             PlayerGestures(
@@ -629,6 +668,7 @@ class PlayerActivity : FragmentActivity() {
             if (live) dial.onChannel(id)
             // Flipping to another channel ends the search for a copy of the last one.
             backups.onChannelChanged(id)
+            qualityCopies.onChannel(if (live && id != CatchUpLinks.ID) id else null)
         }
 
         override fun onRenderedFirstFrame() {
@@ -694,6 +734,7 @@ class PlayerActivity : FragmentActivity() {
 
         override fun onTracksChanged(tracks: Tracks) {
             player?.let { audioCheck.onTracks(it, tracks) }
+            tools.onTracks(tracks)
         }
 
         override fun onVideoSizeChanged(videoSize: VideoSize) {
@@ -819,6 +860,7 @@ class PlayerActivity : FragmentActivity() {
         super.onPictureInPictureModeChanged(isInPictureInPictureMode, newConfig)
         playerView.useController = !isInPictureInPictureMode && !tools.locked
         recorder.hideMark(isInPictureInPictureMode)
+        jumpToLive.hide(isInPictureInPictureMode)
         if (isInPictureInPictureMode) {
             playerView.hideController()
             overlay.visibility = View.GONE

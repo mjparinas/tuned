@@ -43,6 +43,13 @@ class TraktTest {
     }
 
     @Test
+    fun aSpotOfNothingIsNotSent() {
+        assertFalse(Trakt.sendsSpot(0.0))
+        assertTrue(Trakt.sendsSpot(0.01))
+        assertTrue(Trakt.sendsSpot(100.0))
+    }
+
+    @Test
     fun pollAnswers() {
         assertEquals(Trakt.Poll.SIGNED_IN, Trakt.poll(200))
         assertEquals(Trakt.Poll.WAIT, Trakt.poll(400))

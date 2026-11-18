@@ -101,6 +101,25 @@ internal class LiveTimeshift(
         return true
     }
 
+    /** Playing the channel from the device, behind what is airing now (after a pause). */
+    val behind: Boolean get() = shifted != null
+
+    /**
+     * Jump to live: the live link goes back in its spot and plays from what is airing now. The recorder stops before
+     * the player reconnects, so there is still one connection, and what was kept stays for the next pause.
+     */
+    fun goLive(player: ExoPlayer): Boolean {
+        val (index, original) = shifted ?: return false
+        if (player.currentMediaItemIndex != index) return false
+        shifted = null
+        stopRecorder()
+        player.replaceMediaItem(index, original)
+        player.seekToDefaultPosition(index)
+        player.prepare()
+        player.playWhenReady = true
+        return true
+    }
+
     /** The player moved on: if it left the channel playing from the device, put its live link back. */
     fun onChannelChanged(player: ExoPlayer) {
         val (index, original) = shifted ?: return

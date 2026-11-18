@@ -1,6 +1,7 @@
 package app.tuned.player
 
 import android.content.Context
+import android.os.SystemClock
 import android.view.ContextThemeWrapper
 import androidx.core.net.toUri
 import androidx.fragment.app.FragmentActivity
@@ -69,6 +70,9 @@ class CastControl(
     private var lastPositionMs = 0L
     private var retry: Job? = null
     private var files: FileServer? = null
+    private var preparing: Job? = null
+    private var lastLoad: Pair<Long, Long>? = null
+    private val copies = CastCopy(File(activity.cacheDir, "cast"))
     private var lastPlayerState = MediaStatus.PLAYER_STATE_UNKNOWN
 
     /** What the TV says about the media: logged, so a cast that shows "No media selected" says why. */
@@ -195,6 +199,8 @@ class CastControl(
     /** Back on the phone, from where the TV was for films and episodes. */
     private fun ended() {
         retry?.cancel()
+        preparing?.cancel()
+        lastLoad = null
         stopServing()
         session?.remoteMediaClient?.unregisterCallback(mediaCallback)
         session = null
@@ -205,31 +211,74 @@ class CastControl(
         exo.play()
     }
 
-    /** Plays [item] on the TV, from [positionMs] for films and episodes. */
+    /**
+     * Plays [item] on the TV, from [positionMs] for films and episodes (an unknown position, Media3's TIME_UNSET, is
+     * the start). Asking for the same item again within a moment does nothing: opening the player while a cast starts
+     * used to send it twice, and the second load cancelled the first.
+     */
     fun load(
         item: ItemEntity,
         live: Boolean,
         positionMs: Long,
     ) {
+        val now = SystemClock.elapsedRealtime()
+        if (item.id == lastLoad?.first && now - (lastLoad?.second ?: 0L) < SAME_LOAD_MS) {
+            return AppLog.i(TAG) { "Already sending this to the TV" }
+        }
+        lastLoad = item.id to now
         retry?.cancel()
+        preparing?.cancel()
+        val from = positionMs.coerceAtLeast(0)
         // A saved film or episode plays from the phone, never the provider ("saved before streamed").
         val saved = savedFile(item.id)
-        val savedUrl =
-            saved?.let { file ->
-                serve(file) ?: run {
-                    AppLog.w(TAG, "${file.name} is saved, but the phone has no Wi-Fi address to serve it from")
-                    onStatus(activity.getString(R.string.cast_no_wifi))
-                    return
-                }
-            }
-        if (dlna.active) return dlna.load(item, live, positionMs, savedUrl)
-        val media =
-            if (saved != null && savedUrl != null) {
-                CastMedia.Media(savedUrl, CastMedia.mimeFor(saved.name))
+        if (saved == null) {
+            if (dlna.active) {
+                dlna.load(item, live, from)
             } else {
-                CastMedia.forCast(StreamLink.address(item.url), live) // a Chromecast takes no extra headers
+                send(Request(item, live, from, CastMedia.forCast(StreamLink.address(item.url), live), attempt = 1))
             }
-        send(Request(item, live, positionMs, media, attempt = 1))
+        } else if (dlna.active) {
+            val url = serve(saved) ?: return noWifi(saved)
+            dlna.load(item, live, from, url)
+        } else {
+            sendSaved(item, saved, from)
+        }
+    }
+
+    /**
+     * A Chromecast gets a saved file as an MP4 it can play ([CastCopy]), made on the phone first when needed, with
+     * the progress over the video. DLNA TVs take MKV and Dolby sound, so they get the file as it is.
+     */
+    private fun sendSaved(
+        item: ItemEntity,
+        saved: File,
+        positionMs: Long,
+    ) {
+        val s = session ?: return AppLog.w(TAG, "Not connected to a TV, so nothing was sent")
+        preparing =
+            activity.lifecycleScope.launchSafely(TAG) {
+                // The copy reports from its own thread; the note is a view.
+                val file =
+                    copies.forCast(saved) { percent ->
+                        activity.runOnUiThread { onStatus(activity.getString(R.string.cast_preparing, name(s), percent)) }
+                    }
+                if (session !== s) return@launchSafely
+                onStatus(activity.getString(R.string.cast_playing_on, name(s)))
+                val url = serve(file) ?: return@launchSafely noWifi(file)
+                send(Request(item, false, positionMs, CastMedia.Media(url, CastMedia.mimeFor(file.name)), attempt = 1))
+            }
+    }
+
+    private fun noWifi(file: File) {
+        AppLog.w(TAG, "${file.name} is saved, but the phone has no Wi-Fi address to serve it from")
+        onStatus(activity.getString(R.string.cast_no_wifi))
+    }
+
+    /** Where the TV is in the film or episode, as position and length in ms; null when nothing is playing there. */
+    fun tvPosition(): Pair<Long, Long>? {
+        val client = session?.takeIf { it.isConnected }?.remoteMediaClient ?: return null
+        val length = client.streamDuration
+        return if (length > 0) client.approximateStreamPosition to length else null
     }
 
     /** One load sent to a Chromecast, kept to send again as it was. */
@@ -279,6 +328,8 @@ class CastControl(
         r: Request,
     ) {
         if (ok) return AppLog.i(TAG) { "${name(s)} took it" }
+        // A newer load took its place: not a failure, and trying again would undo the newer one.
+        if (status == CastStatusCodes.REPLACED) return AppLog.i(TAG) { "A newer load replaced try ${r.attempt}" }
         AppLog.w(TAG, "${name(s)} couldn't load it, try ${r.attempt}: ${code(status)}")
         if (session !== s) return
         val wait = CastMedia.retryDelayMs(r.attempt)
@@ -331,6 +382,8 @@ class CastControl(
 
     fun release() {
         retry?.cancel()
+        preparing?.cancel()
+        copies.clear()
         stopServing()
         session?.remoteMediaClient?.unregisterCallback(mediaCallback)
         context?.sessionManager?.removeSessionManagerListener(listener, CastSession::class.java)
@@ -339,6 +392,7 @@ class CastControl(
 
     private companion object {
         const val TAG = "Cast"
+        const val SAME_LOAD_MS = 2_000L
         const val MS_PER_S = 1_000
 
         fun name(s: CastSession): String = s.castDevice?.friendlyName ?: "the TV"

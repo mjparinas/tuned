@@ -106,8 +106,11 @@ internal class Backups(
         return true
     }
 
-    /** Puts channel [id] in the current spot of the list, so next and previous still flip the same category. */
-    private fun swapTo(
+    /**
+     * Puts channel [id] in the current spot of the list, so next and previous still flip the same category. The HQ
+     * button switches copies through this too ([QualityCopies]).
+     */
+    fun swapTo(
         player: ExoPlayer,
         id: Long,
     ) {
