@@ -53,6 +53,9 @@ object RegionLanguages {
     /** The language (ISO 639-1 code) a region tag speaks, or null when it has several or isn't known. */
     fun of(region: String): String? = byRegion[region]
 
+    /** The tag that stands for [language] (ISO 639-1) in the language switches: "en" is EN, "es" is ES. */
+    fun tagFor(language: String): String? = languages[language]?.first()
+
     /** The languages among [regions], each with the tags from [regions] that speak it, most tags first. */
     fun group(regions: Collection<String>): List<Pair<String, List<String>>> = regions
         .mapNotNull { r -> of(r)?.let { it to r } }

@@ -122,11 +122,29 @@ data class MetadataEntity(
     val fetchedAt: Long,
 )
 
+/**
+ * One season of a show on TMDB, keyed "tmdbId|season": the episodes as JSON (name, summary, runtime and screenshot
+ * link), or nothing found. Kept so a season seen once shows its screenshots and names from the device after that.
+ */
+@Entity(tableName = "tmdb_seasons")
+data class TmdbSeasonEntity(
+    @PrimaryKey val cacheKey: String,
+    val found: Boolean,
+    val episodes: String,
+    val fetchedAt: Long,
+)
+
 /** A live channel that keeps recordings (Xtream `tv_archive`), by its stream id; replaced on every playlist refresh. */
 @Entity(tableName = "catchup")
 data class CatchUpEntity(
     @PrimaryKey val streamId: String,
     val days: Int,
+)
+
+/** A stream's id and link, to match it with what the Xtream API says about its stream id. */
+data class ItemUrl(
+    val id: Long,
+    val url: String,
 )
 
 /** A live channel's guide id and link, to match it with its catch-up days. */
@@ -222,6 +240,16 @@ data class HiddenScanRow(
     val itemId: Long,
     val name: String,
     val groupName: String,
+)
+
+/** A programme on a sports or pay-per-view channel, for Live Events ([ItemDao.eventProgrammes]). */
+data class EventRow(
+    val itemId: Long,
+    val channelName: String,
+    val group: String,
+    val title: String,
+    val start: Long,
+    val stop: Long,
 )
 
 /** A live channel with what's on now (from the guide), for the Live TV list. */

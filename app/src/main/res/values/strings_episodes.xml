@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- An episode row's label with TMDB's runtime, such as "Episode 1 · 22m". -->
+    <string name="episode_label_runtime">Episode %1$d · %2$s</string>
+    <!-- A Continue Watching card with TMDB's episode name, such as "The Simpsons · Kamp Krusty". -->
+    <string name="continue_episode_named">%1$s · %2$s</string>
+</resources>

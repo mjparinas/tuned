@@ -13,7 +13,7 @@ object CatchUp {
     private val trailingId = Regex("""/(\d+)(\.[A-Za-z0-9]+)?$""")
 
     /** The Xtream stream id at the end of a live link (`…/live/user/pass/123.ts` or `…/user/pass/123`). */
-    fun streamId(url: String): String? = trailingId.find(url.substringBefore('?'))?.groupValues?.get(1)
+    fun streamId(url: String): String? = trailingId.find(StreamLink.address(url).substringBefore('?'))?.groupValues?.get(1)
 
     /** Days of recordings from a `get_live_streams` entry; servers send the values as numbers or strings. */
     fun days(

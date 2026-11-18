@@ -22,10 +22,11 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         ChannelScanEntity::class,
         ItemFts::class,
         ShowGroupEntity::class,
+        TmdbSeasonEntity::class,
         ProfileEntity::class,
         CurrentProfileEntity::class,
     ],
-    version = 12,
+    version = 13,
     exportSchema = true,
 )
 abstract class TunedDatabase : RoomDatabase() {
@@ -69,6 +70,7 @@ abstract class TunedDatabase : RoomDatabase() {
                 MIGRATION_9_10,
                 MIGRATION_10_11,
                 MIGRATION_11_12,
+                MIGRATION_12_13,
             ).addCallback(FirstProfile)
             // Going back to an older release (installing an older APK) can't keep a newer database: start it afresh
             // rather than crash on every launch. Upgrades always migrate, above.
@@ -208,6 +210,17 @@ abstract class TunedDatabase : RoomDatabase() {
                 }
             }
 
+        /** Adds TMDB's seasons, for episode screenshots and names. */
+        val MIGRATION_11_12 =
+            object : Migration(11, 12) {
+                override fun migrate(db: SupportSQLiteDatabase) {
+                    db.execSQL(
+                        "CREATE TABLE IF NOT EXISTS `tmdb_seasons` (`cacheKey` TEXT NOT NULL, `found` INTEGER NOT NULL, " +
+                            "`episodes` TEXT NOT NULL, `fetchedAt` INTEGER NOT NULL, PRIMARY KEY(`cacheKey`))",
+                    )
+                }
+            }
+
         private const val FTS_INSERT = "INSERT INTO `items_fts`(`docid`, `searchName`) VALUES (NEW.`rowid`, NEW.`searchName`); END"
 
         private val ftsTriggers =
@@ -222,8 +235,8 @@ abstract class TunedDatabase : RoomDatabase() {
          * Adds profiles. Favourites, history, watch later and seen episodes gain a profile, and everything already
          * there goes to the first one, so nothing is lost.
          */
-        val MIGRATION_11_12 =
-            object : Migration(11, 12) {
+        val MIGRATION_12_13 =
+            object : Migration(12, 13) {
                 override fun migrate(db: SupportSQLiteDatabase) {
                     db.execSQL(
                         "CREATE TABLE IF NOT EXISTS `profiles` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `name` TEXT NOT NULL, " +

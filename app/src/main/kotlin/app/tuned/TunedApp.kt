@@ -14,6 +14,7 @@ import app.tuned.data.ChannelScanner
 import app.tuned.data.Connectivity
 import app.tuned.data.CredentialStore
 import app.tuned.data.Credentials
+import app.tuned.data.EventsRepository
 import app.tuned.data.MetadataRepository
 import app.tuned.data.Offline
 import app.tuned.data.PeopleRepository
@@ -81,6 +82,7 @@ class AppContainer(
     val updates by lazy { GitHubUpdates(context, http) }
     val backup by lazy { BackupRepository(credentials, settings, db) }
     val reminders by lazy { Reminders(context) }
+    val events by lazy { EventsRepository(db, settings, reminders) }
     val offline by lazy { Offline(context, db, settings) }
     val picks by lazy { Picks(db, appScope) }
     val connectivity by lazy { Connectivity(context, appScope) }

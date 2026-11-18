@@ -10,6 +10,8 @@
 
 **Cleartext HTTP is allowed** (`network_security_config.xml`), because IPTV servers, eros4k.ddns.net included, serve playlists and streams over plain HTTP on whatever host a stream redirects to. Android Lint's `InsecureBaseConfiguration` check is disabled for that reason.
 
+**Serving saved files to a TV** (2026-11-18). Casting a saved film or episode opens a small HTTP server on the phone (`core/FileServer`), reachable on the local network while the cast lasts and closed when it ends or the player closes. It serves only the files handed to it, under a path with 96 random bits, and nothing else on the device; the files hold no login.
+
 ## Parental PIN (2026-11-17)
 
 Melvin asked for "a pin to filter out adult content". Adult categories (the classifier flags groups such as "FOR ADULTS", XXX and 18+) are always hidden until unlocked with a PIN of 4 to 8 digits:

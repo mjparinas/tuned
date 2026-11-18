@@ -1,9 +1,12 @@
 package app.tuned.ui.shows
 
 import android.app.Application
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -12,12 +15,14 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -51,6 +56,7 @@ import app.tuned.R
 import app.tuned.container
 import app.tuned.core.Titles
 import app.tuned.data.CastMember
+import app.tuned.data.EpisodeInfo
 import app.tuned.data.db.HistoryEntity
 import app.tuned.data.db.ItemEntity
 import app.tuned.data.db.SeenEpisodeEntity
@@ -90,6 +96,8 @@ class ShowViewModel(
     fun load(showKey: String) {
         if (key.value == showKey) return
         key.value = showKey
+        // A show read from the Xtream API fetches its episodes the first time it opens (core/XtreamApi).
+        viewModelScope.launchSafely("Show") { getApplication<Application>().container.sync.loadShow(showKey) }
         viewModelScope.launchSafely("Show") {
             val list = db.items().episodes(showKey).first { it.isNotEmpty() }
             val seen = db.seenEpisodes().seen(showKey).toSet()
@@ -103,6 +111,29 @@ class ShowViewModel(
         key
             .flatMapLatest { k -> if (k == null) MutableStateFlow(emptyList()) else db.items().episodes(k) }
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
+    private val seasonInfo = MutableStateFlow<Map<String, Map<Int, EpisodeInfo>>>(emptyMap())
+    private val askedSeasons = mutableSetOf<String>()
+
+    /** TMDB's episodes (names, summaries, screenshots) by "tmdbId|season", then by episode number. */
+    val episodeInfo: StateFlow<Map<String, Map<Int, EpisodeInfo>>> = seasonInfo
+
+    /**
+     * Fetches one season's episode details the first time its tab shows: what the device has at once, then anything
+     * newer. Only the season on screen is asked for, so opening a show with twenty seasons costs one request.
+     */
+    fun loadSeason(
+        tmdbId: Long,
+        season: Int,
+    ) {
+        val key = seasonKey(tmdbId, season)
+        if (!askedSeasons.add(key)) return
+        val metadata = getApplication<Application>().container.metadata
+        viewModelScope.launchSafely("Show") {
+            metadata.cachedSeason(tmdbId, season)?.let { found -> seasonInfo.value += key to found }
+            metadata.season(tmdbId, season)?.let { found -> seasonInfo.value += key to found }
+        }
+    }
 
     val progress: StateFlow<Map<Long, HistoryEntity>> =
         episodes
@@ -129,9 +160,16 @@ fun ShowScreen(
     val episodes by vm.episodes.collectAsStateWithLifecycle()
     val progress by vm.progress.collectAsStateWithLifecycle()
     val fresh by vm.fresh.collectAsStateWithLifecycle()
+    val episodeInfo by vm.episodeInfo.collectAsStateWithLifecycle()
     val seasons = episodes.map { it.season ?: 1 }.distinct().sorted()
     var selected by rememberSaveable { mutableIntStateOf(0) }
     val season = seasons.getOrNull(selected.coerceAtMost((seasons.size - 1).coerceAtLeast(0)))
+
+    val tmdbId = metadata?.tmdbId
+    LaunchedEffect(tmdbId, season) {
+        if (tmdbId != null && season != null) vm.loadSeason(tmdbId, season)
+    }
+    val seasonEpisodes = if (tmdbId != null && season != null) episodeInfo[seasonKey(tmdbId, season)] else null
 
     Scaffold(topBar = { BackTopBar(Titles.display(title), onBack) }) { padding ->
         Column(Modifier.padding(padding).fillMaxSize()) {
@@ -171,15 +209,20 @@ fun ShowScreen(
                 val shown = episodes.filter { season == null || (it.season ?: 1) == season }
                 item(key = "season-actions") {
                     val allWatched = shown.isNotEmpty() && shown.all { progress[it.id].isWatched() }
-                    Row(
+                    // A flow row: when both buttons don't fit side by side, the second goes on its own line
+                    // instead of squeezing to one letter per line.
+                    FlowRow(
                         Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
-                        verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(4.dp),
                     ) {
                         SeasonDownloadButton(shown)
                         if (shown.isNotEmpty()) {
                             TextButton(onClick = { library.setWatched(shown.map { it.id }, !allWatched) }) {
-                                Text(stringResource(if (allWatched) R.string.mark_season_unwatched else R.string.mark_season_watched))
+                                Text(
+                                    stringResource(if (allWatched) R.string.mark_season_unwatched else R.string.mark_season_watched),
+                                    maxLines = 1,
+                                )
                             }
                         }
                     }
@@ -187,6 +230,7 @@ fun ShowScreen(
                 items(shown, key = { it.id }) { ep ->
                     EpisodeRow(
                         ep,
+                        seasonEpisodes?.get(ep.episode ?: 1),
                         progress[ep.id],
                         isNew = ep.id in fresh,
                         onClick = { onPlay(ep.id) },
@@ -201,6 +245,7 @@ fun ShowScreen(
 @Composable
 private fun EpisodeRow(
     episode: ItemEntity,
+    info: EpisodeInfo?,
     history: HistoryEntity?,
     isNew: Boolean,
     onClick: () -> Unit,
@@ -212,7 +257,7 @@ private fun EpisodeRow(
             .fillMaxWidth()
             .focusRing(RectangleShape, MaterialTheme.colorScheme.primary)
             .clickable(onClick = onClick)
-            .padding(horizontal = 16.dp, vertical = 12.dp),
+            .padding(start = 4.dp, end = 4.dp, top = 8.dp, bottom = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         // The check marks the episode watched or unwatched by hand; the rest of the row plays it.
@@ -223,11 +268,18 @@ private fun EpisodeRow(
                 tint = if (watched) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.outline,
             )
         }
-        Spacer(Modifier.width(4.dp))
+        EpisodeStill(info?.still, history.takeIf { !watched })
+        Spacer(Modifier.width(12.dp))
         Column(Modifier.weight(1f)) {
+            val number = episode.episode ?: 1
+            val label =
+                when (val runtime = info?.runtime) {
+                    null -> stringResource(R.string.episode_label, number)
+                    else -> stringResource(R.string.episode_label_runtime, number, runtime)
+                }
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
-                    stringResource(R.string.episode_label, episode.episode ?: 1),
+                    label,
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -241,19 +293,65 @@ private fun EpisodeRow(
                     )
                 }
             }
-            Text(episode.name, style = MaterialTheme.typography.bodyLarge, maxLines = 2, overflow = TextOverflow.Ellipsis)
-            if (history != null && !watched && history.durationMs > 0) {
-                Spacer(Modifier.height(6.dp))
-                LinearProgressIndicator(
-                    progress = { (history.positionMs.toFloat() / history.durationMs).coerceIn(0f, 1f) },
-                    modifier = Modifier.fillMaxWidth(0.5f).height(3.dp).clip(RoundedCornerShape(2.dp)),
-                    drawStopIndicator = {},
+            // TMDB's name ("Kamp Krusty") reads better than the provider's ("EN - The Simpsons (1989) S04 E01").
+            Text(
+                info?.name ?: Titles.display(episode.name),
+                style = MaterialTheme.typography.bodyLarge,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+            )
+            info?.overview?.let {
+                Text(
+                    it,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
                 )
             }
         }
         DownloadButton(episode)
     }
 }
+
+/**
+ * The episode's screenshot at 16:9, with how far it was watched along the bottom. A plain tile with a play mark
+ * stands in while it loads and when TMDB has none, so rows never change height. Coil loads it only when the row
+ * scrolls into view and keeps it on the device.
+ */
+@Composable
+private fun EpisodeStill(
+    still: String?,
+    started: HistoryEntity?,
+) {
+    Box(
+        Modifier
+            .width(STILL_WIDTH)
+            .aspectRatio(16f / 9f)
+            .clip(RoundedCornerShape(8.dp))
+            .background(MaterialTheme.colorScheme.surfaceContainerHigh),
+        contentAlignment = Alignment.Center,
+    ) {
+        Icon(Icons.Filled.PlayArrow, null, Modifier.size(24.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+        if (still != null) {
+            AsyncImage(model = still, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
+        }
+        if (started != null && started.durationMs > 0) {
+            LinearProgressIndicator(
+                progress = { (started.positionMs.toFloat() / started.durationMs).coerceIn(0f, 1f) },
+                modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth().height(3.dp),
+                drawStopIndicator = {},
+            )
+        }
+    }
+}
+
+private val STILL_WIDTH = 112.dp
+
+private fun seasonKey(
+    tmdbId: Long,
+    season: Int,
+) = "$tmdbId|$season"
 
 /** Played to the end (92%), or marked watched by hand. */
 private fun HistoryEntity?.isWatched(): Boolean = this != null && durationMs > 0 && positionMs >= durationMs * WATCHED_PERCENT / 100

@@ -86,7 +86,7 @@ class ProfilesDbTest {
     @Test
     fun upgradeGivesEverythingToTheFirstProfileInTheShapeRoomExpects() {
         val helper =
-            openHelper(11) { old ->
+            openHelper(12) { old ->
                 old.execSQL(
                     "CREATE TABLE `favourites` (`itemId` INTEGER NOT NULL, `addedAt` INTEGER NOT NULL, " +
                         "`position` INTEGER NOT NULL DEFAULT 0, PRIMARY KEY(`itemId`))",
@@ -109,7 +109,7 @@ class ProfilesDbTest {
         old.execSQL("INSERT INTO watch_later VALUES ('s:abc', NULL, 'abc', 'Show', NULL, 9)")
         old.execSQL("INSERT INTO seen_episodes VALUES (11, 'abc')")
 
-        TunedDatabase.MIGRATION_11_12.migrate(old)
+        TunedDatabase.MIGRATION_12_13.migrate(old)
 
         assertEquals(listOf("7|500|3|1"), rows(old, "SELECT itemId, addedAt, position, profileId FROM favourites"))
         assertEquals(listOf("8|1000|2000|50|1"), rows(old, "SELECT itemId, positionMs, durationMs, watchedAt, profileId FROM history"))
