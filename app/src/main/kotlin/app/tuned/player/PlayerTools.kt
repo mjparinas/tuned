@@ -2,6 +2,7 @@ package app.tuned.player
 
 import android.annotation.SuppressLint
 import android.app.AlertDialog
+import android.content.Intent
 import android.graphics.Color
 import android.util.TypedValue
 import android.view.Gravity
@@ -16,6 +17,7 @@ import android.widget.TextView
 import androidx.activity.ComponentActivity
 import androidx.activity.OnBackPressedCallback
 import androidx.annotation.OptIn
+import androidx.core.net.toUri
 import androidx.core.view.isVisible
 import androidx.lifecycle.lifecycleScope
 import androidx.media3.common.C
@@ -30,6 +32,7 @@ import app.tuned.core.RemoteKeys
 import app.tuned.data.VideoFit
 import app.tuned.data.db.ItemEntity
 import app.tuned.diagnostics.launchSafely
+import app.tuned.diagnostics.startActivitySafely
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
@@ -106,6 +109,7 @@ class PlayerTools(
             addView(button(R.drawable.ic_player_quality, R.string.player_quality) { pickQuality() })
             addView(button(R.drawable.ic_player_subtitle_timing, R.string.subtitle_timing) { pickSubtitleTiming() })
             addView(button(R.drawable.ic_player_info, R.string.player_info) { toggleInfo() })
+            addView(button(R.drawable.ic_player_open_with, R.string.player_open_with) { openElsewhere() })
             addView(button(R.drawable.ic_player_lock, R.string.player_lock) { lock() })
         }
 
@@ -233,6 +237,28 @@ class PlayerTools(
             }
 
             RemoteKeys.Action.NONE -> {}
+        }
+    }
+
+    /**
+     * Hands the stream to another installed player (VLC, MX Player, Just Player) for a format Tuned can't play
+     * (from the app audit). Tuned stops its own stream first and closes, so the account never has two open.
+     */
+    private fun openElsewhere() {
+        val player = hooks.player() ?: return
+        val item = hooks.queue().getOrNull(player.currentMediaItemIndex) ?: return
+        val view =
+            Intent(Intent.ACTION_VIEW)
+                .setDataAndType(item.url.toUri(), "video/*")
+                .putExtra(Intent.EXTRA_TITLE, item.name)
+                .putExtra("title", item.name) // what VLC and MX Player read
+        player.stop()
+        val chooser = Intent.createChooser(view, activity.getString(R.string.player_open_with))
+        if (activity.startActivitySafely(chooser, "PlayerTools")) {
+            activity.finish()
+        } else {
+            hooks.say(activity.getString(R.string.player_open_with_none))
+            player.prepare()
         }
     }
 
