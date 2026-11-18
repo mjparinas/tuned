@@ -4,10 +4,12 @@ import android.app.PictureInPictureParams
 import android.graphics.Rect
 import android.os.Build
 import android.util.Rational
+import androidx.annotation.OptIn
 import androidx.core.net.toUri
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
 import androidx.media3.common.Player
+import androidx.media3.common.util.UnstableApi
 import androidx.media3.ui.PlayerView
 import app.tuned.core.StreamLink
 import app.tuned.data.db.ItemEntity
@@ -34,6 +36,7 @@ internal fun ItemEntity.toMediaItem(
 }
 
 /** Picture-in-picture: the video's shape, where it is on screen, and whether leaving the app shrinks it on its own. */
+@OptIn(UnstableApi::class)
 internal fun pipParams(
     player: Player?,
     playerView: PlayerView,
