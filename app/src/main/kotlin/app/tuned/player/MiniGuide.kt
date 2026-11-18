@@ -19,13 +19,13 @@ import androidx.core.view.isVisible
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
 import app.tuned.R
-import coil3.dispose
-import coil3.load
-import coil3.size.Precision
 import app.tuned.container
 import app.tuned.core.ScreenLayout
 import app.tuned.data.db.ItemEntity
 import app.tuned.diagnostics.launchSafely
+import coil3.dispose
+import coil3.load
+import coil3.size.Precision
 import kotlinx.coroutines.CoroutineScope
 
 /**
