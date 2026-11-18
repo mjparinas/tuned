@@ -82,12 +82,17 @@ class GoogleDrive(
     private val signedInFlow = MutableStateFlow(prefs.contains(KEY_REFRESH))
     val signedIn: StateFlow<Boolean> = signedInFlow.asStateFlow()
 
-    /** Step one of signing in: the code to show and where to enter it. */
-    suspend fun requestCode(): DeviceCode? {
+    /** Step one of signing in: the code to show and where to enter it, or why Google wouldn't give one. */
+    data class CodeAnswer(
+        val code: DeviceCode?,
+        val failure: CloudSync.Failure?,
+    )
+
+    suspend fun requestCode(): CodeAnswer {
         val form =
             FormBody
                 .Builder()
-                .add("client_id", BuildConfig.GOOGLE_TV_CLIENT_ID)
+                .add("client_id", CLIENT_ID)
                 .add("scope", CloudSync.SCOPE)
                 .build()
         val answer =
@@ -97,22 +102,27 @@ class GoogleDrive(
                     .url(DEVICE_CODE_URL)
                     .post(form)
                     .build(),
-            ) ?: return null
-        if (answer.first != HTTP_OK) return null
-        return attempt(TAG, "Couldn't read Google's sign-in code") {
-            json.decodeFromString(DeviceCode.serializer(), answer.second)
-        }.getOrNull()
+            ) ?: return CodeAnswer(null, failed(null, null))
+        if (answer.first != HTTP_OK) return CodeAnswer(null, failed(answer.first, answer.second))
+        val code =
+            attempt(TAG, "Couldn't read Google's sign-in code") {
+                json.decodeFromString(DeviceCode.serializer(), answer.second)
+            }.getOrNull()
+        return CodeAnswer(code, if (code == null) failed(answer.first, answer.second) else null)
     }
 
-    /** Step two: asks Google every few seconds whether the code was entered. Cancelling the coroutine stops it. */
-    suspend fun awaitSignIn(code: DeviceCode): CloudSync.Poll {
+    /**
+     * Step two: asks Google every few seconds whether the code was entered. Null once signed in, otherwise why not.
+     * Cancelling the coroutine stops it.
+     */
+    suspend fun awaitSignIn(code: DeviceCode): CloudSync.Failure? {
         var wait = code.interval.coerceAtLeast(1) * MS
         val until = System.currentTimeMillis() + code.expiresIn * MS
         val form =
             FormBody
                 .Builder()
-                .add("client_id", BuildConfig.GOOGLE_TV_CLIENT_ID)
-                .add("client_secret", BuildConfig.GOOGLE_TV_CLIENT_SECRET)
+                .add("client_id", CLIENT_ID)
+                .add("client_secret", CLIENT_SECRET)
                 .add("device_code", code.deviceCode)
                 .add("grant_type", "urn:ietf:params:oauth:grant-type:device_code")
                 .build()
@@ -128,13 +138,19 @@ class GoogleDrive(
                 )
             val poll = answer?.let { CloudSync.poll(it.first, errorOf(it.second)) } ?: CloudSync.Poll.WAIT
             when (poll) {
-                CloudSync.Poll.SIGNED_IN -> return if (saveTokens(requireNotNull(answer).second)) poll else CloudSync.Poll.FAILED
+                CloudSync.Poll.SIGNED_IN -> {
+                    val reply = requireNotNull(answer).second
+                    return if (saveTokens(reply)) null else failed(HTTP_OK, reply)
+                }
+
                 CloudSync.Poll.SLOW_DOWN -> wait += SLOW_DOWN_MS
+
                 CloudSync.Poll.WAIT -> Unit
-                else -> return poll
+
+                else -> return failed(answer?.first, answer?.second)
             }
         }
-        return CloudSync.Poll.EXPIRED
+        return CloudSync.Failure(CloudSync.Reason.EXPIRED, null)
     }
 
     /** Forgets the account here and tells Google to drop the token. */
@@ -231,7 +247,11 @@ class GoogleDrive(
         return withContext(Dispatchers.IO) {
             http.newCall(request.header("Authorization", "Bearer $token").build()).execute().use { r ->
                 if (r.code == HTTP_UNAUTHORIZED) access = null
-                if (!r.isSuccessful) throw IOException("Google Drive answered HTTP ${r.code}")
+                if (!r.isSuccessful) {
+                    val body = r.body.string()
+                    if (CloudSync.driveApiOff(r.code, body)) throw DriveApiOff()
+                    throw IOException("Google Drive answered HTTP ${r.code}")
+                }
                 read(r)
             }
         }
@@ -244,8 +264,8 @@ class GoogleDrive(
         val form =
             FormBody
                 .Builder()
-                .add("client_id", BuildConfig.GOOGLE_TV_CLIENT_ID)
-                .add("client_secret", BuildConfig.GOOGLE_TV_CLIENT_SECRET)
+                .add("client_id", CLIENT_ID)
+                .add("client_secret", CLIENT_SECRET)
                 .add("refresh_token", refresh)
                 .add("grant_type", "refresh_token")
                 .build()
@@ -298,13 +318,24 @@ class GoogleDrive(
         signedInFlow.value = false
     }
 
-    private fun errorOf(body: String): String? = attempt(TAG, "Couldn't read Google's answer") {
-        json
-            .parseToJsonElement(body)
-            .jsonObject["error"]
-            ?.jsonPrimitive
-            ?.content
+    private fun errorOf(body: String): String? = field(body, "error")
+
+    private fun field(
+        body: String,
+        name: String,
+    ): String? = attempt(TAG, "Couldn't read Google's answer") {
+        (json.parseToJsonElement(body).jsonObject[name] as? JsonPrimitive)?.content
     }.getOrNull()
+
+    /** Why a sign-in step failed, logged with Google's own words (never a token or code: Google's errors hold neither). */
+    private fun failed(
+        status: Int?,
+        body: String?,
+    ): CloudSync.Failure {
+        val failure = CloudSync.failure(status, body?.let(::errorOf), body?.let { field(it, "error_description") })
+        if (status != null) AppLog.w(TAG, "Google sign-in failed (HTTP $status): ${failure.detail}")
+        return failure
+    }
 
     /** The answer's status and body, or null when the network failed. Tokens and codes are never logged. */
     private suspend fun send(request: Request): Pair<Int, String>? = withContext(Dispatchers.IO) {
@@ -316,8 +347,15 @@ class GoogleDrive(
         }
     }
 
+    /** The Drive API is turned off in the Google Cloud project the app's keys belong to. */
+    class DriveApiOff : IOException("The Google Drive API is off for this app's Google Cloud project")
+
     private companion object {
         const val TAG = "GoogleDrive"
+
+        // Trimmed: a key pasted into GitHub with a stray space or newline would otherwise read as "client not found".
+        val CLIENT_ID = BuildConfig.GOOGLE_TV_CLIENT_ID.trim()
+        val CLIENT_SECRET = BuildConfig.GOOGLE_TV_CLIENT_SECRET.trim()
         const val KEY_REFRESH = "refresh"
         const val PROP_FINGERPRINT = "fingerprint"
         const val PROP_CHANGED = "changedAt"
