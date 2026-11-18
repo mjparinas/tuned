@@ -9,6 +9,7 @@ import android.view.Window
 import android.widget.ImageButton
 import android.widget.TextView
 import androidx.core.view.WindowCompat
+import androidx.core.widget.doAfterTextChanged
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import app.tuned.R
@@ -22,9 +23,12 @@ internal fun titleText(context: Context) = TextView(context).apply {
     setTypeface(typeface, Typeface.BOLD)
 }
 
+/** The line under the title (what's on, or the show and episode), gone while there is nothing to say. */
 internal fun subtitleText(context: Context) = TextView(context).apply {
     setTextColor(0xCCFFFFFF.toInt())
     textSize = 14f
+    visibility = View.GONE
+    doAfterTextChanged { visibility = if (it.isNullOrEmpty()) View.GONE else View.VISIBLE }
 }
 
 /** The centred message for holds and errors, hidden until there is one. */

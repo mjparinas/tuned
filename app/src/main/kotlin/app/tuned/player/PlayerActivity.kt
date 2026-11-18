@@ -390,7 +390,8 @@ class PlayerActivity : FragmentActivity() {
                 copies = qualityCopies,
             )
         overlay.addView(tools.toolbar)
-        tools.addButton(subtitleSearch.button)
+        val captionButtons = listOf(subtitleSearch.button, tools.subtitleTimingButton)
+        if (!placeBesideCaptions(playerView, captionButtons)) captionButtons.reversed().forEach(tools::addButton)
         cast =
             CastControl(
                 activity = this,
@@ -697,8 +698,10 @@ class PlayerActivity : FragmentActivity() {
     }
 
     private fun updateOverlay(item: ItemEntity) {
-        titleView.text = item.name
-        subtitleView.text = item.groupName
+        // The name without the provider's language tag ("EN - "), and no category beneath it (Melvin, 2026-11-18). A
+        // catch-up recording keeps its channel's name there.
+        titleView.text = Titles.display(item.name)
+        subtitleView.text = if (item.id == CatchUpLinks.ID) item.groupName else ""
         // The episode's TMDB name, from the device at once when the show's page was opened, else one cached
         // TMDB request. Playback never waits for it, and it stays out of its own function because detekt caps
         // this class at 30.
@@ -727,7 +730,7 @@ class PlayerActivity : FragmentActivity() {
                 listOfNotNull(
                     current?.let { getString(R.string.player_now, it.title) },
                     next?.let { getString(R.string.player_next, it.title) },
-                ).joinToString("  ·  ").ifBlank { item.groupName }
+                ).joinToString("  ·  ")
         }
     }
 
