@@ -66,7 +66,7 @@ Only real tags count: the ISO country codes plus the language and area tags prov
 
 **Account status** (2026-11-17, from the app audit). Settings › Account shows the subscription (Active, Trial and so on), when it ends (with "in 3 days" in the last week) and how many of its connections are in use, from Xtream's `player_api.php` (`AccountRepository`, rules in `core/XtreamAccount`). It is a small answer, not a stream, asked when Live TV opens and when Settings opens, and kept for three minutes, so nothing waits on it. Plain M3U logins have no such call and show nothing.
 
-When a fresh answer says every connection is in use, and it was taken while Tuned had no stream of its own (its player closed for at least a minute, since servers are slow to stop counting one), the player doesn't open the stream: it says the connections are in use, probably on another device, and waits for play to be pressed. That keeps a 1- or 2-connection account from going over its limit by accident.
+When a fresh answer says every connection is in use, and it was taken while Tuned had no stream of its own (no player and no download open, and the last one closed at least a minute before, since servers are slow to stop counting one; a running download used to count as another device, 2026-11-18), the player doesn't open the stream: it says the connections are in use, probably on another device, and waits for play to be pressed. That keeps a 1- or 2-connection account from going over its limit by accident.
 
 **Guide fixes** (2026-11-17, from the app audit: wrong or missing guide data is one of the most common complaints). The rules are in `core/GuideFixes.kt`, with tests.
 
