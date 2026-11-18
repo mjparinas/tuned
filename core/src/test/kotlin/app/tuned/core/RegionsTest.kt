@@ -94,4 +94,18 @@ class RegionsTest {
         assertTrue(Regions.matchesSearch("espa", listOf("Español")))
         assertFalse(Regions.matchesSearch("french", listOf("English", "US", "UK")))
     }
+
+    @Test
+    fun `a tag and a bar in the stream's own name beats the category`() {
+        // Melvin, 2026-11-18: Hindi channels filed under "US| MOVIES NETWORK" showed with only US and Canada on.
+        assertEquals("IN", Regions.detect("US| MOVIES NETWORK", null, "HINDI| & PICTURES FHD"))
+        assertEquals("IN", Regions.detect("US| MOVIES NETWORK", null, "IN | Colors Cineplex"))
+        assertEquals("US", Regions.detect("US| MOVIES NETWORK", null, "US| THE FILM DETECTIVE"))
+        // A colon, a quality tag or an unknown word in front of the bar leaves the category in charge.
+        assertEquals("US", Regions.detect("US| Movies", null, "IT: Chapter Two"))
+        assertEquals("US", Regions.detect("US| Sports", null, "VIP | ESPN"))
+        assertEquals("US", Regions.detect("US| Sports", null, "NFL | Week 1"))
+        // tvg-country still wins.
+        assertEquals("CA", Regions.detect("US| News", "CA", "HINDI| Aaj Tak"))
+    }
 }
