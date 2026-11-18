@@ -471,19 +471,10 @@ class PlayerActivity : FragmentActivity() {
             playerView.setShowNextButton(queue.size > 1)
             playerView.setShowPreviousButton(queue.size > 1)
         }
-        // Subtitles fetched from OpenSubtitles before come back with their film, with no download.
-        val subtitles = if (live) emptyMap() else container.subtitles.saved(queue.map { it.id })
+        val subtitles = savedSubtitles(exo, live, item.id)
         val mediaItems = queue.map { it.toMediaItem(local[it.id], subtitles[it.id]) }
         val index = queue.indexOfFirst { it.id == item.id }.coerceAtLeast(0)
         val resumeAt = if (!live && settings.resumePlayback) resumePosition(item.id) else C.TIME_UNSET
-        subtitles[queue[index].id]?.let { file ->
-            exo.trackSelectionParameters =
-                exo.trackSelectionParameters
-                    .buildUpon()
-                    .setTrackTypeDisabled(C.TRACK_TYPE_TEXT, false)
-                    .setPreferredTextLanguage(SubtitleSearch.languageOf(file))
-                    .build()
-        }
         exo.setMediaItems(mediaItems, index, resumeAt)
         exo.pauseAtEndOfMediaItems = kind == ContentKind.SERIES && !settings.autoPlayNext
         val castNow = cast?.takeIf { it.casting }
@@ -760,6 +751,28 @@ class PlayerActivity : FragmentActivity() {
         val duration = exo.duration
         if (duration == C.TIME_UNSET || duration <= 0) return
         container.db.library().saveProgress(HistoryEntity(id, exo.currentPosition, duration, System.currentTimeMillis()))
+    }
+
+    /**
+     * Subtitles fetched from OpenSubtitles before come back with their film, with no download; the one starting now
+     * turns captions on in its language.
+     */
+    private suspend fun savedSubtitles(
+        exo: ExoPlayer,
+        live: Boolean,
+        startId: Long,
+    ): Map<Long, File> {
+        if (live) return emptyMap()
+        val saved = container.subtitles.saved(queue.map { it.id })
+        saved[startId]?.let { file ->
+            exo.trackSelectionParameters =
+                exo.trackSelectionParameters
+                    .buildUpon()
+                    .setTrackTypeDisabled(C.TRACK_TYPE_TEXT, false)
+                    .setPreferredTextLanguage(SubtitleSearch.languageOf(file))
+                    .build()
+        }
+        return saved
     }
 
     private fun live(): Boolean = queue.firstOrNull()?.kind == ContentKind.LIVE.code
