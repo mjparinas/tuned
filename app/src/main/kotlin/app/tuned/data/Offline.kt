@@ -13,6 +13,7 @@ import app.tuned.data.db.ItemEntity
 import app.tuned.data.db.TunedDatabase
 import app.tuned.diagnostics.attempt
 import app.tuned.work.OfflineWorker
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
 import java.io.File
 
@@ -25,6 +26,8 @@ class Offline(
     private val context: Context,
     private val db: TunedDatabase,
     private val settings: SettingsRepository,
+    /** True while the player is open; nothing downloads then (one connection, ever). */
+    private val playerOpen: StateFlow<Boolean>,
 ) {
     private val dir: File get() = context.getExternalFilesDir(DIR) ?: File(context.filesDir, DIR)
     private val work get() = WorkManager.getInstance(context)
@@ -81,6 +84,7 @@ class Offline(
         work.cancelUniqueWork(OfflineWorker.NAME)
         File(row.path).delete()
         File(row.path + ".part").delete()
+        File(row.path + ".part.tag").delete()
         db.downloads().delete(itemId)
         start()
     }
@@ -104,7 +108,8 @@ class Offline(
 
     /** The player closed, or something was added: carry on with what's left. */
     suspend fun start() {
-        if (db.downloads().next() == null) return
+        // Something added while a stream plays (in picture-in-picture, say) waits: the player starts it on closing.
+        if (playerOpen.value || db.downloads().next() == null) return
         val unmetered = settings.settings.first().unmeteredOnly
         val request =
             OneTimeWorkRequestBuilder<OfflineWorker>()

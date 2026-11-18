@@ -23,6 +23,8 @@ import kotlin.coroutines.coroutineContext
  * - Only consecutive attempts that make no progress count towards the limit, so a long download on a flaky line
  *   keeps going as long as it keeps moving.
  * - The body is saved as sent (gzip stays gzip); the reader unwraps it, see `Streams.maybeGunzip`.
+ * - With `keepPart`, a download that is stopped (the player opened, the app closed) keeps its `.part` file and the
+ *   server's validator beside it (`.part.tag`), so the next run carries on from there instead of starting over.
  */
 class Downloader(
     http: OkHttpClient,
@@ -52,11 +54,13 @@ class Downloader(
         target: File,
         userAgent: String = "",
         progress: Progress = Progress { _, _ -> },
+        keepPart: Boolean = false,
     ): File = withContext(Dispatchers.IO) {
         target.parentFile?.mkdirs()
         val part = File(target.path + ".part")
-        part.delete()
-        val state = State()
+        val tag = File(target.path + ".part.tag")
+        val state = State(if (keepPart) tag else null)
+        if (keepPart && part.exists()) state.restore() else part.delete()
         var stalls = 0
         var lastError: IOException? = null
         while (stalls < maxStalls) {
@@ -68,11 +72,13 @@ class Downloader(
                     part.copyTo(target, overwrite = true)
                     part.delete()
                 }
+                tag.delete()
                 return@withContext target
             } catch (e: HttpError) {
                 // A server that says no (wrong login, missing file) won't change its mind on a retry.
                 if (e.isFinal) {
                     part.delete()
+                    tag.delete()
                     throw e
                 }
                 lastError = e
@@ -83,13 +89,29 @@ class Downloader(
             stalls = if (after > before) 1 else stalls + 1
             if (stalls < maxStalls) delay(backoffMs(stalls))
         }
-        part.delete()
+        // A saved download keeps what it has for the next try; anything else starts clean next time.
+        if (!keepPart) part.delete()
         throw lastError ?: IOException("Couldn't download")
     }
 
-    private class State {
+    /** What the server said about the file; with [tag], also kept on disk so a later run can resume. */
+    private class State(
+        private val tag: File?,
+    ) {
         var validator: String? = null
         var total = -1L
+
+        fun restore() {
+            val lines = tag?.takeIf { it.exists() }?.readLines() ?: return
+            validator = lines.getOrNull(0)?.takeIf { it.isNotBlank() }
+            total = lines.getOrNull(1)?.toLongOrNull() ?: -1L
+        }
+
+        fun save() {
+            val file = tag ?: return
+            val v = validator
+            if (v == null) file.delete() else file.writeText("$v\n$total")
+        }
     }
 
     /** One connection: resumes [part] when it can, otherwise starts it over. Throws when the file isn't complete. */
@@ -126,6 +148,7 @@ class Downloader(
                     } else {
                         response.body.contentLength()
                     }
+                state.save()
                 save(response, part, append, state.total, progress)
             }
         }

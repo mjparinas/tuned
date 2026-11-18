@@ -803,12 +803,13 @@ class PlayerActivity : FragmentActivity() {
         tools.release()
         dial.release()
         cast?.release()
-        container.appScope.launch { container.offline.start() }
         reconnect.stop()
+        // The stream closes before downloads carry on, so the provider never sees two connections.
         player?.release()
         player = null
         container.account.noStreamSince = System.currentTimeMillis()
         container.playerOpen.value = false
+        container.appScope.launch { container.offline.start() }
         super.onDestroy()
     }
 

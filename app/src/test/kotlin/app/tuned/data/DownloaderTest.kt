@@ -108,4 +108,20 @@ class DownloaderTest {
         assertFailsWith<IOException> { few.download(server.url("/get.php").toString(), folder.root.resolve("playlist")) }
         assertEquals(3, server.requestCount)
     }
+
+    @Test
+    fun aSavedDownloadCarriesOnAfterBeingStopped() = runTest {
+        // The first run is cut off (the player opening stops downloads); the next run picks up from the same bytes.
+        serve(drops = 1, validator = true)
+        val target = folder.root.resolve("film.mkv")
+        val once = Downloader(OkHttpClient(), maxStalls = 1, backoffMs = { 0 })
+        assertFailsWith<IOException> { once.download(server.url("/film.mkv").toString(), target, keepPart = true) }
+        assertTrue(folder.root.resolve("film.mkv.part").length() > 0)
+        val out = downloader.download(server.url("/film.mkv").toString(), target, keepPart = true)
+        assertContentEquals(file, out.readBytes())
+        assertEquals(2, ranges.size)
+        assertNull(ranges[0])
+        assertTrue(ranges[1] != null && ranges[1] != "bytes=0-", "the second run resumes: $ranges")
+        assertTrue(!folder.root.resolve("film.mkv.part.tag").exists())
+    }
 }
