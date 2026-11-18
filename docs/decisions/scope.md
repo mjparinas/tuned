@@ -13,8 +13,6 @@ This file keeps the decisions that don't belong to one area yet: what Tuned will
 
 Each line names Melvin's words and date. Move it into the topic's file when it merges.
 
-- **Free app with a Premium unlock** (Melvin agreed the plan, 2026-11-17): store builds, Play Billing, the locks and the Premium screen ([premium](premium.md)).
-
 - **Never hide sports, PPV and event channels** (Melvin, 2026-11-17: worried auto-tune or the scan would hide "legitimate channels" such as pay-per-view slots with nothing on, "just in case there is no show at that time"). Scans and failed plays only mark them off air; auto-tune still tries every one, recent failures last. Empty "NO EVENT STREAMING" slots stay out of the Live TV list but auto-tune and search can still reach them. (Pull request #63.)
 - **Downloads by show** (Melvin, 2026-11-17): one poster per show, then its seasons (with season posters where TMDB has them), then episodes with screenshots; the top of the page shows how much is downloaded and how much space is left on the device. (#64.)
 - **Real episode names everywhere** (Melvin, 2026-11-17: "if you can find the actual name of an episode, prioritize that over showing the season number and episode number"), with TMDB's still for each episode. (#57.)

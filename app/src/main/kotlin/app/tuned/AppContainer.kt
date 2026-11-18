@@ -27,6 +27,7 @@ import app.tuned.data.TraktAccount
 import app.tuned.data.TuneRepository
 import app.tuned.data.db.TunedDatabase
 import app.tuned.diagnostics.loggingHandler
+import app.tuned.premium.Premium
 import app.tuned.updates.GitHubUpdates
 import app.tuned.work.OfflineWorker
 import app.tuned.work.Reminders
@@ -81,6 +82,7 @@ class AppContainer(
     val trakt by lazy { TraktAccount(context, http) }
     val people by lazy { PeopleRepository(http, BuildConfig.TMDB_API_KEY, db.metadata(), connectivity::onlineNow) }
     val profiles by lazy { ProfileRepository(db, settings) }
+    val premium by lazy { Premium(context, appScope) }
     val subtitles by lazy { SubtitleRepository(http, settings, credentials, metadata, context.filesDir.resolve("subtitles")) }
 
     /** True while the player is open; downloads and channel scans hold back so only one stream is ever open. */

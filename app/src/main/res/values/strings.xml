@@ -256,6 +256,33 @@
     <string name="update_ready">Tuned %1$s is ready to install</string>
     <string name="update_install">Install</string>
     <string name="update_failed">The update didn’t install. Tuned will try again next time.</string>
+    <!-- Premium (docs/decisions/premium.md) -->
+    <string name="premium_title">Tuned Premium</string>
+    <string name="premium_lead">Everything you need to watch is free. Premium adds the extras for people who live in Tuned.</string>
+    <string name="premium_on">Premium is on. Thanks for supporting Tuned.</string>
+    <string name="premium_feature_playlists">More than one playlist</string>
+    <string name="premium_feature_profiles">Profiles, kids profiles and PIN locks</string>
+    <string name="premium_feature_rewind">Pause and rewind live TV</string>
+    <string name="premium_feature_record">Record the channel you\'re watching</string>
+    <string name="premium_feature_downloads">Unlimited downloads (free keeps 3)</string>
+    <string name="premium_feature_events">Follow events and get alerts</string>
+    <string name="premium_feature_sync">Sync between your phone and TV</string>
+    <string name="premium_feature_trakt">Trakt</string>
+    <string name="premium_feature_colours">Every accent colour</string>
+    <plurals name="premium_try_free">
+        <item quantity="one">Try %1$d day free, then %2$s a year</item>
+        <item quantity="other">Try %1$d days free, then %2$s a year</item>
+    </plurals>
+    <string name="premium_buy_yearly">%1$s a year</string>
+    <string name="premium_buy_lifetime">%1$s once, for life</string>
+    <string name="premium_restore">Restore purchase</string>
+    <string name="premium_nothing_to_restore">No Premium purchase found on this Google account.</string>
+    <string name="premium_store_unreachable">Couldn\'t reach Google Play. Try again in a moment.</string>
+    <string name="premium_loading">Asking Google Play for prices…</string>
+    <string name="premium_fine_print">The yearly plan renews until you cancel it in Google Play. One purchase covers every device on your Google account.</string>
+    <string name="premium_summary_on">On</string>
+    <string name="premium_summary_off">Free plan. See what Premium adds</string>
+    <string name="premium_locked">Premium</string>
     <string name="settings_check_updates">Look for updates automatically</string>
     <string name="settings_check_updates_summary">Check GitHub for new versions when Tuned opens (at most hourly) and during background refreshes</string>
     <string name="settings_gestures">Gestures</string>

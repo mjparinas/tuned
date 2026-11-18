@@ -32,6 +32,8 @@ import app.tuned.data.CloudSyncRepository
 import app.tuned.data.GoogleDrive
 import app.tuned.diagnostics.launchSafely
 import app.tuned.diagnostics.startActivitySafely
+import app.tuned.premium.LockedRow
+import app.tuned.premium.premiumUnlocked
 import app.tuned.work.CloudSyncWorker
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -118,6 +120,11 @@ fun CloudSyncRows(vm: CloudSyncViewModel = viewModel()) {
     var askPassphrase by remember { mutableStateOf(false) }
     SectionHeader(stringResource(R.string.cloud_sync))
     when {
+        // Sync is Premium (docs/decisions/premium.md).
+        !signedIn && !premiumUnlocked() -> {
+            LockedRow(stringResource(R.string.cloud_sync_start))
+        }
+
         !signedIn -> {
             SettingRow(
                 stringResource(R.string.cloud_sync_start),

@@ -134,7 +134,11 @@ class EventsViewModel(
             )
     }
 
+    // Following and alerts are Premium; browsing and Tune stay free (docs/decisions/premium.md).
+    private val premium = app.container.premium
+
     fun follow(name: String) {
+        if (!premium.allow(getApplication<Application>())) return
         viewModelScope.launchSafely(TAG) { events.follow(name) }
     }
 
@@ -144,6 +148,7 @@ class EventsViewModel(
 
     fun toggleAlert(event: Events.Event) {
         val on = EventsRepository.alertKey(event) !in alerts.value
+        if (on && !premium.allow(getApplication<Application>())) return
         viewModelScope.launchSafely(TAG) { events.setAlert(event, on) }
     }
 
