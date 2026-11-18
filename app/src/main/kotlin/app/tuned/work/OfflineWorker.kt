@@ -32,8 +32,11 @@ class OfflineWorker(
     private var lastReport = 0L
 
     override suspend fun doWork(): Result = try {
+        applicationContext.container.downloadOpen.value = true
         logFailures(TAG, failed = { Result.failure() }) { download() }
     } finally {
+        // Reached only once the connection is closed (Downloader hangs it up when stopped); the player waits for it.
+        applicationContext.container.downloadOpen.value = false
         // The server takes a while to stop counting the download's connection; see [AccountRepository.noStreamSince].
         applicationContext.container.account.noStreamSince = System.currentTimeMillis()
     }
@@ -49,8 +52,9 @@ class OfflineWorker(
         // A film is large; as a foreground service the download carries on with the screen off.
         attempt(TAG, "Couldn't run as a foreground service") { setForeground(foregroundInfo(null)) }
         while (true) {
-            // The player opened between being queued and now: stop, and the player starts the queue again on closing.
-            if (container.playerOpen.value) return Result.success()
+            // Something started playing (the player, or a TV) between being queued and now: stop; the queue starts
+            // again when it ends.
+            if (container.watching()) return Result.success()
             val row = dao.next() ?: return Result.success()
             // Its page first (details, poster, cast photos), so it looks the same offline; a few small requests.
             attempt(TAG, "Couldn't save the artwork for ${row.name}") { container.savedArtwork.keep(row.itemId) }
