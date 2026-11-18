@@ -54,12 +54,18 @@ fun MacrobenchmarkScope.browseAndPlay() {
     openTab("Movies", "Film ")
     openTab("Shows", "Show ")
     openTab("Live TV", "Channel ")
-    device.findObject(By.text(FakeProvider.FIRST_CHANNEL)).click()
+    anyChannel().click()
     device.waitForIdle()
     Thread.sleep(PLAY_MS)
     device.pressBack()
-    waitForChannels()
+    anyChannel()
 }
+
+/** Whichever channel is on screen; the tabs are scrolled by now, so the first one may not be. */
+private fun MacrobenchmarkScope.anyChannel() =
+    checkNotNull(device.wait(Until.findObject(By.textStartsWith("Channel ")), SCREEN_TIMEOUT_MS)) {
+        "No channel on screen. On screen: ${onScreen()}"
+    }
 
 private fun MacrobenchmarkScope.openTab(
     tab: String,
