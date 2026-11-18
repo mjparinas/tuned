@@ -32,8 +32,11 @@ class RegionsTest {
     }
 
     @Test
-    fun `tvg-country wins and the channel name is the fallback`() {
-        assertEquals("CA", Regions.detect("US| News", "CA;US", "x"))
+    fun `the category's country wins over tvg-country, and the channel name is the fallback`() {
+        // The category is what people see and hide by (Melvin, 2026-11-18): "|EXYU| ..." hides with Ex-Yugoslavia.
+        assertEquals("US", Regions.detect("US| News", "CA;US", "x"))
+        assertEquals("EX", Regions.detect("|EXYU| STRANI FILMOVI", "HR", "Ex - R.M.N. (2022)"))
+        assertEquals("HR", Regions.detect("Filmovi", "HR", "x"))
         assertEquals("DE", Regions.detect("News", null, "DE: Das Erste"))
         assertEquals("Canada", Regions.displayName("CA"))
         assertEquals("ZZ", Regions.displayName("ZZ"))

@@ -252,20 +252,22 @@ object Regions {
             )
 
     /**
-     * The region of one stream. `tvg-country` wins when it names a known country; then a flag or tag at the start of
-     * the category or the name; then a tag in brackets at the end ("ESPN (US)"); then `tvg-language`, read as the tag
-     * that speaks it, so the language switches still work for playlists that only say "English".
+     * The region of one stream. The category comes first, since it is what people see and hide by (Melvin, 2026-11-18:
+     * a "|EXYU| ..." category must hide with Ex-Yugoslavia even when its films carry `tvg-country="HR"`): a flag or tag
+     * at its start, a category that is only a country, or a country written out at its start. Then `tvg-country`, when
+     * it names a known country; then the same in the name, a tag in brackets at the end ("ESPN (US)"), and finally
+     * `tvg-language`, read as the tag that speaks it.
      */
     fun detect(
         group: String,
         tvgCountry: String?,
         name: String,
         tvgLanguage: String? = null,
-    ): String? = country(tvgCountry)
-        ?: flag(group)
+    ): String? = flag(group)
         ?: prefix(group)
         ?: whole(group)
         ?: leading(group)
+        ?: country(tvgCountry)
         ?: flag(name)
         ?: prefix(name)
         ?: suffix(name)
