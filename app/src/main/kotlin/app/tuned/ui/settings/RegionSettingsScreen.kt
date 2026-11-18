@@ -4,6 +4,7 @@ import android.app.Application
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -62,8 +63,9 @@ class RegionViewModel(
 /**
  * Settings › Countries and languages: one switch per language first, then one per country (or region tag) found in
  * the playlist, A to Z by name, with how many streams each has. The search box above filters both as you type.
- * Turning one off hides its channels, movies and shows everywhere, including search. A language is the set of tags that speak it ([RegionLanguages]), so its switch turns all of those
- * on or off together and needs nothing stored of its own; it shows on while any of them is on.
+ * Turning one off hides its channels, movies and shows everywhere, including search. A language is the set of tags
+ * that speak it ([RegionLanguages]), so its switch turns all of those on or off together and needs nothing stored of
+ * its own; it shows on while any of them is on.
  */
 @Composable
 fun RegionSettingsScreen(
@@ -81,7 +83,7 @@ fun RegionSettingsScreen(
     val shownLanguages =
         languages
             .map { (code, tags) -> Triple(code, tags, languageName(code)) }
-            .filter { (_, tags, name) -> Regions.matchesSearch(query, name, *tags.toTypedArray()) }
+            .filter { (_, tags, name) -> Regions.matchesSearch(query, tags + name) }
     val shownRegions = byName.filter { Regions.regionMatches(query, it.region) }
     Scaffold(
         topBar = {

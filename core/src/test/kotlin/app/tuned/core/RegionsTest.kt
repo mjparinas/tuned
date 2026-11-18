@@ -57,7 +57,7 @@ class RegionsTest {
         assertTrue(Regions.regionMatches("  KINGDOM ", "UK"))
         assertTrue(Regions.regionMatches("", "FR"))
         assertFalse(Regions.regionMatches("germany", "FR"))
-        assertTrue(Regions.matchesSearch("espa", "Español"))
-        assertFalse(Regions.matchesSearch("french", "English", "US", "UK"))
+        assertTrue(Regions.matchesSearch("espa", listOf("Español")))
+        assertFalse(Regions.matchesSearch("french", listOf("English", "US", "UK")))
     }
 }

@@ -249,7 +249,7 @@ object Regions {
      */
     fun matchesSearch(
         query: String,
-        vararg texts: String,
+        texts: Iterable<String>,
     ): Boolean {
         val q = fold(query.trim())
         return q.isEmpty() || texts.any { fold(it).contains(q) }
@@ -259,7 +259,7 @@ object Regions {
     fun regionMatches(
         query: String,
         region: String,
-    ): Boolean = matchesSearch(query, displayName(region), region)
+    ): Boolean = matchesSearch(query, listOf(displayName(region), region))
 
     private val marks = Regex("\\p{Mn}+")
 
