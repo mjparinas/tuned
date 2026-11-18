@@ -41,7 +41,7 @@ class GitHubUpdates(
     /** Tests point these at a local server and an older installed copy. */
     private val api: String = "https://api.github.com",
     private val installedCode: Int = BuildConfig.VERSION_CODE,
-    private val enabled: Boolean = !BuildConfig.DEBUG,
+    private val enabled: Boolean = !BuildConfig.DEBUG && BuildConfig.GITHUB_UPDATES,
     private val downloader: Downloader = Downloader(http),
 ) {
     sealed interface State {
@@ -130,7 +130,9 @@ class GitHubUpdates(
     }
 
     /** Copies installed from Play update through Play ([app.tuned.ui.AppUpdates]), never from here. */
-    fun fromPlay(): Boolean = runCatching {
+    fun fromPlay(): Boolean = !BuildConfig.GITHUB_UPDATES || installedFromPlay()
+
+    private fun installedFromPlay(): Boolean = runCatching {
         val name = context.packageName
         val installer =
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
