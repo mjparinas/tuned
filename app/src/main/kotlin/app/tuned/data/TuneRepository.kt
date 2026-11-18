@@ -1,6 +1,7 @@
 package app.tuned.data
 
 import app.tuned.core.ChannelCopies
+import app.tuned.core.EventChannels
 import app.tuned.core.Search
 import app.tuned.core.TuneCandidate
 import app.tuned.core.Tuner
@@ -15,22 +16,24 @@ class TuneRepository(
 ) {
     /** Channel ids, best first, for a search such as "UFC". Matches names and anything on now or within the hour. */
     suspend fun candidates(query: String): List<Long> {
-        val text = query.trim()
-        val normalized = Search.normalize(text).trim()
-        if (normalized.isEmpty()) return emptyList()
+        val words = Tuner.words(Search.normalize(query))
+        if (words.isEmpty()) return emptyList()
         val s = settings.settings.first()
         val now = System.currentTimeMillis()
         val rows =
             db.items().tuneCandidates(
-                query = text,
-                normalized = normalized,
+                w1 = words[0],
+                w2 = words.getOrElse(1) { "" },
+                w3 = words.getOrElse(2) { "" },
                 from = now,
                 to = now + HOUR,
                 hidden = s.hiddenKeys(),
                 adult = s.showAdult,
             )
+        // Hidden channels stay out, except sports, PPV and event slots: an empty slot may carry the event searched for.
+        val kept = rows.filter { !it.held || EventChannels.matches(it.name, it.groupName) }
         val candidates =
-            rows.map {
+            kept.map {
                 TuneCandidate(
                     id = it.id,
                     name = it.name,
@@ -43,7 +46,14 @@ class TuneRepository(
                     height = it.height ?: 0,
                 )
             }
-        return Tuner.rank(candidates, now).map { it.id }
+        // A held channel the guide doesn't place the event on is a long shot: tried after everything else.
+        val longShots = kept.filter { it.held && !it.guideMatch }.mapTo(HashSet()) { it.id }
+        val (likely, rest) =
+            Tuner
+                .rank(candidates, now)
+                .map { it.id }
+                .partition { it !in longShots }
+        return likely + rest
     }
 
     /**

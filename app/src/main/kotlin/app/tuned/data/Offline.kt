@@ -1,14 +1,17 @@
 package app.tuned.data
 
 import android.content.Context
+import android.os.StatFs
 import androidx.work.Constraints
 import androidx.work.ExistingWorkPolicy
 import androidx.work.NetworkType
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
+import app.tuned.core.StreamLink
 import app.tuned.data.db.DownloadEntity
 import app.tuned.data.db.ItemEntity
 import app.tuned.data.db.TunedDatabase
+import app.tuned.diagnostics.attempt
 import app.tuned.work.OfflineWorker
 import kotlinx.coroutines.flow.first
 import java.io.File
@@ -46,7 +49,8 @@ class Offline(
         addedAt: Long,
     ) {
         val ext =
-            item.url
+            StreamLink
+                .address(item.url)
                 .substringBefore('?')
                 .substringAfterLast('/')
                 .substringAfterLast('.', "mp4")
@@ -88,6 +92,10 @@ class Offline(
         .map { it.itemId to File(it.path) }
         .filter { it.second.exists() }
         .toMap()
+
+    /** Space left where downloads are saved, or null when Android won't say. */
+    fun freeBytes(): Long? =
+        attempt("Offline", "Couldn't read free space") { StatFs(dir.apply { mkdirs() }.path).availableBytes }.getOrNull()
 
     /** The player opened: downloads wait. */
     fun pause() {

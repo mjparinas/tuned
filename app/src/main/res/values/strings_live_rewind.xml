@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_live_rewind">Pause and rewind live TV</string>
+    <string name="settings_live_rewind_off">Off</string>
+    <!-- How much of a live channel is kept on the device to rewind through. -->
+    <plurals name="settings_live_rewind_minutes">
+        <item quantity="one">Keep the last %1$d minute</item>
+        <item quantity="other">Keep the last %1$d minutes</item>
+    </plurals>
+</resources>

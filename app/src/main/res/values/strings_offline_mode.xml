@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="offline_banner">You\'re offline. Saved films and episodes still play.</string>
+    <string name="offline_banner_downloads">Downloads</string>
+    <string name="offline_cant_play">You\'re offline. Only downloaded films and episodes can play.</string>
+</resources>

@@ -34,6 +34,7 @@ import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 
 /** What a list shows: a category, favourites only, or everything. */
 sealed interface Filter {
@@ -67,7 +68,9 @@ class BrowseViewModel(
 
     init {
         // The account's status (connections in use, expiry), so the player and Settings never wait for it.
-        viewModelScope.launch { container.account.refreshIfOld() }
+        viewModelScope.launchSafely("BrowseViewModel") { container.account.refreshIfOld() }
+        // Sports, PPV and event channels are never hidden as dead: bring back any hidden before that rule, or renamed since.
+        viewModelScope.launchSafely("BrowseViewModel") { container.channelScan.releaseEventChannels() }
     }
 
     private val filters = mutableMapOf<ContentKind, MutableStateFlow<Filter>>()
@@ -152,6 +155,24 @@ class BrowseViewModel(
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
     }
 
+    private val episodeNames = MutableStateFlow<Map<Long, String>>(emptyMap())
+    private val askedNames = mutableSetOf<Long>()
+
+    /** TMDB's names for the episodes in Continue Watching ("Kamp Krusty"), by item id, as they become known. */
+    val continueNames: StateFlow<Map<Long, String>> = episodeNames
+
+    /** Looks up one episode's TMDB name: from the device when known, else one cached TMDB request per season. */
+    fun loadEpisodeName(row: ContinueRow) {
+        val show = row.showName ?: return
+        val season = row.season ?: return
+        val episode = row.episode ?: return
+        if (!askedNames.add(row.id)) return
+        viewModelScope.launchSafely("BrowseViewModel") {
+            val info = container.metadata.cachedEpisode(show, season, episode) ?: container.metadata.episode(show, season, episode)
+            info?.name?.let { name -> episodeNames.value += row.id to name }
+        }
+    }
+
     private val groupFlows = mutableMapOf<ContentKind, StateFlow<List<GroupCount>>>()
 
     fun groups(kind: ContentKind): StateFlow<List<GroupCount>> = groupFlows.getOrPut(kind) {
@@ -219,6 +240,11 @@ class BrowseViewModel(
         viewModelScope.launchSafely("BrowseViewModel") {
             container.settings.update { it.copy(hiddenGroups = it.hiddenGroups + HiddenGroups.key(kind.code, group)) }
         }
+    }
+
+    /** Live TV as the grid guide or the list; remembered, and also in Settings. */
+    fun setLiveGrid(on: Boolean) {
+        viewModelScope.launchSafely("BrowseViewModel") { container.settings.update { it.copy(liveGrid = on) } }
     }
 
     fun rememberTab(index: Int) {

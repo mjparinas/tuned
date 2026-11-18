@@ -13,6 +13,7 @@ import androidx.work.ForegroundInfo
 import androidx.work.WorkerParameters
 import app.tuned.R
 import app.tuned.container
+import app.tuned.core.StreamLink
 import app.tuned.data.Downloader
 import app.tuned.data.db.DownloadEntity
 import app.tuned.diagnostics.AppLog
@@ -44,8 +45,13 @@ class OfflineWorker(
         attempt(TAG, "Couldn't run as a foreground service") { setForeground(foregroundInfo(null)) }
         while (true) {
             val row = dao.next() ?: return Result.success()
+            // Its page first (details, poster, cast photos), so it looks the same offline; a few small requests.
+            attempt(TAG, "Couldn't save the artwork for ${row.name}") { container.savedArtwork.keep(row.itemId) }
             try {
-                downloader.download(row.url, File(row.path), ua) { bytes, total -> report(row, bytes, total) }
+                // A user agent the playlist asks for wins over the app's.
+                val link = StreamLink.split(row.url)
+                val agent = link.headers[StreamLink.USER_AGENT] ?: ua
+                downloader.download(link.url, File(row.path), agent) { bytes, total -> report(row, bytes, total) }
                 val size = File(row.path).length()
                 dao.progress(row.itemId, size, size)
                 dao.state(row.itemId, DownloadEntity.DONE)
