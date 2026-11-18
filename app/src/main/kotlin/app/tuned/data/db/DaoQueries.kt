@@ -83,6 +83,20 @@ internal const val KIDS_ONLY_GROUPS =
         "lower(groupName) GLOB '*boomerang*'" +
         "))"
 
+/** Hide 24/7 ([app.tuned.core.RoundTheClock]) for the per-show table, on the category and the show's name. */
+internal const val ROUND_THE_CLOCK_S =
+    "AND NOT ('247' IN (:hidden) " +
+        "AND ((' ' || lower(s.groupName || ' ' || s.showName) || ' ') GLOB '*[^0-9]24[/ x-]7[^0-9]*' " +
+        "OR (' ' || lower(s.groupName || ' ' || s.showName) || ' ') GLOB '*[^0-9]247[^0-9]*' " +
+        "OR (' ' || lower(s.groupName || ' ' || s.showName) || ' ') GLOB '*[^0-9]24 / 7[^0-9]*'))"
+
+/** [ROUND_THE_CLOCK_S] for queries on the per-show table that don't name it. */
+internal const val ROUND_THE_CLOCK_GROUPS =
+    "AND NOT ('247' IN (:hidden) " +
+        "AND ((' ' || lower(groupName || ' ' || showName) || ' ') GLOB '*[^0-9]24[/ x-]7[^0-9]*' " +
+        "OR (' ' || lower(groupName || ' ' || showName) || ' ') GLOB '*[^0-9]247[^0-9]*' " +
+        "OR (' ' || lower(groupName || ' ' || showName) || ' ') GLOB '*[^0-9]24 / 7[^0-9]*'))"
+
 /** What a Live TV row shows: the channel and what's on now. */
 internal const val CHANNEL_COLUMNS =
     "i.id, i.name, i.logo, i.groupName, i.tvgId, i.number, p.title AS nowTitle, p.start AS nowStart, p.stop AS nowStop"

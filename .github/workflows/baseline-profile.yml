@@ -3,7 +3,7 @@ name: Baseline profile
 # Generates the app's baseline profile on an emulator and measures cold start with and without it
 # (docs/decisions/speed.md). It is not part of "CI passed": an emulator run takes about half an hour, and the
 # profile only needs refreshing when the first minute of the app changes. Run it by hand, or let a pull request
-# that changes the journeys run it. The profile comes back as an artifact to commit under app/src/release/generated/.
+# that changes the journeys run it. The profile comes back as an artifact to commit under app/src/main/generated/.
 
 on:
   workflow_dispatch:
@@ -38,7 +38,7 @@ jobs:
         run: ./gradlew :app:generateBaselineProfile $GMD --no-configuration-cache
       - name: Measure cold start without and with it
         run: >
-          ./gradlew :baselineprofile:pixel6Api34BenchmarkReleaseAndroidTest $GMD --no-configuration-cache
+          ./gradlew :baselineprofile:pixel6Api34GithubBenchmarkReleaseAndroidTest $GMD --no-configuration-cache
           -Pandroid.testInstrumentationRunnerArguments.androidx.benchmark.enabledRules=Macrobenchmark
       - name: Print failing tests
         if: failure()
@@ -52,7 +52,7 @@ jobs:
       - name: Print the profile
         if: success()
         run: |
-          cd app/src/release/generated/baselineProfiles
+          cd app/src/main/generated/baselineProfiles
           wc -l *.txt
           echo "BEGIN-PROFILE"
           tar -cz *.txt | base64 -w 4000
@@ -65,7 +65,7 @@ jobs:
         with:
           name: baseline-profile
           path: |
-            app/src/release/generated/baselineProfiles/
+            app/src/main/generated/baselineProfiles/
             baselineprofile/build/outputs/
             baselineprofile/build/reports/
           retention-days: 14

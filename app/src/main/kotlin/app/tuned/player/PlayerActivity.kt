@@ -55,6 +55,7 @@ import app.tuned.data.hiddenKeys
 import app.tuned.diagnostics.AppLog
 import app.tuned.diagnostics.attempt
 import app.tuned.diagnostics.launchSafely
+import app.tuned.premium.Premium
 import app.tuned.work.TvHome
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -181,9 +182,11 @@ class PlayerActivity : FragmentActivity() {
             scope = lifecycleScope,
             http = container.http,
             userAgent = { settings.userAgent.ifBlank { "Tuned/${BuildConfig.VERSION_NAME}" } },
-            keepMinutes = { settings.liveRewindMinutes },
+            // Pause and rewind live TV is Premium (docs/decisions/premium.md).
+            keepMinutes = { if (container.premium.unlocked.value) settings.liveRewindMinutes else 0 },
         )
     }
+
     private val recorder by lazy {
         LiveRecorder(
             this,
@@ -197,9 +200,16 @@ class PlayerActivity : FragmentActivity() {
                 stream = timeshift::stream,
                 casting = { cast?.casting == true },
                 say = ::flash,
+                locked = { !container.premium.unlocked.value },
+                unlock = { Premium.open(this) },
             ),
         )
     }
+
+    private val trakt by lazy {
+        TraktScrobbler(container.trakt, container.appScope) { player?.let { queue.getOrNull(it.currentMediaItemIndex) } }
+    }
+
     private val frameRate by lazy { FrameRateMatch(this) { settings.matchFrameRate && cast?.casting != true } }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -493,6 +503,7 @@ class PlayerActivity : FragmentActivity() {
         val live = kind == ContentKind.LIVE
         val exo = buildPlayer(live)
         player = exo
+        trakt.attach(exo)
         playerView.player = ViewPlayer(exo)
         playerView.setControllerShowTimeoutMs(settings.controlsTimeoutMs)
         playerView.setShowNextButton(queue.size > 1)
@@ -844,6 +855,7 @@ class PlayerActivity : FragmentActivity() {
 
     override fun onDestroy() {
         progressJob?.cancel()
+        trakt.release()
         autoTune?.release()
         backups.release()
         recorder.release()

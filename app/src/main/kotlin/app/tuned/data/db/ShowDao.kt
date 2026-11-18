@@ -27,6 +27,7 @@ interface ShowDao {
         WHERE (s.region IS NULL OR s.region NOT IN (:hidden)) AND ('g:2:' || s.groupName) NOT IN (:hidden)
             AND (:adult OR s.adult = 0)
             $KIDS_ONLY_S
+            $ROUND_THE_CLOCK_S
             AND (:group IS NULL OR s.groupName = :group)
         GROUP BY s.showKey
         ORDER BY MIN(s.sortOrder)
@@ -47,6 +48,7 @@ interface ShowDao {
         SELECT groupName, SUM(episodes) AS count FROM show_groups
         WHERE (region IS NULL OR region NOT IN (:hidden)) AND ('g:2:' || groupName) NOT IN (:hidden) AND (:adult OR adult = 0)
             $KIDS_ONLY_GROUPS
+            $ROUND_THE_CLOCK_GROUPS
         GROUP BY groupName ORDER BY MIN(sortOrder)
         """,
     )

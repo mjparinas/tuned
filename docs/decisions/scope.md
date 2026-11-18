@@ -21,9 +21,7 @@ Each line names Melvin's words and date. Move it into the topic's file when it m
 - **Actor pages** (Melvin, 2026-11-17): tapping a cast member lists every film and show they've been in, in date order, paged.
 - **Live Events page** (audit item 2, picked 2026-11-17): today's sports and pay-per-view with Tune.
 - **Full grid TV guide** and **profiles with a PIN lock** (Melvin, 2026-11-17).
-- **Audit items 7, 8, 10, 11, 12, 13, 14 and 15** (Melvin, 2026-11-17: "Build 7, 8 10 11 12 13 14 15"): guide time offset, extra guide links and manual matching; channel numbers and flipping back to the last channel; open in another player; start on the last channel; recording, only ever of the channel being watched (one connection); phone and TV sync; Trakt; Android TV home screen rows. Sync and Trakt need OAuth keys only Melvin can create, so they stay hidden until a build secret exists.
 
 ## Offered, not decided
 
 - Skipping whole countries or languages at import to keep the database smaller (offered 2026-11-17 with the search speed work; the speed audit didn't need it).
-- Monetizing with a free app and a Premium unlock (suggested 2026-11-17; no decision).

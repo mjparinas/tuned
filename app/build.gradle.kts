@@ -24,6 +24,9 @@ android {
         buildConfigField("String", "OPENSUBTITLES_API_KEY", "\"$openSubtitlesKey\"")
         // The app's TMDB key (a v4 read token or v3 key) from the release secret, never committed; without it TMDB is off.
         buildConfigField("String", "TMDB_API_KEY", "\"${System.getenv("TMDB_API_KEY").orEmpty()}\"")
+        // Trakt's app keys (docs/decisions/trakt.md): from the release workflow's secrets, never committed. Without
+        // them the Trakt settings stay hidden.
+        buildConfigField("String", "TRAKT_CLIENT_ID", "\"${System.getenv("TRAKT_CLIENT_ID").orEmpty()}\"")
         // The commit this build came from, shown as plain text at the bottom of Settings (Melvin, 2026-11-18). CI and Release
         // pass GIT_COMMIT (a pull request's own head, not GitHub's merge commit); local builds ask git. Empty hides the line.
         val gitCommit =
@@ -37,6 +40,30 @@ android {
                         .get()
                 }.getOrNull()
         buildConfigField("String", "GIT_COMMIT", "\"${gitCommit.orEmpty().trim().take(7)}\"")
+        // Sync between devices (docs/decisions/sync.md): Google's "TVs and limited input devices" client, from the release
+        // workflow's secrets, never committed. Without it sync stays hidden.
+        buildConfigField("String", "GOOGLE_TV_CLIENT_ID", "\"${System.getenv("GOOGLE_TV_CLIENT_ID").orEmpty()}\"")
+        buildConfigField("String", "GOOGLE_TV_CLIENT_SECRET", "\"${System.getenv("GOOGLE_TV_CLIENT_SECRET").orEmpty()}\"")
+    }
+
+    // Two builds of the same app (docs/decisions/premium.md). `github` is what GitHub Releases ship: it updates itself
+    // from GitHub and fills in the default server. `play` is for Google Play and other stores: no self-updater (stores
+    // don't allow REQUEST_INSTALL_PACKAGES), and the server field starts empty so the app never looks like it comes with
+    // a provider.
+    flavorDimensions += "store"
+    productFlavors {
+        create("github") {
+            dimension = "store"
+            buildConfigField("boolean", "GITHUB_UPDATES", "true")
+            buildConfigField("boolean", "PREMIUM_ALWAYS", "true")
+            buildConfigField("String", "DEFAULT_SERVER", "\"http://eros4k.ddns.net\"")
+        }
+        create("play") {
+            dimension = "store"
+            buildConfigField("boolean", "GITHUB_UPDATES", "false")
+            buildConfigField("boolean", "PREMIUM_ALWAYS", "false")
+            buildConfigField("String", "DEFAULT_SERVER", "\"\"")
+        }
     }
 
     signingConfigs {
@@ -104,11 +131,13 @@ kotlin {
 }
 
 // The baseline profile (docs/decisions/speed.md) is generated on an emulator by .github/workflows/baseline-profile.yml
-// and committed under src/release/generated/, so release builds compile the first minute's code at install. Normal
+// and committed under src/main/generated/, so release builds of both stores compile the first minute's code at install. It
+// is recorded on the github build, whose code is the same as play's apart from the updater and billing. Normal
 // builds only read it; they never start an emulator.
 baselineProfile {
     automaticGenerationDuringBuild = false
     saveInSrc = true
+    mergeIntoMain = true
     // Puts the startup code together at the front of the dex file too, so less of it is read from storage.
     dexLayoutOptimization = true
 }
@@ -167,6 +196,8 @@ dependencies {
     implementation(libs.androidx.profileinstaller)
     baselineProfile(project(":baselineprofile"))
     implementation(libs.play.app.update)
+    // Premium is sold through Play Billing in the store build only (docs/decisions/premium.md).
+    "playImplementation"(libs.play.billing)
     // Play's update library pulls in an old Fragment; 1.3+ is needed for the activity result API it uses.
     implementation(libs.androidx.fragment)
 

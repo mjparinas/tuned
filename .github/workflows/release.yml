@@ -52,14 +52,17 @@ jobs:
           ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           OPENSUBTITLES_API_KEY: ${{ secrets.OPENSUBTITLES_API_KEY }}
           TMDB_API_KEY: ${{ secrets.TMDB_API_KEY }}
+          TRAKT_CLIENT_ID: ${{ secrets.TRAKT_CLIENT_ID }}
+          GOOGLE_TV_CLIENT_ID: ${{ secrets.GOOGLE_TV_CLIENT_ID }}
+          GOOGLE_TV_CLIENT_SECRET: ${{ secrets.GOOGLE_TV_CLIENT_SECRET }}
           VERSION_CODE: ${{ steps.v.outputs.code }}
           VERSION_NAME: ${{ steps.v.outputs.version }}
           GIT_COMMIT: ${{ github.sha }}
         run: |
           echo "$ANDROID_KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/upload.jks"
-          ANDROID_KEYSTORE_PATH="$RUNNER_TEMP/upload.jks" ./gradlew :app:assembleRelease :app:bundleRelease
+          ANDROID_KEYSTORE_PATH="$RUNNER_TEMP/upload.jks" ./gradlew :app:assembleGithubRelease :app:bundlePlayRelease
           rm "$RUNNER_TEMP/upload.jks"
-          cp app/build/outputs/apk/release/app-release.apk "$RUNNER_TEMP/tuned.apk"
+          cp app/build/outputs/apk/github/release/app-github-release.apk "$RUNNER_TEMP/tuned.apk"
       - name: GitHub release
         if: env.HAS_KEY == 'true'
         env:
@@ -76,7 +79,7 @@ jobs:
         if: env.HAS_KEY == 'true'
         with:
           name: tuned-release-aab
-          path: app/build/outputs/bundle/release/app-release.aab
+          path: app/build/outputs/bundle/playRelease/app-play-release.aab
           retention-days: 30
       - name: Upload to Play (internal)
         if: env.HAS_KEY == 'true' && env.HAS_PLAY == 'true'
@@ -84,8 +87,8 @@ jobs:
         with:
           serviceAccountJsonPlainText: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
           packageName: app.tuned
-          releaseFiles: app/build/outputs/bundle/release/app-release.aab
-          mappingFile: app/build/outputs/mapping/release/mapping.txt
+          releaseFiles: app/build/outputs/bundle/playRelease/app-play-release.aab
+          mappingFile: app/build/outputs/mapping/playRelease/mapping.txt
           track: internal
           status: completed
           # Play's in-app updates read this: 5 makes installed copies update at once (docs/decisions/updates.md).

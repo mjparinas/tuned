@@ -117,17 +117,17 @@ jobs:
       - uses: actions/checkout@v7
       - uses: ./.github/actions/setup-android
       # detekt and Android Lint both fail on any finding (warnings are errors).
-      - run: ./gradlew detekt :app:lintDebug --continue
+      - run: ./gradlew detekt :app:lintGithubDebug --continue
       - name: Print the findings
         if: failure()
-        run: cat app/build/reports/lint-results-debug.txt build/reports/detekt/detekt.txt 2>/dev/null || true
+        run: cat app/build/reports/lint-results-githubDebug.txt build/reports/detekt/detekt.txt 2>/dev/null || true
       - uses: actions/upload-artifact@v7
         if: failure()
         with:
           name: lint-reports
           path: |
             build/reports/detekt/
-            app/build/reports/lint-results-debug.html
+            app/build/reports/lint-results-githubDebug.html
           retention-days: 7
 
   test:
@@ -139,7 +139,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - uses: ./.github/actions/setup-android
-      - run: ./gradlew :core:test :app:testDebugUnitTest --continue
+      - run: ./gradlew :core:test :app:testGithubDebugUnitTest --continue
       - uses: actions/upload-artifact@v7
         if: failure()
         with:
@@ -158,17 +158,13 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - uses: ./.github/actions/setup-android
-      # The debug APK to install and try, plus an unsigned release build so R8 fails here on a missing keep rule,
-      # not in Release.
-      - run: ./gradlew :app:assembleDebug :app:assembleRelease
+      # Unsigned release builds of both the GitHub and the store build, so R8 fails here on a missing keep rule, not in
+      # Release. No debug APK: Melvin
+      # (2026-11-18) installs only production releases, and lint and the unit tests already compile the debug variant.
+      - run: ./gradlew :app:assembleRelease
         env:
           # The commit shown at the bottom of Settings: a pull request's own head, not the merge commit GitHub builds.
           GIT_COMMIT: ${{ github.event.pull_request.head.sha || github.sha }}
-      - uses: actions/upload-artifact@v7
-        with:
-          name: tuned-debug-apk
-          path: app/build/outputs/apk/debug/app-debug.apk
-          retention-days: 7
 
   # Melvin, 2026-11-17: the decision record "should be updated and kept in sync every time new features are added
   # or removed". A pull request titled feat:, breaking (!), revert or remove must change AGENTS.md or docs/decisions/.

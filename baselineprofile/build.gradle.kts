@@ -19,6 +19,14 @@ android {
 
     targetProjectPath = ":app"
 
+    // The app's two stores (docs/decisions/premium.md). Only the github build is driven; the profile is merged into
+    // main, so the play build ships it too.
+    flavorDimensions += "store"
+    productFlavors {
+        create("github") { dimension = "store" }
+        create("play") { dimension = "store" }
+    }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_21
         targetCompatibility = JavaVersion.VERSION_21
@@ -31,6 +39,10 @@ android {
             systemImageSource = "aosp"
         }
     }
+}
+
+androidComponents {
+    beforeVariants { if (it.productFlavors.contains("store" to "play")) it.enable = false }
 }
 
 kotlin {

@@ -6,9 +6,11 @@ import androidx.work.WorkManager
 import app.tuned.data.AccountRepository
 import app.tuned.data.BackupRepository
 import app.tuned.data.ChannelScanner
+import app.tuned.data.CloudSyncRepository
 import app.tuned.data.Connectivity
 import app.tuned.data.CredentialStore
 import app.tuned.data.EventsRepository
+import app.tuned.data.GoogleDrive
 import app.tuned.data.GuideFixRepository
 import app.tuned.data.MetadataRepository
 import app.tuned.data.Offline
@@ -21,9 +23,11 @@ import app.tuned.data.SavedArtwork
 import app.tuned.data.SettingsRepository
 import app.tuned.data.SubtitleRepository
 import app.tuned.data.SyncRepository
+import app.tuned.data.TraktAccount
 import app.tuned.data.TuneRepository
 import app.tuned.data.db.TunedDatabase
 import app.tuned.diagnostics.loggingHandler
+import app.tuned.premium.Premium
 import app.tuned.updates.GitHubUpdates
 import app.tuned.work.OfflineWorker
 import app.tuned.work.Reminders
@@ -64,6 +68,9 @@ class AppContainer(
     val guideFixes by lazy { GuideFixRepository(db, sync, scheduler, credentials) }
     val updates by lazy { GitHubUpdates(context, http) }
     val backup by lazy { BackupRepository(credentials, settings, db) }
+    val cloudSync by lazy {
+        CloudSyncRepository(context, GoogleDrive(context, http), backup) { scheduler.refreshNow(first = true) }
+    }
     val reminders by lazy { Reminders(context) }
     val events by lazy { EventsRepository(db, settings, reminders) }
     val offline by lazy { Offline(context, db, settings) }
@@ -72,8 +79,10 @@ class AppContainer(
     val connectivity by lazy { Connectivity(context, appScope) }
     val metadata by lazy { MetadataRepository(http, BuildConfig.TMDB_API_KEY, db.metadata(), appScope, connectivity::onlineNow) }
     val savedArtwork by lazy { SavedArtwork(context, db, metadata) }
+    val trakt by lazy { TraktAccount(context, http) }
     val people by lazy { PeopleRepository(http, BuildConfig.TMDB_API_KEY, db.metadata(), connectivity::onlineNow) }
     val profiles by lazy { ProfileRepository(db, settings) }
+    val premium by lazy { Premium(context, appScope) }
     val subtitles by lazy { SubtitleRepository(http, settings, credentials, metadata, context.filesDir.resolve("subtitles")) }
 
     /** True while the player is open; downloads and channel scans hold back so only one stream is ever open. */

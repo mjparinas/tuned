@@ -5,12 +5,12 @@ Tuned is a native Android IPTV player. It signs in to an Xtream Codes-style serv
 ## Commands
 
 ```bash
-./gradlew :app:assembleDebug          # debug APK: app/build/outputs/apk/debug/app-debug.apk (id app.tuned.debug)
+./gradlew :app:assembleGithubDebug    # debug APK: app/build/outputs/apk/github/debug/app-github-debug.apk (id app.tuned.debug)
 ./gradlew :core:test                  # parser and rule tests, plain JVM, seconds
-./gradlew :app:testDebugUnitTest      # app unit tests
+./gradlew :app:testGithubDebugUnitTest # app unit tests
 ./gradlew spotlessApply               # format Kotlin (ktlint); CI runs spotlessCheck
-./gradlew detekt :app:lintDebug       # static analysis and Android Lint; any finding fails
-./gradlew :app:generateBaselineProfile  # baseline profile on an emulator (Baseline profile workflow does it in CI)
+./gradlew detekt :app:lintGithubDebug # static analysis and Android Lint; any finding fails
+./gradlew :app:generateGithubReleaseBaselineProfile  # baseline profile on an emulator (Baseline profile workflow does it in CI)
 npm ci && npm run format              # Prettier for YAML, JSON and Markdown; CI runs format:check
 ```
 
@@ -21,7 +21,8 @@ Kotlin, Jetpack Compose with Material 3, Navigation Compose (type-safe routes), 
 ## Modules
 
 - `:core`: plain Kotlin, no Android. The M3U and XMLTV parsers, sorting streams into Live TV, Movies and Shows, country detection, episode numbering, Xtream URLs. Anything that can be tested without a device goes here, with a test.
-- `:app`: the Android app. `data/` (Room, DataStore settings, encrypted login, sync), `work/` (background refresh), `player/` (PlayerActivity), `ui/` (Compose screens, one screen and its ViewModel per file).
+- `:app`: the Android app, in two builds ([premium](docs/decisions/premium.md)): `github` (GitHub Releases, updates itself, everything unlocked) and `play` (Google Play and other stores: no self-updater, no default server, Premium sold through Play Billing). Store builds never name a provider, channel or sports brand, in the app or the listing.
+- `:app` folders: `data/` (Room, DataStore settings, encrypted login, sync), `work/` (background refresh), `player/` (PlayerActivity), `ui/` (Compose screens, one screen and its ViewModel per file).
 - `:baselineprofile`: drives the release app on an emulator to write its baseline profile and measure cold start ([speed](docs/decisions/speed.md)).
 
 ## Product rules
@@ -50,7 +51,7 @@ Kotlin, Jetpack Compose with Material 3, Navigation Compose (type-safe routes), 
 
 ## CI/CD (like Liftsmith)
 
-- `ci.yml` on every pull request and push to `main` and `staging`: formatting (Prettier, ktlint), lint and static analysis (detekt, Android Lint), unit tests, and the Android build (debug APK uploaded as an artifact to install and try, plus an unsigned release build so R8 problems show up here). **"CI passed"** is the one required check. A tree that already passed, or a Markdown-only change after a passing commit, skips the work.
+- `ci.yml` on every pull request and push to `main` and `staging`: formatting (Prettier, ktlint), lint and static analysis (detekt, Android Lint), unit tests, and the Android build (an unsigned release build so R8 problems show up here; no debug APK, because Melvin installs only production releases, 2026-11-18). **"CI passed"** is the one required check. A tree that already passed, or a Markdown-only change after a passing commit, skips the work.
 - `promote-staging.yml`: `main` is production and every pull request targets `staging`. Run by hand, it promotes staging to main when "CI passed" is green (a direct merge, so it needs no repository setting), then merges main back into staging. **Every production release needs Melvin's go-ahead, each time** (2026-11-17; he holds releases until a batch of features is in), so the nightly schedule Liftsmith uses is off.
 - `release.yml`: on every promotion and on demand, a signed APK published as a **GitHub release** (`v<version>`, no build number), which installed copies offer to update to; plus a signed App Bundle for the Play **internal** track once its secret exists ([updates](docs/decisions/updates.md)). The version is semver, bumped automatically from the commits since the last release (`scripts/next-version.mjs`; `package.json` is a floor), and the version code comes from it (1.2.3 is 1002003). Skips with a notice until its secrets exist.
 - Secrets: `ANDROID_KEYSTORE_B64` (base64 upload keystore, alias `upload`), `ANDROID_KEYSTORE_PASSWORD`, `PLAY_SERVICE_ACCOUNT_JSON`, optional `PROMOTE_TOKEN`. The app's own service keys (`TMDB_API_KEY` for ratings and details, `OPENSUBTITLES_API_KEY` for subtitle search, and the others each feature adds) are release secrets built into `BuildConfig`, never committed and never typed into Settings; a build without one hides that feature. The first upload must be done by hand in Play Console before the API can upload.
@@ -85,10 +86,13 @@ One file per topic in `docs/decisions/`, A to Z. Add a line when you add a topic
 - [People](docs/decisions/people.md): actor filmography pages, oldest first, with what is in the playlist marked.
 - [Playlist and guide](docs/decisions/playlist.md): Xtream URLs, how streams are sorted, countries and adult categories across providers, refresh.
 - [Player](docs/decisions/player.md): Media3 setup, controls, captions, audio, cast, backup copies, TMDB details.
+- [Premium](docs/decisions/premium.md): the free app, the Premium unlock, prices, the GitHub and store builds, store policy.
 - [Profiles](docs/decisions/profiles.md): who's watching, kids profiles, profile PINs.
 - [Scope](docs/decisions/scope.md): what Tuned will never do, and what's decided but not built yet.
 - [Security](docs/decisions/security.md): login storage, cleartext HTTP, backups.
 - [Settings](docs/decisions/settings.md): the pages of Settings and what goes where.
 - [Speed](docs/decisions/speed.md): what keeps the app fast, and the budget.
+- [Sync](docs/decisions/sync.md): phone and TV kept the same through Google Drive's app folder, locked with a passphrase.
+- [Trakt](docs/decisions/trakt.md): signing in with a code, scrobbling films and episodes, the app's keys.
 - [TV](docs/decisions/tv.md): Android TV launcher, focus outlines, remote keys in the player.
 - [Updates](docs/decisions/updates.md): GitHub Releases updater now, Play in-app updates later, semver tags.
