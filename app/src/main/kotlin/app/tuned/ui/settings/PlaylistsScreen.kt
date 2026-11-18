@@ -116,7 +116,7 @@ fun PlaylistsRow(
         stringResource(R.string.playlists),
         when {
             current == null -> pluralStringResource(R.plurals.playlists_saved, saved.size, saved.size)
-            saved.size > 1 -> stringResource(R.string.playlists_in_use, current?.label.orEmpty(), saved.size)
+            saved.size > 1 -> pluralStringResource(R.plurals.playlists_in_use, saved.size, current?.label.orEmpty(), saved.size)
             else -> current?.label.orEmpty()
         },
         onClick = onOpen,

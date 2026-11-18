@@ -28,26 +28,32 @@ sealed interface PlaylistLink {
             if (trimmed.isEmpty() || trimmed.any { it.isWhitespace() }) return null
             val withScheme = if ("://" in trimmed) trimmed else "http://$trimmed"
             val uri = runCatching { URI(withScheme) }.getOrNull() ?: return null
-            val scheme = uri.scheme?.lowercase()
+            val scheme = uri.scheme.orEmpty().lowercase()
             if (scheme != "http" && scheme != "https") return null
             val host = uri.host ?: return null
             if ('.' !in host && host != "localhost" && ':' !in host) return null
+            return xtream(uri, scheme, host) ?: M3u(withScheme)
+        }
+
+        /** The login inside an Xtream `get.php` (or `player_api.php`, `xmltv.php`) link, or null for any other link. */
+        private fun xtream(
+            uri: URI,
+            scheme: String,
+            host: String,
+        ): Xtream? {
             val file =
                 uri.rawPath
                     .orEmpty()
                     .substringAfterLast('/')
                     .lowercase()
-            if (file in XTREAM_PATHS) {
-                val query = query(uri.rawQuery.orEmpty())
-                val user = query["username"].orEmpty()
-                val pass = query["password"].orEmpty()
-                if (user.isNotEmpty() && pass.isNotEmpty()) {
-                    val port = if (uri.port == -1) "" else ":${uri.port}"
-                    val base = uri.rawPath.substringBeforeLast('/')
-                    return Xtream("$scheme://$host$port$base", user, pass)
-                }
-            }
-            return M3u(withScheme)
+            if (file !in XTREAM_PATHS) return null
+            val query = query(uri.rawQuery.orEmpty())
+            val user = query["username"].orEmpty()
+            val pass = query["password"].orEmpty()
+            if (user.isEmpty() || pass.isEmpty()) return null
+            val port = if (uri.port == -1) "" else ":${uri.port}"
+            val base = uri.rawPath.substringBeforeLast('/')
+            return Xtream("$scheme://$host$port$base", user, pass)
         }
 
         private val HEADER_GUIDE = Regex("""(?:x-tvg-url|url-tvg|tvg-url)\s*=\s*["']([^"']+)["']""", RegexOption.IGNORE_CASE)
