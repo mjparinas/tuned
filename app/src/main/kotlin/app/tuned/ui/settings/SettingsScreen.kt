@@ -20,7 +20,6 @@ import androidx.compose.material.icons.automirrored.filled.PlaylistPlay
 import androidx.compose.material.icons.filled.Autorenew
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.ClosedCaption
-import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.People
@@ -46,7 +45,6 @@ import app.tuned.container
 import app.tuned.data.AppSettings
 import app.tuned.diagnostics.launchSafely
 import app.tuned.ui.CaptionSettingsRoute
-import app.tuned.ui.DownloadsRoute
 import app.tuned.ui.SettingsPageRoute
 import app.tuned.ui.common.BackTopBar
 import kotlinx.coroutines.flow.SharingStarted
@@ -119,8 +117,8 @@ enum class SettingsPage(
 }
 
 /**
- * Settings' first screen: one row per page, plus captions and downloads, which are pages of their own. Short enough to
- * see at a glance, so nothing needs a search.
+ * Settings' first screen: one row per page, plus captions, a page of its own. Downloads is in the home screen's bar,
+ * so it has no row here (Melvin, 2026-11-18). Short enough to see at a glance, so nothing needs a search.
  */
 @Composable
 fun SettingsScreen(
@@ -137,9 +135,6 @@ fun SettingsScreen(
             stringResource(if (settings.captions.enabled) R.string.captions_on else R.string.captions_off),
         ) { onOpen(CaptionSettingsRoute) }
         pages.drop(pages.indexOf(SettingsPage.PLAYBACK) + 1).forEach { PageRow(it, onOpen) }
-        IconRow(Icons.Filled.Download, stringResource(R.string.downloads), stringResource(R.string.downloads_summary)) {
-            onOpen(DownloadsRoute)
-        }
         HorizontalDivider(Modifier.padding(top = 16.dp))
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text(

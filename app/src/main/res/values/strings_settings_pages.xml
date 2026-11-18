@@ -14,7 +14,7 @@
     <string name="settings_page_reliability_summary">Reconnecting, backup copies, auto-tune and channel health</string>
     <string name="settings_page_appearance_summary">Theme, colours and pure black</string>
     <string name="settings_page_about">Updates and advanced</string>
-    <string name="settings_page_about_summary">Updates, ratings key, user agent and developer tools</string>
+    <string name="settings_page_about_summary">Updates, user agent and logs</string>
     <string name="settings_header_hidden">What\'s hidden</string>
     <string name="settings_header_guide">Guide</string>
     <string name="settings_header_screen">Screen and controls</string>

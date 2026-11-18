@@ -163,8 +163,6 @@ data class AppSettings(
     val profileId: Long = 1,
     val kidsProfile: Boolean = false,
     val profileCount: Int = 1,
-    /** Settings › Developer: keep a detailed log and show the log viewer, for finding what went wrong. */
-    val developerMode: Boolean = false,
 )
 
 /** Hidden countries, hidden groups and the channel filters together: the one list every query filters by. */
@@ -298,7 +296,7 @@ class SettingsRepository(
     }
 
     private companion object {
-        /** Sync times, the open tab, developer mode and the profile mirror belong to this phone; sync leaves them out. */
+        /** Sync times, the open tab and the profile mirror belong to this phone; sync leaves them out. */
         val DEVICE_ONLY = SETTING_FIELDS.filter { it.deviceOnly }.map { it.key.name }.toSet()
     }
 }

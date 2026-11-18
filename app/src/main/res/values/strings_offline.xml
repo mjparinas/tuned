@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="downloads">Downloads</string>
-    <string name="downloads_summary">Films and episodes saved to watch offline</string>
     <string name="downloads_running">Downloading</string>
     <string name="downloads_empty">Nothing saved yet. Tap the download button on a film, an episode or a whole season to watch it offline.</string>
     <string name="download">Download</string>

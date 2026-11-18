@@ -1,6 +1,7 @@
 package app.tuned.core
 
 import java.text.Collator
+import java.text.Normalizer
 import java.util.Locale
 
 /**
@@ -236,7 +237,18 @@ object Regions {
         ?: suffix(group)
         ?: language(tvgLanguage)
 
-    fun displayName(region: String): String = names[region] ?: region
+    /** The name people read: Tuned's own short names first, then the JDK's English name for any other ISO code. */
+    fun displayName(region: String): String = names[region] ?: isoNames[region] ?: region
+
+    private val isoNames: Map<String, String> by lazy {
+        Locale.getISOCountries().associateWith {
+            Locale
+                .Builder()
+                .setRegion(it)
+                .build()
+                .getDisplayCountry(Locale.ENGLISH)
+        }
+    }
 
     /**
      * Regions in A to Z order of the name people read ("Canada" before "France"), not by how many streams each has
@@ -249,6 +261,29 @@ object Regions {
         val collator = Collator.getInstance(Locale.ENGLISH).apply { strength = Collator.PRIMARY }
         return items.sortedWith(compareBy(collator) { item: T -> displayName(region(item)) }.thenBy { region(it) })
     }
+
+    /**
+     * Whether the search on Settings › Countries and languages finds this text (Melvin, 2026-11-18: "countries and
+     * languages should have a real time search"). Case and accents don't matter, so "cote" finds "Côte d'Ivoire", and a
+     * blank search finds everything.
+     */
+    fun matchesSearch(
+        query: String,
+        texts: Iterable<String>,
+    ): Boolean {
+        val q = fold(query.trim())
+        return q.isEmpty() || texts.any { fold(it).contains(q) }
+    }
+
+    /** A country or region tag matches by its name ("Canada") or the tag itself ("CA"). */
+    fun regionMatches(
+        query: String,
+        region: String,
+    ): Boolean = matchesSearch(query, listOf(displayName(region), region))
+
+    private val marks = Regex("\\p{Mn}+")
+
+    private fun fold(text: String): String = marks.replace(Normalizer.normalize(text, Normalizer.Form.NFD), "").lowercase(Locale.ROOT)
 
     /** A tag providers use for a country or language, such as US, UK, EN or USA. */
     fun isKnown(tag: String): Boolean = tag.uppercase() in known
