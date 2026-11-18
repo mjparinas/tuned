@@ -72,7 +72,7 @@
     <string name="settings_show_adult_summary">Hidden until unlocked with your PIN. Locks again 5 minutes after you leave the app.</string>
     <string name="settings_show_adult_summary_no_pin">Hidden. Turning this on asks you to set a PIN first.</string>
     <string name="settings_hide_247">Hide 24/7 channels</string>
-    <string name="settings_hide_247_summary">Leaves out channels that loop one show all day, such as "24/7 Friends", from Live TV and search.</string>
+    <string name="settings_hide_247_summary">Leaves out channels that loop one show all day, such as "24/7 Friends", and anything labelled 24/7 in Movies, Shows and search.</string>
     <string name="settings_change_pin">Change PIN</string>
     <string name="settings_change_pin_summary">The PIN that unlocks adult categories</string>
     <string name="ok">OK</string>
