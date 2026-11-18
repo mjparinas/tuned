@@ -158,6 +158,7 @@ class SettingFieldsTest {
                 "show_guide_in_list",
                 "live_grid",
                 "channel_numbers",
+                "always_show_scrollbar",
                 "start_on_last_channel",
                 "check_updates",
                 "cc_enabled",
