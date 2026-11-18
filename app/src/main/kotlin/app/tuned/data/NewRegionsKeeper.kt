@@ -12,7 +12,12 @@ suspend fun settleNewRegions(
     db: TunedDatabase,
     settings: SettingsRepository,
 ) {
-    val found = db.items().regions().first().mapTo(HashSet()) { it.region }
+    val found =
+        db
+            .items()
+            .regions()
+            .first()
+            .mapTo(HashSet()) { it.region }
     settings.update { s ->
         NewRegions.settle(found, s.seenRegions, s.hiddenRegions)?.let { s.copy(hiddenRegions = it.hidden, seenRegions = it.seen) } ?: s
     }
