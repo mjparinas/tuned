@@ -30,7 +30,6 @@ import app.tuned.diagnostics.AppLog
 import app.tuned.diagnostics.CrashReporter
 import app.tuned.diagnostics.attempt
 import app.tuned.diagnostics.launchSafely
-import app.tuned.diagnostics.attempt
 import app.tuned.diagnostics.loggingHandler
 import app.tuned.updates.GitHubUpdates
 import app.tuned.work.OfflineWorker
