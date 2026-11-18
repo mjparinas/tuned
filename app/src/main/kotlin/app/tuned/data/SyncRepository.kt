@@ -148,8 +148,10 @@ class SyncRepository(
         return fromApi.getOrElse { throw failure }
     }
 
-    /** Like [runCatching] for I/O only: anything else (a bug, a cancellation) still throws. */
-    // kotlin.Result in full: this class has its own Result (a refresh's counts).
+    /**
+     * Like [runCatching] for I/O only: anything else (a bug, a cancellation) still throws. `kotlin.Result` in full,
+     * because this class has its own Result (a refresh's counts).
+     */
     private inline fun <T> runCatchingIo(block: () -> T): kotlin.Result<T> = try {
         kotlin.Result.success(block())
     } catch (e: IOException) {
