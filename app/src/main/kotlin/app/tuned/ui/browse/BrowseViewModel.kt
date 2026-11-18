@@ -250,6 +250,17 @@ class BrowseViewModel(
         }
     }
 
+    /** Undo for [hideGroup]: the group comes back and is chosen again, as it was. */
+    fun unhideGroup(
+        kind: ContentKind,
+        group: String,
+    ) {
+        viewModelScope.launchSafely("BrowseViewModel") {
+            container.settings.update { it.copy(hiddenGroups = it.hiddenGroups - HiddenGroups.key(kind.code, group)) }
+            filter(kind).value = Filter.Group(group)
+        }
+    }
+
     /** Live TV as the grid guide or the list; remembered, and also in Settings. */
     fun setLiveGrid(on: Boolean) {
         viewModelScope.launchSafely("BrowseViewModel") { container.settings.update { it.copy(liveGrid = on) } }

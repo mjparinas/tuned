@@ -1,6 +1,5 @@
 package app.tuned.ui.browse
 
-import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -14,6 +13,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -29,7 +29,9 @@ import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.History
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Movie
+import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.filled.Radar
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
@@ -37,9 +39,12 @@ import androidx.compose.material.icons.filled.TravelExplore
 import androidx.compose.material.icons.filled.Tv
 import androidx.compose.material.icons.filled.VideoLibrary
 import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Button
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
@@ -49,6 +54,10 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -61,6 +70,8 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -70,7 +81,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.CustomAccessibilityAction
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.customActions
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -91,6 +104,7 @@ import app.tuned.ui.common.windowWidthDp
 import app.tuned.ui.offline.DownloadsViewModel
 import app.tuned.ui.settings.ProfileBadge
 import app.tuned.updates.GitHubUpdates
+import kotlinx.coroutines.launch
 
 internal data class Tab(
     val kind: ContentKind,
@@ -116,7 +130,8 @@ fun HomeScreen(
     onOpenPerson: (CastMember) -> Unit,
     onOpenSettings: () -> Unit,
     onOpenProfiles: () -> Unit,
-    onOpenSearch: () -> Unit,
+    /** Search everything, starting from the words typed on the tab (empty for none). */
+    onOpenSearch: (String) -> Unit,
     onOpenDownloads: () -> Unit,
     onOpenEvents: () -> Unit,
     onTune: (String) -> Unit,
@@ -166,10 +181,28 @@ fun HomeScreen(
         vm.rememberTab(index)
     }
 
+    val snackbar = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+    val undoLabel = stringResource(R.string.group_hidden_undo)
+    // Hiding a category says so with Undo, rather than a toast that can't take it back.
+    val onGroupHidden: (ContentKind, String, String) -> Unit = { kind, group, message ->
+        scope.launch {
+            snackbar.currentSnackbarData?.dismiss()
+            val result =
+                snackbar.showSnackbar(
+                    message,
+                    actionLabel = undoLabel,
+                    duration = SnackbarDuration.Long,
+                )
+            if (result == SnackbarResult.ActionPerformed) vm.unhideGroup(kind, group)
+        }
+    }
+
     Row(Modifier.fillMaxSize()) {
         if (rail) HomeRail(selected, select, onOpenDownloads)
         Scaffold(
             modifier = Modifier.weight(1 - ScreenLayout.DETAIL_FRACTION),
+            snackbarHost = { SnackbarHost(snackbar) },
             floatingActionButton = {
                 // Auto-tune: with a search on Live TV (a channel or an event, say "UFC"), find one that works and play it.
                 if (tab.kind == ContentKind.LIVE && liveSearch.isNotBlank()) {
@@ -189,12 +222,12 @@ fun HomeScreen(
                     onChange = { search.value = it },
                     grid = if (tab.kind == ContentKind.LIVE) settings.liveGrid else null,
                     onToggleGrid = { vm.setLiveGrid(!settings.liveGrid) },
-                    onOpenSearch = onOpenSearch,
+                    // The words typed on the tab carry over, so the search isn't typed twice.
+                    onOpenSearch = { onOpenSearch(text.trim()) },
                     // A kids profile has no way into Settings; switching profile (with a PIN) is the way out.
                     onOpenSettings = onOpenSettings.takeUnless { settings.kidsProfile },
                     profile = profile.takeIf { settings.profileCount > 1 },
                     onOpenProfiles = onOpenProfiles,
-                    onOpenEvents = onOpenEvents.takeIf { tab.kind == ContentKind.LIVE },
                 )
             },
             bottomBar = {
@@ -226,12 +259,12 @@ fun HomeScreen(
                 }
                 requestedProgress?.let { RefreshBar(it) }
                 UpdateBanner()
-                CategoryChips(vm, tab.kind)
+                CategoryChips(vm, tab.kind, onGroupHidden, onOpenEvents.takeIf { tab.kind == ContentKind.LIVE })
                 val lists: @Composable () -> Unit = {
                     when (tab.kind) {
-                        ContentKind.LIVE -> LiveTab(vm, settings, onPlay, openGuide)
-                        ContentKind.MOVIE -> MovieGrid(vm, onPlay, openMovie, settings.alwaysShowScrollbar)
-                        ContentKind.SERIES -> ShowGrid(vm, openShow, onPlay, settings.alwaysShowScrollbar)
+                        ContentKind.LIVE -> LiveTab(vm, settings, onPlay, openGuide, onOpenSearch)
+                        ContentKind.MOVIE -> MovieGrid(vm, onPlay, openMovie, settings.alwaysShowScrollbar, onOpenSearch)
+                        ContentKind.SERIES -> ShowGrid(vm, openShow, onPlay, settings.alwaysShowScrollbar, onOpenSearch)
                     }
                 }
                 // Pull to refresh is a setting, off by default; Settings › Refresh now always works.
@@ -292,10 +325,8 @@ private fun SearchBarRow(
     onOpenSettings: (() -> Unit)?,
     profile: ProfileEntity?,
     onOpenProfiles: () -> Unit,
-    /** Live Events, shown on the Live TV tab only. */
-    onOpenEvents: (() -> Unit)?,
 ) {
-    val switchLabel = stringResource(R.string.profile_switch)
+    var menu by remember { mutableStateOf(false) }
     Surface(color = MaterialTheme.colorScheme.surface) {
         Row(
             Modifier
@@ -325,33 +356,46 @@ private fun SearchBarRow(
                         focusedIndicatorColor = Color.Transparent,
                         unfocusedIndicatorColor = Color.Transparent,
                     ),
-                modifier = Modifier.weight(1f).height(52.dp),
+                modifier = Modifier.weight(1f).heightIn(min = 52.dp),
             )
-            // Live TV only: switch between the channel list and the grid guide.
-            if (grid != null) {
-                IconButton(onClick = onToggleGrid) {
-                    Icon(
-                        if (grid) Icons.AutoMirrored.Filled.List else Icons.Filled.GridView,
-                        contentDescription = stringResource(if (grid) R.string.grid_hide else R.string.grid_show),
-                    )
+            // One button beside the box, so search keeps the width (2026-11-18, UI review): the profile's badge when
+            // there are profiles, otherwise the three dots. Everything else that used to sit here is in its menu.
+            val more = stringResource(R.string.home_menu)
+            Box {
+                IconButton(onClick = { menu = true }, modifier = Modifier.semantics { contentDescription = more }) {
+                    if (profile != null) {
+                        ProfileBadge(profile, size = 28.dp)
+                    } else {
+                        Icon(Icons.Filled.MoreVert, contentDescription = null)
+                    }
                 }
-            }
-            if (onOpenEvents != null) {
-                IconButton(onClick = onOpenEvents) {
-                    Icon(Icons.Filled.EmojiEvents, contentDescription = stringResource(R.string.events_title))
-                }
-            }
-            IconButton(onClick = onOpenSearch) {
-                Icon(Icons.Filled.TravelExplore, contentDescription = stringResource(R.string.search_everything))
-            }
-            if (profile != null) {
-                IconButton(onClick = onOpenProfiles) {
-                    Box(Modifier.semantics { contentDescription = switchLabel }) { ProfileBadge(profile, size = 28.dp) }
-                }
-            }
-            if (onOpenSettings != null) {
-                IconButton(onClick = onOpenSettings) {
-                    Icon(Icons.Filled.Settings, contentDescription = stringResource(R.string.settings))
+                DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
+                    MenuRow(Icons.Filled.TravelExplore, stringResource(R.string.search_everything)) {
+                        menu = false
+                        onOpenSearch()
+                    }
+                    // Live TV only: switch between the channel list and the grid guide.
+                    if (grid != null) {
+                        MenuRow(
+                            if (grid) Icons.AutoMirrored.Filled.List else Icons.Filled.GridView,
+                            stringResource(if (grid) R.string.grid_hide else R.string.grid_show),
+                        ) {
+                            menu = false
+                            onToggleGrid()
+                        }
+                    }
+                    if (profile != null) {
+                        MenuRow(Icons.Filled.People, stringResource(R.string.profile_switch)) {
+                            menu = false
+                            onOpenProfiles()
+                        }
+                    }
+                    if (onOpenSettings != null) {
+                        MenuRow(Icons.Filled.Settings, stringResource(R.string.settings)) {
+                            menu = false
+                            onOpenSettings()
+                        }
+                    }
                 }
             }
         }
@@ -359,9 +403,26 @@ private fun SearchBarRow(
 }
 
 @Composable
+private fun MenuRow(
+    icon: ImageVector,
+    label: String,
+    onClick: () -> Unit,
+) {
+    DropdownMenuItem(
+        text = { Text(label) },
+        leadingIcon = { Icon(icon, contentDescription = null) },
+        onClick = onClick,
+    )
+}
+
+@Composable
 private fun CategoryChips(
     vm: BrowseViewModel,
     kind: ContentKind,
+    /** The kind, the group and the message that says it is hidden. */
+    onHidden: (ContentKind, String, String) -> Unit,
+    /** Live events, first in Live TV's row (it used to be an icon beside search). Null elsewhere. */
+    onOpenEvents: (() -> Unit)?,
 ) {
     val groups by vm.groups(kind).collectAsStateWithLifecycle()
     val filterFlow = vm.filter(kind)
@@ -370,6 +431,15 @@ private fun CategoryChips(
         contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
+        if (onOpenEvents != null) {
+            item(key = "events") {
+                AssistChip(
+                    onClick = onOpenEvents,
+                    leadingIcon = { Icon(Icons.Filled.EmojiEvents, contentDescription = null, modifier = Modifier.size(16.dp)) },
+                    label = { Text(stringResource(R.string.events_title)) },
+                )
+            }
+        }
         item(key = "all") {
             FilterChip(selected = filter == Filter.All, onClick = {
                 filterFlow.value = Filter.All
@@ -395,12 +465,31 @@ private fun CategoryChips(
         }
         items(groups, key = { "g:" + it.groupName }) { g ->
             val on = filter == Filter.Group(g.groupName)
-            val context = LocalContext.current
             val hiddenMessage = stringResource(R.string.group_hidden, g.groupName)
+            val hideLabel = stringResource(R.string.group_hide)
+            val hide = {
+                vm.hideGroup(kind, g.groupName)
+                onHidden(kind, g.groupName, hiddenMessage)
+            }
             FilterChip(
                 selected = on,
                 onClick = { filterFlow.value = if (on) Filter.All else Filter.Group(g.groupName) },
                 label = { Text(g.groupName) },
+                // The small eye inside the chip is hard to reach with a screen reader, so hiding is also an action on the chip.
+                modifier =
+                    if (on) {
+                        Modifier.semantics {
+                            customActions =
+                                listOf(
+                                    CustomAccessibilityAction(hideLabel) {
+                                        hide()
+                                        true
+                                    },
+                                )
+                        }
+                    } else {
+                        Modifier
+                    },
                 // The chosen group can be hidden from here; Settings › Hidden groups brings it back.
                 trailingIcon =
                     if (on) {
@@ -409,15 +498,7 @@ private fun CategoryChips(
                                 Icons.Filled.VisibilityOff,
                                 contentDescription = stringResource(R.string.group_hide),
                                 modifier =
-                                    Modifier.size(18.dp).clickable {
-                                        vm.hideGroup(kind, g.groupName)
-                                        Toast
-                                            .makeText(
-                                                context,
-                                                hiddenMessage,
-                                                Toast.LENGTH_LONG,
-                                            ).show()
-                                    },
+                                    Modifier.size(18.dp).clickable(onClick = hide),
                             )
                         }
                     } else {

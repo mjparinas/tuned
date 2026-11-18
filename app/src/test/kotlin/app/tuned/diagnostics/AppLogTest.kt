@@ -29,6 +29,16 @@ class AppLogTest {
     }
 
     @Test
+    fun `masks the login as it appears inside a link`() {
+        // Xtream playlists' live links carry the login as plain path parts, with no /live/ to recognise.
+        AppLog.setSecrets("p@ss w0rd!", "bob")
+        AppLog.w("Player", "Source error http://tv.example:8080/bob/p%40ss%20w0rd%21/123")
+        AppLog.w("Sync", "GET http://tv.example/get.php?username=bob&password=p%40ss+w0rd%21 failed")
+        val text = AppLog.snapshot().joinToString("\n") { it.message }
+        assertFalse("p%40ss" in text || "w0rd" in text, text)
+    }
+
+    @Test
     fun `masks login-shaped addresses without knowing the login`() {
         AppLog.w("Player", "Source error http://tv.example/live/bob/pw123/1.ts")
         assertEquals("Source error http://tv.example/live/•••/•••/1.ts", AppLog.snapshot().single().message)

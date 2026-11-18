@@ -8,5 +8,6 @@
     </plurals>
     <string name="hidden_groups_help">Turn a group off to hide it from its section, search and channel flipping. To hide one from the home screen, pick its chip and tap the eye.</string>
     <string name="group_hide">Hide this group</string>
-    <string name="group_hidden">%1$s hidden. Bring it back in Settings › Hidden groups.</string>
+    <string name="group_hidden">%1$s hidden</string>
+    <string name="group_hidden_undo">Undo</string>
 </resources>

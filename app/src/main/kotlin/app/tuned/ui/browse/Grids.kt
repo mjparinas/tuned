@@ -75,6 +75,7 @@ internal fun MovieGrid(
     onPlay: (Long) -> Unit,
     onOpenMovie: (Long) -> Unit,
     alwaysShowScrollbar: Boolean,
+    onSearchEverything: (String) -> Unit,
 ) {
     val movies = vm.movies.collectAsLazyPagingItems()
     val favourites by vm.favouriteIds.collectAsStateWithLifecycle()
@@ -127,6 +128,7 @@ internal fun MovieGrid(
             }
         }
         GridScrollbar(state, movies.itemCount, alwaysShowScrollbar) { movies.peekOrNull(it)?.groupName }
+        NoMatches(movies, vm, ContentKind.MOVIE, onSearchEverything)
     }
 }
 
@@ -136,6 +138,7 @@ internal fun ShowGrid(
     onOpenShow: (String, String) -> Unit,
     onPlay: (Long) -> Unit,
     alwaysShowScrollbar: Boolean,
+    onSearchEverything: (String) -> Unit,
 ) {
     val shows = vm.shows.collectAsLazyPagingItems()
     val library: LibraryViewModel = viewModel()
@@ -191,6 +194,7 @@ internal fun ShowGrid(
             }
         }
         GridScrollbar(state, shows.itemCount, alwaysShowScrollbar) { shows.peekOrNull(it)?.groupName }
+        NoMatches(shows, vm, ContentKind.SERIES, onSearchEverything)
     }
 }
 

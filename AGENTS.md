@@ -45,6 +45,7 @@ Kotlin, Jetpack Compose with Material 3, Navigation Compose (type-safe routes), 
 - Formatting is ktlint's (`.editorconfig`, width 140) through Spotless, and Prettier's for YAML, JSON and Markdown. Don't hand-format.
 - detekt (`config/detekt/detekt.yml`) and Android Lint (`warningsAsErrors`) fail CI on any finding. Fix the cause; suppress only with a comment saying why.
 - Every string a person reads is in `res/values/strings.xml`; numbers that change a word use `<plurals>`.
+- **Accessible by default** ([accessibility](docs/decisions/accessibility.md)): an icon-only button has a label, a state shown by colour is also given in words, switches are `toggleable`, tap targets are 48dp, and text containers use a minimum height, never a fixed one.
 - Fire-and-forget coroutines use `launchSafely(tag)`, and caught failures go to `AppLog` (`attempt` instead of `runCatching`), so nothing fails silently and nothing crashes the app ([diagnostics](docs/decisions/diagnostics.md)).
 - **Where new code goes, so parallel work doesn't collide.** Add to the file for your area, inside its area, never at the end of a shared list. A new setting is one field in `AppSettings` (`data/Settings.kt`) and one line in its area of `SETTING_FIELDS` (`data/SettingFields.kt`); its row goes in that page's file (`ui/settings/SettingsPlayback.kt` and so on; [settings](docs/decisions/settings.md)). A row that opens another screen passes its route to `onOpen`, so `SettingsScreen` and `MainActivity` don't change. Stored key names never change (a test pins them).
 - **Big files are split by area so features land side by side.** Each DAO has its own file in `data/db/` (shared SQL filters in `DaoQueries.kt`), entities are grouped by table (`ItemEntities.kt`, `LibraryEntities.kt` and so on), the Home screen's tabs have their own files (`LiveList.kt`, `Grids.kt`, `Posters.kt`), and `AppContainer.kt` only builds the app's shared objects; switching, removing and signing out of playlists is `PlaylistSession`. Put new code in the file for its area rather than growing a shared one. Two pull requests that both bump the database version: the one that merges second renumbers its migration and schema file when it merges `staging` in.
@@ -77,6 +78,7 @@ Melvin, 2026-11-17: his product and development decisions "should be updated and
 
 One file per topic in `docs/decisions/`, A to Z. Add a line when you add a topic.
 
+- [Accessibility](docs/decisions/accessibility.md): TalkBack labels and states, 48dp targets, large text, the player's controls with a screen reader.
 - [Architecture](docs/decisions/architecture.md): native Kotlin over Capacitor, modules, data flow.
 - [Auto-tune](docs/decisions/auto-tune.md): finding a working English stream for a live event, one connection at a time.
 - [Branding](docs/decisions/branding.md): name, icon, colours, themes.

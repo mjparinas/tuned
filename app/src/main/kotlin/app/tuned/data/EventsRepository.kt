@@ -44,8 +44,16 @@ class EventsRepository(
         scheduleAlerts()
     }
 
-    suspend fun unfollow(name: String) {
+    /** Stops following [name], and takes away the alerts it set that nothing else followed still covers. */
+    suspend fun unfollow(
+        name: String,
+        now: Long = System.currentTimeMillis(),
+    ) {
         settings.update { s -> s.copy(followedEvents = s.followedEvents - name) }
+        val followed = settings.settings.first().followedEvents
+        Events
+            .noLongerFollowed(events(now).filter { it.start > now }, name, followed)
+            .forEach { setAlert(it, on = false) }
     }
 
     /** Sets an alert for [event] (or takes it away), [AppSettings.reminderLeadMinutes] before it starts. */

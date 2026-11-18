@@ -29,6 +29,8 @@
     <string name="search_movies">Search movies</string>
     <string name="search_shows">Search shows</string>
     <string name="search_clear">Clear search</string>
+    <string name="settings_search">Search settings</string>
+    <string name="settings_search_none">No settings match</string>
     <string name="filter_all">All</string>
     <string name="filter_favourites">Favourites</string>
     <string name="favourite_add">Add to favourites</string>
@@ -45,6 +47,7 @@
 
     <string name="player_now">Now: %1$s</string>
     <string name="player_next">Next: %1$s</string>
+    <string name="player_not_allowed">This is locked on this profile. Open Tuned to unlock it.</string>
     <string name="player_error">Can\'t play this stream (%1$s)</string>
 
     <string name="sync_channel">Refreshing channels</string>
@@ -306,6 +309,7 @@
     <string name="accent_pink">Pink</string>
     <string name="accent_red">Red</string>
     <string name="search_everything">Search everything</string>
+    <string name="home_menu">Menu</string>
     <string name="search_nothing">Nothing found for \"%1$s\"</string>
     <string name="voice_search">Search by voice</string>
     <string name="voice_prompt">Say a channel, film, show or event</string>

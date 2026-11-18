@@ -3,6 +3,8 @@ package app.tuned.data.db
 import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.Index
+import app.tuned.core.PlayGate
+import app.tuned.data.AppSettings
 
 /**
  * Favourites and watch history survive refreshes because they hold the stable id, not a row. Each profile keeps its
@@ -17,13 +19,19 @@ data class FavouriteEntity(
     @ColumnInfo(defaultValue = "1") val profileId: Long = Profiles.FIRST,
 )
 
-/** A favourite channel in Settings › Order favourites. */
+/** A favourite channel in Settings › Order favourites, the widget and Android TV's home screen. */
 data class FavouriteRow(
     val id: Long,
     val name: String,
     val logo: String?,
     val tvgId: String?,
-)
+    /** For [PlayGate]: the widget and TV cards leave out what the profile and parental lock hide. */
+    val groupName: String = "",
+    val adult: Boolean = false,
+) {
+    fun allowed(settings: AppSettings): Boolean =
+        PlayGate.allowed(adult, groupName, name, live = true, showAdult = settings.showAdult, kidsProfile = settings.kidsProfile)
+}
 
 @Entity(tableName = "history", primaryKeys = ["profileId", "itemId"], indices = [Index(value = ["watchedAt"])])
 data class HistoryEntity(

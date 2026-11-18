@@ -76,7 +76,7 @@ fun NavGraphBuilder.browseScreens(app: AppNav) {
             onOpenPerson = app.openPerson,
             onOpenSettings = { app.nav.navigate(SettingsRoute) },
             onOpenProfiles = { app.nav.navigate(ProfilesRoute()) },
-            onOpenSearch = { app.nav.navigate(SearchRoute()) },
+            onOpenSearch = { app.nav.navigate(SearchRoute(it)) },
             onOpenDownloads = { app.nav.navigate(DownloadsRoute) },
             onOpenEvents = { app.nav.navigate(EventsRoute) },
             onTune = app.tune,

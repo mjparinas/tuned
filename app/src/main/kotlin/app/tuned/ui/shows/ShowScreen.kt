@@ -54,6 +54,7 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import app.tuned.R
 import app.tuned.container
+import app.tuned.core.Episodes
 import app.tuned.core.Titles
 import app.tuned.data.CastMember
 import app.tuned.data.EpisodeInfo
@@ -272,19 +273,27 @@ private fun EpisodeRow(
         Spacer(Modifier.width(12.dp))
         Column(Modifier.weight(1f)) {
             val number = episode.episode ?: 1
+            // TMDB's name ("Kamp Krusty") reads better than the provider's ("EN - The Simpsons (1989) S04 E01"). Without
+            // one, the provider's own episode name if its title has one; otherwise the row says "Episode 1" once, not
+            // "Episode 1" over "Harbour Town S01E01" (Melvin, 2026-11-17: real names over numbers).
+            val name = info?.name ?: Episodes.title(episode.name)?.let(Titles::display)
+            val runtime = info?.runtime
             val label =
-                when (val runtime = info?.runtime) {
-                    null -> stringResource(R.string.episode_label, number)
+                when {
+                    name == null -> runtime
+                    runtime == null -> stringResource(R.string.episode_label, number)
                     else -> stringResource(R.string.episode_label_runtime, number, runtime)
                 }
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    label,
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
+                if (label != null) {
+                    Text(
+                        label,
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(end = 8.dp),
+                    )
+                }
                 if (isNew) {
-                    Spacer(Modifier.width(8.dp))
                     Text(
                         stringResource(R.string.episode_new),
                         style = MaterialTheme.typography.labelMedium,
@@ -293,9 +302,8 @@ private fun EpisodeRow(
                     )
                 }
             }
-            // TMDB's name ("Kamp Krusty") reads better than the provider's ("EN - The Simpsons (1989) S04 E01").
             Text(
-                info?.name ?: Titles.display(episode.name),
+                name ?: stringResource(R.string.episode_label, number),
                 style = MaterialTheme.typography.bodyLarge,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,

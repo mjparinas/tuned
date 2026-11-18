@@ -7,6 +7,7 @@ import java.net.InetSocketAddress
 import java.net.ServerSocket
 import java.net.Socket
 import java.util.Collections
+import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.concurrent.thread
 
@@ -31,6 +32,9 @@ object FakeProvider {
     private const val BASE = "http://127.0.0.1:$PORT"
 
     const val PLAYLIST_URL = "$BASE/playlist.m3u"
+
+    /** The name the first film is listed under. */
+    const val FIRST_FILM = "Film 001"
 
     /** The name the first channel is listed under, to wait for. */
     const val FIRST_CHANNEL = "Channel 0001"
@@ -87,7 +91,7 @@ object FakeProvider {
                 out.write(head("audio/x-mpegurl", playlist.size))
                 out.write(playlist)
             } else {
-                stream(path, out)
+                stream(path, out, client)
             }
             out.flush()
         } catch (_: IOException) {
@@ -98,9 +102,24 @@ object FakeProvider {
     private fun stream(
         path: String,
         out: OutputStream,
+        client: Socket,
     ) {
         streamsRequested += path
         most.accumulateAndGet(open.incrementAndGet(), ::maxOf)
+        // Counted closed the moment the app hangs up, not at the next chunk sent, so a stream that opens right after
+        // another closes isn't counted as two at once.
+        val closed = AtomicBoolean()
+        val close = { if (closed.compareAndSet(false, true)) open.decrementAndGet() }
+        thread(isDaemon = true, name = "fake-provider-hangup") {
+            try {
+                while (client.getInputStream().read() >= 0) {
+                    // The app sends nothing more after its request; -1 is the hang-up.
+                }
+            } catch (_: IOException) {
+                // Closed either way.
+            }
+            close()
+        }
         try {
             out.write(head("video/mp2t", clip.size))
             // About as fast as it plays, so the connection stays open the way a live channel's does.
@@ -113,7 +132,7 @@ object FakeProvider {
                 Thread.sleep(pause)
             }
         } finally {
-            open.decrementAndGet()
+            close()
         }
     }
 

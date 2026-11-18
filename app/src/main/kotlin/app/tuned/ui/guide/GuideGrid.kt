@@ -45,6 +45,8 @@ import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
@@ -423,6 +425,7 @@ private fun ProgrammeCell(
 ) {
     val times = rememberTimeLabels()
     val onNow = programme.start <= now && programme.stop > now
+    val onNowLabel = stringResource(R.string.a11y_on_now)
     val past = programme.stop <= now
     val colours = MaterialTheme.colorScheme
     val background =
@@ -447,7 +450,9 @@ private fun ProgrammeCell(
             .background(background)
             .focusRing(RoundedCornerShape(6.dp), colours.primary)
             .onFocusChanged { if (it.isFocused) onFocus() }
-            .clickable(onClick = onClick),
+            // The cell's colour marks what's on now; a screen reader hears it, and what a tap does.
+            .clickable(onClickLabel = stringResource(if (onNow) R.string.a11y_play else R.string.a11y_details), onClick = onClick)
+            .semantics { if (onNow) stateDescription = onNowLabel },
     ) {
         // A programme that started before the view keeps its title in sight at the left edge, as long as it fits.
         Column(
