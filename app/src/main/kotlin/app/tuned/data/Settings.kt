@@ -82,6 +82,8 @@ data class AppSettings(
     val startTab: StartTab = StartTab.LIVE,
     val lastTab: Int = 0,
     val hiddenRegions: Set<String> = emptySet(),
+    /** Every country the playlist had at the last check, so a new one can follow the rest ([app.tuned.core.NewRegions]). */
+    val seenRegions: Set<String> = emptySet(),
     /** Hidden groups, as [app.tuned.core.HiddenGroups] keys. */
     val hiddenGroups: Set<String> = emptySet(),
     /** Teams, leagues and fighters followed on Live Events ("Canucks", "UFC"), as typed. */
