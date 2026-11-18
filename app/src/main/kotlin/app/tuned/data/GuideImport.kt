@@ -3,6 +3,7 @@ package app.tuned.data
 import android.util.Xml
 import app.tuned.core.CatchUp
 import app.tuned.core.GuideFixes
+import app.tuned.core.GuideShift
 import app.tuned.core.Programme
 import app.tuned.core.XmltvParser
 import app.tuned.data.db.GuideChannelEntity
@@ -14,8 +15,8 @@ import java.io.InputStream
 /**
  * One guide refresh: the provider's guide, then any extra guide links, read into one new guide that replaces the old
  * at the end ([GuideWriter]). A channel takes its programmes from the first guide that has it, so an extra guide only
- * fills gaps. The whole guide is moved by [offsetMinutes], and channels with their own fix get their copies
- * ([GuideFixes]).
+ * fills gaps. The whole guide is moved by [offsetMinutes]; a channel with a playlist `tvg-shift` ([GuideShift]) or its
+ * own fix ([GuideFixes]) gets its own copy, moved by that too.
  */
 class GuideImport(
     private val db: TunedDatabase,
@@ -28,7 +29,7 @@ class GuideImport(
     private val filled = HashSet<String>()
     private val channels = LinkedHashMap<String, String>()
     private var count = 0
-    private lateinit var wanted: Set<String>
+    /** Each guide channel to read, and the ids to write its programmes under, with how far to move each copy. */
     private lateinit var targets: Map<String, List<Pair<String, Long>>>
     private val pastFrom = HashMap<String, Long>()
     private var from = 0L
@@ -36,13 +37,22 @@ class GuideImport(
 
     /** False when there are no live channels to fill, and nothing is read. */
     suspend fun begin(): Boolean {
+        val copies = HashMap<String, MutableList<Pair<String, Long>>>()
+        for (id in db.items().liveTvgIds()) {
+            copies.getOrPut(GuideShift.base(id)) { ArrayList(1) } += id to GuideShift.offset(id)
+        }
+        // A fix on a channel with a tvg-shift reads the unshifted guide entry and keeps the shift on top of its own.
         val fixes =
             db.guideFixes().all().mapNotNull { f ->
-                (f.guideId ?: f.playlistTvgId)?.let { GuideFixes.Fix(f.itemId, it, f.offsetMinutes) }
+                val source = f.guideId ?: f.playlistTvgId ?: return@mapNotNull null
+                GuideFixes.Fix(f.itemId, GuideShift.base(source), f.offsetMinutes) to GuideShift.offset(source)
             }
-        targets = GuideFixes.targets(fixes)
-        wanted = db.items().liveTvgIds().toHashSet() + targets.keys
-        if (wanted.isEmpty()) return false
+        val shifts = fixes.associate { (fix, shift) -> GuideFixes.fixedId(fix.itemId) to shift }
+        for ((source, list) in GuideFixes.targets(fixes.map { it.first })) {
+            copies.getOrPut(source) { ArrayList(list.size) } += list.map { (id, by) -> id to by + (shifts[id] ?: 0) }
+        }
+        targets = copies
+        if (targets.isEmpty()) return false
         val now = System.currentTimeMillis()
         from = now - HOUR
         until = now + days * DAY
@@ -70,13 +80,16 @@ class GuideImport(
         val programmes =
             XmltvParser.programmes(
                 parser,
-                keep = { id, start, stop -> id in wanted && id !in before && inWindow(id, start + shift, stop + shift) },
+                keep = { id, start, stop ->
+                    id !in before && targets[id]?.any { (to, by) -> inWindow(to, start + shift + by, stop + shift + by) } == true
+                },
                 onChannel = { id, name -> channels.putIfAbsent(id, name) },
             )
         for (p in programmes) {
             filled += p.channelId
-            add(p.channelId, p, shift)
-            targets[p.channelId]?.forEach { (fixedId, extra) -> add(fixedId, p, shift + extra) }
+            for ((to, by) in targets[p.channelId].orEmpty()) {
+                if (inWindow(to, p.start + shift + by, p.stop + shift + by)) add(to, p, shift + by)
+            }
             if (batch.size >= BATCH) {
                 writer.add(batch.toList())
                 batch.clear()
