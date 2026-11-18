@@ -17,39 +17,15 @@ import androidx.lifecycle.lifecycleScope
 import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import androidx.navigation.toRoute
 import app.tuned.R
 import app.tuned.container
 import app.tuned.data.AppSettings
 import app.tuned.data.CastMember
-import app.tuned.data.Credentials
 import app.tuned.diagnostics.launchSafely
 import app.tuned.player.PlayerActivity
-import app.tuned.ui.browse.HomeScreen
 import app.tuned.ui.common.WithOfflineBanner
-import app.tuned.ui.details.MovieScreen
-import app.tuned.ui.details.PersonScreen
-import app.tuned.ui.events.EventsScreen
-import app.tuned.ui.guide.GuideScreen
-import app.tuned.ui.offline.DownloadsScreen
-import app.tuned.ui.onboarding.AddPlaylistScreen
-import app.tuned.ui.onboarding.WelcomeScreen
-import app.tuned.ui.search.SearchScreen
-import app.tuned.ui.settings.CaptionSettingsScreen
-import app.tuned.ui.settings.ChannelHealthScreen
-import app.tuned.ui.settings.DeveloperLogScreen
-import app.tuned.ui.settings.FavouriteOrderScreen
-import app.tuned.ui.settings.HiddenGroupsScreen
-import app.tuned.ui.settings.PlaylistsScreen
-import app.tuned.ui.settings.ProfilesScreen
-import app.tuned.ui.settings.RegionSettingsScreen
-import app.tuned.ui.settings.SettingsPage
-import app.tuned.ui.settings.SettingsPageScreen
-import app.tuned.ui.settings.SettingsScreen
-import app.tuned.ui.shows.ShowScreen
 import app.tuned.ui.theme.TunedTheme
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -154,142 +130,12 @@ class MainActivity : ComponentActivity() {
                     else -> HomeRoute
                 }
             }
+        val app = AppNav(nav, current, play, tune, openPerson, openHome, openWelcome)
         NavHost(navController = nav, startDestination = start) {
-            composable<ProfilesRoute> { entry ->
-                val atStart = entry.toRoute<ProfilesRoute>().atStart
-                ProfilesScreen(
-                    atStart = atStart,
-                    onPicked = {
-                        if (atStart || !nav.popBackStack(HomeRoute, inclusive = false)) {
-                            nav.navigate(HomeRoute) { popUpTo(0) { inclusive = true } }
-                        }
-                    },
-                    onBack = { nav.popBackStack() },
-                )
-            }
-            composable<WelcomeRoute> {
-                WelcomeScreen(
-                    firstRun = true,
-                    onPick = { kind -> nav.navigate(AddPlaylistRoute(kind.name)) },
-                    onRestored = openHome,
-                    onBack = {},
-                )
-            }
-            composable<ChoosePlaylistRoute> {
-                WelcomeScreen(
-                    firstRun = false,
-                    onPick = { kind -> nav.navigate(AddPlaylistRoute(kind.name)) },
-                    onRestored = openHome,
-                    onBack = { nav.popBackStack() },
-                )
-            }
-            composable<AddPlaylistRoute> { entry ->
-                val route = entry.toRoute<AddPlaylistRoute>()
-                AddPlaylistScreen(
-                    kind = Credentials.Kind.valueOf(route.kind),
-                    editIndex = route.editIndex,
-                    onBack = { nav.popBackStack() },
-                    // A new playlist (or an edit of the one in use) opens on its own; an edit of another goes back.
-                    onDone = { opened -> if (opened) openHome() else nav.popBackStack() },
-                )
-            }
-            composable<PlaylistsRoute> {
-                PlaylistsScreen(
-                    onBack = { nav.popBackStack() },
-                    onAdd = { nav.navigate(ChoosePlaylistRoute) },
-                    onEdit = { index, kind -> nav.navigate(AddPlaylistRoute(kind.name, index)) },
-                    onSwitched = openHome,
-                    onEmpty = openWelcome,
-                )
-            }
-            composable<HomeRoute> {
-                HomeScreen(
-                    settings = current,
-                    onPlay = play,
-                    onOpenShow = { key, title -> nav.navigate(ShowRoute(key, title)) },
-                    onOpenGuide = { id -> nav.navigate(GuideRoute(id)) },
-                    onOpenMovie = { id -> nav.navigate(MovieRoute(id)) },
-                    onOpenPerson = openPerson,
-                    onOpenSettings = { nav.navigate(SettingsRoute) },
-                    onOpenProfiles = { nav.navigate(ProfilesRoute()) },
-                    onOpenSearch = { nav.navigate(SearchRoute()) },
-                    onOpenDownloads = { nav.navigate(DownloadsRoute) },
-                    onOpenEvents = { nav.navigate(EventsRoute) },
-                    onTune = tune,
-                    onOpenPlaylists = { nav.navigate(PlaylistsRoute) },
-                )
-            }
-            composable<SearchRoute> { entry ->
-                SearchScreen(
-                    initialQuery = entry.toRoute<SearchRoute>().query,
-                    onBack = { nav.popBackStack() },
-                    onPlay = play,
-                    onOpenShow = { key, title -> nav.navigate(ShowRoute(key, title)) },
-                    onOpenMovie = { id -> nav.navigate(MovieRoute(id)) },
-                    onTune = tune,
-                )
-            }
-            composable<ShowRoute> { entry ->
-                val route = entry.toRoute<ShowRoute>()
-                ShowScreen(
-                    showKey = route.showKey,
-                    title = route.title,
-                    onPlay = play,
-                    onBack = { nav.popBackStack() },
-                    onOpenPerson = openPerson,
-                )
-            }
-            composable<MovieRoute> { entry ->
-                MovieScreen(
-                    itemId = entry.toRoute<MovieRoute>().itemId,
-                    onPlay = play,
-                    onBack = { nav.popBackStack() },
-                    onOpenPerson = openPerson,
-                )
-            }
-            composable<PersonRoute> { entry ->
-                val route = entry.toRoute<PersonRoute>()
-                PersonScreen(
-                    personId = route.personId,
-                    name = route.name,
-                    onOpenMovie = { id -> nav.navigate(MovieRoute(id)) },
-                    onOpenShow = { key, title -> nav.navigate(ShowRoute(key, title)) },
-                    onBack = { nav.popBackStack() },
-                )
-            }
-            composable<EventsRoute> { EventsScreen(onTune = tune, onBack = { nav.popBackStack() }) }
-            composable<GuideRoute> { entry ->
-                GuideScreen(itemId = entry.toRoute<GuideRoute>().itemId, onPlay = play, onBack = { nav.popBackStack() })
-            }
-            composable<SettingsRoute> {
-                SettingsScreen(settings = current, onBack = { nav.popBackStack() }, onOpen = { route -> nav.navigate(route) })
-            }
-            composable<SettingsPageRoute> { entry ->
-                SettingsPageScreen(
-                    page = SettingsPage.valueOf(entry.toRoute<SettingsPageRoute>().page),
-                    settings = current,
-                    onBack = { nav.popBackStack() },
-                    onOpen = { route -> nav.navigate(route) },
-                    onSignedOut = openWelcome,
-                )
-            }
-            composable<DeveloperLogRoute> { DeveloperLogScreen(onBack = { nav.popBackStack() }) }
-            composable<DownloadsRoute> {
-                DownloadsScreen(onPlay = play, onBack = { nav.popBackStack() })
-            }
-            composable<CaptionSettingsRoute> {
-                CaptionSettingsScreen(settings = current, onBack = { nav.popBackStack() })
-            }
-            composable<FavouriteOrderRoute> { FavouriteOrderScreen(onBack = { nav.popBackStack() }) }
-            composable<RegionSettingsRoute> {
-                RegionSettingsScreen(settings = current, onBack = { nav.popBackStack() })
-            }
-            composable<HiddenGroupsRoute> {
-                HiddenGroupsScreen(settings = current, onBack = { nav.popBackStack() })
-            }
-            composable<ChannelHealthRoute> {
-                ChannelHealthScreen(settings = current, onBack = { nav.popBackStack() })
-            }
+            // Each feature adds its own screens, in its own file, so two features never edit the same lines here.
+            playlistScreens(app)
+            browseScreens(app)
+            settingsScreens(app)
         }
     }
 
