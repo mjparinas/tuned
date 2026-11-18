@@ -93,6 +93,7 @@ class PlayerGesturesTest {
     private companion object {
         const val WIDTH = 1920
         const val HEIGHT = 1080
+
         // Away from the centre, where the play button would take the tap, and above the bar at the bottom.
         const val X = 150f
         const val Y = 300f
