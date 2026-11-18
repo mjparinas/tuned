@@ -7,6 +7,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import app.tuned.R
+import app.tuned.core.Regions
 import app.tuned.data.AppSettings
 import app.tuned.data.StartTab
 import app.tuned.ui.FavouriteOrderRoute
@@ -58,11 +59,7 @@ internal fun ChannelsPage(
     SectionHeader(stringResource(R.string.settings_header_hidden))
     SettingRow(
         stringResource(R.string.settings_countries),
-        if (settings.hiddenRegions.isEmpty()) {
-            stringResource(R.string.settings_countries_none_hidden)
-        } else {
-            pluralStringResource(R.plurals.countries_hidden, settings.hiddenRegions.size, settings.hiddenRegions.size)
-        },
+        countriesSummary(settings.hiddenRegions),
         onClick = { onOpen(RegionSettingsRoute) },
         trailing = { Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null) },
     )
@@ -88,4 +85,17 @@ private fun startTabLabel(tab: StartTab): Int = when (tab) {
     StartTab.MOVIES -> R.string.tab_movies
     StartTab.SHOWS -> R.string.tab_shows
     StartTab.LAST -> R.string.start_tab_last
+}
+
+/** "118 countries hidden", with "and no country" when streams with no country are hidden too. */
+@Composable
+private fun countriesSummary(hidden: Set<String>): String {
+    val countries = (hidden - Regions.NONE).size
+    val none = Regions.NONE in hidden
+    return when {
+        countries == 0 && !none -> stringResource(R.string.settings_countries_none_hidden)
+        countries == 0 -> stringResource(R.string.regions_other_hidden)
+        none -> pluralStringResource(R.plurals.countries_and_other_hidden, countries, countries)
+        else -> pluralStringResource(R.plurals.countries_hidden, countries, countries)
+    }
 }

@@ -5,6 +5,10 @@ package app.tuned.core
  * still showed). Settings keeps the countries turned off, so a country a later refresh finds, or one a better rule
  * starts to read, would show by default. A new country follows what most of the known ones do: someone who hid most
  * countries sees only what they chose, and someone who hid one or two still sees new ones.
+ *
+ * Streams with no country ([Regions.NONE]) are the exception: they start hidden only when every known country is
+ * hidden, because someone who kept only US and Canada still wants the untagged sports and event channels, while
+ * someone who turned everything off wants nothing to show.
  */
 object NewRegions {
     data class Settled(
@@ -24,8 +28,11 @@ object NewRegions {
         if (seen.isEmpty()) return if (found.isEmpty()) null else Settled(hidden, found)
         val new = found - seen
         if (new.isEmpty()) return null
-        val hiddenBefore = seen.count { it in hidden }
-        val hideNew = hiddenBefore > seen.size - hiddenBefore
-        return Settled(if (hideNew) hidden + new else hidden, seen + new)
+        val countries = seen - Regions.NONE
+        val hiddenBefore = countries.count { it in hidden }
+        val hideNew = hiddenBefore > countries.size - hiddenBefore
+        val hideNone = countries.isNotEmpty() && hiddenBefore == countries.size
+        val newHidden = new.filter { if (it == Regions.NONE) hideNone else hideNew }
+        return Settled(hidden + newHidden, seen + new)
     }
 }

@@ -72,6 +72,9 @@
     <string name="regions_show_all">Show all</string>
     <string name="regions_hide_all">Hide all</string>
     <string name="regions_search">Search languages and countries</string>
+    <string name="regions_other">No country</string>
+    <string name="regions_other_summary">Streams Tuned can\'t place in a country or language · %1$s</string>
+    <string name="regions_other_hidden">Streams with no country hidden</string>
     <string name="settings_show_adult">Show adult categories</string>
     <string name="settings_show_adult_summary">Hidden until unlocked with your PIN. Locks again 5 minutes after you leave the app.</string>
     <string name="settings_show_adult_summary_no_pin">Hidden. Turning this on asks you to set a PIN first.</string>
@@ -274,6 +277,10 @@
     <plurals name="countries_hidden">
         <item quantity="one">%1$d country hidden</item>
         <item quantity="other">%1$d countries hidden</item>
+    </plurals>
+    <plurals name="countries_and_other_hidden">
+        <item quantity="one">%1$d country and streams with no country hidden</item>
+        <item quantity="other">%1$d countries and streams with no country hidden</item>
     </plurals>
     <plurals name="refresh_every_hours">
         <item quantity="one">Every hour</item>
