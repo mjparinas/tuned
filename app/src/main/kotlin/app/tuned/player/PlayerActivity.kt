@@ -391,7 +391,7 @@ class PlayerActivity : FragmentActivity() {
         tools.addButton(recorder.button)
     }
 
-    @SuppressLint("ClickableViewAccessibility") // PlayerGestures calls performClick on every tap
+    @SuppressLint("ClickableViewAccessibility") // PlayerGestures performs the click once a single tap is confirmed
     private fun setUpGestures() {
         val g =
             PlayerGestures(
