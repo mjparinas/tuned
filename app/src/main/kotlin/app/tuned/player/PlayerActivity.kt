@@ -475,10 +475,6 @@ class PlayerActivity : FragmentActivity() {
             }
     }
 
-    /**
-     * When the connection comes back (Wi-Fi to mobile, a tunnel, a router restart), a stream that stopped on an error
-     * starts again by itself, from where it was for films and episodes.
-     */
     /** Auto-tune: queue the channels for an event, best first, and let [AutoTune] find one that plays. */
     private suspend fun startTune(query: String) {
         val ids = container.tune.candidates(query)
