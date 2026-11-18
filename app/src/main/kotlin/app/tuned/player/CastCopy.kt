@@ -20,8 +20,9 @@ import java.nio.ByteOrder
 
 /**
  * Turns a saved film or episode into one a Chromecast plays ([CastCodecs]): an MP4 with the video copied as it is and
- * the sound copied, or turned into stereo AAC when it isn't stereo AAC already. Only one copy is kept, in the app's cache, and it is reused while the saved file
- * is unchanged. Subtitles and extra sound tracks are left out; the TV gets the first sound track.
+ * the sound copied, or turned into stereo AAC when it isn't stereo AAC already. Only one copy is kept, in the app's
+ * cache, and it is reused while the saved file is unchanged. Subtitles and extra sound tracks are left out; the TV gets
+ * the first sound track.
  */
 internal class CastCopy(
     private val dir: File,
