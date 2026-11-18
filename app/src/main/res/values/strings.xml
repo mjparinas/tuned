@@ -327,6 +327,16 @@
     <string name="player_reconnecting">Reconnecting…</string>
     <string name="player_reconnecting_try">Reconnecting… (%1$d of %2$d)</string>
     <string name="filter_recent">Recent</string>
+    <string name="live_filters">Filters</string>
+    <string name="live_filters_title">Filter channels</string>
+    <string name="live_filters_type">Type</string>
+    <string name="live_filters_language">Language</string>
+    <string name="live_filters_country">Country</string>
+    <string name="live_filters_clear">Clear filters</string>
+    <string name="live_filters_done">Done</string>
+    <string name="live_filters_none">No channels match these filters</string>
+    <string name="live_filter_sports">Sports</string>
+    <string name="live_filter_ppv">PPV and events</string>
     <string name="continue_watching">Continue watching</string>
     <string name="continue_episode">%1$s · S%2$d E%3$d</string>
     <string name="settings_accent">Accent colour</string>
