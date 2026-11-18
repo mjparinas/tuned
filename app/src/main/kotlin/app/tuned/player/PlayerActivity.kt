@@ -733,12 +733,9 @@ class PlayerActivity : FragmentActivity() {
 
     private fun live(): Boolean = queue.firstOrNull()?.kind == ContentKind.LIVE.code
 
-<<<<<<< HEAD
-=======
     /** A live channel pauses into the copy kept on the device, so it can carry on, rewind or catch up. */
     private fun pauseLive(exo: ExoPlayer): Boolean = live() && timeshift.shift(exo)
 
->>>>>>> origin/staging
     override fun onUserLeaveHint() {
         super.onUserLeaveHint()
         // Android 12+ enters picture-in-picture by itself (setAutoEnterEnabled); older versions need asking.
