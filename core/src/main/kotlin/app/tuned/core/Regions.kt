@@ -238,7 +238,7 @@ object Regions {
         region: (T) -> String,
     ): List<T> {
         val collator = Collator.getInstance(Locale.ENGLISH).apply { strength = Collator.PRIMARY }
-        return items.sortedWith(compareBy(collator) { it: T -> displayName(region(it)) }.thenBy { region(it) })
+        return items.sortedWith(compareBy(collator) { item: T -> displayName(region(item)) }.thenBy { region(it) })
     }
 
     /** A tag providers use for a country or language, such as US, UK, EN or USA. */
