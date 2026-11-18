@@ -113,7 +113,7 @@ data class AppSettings(
     val liveRewindMinutes: Int = 30,
     /** Leave out empty event slots ("NO EVENT STREAMING"); see [Placeholders]. Melvin, 2026-11-17: hide them. */
     val hidePlaceholders: Boolean = true,
-    /** Leave out round-the-clock "24/7" channels; see [RoundTheClock]. Melvin, 2026-11-17. Off by default. */
+    /** Leave out round-the-clock "24/7" channels, films and shows; see [RoundTheClock]. Melvin, 2026-11-17 and 11-18. Off by default. */
     val hide247: Boolean = false,
     val pictureInPicture: Boolean = true,
     val playerGestures: Boolean = true,
