@@ -136,6 +136,8 @@ fun HomeScreen(
     val refreshing by vm.refreshing.collectAsStateWithLifecycle()
     val lastError by vm.lastError.collectAsStateWithLifecycle()
     val progress by vm.progress.collectAsStateWithLifecycle()
+    val requestedProgress by vm.requestedProgress.collectAsStateWithLifecycle()
+    val requestedRefreshing by vm.requestedRefreshing.collectAsStateWithLifecycle()
     val liveSearch by vm.search(ContentKind.LIVE).collectAsStateWithLifecycle()
     val profile by vm.profile.collectAsStateWithLifecycle()
     val widthDp = windowWidthDp()
@@ -222,7 +224,7 @@ fun HomeScreen(
                     )
                     return@Column
                 }
-                progress?.let { RefreshBar(it) }
+                requestedProgress?.let { RefreshBar(it) }
                 UpdateBanner()
                 CategoryChips(vm, tab.kind)
                 val lists: @Composable () -> Unit = {
@@ -235,7 +237,7 @@ fun HomeScreen(
                 // Pull to refresh is a setting, off by default; Settings › Refresh now always works.
                 if (settings.pullToRefresh) {
                     PullToRefreshBox(
-                        isRefreshing = refreshing && progress == null,
+                        isRefreshing = requestedRefreshing && requestedProgress == null,
                         onRefresh = vm::refresh,
                         modifier = Modifier.fillMaxSize(),
                     ) {

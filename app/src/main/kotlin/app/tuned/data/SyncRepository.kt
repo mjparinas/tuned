@@ -1,6 +1,7 @@
 package app.tuned.data
 
 import androidx.room.withTransaction
+import app.tuned.BuildConfig
 import app.tuned.core.CatchUp
 import app.tuned.core.ContentKind
 import app.tuned.core.EpisodeInfo
@@ -72,6 +73,7 @@ class SyncRepository(
 ) {
     private val lock = Mutex()
     private val downloader = Downloader(http)
+    private val memo = PlaylistMemo(File(dir, "playlist.fingerprint"), BuildConfig.VERSION_CODE.toString())
 
     data class Result(
         val items: Int,
@@ -119,7 +121,15 @@ class SyncRepository(
         val api = XtreamImport(http, login, userAgent())
         val m3u =
             runCatchingIo {
-                download(url, "playlist", SyncProgress.Step.Playlist, progress) { input ->
+                download(url, "playlist", SyncProgress.Step.Playlist, progress) { input, fingerprint ->
+                    val print = fingerprint()
+                    // The same file as last time changes nothing: keep the cache and skip the minutes of saving.
+                    if (memo.unchanged(print, db.items().any())) {
+                        AppLog.i(TAG_SYNC, "The playlist hasn't changed since the last refresh; keeping the cache")
+                        return@download db.items().count()
+                    }
+                    var fromOneFile = true
+                    memo.forget()
                     importPlaylist(saved) { add ->
                         var shows = 0
                         var order = 0
@@ -130,14 +140,19 @@ class SyncRepository(
                             order = entry.order + 1
                             add(entry)
                         }
-                        // Some providers leave series out of the M3U; their API still lists them.
-                        if (xtream && shows == 0) attempt(TAG_SYNC, "No shows from the API either") { addApiShows(api, order, add) }
-                    }
+                        // Some providers leave series out of the M3U; their API still lists them, and those can change
+                        // while the file doesn't, so such a cache is always saved afresh.
+                        if (xtream && shows == 0) {
+                            fromOneFile = false
+                            attempt(TAG_SYNC, "No shows from the API either") { addApiShows(api, order, add) }
+                        }
+                    }.also { if (fromOneFile) memo.remember(print) }
                 }
             }
         val failure = m3u.exceptionOrNull() ?: return m3u.getOrThrow()
         if (!xtream) throw failure
         AppLog.w(TAG_SYNC, "M3U download failed; reading the Xtream API instead", failure)
+        memo.forget() // the cache is about to come from the API, not from a file
         val fromApi =
             runCatchingIo {
                 importPlaylist(saved) { add ->
@@ -237,11 +252,11 @@ class SyncRepository(
         val count =
             try {
                 if (!import.begin()) return 0
-                if (url != null) download(url, "guide", SyncProgress.Step.Guide, progress) { input -> import.read(input, saved) }
+                if (url != null) download(url, "guide", SyncProgress.Step.Guide, progress) { input, _ -> import.read(input, saved) }
                 // Extra guide links only fill gaps; one that fails leaves the rest of the guide as it is.
                 for (extra in login.extraGuides) {
                     attempt(TAG_SYNC, "An extra guide failed") {
-                        download(extra, "guide", SyncProgress.Step.Guide, progress) { input -> import.read(input, saved) }
+                        download(extra, "guide", SyncProgress.Step.Guide, progress) { input, _ -> import.read(input, saved) }
                     }
                 }
                 import.commit()
@@ -266,29 +281,36 @@ class SyncRepository(
     /** Runs [block] while no refresh is writing the guide, for [GuideFixRepository]. */
     suspend fun <T> whileIdle(block: suspend () -> T): T = lock.withLock { block() }
 
-    /** Saves [url] to disk (resuming and retrying as needed), then hands the unzipped file to [read] and deletes it. */
+    /**
+     * Saves [url] to disk (resuming and retrying as needed), then hands the unzipped file to [read] and deletes it.
+     * [read] can also ask for the file's [PlaylistMemo] fingerprint, which reads the file once more.
+     */
     private suspend fun <T> download(
         url: String,
         name: String,
         step: SyncProgress.Step,
         progress: (SyncProgress) -> Unit,
-        read: suspend (InputStream) -> T,
+        read: suspend (input: InputStream, fingerprint: suspend () -> String) -> T,
     ): T {
         if (url.startsWith(Credentials.FILE_SCHEME)) {
             // A playlist picked from a file was copied into the app when it was added: read it where it is.
             val local = File(URI(url))
             if (!local.exists()) throw IOException("The playlist file is missing. Add it again in Settings › Playlists.")
-            return withContext(Dispatchers.IO) { local.inputStream().use { read(Streams.maybeGunzip(it)) } }
+            return withContext(Dispatchers.IO) {
+                local.inputStream().use { read(Streams.maybeGunzip(it)) { fingerprintOf(local) } }
+            }
         }
         val ua = settings.settings.first().userAgent
         val file = File(dir, name)
         try {
             downloader.download(url, file, ua) { bytes, total -> progress(SyncProgress(step, bytes, total)) }
-            return withContext(Dispatchers.IO) { file.inputStream().use { read(Streams.maybeGunzip(it)) } }
+            return withContext(Dispatchers.IO) { file.inputStream().use { read(Streams.maybeGunzip(it)) { fingerprintOf(file) } } }
         } finally {
             file.delete()
         }
     }
+
+    private suspend fun fingerprintOf(file: File) = withContext(Dispatchers.IO) { file.inputStream().use(memo::fingerprint) }
 
     /** Where the guide named in the last playlist's `#EXTM3U` line is kept, for plain playlists without a guide link. */
     private val headerGuide get() = File(dir, "header-guide")

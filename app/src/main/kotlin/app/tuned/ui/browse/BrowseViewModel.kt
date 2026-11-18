@@ -206,6 +206,12 @@ class BrowseViewModel(
     val progress: StateFlow<SyncProgress?> =
         container.scheduler.progress.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
+    /** Only refreshes the person started show above the lists; scheduled ones run unseen. */
+    val requestedProgress: StateFlow<SyncProgress?> =
+        container.scheduler.requestedProgress.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
+
+    val requestedRefreshing = container.scheduler.requestedRefreshing.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), false)
+
     /** Nothing cached yet (first run, or the first download is still going). */
     val empty: StateFlow<Boolean?> =
         items
