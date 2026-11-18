@@ -48,6 +48,15 @@ jobs:
           find baselineprofile/build -iname '*logcat*' | head -20
           find baselineprofile/build -iname '*logcat*' -type f -print0 \
             | xargs -0 -r grep -h -E ' [EW] |AndroidRuntime|app\.tuned' | grep -v -E 'TestRunner|ActivityManager: Process' | tail -200 || true
+      # The profile is also printed (gzip, base64) so it can be committed from the log where artifacts can't be fetched.
+      - name: Print the profile
+        if: success()
+        run: |
+          cd app/src/release/generated/baselineProfiles
+          wc -l *.txt
+          echo "BEGIN-PROFILE"
+          tar -cz *.txt | base64 -w 4000
+          echo "END-PROFILE"
       - name: Write the numbers to the summary
         if: ${{ !cancelled() }}
         run: node scripts/startup-summary.mjs baselineprofile/build >> "$GITHUB_STEP_SUMMARY"
