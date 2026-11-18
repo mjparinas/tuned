@@ -212,10 +212,11 @@ private fun BackupFlow(
 }
 
 @Composable
-private fun PassphraseDialog(
+internal fun PassphraseDialog(
     create: Boolean,
     wrong: Boolean,
     onDismiss: () -> Unit,
+    help: String? = null,
     onConfirm: (String) -> Unit,
 ) {
     var passphrase by remember { mutableStateOf("") }
@@ -228,7 +229,7 @@ private fun PassphraseDialog(
         text = {
             Column {
                 Text(
-                    stringResource(if (create) R.string.backup_passphrase_new_help else R.string.backup_passphrase_help),
+                    help ?: stringResource(if (create) R.string.backup_passphrase_new_help else R.string.backup_passphrase_help),
                     style = MaterialTheme.typography.bodyMedium,
                 )
                 Spacer(Modifier.height(12.dp))

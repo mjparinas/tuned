@@ -9,6 +9,7 @@ import androidx.lifecycle.ProcessLifecycleOwner
 import app.tuned.diagnostics.AppLog
 import app.tuned.diagnostics.CrashReporter
 import app.tuned.diagnostics.launchSafely
+import app.tuned.work.CloudSyncWorker
 import coil3.ImageLoader
 import coil3.PlatformContext
 import coil3.SingletonImageLoader
@@ -52,6 +53,7 @@ class TunedApp :
         }
         container = AppContainer(this)
         lockAdultWhenAway()
+        CloudSyncWorker.watch(this)
         container.appScope.launchSafely("Profiles") { container.profiles.sync() }
         container.appScope.launch {
             container.settings.settings

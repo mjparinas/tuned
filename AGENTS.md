@@ -88,6 +88,7 @@ One file per topic in `docs/decisions/`, A to Z. Add a line when you add a topic
 - [Security](docs/decisions/security.md): login storage, cleartext HTTP, backups.
 - [Settings](docs/decisions/settings.md): the pages of Settings and what goes where.
 - [Speed](docs/decisions/speed.md): what keeps the app fast, and the budget.
+- [Sync](docs/decisions/sync.md): phone and TV kept the same through Google Drive's app folder, locked with a passphrase.
 - [Trakt](docs/decisions/trakt.md): signing in with a code, scrobbling films and episodes, the app's keys.
 - [TV](docs/decisions/tv.md): Android TV launcher, focus outlines, remote keys in the player.
 - [Updates](docs/decisions/updates.md): GitHub Releases updater now, Play in-app updates later, semver tags.

@@ -96,6 +96,73 @@ class BackupRepository(
         BackupCrypto.seal(json.encodeToString(Contents.serializer(), contents).toByteArray(), passphrase)
     }
 
+    /**
+     * The copy that sync between devices shares ([CloudSync]): the saved playlists, settings, favourites and watch
+     * later, in a fixed order so the same state always gives the same bytes. Which playlist is in use stays each
+     * device's own, so a phone and a TV can watch different ones.
+     */
+    suspend fun syncCopy(): ByteArray = withContext(Dispatchers.IO) {
+        val contents =
+            Contents(
+                playlists =
+                    credentials
+                        .saved()
+                        .filter { it.kind != Credentials.Kind.File }
+                        .map { it.toLogin() }
+                        .sortedWith(compareBy({ it.server }, { it.username }, { it.playlistUrl })),
+                settings =
+                    settings
+                        .snapshot()
+                        .toSortedMap()
+                        .mapValues { (_, v) -> encode(v) },
+                favourites =
+                    db
+                        .library()
+                        .allFavourites()
+                        .map { Favourite(it.itemId, it.addedAt, it.position) }
+                        .sortedBy { it.itemId },
+                watchLater =
+                    db
+                        .watchLater()
+                        .all()
+                        .first()
+                        .map { Later(it.key, it.itemId, it.showKey, it.title, it.image, it.addedAt) }
+                        .sortedBy { it.key },
+            )
+        json.encodeToString(Contents.serializer(), contents).toByteArray()
+    }
+
+    /**
+     * Takes another device's [syncCopy]: its settings, and its favourites and watch later in place of this device's,
+     * so a removal on one device removes it here too. Its playlists are added to the saved ones; a device with none in
+     * use starts on the first. Returns whether that signed this device in.
+     */
+    suspend fun applySyncCopy(plain: ByteArray): Boolean = withContext(Dispatchers.IO) {
+        val contents =
+            runCatching { json.decodeFromString(Contents.serializer(), plain.decodeToString()) }
+                .getOrElse { throw BackupCrypto.NotABackup() }
+        settings.restore(contents.settings.mapNotNull { (k, v) -> decode(v)?.let { k to it } }.toMap())
+        val library = db.library()
+        library.clearFavourites()
+        contents.favourites.forEach { library.addFavourite(FavouriteEntity(it.itemId, it.addedAt, it.position)) }
+        val later = db.watchLater()
+        val keep = contents.watchLater.map { it.key }.toSet()
+        later
+            .all()
+            .first()
+            .filter { it.key !in keep }
+            .forEach { later.remove(it.key) }
+        contents.watchLater.forEach { later.add(WatchLaterEntity(it.key, it.itemId, it.showKey, it.title, it.image, it.addedAt)) }
+        contents.playlists.forEach { credentials.remember(it.toCredentials()) }
+        val first = contents.playlists.firstOrNull()
+        if (credentials.load() == null && first != null) {
+            credentials.save(first.toCredentials())
+            true
+        } else {
+            false
+        }
+    }
+
     /** Throws [BackupCrypto.WrongPassphrase] or [BackupCrypto.NotABackup]; nothing changes unless the whole file reads. */
     suspend fun import(
         sealed: ByteArray,
@@ -128,7 +195,7 @@ class BackupRepository(
                 is Long -> put("l", value)
                 is Float -> put("f", value)
                 is String -> put("s", value)
-                is Set<*> -> putJsonArray("set") { value.forEach { add(JsonPrimitive(it.toString())) } }
+                is Set<*> -> putJsonArray("set") { value.map { it.toString() }.sorted().forEach { add(JsonPrimitive(it)) } }
             }
         }
 
