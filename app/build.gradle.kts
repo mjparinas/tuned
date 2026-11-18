@@ -140,6 +140,10 @@ baselineProfile {
     mergeIntoMain = true
     // Puts the startup code together at the front of the dex file too, so less of it is read from storage.
     dexLayoutOptimization = true
+    // Only the github build is driven on the emulator; mergeIntoMain gives the play build the same profile.
+    variants {
+        create("github") { from(project(":baselineprofile")) }
+    }
 }
 
 // Room's plugin writes each variant's schema separately, so debug and release builds don't race on one file.
@@ -194,8 +198,6 @@ dependencies {
     implementation(libs.coil.compose)
     implementation(libs.coil.network.okhttp)
     implementation(libs.androidx.profileinstaller)
-    // Only the github build is driven on the emulator; mergeIntoMain gives the play build the same profile.
-    "githubBaselineProfile"(project(":baselineprofile"))
     implementation(libs.play.app.update)
     // Premium is sold through Play Billing in the store build only (docs/decisions/premium.md).
     "playImplementation"(libs.play.billing)
