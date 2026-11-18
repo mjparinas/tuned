@@ -9,6 +9,8 @@ object CastMedia {
     data class Media(
         val url: String,
         val mimeType: String,
+        /** HLS whose pieces are fragmented MP4 rather than MPEG-TS, which the receiver must be told ([CastHls]). */
+        val fmp4: Boolean = false,
     )
 
     private val xtreamLive = Regex("""^(https?://[^/]+)(/live)?/([^/]+)/([^/]+)/(\d+)(\.ts)?$""", RegexOption.IGNORE_CASE)
@@ -26,6 +28,9 @@ object CastMedia {
         }
         return Media(url, mimeFor(clean))
     }
+
+    /** A saved file streamed from the phone as HLS made on the fly, at [url] (its playlist). */
+    fun phoneStream(url: String): Media = Media(url, HLS, fmp4 = true)
 
     fun mimeFor(path: String): String = when (path.substringAfterLast('.', "").lowercase()) {
         "m3u8" -> HLS

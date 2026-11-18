@@ -1,38 +1,43 @@
 package app.tuned.core
 
-import app.tuned.core.CastCodecs.Plan
 import kotlin.test.Test
+import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class CastCodecsTest {
     @Test
-    fun anMkvWithDolbySoundBecomesAnMp4WithAac() {
-        // The Shield's case: H.264 and AC-3 in MKV stopped at once with a decode error.
-        assertEquals(Plan.REMUX_NEW_AUDIO, CastCodecs.plan("4148599558004010732.mkv", "video/avc", "audio/ac3"))
-        assertEquals(Plan.REMUX_NEW_AUDIO, CastCodecs.plan("1.mkv", "video/hevc", "audio/eac3"))
-        assertEquals(Plan.REMUX_NEW_AUDIO, CastCodecs.plan("1.mp4", "video/avc", "audio/vnd.dts"))
+    fun h264AndHevcAreStreamedPieceByPiece() {
+        assertTrue(CastCodecs.streams("video/avc"))
+        assertTrue(CastCodecs.streams("video/hevc"))
+        // Video an MP4 can't hold goes as it is: only the picture would need re-encoding.
+        assertFalse(CastCodecs.streams("video/x-vnd.on2.vp9"))
+        assertFalse(CastCodecs.streams("video/mpeg2"))
+        assertFalse(CastCodecs.streams(null))
     }
 
     @Test
-    fun anMkvWithAacIsOnlyRepackaged() {
-        assertEquals(Plan.REMUX, CastCodecs.plan("1.mkv", "video/avc", "audio/mp4a-latm"))
-        assertEquals(Plan.REMUX, CastCodecs.plan("1.avi", "video/avc", null))
+    fun onlyStereoOrMonoAacGoesAsItIs() {
+        assertTrue(CastCodecs.copiesSound("audio/mp4a-latm", 2))
+        assertTrue(CastCodecs.copiesSound("audio/mp4a-latm", 1))
+        // The Shield's case: every film and episode failed with 102 while stereo live channels played.
+        assertFalse(CastCodecs.copiesSound("audio/mp4a-latm", 6))
+        // The Dolby and DTS sound of most TV rips, which a Chromecast can't play.
+        assertFalse(CastCodecs.copiesSound("audio/ac3", 6))
+        assertFalse(CastCodecs.copiesSound("audio/eac3", 2))
+        assertFalse(CastCodecs.copiesSound("audio/vnd.dts", 6))
+        assertFalse(CastCodecs.copiesSound("audio/mp4a-latm", null))
+        assertEquals(2, CastCodecs.channelsForTv(6))
+        assertEquals(1, CastCodecs.channelsForTv(1))
     }
 
     @Test
-    fun aPlayableMp4GoesAsItIs() {
-        assertEquals(Plan.AS_IS, CastCodecs.plan("1.mp4", "video/avc", "audio/mp4a-latm"))
-        assertEquals(Plan.AS_IS, CastCodecs.plan("1.M4V", "video/hevc", "audio/mpeg"))
-    }
-
-    @Test
-    fun aCopyIsReusedUntilTheSavedFileChanges() {
-        assertTrue(CastCodecs.reuseCopy(copyModified = 2_000, sourceModified = 1_000))
-        assertTrue(CastCodecs.reuseCopy(copyModified = 1_000, sourceModified = 1_000))
-        assertFalse(CastCodecs.reuseCopy(copyModified = 500, sourceModified = 1_000))
-        assertFalse(CastCodecs.reuseCopy(copyModified = null, sourceModified = 1_000))
+    fun theSoundSetupMatchesWhatTheEncoderMakes() {
+        assertContentEquals(byteArrayOf(0x11, 0x90.toByte()), CastCodecs.aacConfig(48_000, 2))
+        assertContentEquals(byteArrayOf(0x12, 0x10), CastCodecs.aacConfig(44_100, 2))
+        // An unusual rate is written out in full.
+        assertEquals(5, CastCodecs.aacConfig(47_000, 2).size)
     }
 
     @Test
@@ -42,9 +47,17 @@ class CastCodecsTest {
     }
 
     @Test
-    fun videoAnMp4CantHoldGoesAsItIs() {
-        assertEquals(Plan.AS_IS, CastCodecs.plan("1.mkv", "video/x-vnd.on2.vp9", "audio/opus"))
-        assertEquals(Plan.AS_IS, CastCodecs.plan("1.ts", "video/mpeg2", "audio/ac3"))
-        assertEquals(Plan.AS_IS, CastCodecs.plan("1.mkv", null, "audio/ac3"))
+    fun fivePointOneIsMixedForTwoSpeakers() {
+        // One frame: front left, front right, centre, low frequency, back left, back right.
+        val mixed = CastCodecs.downmix(shortArrayOf(1000, 2000, 1000, 30000, 1000, 0), channels = 6)
+        assertEquals(2, mixed.size)
+        assertEquals(2414, mixed[0].toInt()) // 1000 + 707 centre + 707 back left; the low frequency is left out
+        assertEquals(2707, mixed[1].toInt()) // 2000 + 707 centre
+        // Loud peaks are clamped rather than wrapping round.
+        val loud = CastCodecs.downmix(ShortArray(6) { Short.MAX_VALUE }, channels = 6)
+        assertEquals(Short.MAX_VALUE, loud[0])
+        // Stereo goes through untouched.
+        val stereo = shortArrayOf(1, 2, 3, 4)
+        assertTrue(CastCodecs.downmix(stereo, channels = 2) === stereo)
     }
 }

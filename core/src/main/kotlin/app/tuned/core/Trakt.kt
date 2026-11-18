@@ -65,10 +65,14 @@ object Trakt {
     }
 
     /**
-     * Whether a pause or stop at [progress] is worth sending. Trakt turns down a spot of 0% (HTTP 422), which is what
-     * the phone's player reads while a cast has the video (2026-11-18), and there is nothing to save there anyway.
+     * Whether a pause or stop at [progress] is worth sending. Trakt turns down a spot under 1% ("progress_too_low",
+     * HTTP 422; 2026-11-18 logs showed it at 0% while a cast had the video and at 0.44%), and there is nothing to save
+     * there anyway.
      */
-    fun sendsSpot(progress: Double): Boolean = progress > 0.0
+    fun sendsSpot(progress: Double): Boolean = progress >= MIN_SPOT_PERCENT
+
+    /** The least progress Trakt keeps a paused or stopped spot for. */
+    const val MIN_SPOT_PERCENT = 1.0
 
     /** Trakt counts a play as watched from 80%; under that, stopping only saves the spot. */
     const val WATCHED_PERCENT = 80.0
