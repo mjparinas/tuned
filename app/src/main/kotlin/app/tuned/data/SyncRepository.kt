@@ -149,10 +149,11 @@ class SyncRepository(
     }
 
     /** Like [runCatching] for I/O only: anything else (a bug, a cancellation) still throws. */
-    private inline fun <T> runCatchingIo(block: () -> T): Result<T> = try {
-        Result.success(block())
+    // kotlin.Result in full: this class has its own Result (a refresh's counts).
+    private inline fun <T> runCatchingIo(block: () -> T): kotlin.Result<T> = try {
+        kotlin.Result.success(block())
     } catch (e: IOException) {
-        Result.failure(e)
+        kotlin.Result.failure(e)
     }
 
     /** Which live channels keep recordings (Xtream only), and the server's time zone that catch-up links use. */
