@@ -72,8 +72,10 @@ import java.io.IOException
 import java.util.UUID
 import java.util.concurrent.TimeUnit
 
-/** The default server; editable here and in Settings › Playlists (Melvin, 2026-11-17). */
-/** Filled in at sign-in in GitHub builds; empty in store builds, which never name a provider (docs/decisions/premium.md). */
+/**
+ * The default server; editable here and in Settings › Playlists (Melvin, 2026-11-17). Filled in at sign-in in GitHub
+ * builds; empty in store builds, which never name a provider (docs/decisions/premium.md).
+ */
 val DEFAULT_SERVER: String = BuildConfig.DEFAULT_SERVER
 
 /** What the form holds, before it becomes a [Credentials]. */
