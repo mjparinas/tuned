@@ -87,7 +87,7 @@ One file per topic in `docs/decisions/`, A to Z. Add a line when you add a topic
 - [Premium](docs/decisions/premium.md): the free app, the Premium unlock, prices, the GitHub and store builds, store policy.
 - [Profiles](docs/decisions/profiles.md): who's watching, kids profiles, profile PINs.
 - [Scope](docs/decisions/scope.md): what Tuned will never do, and what's decided but not built yet.
-- [Security](docs/decisions/security.md): login storage, cleartext HTTP, backups.
+- [Security](docs/decisions/security.md): login storage, cleartext HTTP, Android backup off (backup files removed 2026-11-18).
 - [Settings](docs/decisions/settings.md): the pages of Settings and what goes where.
 - [Speed](docs/decisions/speed.md): what keeps the app fast, and the budget.
 - [Sync](docs/decisions/sync.md): phone and TV kept the same through Google Drive's app folder, locked with a passphrase.

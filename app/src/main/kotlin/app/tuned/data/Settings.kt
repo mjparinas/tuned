@@ -96,6 +96,8 @@ data class AppSettings(
     val guideDays: Int = 3,
     /** Moves the whole guide, for one that runs early or late (Settings › Guide). */
     val guideOffsetMinutes: Int = 0,
+    /** The zone guide and event times show in, as a zone id; blank follows the phone (Settings › Guide). */
+    val timeZone: String = "",
     val unmeteredOnly: Boolean = false,
     val buffer: BufferMode = BufferMode.BALANCED,
     val audioLanguage: String = "",
@@ -246,8 +248,8 @@ class SettingsRepository(
     ) = update { it.copy(profileId = id, kidsProfile = kids, profileCount = count) }
 
     /**
-     * Every stored setting by its key, for a backup. Sync times and the open tab are left out: they belong to this phone.
-     * Reads the file directly, so a backup fails loudly rather than saving the defaults.
+     * Every stored setting by its key, for sync. Sync times and the open tab are left out: they belong to this phone.
+     * Reads the file directly, so sync fails loudly rather than saving the defaults.
      */
     suspend fun snapshot(): Map<String, Any> = context.dataStore.data
         .first()
@@ -256,7 +258,7 @@ class SettingsRepository(
         .filterKeys { it !in DEVICE_ONLY }
 
     /** Puts back what [snapshot] saved; values of a type the app doesn't store are skipped. */
-    @Suppress("UNCHECKED_CAST") // a Set read back from a backup only ever holds the strings it was saved with
+    @Suppress("UNCHECKED_CAST") // a Set read back from a synced copy only ever holds the strings it was saved with
     suspend fun restore(values: Map<String, Any>) {
         context.dataStore.edit { prefs ->
             for ((name, value) in values.filterKeys { it !in DEVICE_ONLY }) {
@@ -289,12 +291,12 @@ class SettingsRepository(
     private object K {
         val adultPin = stringPreferencesKey("adult_pin")
 
-        /** The per-device TMDB key from before it was built in; deleted on the next save, so it leaves backups too. */
+        /** The per-device TMDB key from before it was built in; deleted on the next save, so it leaves synced copies too. */
         val oldTmdbKey = stringPreferencesKey("tmdb_key")
     }
 
     private companion object {
-        /** Sync times, the open tab and the profile mirror belong to this phone; a backup leaves them out. */
+        /** Sync times, the open tab and the profile mirror belong to this phone; sync leaves them out. */
         val DEVICE_ONLY = SETTING_FIELDS.filter { it.deviceOnly }.map { it.key.name }.toSet()
     }
 }

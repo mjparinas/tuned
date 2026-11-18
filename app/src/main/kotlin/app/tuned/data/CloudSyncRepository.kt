@@ -2,8 +2,8 @@ package app.tuned.data
 
 import android.content.Context
 import androidx.core.content.edit
-import app.tuned.core.BackupCrypto
 import app.tuned.core.CloudSync
+import app.tuned.core.PassphraseCrypto
 import app.tuned.diagnostics.AppLog
 import app.tuned.diagnostics.attempt
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -15,8 +15,8 @@ import java.io.IOException
 
 /**
  * Sync between devices (from the app audit, item 13; Melvin chose his Google account's Drive app folder, 2026-11-17):
- * the saved playlists, settings, favourites and watch later ([BackupRepository.syncCopy]) kept the same on a phone and
- * a TV. The copy is sealed with a passphrase the person chooses ([BackupCrypto], the same as backup files) before it
+ * the saved playlists, settings, favourites and watch later ([SyncCopyRepository.syncCopy]) kept the same on a phone and
+ * a TV. The copy is sealed with a passphrase the person chooses ([PassphraseCrypto]) before it
  * leaves the device, so Google holds only ciphertext. Each run takes the other device's copy or sends this one's
  * ([CloudSync.decide]); everything works offline and catches up on the next run.
  */
@@ -24,7 +24,7 @@ class CloudSyncRepository(
     context: Context,
     /** The Google account: signing in, and the copy in Drive. */
     val drive: GoogleDrive,
-    private val backup: BackupRepository,
+    private val syncCopy: SyncCopyRepository,
     /** A pulled copy signed this device in: start its first download. */
     private val onSignedIn: () -> Unit,
 ) {
@@ -81,7 +81,7 @@ class CloudSyncRepository(
             prefs.edit { putLong(KEY_LAST_SYNC, now) }
             statusFlow.value = Status(now, Problem.NONE)
             true
-        } catch (_: BackupCrypto.WrongPassphrase) {
+        } catch (_: PassphraseCrypto.WrongPassphrase) {
             AppLog.w(TAG, "The sync passphrase doesn't open the copy in Drive")
             statusFlow.value = statusFlow.value.copy(problem = Problem.PASSPHRASE)
             true
@@ -97,7 +97,7 @@ class CloudSyncRepository(
     }
 
     private suspend fun sync(passphrase: CharArray) {
-        val plain = backup.syncCopy()
+        val plain = syncCopy.syncCopy()
         val local = CloudSync.fingerprint(plain, passphrase)
         val synced = prefs.getString(KEY_SYNCED, null)
         if (local != synced && prefs.getString(KEY_NOTICED, null) != local) {
@@ -122,14 +122,14 @@ class CloudSyncRepository(
                 val found = requireNotNull(remote)
                 val opened =
                     try {
-                        BackupCrypto.open(drive.download(found.id), passphrase)
-                    } catch (_: BackupCrypto.NotABackup) {
+                        PassphraseCrypto.open(drive.download(found.id), passphrase)
+                    } catch (_: PassphraseCrypto.NotOurs) {
                         // A damaged copy in Drive: this device's replaces it rather than leaving sync stuck.
                         AppLog.w(TAG, "The copy in Drive is damaged; sending this device's")
                         push(plain, local, passphrase, found.id)
                         return
                     }
-                val signedIn = backup.applySyncCopy(opened)
+                val signedIn = syncCopy.applySyncCopy(opened)
                 markSynced(requireNotNull(found.fingerprint))
                 if (signedIn) onSignedIn()
             }
@@ -142,7 +142,7 @@ class CloudSyncRepository(
         passphrase: CharArray,
         existing: String?,
     ) {
-        drive.upload(BackupCrypto.seal(plain, passphrase), fingerprint, System.currentTimeMillis(), existing)
+        drive.upload(PassphraseCrypto.seal(plain, passphrase), fingerprint, System.currentTimeMillis(), existing)
         markSynced(fingerprint)
     }
 
