@@ -64,7 +64,11 @@ object AppLog {
     fun setSecrets(vararg values: String) {
         secrets =
             values
-                .flatMap { listOf(it, URLEncoder.encode(it, Charsets.UTF_8), URLEncoder.encode(it, Charsets.UTF_8).replace("+", "%20")) }
+                .flatMap {
+                    // The String overload: the Charset one needs Android 13.
+                    val encoded = URLEncoder.encode(it, "UTF-8")
+                    listOf(it, encoded, encoded.replace("+", "%20"))
+                }
                 .filter { it.length >= 3 }
                 .distinct()
                 .sortedByDescending { it.length }
