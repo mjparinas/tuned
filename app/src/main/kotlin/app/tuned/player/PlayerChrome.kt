@@ -9,9 +9,9 @@ import android.view.Window
 import android.widget.ImageButton
 import android.widget.TextView
 import androidx.core.view.WindowCompat
-import androidx.core.widget.doAfterTextChanged
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
+import androidx.core.widget.doAfterTextChanged
 import app.tuned.R
 
 // The player's plain views (title, status, back) and full-screen mode, kept out of PlayerActivity so it holds only
