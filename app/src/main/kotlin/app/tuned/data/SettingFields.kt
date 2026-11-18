@@ -163,6 +163,7 @@ internal val SETTING_FIELDS: List<SettingField<*, *>> =
         bool("cc_bold", { captions.bold }) { cc { copy(bold = it) } },
         bool("cc_override", { captions.overrideStreamStyle }) { cc { copy(overrideStreamStyle = it) } },
         float("cc_bottom", { captions.bottomPadding }) { cc { copy(bottomPadding = it) } },
+        bool("auto_subtitles", { autoSubtitles }) { copy(autoSubtitles = it) },
         // Ratings, network and updates
         string("tmdb_key", { tmdbKey }) { copy(tmdbKey = it) },
         string("user_agent", { userAgent }) { copy(userAgent = it) },

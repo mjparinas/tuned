@@ -111,6 +111,9 @@ class PlayerActivity : FragmentActivity() {
     /** Saved copies in the queue, by item id: played from the device here, and served from the phone when casting. */
     private var savedFiles: Map<Long, File> = emptyMap()
     private val subtitleTiming = SubtitleTiming()
+    private val subtitleSearch by lazy {
+        SubtitleSearch(this, container.subtitles, { player }, { queue }, { settings }, { cast?.casting == true }, ::flash)
+    }
     private var reconnect: ConnectivityManager.NetworkCallback? = null
     private var autoTune: AutoTune? = null
     private val tuneNext by lazy {
@@ -343,6 +346,7 @@ class PlayerActivity : FragmentActivity() {
                     ),
             )
         overlay.addView(tools.toolbar)
+        tools.addButton(subtitleSearch.button)
         cast =
             CastControl(
                 activity = this,
@@ -484,7 +488,7 @@ class PlayerActivity : FragmentActivity() {
             playerView.setShowNextButton(queue.size > 1)
             playerView.setShowPreviousButton(queue.size > 1)
         }
-        val mediaItems = queue.map { it.toMediaItem(local[it.id]) }
+        val mediaItems = subtitleSearch.withSaved(exo, queue, item.id, queue.map { it.toMediaItem(local[it.id]) })
         val index = queue.indexOfFirst { it.id == item.id }.coerceAtLeast(0)
         val resumeAt = if (!live && settings.resumePlayback) resumePosition(item.id) else C.TIME_UNSET
         exo.setMediaItems(mediaItems, index, resumeAt)
@@ -566,6 +570,7 @@ class PlayerActivity : FragmentActivity() {
             .apply {
                 addListener(listener(live))
                 addListener(skipIntro.listener)
+                addListener(subtitleSearch.listener)
             }
     }
 

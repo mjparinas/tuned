@@ -50,6 +50,7 @@ jobs:
         env:
           ANDROID_KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_B64 }}
           ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          OPENSUBTITLES_API_KEY: ${{ secrets.OPENSUBTITLES_API_KEY }}
           VERSION_CODE: ${{ steps.v.outputs.code }}
           VERSION_NAME: ${{ steps.v.outputs.version }}
         run: |

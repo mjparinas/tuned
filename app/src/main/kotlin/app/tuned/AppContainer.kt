@@ -18,6 +18,7 @@ import app.tuned.data.PlaylistSession
 import app.tuned.data.ProfileRepository
 import app.tuned.data.SavedArtwork
 import app.tuned.data.SettingsRepository
+import app.tuned.data.SubtitleRepository
 import app.tuned.data.SyncRepository
 import app.tuned.data.TuneRepository
 import app.tuned.data.db.TunedDatabase
@@ -71,6 +72,7 @@ class AppContainer(
     val savedArtwork by lazy { SavedArtwork(context, db, metadata) }
     val people by lazy { PeopleRepository(http, settings, db.metadata(), connectivity::onlineNow) }
     val profiles by lazy { ProfileRepository(db, settings) }
+    val subtitles by lazy { SubtitleRepository(http, settings, credentials, metadata, context.filesDir.resolve("subtitles")) }
 
     /** True while the player is open; downloads and channel scans hold back so only one stream is ever open. */
     val playerOpen = MutableStateFlow(false)

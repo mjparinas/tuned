@@ -133,6 +133,8 @@ data class AppSettings(
     val userAgent: String = "",
     /** The person's own TMDB key (v3 key or v4 read token) for ratings and trailers; blank turns them off. */
     val tmdbKey: String = "",
+    /** With captions on, a film or episode with no subtitles of its own fetches the best match by itself. */
+    val autoSubtitles: Boolean = true,
     val showGuideInList: Boolean = true,
     /** Live TV as a grid guide (channels down the side, time across the top) instead of a list. */
     val liveGrid: Boolean = false,

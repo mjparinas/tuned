@@ -98,6 +98,7 @@ internal fun PlaybackPage(
         label = { ms -> pluralStringResource(R.plurals.seconds, (ms / 1000).toInt(), (ms / 1000).toInt()) },
     ) { ms -> vm.update { it.copy(seekForwardMs = ms) } }
     SettingRow(stringResource(R.string.settings_clear_history), onClick = vm::clearHistory)
+    SubtitleSettings(settings, vm::update)
 }
 
 private fun bufferLabel(mode: BufferMode): Int = when (mode) {
