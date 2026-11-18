@@ -53,7 +53,6 @@
     <string name="sync_downloading_playlist">Downloading channels · %1$s</string>
     <string name="sync_downloading_guide">Downloading the guide · %1$s</string>
 
-    <string name="settings_account">Account</string>
     <string name="settings_refresh_now">Refresh now</string>
     <string name="settings_pull_to_refresh">Pull down to refresh</string>
     <string name="settings_pull_to_refresh_summary">Pulling down on a list downloads the playlist and guide again</string>
@@ -64,7 +63,6 @@
     <string name="settings_sign_out_summary">Forget every playlist and the downloaded channels</string>
     <string name="settings_sign_out_confirm">This removes every saved playlist and login, and the downloaded channels and guide from this device. Favourites stay.</string>
 
-    <string name="settings_content">Content</string>
     <string name="settings_countries">Countries and languages</string>
     <string name="settings_countries_none_hidden">Showing every country</string>
     <string name="regions_help">Turn a language or country off to hide its channels, movies and shows everywhere, search included. A language covers the countries that speak it, so English covers US, UK, Canada and the rest.</string>
@@ -121,7 +119,6 @@
     <string name="settings_start_tab">Open on</string>
     <string name="start_tab_last">Where I left off</string>
 
-    <string name="settings_background">Background refresh</string>
     <string name="settings_playlist_refresh">Channels and movies</string>
     <string name="settings_guide_refresh">TV guide</string>
     <string name="settings_guide_days">Guide days to keep</string>

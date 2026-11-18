@@ -37,11 +37,10 @@ import app.tuned.data.ThemeMode
 import app.tuned.ui.theme.swatch
 
 @Composable
-internal fun AppearanceSettings(
+internal fun AppearancePage(
     settings: AppSettings,
     vm: SettingsViewModel,
 ) {
-    SectionHeader(stringResource(R.string.settings_appearance))
     ChoiceRow(
         stringResource(R.string.settings_theme),
         ThemeMode.entries,

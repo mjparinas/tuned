@@ -123,7 +123,7 @@ class CredentialStore(
     fun forget(credentials: Credentials) = write(saved().filterNot { it.samePlaylist(credentials) })
 
     /**
-     * The optional OpenSubtitles.com account (Settings › Subtitles), which raises the daily download limit. Kept
+     * The optional OpenSubtitles.com account (Settings › Playback › Subtitles), which raises the daily download limit. Kept
      * encrypted like the login, and forgotten on sign-out with it.
      */
     fun subtitleAccount(): SubtitleAccount? {

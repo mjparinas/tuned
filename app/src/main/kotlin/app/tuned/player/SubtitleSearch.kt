@@ -29,7 +29,7 @@ import java.util.Locale
 /**
  * Subtitle search (Melvin, 2026-11-17): for films and episodes whose stream has no subtitles, the player's subtitle
  * search button lists matching files from OpenSubtitles.com and adds the one picked. With captions on, a video that
- * has none fetches the best match by itself (Settings › Subtitles). The button shows only in builds with the key.
+ * has none fetches the best match by itself (Settings › Playback › Subtitles). The button shows only in builds with the key.
  * Downloaded files are kept by item, so the same film shows them again with no download.
  */
 @OptIn(UnstableApi::class)

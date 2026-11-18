@@ -24,7 +24,7 @@ import app.tuned.data.AppSettings
 import app.tuned.data.SubtitleAccount
 
 /**
- * Settings › Subtitles, only in builds with the OpenSubtitles.com key (OPENSUBTITLES_API_KEY): whether a video with no
+ * Settings › Playback › Subtitles, only in builds with the OpenSubtitles.com key (OPENSUBTITLES_API_KEY): whether a video with no
  * subtitles fetches them by itself, and an optional account for a higher daily limit.
  * The account is kept encrypted with the login, never in settings or backups.
  */

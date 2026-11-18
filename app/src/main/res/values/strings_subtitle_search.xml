@@ -8,7 +8,7 @@
     <string name="subtitle_search_not_casting">Finding subtitles isn\'t available while casting</string>
     <string name="subtitle_search_no_key">Subtitle search isn\'t available in this build</string>
     <string name="subtitle_search_bad_key">OpenSubtitles turned down this app\'s key. Try again after the next update.</string>
-    <string name="subtitle_search_bad_account">OpenSubtitles turned down the sign-in. Check it in Settings › Subtitles.</string>
+    <string name="subtitle_search_bad_account">OpenSubtitles turned down the sign-in. Check it in Settings › Playback › Subtitles.</string>
     <string name="subtitle_search_limit">Today\'s OpenSubtitles download limit is used up. Try again tomorrow.</string>
     <string name="subtitle_search_offline">Couldn\'t reach OpenSubtitles. Try again in a moment.</string>
     <string name="subtitle_search_hearing_impaired">Hearing impaired</string>
