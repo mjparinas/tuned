@@ -23,7 +23,6 @@ import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
-import kotlinx.serialization.json.putJsonArray
 import kotlinx.serialization.json.putJsonObject
 import okhttp3.FormBody
 import okhttp3.HttpUrl.Companion.toHttpUrl
@@ -37,9 +36,9 @@ import java.io.IOException
 
 /**
  * The person's Google account, for sync between devices (from the app audit, item 13): signed in with Google's code
- * for TVs and other devices, the same on a phone and a TV remote, asking only for Drive's app folder, a hidden folder
- * only Tuned can see. Tuned never sees the Google password. The refresh token is sealed with a Keystore key
- * ([KeystoreBox]) and stays out of backups. Without the app's keys in the build ([BuildConfig.GOOGLE_TV_CLIENT_ID])
+ * for TVs and other devices, the same on a phone and a TV remote, asking only for the files Tuned itself creates
+ * (`drive.file`; Google's code sign-in refuses the hidden app folder). Tuned never sees the Google password. The
+ * refresh token is sealed with a Keystore key ([KeystoreBox]) and stays out of backups. Without the app's keys in the build ([BuildConfig.GOOGLE_TV_CLIENT_ID])
  * none of it shows.
  */
 class GoogleDrive(
@@ -181,8 +180,8 @@ class GoogleDrive(
             FILES_URL
                 .toHttpUrl()
                 .newBuilder()
-                .addQueryParameter("spaces", "appDataFolder")
-                .addQueryParameter("q", "name = '${CloudSync.FILE_NAME}'")
+                // Only files Tuned created are visible to it (drive.file); one put in the bin no longer counts.
+                .addQueryParameter("q", "name = '${CloudSync.FILE_NAME}' and trashed = false")
                 .addQueryParameter("fields", "files(id,appProperties)")
                 .build()
         val answer = authorized(Request.Builder().url(url).get())
@@ -209,7 +208,7 @@ class GoogleDrive(
     /** The sealed copy's bytes. Throws [IOException] when Drive can't be asked. */
     suspend fun download(id: String): ByteArray = call(Request.Builder().url("$FILES_URL/$id?alt=media").get()) { it.body.bytes() }
 
-    /** Puts [sealed] in Drive's app folder, replacing [existing] when there is one. Throws [IOException] on failure. */
+    /** Puts [sealed] in the person's Drive, replacing [existing] when there is one. Throws [IOException] on failure. */
     suspend fun upload(
         sealed: ByteArray,
         fingerprint: String,
@@ -220,7 +219,7 @@ class GoogleDrive(
             buildJsonObject {
                 if (existing == null) {
                     put("name", CloudSync.FILE_NAME)
-                    putJsonArray("parents") { add(JsonPrimitive("appDataFolder")) }
+                    put("description", FILE_DESCRIPTION)
                 }
                 putJsonObject("appProperties") {
                     put(PROP_FINGERPRINT, fingerprint)
@@ -367,6 +366,8 @@ class GoogleDrive(
         const val KEY_REFRESH = "refresh"
         const val PROP_FINGERPRINT = "fingerprint"
         const val PROP_CHANGED = "changedAt"
+        const val FILE_DESCRIPTION =
+            "Tuned's playlists, settings and favourites, so your phone and TV stay the same. Deleting it stops nothing."
         const val DEVICE_CODE_URL = "https://oauth2.googleapis.com/device/code"
         const val TOKEN_URL = "https://oauth2.googleapis.com/token"
         const val REVOKE_URL = "https://oauth2.googleapis.com/revoke"

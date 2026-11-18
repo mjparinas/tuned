@@ -112,9 +112,15 @@ object CloudSync {
         body: String,
     ): Boolean = status == HTTP_FORBIDDEN && ("accessNotConfigured" in body || "SERVICE_DISABLED" in body)
 
-    /** The one scope asked for: a folder in the person's Drive that only Tuned can see, nothing else of theirs. */
-    const val SCOPE = "https://www.googleapis.com/auth/drive.appdata"
-    const val FILE_NAME = "tuned-sync"
+    /**
+     * The one scope asked for: only the files Tuned itself created in the person's Drive, nothing else of theirs.
+     * Not `drive.appdata` (the hidden app folder): Google's sign-in with a code refuses it ("Invalid device flow
+     * scope"), and that sign-in is the one Tuned uses on phones and TVs alike.
+     */
+    const val SCOPE = "https://www.googleapis.com/auth/drive.file"
+
+    /** The synced copy's name in the person's Drive. */
+    const val FILE_NAME = "Tuned sync"
 
     private const val HMAC = "HmacSHA256"
     private const val HTTP_OK = 200
