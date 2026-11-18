@@ -64,6 +64,12 @@ object Trakt {
         return Math.round(percent * HUNDRED) / HUNDRED
     }
 
+    /**
+     * Whether a pause or stop at [progress] is worth sending. Trakt turns down a spot of 0% (HTTP 422), which is what
+     * the phone's player reads while a cast has the video (2026-11-18), and there is nothing to save there anyway.
+     */
+    fun sendsSpot(progress: Double): Boolean = progress > 0.0
+
     /** Trakt counts a play as watched from 80%; under that, stopping only saves the spot. */
     const val WATCHED_PERCENT = 80.0
 
