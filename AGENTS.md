@@ -40,6 +40,7 @@ Kotlin, Jetpack Compose with Material 3, Navigation Compose (type-safe routes), 
 - detekt (`config/detekt/detekt.yml`) and Android Lint (`warningsAsErrors`) fail CI on any finding. Fix the cause; suppress only with a comment saying why.
 - Every string a person reads is in `res/values/strings.xml`; numbers that change a word use `<plurals>`.
 - Fire-and-forget coroutines use `launchSafely(tag)`, and caught failures go to `AppLog` (`attempt` instead of `runCatching`), so nothing fails silently and nothing crashes the app ([diagnostics](docs/decisions/diagnostics.md)).
+- **Where new code goes, so parallel work doesn't collide.** Add to the file for your area, inside its area, never at the end of a shared list. A new setting is one field in `AppSettings` (`data/Settings.kt`) and one line in its area of `SETTING_FIELDS` (`data/SettingFields.kt`); its row goes in that area's section file (`ui/settings/SettingsPlayback.kt` and so on). A row that opens another screen passes its route to `onOpen`, so `SettingsScreen` and `MainActivity` don't change. Stored key names never change (a test pins them).
 - A bug fix comes with a test that fails without it. Flaky tests are fixed at the cause, never retried.
 
 ## CI/CD (like Liftsmith)

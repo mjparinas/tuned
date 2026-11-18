@@ -259,16 +259,8 @@ class MainActivity : ComponentActivity() {
                 SettingsScreen(
                     settings = current,
                     onBack = { nav.popBackStack() },
-                    onOpenCaptions = { nav.navigate(CaptionSettingsRoute) },
-                    onOpenRegions = { nav.navigate(RegionSettingsRoute) },
-                    onOpenHiddenGroups = { nav.navigate(HiddenGroupsRoute) },
-                    onOpenChannelHealth = { nav.navigate(ChannelHealthRoute) },
-                    onOpenFavouriteOrder = { nav.navigate(FavouriteOrderRoute) },
-                    onOpenDownloads = { nav.navigate(DownloadsRoute) },
-                    onOpenProfiles = { nav.navigate(ProfilesRoute()) },
-                    onOpenLogs = { nav.navigate(DeveloperLogRoute) },
+                    onOpen = { route -> nav.navigate(route) },
                     onSignedOut = openWelcome,
-                    onOpenPlaylists = { nav.navigate(PlaylistsRoute) },
                 )
             }
             composable<DeveloperLogRoute> { DeveloperLogScreen(onBack = { nav.popBackStack() }) }

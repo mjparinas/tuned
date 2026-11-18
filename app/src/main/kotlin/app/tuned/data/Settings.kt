@@ -241,13 +241,7 @@ class SettingsRepository(
         id: Long,
         kids: Boolean,
         count: Int,
-    ) {
-        context.dataStore.edit {
-            it[K.profileId] = id
-            it[K.kidsProfile] = kids
-            it[K.profileCount] = count
-        }
-    }
+    ) = update { it.copy(profileId = id, kidsProfile = kids, profileCount = count) }
 
     /**
      * Every stored setting by its key, for a backup. Sync times and the open tab are left out: they belong to this phone.
@@ -280,247 +274,19 @@ class SettingsRepository(
         context.dataStore.edit { prefs -> write(prefs, change(read(prefs))) }
     }
 
-    @Suppress("CyclomaticComplexMethod") // one `?:` per setting, nothing to untangle
-    private fun read(p: Preferences): AppSettings {
-        val d = AppSettings()
-        val c = d.captions
-        return AppSettings(
-            theme = enumOr(p[K.theme], d.theme),
-            dynamicColour = p[K.dynamicColour] ?: d.dynamicColour,
-            pureBlack = p[K.pureBlack] ?: d.pureBlack,
-            accent = enumOr(p[K.accent], d.accent),
-            startTab = enumOr(p[K.startTab], d.startTab),
-            lastTab = p[K.lastTab] ?: d.lastTab,
-            hiddenRegions = p[K.hiddenRegions] ?: d.hiddenRegions,
-            hiddenGroups = p[K.hiddenGroups] ?: d.hiddenGroups,
-            followedEvents = p[K.followedEvents] ?: d.followedEvents,
-            playlistRefreshHours = p[K.playlistRefreshHours] ?: d.playlistRefreshHours,
-            guideRefreshHours = p[K.guideRefreshHours] ?: d.guideRefreshHours,
-            reminderLeadMinutes = p[K.reminderLeadMinutes] ?: d.reminderLeadMinutes,
-            guideDays = p[K.guideDays] ?: d.guideDays,
-            guideOffsetMinutes = p[K.guideOffsetMinutes] ?: d.guideOffsetMinutes,
-            unmeteredOnly = p[K.unmeteredOnly] ?: d.unmeteredOnly,
-            buffer = enumOr(p[K.buffer], d.buffer),
-            audioLanguage = p[K.audioLanguage] ?: d.audioLanguage,
-            resumePlayback = p[K.resumePlayback] ?: d.resumePlayback,
-            autoPlayNext = p[K.autoPlayNext] ?: d.autoPlayNext,
-            pullToRefresh = p[K.pullToRefresh] ?: d.pullToRefresh,
-            hideDeadChannels = p[K.hideDeadChannels] ?: d.hideDeadChannels,
-            hideFailedOnPlay = p[K.hideFailedOnPlay] ?: d.hideFailedOnPlay,
-            backupCopies = p[K.backupCopies] ?: d.backupCopies,
-            matchFrameRate = p[K.matchFrameRate] ?: d.matchFrameRate,
-            liveRewindMinutes = p[K.liveRewindMinutes] ?: d.liveRewindMinutes,
-            hidePlaceholders = p[K.hidePlaceholders] ?: d.hidePlaceholders,
-            hide247 = p[K.hide247] ?: d.hide247,
-            pictureInPicture = p[K.pictureInPicture] ?: d.pictureInPicture,
-            playerGestures = p[K.playerGestures] ?: d.playerGestures,
-            autoReconnect = p[K.autoReconnect] ?: d.autoReconnect,
-            landscapePlayback = p[K.landscapePlayback] ?: d.landscapePlayback,
-            videoFit = enumOr(p[K.videoFit], d.videoFit),
-            controlsTimeoutMs = p[K.controlsTimeoutMs] ?: d.controlsTimeoutMs,
-            tuneTimeoutMs = p[K.tuneTimeoutMs] ?: d.tuneTimeoutMs,
-            tuneMinHeight = p[K.tuneMinHeight] ?: d.tuneMinHeight,
-            seekBackMs = p[K.seekBackMs] ?: d.seekBackMs,
-            seekForwardMs = p[K.seekForwardMs] ?: d.seekForwardMs,
-            skipIntroMs = p[K.skipIntroMs] ?: d.skipIntroMs,
-            userAgent = p[K.userAgent] ?: d.userAgent,
-            tmdbKey = p[K.tmdbKey] ?: d.tmdbKey,
-            showGuideInList = p[K.showGuideInList] ?: d.showGuideInList,
-            liveGrid = p[K.liveGrid] ?: d.liveGrid,
-            channelNumbers = p[K.channelNumbers] ?: d.channelNumbers,
-            startOnLastChannel = p[K.startOnLastChannel] ?: d.startOnLastChannel,
-            checkUpdates = p[K.checkUpdates] ?: d.checkUpdates,
-            captions =
-                CaptionStyle(
-                    enabled = p[K.ccEnabled] ?: c.enabled,
-                    language = p[K.ccLanguage] ?: c.language,
-                    textScale = p[K.ccScale] ?: c.textScale,
-                    textColor = p[K.ccText] ?: c.textColor,
-                    backgroundColor = p[K.ccBackground] ?: c.backgroundColor,
-                    backgroundOpacity = p[K.ccBackgroundOpacity] ?: c.backgroundOpacity,
-                    windowColor = p[K.ccWindow] ?: c.windowColor,
-                    edge = enumOr(p[K.ccEdge], c.edge),
-                    edgeColor = p[K.ccEdgeColor] ?: c.edgeColor,
-                    font = enumOr(p[K.ccFont], c.font),
-                    bold = p[K.ccBold] ?: c.bold,
-                    overrideStreamStyle = p[K.ccOverride] ?: c.overrideStreamStyle,
-                    bottomPadding = p[K.ccBottom] ?: c.bottomPadding,
-                ),
-            lastPlaylistSync = p[K.lastPlaylistSync] ?: d.lastPlaylistSync,
-            lastGuideSync = p[K.lastGuideSync] ?: d.lastGuideSync,
-            lastSyncError = p[K.lastSyncError] ?: d.lastSyncError,
-            serverTimezone = p[K.serverTimezone] ?: d.serverTimezone,
-            askProfileAtStart = p[K.askProfileAtStart] ?: d.askProfileAtStart,
-            profileId = p[K.profileId] ?: d.profileId,
-            kidsProfile = p[K.kidsProfile] ?: d.kidsProfile,
-            profileCount = p[K.profileCount] ?: d.profileCount,
-            developerMode = p[K.developerMode] ?: d.developerMode,
-        )
-    }
+    private fun read(p: Preferences): AppSettings = SETTING_FIELDS.fold(AppSettings()) { s, field -> field.read(p, s) }
 
     private fun write(
         p: MutablePreferences,
         s: AppSettings,
-    ) {
-        p[K.theme] = s.theme.name
-        p[K.dynamicColour] = s.dynamicColour
-        p[K.pureBlack] = s.pureBlack
-        p[K.accent] = s.accent.name
-        p[K.startTab] = s.startTab.name
-        p[K.lastTab] = s.lastTab
-        p[K.hiddenRegions] = s.hiddenRegions
-        p[K.hiddenGroups] = s.hiddenGroups
-        p[K.followedEvents] = s.followedEvents
-        p[K.playlistRefreshHours] = s.playlistRefreshHours
-        p[K.guideRefreshHours] = s.guideRefreshHours
-        p[K.reminderLeadMinutes] = s.reminderLeadMinutes
-        p[K.guideDays] = s.guideDays
-        p[K.guideOffsetMinutes] = s.guideOffsetMinutes
-        p[K.unmeteredOnly] = s.unmeteredOnly
-        p[K.buffer] = s.buffer.name
-        p[K.audioLanguage] = s.audioLanguage
-        p[K.resumePlayback] = s.resumePlayback
-        p[K.autoPlayNext] = s.autoPlayNext
-        p[K.pullToRefresh] = s.pullToRefresh
-        p[K.hideDeadChannels] = s.hideDeadChannels
-        p[K.hideFailedOnPlay] = s.hideFailedOnPlay
-        p[K.backupCopies] = s.backupCopies
-        p[K.matchFrameRate] = s.matchFrameRate
-        p[K.liveRewindMinutes] = s.liveRewindMinutes
-        p[K.hidePlaceholders] = s.hidePlaceholders
-        p[K.hide247] = s.hide247
-        p[K.pictureInPicture] = s.pictureInPicture
-        p[K.playerGestures] = s.playerGestures
-        p[K.autoReconnect] = s.autoReconnect
-        p[K.landscapePlayback] = s.landscapePlayback
-        p[K.videoFit] = s.videoFit.name
-        p[K.controlsTimeoutMs] = s.controlsTimeoutMs
-        p[K.tuneTimeoutMs] = s.tuneTimeoutMs
-        p[K.tuneMinHeight] = s.tuneMinHeight
-        p[K.seekBackMs] = s.seekBackMs
-        p[K.seekForwardMs] = s.seekForwardMs
-        p[K.skipIntroMs] = s.skipIntroMs
-        p[K.userAgent] = s.userAgent
-        p[K.tmdbKey] = s.tmdbKey
-        p[K.showGuideInList] = s.showGuideInList
-        p[K.liveGrid] = s.liveGrid
-        p[K.channelNumbers] = s.channelNumbers
-        p[K.startOnLastChannel] = s.startOnLastChannel
-        p[K.checkUpdates] = s.checkUpdates
-        val c = s.captions
-        p[K.ccEnabled] = c.enabled
-        p[K.ccLanguage] = c.language
-        p[K.ccScale] = c.textScale
-        p[K.ccText] = c.textColor
-        p[K.ccBackground] = c.backgroundColor
-        p[K.ccBackgroundOpacity] = c.backgroundOpacity
-        p[K.ccWindow] = c.windowColor
-        p[K.ccEdge] = c.edge.name
-        p[K.ccEdgeColor] = c.edgeColor
-        p[K.ccFont] = c.font.name
-        p[K.ccBold] = c.bold
-        p[K.ccOverride] = c.overrideStreamStyle
-        p[K.ccBottom] = c.bottomPadding
-        p[K.lastPlaylistSync] = s.lastPlaylistSync
-        p[K.lastGuideSync] = s.lastGuideSync
-        p[K.lastSyncError] = s.lastSyncError
-        p[K.serverTimezone] = s.serverTimezone
-        p[K.askProfileAtStart] = s.askProfileAtStart
-        p[K.profileId] = s.profileId
-        p[K.kidsProfile] = s.kidsProfile
-        p[K.profileCount] = s.profileCount
-        p[K.developerMode] = s.developerMode
-    }
-
-    private inline fun <reified E : Enum<E>> enumOr(
-        name: String?,
-        default: E,
-    ): E = name?.let { n -> enumValues<E>().firstOrNull { it.name == n } } ?: default
+    ) = SETTING_FIELDS.forEach { it.write(p, s) }
 
     private object K {
-        val theme = stringPreferencesKey("theme")
-        val dynamicColour = booleanPreferencesKey("dynamic_colour")
-        val pureBlack = booleanPreferencesKey("pure_black")
-        val accent = stringPreferencesKey("accent")
-        val startTab = stringPreferencesKey("start_tab")
-        val lastTab = intPreferencesKey("last_tab")
-        val hiddenRegions = stringSetPreferencesKey("hidden_regions")
-        val hiddenGroups = stringSetPreferencesKey("hidden_groups")
-        val followedEvents = stringSetPreferencesKey("followed_events")
         val adultPin = stringPreferencesKey("adult_pin")
-        val playlistRefreshHours = intPreferencesKey("playlist_refresh_hours")
-        val guideRefreshHours = intPreferencesKey("guide_refresh_hours")
-        val reminderLeadMinutes = intPreferencesKey("reminder_lead_minutes")
-        val guideDays = intPreferencesKey("guide_days")
-        val guideOffsetMinutes = intPreferencesKey("guide_offset_minutes")
-        val unmeteredOnly = booleanPreferencesKey("unmetered_only")
-        val buffer = stringPreferencesKey("buffer")
-        val audioLanguage = stringPreferencesKey("audio_language")
-        val resumePlayback = booleanPreferencesKey("resume_playback")
-        val autoPlayNext = booleanPreferencesKey("auto_play_next")
-        val pullToRefresh = booleanPreferencesKey("pull_to_refresh")
-        val hideDeadChannels = booleanPreferencesKey("hide_dead_channels")
-        val hideFailedOnPlay = booleanPreferencesKey("hide_failed_on_play")
-        val backupCopies = booleanPreferencesKey("backup_copies")
-        val matchFrameRate = booleanPreferencesKey("match_frame_rate")
-        val liveRewindMinutes = intPreferencesKey("live_rewind_minutes")
-        val hidePlaceholders = booleanPreferencesKey("hide_placeholders")
-        val hide247 = booleanPreferencesKey("hide_247")
-        val pictureInPicture = booleanPreferencesKey("picture_in_picture")
-        val playerGestures = booleanPreferencesKey("player_gestures")
-        val autoReconnect = booleanPreferencesKey("auto_reconnect")
-        val landscapePlayback = booleanPreferencesKey("landscape_playback")
-        val videoFit = stringPreferencesKey("video_fit")
-        val controlsTimeoutMs = intPreferencesKey("controls_timeout_ms")
-        val tuneTimeoutMs = intPreferencesKey("tune_timeout_ms")
-        val tuneMinHeight = intPreferencesKey("tune_min_height")
-        val seekBackMs = longPreferencesKey("seek_back_ms")
-        val seekForwardMs = longPreferencesKey("seek_forward_ms")
-        val skipIntroMs = longPreferencesKey("skip_intro_ms")
-        val userAgent = stringPreferencesKey("user_agent")
-        val tmdbKey = stringPreferencesKey("tmdb_key")
-        val showGuideInList = booleanPreferencesKey("show_guide_in_list")
-        val liveGrid = booleanPreferencesKey("live_grid")
-        val channelNumbers = booleanPreferencesKey("channel_numbers")
-        val startOnLastChannel = booleanPreferencesKey("start_on_last_channel")
-        val checkUpdates = booleanPreferencesKey("check_updates")
-        val ccEnabled = booleanPreferencesKey("cc_enabled")
-        val ccLanguage = stringPreferencesKey("cc_language")
-        val ccScale = floatPreferencesKey("cc_scale")
-        val ccText = intPreferencesKey("cc_text")
-        val ccBackground = intPreferencesKey("cc_background")
-        val ccBackgroundOpacity = floatPreferencesKey("cc_background_opacity")
-        val ccWindow = intPreferencesKey("cc_window")
-        val ccEdge = stringPreferencesKey("cc_edge")
-        val ccEdgeColor = intPreferencesKey("cc_edge_color")
-        val ccFont = stringPreferencesKey("cc_font")
-        val ccBold = booleanPreferencesKey("cc_bold")
-        val ccOverride = booleanPreferencesKey("cc_override")
-        val ccBottom = floatPreferencesKey("cc_bottom")
-        val lastPlaylistSync = longPreferencesKey("last_playlist_sync")
-        val lastGuideSync = longPreferencesKey("last_guide_sync")
-        val lastSyncError = stringPreferencesKey("last_sync_error")
-        val serverTimezone = stringPreferencesKey("server_timezone")
-        val askProfileAtStart = booleanPreferencesKey("ask_profile_at_start")
-        val profileId = longPreferencesKey("profile_id")
-        val kidsProfile = booleanPreferencesKey("kids_profile")
-        val profileCount = intPreferencesKey("profile_count")
-        val developerMode = booleanPreferencesKey("developer_mode")
     }
 
     private companion object {
-        val DEVICE_ONLY =
-            setOf(
-                K.lastPlaylistSync.name,
-                K.lastGuideSync.name,
-                K.lastSyncError.name,
-                K.lastTab.name,
-                K.serverTimezone.name,
-                K.developerMode.name,
-                // The profiles live in the database, which a backup doesn't hold.
-                K.profileId.name,
-                K.kidsProfile.name,
-                K.profileCount.name,
-            )
+        /** Sync times, the open tab, developer mode and the profile mirror belong to this phone; a backup leaves them out. */
+        val DEVICE_ONLY = SETTING_FIELDS.filter { it.deviceOnly }.map { it.key.name }.toSet()
     }
 }
