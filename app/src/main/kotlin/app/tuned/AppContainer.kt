@@ -73,7 +73,7 @@ class AppContainer(
     }
     val reminders by lazy { Reminders(context) }
     val events by lazy { EventsRepository(db, settings, reminders) }
-    val offline by lazy { Offline(context, db, settings) }
+    val offline by lazy { Offline(context, db, settings, playerOpen) }
     val recordings by lazy { Recordings(context) }
     val picks by lazy { Picks(db, appScope) { TvHome.schedule(context) } }
     val connectivity by lazy { Connectivity(context, appScope) }

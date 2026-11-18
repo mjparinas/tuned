@@ -44,6 +44,8 @@ class OfflineWorker(
         // A film is large; as a foreground service the download carries on with the screen off.
         attempt(TAG, "Couldn't run as a foreground service") { setForeground(foregroundInfo(null)) }
         while (true) {
+            // The player opened between being queued and now: stop, and the player starts the queue again on closing.
+            if (container.playerOpen.value) return Result.success()
             val row = dao.next() ?: return Result.success()
             // Its page first (details, poster, cast photos), so it looks the same offline; a few small requests.
             attempt(TAG, "Couldn't save the artwork for ${row.name}") { container.savedArtwork.keep(row.itemId) }
@@ -51,7 +53,7 @@ class OfflineWorker(
                 // A user agent the playlist asks for wins over the app's.
                 val link = StreamLink.split(row.url)
                 val agent = link.headers[StreamLink.USER_AGENT] ?: ua
-                downloader.download(link.url, File(row.path), agent) { bytes, total -> report(row, bytes, total) }
+                downloader.download(link.url, File(row.path), agent, keepPart = true) { bytes, total -> report(row, bytes, total) }
                 val size = File(row.path).length()
                 dao.progress(row.itemId, size, size)
                 dao.state(row.itemId, DownloadEntity.DONE)
