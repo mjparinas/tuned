@@ -45,7 +45,8 @@ class TraktTest {
     @Test
     fun aSpotOfNothingIsNotSent() {
         assertFalse(Trakt.sendsSpot(0.0))
-        assertTrue(Trakt.sendsSpot(0.01))
+        assertFalse(Trakt.sendsSpot(0.44)) // Trakt answered "progress_too_low" for this
+        assertTrue(Trakt.sendsSpot(1.0))
         assertTrue(Trakt.sendsSpot(100.0))
     }
 

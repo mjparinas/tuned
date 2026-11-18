@@ -47,4 +47,30 @@ class CastCodecsTest {
         assertEquals(Plan.AS_IS, CastCodecs.plan("1.ts", "video/mpeg2", "audio/ac3"))
         assertEquals(Plan.AS_IS, CastCodecs.plan("1.mkv", null, "audio/ac3"))
     }
+
+    @Test
+    fun surroundSoundBecomesStereoEvenWhenItIsAac() {
+        // The Shield's case: every film and episode failed with 102 while stereo live channels played.
+        assertEquals(Plan.REMUX_NEW_AUDIO, CastCodecs.plan("1.mp4", "video/avc", "audio/mp4a-latm", channels = 6))
+        assertEquals(Plan.REMUX_NEW_AUDIO, CastCodecs.plan("1.mkv", "video/hevc", "audio/mp4a-latm", channels = 6))
+        assertEquals(Plan.AS_IS, CastCodecs.plan("1.mp4", "video/avc", "audio/mp4a-latm", channels = 2))
+        assertEquals(Plan.REMUX, CastCodecs.plan("1.mkv", "video/avc", "audio/mp4a-latm", channels = 1))
+        assertEquals(2, CastCodecs.channelsForTv(6))
+        assertEquals(1, CastCodecs.channelsForTv(1))
+    }
+
+    @Test
+    fun fivePointOneIsMixedForTwoSpeakers() {
+        // One frame: front left, front right, centre, low frequency, back left, back right.
+        val mixed = CastCodecs.downmix(shortArrayOf(1000, 2000, 1000, 30000, 1000, 0), channels = 6)
+        assertEquals(2, mixed.size)
+        assertEquals(2414, mixed[0].toInt()) // 1000 + 707 centre + 707 back left; the low frequency is left out
+        assertEquals(2707, mixed[1].toInt()) // 2000 + 707 centre
+        // Loud peaks are clamped rather than wrapping round.
+        val loud = CastCodecs.downmix(ShortArray(6) { Short.MAX_VALUE }, channels = 6)
+        assertEquals(Short.MAX_VALUE, loud[0])
+        // Stereo goes through untouched.
+        val stereo = shortArrayOf(1, 2, 3, 4)
+        assertTrue(CastCodecs.downmix(stereo, channels = 2) === stereo)
+    }
 }

@@ -20,7 +20,7 @@ import java.nio.ByteOrder
 
 /**
  * Turns a saved film or episode into one a Chromecast plays ([CastCodecs]): an MP4 with the video copied as it is and
- * the sound copied or turned into AAC. Only one copy is kept, in the app's cache, and it is reused while the saved file
+ * the sound copied, or turned into stereo AAC when it isn't stereo AAC already. Only one copy is kept, in the app's cache, and it is reused while the saved file
  * is unchanged. Subtitles and extra sound tracks are left out; the TV gets the first sound track.
  */
 internal class CastCopy(
@@ -32,8 +32,10 @@ internal class CastCopy(
         progress: (Int) -> Unit,
     ): File = withContext(Dispatchers.IO) {
         val tracks = attempt(TAG, "Couldn't read the tracks of ${source.name}") { tracks(source) }.getOrNull() ?: return@withContext source
-        val plan = CastCodecs.plan(source.name, tracks.video, tracks.audio)
-        AppLog.i(TAG) { "${source.name}: video ${tracks.video}, sound ${tracks.audio} (${tracks.count} tracks), so $plan" }
+        val plan = CastCodecs.plan(source.name, tracks.video, tracks.audio, tracks.channels)
+        AppLog.i(TAG) {
+            "${source.name}: video ${tracks.video}, sound ${tracks.audio} in ${tracks.channels} channels (${tracks.count} tracks), so $plan"
+        }
         if (plan == CastCodecs.Plan.AS_IS) return@withContext source
         val target = File(dir, source.nameWithoutExtension + ".mp4")
         if (CastCodecs.reuseCopy(target.takeIf { it.isFile }?.lastModified(), source.lastModified())) {
@@ -73,6 +75,7 @@ internal class CastCopy(
     private data class Tracks(
         val video: String?,
         val audio: String?,
+        val channels: Int?,
         val count: Int,
     )
 
@@ -84,7 +87,9 @@ internal class CastCopy(
             // Every detail Android reads (profile, level, size, colour, channels), so a TV's refusal can be matched to it.
             formats.forEachIndexed { i, f -> AppLog.i(TAG) { "${source.name} track $i: ${f.toString().take(MAX_FORMAT_CHARS)}" } }
             val mimes = formats.map { it.getString(MediaFormat.KEY_MIME).orEmpty() }
-            return Tracks(mimes.firstOrNull { it.startsWith("video/") }, mimes.firstOrNull { it.startsWith("audio/") }, mimes.size)
+            val sound = formats.firstOrNull { it.getString(MediaFormat.KEY_MIME).orEmpty().startsWith("audio/") }
+            val channels = sound?.takeIf { it.containsKey(MediaFormat.KEY_CHANNEL_COUNT) }?.getInteger(MediaFormat.KEY_CHANNEL_COUNT)
+            return Tracks(mimes.firstOrNull { it.startsWith("video/") }, sound?.getString(MediaFormat.KEY_MIME), channels, mimes.size)
         } finally {
             ex.release()
         }
@@ -185,8 +190,8 @@ internal class CastCopy(
     }
 
     /**
-     * Decodes the sound and encodes it again as AAC (up to 5.1; extra channels are left out), one encoded sample at a
-     * time so it can be written between video samples. Timestamps are counted from the samples, so they always rise.
+     * Decodes the sound and encodes it again as stereo AAC (surround is mixed down, [CastCodecs.downmix]), one encoded
+     * sample at a time so it can be written between video samples. Timestamps are counted from the samples, so they always rise.
      */
     private class AacTranscoder(
         private val ex: MediaExtractor,
@@ -297,11 +302,11 @@ internal class CastCopy(
             floatPcm =
                 decoded.containsKey(MediaFormat.KEY_PCM_ENCODING) &&
                 decoded.getInteger(MediaFormat.KEY_PCM_ENCODING) == AudioFormat.ENCODING_PCM_FLOAT
-            outChannels = inChannels.coerceIn(1, MAX_CHANNELS)
+            outChannels = CastCodecs.channelsForTv(inChannels)
             val format =
                 MediaFormat.createAudioFormat(MediaFormat.MIMETYPE_AUDIO_AAC, sampleRate, outChannels).apply {
                     setInteger(MediaFormat.KEY_AAC_PROFILE, MediaCodecInfo.CodecProfileLevel.AACObjectLC)
-                    setInteger(MediaFormat.KEY_BIT_RATE, if (outChannels > 2) SURROUND_BITRATE else STEREO_BITRATE)
+                    setInteger(MediaFormat.KEY_BIT_RATE, STEREO_BITRATE)
                     setInteger(MediaFormat.KEY_MAX_INPUT_SIZE, ENCODER_INPUT_BYTES)
                 }
             AppLog.i(TAG) { "Sound: $inChannels channels at $sampleRate Hz, encoding $outChannels as AAC" }
@@ -312,19 +317,17 @@ internal class CastCopy(
                 }
         }
 
-        /** Keeps decoded sound for the encoder as 16-bit, leaving out channels past 5.1. */
+        /** Keeps decoded sound for the encoder as 16-bit, mixed down to stereo. */
         private fun keep(out: ByteBuffer) {
             val bytes = if (floatPcm) toPcm16(out) else ByteArray(out.remaining()).also { out.get(it) }
             val kept =
                 if (outChannels == inChannels) {
                     bytes
                 } else {
-                    val frame = inChannels * 2
-                    val keptFrame = outChannels * 2
-                    val frames = bytes.size / frame
-                    ByteArray(frames * keptFrame).also { k ->
-                        for (f in 0 until frames) System.arraycopy(bytes, f * frame, k, f * keptFrame, keptFrame)
-                    }
+                    val samples = ShortArray(bytes.size / 2)
+                    ByteBuffer.wrap(bytes).order(ByteOrder.nativeOrder()).asShortBuffer().get(samples)
+                    val mixed = CastCodecs.downmix(samples, inChannels)
+                    ByteBuffer.allocate(mixed.size * 2).order(ByteOrder.nativeOrder()).also { it.asShortBuffer().put(mixed) }.array()
                 }
             pcm.addLast(kept)
             pcmBytes += kept.size
@@ -421,10 +424,8 @@ internal class CastCopy(
         private companion object {
             const val TIMEOUT_US = 2_000L
             const val MAX_PCM_BYTES = 1 shl 20
-            const val MAX_CHANNELS = 6
             const val DEFAULT_RATE = 48_000
             const val STEREO_BITRATE = 192_000
-            const val SURROUND_BITRATE = 384_000
             const val ENCODER_INPUT_BYTES = 64 * 1024
             const val US_PER_S = 1_000_000L
             const val MAX_SPINS = 20_000
