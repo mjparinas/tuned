@@ -38,8 +38,8 @@ import java.io.IOException
  * The person's Google account, for sync between devices (from the app audit, item 13): signed in with Google's code
  * for TVs and other devices, the same on a phone and a TV remote, asking only for the files Tuned itself creates
  * (`drive.file`; Google's code sign-in refuses the hidden app folder). Tuned never sees the Google password. The
- * refresh token is sealed with a Keystore key ([KeystoreBox]) and stays out of backups. Without the app's keys in the build ([BuildConfig.GOOGLE_TV_CLIENT_ID])
- * none of it shows.
+ * refresh token is sealed with a Keystore key ([KeystoreBox]) and stays out of backups. Without the app's keys in
+ * the build ([BuildConfig.GOOGLE_TV_CLIENT_ID]) none of it shows.
  */
 class GoogleDrive(
     context: Context,
