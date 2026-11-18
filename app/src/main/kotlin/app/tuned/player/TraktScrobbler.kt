@@ -22,6 +22,8 @@ internal class TraktScrobbler(
     private val scope: CoroutineScope,
     /** The item the player is on now. */
     private val current: () -> ItemEntity?,
+    /** Where the TV is, as position and length in ms, while a cast has the video; null when the phone plays it. */
+    private val elsewhere: () -> Pair<Long, Long>? = { null },
 ) : Player.Listener {
     private var player: Player? = null
     private var started: Trakt.Target? = null
@@ -54,7 +56,9 @@ internal class TraktScrobbler(
         if (playWhenReady) {
             if (p.playbackState == Player.STATE_READY) start(p)
         } else {
-            started?.let { send("pause", it, progress(p)) }
+            val target = started ?: return
+            val at = progress(p)
+            if (Trakt.sendsSpot(at)) send("pause", target, at)
         }
     }
 
@@ -84,10 +88,13 @@ internal class TraktScrobbler(
     private fun stop(progress: Double) {
         val target = started ?: return
         started = null
-        send("stop", target, progress)
+        if (Trakt.sendsSpot(progress)) send("stop", target, progress)
     }
 
-    private fun progress(p: Player): Double = Trakt.progress(p.currentPosition, p.duration).also { lastProgress = it }
+    private fun progress(p: Player): Double {
+        val (position, length) = elsewhere() ?: (p.currentPosition to p.duration)
+        return Trakt.progress(position, length).also { lastProgress = it }
+    }
 
     private fun send(
         action: String,

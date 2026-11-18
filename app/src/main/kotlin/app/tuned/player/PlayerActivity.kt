@@ -207,7 +207,12 @@ class PlayerActivity : FragmentActivity() {
     }
 
     private val trakt by lazy {
-        TraktScrobbler(container.trakt, container.appScope) { player?.let { queue.getOrNull(it.currentMediaItemIndex) } }
+        TraktScrobbler(
+            container.trakt,
+            container.appScope,
+            current = { player?.let { queue.getOrNull(it.currentMediaItemIndex) } },
+            elsewhere = { cast?.tvPosition() },
+        )
     }
 
     private val frameRate by lazy { FrameRateMatch(this) { settings.matchFrameRate && cast?.casting != true } }
