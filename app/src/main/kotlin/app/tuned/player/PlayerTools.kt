@@ -23,6 +23,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.media3.common.C
 import androidx.media3.common.Format
 import androidx.media3.common.TrackSelectionOverride
+import androidx.media3.common.Tracks
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.AspectRatioFrameLayout
@@ -66,6 +67,8 @@ class PlayerTools(
     private val guide = MiniGuide(activity, hooks.player, hooks.queue, beside = listOf(playerView, overlay), onClosed = { syncBack() })
     private val guideButton = button(R.drawable.ic_player_guide, R.string.player_guide) { toggleGuide() }
     private val flipButton = button(R.drawable.ic_player_flip_back, R.string.player_flip_back) { hooks.dial.flipBack() }
+    private val qualityButton =
+        button(R.drawable.ic_player_quality, R.string.player_quality) { pickQuality() }.apply { visibility = View.GONE }
     private val unlockButton =
         button(R.drawable.ic_player_lock, R.string.player_unlock) { unlock() }.apply {
             visibility = View.GONE
@@ -106,7 +109,7 @@ class PlayerTools(
             addView(guideButton)
             addView(flipButton)
             addView(button(R.drawable.ic_player_aspect, R.string.player_fit) { nextFit() })
-            addView(button(R.drawable.ic_player_quality, R.string.player_quality) { pickQuality() })
+            addView(qualityButton)
             addView(button(R.drawable.ic_player_subtitle_timing, R.string.subtitle_timing) { pickSubtitleTiming() })
             addView(button(R.drawable.ic_player_info, R.string.player_info) { toggleInfo() })
             addView(button(R.drawable.ic_player_open_with, R.string.player_open_with) { openElsewhere() })
@@ -154,6 +157,31 @@ class PlayerTools(
             flipButton.visibility = if (hooks.isLive() && hooks.dial.canFlipBack) View.VISIBLE else View.GONE
         }
     }
+
+    /**
+     * The quality button shows only when the stream offers more than one picture to choose from (an HLS stream with
+     * several renditions). Most IPTV channels are one TS rendition, where the button could only say so (Melvin,
+     * 2026-11-18: "otherwise the hq button is useless").
+     */
+    fun onTracks(tracks: Tracks) {
+        qualityButton.isVisible = StreamInfo.hasQualityChoice(qualityOptions(tracks).map { it.height to it.bitrate })
+    }
+
+    private class QualityOption(
+        val group: Tracks.Group,
+        val index: Int,
+        val height: Int,
+        val bitrate: Int,
+    )
+
+    private fun qualityOptions(tracks: Tracks): List<QualityOption> = tracks.groups
+        .filter { it.type == C.TRACK_TYPE_VIDEO }
+        .flatMap { group ->
+            (0 until group.length).filter(group::isTrackSupported).map { i ->
+                val f = group.getTrackFormat(i)
+                QualityOption(group, i, f.height, f.bitrateOrAverage())
+            }
+        }.sortedByDescending { it.height }
 
     fun applyFit(value: VideoFit) {
         fit = value
@@ -392,34 +420,24 @@ class PlayerTools(
 
     private fun pickQuality() {
         val p = hooks.player() ?: return
-        val options =
-            p.currentTracks.groups
-                .filter { it.type == C.TRACK_TYPE_VIDEO }
-                .flatMap { group ->
-                    (0 until group.length).filter(group::isTrackSupported).map { i -> group to i }
-                }.sortedByDescending { (group, i) -> group.getTrackFormat(i).height }
-        if (options.size <= 1) {
+        val options = qualityOptions(p.currentTracks)
+        if (!StreamInfo.hasQualityChoice(options.map { it.height to it.bitrate })) {
             hooks.say(activity.getString(R.string.player_quality_only_one))
             return
         }
         val chosen =
-            options.indexOfFirst { (group, i) ->
-                p.trackSelectionParameters.overrides[group.mediaTrackGroup]?.trackIndices == listOf(i)
+            options.indexOfFirst { o ->
+                p.trackSelectionParameters.overrides[o.group.mediaTrackGroup]?.trackIndices == listOf(o.index)
             }
-        val labels =
-            listOf(activity.getString(R.string.player_quality_auto)) +
-                options.map { (group, i) ->
-                    val f = group.getTrackFormat(i)
-                    StreamInfo.quality(f.height, f.bitrateOrAverage())
-                }
+        val labels = listOf(activity.getString(R.string.player_quality_auto)) + options.map { StreamInfo.quality(it.height, it.bitrate) }
         AlertDialog
             .Builder(activity, android.R.style.Theme_DeviceDefault_Dialog_Alert)
             .setTitle(R.string.player_quality)
             .setSingleChoiceItems(labels.toTypedArray(), chosen + 1) { dialog, which ->
                 val builder = p.trackSelectionParameters.buildUpon().clearOverridesOfType(C.TRACK_TYPE_VIDEO)
                 if (which > 0) {
-                    val (group, i) = options[which - 1]
-                    builder.addOverride(TrackSelectionOverride(group.mediaTrackGroup, i))
+                    val o = options[which - 1]
+                    builder.addOverride(TrackSelectionOverride(o.group.mediaTrackGroup, o.index))
                 }
                 p.trackSelectionParameters = builder.build()
                 dialog.dismiss()

@@ -8,7 +8,7 @@
 
 - **Channels** (live, when the category has more than one): the category's channels down the right with what's on now; picking one switches on the same connection.
 - **Aspect**: Fit, Zoom to fill (crops) and Stretch, in turn. The last choice is remembered.
-- **Quality**: the stream's own renditions plus Auto. Most IPTV channels are a single TS rendition, so it says so instead of opening an empty list.
+- **Quality** (the HQ button): the stream's own renditions plus Auto. It shows only when the stream has two or more renditions to pick from (Melvin, 2026-11-18: "otherwise the hq button is useless"). Most IPTV channels are a single TS rendition, so on those it stays hidden. Other copies of a channel named HD, FHD or 4K are separate streams, reached through backup copies, not this button.
 - **Stream info**: resolution, frame rate, codecs, bitrate when the stream says, audio channels and language, and the buffer, refreshed every second.
 - **Open in another player** (2026-11-17, from the app audit): hands the stream's link to VLC, MX Player, Just Player or any other video app, for a format Media3 can't play. Tuned stops its own stream first and closes, so the account never has two connections open. The other app gets the full link, login included, as any player of an Xtream link must. If no other player is installed, the stream carries on and says so.
 - **Lock**: ignores every touch and back, so a pocket or a child can't change anything. A tap shows the unlock button for three seconds.

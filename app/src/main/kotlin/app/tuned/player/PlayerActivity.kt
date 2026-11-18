@@ -694,6 +694,7 @@ class PlayerActivity : FragmentActivity() {
 
         override fun onTracksChanged(tracks: Tracks) {
             player?.let { audioCheck.onTracks(it, tracks) }
+            tools.onTracks(tracks)
         }
 
         override fun onVideoSizeChanged(videoSize: VideoSize) {
