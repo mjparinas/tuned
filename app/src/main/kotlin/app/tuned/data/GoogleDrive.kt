@@ -143,11 +143,17 @@ class GoogleDrive(
                     return if (saveTokens(reply)) null else failed(HTTP_OK, reply)
                 }
 
-                CloudSync.Poll.SLOW_DOWN -> wait += SLOW_DOWN_MS
+                CloudSync.Poll.SLOW_DOWN -> {
+                    wait += SLOW_DOWN_MS
+                }
 
-                CloudSync.Poll.WAIT -> Unit
+                CloudSync.Poll.WAIT -> {
+                    Unit
+                }
 
-                else -> return failed(answer?.first, answer?.second)
+                else -> {
+                    return failed(answer?.first, answer?.second)
+                }
             }
         }
         return CloudSync.Failure(CloudSync.Reason.EXPIRED, null)
