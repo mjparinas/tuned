@@ -9,7 +9,9 @@ import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class TimeZonesTest {
-    private val vancouver = ZoneId.of("America/Vancouver")
+    // Los Angeles rather than Vancouver: British Columbia now stays on UTC−7 all year, so its offset no longer
+    // changes in the autumn, and these tests need a zone that does.
+    private val pacific = ZoneId.of("America/Los_Angeles")
     private val toronto = ZoneId.of("America/Toronto")
 
     private fun at(
@@ -29,7 +31,7 @@ class TimeZonesTest {
 
     @Test
     fun aChosenZoneWinsOverTheDevice() {
-        assertEquals(vancouver, TimeZones.resolve("America/Vancouver", device = toronto))
+        assertEquals(pacific, TimeZones.resolve("America/Los_Angeles", device = toronto))
     }
 
     @Test
@@ -40,23 +42,23 @@ class TimeZonesTest {
 
     @Test
     fun tomorrowStartsAtMidnightInTheChosenZone() {
-        // 9:17 p.m. Tuesday in Vancouver is already Wednesday in Toronto.
-        val now = at("2026-11-17T21:17", vancouver)
-        assertEquals(at("2026-11-18T00:00", vancouver), TimeZones.nextMidnight(now, vancouver))
+        // 9:17 p.m. Tuesday in Los Angeles is already Wednesday in Toronto.
+        val now = at("2026-11-17T21:17", pacific)
+        assertEquals(at("2026-11-18T00:00", pacific), TimeZones.nextMidnight(now, pacific))
         assertEquals(at("2026-11-19T00:00", toronto), TimeZones.nextMidnight(now, toronto))
     }
 
     @Test
     fun midnightOnAClockChangeDayIsStillTheNextDay() {
-        val now = at("2026-11-01T12:00", vancouver) // the day clocks fall back
-        assertEquals(at("2026-11-02T00:00", vancouver), TimeZones.nextMidnight(now, vancouver))
+        val now = at("2026-11-01T12:00", pacific) // the day clocks fall back
+        assertEquals(at("2026-11-02T00:00", pacific), TimeZones.nextMidnight(now, pacific))
     }
 
     @Test
     fun theSameMomentCanBeTodayInOneZoneAndTomorrowInAnother() {
-        val now = at("2026-11-17T21:00", vancouver)
-        val event = at("2026-11-17T23:30", vancouver) // 2:30 a.m. Wednesday in Toronto
-        assertTrue(TimeZones.sameDay(now, event, vancouver))
+        val now = at("2026-11-17T21:00", pacific)
+        val event = at("2026-11-17T23:30", pacific) // 2:30 a.m. Wednesday in Toronto
+        assertTrue(TimeZones.sameDay(now, event, pacific))
         assertFalse(TimeZones.sameDay(now, event, toronto))
     }
 
@@ -66,25 +68,27 @@ class TimeZonesTest {
         val local =
             java.time.Instant
                 .ofEpochMilli(start)
-                .atZone(vancouver)
+                .atZone(pacific)
         assertEquals(21, local.hour) // 9 p.m. Tuesday Pacific
         assertEquals(17, local.dayOfMonth)
     }
 
     @Test
     fun offsetsReadPlainly() {
-        val now = at("2026-11-17T12:00", vancouver)
-        assertEquals("UTC−8", TimeZones.offsetLabel(vancouver, now))
+        val now = at("2026-11-17T12:00", pacific)
+        assertEquals("UTC−8", TimeZones.offsetLabel(pacific, now))
         assertEquals("UTC+5:30", TimeZones.offsetLabel(ZoneId.of("Asia/Kolkata"), now))
         assertEquals("UTC", TimeZones.offsetLabel(ZoneId.of("UTC"), now))
     }
 
     @Test
     fun choicesNameTheCityAndOffset() {
-        val now = at("2026-11-17T12:00", vancouver)
-        val label = TimeZones.label("America/Vancouver", now, Locale.CANADA)
-        assertTrue(label.startsWith("Vancouver · "), label)
+        val now = at("2026-11-17T12:00", pacific)
+        val label = TimeZones.label("America/Los_Angeles", now, Locale.CANADA)
+        assertTrue(label.startsWith("Los Angeles · "), label)
         assertTrue(label.endsWith("UTC−8)") || label.endsWith("UTC−8"), label)
+        val vancouver = TimeZones.label("America/Vancouver", now, Locale.CANADA)
+        assertTrue(vancouver.endsWith("UTC−7)") || vancouver.endsWith("UTC−7"), vancouver)
         assertEquals("UTC", TimeZones.label("UTC", now, Locale.CANADA))
         assertEquals("Buenos Aires", TimeZones.label("America/Argentina/Buenos_Aires", now, Locale.CANADA).substringBefore(" ·"))
     }
