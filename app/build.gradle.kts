@@ -194,7 +194,8 @@ dependencies {
     implementation(libs.coil.compose)
     implementation(libs.coil.network.okhttp)
     implementation(libs.androidx.profileinstaller)
-    baselineProfile(project(":baselineprofile"))
+    // Only the github build is driven on the emulator; mergeIntoMain gives the play build the same profile.
+    "githubBaselineProfile"(project(":baselineprofile"))
     implementation(libs.play.app.update)
     // Premium is sold through Play Billing in the store build only (docs/decisions/premium.md).
     "playImplementation"(libs.play.billing)

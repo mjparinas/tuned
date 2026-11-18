@@ -1,9 +1,10 @@
 // Prints the startup benchmark's medians as a Markdown table for the Baseline profile workflow's summary.
 // Usage: node scripts/startup-summary.mjs <directory holding *benchmarkData.json>
-import { readdirSync, readFileSync, statSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 
 function findReports(dir) {
+    if (!existsSync(dir)) return [];
     return readdirSync(dir).flatMap((name) => {
         const path = join(dir, name);
         if (statSync(path).isDirectory()) return findReports(path);
