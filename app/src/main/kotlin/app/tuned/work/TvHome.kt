@@ -1,5 +1,6 @@
 package app.tuned.work
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -66,6 +67,9 @@ class TvHome(
         prefs.edit { clear() }
     }
 
+    // The tvprovider builders inherit their setters from a base class marked @RestrictTo, so Lint flags every
+    // public setter (a known false positive in androidx.tvprovider). The calls are the library's documented API.
+    @SuppressLint("RestrictedApi")
     private fun updateWatchNext(rows: List<ContinueRow>) {
         val old = ids(WATCH_NEXT)
         val now = System.currentTimeMillis()
@@ -94,6 +98,7 @@ class TvHome(
         save(WATCH_NEXT, kept)
     }
 
+    @SuppressLint("RestrictedApi") // the same false positive as updateWatchNext
     private fun updateFavourites(rows: List<FavouriteRow>) {
         val channel = channelId() ?: return
         ids(PROGRAMS).values.forEach { attempt(TAG, "Couldn't remove a home screen card") { helper.deletePreviewProgram(it) } }
