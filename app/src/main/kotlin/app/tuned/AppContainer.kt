@@ -95,7 +95,7 @@ class AppContainer(
                 .map { infos -> infos.any { it.state == WorkInfo.State.RUNNING } }
         combine(playerOpen, downloading) { open, down -> open || down }.stateIn(appScope, SharingStarted.Eagerly, false)
     }
-    val account by lazy { AccountRepository(http, credentials, settings, playerOpen) }
+    val account by lazy { AccountRepository(http, credentials, settings, streamBusy) }
     val channelScan by lazy { ChannelScanner(context, db, http, credentials, settings, streamBusy) }
     val scanControl by lazy { ScanWorker.Control(context) }
 

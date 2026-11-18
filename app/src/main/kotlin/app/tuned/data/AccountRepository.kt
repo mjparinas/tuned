@@ -21,8 +21,8 @@ class AccountRepository(
     private val http: OkHttpClient,
     private val credentials: CredentialStore,
     private val settings: SettingsRepository,
-    /** True while Tuned's player is open. */
-    private val playerOpen: StateFlow<Boolean>,
+    /** True while Tuned itself holds a stream: the player, or a download (which counts as a connection too). */
+    private val ownStream: StateFlow<Boolean>,
 ) {
     /** The last answer and when it came, taken while Tuned had no stream open (see [noStreamSince]). */
     data class Snapshot(
@@ -35,7 +35,7 @@ class AccountRepository(
     private val state = MutableStateFlow<Snapshot?>(null)
     val snapshot: StateFlow<Snapshot?> = state
 
-    /** When Tuned last closed its player (or 0 if it hasn't been opened); set by the player. */
+    /** When Tuned last closed its own stream (or 0 if it hasn't opened one); set by the player and downloads. */
     @Volatile
     var noStreamSince: Long = 0
 
@@ -71,7 +71,7 @@ class AccountRepository(
                 }
             } ?: return
         val now = System.currentTimeMillis()
-        state.value = Snapshot(info, now, withoutOwnStream = !playerOpen.value && now - noStreamSince >= OWN_STREAM_GONE_MS)
+        state.value = Snapshot(info, now, withoutOwnStream = withoutOwnStream(ownStream.value, noStreamSince, now))
     }
 
     /**
@@ -89,6 +89,17 @@ class AccountRepository(
 
     companion object {
         const val FRESH_MS = 3 * 60_000L
+
+        /**
+         * Whether an answer taken [now] counts only other devices: nothing of Tuned's is open, and its last stream
+         * closed long enough ago for the server to stop counting it. A download running while Home asked used to
+         * read as "every connection is in use elsewhere", so the player waited for a press of play.
+         */
+        fun withoutOwnStream(
+            ownStreamOpen: Boolean,
+            noStreamSince: Long,
+            now: Long,
+        ): Boolean = !ownStreamOpen && now - noStreamSince >= OWN_STREAM_GONE_MS
 
         /** Servers take a little while to stop counting a closed stream. */
         const val OWN_STREAM_GONE_MS = 60_000L

@@ -31,7 +31,12 @@ class OfflineWorker(
 ) : CoroutineWorker(context, params) {
     private var lastReport = 0L
 
-    override suspend fun doWork(): Result = logFailures(TAG, failed = { Result.failure() }) { download() }
+    override suspend fun doWork(): Result = try {
+        logFailures(TAG, failed = { Result.failure() }) { download() }
+    } finally {
+        // The server takes a while to stop counting the download's connection; see [AccountRepository.noStreamSince].
+        applicationContext.container.account.noStreamSince = System.currentTimeMillis()
+    }
 
     private suspend fun download(): Result {
         val container = applicationContext.container
