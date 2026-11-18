@@ -53,8 +53,8 @@ class Downloader(
         url: String,
         target: File,
         userAgent: String = "",
-        progress: Progress = Progress { _, _ -> },
         keepPart: Boolean = false,
+        progress: Progress = Progress { _, _ -> },
     ): File = withContext(Dispatchers.IO) {
         target.parentFile?.mkdirs()
         val part = File(target.path + ".part")

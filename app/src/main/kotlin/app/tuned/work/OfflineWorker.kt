@@ -53,7 +53,7 @@ class OfflineWorker(
                 // A user agent the playlist asks for wins over the app's.
                 val link = StreamLink.split(row.url)
                 val agent = link.headers[StreamLink.USER_AGENT] ?: ua
-                downloader.download(link.url, File(row.path), agent, { bytes, total -> report(row, bytes, total) }, keepPart = true)
+                downloader.download(link.url, File(row.path), agent, keepPart = true) { bytes, total -> report(row, bytes, total) }
                 val size = File(row.path).length()
                 dao.progress(row.itemId, size, size)
                 dao.state(row.itemId, DownloadEntity.DONE)
