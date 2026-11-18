@@ -252,18 +252,21 @@ object Regions {
             )
 
     /**
-     * The region of one stream. The category comes first, since it is what people see and hide by (Melvin, 2026-11-18:
-     * a "|EXYU| ..." category must hide with Ex-Yugoslavia even when its films carry `tvg-country="HR"`): a flag or tag
-     * at its start, a category that is only a country, or a country written out at its start. Then `tvg-country`, when
-     * it names a known country; then the same in the name, a tag in brackets at the end ("ESPN (US)"), and finally
-     * `tvg-language`, read as the tag that speaks it.
+     * The region of one stream, most specific first. A stream whose own name starts with a tag and a bar ("HINDI| Sony
+     * Max") is read by that tag: providers file other countries' channels under their own ("US| MOVIES NETWORK";
+     * Melvin, 2026-11-18: Hindi channels showing with only US and Canada on). Then the category, since it is what people
+     * see and hide by (Melvin, 2026-11-18: a "|EXYU| ..." category must hide with Ex-Yugoslavia even when its films carry
+     * `tvg-country="HR"`): a flag or tag at its start, a category that is only a country, or a country written out at its
+     * start. Then `tvg-country`, when it names a known country; then the same in the name, a tag in brackets at the end
+     * ("ESPN (US)"), and finally `tvg-language`, read as the tag that speaks it.
      */
     fun detect(
         group: String,
         tvgCountry: String?,
         name: String,
         tvgLanguage: String? = null,
-    ): String? = flag(group)
+    ): String? = ownTag(name)
+        ?: flag(group)
         ?: prefix(group)
         ?: whole(group)
         ?: leading(group)
@@ -402,6 +405,21 @@ object Regions {
     /** Names that start other things: "Georgia Bulldogs", "Jordan", "America's Got Talent", "Jersey Shore". */
     private val ambiguous =
         setOf("GEORGIA", "JORDAN", "CHAD", "JERSEY", "AMERICA", "LATIN", "ARAB", "MONACO", "DOMINICA", "NIGER", "MALI", "GUERNSEY")
+
+    /** "HINDI| & PICTURES", "US┃ STAR LIFE": a tag or language name, then a bar. A colon is not enough ("IT: Chapter Two"). */
+    private val barTag = Regex("""^\s*([\p{L} ]{2,20}?)\s*[|┃│]""")
+
+    private fun ownTag(name: String): String? {
+        val part =
+            barTag
+                .find(name)
+                ?.groupValues
+                ?.get(1)
+                ?.trim()
+                ?.uppercase() ?: return null
+        if (part in notRegions) return null
+        return if (token.matches(part) && part in known) normalize(part) else wordTags[part]
+    }
 
     private fun suffix(text: String): String? = bracketSuffix
         .find(text)

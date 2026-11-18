@@ -10,6 +10,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.BaseAdapter
 import android.widget.ImageButton
+import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.ListView
 import android.widget.TextView
@@ -22,10 +23,14 @@ import app.tuned.container
 import app.tuned.core.ScreenLayout
 import app.tuned.data.db.ItemEntity
 import app.tuned.diagnostics.launchSafely
+import coil3.dispose
+import coil3.load
+import coil3.size.Precision
 import kotlinx.coroutines.CoroutineScope
 
 /**
- * The channels in the current category, down the right of the video, each with what's on now. Picking one switches to
+ * The channels in the current category, down the right of the video, each with its logo on the left (Melvin,
+ * 2026-11-18) and what's on now. Picking one switches to
  * it on the same connection (the player only ever holds one stream). On a tablet in landscape the guide sits beside
  * the video, which shrinks to make room ([ScreenLayout.guideBesideVideo]); elsewhere it slides over the video.
  */
@@ -162,10 +167,13 @@ class MiniGuide(
             parent: ViewGroup,
         ): View {
             val row = convertView as? LinearLayout ?: newRow()
-            val name = row.getChildAt(0) as TextView
-            val now = row.getChildAt(1) as TextView
+            val logo = row.getChildAt(0) as ImageView
+            val texts = row.getChildAt(1) as LinearLayout
+            val name = texts.getChildAt(0) as TextView
+            val now = texts.getChildAt(1) as TextView
             val channel = channels[position]
             val playing = player()?.currentMediaItemIndex == position
+            showLogo(logo, channel.logo)
             name.text = channel.name
             name.setTextColor(if (playing) PLAYING_COLOUR else Color.WHITE)
             val title = channel.tvgId?.let(onNow::get)
@@ -174,25 +182,58 @@ class MiniGuide(
             return row
         }
 
+        /**
+         * The logo through the app's image cache, decoded at the size it's drawn so a long category stays light. A
+         * channel without one keeps the space empty, so the names still line up.
+         */
+        private fun showLogo(
+            view: ImageView,
+            url: String?,
+        ) {
+            view.dispose()
+            view.setImageDrawable(null)
+            if (url.isNullOrBlank()) return
+            val px = (LOGO_DP * density).toInt()
+            view.load(url) {
+                size(px, px)
+                precision(Precision.INEXACT)
+            }
+        }
+
         private fun newRow() = LinearLayout(activity).apply {
-            orientation = LinearLayout.VERTICAL
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
             val pad = (12 * density).toInt()
             setPadding(pad * 2, pad, pad * 2, pad)
+            val logoSize = (LOGO_DP * density).toInt()
             addView(
-                TextView(activity).apply {
-                    textSize = 16f
-                    setTypeface(typeface, Typeface.BOLD)
-                    maxLines = 1
-                    ellipsize = TextUtils.TruncateAt.END
+                ImageView(activity).apply {
+                    scaleType = ImageView.ScaleType.FIT_CENTER
+                    importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
                 },
+                LinearLayout.LayoutParams(logoSize, logoSize).apply { marginEnd = pad },
             )
             addView(
-                TextView(activity).apply {
-                    textSize = 13f
-                    setTextColor(0xB3FFFFFF.toInt())
-                    maxLines = 1
-                    ellipsize = TextUtils.TruncateAt.END
+                LinearLayout(activity).apply {
+                    orientation = LinearLayout.VERTICAL
+                    addView(
+                        TextView(activity).apply {
+                            textSize = 16f
+                            setTypeface(typeface, Typeface.BOLD)
+                            maxLines = 1
+                            ellipsize = TextUtils.TruncateAt.END
+                        },
+                    )
+                    addView(
+                        TextView(activity).apply {
+                            textSize = 13f
+                            setTextColor(0xB3FFFFFF.toInt())
+                            maxLines = 1
+                            ellipsize = TextUtils.TruncateAt.END
+                        },
+                    )
                 },
+                LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f),
             )
         }
     }
@@ -200,6 +241,7 @@ class MiniGuide(
     private companion object {
         const val CHUNK = 500
         const val OVERLAY_DP = 320
+        const val LOGO_DP = 40
 
         /** A light violet that reads on the dark panel whatever the app's accent. */
         val PLAYING_COLOUR = 0xFFB9A8FF.toInt()

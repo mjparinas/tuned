@@ -39,8 +39,9 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 
 /**
- * The buttons at the top right of the player, shown with the controls: channels (live), aspect, quality, subtitle timing,
- * stream info and screen lock. Each stays out of the way until asked for, as everything in the player does.
+ * The buttons at the top right of the player, shown with the controls: channels (live), aspect, quality, stream info and
+ * screen lock. The subtitle timing button sits beside the CC button instead ([placeBesideCaptions]). Each stays out of
+ * the way until asked for, as everything in the player does.
  */
 @OptIn(UnstableApi::class)
 class PlayerTools(
@@ -112,11 +113,13 @@ class PlayerTools(
             addView(flipButton)
             addView(button(R.drawable.ic_player_aspect, R.string.player_fit) { nextFit() })
             addView(qualityButton)
-            addView(button(R.drawable.ic_player_subtitle_timing, R.string.subtitle_timing) { pickSubtitleTiming() })
             addView(button(R.drawable.ic_player_info, R.string.player_info) { toggleInfo() })
             addView(button(R.drawable.ic_player_open_with, R.string.player_open_with) { openElsewhere() })
             addView(button(R.drawable.ic_player_lock, R.string.player_lock) { lock() })
         }
+
+    /** Moves the captions earlier or later; placed beside the CC button by the player. */
+    val subtitleTimingButton: ImageButton = button(R.drawable.ic_player_subtitle_timing, R.string.subtitle_timing) { pickSubtitleTiming() }
 
     /** Puts another button (the cast button) at the start of the toolbar. */
     fun addButton(view: View) {

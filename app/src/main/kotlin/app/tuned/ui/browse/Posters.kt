@@ -28,16 +28,35 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.ScaleFactor
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import app.tuned.R
+import app.tuned.core.PosterArt
 import app.tuned.ui.common.focusRing
 import app.tuned.ui.common.skeleton
 import coil3.compose.AsyncImage
+
+/**
+ * Crops a real poster to fill the tile, but shows a channel logo whole, centred and never blown up past the tile, so a
+ * small square logo stays sharp instead of being cropped and enlarged ([PosterArt]).
+ */
+private object PosterScale : ContentScale {
+    override fun computeScaleFactor(
+        srcSize: Size,
+        dstSize: Size,
+    ): ScaleFactor = if (PosterArt.isPoster(srcSize.width, srcSize.height)) {
+        ContentScale.Crop.computeScaleFactor(srcSize, dstSize)
+    } else {
+        val fit = ContentScale.Fit.computeScaleFactor(srcSize, dstSize).scaleX * PosterArt.LOGO_FILL
+        ScaleFactor(fit, fit)
+    }
+}
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -66,7 +85,7 @@ fun Poster(
             AsyncImage(
                 model = image,
                 contentDescription = null,
-                contentScale = ContentScale.Crop,
+                contentScale = PosterScale,
                 modifier =
                     Modifier
                         .fillMaxWidth()
