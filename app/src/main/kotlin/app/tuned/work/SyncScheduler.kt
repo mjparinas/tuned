@@ -92,12 +92,25 @@ class SyncScheduler(
         }
     }
 
-    /** What the running refresh is doing, for the progress bars; null when none runs or it hasn't reported yet. */
-    val progress: Flow<SyncProgress?> by lazy {
-        work.getWorkInfosFlow(WorkQuery.fromUniqueWorkNames(NOW, PLAYLIST, GUIDE)).map { infos ->
+    /** What the running refresh is doing, for the first download's screen; null when none runs or it hasn't reported yet. */
+    val progress: Flow<SyncProgress?> by lazy { progressOf(NOW, PLAYLIST, GUIDE) }
+
+    /**
+     * The same, only for a refresh the person started (Refresh now, pull to refresh, a new playlist), for the bar
+     * above the lists. Scheduled refreshes run unseen: the cache stays usable throughout, so there is nothing to wait
+     * for (Melvin, 2026-11-18: "i see 'saving channels' a lot, why").
+     */
+    val requestedProgress: Flow<SyncProgress?> by lazy { progressOf(NOW) }
+
+    /** True while a refresh the person started runs, for the pull-to-refresh spinner. */
+    val requestedRefreshing: Flow<Boolean> by lazy {
+        work.getWorkInfosFlow(WorkQuery.fromUniqueWorkNames(NOW)).map { infos -> infos.any { it.state == WorkInfo.State.RUNNING } }
+    }
+
+    private fun progressOf(vararg names: String): Flow<SyncProgress?> =
+        work.getWorkInfosFlow(WorkQuery.fromUniqueWorkNames(*names)).map { infos ->
             infos.firstOrNull { it.state == WorkInfo.State.RUNNING }?.let { SyncWorker.progressOf(it.progress) }
         }
-    }
 
     fun cancelAll() {
         work.cancelUniqueWork(NOW)

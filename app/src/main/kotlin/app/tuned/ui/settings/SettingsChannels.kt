@@ -44,6 +44,11 @@ internal fun ChannelsPage(
         settings.channelNumbers,
         stringResource(R.string.settings_channel_numbers_summary),
     ) { on -> vm.update { it.copy(channelNumbers = on) } }
+    SwitchRow(
+        stringResource(R.string.settings_always_show_scrollbar),
+        settings.alwaysShowScrollbar,
+        stringResource(R.string.settings_always_show_scrollbar_summary),
+    ) { on -> vm.update { it.copy(alwaysShowScrollbar = on) } }
     SettingRow(
         stringResource(R.string.settings_favourite_order),
         stringResource(R.string.settings_favourite_order_summary),

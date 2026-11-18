@@ -54,7 +54,7 @@ class RegionViewModel(
 
 /**
  * Settings › Countries and languages: one switch per language first, then one per country (or region tag) found in
- * the playlist, with how many streams each has. Turning one off hides its channels, movies and shows everywhere,
+ * the playlist, A to Z by name, with how many streams each has. Turning one off hides its channels, movies and shows everywhere,
  * including search. A language is the set of tags that speak it ([RegionLanguages]), so its switch turns all of those
  * on or off together and needs nothing stored of its own; it shows on while any of them is on.
  */
@@ -68,6 +68,7 @@ fun RegionSettingsScreen(
     val hidden = settings.hiddenRegions
     val languages = remember(regions) { RegionLanguages.group(regions.map { it.region }) }
     val counts = remember(regions) { regions.associate { it.region to it.count } }
+    val byName = remember(regions) { Regions.sortedByName(regions) { it.region } }
     Scaffold(
         topBar = {
             BackTopBar(stringResource(R.string.settings_countries), onBack) {
@@ -106,7 +107,7 @@ fun RegionSettingsScreen(
                 }
                 item { SectionHeader(stringResource(R.string.regions_countries)) }
             }
-            items(regions, key = { it.region }) { r ->
+            items(byName, key = { it.region }) { r ->
                 SwitchRow(
                     title = "${Regions.displayName(r.region)} (${r.region})",
                     checked = r.region !in hidden,

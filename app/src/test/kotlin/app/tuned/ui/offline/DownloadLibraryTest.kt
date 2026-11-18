@@ -68,4 +68,22 @@ class DownloadLibraryTest {
         val library = DownloadLibrary.of(listOf(row(1, addedAt = 10), row(2, addedAt = 20), row(3, addedAt = 30, done = false)))
         assertEquals(listOf(3L, 2L, 1L), library.movies.map { it.download.itemId })
     }
+
+    @Test
+    fun `a show's name loses the provider's language tag`() {
+        val library = DownloadLibrary.of(listOf(row(1, addedAt = 10, show = "EN -  The Simpsons (1989)", season = 1, episode = 1)))
+        assertEquals("The Simpsons (1989)", library.shows.single().name)
+    }
+
+    @Test
+    fun `a show's saved fraction counts finished episodes`() {
+        val library =
+            DownloadLibrary.of(
+                listOf(
+                    row(1, addedAt = 10, show = "Simpsons", season = 1, episode = 1),
+                    row(2, addedAt = 11, show = "Simpsons", season = 1, episode = 2, done = false),
+                ),
+            )
+        assertEquals(0.5f, library.shows.single().savedFraction)
+    }
 }

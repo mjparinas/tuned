@@ -68,4 +68,14 @@ class RegionsTest {
         assertEquals("EX", group("|EXYU| STRANI FILMOVI 1950-2022"))
         assertEquals("US", group("|US| MOVIES NETWORK"))
     }
+
+    @Test
+    fun `countries sort by name, not by stream count`() {
+        // Busiest first, as the database returns them; "Côte d'Ivoire" sorts as if the accent weren't there.
+        val byCount = listOf("US" to 900, "UK" to 500, "FR" to 300, "CI" to 200, "CA" to 50, "AF" to 1)
+        assertEquals(
+            listOf("AF", "CA", "CI", "FR", "UK", "US"),
+            Regions.sortedByName(byCount) { it.first }.map { it.first },
+        )
+    }
 }

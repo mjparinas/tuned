@@ -19,6 +19,7 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyGridScope
+import androidx.compose.foundation.lazy.grid.LazyGridState
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.lazy.items
@@ -50,14 +51,18 @@ import androidx.paging.compose.collectAsLazyPagingItems
 import androidx.paging.compose.itemKey
 import app.tuned.R
 import app.tuned.core.ContentKind
+import app.tuned.core.FastScroll
 import app.tuned.core.ScreenLayout
 import app.tuned.data.db.ContinueRow
 import app.tuned.data.db.ItemEntity
 import app.tuned.data.db.ShowSummary
 import app.tuned.data.db.WatchLaterEntity
+import app.tuned.ui.common.FastScrollbar
 import app.tuned.ui.common.SKELETON_ROWS
 import app.tuned.ui.common.firstLoad
 import app.tuned.ui.common.focusRing
+import app.tuned.ui.common.peekOrNull
+import app.tuned.ui.common.rememberFastScroll
 import app.tuned.ui.common.windowWidthDp
 import app.tuned.ui.library.LibraryViewModel
 import app.tuned.ui.library.watchLaterRow
@@ -68,54 +73,59 @@ internal fun MovieGrid(
     vm: BrowseViewModel,
     onPlay: (Long) -> Unit,
     onOpenMovie: (Long) -> Unit,
+    alwaysShowScrollbar: Boolean,
 ) {
     val movies = vm.movies.collectAsLazyPagingItems()
     val favourites by vm.favouriteIds.collectAsStateWithLifecycle()
     val library: LibraryViewModel = viewModel()
     val watched by library.watched.collectAsStateWithLifecycle()
     val later by library.laterKeys.collectAsStateWithLifecycle()
-    LazyVerticalGrid(
-        columns = GridCells.Adaptive(minSize = ScreenLayout.posterMinDp(windowWidthDp()).dp),
-        state = rememberLazyGridState(),
-        contentPadding = PaddingValues(12.dp),
-        horizontalArrangement = Arrangement.spacedBy(10.dp),
-        verticalArrangement = Arrangement.spacedBy(14.dp),
-        modifier = Modifier.fillMaxSize(),
-    ) {
-        continueWatching(vm, ContentKind.MOVIE, onPlay)
-        watchLaterRow(shows = false, visible = { fullList(vm, ContentKind.MOVIE) }, onOpenMovie = onOpenMovie, onOpenShow = { _, _ -> })
-        if (movies.firstLoad) items(SKELETON_ROWS) { PosterPlaceholder() }
-        items(count = movies.itemCount, key = movies.itemKey { it.id }) { index ->
-            val movie: ItemEntity? = movies[index]
-            if (movie == null) {
-                PosterPlaceholder()
-            } else {
-                val favourite = movie.id in favourites
-                val rating by produceState<Double?>(null, movie.name) { value = vm.rating(movie.name, tv = false) }
-                // A tap opens the film's page; Play now is in the long-press menu for a straight start.
-                val done = movie.id in watched
-                val saved = WatchLaterEntity.movieKey(movie.id) in later
-                Poster(
-                    title = movie.name,
-                    image = movie.logo,
-                    favourite = favourite,
-                    rating = rating,
-                    watched = done,
-                    onClick = { onOpenMovie(movie.id) },
-                    onToggleFavourite = { vm.toggleFavourite(movie.id, favourite) },
-                    onPlayNow = { onPlay(movie.id) },
-                    extraMenu =
-                        listOf(
-                            stringResource(if (saved) R.string.watch_later_remove else R.string.watch_later_add) to {
-                                library.toggleLater(LibraryViewModel.movie(movie.id, movie.name, movie.logo))
-                            },
-                            stringResource(if (done) R.string.mark_unwatched else R.string.mark_watched) to {
-                                library.setWatched(listOf(movie.id), !done)
-                            },
-                        ),
-                )
+    val state = rememberLazyGridState()
+    Box(Modifier.fillMaxSize()) {
+        LazyVerticalGrid(
+            columns = GridCells.Adaptive(minSize = ScreenLayout.posterMinDp(windowWidthDp()).dp),
+            state = state,
+            contentPadding = PaddingValues(12.dp),
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp),
+            modifier = Modifier.fillMaxSize(),
+        ) {
+            continueWatching(vm, ContentKind.MOVIE, onPlay)
+            watchLaterRow(shows = false, visible = { fullList(vm, ContentKind.MOVIE) }, onOpenMovie = onOpenMovie, onOpenShow = { _, _ -> })
+            if (movies.firstLoad) items(SKELETON_ROWS) { PosterPlaceholder() }
+            items(count = movies.itemCount, key = movies.itemKey { it.id }) { index ->
+                val movie: ItemEntity? = movies[index]
+                if (movie == null) {
+                    PosterPlaceholder()
+                } else {
+                    val favourite = movie.id in favourites
+                    val rating by produceState<Double?>(null, movie.name) { value = vm.rating(movie.name, tv = false) }
+                    // A tap opens the film's page; Play now is in the long-press menu for a straight start.
+                    val done = movie.id in watched
+                    val saved = WatchLaterEntity.movieKey(movie.id) in later
+                    Poster(
+                        title = movie.name,
+                        image = movie.logo,
+                        favourite = favourite,
+                        rating = rating,
+                        watched = done,
+                        onClick = { onOpenMovie(movie.id) },
+                        onToggleFavourite = { vm.toggleFavourite(movie.id, favourite) },
+                        onPlayNow = { onPlay(movie.id) },
+                        extraMenu =
+                            listOf(
+                                stringResource(if (saved) R.string.watch_later_remove else R.string.watch_later_add) to {
+                                    library.toggleLater(LibraryViewModel.movie(movie.id, movie.name, movie.logo))
+                                },
+                                stringResource(if (done) R.string.mark_unwatched else R.string.mark_watched) to {
+                                    library.setWatched(listOf(movie.id), !done)
+                                },
+                            ),
+                    )
+                }
             }
         }
+        GridScrollbar(state, movies.itemCount, alwaysShowScrollbar) { movies.peekOrNull(it)?.groupName }
     }
 }
 
@@ -124,57 +134,79 @@ internal fun ShowGrid(
     vm: BrowseViewModel,
     onOpenShow: (String, String) -> Unit,
     onPlay: (Long) -> Unit,
+    alwaysShowScrollbar: Boolean,
 ) {
     val shows = vm.shows.collectAsLazyPagingItems()
     val library: LibraryViewModel = viewModel()
     val later by library.laterKeys.collectAsStateWithLifecycle()
-    LazyVerticalGrid(
-        columns = GridCells.Adaptive(minSize = ScreenLayout.posterMinDp(windowWidthDp()).dp),
-        state = rememberLazyGridState(),
-        contentPadding = PaddingValues(12.dp),
-        horizontalArrangement = Arrangement.spacedBy(10.dp),
-        verticalArrangement = Arrangement.spacedBy(14.dp),
-        modifier = Modifier.fillMaxSize(),
-    ) {
-        continueWatching(vm, ContentKind.SERIES, onPlay)
-        watchLaterRow(shows = true, visible = { fullList(vm, ContentKind.SERIES) }, onOpenMovie = {}, onOpenShow = onOpenShow)
-        if (shows.firstLoad) items(SKELETON_ROWS) { PosterPlaceholder() }
-        items(count = shows.itemCount, key = shows.itemKey { it.showKey }) { index ->
-            val show: ShowSummary? = shows[index]
-            if (show == null) {
-                PosterPlaceholder()
-            } else {
-                val rating by produceState<Double?>(null, show.showName) { value = vm.rating(show.showName, tv = true) }
-                Poster(
-                    title = show.showName,
-                    image = show.logo,
-                    rating = rating,
-                    subtitle =
-                        if (show.newEpisodes > 0) {
-                            stringResource(
-                                R.string.episodes_with_new,
-                                pluralEpisodes(show.episodes),
-                                pluralStringResource(R.plurals.new_episodes, show.newEpisodes, show.newEpisodes),
-                            )
-                        } else {
-                            pluralEpisodes(show.episodes)
-                        },
-                    onClick = { onOpenShow(show.showKey, show.showName) },
-                    extraMenu =
-                        listOf(
-                            stringResource(
-                                if (WatchLaterEntity.showKey(show.showKey) in
-                                    later
-                                ) {
-                                    R.string.watch_later_remove
-                                } else {
-                                    R.string.watch_later_add
-                                },
-                            ) to { library.toggleLater(LibraryViewModel.show(show.showKey, show.showName, show.logo)) },
-                        ),
-                )
+    val state = rememberLazyGridState()
+    Box(Modifier.fillMaxSize()) {
+        LazyVerticalGrid(
+            columns = GridCells.Adaptive(minSize = ScreenLayout.posterMinDp(windowWidthDp()).dp),
+            state = state,
+            contentPadding = PaddingValues(12.dp),
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp),
+            modifier = Modifier.fillMaxSize(),
+        ) {
+            continueWatching(vm, ContentKind.SERIES, onPlay)
+            watchLaterRow(shows = true, visible = { fullList(vm, ContentKind.SERIES) }, onOpenMovie = {}, onOpenShow = onOpenShow)
+            if (shows.firstLoad) items(SKELETON_ROWS) { PosterPlaceholder() }
+            items(count = shows.itemCount, key = shows.itemKey { it.showKey }) { index ->
+                val show: ShowSummary? = shows[index]
+                if (show == null) {
+                    PosterPlaceholder()
+                } else {
+                    val rating by produceState<Double?>(null, show.showName) { value = vm.rating(show.showName, tv = true) }
+                    Poster(
+                        title = show.showName,
+                        image = show.logo,
+                        rating = rating,
+                        subtitle =
+                            if (show.newEpisodes > 0) {
+                                stringResource(
+                                    R.string.episodes_with_new,
+                                    pluralEpisodes(show.episodes),
+                                    pluralStringResource(R.plurals.new_episodes, show.newEpisodes, show.newEpisodes),
+                                )
+                            } else {
+                                pluralEpisodes(show.episodes)
+                            },
+                        onClick = { onOpenShow(show.showKey, show.showName) },
+                        extraMenu =
+                            listOf(
+                                stringResource(
+                                    if (WatchLaterEntity.showKey(show.showKey) in
+                                        later
+                                    ) {
+                                        R.string.watch_later_remove
+                                    } else {
+                                        R.string.watch_later_add
+                                    },
+                                ) to { library.toggleLater(LibraryViewModel.show(show.showKey, show.showName, show.logo)) },
+                            ),
+                    )
+                }
             }
         }
+        GridScrollbar(state, shows.itemCount, alwaysShowScrollbar) { shows.peekOrNull(it)?.groupName }
+    }
+}
+
+/**
+ * The poster grids' scroll bar. The rows across the top (Continue Watching, Watch later) come before the posters,
+ * so a grid index is moved back by them before it's looked up among the [count] posters.
+ */
+@Composable
+private fun GridScrollbar(
+    state: LazyGridState,
+    count: Int,
+    alwaysShow: Boolean,
+    group: (Int) -> String?,
+) {
+    FastScrollbar(rememberFastScroll(state), alwaysShow) { index ->
+        val headers = state.layoutInfo.totalItemsCount - count
+        FastScroll.label(group(index - headers))
     }
 }
 

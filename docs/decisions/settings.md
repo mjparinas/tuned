@@ -8,7 +8,7 @@ The first Settings screen is a short list of pages, each with an icon and a line
 
 - **Playlists and account**: playlists, the account's status, backup and restore, Trakt and sync between devices (each only in builds with its keys), sign out.
 - **Profiles and parental controls**: profiles, adult categories and the parental PIN.
-- **Channels and lists**: start screen, starting on the last channel, the guide in the list, the grid guide, channel numbers, favourite order, and what's hidden (countries, groups, 24/7 channels).
+- **Channels and lists**: start screen, starting on the last channel, the guide in the list, the grid guide, channel numbers, always showing the scroll bar, favourite order, and what's hidden (countries, groups, 24/7 channels).
 - **Guide and refresh**: refresh now, when the playlist and guide download, pull to refresh, Wi-Fi only, guide days, guide fixes and reminders.
 - **Playback**: audio language, resume, autoplay, skip intro, live rewind, buffering, then the screen and controls (landscape, picture-in-picture, frame rate, gestures, how long controls stay, skip lengths), clearing history, and Subtitles (finding subtitles by itself and the optional OpenSubtitles account), shown only in builds with the OpenSubtitles key.
 - **Captions**: opens the caption screen directly, since it is already a page.

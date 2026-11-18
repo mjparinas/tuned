@@ -46,12 +46,16 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.paging.compose.collectAsLazyPagingItems
 import androidx.paging.compose.itemKey
 import app.tuned.R
+import app.tuned.core.FastScroll
 import app.tuned.data.AppSettings
 import app.tuned.data.db.ChannelWithNow
 import app.tuned.ui.common.ChannelRowSkeleton
+import app.tuned.ui.common.FastScrollbar
 import app.tuned.ui.common.SKELETON_ROWS
 import app.tuned.ui.common.firstLoad
 import app.tuned.ui.common.focusRing
+import app.tuned.ui.common.peekOrNull
+import app.tuned.ui.common.rememberFastScroll
 import app.tuned.ui.guide.GuideGridView
 
 /** Live TV as the channel list, or as the grid guide when that's switched on. */
@@ -65,7 +69,7 @@ internal fun LiveTab(
     if (settings.liveGrid) {
         GuideGridView(vm.channels.collectAsLazyPagingItems(), settings.guideDays, onPlay, onOpenGuide)
     } else {
-        LiveList(vm, settings.showGuideInList, settings.channelNumbers, onPlay, onOpenGuide)
+        LiveList(vm, settings.showGuideInList, settings.channelNumbers, settings.alwaysShowScrollbar, onPlay, onOpenGuide)
     }
 }
 
@@ -75,35 +79,41 @@ private fun LiveList(
     vm: BrowseViewModel,
     showGuide: Boolean,
     showNumbers: Boolean,
+    alwaysShowScrollbar: Boolean,
     onPlay: (Long) -> Unit,
     onOpenGuide: (Long) -> Unit,
 ) {
     val channels = vm.channels.collectAsLazyPagingItems()
     val favourites by vm.favouriteIds.collectAsStateWithLifecycle()
     val state = rememberLazyListState()
-    LazyColumn(
-        state = state,
-        modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(start = 12.dp, end = 12.dp, top = 4.dp, bottom = 16.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
-        if (channels.firstLoad) items(SKELETON_ROWS) { ChannelRowSkeleton() }
-        items(count = channels.itemCount, key = channels.itemKey { it.id }) { index ->
-            val channel = channels[index]
-            if (channel == null) {
-                ChannelRowSkeleton()
-            } else {
-                val favourite = channel.id in favourites
-                ChannelRow(
-                    channel = channel,
-                    favourite = favourite,
-                    showGuide = showGuide,
-                    showNumber = showNumbers,
-                    onPlay = { onPlay(channel.id) },
-                    onGuide = { onOpenGuide(channel.id) },
-                    onToggleFavourite = { vm.toggleFavourite(channel.id, favourite) },
-                )
+    Box(Modifier.fillMaxSize()) {
+        LazyColumn(
+            state = state,
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(start = 12.dp, end = 12.dp, top = 4.dp, bottom = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            if (channels.firstLoad) items(SKELETON_ROWS) { ChannelRowSkeleton() }
+            items(count = channels.itemCount, key = channels.itemKey { it.id }) { index ->
+                val channel = channels[index]
+                if (channel == null) {
+                    ChannelRowSkeleton()
+                } else {
+                    val favourite = channel.id in favourites
+                    ChannelRow(
+                        channel = channel,
+                        favourite = favourite,
+                        showGuide = showGuide,
+                        showNumber = showNumbers,
+                        onPlay = { onPlay(channel.id) },
+                        onGuide = { onOpenGuide(channel.id) },
+                        onToggleFavourite = { vm.toggleFavourite(channel.id, favourite) },
+                    )
+                }
             }
+        }
+        FastScrollbar(rememberFastScroll(state), alwaysShowScrollbar) { index ->
+            channels.peekOrNull(index)?.let { FastScroll.label(it.groupName, if (showNumbers) it.number else 0) }
         }
     }
 }

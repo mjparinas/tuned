@@ -92,6 +92,8 @@ class TunedApp :
 
                     Lifecycle.Event.ON_START -> {
                         pending?.cancel()
+                        // The store build asks Play what this account owns, in the background (docs/decisions/premium.md).
+                        container.premium.refresh()
                     }
 
                     else -> {}

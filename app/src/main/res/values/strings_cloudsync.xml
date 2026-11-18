@@ -8,8 +8,14 @@
     <string name="cloud_sync_waiting">Waiting for you to enter the code…</string>
     <string name="cloud_sync_open_site">Open Google</string>
     <string name="cloud_sync_expired">The code ran out before it was entered.</string>
-    <string name="cloud_sync_denied">Google said no to the connection.</string>
+    <string name="cloud_sync_denied">Google said no to the connection. While the app is in testing on Google\'s side, only its test users can sign in.</string>
     <string name="cloud_sync_failed">Couldn\'t reach Google. Check the connection and try again.</string>
+    <string name="cloud_sync_unknown_client">Google doesn\'t recognize this app\'s sign-in key. The app needs an update.</string>
+    <string name="cloud_sync_wrong_client_type">This app\'s Google sign-in key isn\'t set up for signing in with a code. The app needs an update.</string>
+    <string name="cloud_sync_wrong_secret">Google turned down this app\'s sign-in key. The app needs an update.</string>
+    <string name="cloud_sync_scope">Google won\'t give this app its Drive folder yet.</string>
+    <string name="cloud_sync_other">Google couldn\'t sign you in. Try again in a moment.</string>
+    <string name="cloud_sync_google_said">Google said: %1$s</string>
     <string name="cloud_sync_try_again">Try again</string>
     <string name="cloud_sync_passphrase_help">Your playlists, including their logins, are locked with this passphrase before they leave the device, so only your devices can read them. Use the same passphrase on every device. It can\'t be recovered.</string>
     <string name="cloud_sync_set_passphrase">Enter the sync passphrase</string>
@@ -18,6 +24,7 @@
     <string name="cloud_sync_never">Not synced yet</string>
     <string name="cloud_sync_last">Last synced %1$s</string>
     <string name="cloud_sync_offline">Couldn\'t reach Google Drive. It will try again.</string>
+    <string name="cloud_sync_drive_api_off">Google Drive is turned off for this app on Google\'s side.</string>
     <string name="cloud_sync_wrong_passphrase">This passphrase doesn\'t match the one on your other devices. Tap to enter it again.</string>
     <string name="cloud_sync_stop">Stop syncing</string>
     <string name="cloud_sync_stop_summary">Signs this device out of Google. What\'s on it stays.</string>
