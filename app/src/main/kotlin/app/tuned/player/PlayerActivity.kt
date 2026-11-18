@@ -490,15 +490,14 @@ class PlayerActivity : FragmentActivity() {
         tuner.begin()
     }
 
-    private fun mayPlay(item: ItemEntity): Boolean =
-        PlayGate.allowed(
-            item.adult,
-            item.groupName,
-            item.name,
-            live = item.kind == ContentKind.LIVE.code,
-            showAdult = settings.showAdult,
-            kidsProfile = settings.kidsProfile,
-        )
+    private fun mayPlay(item: ItemEntity): Boolean = PlayGate.allowed(
+        item.adult,
+        item.groupName,
+        item.name,
+        live = item.kind == ContentKind.LIVE.code,
+        showAdult = settings.showAdult,
+        kidsProfile = settings.kidsProfile,
+    )
 
     private suspend fun start(item: ItemEntity) {
         val kind = ContentKind.fromCode(item.kind)
