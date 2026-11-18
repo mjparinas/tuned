@@ -4,7 +4,6 @@ import android.Manifest
 import android.app.Application
 import android.content.pm.PackageManager
 import android.os.Build
-import android.text.format.DateFormat
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -61,6 +60,7 @@ import app.tuned.diagnostics.launchSafely
 import app.tuned.player.PlayerActivity
 import app.tuned.ui.common.BackTopBar
 import app.tuned.ui.common.focusRing
+import app.tuned.ui.common.rememberTimeLabels
 import app.tuned.work.Reminders
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -75,7 +75,6 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-import java.util.Date
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class GuideViewModel(
@@ -159,8 +158,7 @@ fun GuideScreen(
     val favourite by vm.favourite.collectAsStateWithLifecycle()
     val catchUpDays by vm.catchUpDays.collectAsStateWithLifecycle()
     val context = LocalContext.current
-    val time = DateFormat.getTimeFormat(context)
-    val day = DateFormat.getMediumDateFormat(context)
+    val times = rememberTimeLabels()
     val now = System.currentTimeMillis()
     val scheduled by vm.scheduled.collectAsStateWithLifecycle()
     var pending by remember { mutableStateOf<ProgrammeEntity?>(null) }
@@ -216,10 +214,10 @@ fun GuideScreen(
             return@Scaffold
         }
         val rows =
-            remember(programmes) {
+            remember(programmes, times) {
                 programmes.mapIndexed { i, p ->
-                    val label = day.format(Date(p.start))
-                    Triple(p, label, i == 0 || label != day.format(Date(programmes[i - 1].start)))
+                    val label = times.date(p.start)
+                    Triple(p, label, i == 0 || label != times.date(programmes[i - 1].start))
                 }
             }
         // With catch-up the list starts in the past, so it opens on what's on now.
@@ -240,7 +238,7 @@ fun GuideScreen(
                 Column {
                     if (header) {
                         Text(
-                            label,
+                            stringResource(R.string.grid_day_zone, label, times.zoneName(p.start)),
                             style = MaterialTheme.typography.labelLarge,
                             color = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.padding(start = 16.dp, top = 16.dp, bottom = 4.dp),
@@ -264,7 +262,7 @@ fun GuideScreen(
                                 .padding(horizontal = 16.dp, vertical = 10.dp),
                     ) {
                         Text(
-                            time.format(Date(p.start)),
+                            times.time(p.start),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.widthIn(min = 64.dp),

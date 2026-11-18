@@ -94,6 +94,8 @@ data class AppSettings(
     val guideDays: Int = 3,
     /** Moves the whole guide, for one that runs early or late (Settings › Guide). */
     val guideOffsetMinutes: Int = 0,
+    /** The zone guide and event times show in, as a zone id; blank follows the phone (Settings › Guide). */
+    val timeZone: String = "",
     val unmeteredOnly: Boolean = false,
     val buffer: BufferMode = BufferMode.BALANCED,
     val audioLanguage: String = "",
