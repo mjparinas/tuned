@@ -228,7 +228,12 @@ object Regions {
         ?: suffix(group)
         ?: language(tvgLanguage)
 
-    fun displayName(region: String): String = names[region] ?: region
+    /** The name people read: Tuned's own short names first, then the JDK's English name for any other ISO code. */
+    fun displayName(region: String): String = names[region] ?: isoNames[region] ?: region
+
+    private val isoNames: Map<String, String> by lazy {
+        Locale.getISOCountries().associateWith { Locale.Builder().setRegion(it).build().getDisplayCountry(Locale.ENGLISH) }
+    }
 
     /**
      * Regions in A to Z order of the name people read ("Canada" before "France"), not by how many streams each has

@@ -37,6 +37,8 @@ class RegionsTest {
         assertEquals("DE", Regions.detect("News", null, "DE: Das Erste"))
         assertEquals("Canada", Regions.displayName("CA"))
         assertEquals("ZZ", Regions.displayName("ZZ"))
+        // Codes Tuned has no short name for still read as a country, so they sort and search by name too.
+        assertTrue(Regions.displayName("CI").startsWith("C") && Regions.displayName("CI") != "CI")
     }
 
     @Test
