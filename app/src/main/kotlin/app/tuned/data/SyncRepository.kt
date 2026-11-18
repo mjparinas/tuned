@@ -1,23 +1,27 @@
 package app.tuned.data
 
-import android.util.Xml
 import androidx.room.withTransaction
 import app.tuned.core.CatchUp
+import app.tuned.core.ContentKind
+import app.tuned.core.EpisodeInfo
 import app.tuned.core.Episodes
+import app.tuned.core.GuideFixes
 import app.tuned.core.M3uParser
 import app.tuned.core.PlaylistEntry
+import app.tuned.core.PlaylistLink
 import app.tuned.core.Search
 import app.tuned.core.StableId
 import app.tuned.core.Streams
-import app.tuned.core.XmltvParser
 import app.tuned.core.XtreamAccount
+import app.tuned.core.XtreamApi
 import app.tuned.core.XtreamUrls
 import app.tuned.data.db.CatchUpEntity
 import app.tuned.data.db.GuideWriter
 import app.tuned.data.db.ItemEntity
 import app.tuned.data.db.PlaylistWriter
-import app.tuned.data.db.ProgrammeEntity
+import app.tuned.data.db.ShowGroups
 import app.tuned.data.db.TunedDatabase
+import app.tuned.diagnostics.AppLog
 import app.tuned.diagnostics.attempt
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
@@ -32,9 +36,11 @@ import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.decodeToSequence
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import java.io.BufferedReader
 import java.io.File
 import java.io.IOException
 import java.io.InputStream
+import java.net.URI
 
 /** Where a refresh is, for the progress bars on sign-in, on the lists and in the notification. */
 data class SyncProgress(
@@ -82,21 +88,79 @@ class SyncRepository(
 
     private suspend fun refreshPlaylistLocked(progress: (SyncProgress) -> Unit): Int {
         val login = credentials.load() ?: throw IOException("Not signed in")
-        val url = login.playlistUrl.ifBlank { XtreamUrls.playlist(login.server, login.username, login.password) }
         val count =
             try {
-                download(url, "playlist", SyncProgress.Step.Playlist, progress) { input ->
-                    importPlaylist(input) { rows -> progress(SyncProgress(SyncProgress.Step.SavingPlaylist, rows.toLong())) }
-                }
+                importFromServer(login, progress)
             } catch (e: IOException) {
                 val message = XtreamUrls.redact(e.message ?: "Couldn't download the playlist", login.username, login.password)
                 settings.update { it.copy(lastSyncError = message) }
                 throw IOException(message, e)
             }
+        // Channels with their own guide fix keep it across the new playlist.
+        db.guideFixes().reapply()
         settings.update { it.copy(lastPlaylistSync = System.currentTimeMillis(), lastSyncError = "") }
         // Catch-up is a bonus: a server that doesn't answer leaves the last known channels as they were.
         if (login.playlistUrl.isBlank()) attempt("Sync", "Catch-up refresh failed") { refreshCatchUp(login) }
         return count
+    }
+
+    /**
+     * The M3U playlist, read into the cache. On an Xtream login, a server that won't send the M3U is read through its
+     * API instead, and one whose M3U has no shows gets them from the API (core/XtreamApi). The M3U's own failure is the
+     * one reported when the API fails too.
+     */
+    private suspend fun importFromServer(
+        login: Credentials,
+        progress: (SyncProgress) -> Unit,
+    ): Int {
+        val xtream = login.playlistUrl.isBlank()
+        val url = login.playlistUrl.ifBlank { XtreamUrls.playlist(login.server, login.username, login.password) }
+        val saved = { rows: Int -> progress(SyncProgress(SyncProgress.Step.SavingPlaylist, rows.toLong())) }
+        val api = XtreamImport(http, login, userAgent())
+        val m3u =
+            runCatchingIo {
+                download(url, "playlist", SyncProgress.Step.Playlist, progress) { input ->
+                    importPlaylist(saved) { add ->
+                        var shows = 0
+                        var order = 0
+                        val reader = input.bufferedReader()
+                        rememberHeaderGuide(reader)
+                        for (entry in M3uParser.entries(reader)) {
+                            if (entry.kind == ContentKind.SERIES) shows++
+                            order = entry.order + 1
+                            add(entry)
+                        }
+                        // Some providers leave series out of the M3U; their API still lists them.
+                        if (xtream && shows == 0) attempt(TAG_SYNC, "No shows from the API either") { addApiShows(api, order, add) }
+                    }
+                }
+            }
+        val failure = m3u.exceptionOrNull() ?: return m3u.getOrThrow()
+        if (!xtream) throw failure
+        AppLog.w(TAG_SYNC, "M3U download failed; reading the Xtream API instead", failure)
+        val fromApi =
+            runCatchingIo {
+                importPlaylist(saved) { add ->
+                    var order = 0
+                    api.channelsAndFilms { entry ->
+                        order = entry.order + 1
+                        add(entry)
+                    }
+                    addApiShows(api, order, add)
+                }
+            }
+        fromApi.exceptionOrNull()?.let { failure.addSuppressed(it) }
+        return fromApi.getOrElse { throw failure }
+    }
+
+    /**
+     * Like [runCatching] for I/O only: anything else (a bug, a cancellation) still throws. `kotlin.Result` in full,
+     * because this class has its own Result (a refresh's counts).
+     */
+    private inline fun <T> runCatchingIo(block: () -> T): kotlin.Result<T> = try {
+        kotlin.Result.success(block())
+    } catch (e: IOException) {
+        kotlin.Result.failure(e)
     }
 
     /** Which live channels keep recordings (Xtream only), and the server's time zone that catch-up links use. */
@@ -118,36 +182,89 @@ class SyncRepository(
                 if (r.isSuccessful) XtreamAccount.timezone(r.body.string().take(MAX_ACCOUNT_ANSWER)) else null
             }
         if (zone != null) settings.update { it.copy(serverTimezone = zone) }
-        val rows =
-            http.newCall(get(XtreamUrls.liveStreams(login.server, login.username, login.password))).execute().use { r ->
-                if (!r.isSuccessful) throw IOException("HTTP ${r.code}")
-                // Streamed one channel at a time: the list of every live channel can run to megabytes.
-                Json
-                    .decodeToSequence(r.body.byteStream(), JsonObject.serializer())
-                    .mapNotNull { o ->
-                        val days = CatchUp.days(o.text("tv_archive"), o.text("tv_archive_duration"))
-                        o.text("stream_id")?.takeIf { days > 0 }?.let { CatchUpEntity(it, days) }
-                    }.toList()
+        val rows = ArrayList<CatchUpEntity>()
+        val adult = HashSet<String>()
+        http.newCall(get(XtreamUrls.liveStreams(login.server, login.username, login.password))).execute().use { r ->
+            if (!r.isSuccessful) throw IOException("HTTP ${r.code}")
+            // Streamed one channel at a time: the list of every live channel can run to megabytes.
+            for (o in Json.decodeToSequence(r.body.byteStream(), JsonObject.serializer())) {
+                val id = o.text("stream_id") ?: continue
+                val days = CatchUp.days(o.text("tv_archive"), o.text("tv_archive_duration"))
+                if (days > 0) rows += CatchUpEntity(id, days)
+                if (o.text("is_adult") == "1") adult += id
             }
+        }
         db.withTransaction {
             db.catchUp().deleteAll()
             rows.chunked(BATCH).forEach { db.catchUp().insertAll(it) }
         }
+        markAdult(adult)
+    }
+
+    /**
+     * Channels the server flags `is_adult` are adult even when their category doesn't say so (other providers file
+     * them under names like "Night" or "Premium"). Runs after each playlist import, which resets the flag from the names.
+     */
+    private suspend fun markAdult(streamIds: Set<String>) {
+        if (streamIds.isEmpty()) return
+        val ids =
+            db
+                .catchUp()
+                .liveUrls()
+                .filter { CatchUp.streamId(it.url) in streamIds }
+                .map { it.id }
+        ids.chunked(SQL_VARIABLES).forEach { db.catchUp().markAdult(it) }
     }
 
     private fun JsonObject.text(key: String) = (this[key] as? JsonPrimitive)?.contentOrNull
 
     private suspend fun refreshGuideLocked(progress: (SyncProgress) -> Unit): Int {
         val login = credentials.load() ?: throw IOException("Not signed in")
-        val url = login.guideUrl.ifBlank { XtreamUrls.guide(login.server, login.username, login.password) }
-        val days = settings.settings.first().guideDays
+        // A plain playlist's guide is the one its header names; without one only the extra guide links are read.
+        val main =
+            login.guideUrl.ifBlank {
+                if (login.kind == Credentials.Kind.Xtream) {
+                    XtreamUrls.guide(login.server, login.username, login.password)
+                } else {
+                    headerGuide.takeIf { it.exists() }?.readText().orEmpty()
+                }
+            }
+        val url = main.takeIf { it.isNotBlank() }
+        if (url == null && login.extraGuides.isEmpty()) return 0
+        val s = settings.settings.first()
+        val import = GuideImport(db, s.guideDays, s.guideOffsetMinutes)
+        val saved = { rows: Int -> progress(SyncProgress(SyncProgress.Step.SavingGuide, rows.toLong())) }
         val count =
-            download(url, "guide", SyncProgress.Step.Guide, progress) { input ->
-                importGuide(input, days) { rows -> progress(SyncProgress(SyncProgress.Step.SavingGuide, rows.toLong())) }
+            try {
+                if (!import.begin()) return 0
+                if (url != null) download(url, "guide", SyncProgress.Step.Guide, progress) { input -> import.read(input, saved) }
+                // Extra guide links only fill gaps; one that fails leaves the rest of the guide as it is.
+                for (extra in login.extraGuides) {
+                    attempt(TAG_SYNC, "An extra guide failed") {
+                        download(extra, "guide", SyncProgress.Step.Guide, progress) { input -> import.read(input, saved) }
+                    }
+                }
+                import.commit()
+            } finally {
+                import.discard() // a no-op after a commit; after a failure, the old guide stays
             }
         settings.update { it.copy(lastGuideSync = System.currentTimeMillis()) }
         return count
     }
+
+    /**
+     * Moves the whole guide by a new offset (Settings › Guide) at once, under the refresh lock so a refresh running
+     * meanwhile can't apply it twice.
+     */
+    suspend fun setGuideOffset(minutes: Int) = lock.withLock {
+        val old = settings.settings.first().guideOffsetMinutes
+        if (old == minutes) return@withLock
+        db.guideFixes().shiftAll((minutes - old) * GuideFixes.MINUTE)
+        settings.update { it.copy(guideOffsetMinutes = minutes) }
+    }
+
+    /** Runs [block] while no refresh is writing the guide, for [GuideFixRepository]. */
+    suspend fun <T> whileIdle(block: suspend () -> T): T = lock.withLock { block() }
 
     /** Saves [url] to disk (resuming and retrying as needed), then hands the unzipped file to [read] and deletes it. */
     private suspend fun <T> download(
@@ -157,6 +274,12 @@ class SyncRepository(
         progress: (SyncProgress) -> Unit,
         read: suspend (InputStream) -> T,
     ): T {
+        if (url.startsWith(Credentials.FILE_SCHEME)) {
+            // A playlist picked from a file was copied into the app when it was added: read it where it is.
+            val local = File(URI(url))
+            if (!local.exists()) throw IOException("The playlist file is missing. Add it again in Settings › Playlists.")
+            return withContext(Dispatchers.IO) { local.inputStream().use { read(Streams.maybeGunzip(it)) } }
+        }
         val ua = settings.settings.first().userAgent
         val file = File(dir, name)
         try {
@@ -167,23 +290,44 @@ class SyncRepository(
         }
     }
 
+    /** Where the guide named in the last playlist's `#EXTM3U` line is kept, for plain playlists without a guide link. */
+    private val headerGuide get() = File(dir, "header-guide")
+
+    /** Peeks at the first line for `x-tvg-url` and puts the reader back, so the parser still sees every line. */
+    private fun rememberHeaderGuide(reader: BufferedReader) {
+        reader.mark(HEADER_PEEK)
+        val buffer = CharArray(HEADER_PEEK)
+        val read = reader.read(buffer).coerceAtLeast(0)
+        reader.reset()
+        val first = String(buffer, 0, read).substringBefore('\n')
+        val guide = PlaylistLink.headerGuide(first)
+        dir.mkdirs()
+        if (guide == null) headerGuide.delete() else headerGuide.writeText(guide)
+    }
+
+    /**
+     * Writes the streams [fill] adds beside the cache and applies them at the end, so the lists and search keep working
+     * on it meanwhile. A stream listed twice is kept once.
+     */
     private suspend fun importPlaylist(
-        input: InputStream,
         saved: (Int) -> Unit,
+        fill: suspend (add: suspend (PlaylistEntry) -> Unit) -> Unit,
     ): Int {
-        // Written beside the cache and applied at the end, so the lists and search keep working on it meanwhile.
         val writer = PlaylistWriter(db)
         writer.begin()
         try {
             val batch = ArrayList<ItemEntity>(BATCH)
-            for (entry in M3uParser.entries(input.bufferedReader())) {
-                val row = entry.toRow()
-                if (!writer.accept(row.id)) continue // the same stream listed twice
-                batch += row
-                if (batch.size == BATCH) {
-                    writer.add(batch.toList())
-                    batch.clear()
-                    saved(writer.count)
+            var live = 0
+            fill { entry ->
+                val parsed = entry.toRow()
+                if (writer.accept(parsed.id)) {
+                    // Live channels are numbered 1 up in playlist order, for typing a number on the remote.
+                    batch += if (parsed.kind == ContentKind.LIVE.code) parsed.copy(number = ++live) else parsed
+                    if (batch.size == BATCH) {
+                        writer.add(batch.toList())
+                        batch.clear()
+                        saved(writer.count)
+                    }
                 }
             }
             writer.add(batch)
@@ -195,51 +339,62 @@ class SyncRepository(
         }
     }
 
-    private suspend fun importGuide(
-        input: InputStream,
-        days: Int,
-        saved: (Int) -> Unit,
-    ): Int {
-        val wanted = db.items().liveTvgIds().toHashSet()
-        if (wanted.isEmpty()) return 0
-        val now = System.currentTimeMillis()
-        val from = now - HOUR
-        // Channels with catch-up keep their past programmes for as long as the server keeps the recordings.
-        val archive = db.catchUp().all().associate { it.streamId to it.days }
-        val pastFrom = HashMap<String, Long>()
-        if (archive.isNotEmpty()) {
-            for (link in db.items().liveLinks()) {
-                val days = CatchUp.streamId(link.url)?.let(archive::get) ?: continue
-                pastFrom.merge(link.tvgId, CatchUp.keepFrom(now, days), ::minOf)
-            }
-        }
-        val until = now + days * DAY
-        // Written beside the old guide and swapped in at the end, so searching and browsing never wait on it.
-        val writer = GuideWriter(db)
-        writer.begin()
-        try {
-            val parser = Xml.newPullParser()
-            parser.setInput(input, null)
-            val batch = ArrayList<ProgrammeEntity>(BATCH)
-            var count = 0
-            for (p in XmltvParser.programmes(
-                parser,
-            ) { id, start, stop -> stop > (pastFrom[id] ?: from) && start < until && id in wanted }) {
-                batch +=
-                    ProgrammeEntity(channelId = p.channelId, start = p.start, stop = p.stop, title = p.title, description = p.description)
-                count++
-                if (batch.size == BATCH) {
-                    writer.add(batch.toList())
-                    batch.clear()
-                    saved(count)
-                }
-            }
-            writer.add(batch)
-            return writer.commit()
-        } finally {
-            writer.discard() // a no-op after a commit; after a failure, the old guide stays
+    /**
+     * Shows from the Xtream API. A show whose episodes were fetched before (it was opened) keeps them; any other is one
+     * stand-in row until it is opened ([loadShow]).
+     */
+    private suspend fun addApiShows(
+        api: XtreamImport,
+        first: Int,
+        add: suspend (PlaylistEntry) -> Unit,
+    ) {
+        val fetched = db.shows().fetchedEpisodes().groupBy { it.showKey }
+        api.shows(first) { show, order ->
+            val kept = fetched[Episodes.showKey(show.name)]
+            if (kept.isNullOrEmpty()) add(XtreamApi.seriesStandIn(show, order)) else kept.forEach { add(it.toEntry()) }
         }
     }
+
+    /**
+     * Fetches the episodes of a show read from the Xtream API the first time it is opened, and swaps them in for its
+     * stand-in row. A show from the M3U has its episodes already, and this does nothing.
+     */
+    suspend fun loadShow(showKey: String) {
+        val standIn = db.items().episodesNow(showKey).firstOrNull { XtreamApi.standInId(it.url) != null } ?: return
+        val login = credentials.load() ?: return
+        val api = XtreamImport(http, login, userAgent())
+        val episodes =
+            api
+                .episodes(
+                    XtreamApi.standInId(standIn.url) ?: return,
+                    standIn.showName ?: standIn.name,
+                    standIn.groupName,
+                    standIn.logo,
+                    standIn.sortOrder,
+                ).map { it.toRow() }
+        if (episodes.isEmpty()) return
+        db.shows().replaceStandIn(standIn.id, episodes)
+        ShowGroups.rebuild(db)
+    }
+
+    private suspend fun userAgent(): String? = settings.settings
+        .first()
+        .userAgent
+        .ifBlank { null }
+
+    /** A stored episode back as a playlist entry, kept as it is by the next refresh. */
+    private fun ItemEntity.toEntry() = PlaylistEntry(
+        name = name,
+        url = url,
+        kind = ContentKind.fromCode(kind),
+        group = groupName,
+        tvgId = tvgId,
+        logo = logo,
+        region = region,
+        adult = adult,
+        episode = EpisodeInfo(showName ?: name, season ?: 1, episode ?: 1),
+        order = sortOrder,
+    )
 
     private fun PlaylistEntry.toRow(): ItemEntity {
         val ep = episode
@@ -264,9 +419,9 @@ class SyncRepository(
 
     private companion object {
         const val BATCH = 1_000
+        const val HEADER_PEEK = 8_192
+        const val SQL_VARIABLES = 900
         const val MAX_ACCOUNT_ANSWER = 64_000
-        const val HOUR = 3_600_000L
-        const val DAY = 24 * HOUR
     }
 }
 

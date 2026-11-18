@@ -6,31 +6,10 @@ import android.os.StrictMode
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.ProcessLifecycleOwner
-import androidx.work.WorkInfo
-import androidx.work.WorkManager
-import app.tuned.data.AccountRepository
-import app.tuned.data.BackupRepository
-import app.tuned.data.ChannelScanner
-import app.tuned.data.Connectivity
-import app.tuned.data.CredentialStore
-import app.tuned.data.Credentials
-import app.tuned.data.MetadataRepository
-import app.tuned.data.Offline
-import app.tuned.data.PeopleRepository
-import app.tuned.data.Picks
-import app.tuned.data.SavedArtwork
-import app.tuned.data.SettingsRepository
-import app.tuned.data.SyncRepository
-import app.tuned.data.TuneRepository
-import app.tuned.data.db.TunedDatabase
 import app.tuned.diagnostics.AppLog
 import app.tuned.diagnostics.CrashReporter
-import app.tuned.diagnostics.loggingHandler
-import app.tuned.updates.GitHubUpdates
-import app.tuned.work.OfflineWorker
-import app.tuned.work.Reminders
-import app.tuned.work.ScanWorker
-import app.tuned.work.SyncScheduler
+import app.tuned.diagnostics.launchSafely
+import app.tuned.work.CloudSyncWorker
 import coil3.ImageLoader
 import coil3.PlatformContext
 import coil3.SingletonImageLoader
@@ -39,104 +18,12 @@ import coil3.disk.directory
 import coil3.memory.MemoryCache
 import coil3.network.okhttp.OkHttpNetworkFetcherFactory
 import coil3.request.crossfade
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.drop
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-import okhttp3.OkHttpClient
-import java.util.concurrent.TimeUnit
-
-/** Everything the app shares, built once and on first use (nothing heavy runs before the first frame). */
-class AppContainer(
-    private val context: Context,
-) {
-    /** A failure in background work is logged (Settings › Developer › Logs), never a crash. */
-    val appScope = CoroutineScope(SupervisorJob() + loggingHandler("App"))
-    val settings = SettingsRepository(context)
-    val credentials = CredentialStore(context)
-    val db by lazy { TunedDatabase.create(context) }
-    val http: OkHttpClient by lazy {
-        OkHttpClient
-            .Builder()
-            .connectTimeout(15, TimeUnit.SECONDS)
-            .readTimeout(60, TimeUnit.SECONDS)
-            .retryOnConnectionFailure(true)
-            .build()
-    }
-    val sync by lazy { SyncRepository(db, http, credentials, settings, context.noBackupFilesDir.resolve("sync")) }
-    val tune by lazy { TuneRepository(db, settings) }
-    val scheduler = SyncScheduler(context)
-    val updates by lazy { GitHubUpdates(context, http) }
-    val backup by lazy { BackupRepository(credentials, settings, db) }
-    val reminders by lazy { Reminders(context) }
-    val offline by lazy { Offline(context, db, settings) }
-    val picks by lazy { Picks(db, appScope) }
-    val connectivity by lazy { Connectivity(context, appScope) }
-    val metadata by lazy { MetadataRepository(http, settings, db.metadata(), appScope, connectivity::onlineNow) }
-    val savedArtwork by lazy { SavedArtwork(context, db, metadata) }
-    val people by lazy { PeopleRepository(http, settings, db.metadata(), connectivity::onlineNow) }
-
-    /** True while the player is open; downloads and channel scans hold back so only one stream is ever open. */
-    val playerOpen = MutableStateFlow(false)
-    private val streamBusy: StateFlow<Boolean> by lazy {
-        val downloading =
-            WorkManager
-                .getInstance(context)
-                .getWorkInfosForUniqueWorkFlow(OfflineWorker.NAME)
-                .map { infos -> infos.any { it.state == WorkInfo.State.RUNNING } }
-        combine(playerOpen, downloading) { open, down -> open || down }.stateIn(appScope, SharingStarted.Eagerly, false)
-    }
-    val account by lazy { AccountRepository(http, credentials, settings, playerOpen) }
-    val channelScan by lazy { ChannelScanner(context, db, http, credentials, settings, streamBusy) }
-    val scanControl by lazy { ScanWorker.Control(context) }
-
-    /**
-     * Makes [login] the one in use and remembers it among the saved playlists. A different playlist's channels and
-     * guide are cleared first, so the lists never mix two providers, then everything is downloaded afresh.
-     */
-    suspend fun useLogin(login: Credentials) {
-        val previous = credentials.load()
-        credentials.save(login)
-        credentials.remember(login)
-        if (previous != null && !previous.samePlaylist(login)) {
-            reminders.cancelAll()
-            db.items().deleteAll()
-            db.shows().deleteShowGroups()
-            db.programmes().deleteAll()
-            db.catchUp().deleteAll()
-            db.channelScan().deleteAll()
-            settings.update { it.copy(lastPlaylistSync = 0, lastGuideSync = 0) }
-        }
-        settings.update { it.copy(lastSyncError = "") }
-        account.clear()
-        scheduler.refreshNow(first = true)
-        val s = settings.settings.first()
-        scheduler.schedule(s.playlistRefreshHours, s.guideRefreshHours, s.unmeteredOnly)
-    }
-
-    /** Forgets the login, the cached playlist and guide, and stops background refreshes. */
-    suspend fun signOut() {
-        scheduler.cancelAll()
-        scanControl.stop()
-        reminders.cancelAll()
-        credentials.clear()
-        account.clear()
-        db.items().deleteAll()
-        db.programmes().deleteAll()
-        settings.update { it.copy(lastPlaylistSync = 0, lastGuideSync = 0, lastSyncError = "") }
-        settings.lockAdult() // the PIN stays: it guards the device, not one login
-    }
-}
 
 class TunedApp :
     Application(),
@@ -166,6 +53,8 @@ class TunedApp :
         }
         container = AppContainer(this)
         lockAdultWhenAway()
+        CloudSyncWorker.watch(this)
+        container.appScope.launchSafely("Profiles") { container.profiles.sync() }
         container.appScope.launch {
             container.settings.settings
                 .map { it.developerMode }

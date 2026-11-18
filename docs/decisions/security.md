@@ -10,6 +10,8 @@
 
 **Cleartext HTTP is allowed** (`network_security_config.xml`), because IPTV servers, eros4k.ddns.net included, serve playlists and streams over plain HTTP on whatever host a stream redirects to. Android Lint's `InsecureBaseConfiguration` check is disabled for that reason.
 
+**Serving saved files to a TV** (2026-11-18). Casting a saved film or episode opens a small HTTP server on the phone (`core/FileServer`), reachable on the local network while the cast lasts and closed when it ends or the player closes. It serves only the files handed to it, under a path with 96 random bits, and nothing else on the device; the files hold no login.
+
 ## Parental PIN (2026-11-17)
 
 Melvin asked for "a pin to filter out adult content". Adult categories (the classifier flags groups such as "FOR ADULTS", XXX and 18+) are always hidden until unlocked with a PIN of 4 to 8 digits:
@@ -19,4 +21,8 @@ Melvin asked for "a pin to filter out adult content". Adult categories (the clas
 - Five wrong PINs in a row wait 30 seconds before the next try.
 - "Forgot PIN" takes the account password (or, for a playlist link login, the link) and then sets a new PIN. The PIN stays across sign-out, because it guards the device rather than one login.
 
-**Saved playlists** (2026-11-17). Every login used on the device is kept, encrypted with the same Keystore key as the one in use, so Settings › Playlists can switch between them without typing them again. Switching to another provider clears the cached channels, guide and catch-up list and downloads the other playlist, so the lists never mix and the app still holds one playlist at a time. Signing out forgets all of them; the encrypted backup holds only the login in use.
+**Saved playlists** (2026-11-17). Every login used on the device is kept, encrypted with the same Keystore key as the one in use, so Settings › Playlists can switch between them without typing them again. Switching to another provider clears the cached channels, guide and catch-up list and downloads the other playlist, so the lists never mix and the app still holds one playlist at a time. Signing out forgets all of them, and deletes playlist files copied into the app. The encrypted backup holds every saved playlist except files ([onboarding](onboarding.md)).
+
+**Sync between devices** (2026-11-18). The synced copy holds the saved playlists' logins, so it is sealed with the person's sync passphrase before it reaches Google Drive, the same way as a backup file; the passphrase and the Google refresh token are sealed with Keystore keys and stay out of backups ([sync](sync.md)).
+
+**OpenSubtitles account** (2026-11-17). The optional sign-in for subtitle search is encrypted with the same Keystore key as the login (`CredentialStore.subtitleAccount`), stays out of settings and backups, and is forgotten on sign-out. The API key is not a setting: it comes from the `OPENSUBTITLES_API_KEY` repository secret at release build time, like the TMDB key.

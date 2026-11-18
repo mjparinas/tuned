@@ -8,7 +8,6 @@ import app.tuned.data.db.TmdbSeasonEntity
 import app.tuned.diagnostics.launchSafely
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
@@ -67,7 +66,8 @@ data class Metadata(
  */
 class MetadataRepository(
     private val http: OkHttpClient,
-    private val settings: SettingsRepository,
+    /** The app's TMDB key (v3 key or v4 read token), built in from the release secret; blank turns TMDB off. */
+    private val apiKey: String,
     private val dao: MetadataDao,
     private val scope: CoroutineScope,
     private val online: () -> Boolean,
@@ -77,10 +77,13 @@ class MetadataRepository(
     /** One lookup per title at a time, so a grid asking for the same poster twice makes one request. */
     private val locks = ConcurrentHashMap<String, Mutex>()
 
-    suspend fun hasKey(): Boolean = settings.settings
-        .first()
-        .tmdbKey
-        .isNotBlank()
+    fun hasKey(): Boolean = apiKey.isNotBlank()
+
+    /** The TMDB id the device already knows for [name], without asking the network (subtitle search matches by it). */
+    suspend fun knownId(
+        name: String,
+        tv: Boolean,
+    ): Long? = dao.get(cacheKey(name, tv))?.takeIf { it.found && it.tmdbId > 0 }?.tmdbId
 
     /** What the device already knows, without asking the network. */
     suspend fun cached(
@@ -157,11 +160,6 @@ class MetadataRepository(
         full: Boolean,
         old: MetadataEntity?,
     ): Metadata? {
-        val apiKey =
-            settings.settings
-                .first()
-                .tmdbKey
-                .trim()
         if (apiKey.isEmpty()) return old?.takeIf { it.found }?.toMetadata()
         val row =
             try {
@@ -246,11 +244,6 @@ class MetadataRepository(
             if (row != null && now - row.fetchedAt < if (row.found) KEEP_SEASON_MS else MetadataCache.KEEP_MISSING_MS) {
                 return@withLock row.toEpisodes()
             }
-            val apiKey =
-                settings.settings
-                    .first()
-                    .tmdbKey
-                    .trim()
             // Offline, or without a key: what the device has, and nothing asked.
             if (apiKey.isEmpty() || !online()) return@withLock row?.toEpisodes()
             val fresh =
@@ -264,6 +257,32 @@ class MetadataRepository(
             dao.upsertSeason(fresh)
             fresh.toEpisodes()
         }
+    }
+
+    /**
+     * TMDB's details for one episode of a show (by the playlist's show name), from the device alone: known once the
+     * show's page or this episode was looked up before. Never touches the network, so lists can call it freely.
+     */
+    suspend fun cachedEpisode(
+        showName: String,
+        season: Int,
+        episode: Int,
+    ): EpisodeInfo? {
+        val show = dao.get(cacheKey(showName, true))?.takeIf { it.found } ?: return null
+        return cachedSeason(show.tmdbId, season)?.get(episode)
+    }
+
+    /**
+     * TMDB's details for one episode, asking TMDB when the device doesn't know yet: one show search and one season
+     * request, both kept, so every other episode of that season is known after.
+     */
+    suspend fun episode(
+        showName: String,
+        season: Int,
+        episode: Int,
+    ): EpisodeInfo? {
+        val show = summary(showName, tv = true) ?: return null
+        return season(show.tmdbId, season)?.get(episode)
     }
 
     private fun downloadSeason(

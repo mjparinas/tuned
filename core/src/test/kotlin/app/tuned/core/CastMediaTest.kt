@@ -2,6 +2,7 @@ package app.tuned.core
 
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNull
 
 class CastMediaTest {
     @Test
@@ -25,5 +26,11 @@ class CastMediaTest {
         )
         assertEquals("application/x-mpegURL", CastMedia.forCast("https://cdn.example/a/b/index.m3u8?token=1", live = true).mimeType)
         assertEquals("video/*", CastMedia.forCast("https://cdn.example/stream", live = true).mimeType)
+    }
+
+    @Test
+    fun aRefusedLoadIsTriedOnceMoreAfterAPause() {
+        assertEquals(3_000L, CastMedia.retryDelayMs(attempt = 1))
+        assertNull(CastMedia.retryDelayMs(attempt = 2))
     }
 }

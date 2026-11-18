@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="subtitle_search">Find subtitles</string>
+    <string name="subtitle_search_searching">Looking for subtitles…</string>
+    <string name="subtitle_search_downloading">Downloading subtitles…</string>
+    <string name="subtitle_search_added">Subtitles added from OpenSubtitles</string>
+    <string name="subtitle_search_none">No subtitles found for this video</string>
+    <string name="subtitle_search_not_casting">Finding subtitles isn\'t available while casting</string>
+    <string name="subtitle_search_no_key">Subtitle search isn\'t available in this build</string>
+    <string name="subtitle_search_bad_key">OpenSubtitles turned down this app\'s key. Try again after the next update.</string>
+    <string name="subtitle_search_bad_account">OpenSubtitles turned down the sign-in. Check it in Settings › Playback › Subtitles.</string>
+    <string name="subtitle_search_limit">Today\'s OpenSubtitles download limit is used up. Try again tomorrow.</string>
+    <string name="subtitle_search_offline">Couldn\'t reach OpenSubtitles. Try again in a moment.</string>
+    <string name="subtitle_search_hearing_impaired">Hearing impaired</string>
+    <string name="subtitle_search_machine">Machine translated</string>
+    <plurals name="subtitle_search_downloads">
+        <item quantity="one">%d download</item>
+        <item quantity="other">%,d downloads</item>
+    </plurals>
+
+    <string name="settings_subtitles">Subtitles</string>
+    <string name="settings_auto_subtitles">Find subtitles automatically</string>
+    <string name="settings_auto_subtitles_summary">With captions on, a film or episode with no subtitles gets the best match by itself</string>
+    <string name="settings_opensubtitles_account">OpenSubtitles account</string>
+    <string name="settings_opensubtitles_account_summary">Optional. Signing in raises the daily download limit.</string>
+    <string name="settings_opensubtitles_account_set">Signed in as %1$s</string>
+    <string name="settings_opensubtitles_username">Username</string>
+    <string name="settings_opensubtitles_password">Password</string>
+    <string name="settings_opensubtitles_remove">Remove</string>
+</resources>

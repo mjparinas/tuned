@@ -7,6 +7,7 @@ import androidx.work.ExistingWorkPolicy
 import androidx.work.NetworkType
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
+import app.tuned.core.StreamLink
 import app.tuned.data.db.DownloadEntity
 import app.tuned.data.db.ItemEntity
 import app.tuned.data.db.TunedDatabase
@@ -48,7 +49,8 @@ class Offline(
         addedAt: Long,
     ) {
         val ext =
-            item.url
+            StreamLink
+                .address(item.url)
                 .substringBefore('?')
                 .substringAfterLast('/')
                 .substringAfterLast('.', "mp4")

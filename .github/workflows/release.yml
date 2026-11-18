@@ -50,8 +50,14 @@ jobs:
         env:
           ANDROID_KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_B64 }}
           ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          OPENSUBTITLES_API_KEY: ${{ secrets.OPENSUBTITLES_API_KEY }}
+          TMDB_API_KEY: ${{ secrets.TMDB_API_KEY }}
+          TRAKT_CLIENT_ID: ${{ secrets.TRAKT_CLIENT_ID }}
+          GOOGLE_TV_CLIENT_ID: ${{ secrets.GOOGLE_TV_CLIENT_ID }}
+          GOOGLE_TV_CLIENT_SECRET: ${{ secrets.GOOGLE_TV_CLIENT_SECRET }}
           VERSION_CODE: ${{ steps.v.outputs.code }}
           VERSION_NAME: ${{ steps.v.outputs.version }}
+          GIT_COMMIT: ${{ github.sha }}
         run: |
           echo "$ANDROID_KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/upload.jks"
           ANDROID_KEYSTORE_PATH="$RUNNER_TEMP/upload.jks" ./gradlew :app:assembleRelease :app:bundleRelease

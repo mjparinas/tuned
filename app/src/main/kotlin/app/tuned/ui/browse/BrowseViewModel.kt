@@ -13,13 +13,16 @@ import app.tuned.core.HiddenGroups
 import app.tuned.core.Search
 import app.tuned.data.AppSettings
 import app.tuned.data.SyncProgress
+import app.tuned.data.db.ChannelNumbers
 import app.tuned.data.db.ChannelWithNow
 import app.tuned.data.db.ContinueRow
 import app.tuned.data.db.GroupCount
 import app.tuned.data.db.ItemEntity
+import app.tuned.data.db.ProfileEntity
 import app.tuned.data.db.ShowSummary
 import app.tuned.data.hiddenKeys
 import app.tuned.diagnostics.launchSafely
+import app.tuned.work.TvHome
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.delay
@@ -71,6 +74,10 @@ class BrowseViewModel(
         viewModelScope.launchSafely("BrowseViewModel") { container.account.refreshIfOld() }
         // Sports, PPV and event channels are never hidden as dead: bring back any hidden before that rule, or renamed since.
         viewModelScope.launchSafely("BrowseViewModel") { container.channelScan.releaseEventChannels() }
+        // A cache from before channel numbers: number it once, in the background.
+        viewModelScope.launchSafely("BrowseViewModel") { ChannelNumbers.fillIfMissing(container.db) }
+        // The Android TV home screen rows (Continue watching, favourites); nothing on phones.
+        TvHome.schedule(app)
     }
 
     private val filters = mutableMapOf<ContentKind, MutableStateFlow<Filter>>()
@@ -81,6 +88,9 @@ class BrowseViewModel(
     fun search(kind: ContentKind): MutableStateFlow<String> = searches.getOrPut(kind) { MutableStateFlow("") }
 
     private val settings: StateFlow<AppSettings?> = container.settings.settings.stateIn(viewModelScope, SharingStarted.Eagerly, null)
+
+    /** The profile in use, for the profile button. */
+    val profile: StateFlow<ProfileEntity?> = container.profiles.current.stateIn(viewModelScope, SharingStarted.Eagerly, null)
 
     /** The guide's "now" moves on; re-read it every five minutes so "on now" stays true. */
     private val clock: Flow<Long> =
@@ -155,6 +165,24 @@ class BrowseViewModel(
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
     }
 
+    private val episodeNames = MutableStateFlow<Map<Long, String>>(emptyMap())
+    private val askedNames = mutableSetOf<Long>()
+
+    /** TMDB's names for the episodes in Continue Watching ("Kamp Krusty"), by item id, as they become known. */
+    val continueNames: StateFlow<Map<Long, String>> = episodeNames
+
+    /** Looks up one episode's TMDB name: from the device when known, else one cached TMDB request per season. */
+    fun loadEpisodeName(row: ContinueRow) {
+        val show = row.showName ?: return
+        val season = row.season ?: return
+        val episode = row.episode ?: return
+        if (!askedNames.add(row.id)) return
+        viewModelScope.launchSafely("BrowseViewModel") {
+            val info = container.metadata.cachedEpisode(show, season, episode) ?: container.metadata.episode(show, season, episode)
+            info?.name?.let { name -> episodeNames.value += row.id to name }
+        }
+    }
+
     private val groupFlows = mutableMapOf<ContentKind, StateFlow<List<GroupCount>>>()
 
     fun groups(kind: ContentKind): StateFlow<List<GroupCount>> = groupFlows.getOrPut(kind) {
@@ -191,14 +219,6 @@ class BrowseViewModel(
     val lastError = settings.map { it?.lastSyncError.orEmpty() }.stateIn(viewModelScope, SharingStarted.Eagerly, "")
 
     fun refresh() = container.scheduler.refreshNow()
-
-    /** "Change login" when the first download fails: back to sign-in with nothing kept. */
-    fun signOut(onDone: () -> Unit) {
-        viewModelScope.launchSafely("BrowseViewModel") {
-            container.signOut()
-            onDone()
-        }
-    }
 
     /** The poster badge's rating: from the device when seen before, otherwise one TMDB search (only with a key). */
     suspend fun rating(

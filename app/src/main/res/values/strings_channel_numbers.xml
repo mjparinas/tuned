@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_channel_numbers">Channel numbers</string>
+    <string name="settings_channel_numbers_summary">Show a number beside each live channel. Type it on the remote while watching to change channel, and press the last-channel button to flip back.</string>
+    <!-- %1$d: the number typed. -->
+    <string name="player_no_channel_number">No channel %1$d</string>
+    <string name="player_flip_back">Last channel</string>
+</resources>

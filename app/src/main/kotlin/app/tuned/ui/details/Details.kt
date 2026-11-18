@@ -258,7 +258,7 @@ private fun RatingChip(text: String) {
 }
 
 /**
- * Genres, summary, cast and the TMDB credit; with no key, one line on where to add it. Tapping someone in the cast
+ * Genres, summary, cast and the TMDB credit; in a build without a TMDB key, one line saying so. Tapping someone in the cast
  * opens their films and shows.
  */
 @Composable

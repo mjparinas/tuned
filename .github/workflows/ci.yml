@@ -161,6 +161,9 @@ jobs:
       # The debug APK to install and try, plus an unsigned release build so R8 fails here on a missing keep rule,
       # not in Release.
       - run: ./gradlew :app:assembleDebug :app:assembleRelease
+        env:
+          # The commit shown at the bottom of Settings: a pull request's own head, not the merge commit GitHub builds.
+          GIT_COMMIT: ${{ github.event.pull_request.head.sha || github.sha }}
       - uses: actions/upload-artifact@v7
         with:
           name: tuned-debug-apk

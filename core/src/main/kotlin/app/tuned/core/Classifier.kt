@@ -34,7 +34,7 @@ object Classifier {
         url: String,
         group: String,
     ): ContentKind {
-        val path = url.substringBefore('?').lowercase()
+        val path = StreamLink.address(url).substringBefore('?').lowercase()
         return when {
             "/movie/" in path -> ContentKind.MOVIE
             "/series/" in path -> ContentKind.SERIES

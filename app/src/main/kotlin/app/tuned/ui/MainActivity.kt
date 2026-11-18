@@ -10,41 +10,26 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import androidx.navigation.toRoute
 import app.tuned.R
 import app.tuned.container
 import app.tuned.data.AppSettings
 import app.tuned.data.CastMember
 import app.tuned.diagnostics.launchSafely
 import app.tuned.player.PlayerActivity
-import app.tuned.ui.browse.HomeScreen
 import app.tuned.ui.common.WithOfflineBanner
-import app.tuned.ui.details.MovieScreen
-import app.tuned.ui.details.PersonScreen
-import app.tuned.ui.guide.GuideScreen
-import app.tuned.ui.login.LoginScreen
-import app.tuned.ui.offline.DownloadsScreen
-import app.tuned.ui.search.SearchScreen
-import app.tuned.ui.settings.CaptionSettingsScreen
-import app.tuned.ui.settings.ChannelHealthScreen
-import app.tuned.ui.settings.DeveloperLogScreen
-import app.tuned.ui.settings.FavouriteOrderScreen
-import app.tuned.ui.settings.HiddenGroupsScreen
-import app.tuned.ui.settings.RegionSettingsScreen
-import app.tuned.ui.settings.SettingsScreen
-import app.tuned.ui.shows.ShowScreen
 import app.tuned.ui.theme.TunedTheme
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 
 class MainActivity : ComponentActivity() {
@@ -63,6 +48,21 @@ class MainActivity : ComponentActivity() {
         splash.setKeepOnScreenCondition { settings.value == null }
         val signedIn = container.credentials.load() != null
         incomingSearch.value = searchQuery(intent)
+        // A card on the Android TV home screen ([app.tuned.work.TvHome]): play it, with the lists underneath.
+        val request = if (savedInstanceState == null && signedIn) playRequest(intent) else null
+        if (request != null) PlayerActivity.start(this, request)
+        // Like a cable box: a fresh launch from the home screen goes straight into the last channel (a setting, off by
+        // default). The lists are underneath, from the cache, for when the player closes.
+        val fresh = savedInstanceState == null && signedIn && intent?.action == Intent.ACTION_MAIN
+        if (request == null && fresh && incomingSearch.value == null) {
+            lifecycleScope.launchSafely("Main") {
+                val prefs = container.settings.settings.first()
+                if (!prefs.startOnLastChannel) return@launchSafely
+                val items = container.db.items()
+                val channel = items.lastWatchedChannel() ?: return@launchSafely
+                PlayerActivity.start(this@MainActivity, channel.id)
+            }
+        }
 
         setContent {
             val s by settings.collectAsStateWithLifecycle()
@@ -91,9 +91,10 @@ class MainActivity : ComponentActivity() {
         val online by container.connectivity.online.collectAsStateWithLifecycle()
         val entry by nav.currentBackStackEntryAsState()
         val here = entry?.destination
-        // A way to the saved films and episodes, except where it can't help (signed out, or already there).
+        // A way to the saved films and episodes, except where it can't help (adding a playlist, or already there).
+        val addingPlaylist = here != null && (here.hasRoute<WelcomeRoute>() || here.hasRoute<AddPlaylistRoute>())
         val toDownloads =
-            if (here == null || here.hasRoute<LoginRoute>() || here.hasRoute<DownloadsRoute>()) {
+            if (here == null || addingPlaylist || here.hasRoute<DownloadsRoute>()) {
                 null
             } else {
                 { nav.navigate(DownloadsRoute) { launchSingleTop = true } }
@@ -118,104 +119,23 @@ class MainActivity : ComponentActivity() {
             incomingSearch.value = null
         }
         val openPerson: (CastMember) -> Unit = { person -> nav.navigate(PersonRoute(person.id ?: 0, person.name)) }
-        NavHost(navController = nav, startDestination = if (signedIn) HomeRoute else LoginRoute) {
-            composable<LoginRoute> {
-                // From sign-in or from Settings › Playlists › Add: either way the new playlist opens on its own.
-                LoginScreen(onSignedIn = {
-                    nav.navigate(HomeRoute) { popUpTo(0) { inclusive = true } }
-                })
+        val openHome: () -> Unit = { nav.navigate(HomeRoute) { popUpTo(0) { inclusive = true } } }
+        val openWelcome: () -> Unit = { nav.navigate(WelcomeRoute) { popUpTo(0) { inclusive = true } } }
+        // Decided once: a later change to the profiles mustn't swap the start of a back stack already built.
+        val start: Any =
+            remember {
+                when {
+                    !signedIn -> WelcomeRoute
+                    current.profileCount > 1 && current.askProfileAtStart -> ProfilesRoute(atStart = true)
+                    else -> HomeRoute
+                }
             }
-            composable<HomeRoute> {
-                HomeScreen(
-                    settings = current,
-                    onPlay = play,
-                    onOpenShow = { key, title -> nav.navigate(ShowRoute(key, title)) },
-                    onOpenGuide = { id -> nav.navigate(GuideRoute(id)) },
-                    onOpenMovie = { id -> nav.navigate(MovieRoute(id)) },
-                    onOpenPerson = openPerson,
-                    onOpenSettings = { nav.navigate(SettingsRoute) },
-                    onOpenSearch = { nav.navigate(SearchRoute()) },
-                    onOpenDownloads = { nav.navigate(DownloadsRoute) },
-                    onTune = tune,
-                    onSignedOut = { nav.navigate(LoginRoute) { popUpTo(0) { inclusive = true } } },
-                )
-            }
-            composable<SearchRoute> { entry ->
-                SearchScreen(
-                    initialQuery = entry.toRoute<SearchRoute>().query,
-                    onBack = { nav.popBackStack() },
-                    onPlay = play,
-                    onOpenShow = { key, title -> nav.navigate(ShowRoute(key, title)) },
-                    onOpenMovie = { id -> nav.navigate(MovieRoute(id)) },
-                    onTune = tune,
-                )
-            }
-            composable<ShowRoute> { entry ->
-                val route = entry.toRoute<ShowRoute>()
-                ShowScreen(
-                    showKey = route.showKey,
-                    title = route.title,
-                    onPlay = play,
-                    onBack = { nav.popBackStack() },
-                    onOpenPerson = openPerson,
-                )
-            }
-            composable<MovieRoute> { entry ->
-                MovieScreen(
-                    itemId = entry.toRoute<MovieRoute>().itemId,
-                    onPlay = play,
-                    onBack = { nav.popBackStack() },
-                    onOpenPerson = openPerson,
-                )
-            }
-            composable<PersonRoute> { entry ->
-                val route = entry.toRoute<PersonRoute>()
-                PersonScreen(
-                    personId = route.personId,
-                    name = route.name,
-                    onOpenMovie = { id -> nav.navigate(MovieRoute(id)) },
-                    onOpenShow = { key, title -> nav.navigate(ShowRoute(key, title)) },
-                    onBack = { nav.popBackStack() },
-                )
-            }
-            composable<GuideRoute> { entry ->
-                GuideScreen(itemId = entry.toRoute<GuideRoute>().itemId, onPlay = play, onBack = { nav.popBackStack() })
-            }
-            composable<SettingsRoute> {
-                SettingsScreen(
-                    settings = current,
-                    onBack = { nav.popBackStack() },
-                    onOpenCaptions = { nav.navigate(CaptionSettingsRoute) },
-                    onOpenRegions = { nav.navigate(RegionSettingsRoute) },
-                    onOpenHiddenGroups = { nav.navigate(HiddenGroupsRoute) },
-                    onOpenChannelHealth = { nav.navigate(ChannelHealthRoute) },
-                    onOpenFavouriteOrder = { nav.navigate(FavouriteOrderRoute) },
-                    onOpenDownloads = { nav.navigate(DownloadsRoute) },
-                    onOpenLogs = { nav.navigate(DeveloperLogRoute) },
-                    onSignedOut = {
-                        nav.navigate(LoginRoute) { popUpTo(0) { inclusive = true } }
-                    },
-                    onAddPlaylist = { nav.navigate(LoginRoute) },
-                    onSwitchedPlaylist = { nav.navigate(HomeRoute) { popUpTo(0) { inclusive = true } } },
-                )
-            }
-            composable<DeveloperLogRoute> { DeveloperLogScreen(onBack = { nav.popBackStack() }) }
-            composable<DownloadsRoute> {
-                DownloadsScreen(onPlay = play, onBack = { nav.popBackStack() })
-            }
-            composable<CaptionSettingsRoute> {
-                CaptionSettingsScreen(settings = current, onBack = { nav.popBackStack() })
-            }
-            composable<FavouriteOrderRoute> { FavouriteOrderScreen(onBack = { nav.popBackStack() }) }
-            composable<RegionSettingsRoute> {
-                RegionSettingsScreen(settings = current, onBack = { nav.popBackStack() })
-            }
-            composable<HiddenGroupsRoute> {
-                HiddenGroupsScreen(settings = current, onBack = { nav.popBackStack() })
-            }
-            composable<ChannelHealthRoute> {
-                ChannelHealthScreen(settings = current, onBack = { nav.popBackStack() })
-            }
+        val app = AppNav(nav, current, play, tune, openPerson, openHome, openWelcome)
+        NavHost(navController = nav, startDestination = start) {
+            // Each feature adds its own screens, in its own file, so two features never edit the same lines here.
+            playlistScreens(app)
+            browseScreens(app)
+            settingsScreens(app)
         }
     }
 
@@ -243,6 +163,12 @@ class MainActivity : ComponentActivity() {
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         searchQuery(intent)?.let { incomingSearch.value = it }
+        playRequest(intent)?.let { PlayerActivity.start(this, it) }
+    }
+
+    private fun playRequest(intent: Intent?): Long? {
+        if (intent?.action != ACTION_PLAY) return null
+        return intent.getLongExtra(EXTRA_PLAY_ID, 0).takeIf { it != 0L }
     }
 
     /** "Search for UFC on Tuned" (Assistant), the TV remote's search, or the system search box. */
@@ -266,3 +192,7 @@ class MainActivity : ComponentActivity() {
 }
 
 private const val ASSISTANT_SEARCH = "com.google.android.gms.actions.SEARCH_ACTION"
+
+/** Plays item [EXTRA_PLAY_ID]: what the Android TV home screen's cards open. */
+const val ACTION_PLAY = "app.tuned.action.PLAY"
+const val EXTRA_PLAY_ID = "play_id"

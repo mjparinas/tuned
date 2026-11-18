@@ -18,6 +18,31 @@ android {
         // Release builds take these from the workflow (run number and package.json), like Liftsmith.
         versionCode = (System.getenv("VERSION_CODE") ?: "1").toInt()
         versionName = System.getenv("VERSION_NAME") ?: "0.1.0"
+        // Subtitle search's OpenSubtitles.com key, from the OPENSUBTITLES_API_KEY secret; builds without it hide the search.
+        val openSubtitlesKey = System.getenv("OPENSUBTITLES_API_KEY").orEmpty().trim()
+        buildConfigField("String", "OPENSUBTITLES_API_KEY", "\"$openSubtitlesKey\"")
+        // The app's TMDB key (a v4 read token or v3 key) from the release secret, never committed; without it TMDB is off.
+        buildConfigField("String", "TMDB_API_KEY", "\"${System.getenv("TMDB_API_KEY").orEmpty()}\"")
+        // Trakt's app keys (docs/decisions/trakt.md): from the release workflow's secrets, never committed. Without
+        // them the Trakt settings stay hidden.
+        buildConfigField("String", "TRAKT_CLIENT_ID", "\"${System.getenv("TRAKT_CLIENT_ID").orEmpty()}\"")
+        // The commit this build came from, shown as plain text at the bottom of Settings (Melvin, 2026-11-18). CI and Release
+        // pass GIT_COMMIT (a pull request's own head, not GitHub's merge commit); local builds ask git. Empty hides the line.
+        val gitCommit =
+            System.getenv("GIT_COMMIT")?.takeIf { it.isNotBlank() }
+                ?: runCatching {
+                    providers
+                        .exec {
+                            commandLine("git", "rev-parse", "HEAD")
+                            isIgnoreExitValue = true
+                        }.standardOutput.asText
+                        .get()
+                }.getOrNull()
+        buildConfigField("String", "GIT_COMMIT", "\"${gitCommit.orEmpty().trim().take(7)}\"")
+        // Sync between devices (docs/decisions/sync.md): Google's "TVs and limited input devices" client, from the release
+        // workflow's secrets, never committed. Without it sync stays hidden.
+        buildConfigField("String", "GOOGLE_TV_CLIENT_ID", "\"${System.getenv("GOOGLE_TV_CLIENT_ID").orEmpty()}\"")
+        buildConfigField("String", "GOOGLE_TV_CLIENT_SECRET", "\"${System.getenv("GOOGLE_TV_CLIENT_SECRET").orEmpty()}\"")
     }
 
     signingConfigs {
@@ -123,6 +148,7 @@ dependencies {
     implementation(libs.androidx.paging.compose)
 
     implementation(libs.androidx.work.runtime)
+    implementation(libs.androidx.tvprovider)
     implementation(libs.androidx.datastore.preferences)
 
     implementation(libs.androidx.media3.exoplayer)

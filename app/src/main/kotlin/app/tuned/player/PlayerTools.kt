@@ -2,6 +2,7 @@ package app.tuned.player
 
 import android.annotation.SuppressLint
 import android.app.AlertDialog
+import android.content.Intent
 import android.graphics.Color
 import android.util.TypedValue
 import android.view.Gravity
@@ -16,6 +17,7 @@ import android.widget.TextView
 import androidx.activity.ComponentActivity
 import androidx.activity.OnBackPressedCallback
 import androidx.annotation.OptIn
+import androidx.core.net.toUri
 import androidx.core.view.isVisible
 import androidx.lifecycle.lifecycleScope
 import androidx.media3.common.C
@@ -30,6 +32,7 @@ import app.tuned.core.RemoteKeys
 import app.tuned.data.VideoFit
 import app.tuned.data.db.ItemEntity
 import app.tuned.diagnostics.launchSafely
+import app.tuned.diagnostics.startActivitySafely
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
@@ -55,11 +58,14 @@ class PlayerTools(
         val onFitChanged: (VideoFit) -> Unit,
         val subtitles: SubtitleTiming,
         val casting: () -> Boolean,
+        /** Typing a channel number and flipping back, on live TV. */
+        val dial: ChannelDial,
     )
 
     private val density = activity.resources.displayMetrics.density
     private val guide = MiniGuide(activity, hooks.player, hooks.queue, beside = listOf(playerView, overlay), onClosed = { syncBack() })
     private val guideButton = button(R.drawable.ic_player_guide, R.string.player_guide) { toggleGuide() }
+    private val flipButton = button(R.drawable.ic_player_flip_back, R.string.player_flip_back) { hooks.dial.flipBack() }
     private val unlockButton =
         button(R.drawable.ic_player_lock, R.string.player_unlock) { unlock() }.apply {
             visibility = View.GONE
@@ -98,10 +104,12 @@ class PlayerTools(
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
             addView(guideButton)
+            addView(flipButton)
             addView(button(R.drawable.ic_player_aspect, R.string.player_fit) { nextFit() })
             addView(button(R.drawable.ic_player_quality, R.string.player_quality) { pickQuality() })
             addView(button(R.drawable.ic_player_subtitle_timing, R.string.subtitle_timing) { pickSubtitleTiming() })
             addView(button(R.drawable.ic_player_info, R.string.player_info) { toggleInfo() })
+            addView(button(R.drawable.ic_player_open_with, R.string.player_open_with) { openElsewhere() })
             addView(button(R.drawable.ic_player_lock, R.string.player_lock) { lock() })
         }
 
@@ -143,6 +151,7 @@ class PlayerTools(
     fun onControls(visibility: Int) {
         if (visibility == View.VISIBLE) {
             guideButton.visibility = if (hooks.isLive() && hooks.queue().size > 1) View.VISIBLE else View.GONE
+            flipButton.visibility = if (hooks.isLive() && hooks.dial.canFlipBack) View.VISIBLE else View.GONE
         }
     }
 
@@ -177,6 +186,11 @@ class PlayerTools(
     fun onKey(event: KeyEvent): Boolean {
         val guideKey = event.keyCode == RemoteKeys.GUIDE || event.keyCode == RemoteKeys.MENU
         if (locked || (guide.isOpen && !guideKey)) return false
+        val digit = RemoteKeys.digit(event.keyCode)
+        if (digit != null && hooks.isLive()) {
+            if (event.action == KeyEvent.ACTION_DOWN && event.repeatCount == 0) hooks.dial.type(digit)
+            return true
+        }
         val action = RemoteKeys.action(event.keyCode, hooks.isLive(), playerView.isControllerFullyVisible)
         if (action == RemoteKeys.Action.NONE) return false
         val seek = action == RemoteKeys.Action.SEEK_FORWARD || action == RemoteKeys.Action.SEEK_BACK
@@ -218,7 +232,33 @@ class PlayerTools(
                 toggleInfo()
             }
 
+            RemoteKeys.Action.LAST_CHANNEL -> {
+                hooks.dial.flipBack()
+            }
+
             RemoteKeys.Action.NONE -> {}
+        }
+    }
+
+    /**
+     * Hands the stream to another installed player (VLC, MX Player, Just Player) for a format Tuned can't play
+     * (from the app audit). Tuned stops its own stream first and closes, so the account never has two open.
+     */
+    private fun openElsewhere() {
+        val player = hooks.player() ?: return
+        val item = hooks.queue().getOrNull(player.currentMediaItemIndex) ?: return
+        val view =
+            Intent(Intent.ACTION_VIEW)
+                .setDataAndType(item.url.toUri(), "video/*")
+                .putExtra(Intent.EXTRA_TITLE, item.name)
+                .putExtra("title", item.name) // what VLC and MX Player read
+        player.stop()
+        val chooser = Intent.createChooser(view, activity.getString(R.string.player_open_with))
+        if (activity.startActivitySafely(chooser, "PlayerTools")) {
+            activity.finish()
+        } else {
+            hooks.say(activity.getString(R.string.player_open_with_none))
+            player.prepare()
         }
     }
 

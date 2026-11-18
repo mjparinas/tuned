@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="events_title">Live events</string>
+    <string name="events_follow_hint">Follow a team, league or fighter</string>
+    <string name="events_follow">Follow</string>
+    <!-- %1$s: what is followed, such as "Canucks". -->
+    <string name="events_unfollow">Stop following %1$s</string>
+    <string name="events_following">Following</string>
+    <string name="events_on_now">On now</string>
+    <string name="events_later">Later today</string>
+    <string name="events_tomorrow">Tomorrow</string>
+    <string name="events_live">Live</string>
+    <string name="events_empty">No games, fights or pay-per-views in the guide for the next day and a half. Refresh the guide in Settings if this looks wrong.</string>
+    <plurals name="events_channels">
+        <item quantity="one">On %d channel</item>
+        <item quantity="other">On %d channels</item>
+    </plurals>
+    <string name="reminder_event_text">Starting soon. Tap to tune in.</string>
+</resources>
