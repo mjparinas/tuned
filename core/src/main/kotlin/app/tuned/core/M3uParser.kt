@@ -25,7 +25,8 @@ object M3uParser {
         var pending: ExtInf? = null
         var extGroup: String? = null
         val headers = LinkedHashMap<String, String>()
-        var shift: String? = null // the header's tvg-shift, for channels that don't give their own
+        // The header's attributes (tvg-shift, catch-up), for channels that don't give their own.
+        var header: Map<String, String> = emptyMap()
         var count = 0
         while (true) {
             val raw = reader.readLine() ?: break
@@ -36,7 +37,7 @@ object M3uParser {
                 }
 
                 line.startsWith("#EXTM3U", ignoreCase = true) -> {
-                    shift = parseExtInf("#EXTM3U:0 " + line.substring("#EXTM3U".length)).attributes["tvg-shift"]
+                    header = parseExtInf("#EXTM3U:0 " + line.substring("#EXTM3U".length)).attributes
                 }
 
                 line.startsWith("#EXTINF", ignoreCase = true) -> {
@@ -68,7 +69,7 @@ object M3uParser {
                     val parts = StreamLink.split(line)
                     val link = StreamLink.join(parts.url, headers + parts.headers)
                     val info = pending ?: ExtInf(title = parts.url.substringAfterLast('/'), attributes = emptyMap())
-                    yield(toEntry(info, extGroup, link, count, shift))
+                    yield(toEntry(info, extGroup, link, count, header))
                     count++
                     pending = null
                     extGroup = null
@@ -129,7 +130,7 @@ object M3uParser {
         extGroup: String?,
         url: String,
         order: Int,
-        shift: String?,
+        header: Map<String, String>,
     ): PlaylistEntry {
         val a = info.attributes
         val name = info.title.ifBlank { a["tvg-name"].orEmpty() }.ifBlank { StreamLink.address(url).substringAfterLast('/') }
@@ -140,12 +141,13 @@ object M3uParser {
             url = url,
             kind = kind,
             group = group,
-            tvgId = GuideShift.tag(a["tvg-id"]?.takeIf { it.isNotBlank() }, a["tvg-shift"] ?: shift),
+            tvgId = GuideShift.tag(a["tvg-id"]?.takeIf { it.isNotBlank() }, a["tvg-shift"] ?: header["tvg-shift"]),
             logo = a["tvg-logo"]?.takeIf { it.isNotBlank() },
             region = Regions.detect(group, a["tvg-country"], name, a["tvg-language"]),
             adult = Classifier.isAdult(group, name),
             episode = if (kind == ContentKind.SERIES) Episodes.parse(name, group) else null,
             order = order,
+            catchUp = if (kind == ContentKind.LIVE) M3uCatchUp.from(a, header) else null,
         )
     }
 }

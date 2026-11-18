@@ -28,7 +28,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         GuideFixEntity::class,
         GuideChannelEntity::class,
     ],
-    version = 15,
+    version = 16,
     exportSchema = true,
 )
 abstract class TunedDatabase : RoomDatabase() {
@@ -79,6 +79,7 @@ abstract class TunedDatabase : RoomDatabase() {
                 MIGRATION_12_13,
                 MIGRATION_13_14,
                 MIGRATION_14_15,
+                MIGRATION_15_16,
             ).addCallback(FirstProfile)
             // Going back to an older release (installing an older APK) can't keep a newer database: start it afresh
             // rather than crash on every launch. Upgrades always migrate, above.
@@ -249,6 +250,14 @@ abstract class TunedDatabase : RoomDatabase() {
                 override fun migrate(db: SupportSQLiteDatabase) {
                     db.execSQL("ALTER TABLE `items` ADD COLUMN `number` INTEGER NOT NULL DEFAULT 0")
                     db.execSQL("CREATE INDEX IF NOT EXISTS `index_items_kind_number` ON `items` (`kind`, `number`)")
+                }
+            }
+
+        /** Adds plain M3U catch-up: the channel's link template beside its days. */
+        val MIGRATION_15_16 =
+            object : Migration(15, 16) {
+                override fun migrate(db: SupportSQLiteDatabase) {
+                    db.execSQL("ALTER TABLE `catchup` ADD COLUMN `source` TEXT")
                 }
             }
 
