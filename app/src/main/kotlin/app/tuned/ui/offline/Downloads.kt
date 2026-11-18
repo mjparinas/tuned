@@ -18,6 +18,11 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.GridItemSpan
+import androidx.compose.foundation.lazy.grid.LazyGridItemSpanScope
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -62,6 +67,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -69,6 +75,8 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import app.tuned.R
 import app.tuned.container
+import app.tuned.core.ScreenLayout
+import app.tuned.core.Titles
 import app.tuned.data.EpisodeInfo
 import app.tuned.data.Recordings.Recording
 import app.tuned.data.db.DownloadEntity
@@ -77,8 +85,10 @@ import app.tuned.data.db.ItemEntity
 import app.tuned.diagnostics.launchSafely
 import app.tuned.player.PlayerActivity
 import app.tuned.premium.Premium
+import app.tuned.ui.browse.Poster
 import app.tuned.ui.common.BackTopBar
 import app.tuned.ui.common.focusRing
+import app.tuned.ui.common.windowWidthDp
 import coil3.compose.AsyncImage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -217,6 +227,10 @@ fun DownloadButton(
     }
 }
 
+/** The poster grid's side padding, and how far its full-width rows step in so their text lines up at 16dp. */
+private val GRID_PADDING = 12.dp
+private val GRID_INSET = 4.dp
+
 private fun DownloadEntity.fraction(): Float? = if (total > 0) (bytes.toFloat() / total).coerceIn(0f, 1f) else null
 
 /**
@@ -232,7 +246,6 @@ fun DownloadsScreen(
 ) {
     val rows by vm.page.collectAsStateWithLifecycle()
     val recorded by vm.recordings.collectAsStateWithLifecycle()
-    val context = LocalContext.current
     val library = remember(rows) { DownloadLibrary.of(rows) }
     var showKey by rememberSaveable { mutableStateOf<String?>(null) }
     var season by rememberSaveable { mutableStateOf<Int?>(null) }
@@ -262,57 +275,117 @@ fun DownloadsScreen(
             EmptyDownloads(Modifier.padding(padding))
             return@Scaffold
         }
+        if (show == null) {
+            DownloadGrid(library, rows, recorded, vm, onPlay, Modifier.padding(padding)) {
+                showKey = it
+                inSeason = false
+            }
+            return@Scaffold
+        }
         LazyColumn(Modifier.padding(padding).fillMaxSize(), contentPadding = PaddingValues(bottom = 16.dp)) {
-            when {
-                openSeason != null -> {
-                    items(openSeason.rows, key = { it.download.itemId }) { row ->
-                        SavedOrComing(row, episodes[row.download.itemId], vm, onPlay)
-                    }
+            if (openSeason != null) {
+                items(openSeason.rows, key = { it.download.itemId }) { row ->
+                    SavedOrComing(row, episodes[row.download.itemId], vm, onPlay)
                 }
-
-                show != null -> {
-                    items(show.seasons, key = { "s${it.number}" }) { s ->
-                        GroupRow(
-                            // TMDB's screenshot of its first episode, when known.
-                            picture = s.rows.firstNotNullOfOrNull { episodes[it.download.itemId]?.still } ?: s.picture,
-                            wide = true,
-                            title = seasonName(s.number, null),
-                            rows = s.rows,
-                        ) {
-                            season = s.number
-                            inSeason = true
-                        }
+            } else {
+                items(show.seasons, key = { "s${it.number}" }) { s ->
+                    GroupRow(
+                        // TMDB's screenshot of its first episode, when known.
+                        picture = s.rows.firstNotNullOfOrNull { episodes[it.download.itemId]?.still } ?: s.picture,
+                        wide = true,
+                        title = seasonName(s.number, null),
+                        rows = s.rows,
+                    ) {
+                        season = s.number
+                        inSeason = true
                     }
-                }
-
-                else -> {
-                    item(key = "space") { SpaceSummary(rows, vm) }
-                    if (library.shows.isNotEmpty()) {
-                        item(key = "shows") { SectionTitle(stringResource(R.string.tab_shows)) }
-                        items(library.shows, key = { "show:${it.showKey}" }) { s ->
-                            GroupRow(picture = s.poster, wide = false, title = s.name, rows = s.rows) {
-                                showKey = s.showKey
-                                inSeason = false
-                            }
-                        }
-                    }
-                    if (library.movies.isNotEmpty()) {
-                        item(key = "movies") { SectionTitle(stringResource(R.string.tab_movies)) }
-                        items(library.movies, key = { it.download.itemId }) { row ->
-                            SavedOrComing(row, info = null, vm = vm, onPlay = onPlay)
-                        }
-                    }
-                    recordings(
-                        recorded,
-                        title = {
-                            val size = Formatter.formatShortFileSize(context, recorded.sumOf { it.bytes })
-                            SectionTitle(stringResource(R.string.recordings_section_size, size))
-                        },
-                        onPlay = { PlayerActivity.recording(context, it.id) },
-                        onDelete = vm::deleteRecording,
-                    )
                 }
             }
+        }
+    }
+}
+
+/**
+ * The top of the Downloads page: shows and films as posters, like the Movies and Shows tabs (Melvin, 2026-11-18),
+ * each with what's saved and how far the rest has got. Recordings stay a list under them.
+ */
+@Composable
+private fun DownloadGrid(
+    library: DownloadLibrary,
+    rows: List<DownloadRow>,
+    recorded: List<Recording>,
+    vm: DownloadsViewModel,
+    onPlay: (Long) -> Unit,
+    modifier: Modifier = Modifier,
+    onOpenShow: (String) -> Unit,
+) {
+    val context = LocalContext.current
+    val full: LazyGridItemSpanScope.() -> GridItemSpan = { GridItemSpan(maxLineSpan) }
+    LazyVerticalGrid(
+        columns = GridCells.Adaptive(minSize = ScreenLayout.posterMinDp(windowWidthDp()).dp),
+        modifier = modifier.fillMaxSize(),
+        contentPadding = PaddingValues(start = GRID_PADDING, end = GRID_PADDING, bottom = 16.dp),
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        item(key = "space", span = full) { SpaceSummary(rows, vm, inset = GRID_INSET) }
+        if (library.shows.isNotEmpty()) {
+            item(key = "shows", span = full) { SectionTitle(stringResource(R.string.tab_shows), inset = GRID_INSET) }
+            items(library.shows, key = { "show:${it.showKey}" }) { s ->
+                Column {
+                    Poster(title = s.name, image = s.poster, subtitle = groupSummary(s.rows), onClick = { onOpenShow(s.showKey) })
+                    if (s.rows.any { it.download.state != DownloadEntity.DONE }) {
+                        LinearProgressIndicator(
+                            progress = { s.savedFraction },
+                            modifier = Modifier.fillMaxWidth().padding(horizontal = 2.dp, vertical = 4.dp),
+                        )
+                    }
+                }
+            }
+        }
+        if (library.movies.isNotEmpty()) {
+            item(key = "movies", span = full) { SectionTitle(stringResource(R.string.tab_movies), inset = GRID_INSET) }
+            items(library.movies, key = { it.download.itemId }) { row -> MoviePoster(row, vm, onPlay) }
+        }
+        if (recorded.isNotEmpty()) {
+            item(key = "recordings", span = full) {
+                val size = Formatter.formatShortFileSize(context, recorded.sumOf { it.bytes })
+                SectionTitle(stringResource(R.string.recordings_section_size, size), inset = GRID_INSET)
+            }
+            items(recorded, key = { "recording:${it.id}" }, span = { GridItemSpan(maxLineSpan) }) { r ->
+                RecordingRow(r, onPlay = { PlayerActivity.recording(context, it.id) }, onDelete = vm::deleteRecording, inset = GRID_INSET)
+            }
+        }
+    }
+}
+
+/** A downloaded film: plays on a tap, removed from the long-press menu; one on its way shows progress, pause and cancel. */
+@Composable
+private fun MoviePoster(
+    row: DownloadRow,
+    vm: DownloadsViewModel,
+    onPlay: (Long) -> Unit,
+) {
+    val d = row.download
+    val done = d.state == DownloadEntity.DONE
+    Column {
+        Poster(
+            title = Titles.display(d.name),
+            image = row.logo,
+            subtitle = status(d),
+            onClick = { if (done) onPlay(d.itemId) },
+            onPlayNow = if (done) ({ onPlay(d.itemId) }) else null,
+            extraMenu = listOf(stringResource(if (done) R.string.download_remove else R.string.download_cancel) to { vm.remove(d.itemId) }),
+        )
+        if (!done) {
+            val bar = Modifier.fillMaxWidth().padding(horizontal = 2.dp, vertical = 4.dp)
+            val fraction = d.fraction()
+            when {
+                fraction != null -> LinearProgressIndicator(progress = { fraction }, modifier = bar)
+                d.state == DownloadEntity.QUEUED && d.bytes > 0 -> LinearProgressIndicator(bar)
+                else -> LinearProgressIndicator(progress = { 0f }, modifier = bar)
+            }
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) { ActiveActions(d, vm) }
         }
     }
 }
@@ -350,6 +423,7 @@ private fun SavedOrComing(
 private fun SpaceSummary(
     rows: List<DownloadRow>,
     vm: DownloadsViewModel,
+    inset: Dp = 16.dp,
 ) {
     val context = LocalContext.current
     val used = rows.sumOf { it.download.bytes }
@@ -365,7 +439,7 @@ private fun SpaceSummary(
         } else {
             stringResource(R.string.downloads_space_used, Formatter.formatShortFileSize(context, used))
         }
-    Column(Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 12.dp)) {
+    Column(Modifier.fillMaxWidth().padding(start = inset, end = inset, top = 12.dp)) {
         Text(text, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         if (free != null && used + free > 0) {
             Spacer(Modifier.height(6.dp))
@@ -383,15 +457,7 @@ private fun GroupRow(
     rows: List<DownloadRow>,
     onClick: () -> Unit,
 ) {
-    val context = LocalContext.current
-    val saved = rows.filter { it.download.state == DownloadEntity.DONE }
-    val coming = rows.size - saved.size
-    val summary =
-        listOfNotNull(
-            pluralStringResource(R.plurals.episodes, saved.size, saved.size).takeIf { saved.isNotEmpty() },
-            Formatter.formatShortFileSize(context, saved.sumOf { it.download.bytes }).takeIf { saved.isNotEmpty() },
-            pluralStringResource(R.plurals.downloads_coming, coming, coming).takeIf { coming > 0 },
-        ).joinToString(" · ")
+    val summary = groupSummary(rows)
     Row(
         Modifier
             .fillMaxWidth()
@@ -419,6 +485,19 @@ private fun GroupRow(
     }
 }
 
+/** "5 episodes · 1.7 GB · 2 downloading": what's saved of a show or season, and what's on its way. */
+@Composable
+private fun groupSummary(rows: List<DownloadRow>): String {
+    val context = LocalContext.current
+    val saved = rows.filter { it.download.state == DownloadEntity.DONE }
+    val coming = rows.size - saved.size
+    return listOfNotNull(
+        pluralStringResource(R.plurals.episodes, saved.size, saved.size).takeIf { saved.isNotEmpty() },
+        Formatter.formatShortFileSize(context, saved.sumOf { it.download.bytes }).takeIf { saved.isNotEmpty() },
+        pluralStringResource(R.plurals.downloads_coming, coming, coming).takeIf { coming > 0 },
+    ).joinToString(" · ")
+}
+
 @Composable
 private fun EmptyDownloads(modifier: Modifier = Modifier) {
     Column(
@@ -438,12 +517,15 @@ private fun EmptyDownloads(modifier: Modifier = Modifier) {
 }
 
 @Composable
-private fun SectionTitle(title: String) {
+private fun SectionTitle(
+    title: String,
+    inset: Dp = 16.dp,
+) {
     Text(
         title,
         style = MaterialTheme.typography.titleMedium,
         fontWeight = FontWeight.Bold,
-        modifier = Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 20.dp, bottom = 8.dp),
+        modifier = Modifier.fillMaxWidth().padding(start = inset, end = inset, top = 20.dp, bottom = 8.dp),
     )
 }
 
@@ -495,7 +577,7 @@ private fun DownloadRowItem(
             val title =
                 info?.name?.takeIf { episode }
                     ?: row.episode?.takeIf { episode }?.let { stringResource(R.string.episode_label, it) }
-                    ?: d.name
+                    ?: Titles.display(d.name)
             Text(title, style = MaterialTheme.typography.bodyLarge, maxLines = 2, overflow = TextOverflow.Ellipsis)
             Text(status(d), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             if (d.state == DownloadEntity.QUEUED || d.state == DownloadEntity.PAUSED) {
