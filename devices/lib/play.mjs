@@ -2,7 +2,7 @@
 // Console. The key is the Vercel environment variable GOOGLE_PLAY_SERVICE_ACCOUNT (the JSON file's contents).
 import { createSign } from "node:crypto";
 
-export const PACKAGE = "app.tuned";
+export const PACKAGE = "com.tunedplayer.app";
 export const YEARLY = "premium_yearly";
 export const LIFETIME = "premium_lifetime";
 export const PRODUCTS = [YEARLY, LIFETIME];

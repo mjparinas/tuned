@@ -3,6 +3,14 @@
     "relation": ["delegate_permission/common.handle_all_urls"],
     "target": {
       "namespace": "android_app",
+      "package_name": "com.tunedplayer.app",
+      "sha256_cert_fingerprints": ["AD:40:95:4F:4E:BF:CB:9A:2B:51:00:B6:C6:F4:2F:D1:D0:44:6B:69:04:FC:DB:E0:2D:96:39:93:7D:FF:53:61"]
+    }
+  },
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
       "package_name": "app.tuned",
       "sha256_cert_fingerprints": ["AD:40:95:4F:4E:BF:CB:9A:2B:51:00:B6:C6:F4:2F:D1:D0:44:6B:69:04:FC:DB:E0:2D:96:39:93:7D:FF:53:61"]
     }

@@ -6,7 +6,7 @@ plugins {
 }
 
 android {
-    namespace = "app.tuned.baselineprofile"
+    namespace = "com.tunedplayer.app.baselineprofile"
     compileSdk = 37
 
     defaultConfig {
