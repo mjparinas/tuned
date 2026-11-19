@@ -35,7 +35,9 @@ object Stalker {
     fun normalizePortal(text: String): String {
         var url = XtreamUrls.normalizeServer(text)
         url = url.substringBefore('?').substringBefore('#')
-        if (url.substringAfterLast('/').contains('.')) url = url.substringBeforeLast('/')
+        // A page such as index.html is dropped, but only from the path: the host has dots too.
+        val pathStart = url.indexOf('/', url.indexOf("://").let { if (it < 0) 0 else it + 3 })
+        if (pathStart >= 0 && url.substringAfterLast('/').contains('.')) url = url.substringBeforeLast('/')
         url = url.trimEnd('/')
         if (url.endsWith("/c", ignoreCase = true)) url = url.dropLast(2)
         return url.trimEnd('/')
