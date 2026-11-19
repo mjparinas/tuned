@@ -92,7 +92,6 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import app.tuned.R
-import app.tuned.container
 import app.tuned.core.ContentKind
 import app.tuned.core.PinnedGroups
 import app.tuned.core.ScreenLayout
@@ -103,11 +102,11 @@ import app.tuned.data.SyncProgress
 import app.tuned.data.db.ProfileEntity
 import app.tuned.diagnostics.DeviceClock
 import app.tuned.ui.SyncText
+import app.tuned.ui.common.UpdateBanner
 import app.tuned.ui.common.VoiceSearchButton
 import app.tuned.ui.common.windowWidthDp
 import app.tuned.ui.offline.DownloadsViewModel
 import app.tuned.ui.settings.ProfileBadge
-import app.tuned.updates.GitHubUpdates
 import kotlinx.coroutines.launch
 
 internal data class Tab(
@@ -291,29 +290,6 @@ fun HomeScreen(
             Box(Modifier.weight(ScreenLayout.DETAIL_FRACTION).fillMaxHeight()) {
                 DetailPane(open, onPlay = onPlay, onClose = { detail = null }, onOpenPerson = onOpenPerson)
             }
-        }
-    }
-}
-
-/** A newer Tuned was downloaded from GitHub: one tap installs it. Nothing shows otherwise. */
-@Composable
-private fun UpdateBanner() {
-    val context = LocalContext.current
-    val updates = context.container.updates
-    val state by updates.state.collectAsStateWithLifecycle()
-    val ready = state as? GitHubUpdates.State.Ready ?: return
-    Surface(
-        color = MaterialTheme.colorScheme.primaryContainer,
-        shape = RoundedCornerShape(16.dp),
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp),
-    ) {
-        Row(Modifier.padding(start = 16.dp, end = 8.dp, top = 4.dp, bottom = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-            Text(
-                stringResource(R.string.update_ready, ready.versionName),
-                style = MaterialTheme.typography.bodyMedium,
-                modifier = Modifier.weight(1f),
-            )
-            TextButton(onClick = { updates.install(context) }) { Text(stringResource(R.string.update_install)) }
         }
     }
 }

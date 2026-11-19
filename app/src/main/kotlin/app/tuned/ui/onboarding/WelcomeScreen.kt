@@ -37,6 +37,7 @@ import androidx.compose.ui.unit.dp
 import app.tuned.R
 import app.tuned.data.Credentials
 import app.tuned.ui.common.BackTopBar
+import app.tuned.ui.common.UpdateBanner
 import app.tuned.ui.common.focusRing
 
 /**
@@ -51,59 +52,72 @@ fun WelcomeScreen(
     onBack: () -> Unit,
 ) {
     Scaffold(topBar = { if (!firstRun) BackTopBar(stringResource(R.string.playlists_add), onBack) }) { padding ->
-        BoxWithConstraints(Modifier.fillMaxSize().padding(padding)) {
-            // A TV (960 by 540 dp, less its overscan margin) or a phone held sideways is too short for the logo, the
-            // welcome and three cards in one column, which pushed the logo off the top of a real TV. There the welcome
-            // sits beside the cards instead, so the whole screen fits without scrolling.
-            if (firstRun && maxWidth >= SIDE_BY_SIDE_MIN_WIDTH && maxHeight < SIDE_BY_SIDE_MAX_HEIGHT) {
-                Row(
-                    Modifier
-                        .fillMaxSize()
-                        .padding(horizontal = 24.dp, vertical = 16.dp),
-                    horizontalArrangement = Arrangement.spacedBy(32.dp, Alignment.CenterHorizontally),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Column(
-                        Modifier.weight(1f).verticalScroll(rememberScrollState()),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(12.dp),
-                    ) {
-                        Welcome(logoSize = 72.dp)
-                    }
-                    Column(
-                        Modifier.weight(1.2f).verticalScroll(rememberScrollState()),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(12.dp),
-                    ) {
-                        Kinds(onPick)
-                        Privacy()
-                    }
-                }
-            } else {
+        Column(Modifier.fillMaxSize().padding(padding), horizontalAlignment = Alignment.CenterHorizontally) {
+            // The GitHub build checks for a newer release on every start, signed in or not, so a first install that is
+            // already out of date offers the update here, before a playlist is added.
+            if (firstRun) UpdateBanner(Modifier.widthIn(max = 560.dp).fillMaxWidth().padding(start = 24.dp, end = 24.dp, top = 12.dp))
+            WelcomeBody(firstRun, onPick)
+        }
+    }
+}
+
+@Composable
+private fun WelcomeBody(
+    firstRun: Boolean,
+    onPick: (Credentials.Kind) -> Unit,
+) {
+    BoxWithConstraints(Modifier.fillMaxSize()) {
+        // A TV (960 by 540 dp, less its overscan margin) or a phone held sideways is too short for the logo, the
+        // welcome and three cards in one column, which pushed the logo off the top of a real TV. There the welcome
+        // sits beside the cards instead, so the whole screen fits without scrolling.
+        if (firstRun && maxWidth >= SIDE_BY_SIDE_MIN_WIDTH && maxHeight < SIDE_BY_SIDE_MAX_HEIGHT) {
+            Row(
+                Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 24.dp, vertical = 16.dp),
+                horizontalArrangement = Arrangement.spacedBy(32.dp, Alignment.CenterHorizontally),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
                 Column(
-                    Modifier
-                        .fillMaxSize()
-                        .verticalScroll(rememberScrollState())
-                        .padding(horizontal = 24.dp, vertical = 32.dp),
+                    Modifier.weight(1f).verticalScroll(rememberScrollState()),
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
-                    if (firstRun) {
-                        Welcome(logoSize = 88.dp)
-                        Spacer(Modifier.height(8.dp))
-                    } else {
-                        Text(
-                            stringResource(R.string.welcome_pick),
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.widthIn(max = 560.dp).fillMaxWidth(),
-                        )
-                    }
+                    Welcome(logoSize = 72.dp)
+                }
+                Column(
+                    Modifier.weight(1.2f).verticalScroll(rememberScrollState()),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
                     Kinds(onPick)
-                    if (firstRun) {
-                        Spacer(Modifier.height(4.dp))
-                        Privacy()
-                    }
+                    Privacy()
+                }
+            }
+        } else {
+            Column(
+                Modifier
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 24.dp, vertical = 32.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                if (firstRun) {
+                    Welcome(logoSize = 88.dp)
+                    Spacer(Modifier.height(8.dp))
+                } else {
+                    Text(
+                        stringResource(R.string.welcome_pick),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.widthIn(max = 560.dp).fillMaxWidth(),
+                    )
+                }
+                Kinds(onPick)
+                if (firstRun) {
+                    Spacer(Modifier.height(4.dp))
+                    Privacy()
                 }
             }
         }
