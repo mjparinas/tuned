@@ -76,7 +76,7 @@ private fun WelcomeBody(
 ) {
     BoxWithConstraints(Modifier.fillMaxSize()) {
         // A TV (960 by 540 dp, less its overscan margin) or a phone held sideways is too short for the logo, the
-        // welcome and three cards in one column, which pushed the logo off the top of a real TV. There the welcome
+        // welcome and the cards in one column, which pushed the logo off the top of a real TV. There the welcome
         // sits beside the cards instead, so the whole screen fits without scrolling.
         if (firstRun && maxWidth >= SIDE_BY_SIDE_MIN_WIDTH && maxHeight < SIDE_BY_SIDE_MAX_HEIGHT) {
             Row(
@@ -92,15 +92,17 @@ private fun WelcomeBody(
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
                     Welcome(logoSize = 72.dp)
+                    // Restore and the privacy line sit under the welcome, so the right column holds only the four
+                    // kinds and fits a TV's height (480 dp on some, less the overscan margin) without scrolling.
+                    RestoreFromDrive(onRestored)
+                    Privacy()
                 }
                 Column(
                     Modifier.weight(1.2f).verticalScroll(rememberScrollState()),
                     horizontalAlignment = Alignment.CenterHorizontally,
-                    // Tighter than the phone's column, so four cards and the privacy line fit a TV's height.
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
-                    Kinds(firstRun, onPick, onRestored, onPhone)
-                    Privacy()
+                    Kinds(onPick, onPhone)
                 }
             }
         } else {
@@ -123,7 +125,8 @@ private fun WelcomeBody(
                         modifier = Modifier.widthIn(max = 560.dp).fillMaxWidth(),
                     )
                 }
-                Kinds(firstRun, onPick, onRestored, onPhone)
+                Kinds(onPick, onPhone)
+                if (firstRun) RestoreFromDrive(onRestored)
                 if (firstRun) {
                     Spacer(Modifier.height(4.dp))
                     Privacy()
@@ -136,7 +139,7 @@ private fun WelcomeBody(
 /** Wider than a phone held upright, so two columns have room. */
 private val SIDE_BY_SIDE_MIN_WIDTH = 600.dp
 
-/** Shorter than the single column needs (about 600 dp with the logo, the welcome, three cards and the privacy line). */
+/** Shorter than the single column needs (about 700 dp with the logo, the welcome, four cards, restore and the privacy line). */
 private val SIDE_BY_SIDE_MAX_HEIGHT = 620.dp
 
 @Composable
@@ -154,9 +157,7 @@ private fun Welcome(logoSize: Dp) {
 
 @Composable
 private fun Kinds(
-    firstRun: Boolean,
     onPick: (Credentials.Kind) -> Unit,
-    onRestored: (askProfile: Boolean) -> Unit,
     onPhone: (() -> Unit)?,
 ) {
     // On a TV, typing a login with the remote is the hard part, so the phone comes first (onboarding.md).
@@ -165,7 +166,6 @@ private fun Kinds(
     KindCard(Icons.Filled.Link, R.string.kind_link, R.string.kind_link_summary) { onPick(Credentials.Kind.Link) }
     KindCard(Icons.Filled.FolderOpen, R.string.kind_file, R.string.kind_file_summary) { onPick(Credentials.Kind.File) }
     KindCard(Icons.Filled.Router, R.string.kind_stalker, R.string.kind_stalker_summary) { onPick(Credentials.Kind.Stalker) }
-    if (firstRun) RestoreFromDrive(onRestored)
 }
 
 @Composable

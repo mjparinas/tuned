@@ -22,6 +22,11 @@ class IntroStore(
         context.intros.edit { it[stringPreferencesKey(showKey)] = IntroSkip.encode(intro) }
     }
 
+    /** Forgets one show's intro, when an episode's skips by hand turn out to be fast-forwarding. */
+    suspend fun remove(showKey: String) {
+        context.intros.edit { it.remove(stringPreferencesKey(showKey)) }
+    }
+
     /** Signing out: every learned intro is forgotten. */
     suspend fun clear() {
         context.intros.edit { it.clear() }

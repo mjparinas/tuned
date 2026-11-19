@@ -10,9 +10,12 @@ import android.graphics.Typeface
 import app.tuned.core.ContentKind
 import app.tuned.core.Episodes
 import app.tuned.core.Search
+import app.tuned.data.db.CurrentProfileEntity
 import app.tuned.data.db.FavouriteEntity
 import app.tuned.data.db.HistoryEntity
 import app.tuned.data.db.ItemEntity
+import app.tuned.data.db.ProfileEntity
+import app.tuned.data.db.Profiles
 import app.tuned.data.db.ProgrammeEntity
 import app.tuned.data.db.ShowGroups
 import app.tuned.data.db.TunedDatabase
@@ -30,6 +33,10 @@ object SampleData {
     suspend fun seed(db: TunedDatabase) {
         db.clearAllTables()
         val now = System.currentTimeMillis()
+        // Two profiles, so Home can show the profile button (screenshots set profileCount to 2 to show it).
+        db.profiles().insert(ProfileEntity(Profiles.FIRST, "Alex", 0, kids = false, pinHash = null, createdAt = now, avatar = "fox"))
+        db.profiles().insert(ProfileEntity(name = "Sam", colour = 1, kids = false, pinHash = null, createdAt = now, avatar = "panda"))
+        db.profiles().setCurrent(CurrentProfileEntity(profileId = Profiles.FIRST))
         val items = mutableListOf<ItemEntity>()
 
         fun item(
