@@ -360,7 +360,10 @@ private fun DownloadGrid(
     }
 }
 
-/** A downloaded film: plays on a tap, removed from the long-press menu; one on its way shows progress, pause and cancel. */
+/**
+ * A downloaded film: plays on a tap, removed with the button under it (or the long-press menu); one on its way shows
+ * progress, pause and cancel.
+ */
 @Composable
 private fun MoviePoster(
     row: DownloadRow,
@@ -378,7 +381,14 @@ private fun MoviePoster(
             onPlayNow = if (done) ({ onPlay(d.itemId) }) else null,
             extraMenu = listOf(stringResource(if (done) R.string.download_remove else R.string.download_cancel) to { vm.remove(d.itemId) }),
         )
-        if (!done) {
+        if (done) {
+            // Removing is a button under the poster, not only in its long-press menu, so a remote reaches it in one press.
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
+                IconButton(onClick = { vm.remove(d.itemId) }) {
+                    Icon(Icons.Filled.Delete, contentDescription = stringResource(R.string.download_remove_named, Titles.display(d.name)))
+                }
+            }
+        } else {
             val bar = Modifier.fillMaxWidth().padding(horizontal = 2.dp, vertical = 4.dp)
             val fraction = d.fraction()
             when {

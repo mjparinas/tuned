@@ -19,15 +19,11 @@ import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Dns
 import androidx.compose.material.icons.filled.FolderOpen
 import androidx.compose.material.icons.filled.Link
-import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Router
 import androidx.compose.material.icons.filled.Tv
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -238,68 +234,59 @@ private fun PlaylistRow(
     onEdit: () -> Unit,
     onRemove: () -> Unit,
 ) {
-    var menu by remember { mutableStateOf(false) }
-    Row(
-        Modifier
-            .fillMaxWidth()
-            .focusRing(RoundedCornerShape(8.dp), MaterialTheme.colorScheme.primary)
-            .clickable(enabled = !active, onClick = onSwitch)
-            .padding(start = 16.dp, top = 8.dp, bottom = 8.dp, end = 4.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Icon(
-            when (login.kind) {
-                Credentials.Kind.Xtream -> Icons.Filled.Dns
-                Credentials.Kind.Link -> Icons.Filled.Link
-                Credentials.Kind.File -> Icons.Filled.FolderOpen
-                Credentials.Kind.Stalker -> Icons.Filled.Router
-            },
-            contentDescription = null,
-            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        Column(Modifier.weight(1f).padding(horizontal = 16.dp)) {
-            Text(login.label, style = MaterialTheme.typography.titleMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            val kind =
-                stringResource(
-                    when (login.kind) {
-                        Credentials.Kind.Xtream -> R.string.kind_xtream
-                        Credentials.Kind.Link -> R.string.kind_link
-                        Credentials.Kind.File -> R.string.kind_file
-                        Credentials.Kind.Stalker -> R.string.kind_stalker
-                    },
-                )
-            Text(
-                if (login.name.isBlank()) kind else "$kind · ${login.detail}",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
-        }
-        if (active) {
+    // Rename, Edit and Remove are buttons under the playlist, in sight and one press away, rather than in a three-dot
+    // menu (Melvin, 2026-11-19: "avoid 3 dot drop downs").
+    Column(Modifier.fillMaxWidth()) {
+        Row(
+            Modifier
+                .fillMaxWidth()
+                .focusRing(RoundedCornerShape(8.dp), MaterialTheme.colorScheme.primary)
+                .clickable(enabled = !active, onClick = onSwitch)
+                .padding(start = 16.dp, top = 8.dp, bottom = 8.dp, end = 16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
             Icon(
-                Icons.Filled.CheckCircle,
-                contentDescription = stringResource(R.string.playlists_active),
-                tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(24.dp),
+                when (login.kind) {
+                    Credentials.Kind.Xtream -> Icons.Filled.Dns
+                    Credentials.Kind.Link -> Icons.Filled.Link
+                    Credentials.Kind.File -> Icons.Filled.FolderOpen
+                    Credentials.Kind.Stalker -> Icons.Filled.Router
+                },
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-        }
-        IconButton(onClick = { menu = true }) {
-            Icon(Icons.Filled.MoreVert, contentDescription = stringResource(R.string.playlists_options, login.label))
-            DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
-                DropdownMenuItem(text = { Text(stringResource(R.string.playlists_rename)) }, onClick = {
-                    menu = false
-                    onRename()
-                })
-                DropdownMenuItem(text = { Text(stringResource(R.string.playlists_edit)) }, onClick = {
-                    menu = false
-                    onEdit()
-                })
-                DropdownMenuItem(text = { Text(stringResource(R.string.playlists_remove)) }, onClick = {
-                    menu = false
-                    onRemove()
-                })
+            Column(Modifier.weight(1f).padding(horizontal = 16.dp)) {
+                Text(login.label, style = MaterialTheme.typography.titleMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                val kind =
+                    stringResource(
+                        when (login.kind) {
+                            Credentials.Kind.Xtream -> R.string.kind_xtream
+                            Credentials.Kind.Link -> R.string.kind_link
+                            Credentials.Kind.File -> R.string.kind_file
+                            Credentials.Kind.Stalker -> R.string.kind_stalker
+                        },
+                    )
+                Text(
+                    if (login.name.isBlank()) kind else "$kind · ${login.detail}",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
             }
+            if (active) {
+                Icon(
+                    Icons.Filled.CheckCircle,
+                    contentDescription = stringResource(R.string.playlists_active),
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(24.dp),
+                )
+            }
+        }
+        Row(Modifier.padding(start = 56.dp, bottom = 4.dp)) {
+            TextButton(onClick = onRename) { Text(stringResource(R.string.playlists_rename)) }
+            TextButton(onClick = onEdit) { Text(stringResource(R.string.playlists_edit)) }
+            TextButton(onClick = onRemove) { Text(stringResource(R.string.playlists_remove)) }
         }
     }
 }

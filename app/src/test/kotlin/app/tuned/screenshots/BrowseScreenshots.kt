@@ -48,6 +48,20 @@ class BrowseScreenshots : Screenshots() {
         },
     )
 
+    /** A chosen group, with Pin to the front and Hide this group as chips of their own beside it. */
+    @Test
+    fun liveTvGroupChosen() = shot(
+        "browse-live-tv-group-chosen",
+        HomeRoute,
+        wait = "Maple News 24",
+        then = {
+            val chips = compose.onNode(hasScrollAction() and hasAnyDescendant(hasText(text(R.string.filter_favourites))))
+            chips.performScrollToNode(hasText("UK | News"))
+            compose.onNode(hasText("UK | News")).performClick()
+            chips.performScrollToNode(hasText(text(R.string.group_hide)))
+        },
+    )
+
     @Test
     @Config(qualifiers = TV)
     fun liveTvOnTv() = shot("browse-live-tv-tv", HomeRoute, wait = "Maple News 24")
