@@ -45,7 +45,7 @@
     <string name="send_tv_not_found">No TV is showing that code. Check it, or wait for the TV to show a new one.</string>
     <string name="send_tv_confirm_digits">Check that the TV shows this number:</string>
     <string name="send_tv_matches">It matches</string>
-    <string name="send_tv_what">This sends the playlists, settings, favourites, lists and Watch later from this phone. It\'s locked so only that TV can read it.</string>
+    <string name="send_tv_what">This sends the playlists, settings, profiles, favourites and lists from this phone, as sync between devices does. It\'s locked so only that TV can read it.</string>
     <plurals name="send_tv_playlists">
         <item quantity="one">%d playlist</item>
         <item quantity="other">%d playlists</item>
