@@ -45,7 +45,11 @@ class TunedDialogTest {
     private fun assertMargins(): Seen {
         var width = 0.dp
         compose.setContent {
-            width = with(LocalDensity.current) { LocalWindowInfo.current.containerSize.width.toDp() }
+            width =
+                with(LocalDensity.current) {
+                    LocalWindowInfo.current.containerSize.width
+                        .toDp()
+                }
             TunedDialog(
                 onDismissRequest = {},
                 confirmButton = { TextButton(onClick = {}) { Text("OK") } },
