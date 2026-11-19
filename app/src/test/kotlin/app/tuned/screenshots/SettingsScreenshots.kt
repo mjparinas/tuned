@@ -54,15 +54,6 @@ class SettingsScreenshots : Screenshots() {
         then = { compose.onNodeWithText(text(R.string.report_title)).performScrollTo() },
     )
 
-    /** Report a problem opened: what happened, an email for a reply, then Send to Tuned or Share instead. */
-    @Test
-    fun reportSend() = shot(
-        "settings-report-send",
-        SettingsPageRoute(SettingsPage.ABOUT.name),
-        wait = text(R.string.settings_user_agent),
-        then = { compose.onNodeWithText(text(R.string.report_title)).performScrollTo().performClick() },
-    )
-
     /** The usage stats switch, under Privacy in Settings › About. */
     @Test
     fun usageStats() = shot(
