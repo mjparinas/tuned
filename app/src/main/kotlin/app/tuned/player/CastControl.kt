@@ -614,12 +614,23 @@ class CastControl(
         return session?.remoteMediaClient?.approximateStreamPosition ?: 0
     }
 
-    fun release() {
+    /**
+     * The player screen is going. When it closes for good ([leaving]), the cast ends with it: the TV stops and its app
+     * closes, so the next show plays on the phone (Melvin, 2026-11-19). Going to the background or turning the phone
+     * leaves the TV playing.
+     */
+    fun release(leaving: Boolean) {
         retry?.cancel()
         preparing?.cancel()
         stopServing()
         session?.remoteMediaClient?.unregisterCallback(mediaCallback)
+        // Before the cast ends, so its end doesn't start the phone's player as the screen closes.
         context?.sessionManager?.removeSessionManagerListener(listener, CastSession::class.java)
+        if (leaving && casting) {
+            AppLog.i(TAG) { "The player closed: ending the cast on ${tvName ?: "the TV"}" }
+            if (session?.isConnected == true) context?.sessionManager?.endCurrentSession(true)
+            dlna.end()
+        }
         dlna.release()
     }
 

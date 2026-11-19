@@ -12,6 +12,7 @@ import app.tuned.diagnostics.AppLog
 import app.tuned.diagnostics.attempt
 import app.tuned.diagnostics.launchSafely
 import app.tuned.diagnostics.loggingHandler
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
@@ -35,6 +36,7 @@ class DlnaControl(
     private val onEnded: () -> Unit,
 ) {
     private val http = context.container.http
+    private val appScope = context.container.appScope
     private val router = MediaRouter.getInstance(context)
 
     /** Commands go one at a time and in order, so a quick change of channel can't overtake itself. */
@@ -104,14 +106,27 @@ class DlnaControl(
 
     fun pause() = send(Dlna.pause(), "Pause")
 
+    /**
+     * The player screen closed: the TV stops and the picker lets go of it, so the next show plays on the phone. Stop
+     * is sent from the app's scope, since the screen's own is cancelled as it closes.
+     */
+    fun end() {
+        if (!active) return
+        router.removeCallback(callback)
+        send(Dlna.stop(), "Stop", scope = appScope)
+        controlUrl = null
+        attempt("Dlna", "Couldn't let go of the TV") { router.unselect(MediaRouter.UNSELECT_REASON_STOPPED) }
+    }
+
     private fun send(
         body: String,
         action: String,
         /** Run on the main thread when the TV accepts the command. */
         onDone: (() -> Unit)? = null,
+        scope: CoroutineScope = owner.lifecycleScope,
     ) {
         val url = controlUrl ?: return
-        owner.lifecycleScope.launch(Dispatchers.IO + loggingHandler("Dlna")) {
+        scope.launch(Dispatchers.IO + loggingHandler("Dlna")) {
             sending.withLock {
                 val request =
                     Request
