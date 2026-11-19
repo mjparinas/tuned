@@ -125,12 +125,15 @@ internal const val CHANNEL_FILTER =
         "AND title LIKE '%' || :query || '%'))"
 
 /**
- * Live TV's quick filters ([app.tuned.ui.browse.LiveQuick]), on top of the chip chosen. `:topic` is a Sports or PPV
+ * Live TV's quick filters ([app.tuned.ui.browse.LiveQuick]), on top of the chip chosen. `:topic` is a kind of channel's
  * full-text query ([app.tuned.core.LiveTopic.fullText]) on channel names, or '' for any channel; the categories that
  * match it come in `:quick` as `g:<category>`, since a category has no full-text index. `:quick` also holds the country
- * tags to keep, or `any`. A channel with no country found has none to match, so a country or language leaves it out.
+ * tags to keep, or `any`, and `adult` for the Adult filter, which keeps only channels marked adult (and those show only
+ * while unlocked, through `:adult`). A channel with no country found has none to match, so a country or language
+ * leaves it out.
  */
 internal const val LIVE_QUICK =
     "AND (:topic = '' OR ('g:' || i.groupName) IN (:quick) " +
         "OR i.id IN (SELECT docid FROM items_fts WHERE items_fts MATCH :topic)) " +
-        "AND ('any' IN (:quick) OR i.region IN (:quick))"
+        "AND ('any' IN (:quick) OR i.region IN (:quick)) " +
+        "AND ('adult' NOT IN (:quick) OR i.adult = 1)"

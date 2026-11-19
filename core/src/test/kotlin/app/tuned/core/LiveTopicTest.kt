@@ -32,4 +32,38 @@ class LiveTopicTest {
     fun `the full-text query lists every word, phrases quoted`() {
         assertEquals("ppv* OR \"pay per view\" OR event*", LiveTopic.PPV.fullText)
     }
+
+    @Test
+    fun `genre categories are found by their words`() {
+        val cases =
+            mapOf(
+                LiveTopic.NEWS to listOf("CA| News", "US| CNN", "Al Jazeera", "FR| BFM", "ES| Noticias", "DE| Nachrichten"),
+                LiveTopic.KIDS to listOf("US| Kids", "Children", "UK| CBeebies", "Cartoons", "Nick Jr", "FR| Jeunesse", "ES| Infantil"),
+                LiveTopic.MOVIES to listOf("24/7 Movies", "UK| Sky Cinema", "HBO", "DE| Filme", "ES| Peliculas", "FR| Cinéma"),
+                LiveTopic.MUSIC to listOf("Music", "MTV", "FR| Musique", "DE| Musik", "Stingray Karaoke"),
+                LiveTopic.DOCUMENTARY to listOf("Documentaries", "FR| Documentaire", "Nat Geo", "Discovery", "DE| Doku", "History"),
+            )
+        for ((topic, groups) in cases) {
+            for (group in groups) assertTrue(topic.matches(group), "$topic: $group")
+        }
+    }
+
+    @Test
+    fun `genres leave other categories alone`() {
+        for (topic in listOf(LiveTopic.NEWS, LiveTopic.KIDS, LiveTopic.MOVIES, LiveTopic.MUSIC, LiveTopic.DOCUMENTARY)) {
+            for (group in listOf("US| Entertainment", "CA| Sports", "UK| General", "PPV")) {
+                assertFalse(topic.matches(group), "$topic: $group")
+            }
+        }
+        // Whole words only where a prefix would catch others: "DW" isn't "Dwarf", "Nick" isn't "Nickname".
+        assertFalse(LiveTopic.NEWS.matches("Dwarf TV"))
+        assertFalse(LiveTopic.KIDS.matches("Nickname"))
+    }
+
+    @Test
+    fun `adult has no words, since it is the adult flag`() {
+        assertTrue(LiveTopic.ADULT.isAdult)
+        assertEquals("", LiveTopic.ADULT.fullText)
+        assertFalse(LiveTopic.ADULT.matches("XXX"))
+    }
 }

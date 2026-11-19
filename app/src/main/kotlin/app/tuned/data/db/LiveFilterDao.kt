@@ -17,4 +17,8 @@ interface LiveFilterDao {
         hidden: List<String>,
         adult: Boolean,
     ): Flow<List<RegionCount>>
+
+    /** Whether the playlist has any live channel marked adult, so the Adult filter is offered only where it finds some. */
+    @Query("SELECT EXISTS(SELECT 1 FROM items WHERE kind = 0 AND adult = 1)")
+    fun hasAdultChannels(): Flow<Boolean>
 }
