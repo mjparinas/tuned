@@ -47,6 +47,19 @@ export function apiUrl(base, username, password, action, params = {}) {
     return `${base}/player_api.php?${query.join("&")}`;
 }
 
+/** The M3U link for an Xtream login, as the app builds it (core XtreamUrls). */
+export function playlistUrl(base, username, password) {
+    return `${base}/get.php?username=${enc(username)}&password=${enc(password)}&type=m3u_plus&output=ts`;
+}
+
+/**
+ * Preview deployments (team-scoped *.vercel.app addresses, behind Vercel sign-in) and localhost always show the
+ * check; production addresses follow the admin's web_player flag.
+ */
+export function isPreviewHost(host) {
+    return host === "localhost" || host === "127.0.0.1" || /-projects-[a-z0-9]+\.vercel\.app$/.test(host);
+}
+
 export function liveUrl(base, username, password, id, ext) {
     return `${base}/live/${enc(username)}/${enc(password)}/${enc(id)}.${ext}`;
 }

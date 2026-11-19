@@ -12,6 +12,8 @@ import {
     looksLikePortal,
     parseM3u,
     parseServer,
+    playlistUrl,
+    isPreviewHost,
     redact,
     streamKind,
     verdict,
@@ -103,4 +105,20 @@ test("one answer from the facts", () => {
     assert.equal(verdict({ api: "ok", login: "ok", live: "ok", needsInsecure: true, safari: true }), "not-safari");
     assert.equal(verdict({ api: "ok", login: "ok" }), "list-only");
     assert.equal(verdict({ api: "ok", login: "ok", live: "ok" }), "works");
+});
+
+test("the playlist link built from an Xtream login reads back as the same login", () => {
+    const link = playlistUrl("http://example.com:8080", "a b", "p&w");
+    assert.equal(link, "http://example.com:8080/get.php?username=a%20b&password=p%26w&type=m3u_plus&output=ts");
+    const back = parseServer(link);
+    assert.deepEqual([back.base, back.username, back.password], ["http://example.com:8080", "a b", "p&w"]);
+});
+
+test("previews show the check, production follows the flag", () => {
+    assert.ok(isPreviewHost("tuned-git-staging-melvins-projects-b69f55c3.vercel.app"));
+    assert.ok(isPreviewHost("tuned-5jpbimrdf-melvins-projects-b69f55c3.vercel.app"));
+    assert.ok(isPreviewHost("localhost"));
+    assert.ok(!isPreviewHost("tuned-devices.vercel.app"));
+    assert.ok(!isPreviewHost("tuned.vercel.app"));
+    assert.ok(!isPreviewHost("www.tunedplayer.com"));
 });
