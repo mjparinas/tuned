@@ -183,10 +183,31 @@ class BrowseViewModel(
                     val group = (q.filter as? Filter.Group)?.name
                     val match = Search.match(q.search)
                     when (q.filter) {
-                        Filter.Favourites -> items.favouriteChannels(q.now, q.hidden, q.adult, group, q.search, match, topic, quick)
-                        is Filter.OwnList -> items.listChannels(q.filter.id, q.now, q.hidden, q.adult, group, q.search, match, topic, quick)
-                        Filter.Recent -> items.recentChannels(q.now, q.hidden, q.adult, group, q.search, match, topic, quick)
-                        else -> items.channels(q.now, q.hidden, q.adult, group, q.search, match, topic, quick)
+                        Filter.Favourites -> {
+                            items.favouriteChannels(q.now, q.hidden, q.adult, group, q.search, match, topic, quick)
+                        }
+
+                        is Filter.OwnList -> {
+                            container.db.lists().listChannels(
+                                q.filter.id,
+                                q.now,
+                                q.hidden,
+                                q.adult,
+                                group,
+                                q.search,
+                                match,
+                                topic,
+                                quick,
+                            )
+                        }
+
+                        Filter.Recent -> {
+                            items.recentChannels(q.now, q.hidden, q.adult, group, q.search, match, topic, quick)
+                        }
+
+                        else -> {
+                            items.channels(q.now, q.hidden, q.adult, group, q.search, match, topic, quick)
+                        }
                     }
                 }.flow
             }.cachedIn(viewModelScope)

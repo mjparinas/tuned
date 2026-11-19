@@ -30,7 +30,7 @@ class OwnListsTest {
         (load(PagingSource.LoadParams.Refresh(null, 500, false)) as PagingSource.LoadResult.Page).data
 
     private suspend fun listChannels(listId: Long) = db
-        .items()
+        .lists()
         .listChannels(listId, 0, emptyList(), false, null, "", "", "", listOf("any"))
         .all()
         .map { it.id }

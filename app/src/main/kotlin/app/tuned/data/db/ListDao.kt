@@ -1,5 +1,6 @@
 package app.tuned.data.db
 
+import androidx.paging.PagingSource
 import androidx.room.Dao
 import androidx.room.Query
 import androidx.room.Transaction
@@ -17,6 +18,24 @@ interface ListDao {
 
     @Query("SELECT * FROM lists WHERE profileId = $ME ORDER BY position, createdAt")
     suspend fun allNow(): List<ListEntity>
+
+    /** The channels in one of the person's own lists, in the list's order, with Live TV's filters. */
+    @Suppress("LongParameterList") // Every Live TV filter is a parameter of the one query, so the list stays one read.
+    @Query(
+        "SELECT $CHANNEL_COLUMNS, 0 AS favourite FROM items i JOIN list_items li ON li.itemId = i.id AND li.listId = :listId $NOW_JOIN " +
+            "WHERE $CHANNEL_FILTER $LIVE_QUICK ORDER BY li.position",
+    )
+    fun listChannels(
+        listId: Long,
+        now: Long,
+        hidden: List<String>,
+        adult: Boolean,
+        group: String?,
+        query: String,
+        match: String,
+        topic: String,
+        quick: List<String>,
+    ): PagingSource<Int, ChannelWithNow>
 
     /** The lists with a channel (kind 0) or film (kind 1) in them, for that tab's row of chips. */
     @Query(
