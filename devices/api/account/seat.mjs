@@ -1,10 +1,11 @@
 // POST /api/account/seat { use, purchases }: a signed-in device asking to use Premium (`use: true`) or giving its
 // seat back. It reports the Play purchases it sees, which are checked and saved to the account. The answer is
-// "active", "full" (every seat taken, which only then locks the device) or "none" (the account has no Premium).
+// "active", "full" (every seat taken, which only then locks the device) or "none" (the account has no Premium),
+// with `recorded`: the hashes of the reported purchases the account holds, which the app may then consume.
 // The github build has everything unlocked and never holds a seat.
 import { seatPlan } from "../../lib/accounts.mjs";
 import { body, deviceCaller, guarded, json } from "../../lib/auth.mjs";
-import { parsePurchases, reportPlay, summary } from "../../lib/account-api.mjs";
+import { parsePurchases, recordedPurchases, reportPlay, summary } from "../../lib/account-api.mjs";
 import { entitlements, releaseSeat, takeSeat } from "../../lib/account-store.mjs";
 
 export function POST(request) {
@@ -16,12 +17,14 @@ export function POST(request) {
             await releaseSeat(device.account, device.id);
             return json({ ...(await summary(device.account, device.id)), seat: "released" });
         }
-        await reportPlay(device.account, parsePurchases(ask?.purchases), await entitlements(device.account));
-        const plan = seatPlan(await entitlements(device.account), Date.now());
+        const purchases = parsePurchases(ask?.purchases);
+        await reportPlay(device.account, purchases, await entitlements(device.account));
+        const owned = await entitlements(device.account);
+        const plan = seatPlan(owned, Date.now());
         let seat;
         if (!plan.premium) seat = "none";
         else if (device.build === "github") seat = "active";
         else seat = (await takeSeat(device.account, device.id, plan.limit)) ? "active" : "full";
-        return json({ ...(await summary(device.account, device.id)), seat });
+        return json({ ...(await summary(device.account, device.id)), seat, recorded: recordedPurchases(purchases, owned) });
     });
 }

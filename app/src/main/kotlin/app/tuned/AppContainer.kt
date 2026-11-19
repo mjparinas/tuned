@@ -80,10 +80,11 @@ class AppContainer(
     val guideFixes by lazy { GuideFixRepository(db, sync, scheduler, credentials) }
     val updates by lazy { GitHubUpdates(context, http) }
     val syncCopy by lazy { SyncCopyRepository(credentials, settings, db, profiles, trakt, IntroStore(context)) }
+    val tunedAccount by lazy { TunedAccount(context, http) { tvSignInUrl } }
     val cloudSync by lazy {
         CloudSyncRepository(
             context,
-            TunedAccount(context, http) { tvSignInUrl },
+            tunedAccount,
             syncCopy,
             onSignedIn = { scheduler.refreshNow(first = true) },
             onGuideChanged = { scheduler.refreshNow(guideOnly = true) },
@@ -102,7 +103,7 @@ class AppContainer(
     val trakt by lazy { TraktAccount(context, http) }
     val people by lazy { PeopleRepository(http, BuildConfig.TMDB_API_KEY, db.metadata(), connectivity::onlineNow) }
     val profiles by lazy { ProfileRepository(db, settings) }
-    val premium by lazy { Premium(context, appScope, DeviceSeatsClient.create(context, http)) }
+    val premium by lazy { Premium(context, appScope, DeviceSeatsClient.create(context, http)) { tunedAccount } }
     val subtitles by lazy { SubtitleRepository(http, settings, credentials, metadata, context.filesDir.resolve("subtitles")) }
 
     /** True while the player is open; downloads and channel scans hold back so only one stream is ever open. */

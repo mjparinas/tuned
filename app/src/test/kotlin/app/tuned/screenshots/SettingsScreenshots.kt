@@ -1,12 +1,21 @@
 package app.tuned.screenshots
 
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Surface
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.unit.dp
 import app.tuned.R
+import app.tuned.core.AccountSeats
 import app.tuned.data.AppReset
 import app.tuned.data.CaptionStyle
 import app.tuned.data.LighterMode
+import app.tuned.premium.MoreDevicesOffer
+import app.tuned.premium.Offer
 import app.tuned.ui.CaptionSettingsRoute
 import app.tuned.ui.RegionSettingsRoute
 import app.tuned.ui.SettingsPageRoute
@@ -124,6 +133,22 @@ class SettingsScreenshots : Screenshots() {
         SettingsPageRoute(SettingsPage.GUIDE.name),
         wait = text(R.string.settings_reminder_lead),
         then = { compose.onNodeWithText(text(R.string.settings_notifications)).performScrollTo() },
+    )
+
+    /** Tuned Premium › More devices on a signed-in account with lifetime Premium: one-time seats from Play. */
+    @Test
+    fun premiumMoreDevices() = shot(
+        "premium-more-devices",
+        SettingsPageRoute(SettingsPage.ABOUT.name),
+        wait = text(R.string.premium_more_title),
+        overlay = {
+            Surface(Modifier.fillMaxSize()) {
+                Column(Modifier.padding(24.dp)) {
+                    MoreDevicesOffer(Offer(AccountSeats.SEAT_ONCE, "US$4.99", 0, yearly = false), most = 7, failed = false, onBuy = {})
+                    MoreDevicesOffer(Offer(AccountSeats.SEAT_YEARLY, "US$1.99", 0, yearly = true), most = 1, failed = false, onBuy = {})
+                }
+            }
+        },
     )
 
     /** The user agent picklist, opened from Settings › About. */

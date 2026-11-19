@@ -35,3 +35,28 @@ class DeviceSeatsTest {
         assertEquals(false, DeviceSeats.remember(SeatAnswer.Full(emptyList()), true))
     }
 }
+
+class AccountSeatsTest {
+    @Test
+    fun `seats match the Premium kind`() {
+        assertEquals(AccountSeats.SEAT_ONCE, AccountSeats.seatProduct("lifetime"))
+        assertEquals(AccountSeats.SEAT_YEARLY, AccountSeats.seatProduct("yearly"))
+        assertEquals(null, AccountSeats.seatProduct(null))
+    }
+
+    @Test
+    fun `only active and full count as answers`() {
+        val devices = listOf(SeatDevice("a", "TV", 0, current = true))
+        assertEquals(SeatAnswer.Active(devices), AccountSeats.answer("active", devices))
+        assertEquals(SeatAnswer.Full(devices), AccountSeats.answer("full", devices))
+        assertEquals(SeatAnswer.Unreachable, AccountSeats.answer("none", devices))
+    }
+
+    @Test
+    fun `play sells any number of one-time seats but one yearly seat`() {
+        assertEquals(7, AccountSeats.playCanBuy(AccountSeats.SEAT_ONCE, 7, ownsYearlySeat = false))
+        assertEquals(1, AccountSeats.playCanBuy(AccountSeats.SEAT_YEARLY, 7, ownsYearlySeat = false))
+        assertEquals(0, AccountSeats.playCanBuy(AccountSeats.SEAT_YEARLY, 7, ownsYearlySeat = true))
+        assertEquals(0, AccountSeats.playCanBuy(AccountSeats.SEAT_ONCE, 0, ownsYearlySeat = false))
+    }
+}
