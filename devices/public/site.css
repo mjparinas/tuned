@@ -304,3 +304,207 @@ li span {
     color: var(--muted);
     font-size: 0.9rem;
 }
+
+/* A card's own message: red for an error, teal for done (Melvin, 2026-11-19). */
+:root {
+    --error-soft: #ffdad6;
+    --on-error-soft: #410002;
+    --ok-soft: #9ff2df;
+    --on-ok-soft: #00201b;
+}
+@media (prefers-color-scheme: dark) {
+    :root {
+        --error-soft: #93000a;
+        --on-error-soft: #ffdad6;
+        --ok-soft: #005045;
+        --on-ok-soft: #9ff2df;
+    }
+}
+.message:empty {
+    display: none;
+}
+.message {
+    display: flex;
+    gap: 8px;
+    margin: 12px 0 0;
+    padding: 10px 14px;
+    border-radius: 14px;
+    font-size: 0.9rem;
+    background: var(--error-soft);
+    color: var(--on-error-soft);
+}
+.message::before {
+    content: "!";
+    flex: none;
+    display: grid;
+    place-items: center;
+    width: 20px;
+    height: 20px;
+    margin-top: 1px;
+    border-radius: 50%;
+    background: var(--danger);
+    color: var(--bg);
+    font-weight: 700;
+    font-size: 0.8rem;
+}
+.message[data-tone="ok"] {
+    background: var(--ok-soft);
+    color: var(--on-ok-soft);
+}
+.message[data-tone="ok"]::before {
+    content: "✓";
+    background: var(--teal);
+}
+input[aria-invalid="true"] {
+    border-color: var(--danger);
+}
+
+/* Pop-ups: centred, 24 px off the edges, at most 560 wide, like the app's TunedDialog. */
+dialog {
+    width: calc(100% - 48px);
+    max-width: 560px;
+    padding: 24px;
+    border: 1px solid var(--line);
+    border-radius: 24px;
+    background: var(--card);
+    color: var(--text);
+    box-shadow: 0 24px 64px rgba(0, 0, 0, 0.4);
+}
+dialog::backdrop {
+    background: rgba(11, 10, 16, 0.6);
+}
+dialog h2 {
+    font-size: 1.375rem;
+    margin-bottom: 12px;
+}
+.actions.end {
+    justify-content: flex-end;
+}
+dialog .actions button {
+    width: auto;
+    margin-top: 0;
+}
+button.danger {
+    background: var(--danger);
+    border-color: var(--danger);
+    color: var(--bg);
+}
+
+/* What Tuned does: a list of features on the account page. */
+.features {
+    display: grid;
+    gap: 4px;
+    margin-top: 8px;
+}
+.features div {
+    display: grid;
+    align-content: start;
+    grid-template-columns: 12px 1fr;
+    column-gap: 12px;
+    padding: 8px 0;
+}
+.features div::before {
+    content: "";
+    width: 10px;
+    height: 10px;
+    margin-top: 7px;
+    border-radius: 3px;
+    background: var(--dot, #8466ff);
+    grid-row: span 2;
+}
+.features div:nth-child(3n + 2) {
+    --dot: #5fdcc3;
+}
+.features div:nth-child(3n) {
+    --dot: var(--muted);
+}
+.features b {
+    font-weight: 600;
+}
+.features > div > span {
+    color: var(--muted);
+    font-size: 0.9rem;
+}
+.tag {
+    display: inline-block;
+    margin-left: 6px;
+    padding: 0 8px;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    vertical-align: 2px;
+    background: var(--primary-soft);
+    color: var(--on-primary-soft);
+}
+@media (min-width: 720px) {
+    .features {
+        grid-template-columns: 1fr 1fr;
+        column-gap: 24px;
+    }
+}
+
+/* Sign-in choices: Google, and Apple coming soon in Apple's own black (white on dark) style. */
+.sign-in-options {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+}
+.sign-in-options p {
+    flex-basis: 100%;
+}
+button.apple {
+    gap: 8px;
+    background: #000000;
+    border-color: #000000;
+    color: #ffffff;
+}
+@media (prefers-color-scheme: dark) {
+    button.apple {
+        background: #ffffff;
+        border-color: #ffffff;
+        color: #000000;
+    }
+}
+
+/* Google's own Sign in with Google button (its branding guidelines): the four-colour G on white with a grey
+   outline, or on #131314 in dark, Roboto Medium, pill shaped. */
+.gsi {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    min-height: 48px;
+    padding: 10px 20px 10px 14px;
+    border: 1px solid #747775;
+    border-radius: 999px;
+    background: #ffffff;
+    color: #1f1f1f;
+    font:
+        500 15px/20px Roboto,
+        system-ui,
+        sans-serif;
+    letter-spacing: 0.25px;
+    text-decoration: none;
+    cursor: pointer;
+}
+.gsi img {
+    width: 20px;
+    height: 20px;
+}
+.gsi:hover {
+    background: #f8f9fa;
+}
+.gsi:focus-visible {
+    outline: 3px solid #4285f4;
+    outline-offset: 2px;
+}
+@media (prefers-color-scheme: dark) {
+    .gsi {
+        background: #131314;
+        border-color: #8e918f;
+        color: #e3e3e3;
+    }
+    .gsi:hover {
+        background: #1f1f20;
+    }
+}
