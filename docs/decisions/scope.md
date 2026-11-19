@@ -17,6 +17,8 @@ Each line names Melvin's words and date. Move it into the topic's file when it m
 
 - **The app's side of the admin** (Melvin, 2026-11-19: usage stats "Yes, like Liftsmith"). The server and the admin are built ([admin](admin.md)); still to build in the app: anonymous usage stats from the allow-list, on by default outside the EU, EEA, UK and Switzerland, with Settings › Usage stats (the switch and the install id); reading `GET /api/flags` on open and acting on each switch; and Report a problem offering "Send to Tuned" beside the share sheet.
 
+- **The web player** (Melvin, 2026-11-19: "ok lets do it"). The provider check is built ([web](web.md)); still to build: `:core` as Kotlin Multiplatform, the player at `/watch` for Premium accounts, and the rest of [web](web.md#what-was-decided).
+
 Everything else that was listed has merged and is recorded in its topic: seats per account and extra seats in Play ([accounts](accounts.md)); never hiding sports and event channels ([channel scan](channel-scan.md)); Downloads by show with space left, offline mode and cache first ([offline](offline.md)); real episode names everywhere ([player](player.md)); actor pages ([people](people.md)); Live Events ([events](events.md)); the full grid guide ([playlist](playlist.md)); profiles with a PIN ([profiles](profiles.md)); phone and TV sync ([sync](sync.md)); Trakt ([Trakt](trakt.md)).
 
 ## Offered, not decided
