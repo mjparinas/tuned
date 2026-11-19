@@ -37,7 +37,6 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -87,6 +86,7 @@ import app.tuned.data.Accent
 import app.tuned.data.db.ProfileEntity
 import app.tuned.diagnostics.launchSafely
 import app.tuned.ui.common.BackTopBar
+import app.tuned.ui.common.TunedDialog
 import app.tuned.ui.common.focusRing
 import app.tuned.ui.theme.swatch
 import kotlinx.coroutines.flow.SharingStarted
@@ -550,7 +550,7 @@ private fun ProfileEditor(
         onClose()
     }
 
-    AlertDialog(
+    TunedDialog(
         onDismissRequest = onClose,
         title = { Text(stringResource(if (profile.id == 0L) R.string.profile_new_title else R.string.profile_edit_title)) },
         text = {
@@ -635,7 +635,7 @@ private fun ProfileEditor(
         PinDialog(PinMode.Create, vm.parental, onDone = { askParental = false }, onSuccess = save)
     }
     if (confirmDelete) {
-        AlertDialog(
+        TunedDialog(
             onDismissRequest = { confirmDelete = false },
             text = { Text(stringResource(R.string.profile_delete_confirm, displayName(profile))) },
             confirmButton = {

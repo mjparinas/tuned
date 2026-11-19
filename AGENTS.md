@@ -47,6 +47,7 @@ Kotlin, Jetpack Compose with Material 3, Navigation Compose (type-safe routes), 
 - Formatting is ktlint's (`.editorconfig`, width 140) through Spotless, and Prettier's for YAML, JSON and Markdown. Don't hand-format.
 - detekt (`config/detekt/detekt.yml`) and Android Lint (`warningsAsErrors`) fail CI on any finding. Fix the cause; suppress only with a comment saying why.
 - Every string a person reads is in `res/values/strings.xml`; numbers that change a word use `<plurals>`.
+- **Pop-ups are `TunedDialog`** (`ui/common/TunedDialog.kt`), never Material's `AlertDialog` directly (detekt enforces it), so every dialog keeps 24 dp off the screen's edges, stops at 560 dp and sits in the centre (Melvin, 2026-11-19: "these pop ups shouldn't take the full width"; [branding](docs/decisions/branding.md)).
 - **TV-safe** ([TV](docs/decisions/tv.md)): on a TV every screen sits inside the overscan margin (`TvSafeArea`, 48 dp sides, 27 dp top and bottom); a screen taller than 540 dp less that margin must scroll or change layout so nothing is cut off.
 - **Accessible by default** ([accessibility](docs/decisions/accessibility.md)): an icon-only button has a label, a state shown by colour is also given in words, switches are `toggleable`, tap targets are 48dp, and text containers use a minimum height, never a fixed one.
 - Fire-and-forget coroutines use `launchSafely(tag)`, and caught failures go to `AppLog` (`attempt` instead of `runCatching`), so nothing fails silently and nothing crashes the app ([diagnostics](docs/decisions/diagnostics.md)).

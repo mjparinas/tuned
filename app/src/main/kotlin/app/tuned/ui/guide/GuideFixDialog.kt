@@ -13,7 +13,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Remove
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -44,6 +43,7 @@ import app.tuned.data.db.GuideChannelEntity
 import app.tuned.data.db.GuideFixEntity
 import app.tuned.data.db.ItemEntity
 import app.tuned.diagnostics.launchSafely
+import app.tuned.ui.common.TunedDialog
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -131,7 +131,7 @@ fun GuideFixDialog(
         onSaved()
         onDismiss()
     }
-    AlertDialog(
+    TunedDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(R.string.guide_fix_title)) },
         text = {

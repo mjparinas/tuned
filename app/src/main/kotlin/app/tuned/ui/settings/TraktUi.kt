@@ -5,7 +5,6 @@ import android.content.Intent
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -28,6 +27,7 @@ import app.tuned.diagnostics.launchSafely
 import app.tuned.diagnostics.startActivitySafely
 import app.tuned.premium.LockedRow
 import app.tuned.premium.premiumUnlocked
+import app.tuned.ui.common.TunedDialog
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -124,7 +124,7 @@ private fun SignInDialog(
 ) {
     val context = LocalContext.current
     val ended = state as? TraktViewModel.SignIn.Ended
-    AlertDialog(
+    TunedDialog(
         onDismissRequest = onClose,
         title = { Text(stringResource(R.string.trakt_sign_in)) },
         text = {
