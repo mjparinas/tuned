@@ -9,8 +9,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 
 /**
- * True while a TV (Chromecast or DLNA) is picked to play Tuned's stream. The cast carries on after the player screen
- * closes, and the TV's stream is the account's one connection, so downloads and channel scans keep waiting until the
+ * True while a TV (Chromecast or DLNA) is picked to play Tuned's stream. The cast carries on while the app is in the
+ * background, and the TV's stream is the account's one connection, so downloads and channel scans keep waiting until the
  * cast ends (Melvin, 2026-11-18: "the app should prioritize the stream and have the downloads wait"). Started by the
  * player on the main thread, the only place a cast can begin, so nothing extra runs at app start.
  */

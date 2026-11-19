@@ -255,7 +255,7 @@ class PlayerActivity : FragmentActivity() {
         // One connection to the provider at a time: downloads and channel scans wait while anything plays.
         container.playerOpen.value = true
         container.offline.pause()
-        // A cast outlives this screen; downloads keep waiting while a TV plays.
+        // A cast carries on while the app is in the background; downloads keep waiting while a TV plays.
         container.tvCasting.watch()
         buildViews()
         hideSystemBars(window)
@@ -831,7 +831,7 @@ class PlayerActivity : FragmentActivity() {
         gestures?.release()
         tools.release()
         dial.release()
-        cast?.release()
+        cast?.release(leaving = isFinishing)
         reconnect.stop()
         background.release()
         session.release()

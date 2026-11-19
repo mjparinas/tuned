@@ -111,7 +111,7 @@ class AppContainer(
     /** True while a download holds its connection; set by [OfflineWorker] until its connection is closed. */
     val downloadOpen = MutableStateFlow(false)
 
-    /** A TV playing Tuned's stream, which outlives the player screen; downloads and scans wait for it too. */
+    /** A TV playing Tuned's stream, which carries on while the app is in the background; downloads and scans wait for it too. */
     val tvCasting by lazy { TvCasting(context) { appScope.launch { offline.start() } } }
 
     /** Something is being watched, on the phone or on a TV: the stream comes first and downloads wait. */
