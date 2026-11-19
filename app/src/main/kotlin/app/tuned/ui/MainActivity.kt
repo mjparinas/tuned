@@ -29,6 +29,7 @@ import app.tuned.data.CastMember
 import app.tuned.diagnostics.launchSafely
 import app.tuned.player.PlayerActivity
 import app.tuned.ui.common.LocalTimeZone
+import app.tuned.ui.common.TvSafeArea
 import app.tuned.ui.common.WithOfflineBanner
 import app.tuned.ui.theme.TunedTheme
 import app.tuned.widget.AppShortcuts
@@ -89,7 +90,7 @@ class MainActivity : ComponentActivity() {
                 accent = current.accent,
             ) {
                 CompositionLocalProvider(LocalTimeZone provides TimeZones.resolve(current.timeZone)) {
-                    Navigation(current, signedIn)
+                    TvSafeArea { Navigation(current, signedIn) }
                 }
             }
         }

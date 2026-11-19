@@ -12,6 +12,7 @@ import app.tuned.core.PlaylistEntry
 import app.tuned.core.PlaylistLink
 import app.tuned.core.Search
 import app.tuned.core.StableId
+import app.tuned.core.Stalker
 import app.tuned.core.Streams
 import app.tuned.core.XtreamAccount
 import app.tuned.core.XtreamApi
@@ -25,7 +26,11 @@ import app.tuned.data.db.TunedDatabase
 import app.tuned.diagnostics.AppLog
 import app.tuned.diagnostics.attempt
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.channels.trySendBlocking
+import kotlinx.coroutines.flow.buffer
+import kotlinx.coroutines.flow.channelFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
@@ -71,6 +76,8 @@ class SyncRepository(
     private val currentLogin: () -> Credentials?,
     private val settings: SettingsRepository,
     private val dir: File,
+    /** The signed-in Stalker portal, shared with the player so its token is reused. */
+    private val stalker: StalkerLinks = StalkerLinks(http, currentLogin),
 ) {
     private val lock = Mutex()
     private val downloader = Downloader(http)
@@ -118,6 +125,7 @@ class SyncRepository(
         login: Credentials,
         progress: (SyncProgress) -> Unit,
     ): Int {
+        if (login.kind == Credentials.Kind.Stalker) return importPortal(login, progress)
         val xtream = login.playlistUrl.isBlank()
         val url = login.playlistUrl.ifBlank { XtreamUrls.playlist(login.server, login.username, login.password) }
         val saved = { rows: Int -> progress(SyncProgress(SyncProgress.Step.SavingPlaylist, rows.toLong())) }
@@ -179,6 +187,18 @@ class SyncRepository(
             }
         fromApi.exceptionOrNull()?.let { failure.addSuppressed(it) }
         return fromApi.getOrElse { throw failure }
+    }
+
+    /** A Stalker portal's live channels, read from its API in one answer (`core/Stalker`). */
+    private suspend fun importPortal(
+        login: Credentials,
+        progress: (SyncProgress) -> Unit,
+    ): Int {
+        memo.forget() // a portal has no file to compare
+        progress(SyncProgress(SyncProgress.Step.Playlist))
+        val channels = withContext(Dispatchers.IO) { stalker.portal(login).channels() }
+        val saved = { rows: Int -> progress(SyncProgress(SyncProgress.Step.SavingPlaylist, rows.toLong())) }
+        return importPlaylist(saved) { add -> channels.forEachIndexed { order, channel -> add(Stalker.live(channel, order)) } }
     }
 
     /**
@@ -250,6 +270,8 @@ class SyncRepository(
 
     private suspend fun refreshGuideLocked(progress: (SyncProgress) -> Unit): Int {
         val login = currentLogin() ?: throw IOException("Not signed in")
+        // A portal's own guide, unless a guide link was given for it.
+        if (login.kind == Credentials.Kind.Stalker && login.guideUrl.isBlank()) return refreshPortalGuide(login, progress)
         // A plain playlist's guide is the one its header names; without one only the extra guide links are read.
         val main =
             login.guideUrl.ifBlank {
@@ -277,6 +299,48 @@ class SyncRepository(
                 import.commit()
             } finally {
                 import.discard() // a no-op after a commit; after a failure, the old guide stays
+            }
+        settings.update { it.copy(lastGuideSync = System.currentTimeMillis()) }
+        return count
+    }
+
+    /**
+     * A portal's guide from its API, read as it arrives and filed under each channel's guide id (`core/Stalker`). Extra
+     * guide links then fill the channels it lacks, as for any playlist.
+     */
+    private suspend fun refreshPortalGuide(
+        login: Credentials,
+        progress: (SyncProgress) -> Unit,
+    ): Int {
+        val s = settings.settings.first()
+        val import = GuideImport(db, s.guideDays, s.guideOffsetMinutes)
+        val saved = { rows: Int -> progress(SyncProgress(SyncProgress.Step.SavingGuide, rows.toLong())) }
+        // The portal files programmes under its own channel ids; the channels are stored under their guide ids.
+        val guideIds =
+            db
+                .items()
+                .liveLinks()
+                .mapNotNull { link -> Stalker.parse(link.url)?.let { it.id to link.tvgId } }
+                .toMap()
+        val hours = (s.guideDays * HOURS_A_DAY).coerceIn(HOURS_A_DAY, MAX_PORTAL_GUIDE_HOURS)
+        val portal = stalker.portal(login)
+        val count =
+            try {
+                if (!import.begin()) return 0
+                progress(SyncProgress(SyncProgress.Step.Guide))
+                val programmes =
+                    channelFlow {
+                        withContext(Dispatchers.IO) { portal.guide(hours) { p -> trySendBlocking(p) } }
+                    }.buffer(BATCH).mapNotNull { p -> guideIds[p.channelId]?.let { p.copy(channelId = it) } }
+                import.read(programmes, saved)
+                for (extra in login.extraGuides) {
+                    attempt(TAG_SYNC, "An extra guide failed") {
+                        download(extra, "guide", SyncProgress.Step.Guide, progress) { input, _ -> import.read(input, saved) }
+                    }
+                }
+                import.commit()
+            } finally {
+                import.discard()
             }
         settings.update { it.copy(lastGuideSync = System.currentTimeMillis()) }
         return count
@@ -459,6 +523,10 @@ class SyncRepository(
         const val HEADER_PEEK = 8_192
         const val SQL_VARIABLES = 900
         const val MAX_ACCOUNT_ANSWER = 64_000
+        const val HOURS_A_DAY = 24
+
+        /** A week: portals answer longer periods slowly, if at all. */
+        const val MAX_PORTAL_GUIDE_HOURS = 168
     }
 }
 

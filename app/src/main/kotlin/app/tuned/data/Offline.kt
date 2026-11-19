@@ -100,6 +100,31 @@ class Offline(
     fun freeBytes(): Long? =
         attempt("Offline", "Couldn't read free space") { StatFs(dir.apply { mkdirs() }.path).availableBytes }.getOrNull()
 
+    /** How many downloads there are, finished or not, and the space their files take. */
+    suspend fun usage(): Pair<Int, Long> = db.downloads().count() to dir.walkBottomUp().filter { it.isFile }.sumOf { it.length() }
+
+    /** Signing out with "Delete": every saved file goes. The rows go with the rest of the database. */
+    fun deleteFiles() {
+        work.cancelUniqueWork(OfflineWorker.NAME)
+        dir.deleteRecursively()
+    }
+
+    /**
+     * Signing out with "Keep": finished files stay and play from the device; their rows keep their ids, so they join the
+     * same films and episodes again when that provider signs back in. Half-finished ones go, since finishing them needs
+     * the login, and every stream address (which can hold the login) is forgotten.
+     */
+    suspend fun keepFinishedOnly() {
+        work.cancelUniqueWork(OfflineWorker.NAME)
+        db.downloads().unfinished().forEach { row ->
+            File(row.path).delete()
+            File(row.path + ".part").delete()
+            File(row.path + ".part.tag").delete()
+        }
+        db.downloads().deleteUnfinished()
+        db.downloads().forgetLinks()
+    }
+
     /** The player opened: downloads wait. */
     fun pause() {
         work.cancelUniqueWork(OfflineWorker.NAME)

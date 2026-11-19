@@ -59,6 +59,8 @@ abstract class TunedDatabase : RoomDatabase() {
 
     abstract fun guideFixes(): GuideFixDao
 
+    abstract fun sync(): SyncDao
+
     abstract fun channelNumbers(): ChannelNumberDao
 
     abstract fun liveFilters(): LiveFilterDao
@@ -103,7 +105,7 @@ abstract class TunedDatabase : RoomDatabase() {
             override fun onCreate(db: SupportSQLiteDatabase) = addFirstProfile(db)
         }
 
-        private fun addFirstProfile(db: SupportSQLiteDatabase) {
+        internal fun addFirstProfile(db: SupportSQLiteDatabase) {
             db.execSQL(
                 "INSERT OR IGNORE INTO `profiles` (`id`, `name`, `colour`, `kids`, `pinHash`, `createdAt`) " +
                     "VALUES (${Profiles.FIRST}, '', 0, 0, NULL, ${System.currentTimeMillis()})",

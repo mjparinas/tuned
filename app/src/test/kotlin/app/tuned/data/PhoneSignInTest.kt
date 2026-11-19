@@ -11,12 +11,14 @@ class PhoneSignInTest {
                 Credentials("tv.example.com:8080/", " me ", "pw", name = "Living room"),
                 Credentials("", "", "", "http://tv.example.com/get.php?username=a&password=b&type=m3u", "http://guide.example.com/g.xml"),
                 Credentials("", "", "", "example.com/list.m3u"),
+                Credentials.stalker("http://portal.example.com/c/", "00:1A:79:00:00:01"),
             )
         assertEquals(
             listOf(
                 Credentials("http://tv.example.com:8080", "me", "pw", name = "Living room"),
                 Credentials("http://tv.example.com", "a", "b", guideUrl = "http://guide.example.com/g.xml"),
                 Credentials("", "", "", "http://example.com/list.m3u"),
+                Credentials.stalker("http://portal.example.com/c/", "00:1A:79:00:00:01"),
             ),
             PhoneSignIn.clean(sent),
         )

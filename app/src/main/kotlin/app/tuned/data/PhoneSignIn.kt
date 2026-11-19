@@ -51,6 +51,11 @@ class PhoneSignIn(
                     null
                 }
 
+                // A MAC portal comes only from the phone app, already made by its form.
+                login.kind == Credentials.Kind.Stalker -> {
+                    login.takeIf { it.server.isNotBlank() && it.username.isNotBlank() }
+                }
+
                 else -> {
                     when (val link = PlaylistLink.parse(login.playlistUrl)) {
                         null -> {

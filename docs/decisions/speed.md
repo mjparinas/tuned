@@ -10,6 +10,15 @@ Melvin (2026-11-17): "prioritize speed and efficiency when using the app."
 - **Player start.** Fast-start TS extractor flags, a Fast start buffer mode, and Media3's own PlayerView.
 - **Release builds** are shrunk with R8 and ship a **baseline profile** (2026-11-18, from the gap review Melvin asked for: "what else are we missing"). Before it, the app had the profile installer but no profile, so every cold start ran its own code interpreted until Android compiled it in the background days later. The `:baselineprofile` module drives the release app on an emulator through the first minute (cold start to the cached Live TV list, the three tabs, opening a channel) against a fake provider on the loopback, so no real login is involved, and writes `app/src/main/generated/baselineProfiles/`, which is committed and used by both the GitHub and store builds (it is recorded on the GitHub build). A startup profile from the same run also orders the dex file. The **Baseline profile** workflow regenerates it and measures cold start without and with the profile (median of 10 cold starts each, in the run's summary). It runs by hand or when the journeys change, and is not part of "CI passed" because an emulator run takes about half an hour. First measurement (2026-11-18, CI emulator, Pixel 6 image on API 34 with software graphics, median of 10 cold starts to the first frame): **1,541 ms without the profile, 1,437 ms with it, 7% faster**. The emulator only shows the direction; a real phone should gain more, because it reads the dex file from slower storage. Regenerate it after a change to what opens first.
 
+## Lighter mode for weak TV boxes (Melvin, 2026-11-19)
+
+From the Horizon Maps review ("Do 1, 2, 3, 4, 5, 6", idea 5). Cheap Android TV boxes have little memory and slow graphics, and a fade on every poster or a pulsing placeholder is enough to make them stutter or freeze. **Settings › Appearance › Lighter mode** is Automatic (the default), On or Off, and stays on the device rather than syncing, because the phone and the TV box differ. When it is on:
+
+- Pictures load without a fade, are held in half the memory (RGB 565 where they have no transparency), and the picture memory cache is 10% of the app's memory instead of 20%.
+- Loading placeholders stay still instead of pulsing, and the Premium avatar ring doesn't turn.
+
+**Automatic** turns it on when Android calls the device low on memory, or after two freezes within a week (the freeze reports from [diagnostics](diagnostics.md); `LighterRule` in `:core`, tested). One freeze can be bad luck; two in a week is the device. Clearing Logs clears the freeze reports, so Automatic starts over. `Lighter` (`diagnostics/Lighter.kt`) keeps its answer on the device, because the picture loader is built before the settings load: a change reaches the pictures on the next start and everything else at once. The setting's summary says when Automatic has turned it on.
+
 ## Scroll bar on long lists (Melvin, 2026-11-18)
 
 Melvin: "since there are so many channels, on the live tv page, moves and shows page, i dont see any scroll bars on the right side indicating how much left i can scroll".

@@ -7,6 +7,8 @@
 - Everything a remote can land on (posters, channel rows, Continue Watching cards, search results, episodes, guide rows) shows a clear outline in the accent colour while focused (`ui/common/FocusRing.kt`). Touch never focuses these, so phones look the same.
 - The manifest says touch, Wi-Fi and leanback are optional, adds the TV launcher category, and gives the app a 320 × 180 banner (`drawable/tv_banner.xml`, a vector, so it stays sharp at 4K).
 
+**Overscan margin** (Melvin, 2026-11-19: "The tuned app on a real TV has the logo touching the top of the screen, push that down"). Many TVs crop the edges of the picture, so on a TV every screen of the app and of Premium keeps Google's TV margins: 48 dp at the sides and 27 dp at the top and bottom, filled with the theme's background (`ui/common/TvSafeArea.kt`). It is decided by the system's TV UI mode, so phones and tablets are unchanged. The player stays full screen: the crop only trims the picture's edge.
+
 A dedicated TV layout can come later if the phone layout proves awkward from the sofa.
 
 **The remote in the player** (`core/RemoteKeys.kt`, with tests). Media3's controls already handle play, pause, fast forward and rewind, and any arrow shows the controls. On top of that:

@@ -5,6 +5,7 @@ import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyProperties
 import android.util.Base64
 import androidx.core.content.edit
+import app.tuned.core.Stalker
 import app.tuned.diagnostics.AppLog
 import app.tuned.diagnostics.attempt
 import java.security.KeyStore
@@ -14,7 +15,9 @@ import javax.crypto.SecretKey
 import javax.crypto.spec.GCMParameterSpec
 
 data class Credentials(
+    /** The Xtream server, or a Stalker portal's address. */
     val server: String,
+    /** The Xtream username, or a Stalker portal's MAC address. */
     val username: String,
     val password: String,
     /** Optional overrides for plain M3U providers (no Xtream login). Blank means "use the Xtream URL". */
@@ -25,13 +28,14 @@ data class Credentials(
     /** The name the person gave it ("Living room", "Sports"). Blank shows [detail] instead. */
     val name: String = "",
 ) {
-    enum class Kind { Xtream, Link, File }
+    enum class Kind { Xtream, Link, File, Stalker }
 
     val kind: Kind
         get() =
             when {
                 playlistUrl.isBlank() -> Kind.Xtream
                 playlistUrl.startsWith(FILE_SCHEME) -> Kind.File
+                playlistUrl == Stalker.MARKER -> Kind.Stalker
                 else -> Kind.Link
             }
 
@@ -45,6 +49,7 @@ data class Credentials(
                 Kind.Xtream -> "$username @ ${server.substringAfter("://")}"
                 Kind.Link -> playlistUrl.substringAfter("://").substringBefore('/').substringBefore('?')
                 Kind.File -> name.ifBlank { playlistUrl.substringAfterLast('/') }
+                Kind.Stalker -> server.substringAfter("://").substringBefore('/')
             }
 
     /** How the playlist is listed: its name, or where it comes from. */
@@ -54,6 +59,14 @@ data class Credentials(
     companion object {
         /** Playlists picked from a file are copied into the app and read from here. */
         const val FILE_SCHEME = "file:"
+
+        /** A Stalker portal signed in to with a MAC address (`core/Stalker`); it has no password. */
+        fun stalker(
+            portal: String,
+            mac: String,
+            guideUrl: String = "",
+            name: String = "",
+        ) = Credentials(portal, mac, "", Stalker.MARKER, guideUrl, name = name)
     }
 }
 
@@ -90,7 +103,9 @@ class CredentialStore(
         maskInLogs(credentials)
     }
 
-    private fun maskInLogs(c: Credentials) = AppLog.setSecrets(c.password, c.username, c.playlistUrl, c.guideUrl)
+    // A portal's marker isn't a secret, and masking it would hide every channel link in the log.
+    private fun maskInLogs(c: Credentials) =
+        AppLog.setSecrets(c.password, c.username, c.playlistUrl.takeUnless { c.kind == Credentials.Kind.Stalker }.orEmpty(), c.guideUrl)
 
     /** Signing out forgets every saved playlist too. */
     fun clear() {

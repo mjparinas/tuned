@@ -2,6 +2,7 @@ package app.tuned
 
 import android.content.Context
 import app.tuned.data.AccountRepository
+import app.tuned.data.AppReset
 import app.tuned.data.ChannelEditor
 import app.tuned.data.ChannelScanner
 import app.tuned.data.CloudSyncRepository
@@ -10,6 +11,7 @@ import app.tuned.data.CredentialStore
 import app.tuned.data.EventsRepository
 import app.tuned.data.GoogleDrive
 import app.tuned.data.GuideFixRepository
+import app.tuned.data.IntroStore
 import app.tuned.data.MetadataRepository
 import app.tuned.data.Offline
 import app.tuned.data.OwnLists
@@ -21,6 +23,7 @@ import app.tuned.data.ProfileRepository
 import app.tuned.data.Recordings
 import app.tuned.data.SavedArtwork
 import app.tuned.data.SettingsRepository
+import app.tuned.data.StalkerLinks
 import app.tuned.data.SubtitleRepository
 import app.tuned.data.SyncCopyRepository
 import app.tuned.data.SyncRepository
@@ -68,14 +71,23 @@ class AppContainer(
             .addNetworkInterceptor(DeviceClock.interceptor)
             .build()
     }
-    val sync by lazy { SyncRepository(db, http, credentials::load, settings, context.noBackupFilesDir.resolve("sync")) }
+
+    /** The signed-in Stalker portal, and turning its channels into streams for the player, scans and casting. */
+    val stalker by lazy { StalkerLinks(http, credentials::load) }
+    val sync by lazy { SyncRepository(db, http, credentials::load, settings, context.noBackupFilesDir.resolve("sync"), stalker) }
     val tune by lazy { TuneRepository(db, settings) }
     val scheduler = SyncScheduler(context)
     val guideFixes by lazy { GuideFixRepository(db, sync, scheduler, credentials) }
     val updates by lazy { GitHubUpdates(context, http) }
-    val syncCopy by lazy { SyncCopyRepository(credentials, settings, db) }
+    val syncCopy by lazy { SyncCopyRepository(credentials, settings, db, profiles, trakt, IntroStore(context)) }
     val cloudSync by lazy {
-        CloudSyncRepository(context, GoogleDrive(context, http), syncCopy) { scheduler.refreshNow(first = true) }
+        CloudSyncRepository(
+            context,
+            GoogleDrive(context, http),
+            syncCopy,
+            onSignedIn = { scheduler.refreshNow(first = true) },
+            onGuideChanged = { scheduler.refreshNow(guideOnly = true) },
+        )
     }
     val reminders by lazy { Reminders(context) }
     val events by lazy { EventsRepository(db, settings, reminders) }
@@ -110,11 +122,14 @@ class AppContainer(
             .stateIn(appScope, SharingStarted.Eagerly, false)
     }
     val account by lazy { AccountRepository(http, credentials, settings, streamBusy) }
-    val channelScan by lazy { ChannelScanner(context, db, http, credentials, settings, streamBusy) }
+    val channelScan by lazy { ChannelScanner(context, db, http, credentials, settings, streamBusy, stalker::resolve) }
     val scanControl by lazy { ScanWorker.Control(context) }
 
     /** Adding, switching, removing and signing out of playlists. */
     val session by lazy { PlaylistSession(context, credentials, settings, db, reminders, scheduler, account, scanControl) }
+
+    /** Signing out: the app back as it was installed. */
+    val reset by lazy { AppReset(context, this) }
 
     /** Signing in on a TV with a phone (docs/decisions/onboarding.md): the relay, and taking what arrives. */
     val tvRelay by lazy { TvRelay(http, tvSignInUrl) }

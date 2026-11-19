@@ -30,6 +30,20 @@ interface DownloadDao {
     )
     fun rows(): Flow<List<DownloadRow>>
 
+    /** Downloads not finished yet (queued, held or failed), whose partial files a sign-out removes. */
+    @Query("SELECT * FROM downloads WHERE state != 1")
+    suspend fun unfinished(): List<DownloadEntity>
+
+    @Query("DELETE FROM downloads WHERE state != 1")
+    suspend fun deleteUnfinished()
+
+    /** Forgets every download's stream address (which can hold the login); a finished file plays without it. */
+    @Query("UPDATE downloads SET url = ''")
+    suspend fun forgetLinks()
+
+    @Query("SELECT COUNT(*) FROM downloads")
+    suspend fun count(): Int
+
     @Query("SELECT * FROM downloads WHERE state = 0 ORDER BY addedAt LIMIT 1")
     suspend fun next(): DownloadEntity?
 

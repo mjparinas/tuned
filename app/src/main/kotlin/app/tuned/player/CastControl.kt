@@ -7,6 +7,7 @@ import android.widget.Toast
 import androidx.core.net.toUri
 import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.lifecycleScope
+import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.mediarouter.app.MediaRouteButton
 import androidx.mediarouter.media.MediaRouteSelector
@@ -15,6 +16,7 @@ import app.tuned.core.CastCodecs
 import app.tuned.core.CastHls
 import app.tuned.core.CastMedia
 import app.tuned.core.FileServer
+import app.tuned.core.Stalker
 import app.tuned.core.StreamLink
 import app.tuned.data.db.ItemEntity
 import app.tuned.diagnostics.AppLog
@@ -29,6 +31,7 @@ import com.google.android.gms.cast.MediaError
 import com.google.android.gms.cast.MediaInfo
 import com.google.android.gms.cast.MediaLoadRequestData
 import com.google.android.gms.cast.MediaMetadata
+import com.google.android.gms.cast.MediaSeekOptions
 import com.google.android.gms.cast.MediaStatus
 import com.google.android.gms.cast.framework.CastButtonFactory
 import com.google.android.gms.cast.framework.CastContext
@@ -74,6 +77,12 @@ class CastControl(
      * to SHIELD…", "Starting on SHIELD…") show a spinner beside them until the TV plays, fails or the cast ends.
      */
     private val onStatus: (text: String?, busy: Boolean) -> Unit,
+    /** The subtitle timing set in the player, for the subtitles sent to a Chromecast. */
+    private val subtitleOffsetMs: () -> Long = { 0L },
+    /** The TV started, paused, moved or changed its subtitles, or a cast began or ended: the controls look again. */
+    private val onTvChanged: () -> Unit = {},
+    /** A Stalker portal's channel turned into its stream (`data/StalkerLinks`), which the TV can open itself. */
+    private val resolve: suspend (String) -> String = { it },
 ) {
     @Suppress("DEPRECATION") // the Task-based replacement needs an executor and a callback for the same result
     private val context: CastContext? =
@@ -91,10 +100,54 @@ class CastControl(
     /** The TV being cast to, for the note over the video. */
     private var tvName: String? = null
 
+    /** A cast left with nothing playing, ended as the player opened: its end doesn't move the phone's player. */
+    private var stopped: CastSession? = null
+
+    /** A DLNA TV says nothing back, so the controls show what was last asked of it. */
+    private var dlnaPaused = false
+
+    private val subtitles =
+        CastSubtitles(
+            player = player,
+            serve = { name, made -> serve(name, made) },
+            unshare = { url -> files?.unshare(pathOf(url)) },
+            offsetMs = subtitleOffsetMs,
+        )
+
+    /** The TV, as the player's controls see it ([ViewPlayer]): its time, play and pause, seeking and subtitles. */
+    val tv: TvControls =
+        object : TvControls {
+            override val casting: Boolean get() = this@CastControl.casting
+
+            override fun state(): TvState = if (dlna.active) {
+                TvState(playWhenReady = !dlnaPaused, playbackState = Player.STATE_READY)
+            } else {
+                CastSubtitles.state(session?.remoteMediaClient, isLive(), subtitles.sent)
+            }
+
+            override fun play() = this@CastControl.play()
+
+            override fun pause() = this@CastControl.pause()
+
+            override fun seekTo(positionMs: Long) {
+                val client = session?.remoteMediaClient ?: return
+                AppLog.i(TAG) { "Seeking the TV to ${positionMs / MS_PER_S} s" }
+                client.seek(MediaSeekOptions.Builder().setPosition(positionMs).build())
+                onTvChanged()
+            }
+
+            override fun showSubtitles(on: Boolean) {
+                AppLog.i(TAG) { if (on) "Subtitles on" else "Subtitles off" }
+                subtitles.show(session?.remoteMediaClient, on)
+                onTvChanged()
+            }
+        }
+
     /** What the TV says about the media: logged, so a cast that shows "No media selected" says why. */
     private val mediaCallback =
         object : RemoteMediaClient.Callback() {
             override fun onStatusUpdated() {
+                onTvChanged()
                 val status = session?.remoteMediaClient?.mediaStatus ?: return
                 if (status.playerState == lastPlayerState) return
                 lastPlayerState = status.playerState
@@ -148,6 +201,7 @@ class CastControl(
             ) = started(s)
 
             override fun onSessionEnding(s: CastSession) {
+                if (s === stopped) return
                 lastPositionMs = s.remoteMediaClient?.approximateStreamPosition ?: 0L
             }
 
@@ -156,6 +210,10 @@ class CastControl(
                 error: Int,
             ) {
                 AppLog.i(TAG) { "Cast ended: ${code(error)}" }
+                if (s === stopped) {
+                    stopped = null
+                    return
+                }
                 ended()
             }
 
@@ -196,17 +254,31 @@ class CastControl(
 
     init {
         context?.sessionManager?.addSessionManagerListener(listener, CastSession::class.java)
-        // Opening the player while already casting carries on casting.
         context
             ?.sessionManager
             ?.currentCastSession
             ?.takeIf { it.isConnected }
-            ?.let {
-                attach(it)
-                tvName = name(it)
-                playing()
-            }
+            ?.let(::carryOnOrStop)
         dlna.resume()
+    }
+
+    /**
+     * Opening the player while the TV still plays (or is paused on) the last video carries on casting. A cast that was
+     * stopped on the TV leaves its app open with nothing playing; the next show used to go to it anyway (Melvin,
+     * 2026-11-19: "when you're casting a show and you stop it, and you start another show, don't keep trying to cast"),
+     * so the cast ends instead and the show plays on the phone.
+     */
+    private fun carryOnOrStop(s: CastSession) {
+        val state = s.remoteMediaClient?.mediaStatus?.playerState
+        if (CastResume.carriesOn(state)) {
+            attach(s)
+            tvName = name(s)
+            playing()
+            return
+        }
+        AppLog.i(TAG) { "${name(s)} is connected but ${state?.let(::playerState) ?: "has nothing"}: ending the cast, playing here" }
+        stopped = s
+        context?.sessionManager?.endCurrentSession(true)
     }
 
     /** A TV was picked: the TV's app takes a few seconds to open, so the note says it is on its way. */
@@ -233,6 +305,7 @@ class CastControl(
         AppLog.i(TAG) { "Connected to ${describe(s)}" }
         attach(s)
         handOff(name(s))
+        onTvChanged()
     }
 
     private fun attach(s: CastSession) {
@@ -249,6 +322,7 @@ class CastControl(
     private fun handOff(name: String) {
         lastPositionMs = 0L
         tvName = name
+        dlnaPaused = false
         val exo = player()
         val item = current()
         if (exo == null || item == null) {
@@ -271,7 +345,9 @@ class CastControl(
         session?.remoteMediaClient?.unregisterCallback(mediaCallback)
         session = null
         tvName = null
+        subtitles.stop()
         onStatus(null, false)
+        onTvChanged()
         val exo = player() ?: return
         if (!isLive() && lastPositionMs > 0) exo.seekTo(lastPositionMs)
         exo.prepare()
@@ -296,9 +372,20 @@ class CastControl(
         retry?.cancel()
         preparing?.cancel()
         closeStream()
+        subtitles.stop()
         val from = positionMs.coerceAtLeast(0)
         // A saved film or episode plays from the phone, never the provider ("saved before streamed").
         val saved = savedFile(item.id)
+        if (saved == null && Stalker.isLink(item.url)) {
+            // The TV opens the stream itself, so it gets the portal's real link rather than the stored one.
+            preparing =
+                activity.lifecycleScope.launchSafely(TAG) {
+                    val url = attempt(TAG, "The portal gave no stream to cast") { resolve(item.url) }.getOrNull() ?: return@launchSafely
+                    lastLoad = null
+                    load(item.copy(url = url), live, positionMs)
+                }
+            return
+        }
         if (saved == null) {
             if (dlna.active) {
                 dlna.load(item, live, from)
@@ -339,7 +426,7 @@ class CastControl(
                 val media =
                     if (made != null) {
                         val folder = serve(saved.nameWithoutExtension, made) ?: return@launchSafely noWifi(saved)
-                        streamFolder = folder.substringAfter("://").substringAfter('/').let { "/$it" }
+                        streamFolder = pathOf(folder)
                         CastMedia.phoneStream(folder + CastHls.PLAYLIST)
                     } else {
                         CastMedia.Media(serve(saved) ?: return@launchSafely noWifi(saved), CastMedia.mimeFor(saved.name))
@@ -398,12 +485,14 @@ class CastControl(
                 putString(MediaMetadata.KEY_SUBTITLE, r.item.groupName)
                 r.item.logo?.let { addImage(WebImage(it.toUri())) }
             }
+        val text = subtitles.trackFor(r.item)
         val info =
             MediaInfo
                 .Builder(r.media.url)
                 .setStreamType(if (r.live) MediaInfo.STREAM_TYPE_LIVE else MediaInfo.STREAM_TYPE_BUFFERED)
                 .setContentType(r.media.mimeType)
                 .setMetadata(metadata)
+                .setMediaTracks(listOfNotNull(text))
                 .apply {
                     // The receiver reads HLS pieces as MPEG-TS unless told they are fragmented MP4.
                     if (r.media.fmp4) {
@@ -418,6 +507,7 @@ class CastControl(
                     .setMediaInfo(info)
                     .setAutoplay(true)
                     .setCurrentTime(if (r.live) 0 else r.positionMs.coerceAtLeast(0))
+                    .setActiveTrackIds(subtitles.activeIds())
                     .build(),
             ).setResultCallback { result -> loaded(result.status.isSuccess, result.status.statusCode, s, r) }
     }
@@ -485,12 +575,43 @@ class CastControl(
         files = null
     }
 
+    /** Play on the TV; a video that failed or was stopped there is sent again from where it was. */
     fun play() {
-        if (dlna.active) dlna.play() else session?.remoteMediaClient?.play()
+        if (dlna.active) {
+            dlnaPaused = false
+            dlna.play()
+            onTvChanged()
+            return
+        }
+        val client = session?.remoteMediaClient ?: return
+        val status = client.mediaStatus
+        if (status == null || status.playerState == MediaStatus.PLAYER_STATE_IDLE) {
+            val item = current() ?: return
+            val at = if (status?.idleReason == MediaStatus.IDLE_REASON_FINISHED) 0L else client.approximateStreamPosition
+            lastLoad = null
+            load(item, isLive(), at)
+        } else {
+            client.play()
+        }
     }
 
     fun pause() {
-        if (dlna.active) dlna.pause() else session?.remoteMediaClient?.pause()
+        if (dlna.active) {
+            dlnaPaused = true
+            dlna.pause()
+            onTvChanged()
+        } else {
+            session?.remoteMediaClient?.pause()
+        }
+    }
+
+    /**
+     * Where the TV is in [item], for sending it again with its subtitles (picked with subtitle search while casting);
+     * 0 when the TV is on something else.
+     */
+    fun positionOnTv(item: ItemEntity): Long {
+        if (dlna.active || lastLoad?.first != item.id) return 0
+        return session?.remoteMediaClient?.approximateStreamPosition ?: 0
     }
 
     fun release() {
@@ -507,6 +628,9 @@ class CastControl(
         const val SAME_LOAD_MS = 2_000L
         const val MS_PER_S = 1_000
 
+        /** The path of an address on the phone's server ("http://host:port/key/x/" is "/key/x/"), which it unshares. */
+        fun pathOf(url: String): String = "/" + url.substringAfter("://").substringAfter('/')
+
         fun name(s: CastSession): String = s.castDevice?.friendlyName ?: "the TV"
 
         fun describe(s: CastSession): String = "${name(s)} (${s.castDevice?.modelName ?: "unknown model"})"
@@ -522,6 +646,14 @@ class CastControl(
             else -> "in an unknown state"
         }
     }
+}
+
+/** Whether a cast found on opening the player carries on. */
+internal object CastResume {
+    /** The TV is playing, paused, loading or buffering a video; idle or no media at all means it was stopped. */
+    fun carriesOn(playerState: Int?): Boolean = playerState != null &&
+        playerState != MediaStatus.PLAYER_STATE_IDLE &&
+        playerState != MediaStatus.PLAYER_STATE_UNKNOWN
 }
 
 /**

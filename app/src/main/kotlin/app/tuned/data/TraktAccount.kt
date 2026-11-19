@@ -81,6 +81,16 @@ class TraktAccount(
     /** Settings › Trakt › Scrobble what you watch: on by default once signed in. */
     val scrobbleOn: StateFlow<Boolean> = scrobbleFlow.asStateFlow()
 
+    /**
+     * Takes the session another device synced ([SyncCopyRepository]) when it is newer than this one's, so signing in
+     * to Trakt once covers every device. A device whose session is missing from the copy keeps its own: signing out on
+     * one device, or one device's refresh failing, never signs the others out.
+     */
+    fun adopt(synced: Session) {
+        val mine = sessionFlow.value
+        if (mine == null || synced.expiresAt > mine.expiresAt) store(synced)
+    }
+
     fun setScrobble(on: Boolean) {
         prefs.edit { putBoolean(KEY_SCROBBLE, on) }
         scrobbleFlow.value = on
@@ -115,6 +125,16 @@ class TraktAccount(
             }
         }
         return Trakt.Poll.EXPIRED
+    }
+
+    /**
+     * Signing out of Tuned: forgets the account and its settings on this device. Trakt isn't asked to drop the token,
+     * since sync shares the same sign-in with the person's other devices, and revoking it would sign them out too.
+     */
+    fun disconnect() {
+        prefs.edit(commit = true) { clear() }
+        sessionFlow.value = null
+        scrobbleFlow.value = true
     }
 
     /** Forgets the account here and tells Trakt to drop the token. */

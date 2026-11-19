@@ -46,6 +46,9 @@ fun NavGraphBuilder.playlistScreens(app: AppNav) {
             onPick = { kind -> app.nav.navigate(AddPlaylistRoute(kind.name)) },
             onBack = {},
             onPhone = phoneSignIn(app),
+            onRestored = { askProfile ->
+                if (askProfile) app.nav.navigate(ProfilesRoute(atStart = true)) { popUpTo(0) { inclusive = true } } else app.openHome()
+            },
         )
     }
     composable<ChoosePlaylistRoute> {

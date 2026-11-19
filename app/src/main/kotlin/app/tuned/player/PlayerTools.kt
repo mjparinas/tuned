@@ -34,6 +34,7 @@ import app.tuned.R
 import app.tuned.core.RemoteKeys
 import app.tuned.data.VideoFit
 import app.tuned.data.db.ItemEntity
+import app.tuned.diagnostics.attempt
 import app.tuned.diagnostics.launchSafely
 import app.tuned.diagnostics.startActivitySafely
 import kotlinx.coroutines.Job
@@ -66,6 +67,8 @@ class PlayerTools(
         val casting: () -> Boolean,
         /** Typing a channel number and flipping back, on live TV. */
         val dial: ChannelDial,
+        /** A Stalker portal's channel turned into its stream (`data/StalkerLinks`), for another player to open. */
+        val resolve: suspend (String) -> String = { it },
     )
 
     private val density = activity.resources.displayMetrics.density
@@ -132,8 +135,12 @@ class PlayerTools(
                 R.string.player_open_with to ::openElsewhere,
                 R.string.player_lock to ::lock,
             )
+        // While casting the TV draws the picture and the phone has no stream: only the lock still applies.
+        val casting = hooks.casting()
         PopupMenu(activity, anchor).apply {
-            items.forEachIndexed { index, (label, _) -> menu.add(Menu.NONE, index, index, label) }
+            items.forEachIndexed { index, (label, _) ->
+                menu.add(Menu.NONE, index, index, label).isEnabled = !casting || label == R.string.player_lock
+            }
             setOnMenuItemClickListener { item ->
                 items.getOrNull(item.itemId)?.second?.invoke()
                 true
@@ -182,6 +189,8 @@ class PlayerTools(
             refreshQuality()
             guideButton.visibility = if (hooks.isLive() && hooks.queue().size > 1) View.VISIBLE else View.GONE
             flipButton.visibility = if (hooks.isLive() && hooks.dial.canFlipBack) View.VISIBLE else View.GONE
+            // The TV draws the captions, so their timing can't be moved there.
+            subtitleTimingButton.usable(!hooks.casting())
         }
     }
 
@@ -199,7 +208,8 @@ class PlayerTools(
 
     /** The copies or the stream changed, or the controls showed. */
     fun refreshQuality() {
-        qualityButton.isVisible = renditionChoice(tracks) || copies.available
+        qualityButton.isVisible = renditionChoice(tracks) || copies.exist
+        qualityButton.usable(!hooks.casting())
     }
 
     private fun renditionChoice(tracks: Tracks): Boolean =
@@ -313,11 +323,23 @@ class PlayerTools(
     private fun openElsewhere() {
         val player = hooks.player() ?: return
         val item = hooks.queue().getOrNull(player.currentMediaItemIndex) ?: return
+        activity.lifecycleScope.launchSafely("PlayerTools") {
+            // Another player can't ask a portal for the stream, so it gets the real link.
+            val url = attempt("PlayerTools", "The portal gave no stream") { hooks.resolve(item.url) }.getOrNull() ?: return@launchSafely
+            openWith(player, item.name, url)
+        }
+    }
+
+    private fun openWith(
+        player: ExoPlayer,
+        name: String,
+        url: String,
+    ) {
         val view =
             Intent(Intent.ACTION_VIEW)
-                .setDataAndType(item.url.toUri(), "video/*")
-                .putExtra(Intent.EXTRA_TITLE, item.name)
-                .putExtra("title", item.name) // what VLC and MX Player read
+                .setDataAndType(url.toUri(), "video/*")
+                .putExtra(Intent.EXTRA_TITLE, name)
+                .putExtra("title", name) // what VLC and MX Player read
         player.stop()
         val chooser = Intent.createChooser(view, activity.getString(R.string.player_open_with))
         if (activity.startActivitySafely(chooser, "PlayerTools")) {

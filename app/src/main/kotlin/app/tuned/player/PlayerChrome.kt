@@ -7,6 +7,7 @@ import android.graphics.Typeface
 import android.util.TypedValue
 import android.view.Gravity
 import android.view.View
+import android.view.ViewGroup
 import android.view.Window
 import android.widget.ImageButton
 import android.widget.LinearLayout
@@ -25,6 +26,33 @@ internal fun titleText(context: Context) = TextView(context).apply {
     setTextColor(Color.WHITE)
     textSize = 18f
     setTypeface(typeface, Typeface.BOLD)
+}
+
+/** The title above the line under it. */
+internal fun titleColumn(
+    context: Context,
+    title: View,
+    subtitle: View,
+) = LinearLayout(context).apply {
+    orientation = LinearLayout.VERTICAL
+    addView(title)
+    addView(subtitle)
+}
+
+/** The bar across the top on its scrim: back, then [titles] taking the room left; the tools and the clock join at the end. */
+internal fun topBar(
+    context: Context,
+    back: View,
+    titles: View,
+) = LinearLayout(context).apply {
+    val density = resources.displayMetrics.density
+    orientation = LinearLayout.HORIZONTAL
+    setBackgroundResource(R.drawable.player_top_scrim)
+    val pad = (24 * density).toInt()
+    setPadding(pad / 2, pad / 2, pad, pad * 2)
+    addView(back, LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT))
+    addView(titles, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f).apply { marginStart = (4 * density).toInt() })
+    gravity = Gravity.CENTER_VERTICAL
 }
 
 /** The line under the title (what's on, or the show and episode), gone while there is nothing to say. */
@@ -85,6 +113,19 @@ internal class StatusNote(
         visibility = View.VISIBLE
     }
 }
+
+/**
+ * A control that can't work right now (most while casting, where the TV plays the video) stays in its place, greyed
+ * out and disabled, rather than doing nothing or saying so in a message (Melvin, 2026-11-19: "Any functionality that
+ * you cant use on the UI just disable them, and make them greyed out"). TalkBack reads it as disabled.
+ */
+internal fun View.usable(on: Boolean) {
+    isEnabled = on
+    alpha = if (on) 1f else DISABLED_ALPHA
+}
+
+/** Material's opacity for disabled content. */
+private const val DISABLED_ALPHA = 0.38f
 
 internal fun backButton(
     context: Context,

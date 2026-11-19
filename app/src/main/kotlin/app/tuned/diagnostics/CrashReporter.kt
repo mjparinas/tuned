@@ -41,6 +41,16 @@ object CrashReporter {
         attempt(TAG, "Couldn't read a crash report") { CrashReport(file.lastModified(), file.readText()) }.getOrNull()
     }
 
+    /** When each saved freeze happened, from the file names, without reading them. Lists a folder: off the main thread. */
+    fun freezeTimes(context: Context): List<Long> = files(File(context.filesDir, DIR))
+        .filter { it.name.startsWith("freeze-") }
+        .mapNotNull {
+            it.name
+                .removePrefix("freeze-")
+                .removeSuffix(".txt")
+                .toLongOrNull()
+        }
+
     fun clear(context: Context) {
         files(File(context.filesDir, DIR)).forEach { it.delete() }
     }
