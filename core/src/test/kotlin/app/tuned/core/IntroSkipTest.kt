@@ -60,7 +60,7 @@ class IntroSkipTest {
         assertNull(IntroSkip.learn(10_000, 150_000)) // 2:20 of "intro"
         assertEquals(Intro(10_000, 130_000), IntroSkip.learn(10_000, 130_000))
         // One saved before the limit existed is ignored, and the Settings length is offered instead.
-        assertEquals(Intro(0, 30_000), IntroSkip.intro(Intro(31_000, 151_000), 30_000))
+        assertEquals(Intro(0, 30_000), IntroSkip.intro(Intro(31_000, 161_000), 30_000))
     }
 
     @Test
