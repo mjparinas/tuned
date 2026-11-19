@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -41,7 +42,12 @@ fun UpdateBanner(modifier: Modifier = Modifier.fillMaxWidth().padding(horizontal
                 style = MaterialTheme.typography.bodyMedium,
                 modifier = Modifier.weight(1f),
             )
-            TextButton(onClick = { updates.install(context) }) { Text(stringResource(R.string.update_install)) }
+            // The outline shows where a TV remote is; the arrows reach Install like any other button (up from the first card
+            // on the welcome screen, up from the categories on Home).
+            TextButton(
+                onClick = { updates.install(context) },
+                modifier = Modifier.focusRing(ButtonDefaults.textShape, MaterialTheme.colorScheme.primary),
+            ) { Text(stringResource(R.string.update_install)) }
         }
     }
 }
