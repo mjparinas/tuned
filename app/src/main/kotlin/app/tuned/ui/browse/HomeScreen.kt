@@ -615,7 +615,10 @@ private fun RefreshBar(progress: SyncProgress) {
     }
 }
 
-/** Downloads, beside the three sections: opens in their place, with the bar still below, with a badge while anything is still to download. */
+/**
+ * Downloads, beside the three sections: opens in their place with the bar still below, and has a badge while anything
+ * is still to download.
+ */
 @Composable
 private fun RowScope.DownloadsNavItem(
     selected: Boolean,
