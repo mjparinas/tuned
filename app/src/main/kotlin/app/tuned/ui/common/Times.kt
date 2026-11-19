@@ -34,10 +34,9 @@ class TimeLabels(
 
     // ICU's formatter, the one getBestDateTimePattern writes for: its patterns can use ICU-only letters ("ccc" for a
     // stand-alone weekday), which java.text.SimpleDateFormat off a device (the screenshots) rejects.
-    private fun pattern(skeleton: String) =
-        IcuDateFormat(AndroidDateFormat.getBestDateTimePattern(locale, skeleton), locale).apply {
-            timeZone = IcuTimeZone.getTimeZone(zone.id)
-        }
+    private fun pattern(skeleton: String) = IcuDateFormat(AndroidDateFormat.getBestDateTimePattern(locale, skeleton), locale).apply {
+        timeZone = IcuTimeZone.getTimeZone(zone.id)
+    }
 
     fun time(at: Long): String = timeFormat.format(Date(at))
 
