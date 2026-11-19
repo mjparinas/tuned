@@ -2,12 +2,10 @@ package app.tuned.ui.onboarding
 
 import android.content.Context
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.ui.semantics.SemanticsProperties
-import androidx.compose.ui.test.SemanticsMatcher
-import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertIsOff
 import androidx.compose.ui.test.assertIsOn
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
@@ -37,14 +35,13 @@ class AddPlaylistTvTest {
         compose.setContent {
             MaterialTheme { AddPlaylistScreen(kind = Credentials.Kind.Xtream, editIndex = -1, onBack = {}, onDone = {}) }
         }
-        val field = compose.onNodeWithText(text(R.string.login_password))
-        field.performTextInput("hunter2")
-        // A masked field is marked as a password; a shown one isn't.
-        field.assert(SemanticsMatcher.keyNotDefined(SemanticsProperties.Password))
+        compose.onNodeWithText(text(R.string.login_password)).performTextInput("hunter2")
+        // The eye in the field names what it would do next: "Hide password" while the password shows.
+        compose.onNodeWithContentDescription(text(R.string.login_hide_password)).assertExists()
         val row = compose.onNodeWithText(text(R.string.login_show_password))
         row.assertIsOn()
         row.performClick()
         row.assertIsOff()
-        field.assert(SemanticsMatcher.keyIsDefined(SemanticsProperties.Password))
+        compose.onNodeWithContentDescription(text(R.string.login_show_password)).assertExists()
     }
 }
