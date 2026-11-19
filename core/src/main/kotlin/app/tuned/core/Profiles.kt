@@ -50,6 +50,14 @@ enum class ProfileLock { NONE, PROFILE, PARENTAL }
 
 object ProfileRules {
     /**
+     * At most five profiles (Melvin, 2026-11-18: "there should be [a limit] otherwise the ui will be cluttered"), as
+     * Netflix does: five fit "Who's watching?" on a phone and in one row on a TV. A device that already has more keeps them.
+     */
+    const val MAX_PROFILES = 5
+
+    fun canAdd(count: Int): Boolean = count < MAX_PROFILES
+
+    /**
      * A profile with its own PIN always asks for it. Leaving a kids profile for a grown-up one without a PIN asks for
      * the parental PIN, so a child can't walk out of their profile; moving into a kids profile never asks.
      */

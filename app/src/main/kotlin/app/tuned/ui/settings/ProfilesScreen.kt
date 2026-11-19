@@ -82,6 +82,7 @@ import app.tuned.R
 import app.tuned.container
 import app.tuned.core.Avatars
 import app.tuned.core.ProfileLock
+import app.tuned.core.ProfileRules
 import app.tuned.data.Accent
 import app.tuned.data.db.ProfileEntity
 import app.tuned.diagnostics.launchSafely
@@ -260,7 +261,8 @@ fun ProfilesScreen(
                     list.forEach { p ->
                         key(p.id) { ProfileTile(p, selected = p.id == current?.id, managing = managing, onClick = { pick(p) }) }
                     }
-                    if (!kidsNow && managing) {
+                    // Hidden at the cap, so the picker never crowds (docs/decisions/profiles.md).
+                    if (!kidsNow && managing && ProfileRules.canAdd(list.size)) {
                         AddTile(onClick = {
                             // A second profile is Premium (docs/decisions/premium.md).
                             if (list.isEmpty() || context.container.premium.allow(context)) editing = newProfile(list.size)
