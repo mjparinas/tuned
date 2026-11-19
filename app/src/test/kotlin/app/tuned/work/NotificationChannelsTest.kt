@@ -8,7 +8,11 @@ import kotlin.test.assertTrue
 class NotificationChannelsTest {
     @Test
     fun `only reminders and new versions badge the app icon`() {
-        val badged = NotificationChannels.ALL.filter { it.badge }.map { it.id }.toSet()
+        val badged =
+            NotificationChannels.ALL
+                .filter { it.badge }
+                .map { it.id }
+                .toSet()
         assertEquals(setOf(NotificationChannels.REMINDERS, NotificationChannels.UPDATES), badged)
     }
 

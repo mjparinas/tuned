@@ -2,7 +2,6 @@ package app.tuned.ui.settings
 
 import android.content.Intent
 import android.net.Uri
-import android.provider.Settings as AndroidSettings
 import android.text.format.DateUtils
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalConfiguration
@@ -16,6 +15,7 @@ import app.tuned.diagnostics.DeviceClock
 import app.tuned.diagnostics.startActivitySafely
 import app.tuned.ui.common.isTelevision
 import java.time.ZoneId
+import android.provider.Settings as AndroidSettings
 
 @Composable
 internal fun GuidePage(
