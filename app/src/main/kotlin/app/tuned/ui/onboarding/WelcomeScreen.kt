@@ -19,6 +19,7 @@ import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Dns
 import androidx.compose.material.icons.filled.FolderOpen
 import androidx.compose.material.icons.filled.Link
+import androidx.compose.material.icons.filled.Router
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedCard
@@ -39,8 +40,8 @@ import app.tuned.ui.common.focusRing
 
 /**
  * The first thing a new install shows, and Settings › Playlists › Add: one question, "what kind of playlist?", with
- * the three kinds providers hand out. The form for the chosen kind comes next ([AddPlaylistScreen]), so nobody faces
- * a server, username, password and two links at once.
+ * the kinds providers hand out (an Xtream login, a link, a file or a MAC portal). The form for the chosen kind comes
+ * next ([AddPlaylistScreen]), so nobody faces a server, username, password and two links at once.
  */
 @Composable
 fun WelcomeScreen(
@@ -82,6 +83,7 @@ fun WelcomeScreen(
             KindCard(Icons.Filled.Dns, R.string.kind_xtream, R.string.kind_xtream_summary) { onPick(Credentials.Kind.Xtream) }
             KindCard(Icons.Filled.Link, R.string.kind_link, R.string.kind_link_summary) { onPick(Credentials.Kind.Link) }
             KindCard(Icons.Filled.FolderOpen, R.string.kind_file, R.string.kind_file_summary) { onPick(Credentials.Kind.File) }
+            KindCard(Icons.Filled.Router, R.string.kind_stalker, R.string.kind_stalker_summary) { onPick(Credentials.Kind.Stalker) }
             if (firstRun) RestoreFromDrive(onRestored)
             if (firstRun) {
                 Spacer(Modifier.height(4.dp))

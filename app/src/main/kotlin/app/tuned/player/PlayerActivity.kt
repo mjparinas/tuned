@@ -30,7 +30,6 @@ import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import androidx.media3.ui.PlayerView
-import app.tuned.BuildConfig
 import app.tuned.R
 import app.tuned.container
 import app.tuned.core.ContentKind
@@ -207,16 +206,7 @@ class PlayerActivity : FragmentActivity() {
     private val audioCheck by lazy {
         AudioCheck { codec -> Toast.makeText(this, getString(R.string.player_no_sound, codec), Toast.LENGTH_LONG).show() }
     }
-    private val timeshift by lazy {
-        LiveTimeshift(
-            context = this,
-            scope = lifecycleScope,
-            http = container.http,
-            userAgent = { settings.userAgent.ifBlank { "Tuned/${BuildConfig.VERSION_NAME}" } },
-            // Pause and rewind live TV is Premium (docs/decisions/premium.md).
-            keepMinutes = { if (container.premium.unlocked.value) settings.liveRewindMinutes else 0 },
-        )
-    }
+    private val timeshift by lazy { playerTimeshift { settings } }
 
     private val jumpToLive by lazy {
         JumpToLive(
@@ -410,6 +400,7 @@ class PlayerActivity : FragmentActivity() {
                         subtitles = subtitleTiming,
                         casting = { cast?.casting == true },
                         dial = dial,
+                        resolve = container.stalker::resolve,
                     ),
                 copies = qualityCopies,
             )
@@ -426,6 +417,7 @@ class PlayerActivity : FragmentActivity() {
                 onStatus = { text, busy -> if (text == null) statusView.visibility = View.GONE else statusView.show(text, busy) },
                 subtitleOffsetMs = { subtitleTiming.offsetMs },
                 onTvChanged = ::castChanged,
+                resolve = container.stalker::resolve,
             ).also { c -> tools.addButton(c.button) }
         tools.addButton(recorder.button)
     }
@@ -585,7 +577,7 @@ class PlayerActivity : FragmentActivity() {
     private fun buildPlayer(live: Boolean): ExoPlayer {
         // Streams over OkHttp (through the live rewind copy on live TV), with the headers the playlist asks for;
         // saved downloads from the device.
-        val agent = settings.userAgent.ifBlank { "Tuned/${BuildConfig.VERSION_NAME}" }
+        val agent = settings.playerAgent()
         val http =
             PlayerSources.factory(
                 this,
@@ -593,6 +585,7 @@ class PlayerActivity : FragmentActivity() {
                 agent,
                 headers = { uri -> uri.host?.let(streamHeaders::get).orEmpty() },
                 network = { network -> if (live) timeshift.factory(network) else network },
+                portal = container.stalker::resolveNow,
             )
         // Decoder fallback, and the sound delay from Settings › Player (lip sync); see [TunedRenderersFactory].
         val renderers = TunedRenderersFactory(this) { settings.audioDelayMs }

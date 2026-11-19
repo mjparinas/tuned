@@ -16,6 +16,7 @@ import app.tuned.core.CastCodecs
 import app.tuned.core.CastHls
 import app.tuned.core.CastMedia
 import app.tuned.core.FileServer
+import app.tuned.core.Stalker
 import app.tuned.core.StreamLink
 import app.tuned.data.db.ItemEntity
 import app.tuned.diagnostics.AppLog
@@ -80,6 +81,8 @@ class CastControl(
     private val subtitleOffsetMs: () -> Long = { 0L },
     /** The TV started, paused, moved or changed its subtitles, or a cast began or ended: the controls look again. */
     private val onTvChanged: () -> Unit = {},
+    /** A Stalker portal's channel turned into its stream (`data/StalkerLinks`), which the TV can open itself. */
+    private val resolve: suspend (String) -> String = { it },
 ) {
     @Suppress("DEPRECATION") // the Task-based replacement needs an executor and a callback for the same result
     private val context: CastContext? =
@@ -351,6 +354,16 @@ class CastControl(
         val from = positionMs.coerceAtLeast(0)
         // A saved film or episode plays from the phone, never the provider ("saved before streamed").
         val saved = savedFile(item.id)
+        if (saved == null && Stalker.isLink(item.url)) {
+            // The TV opens the stream itself, so it gets the portal's real link rather than the stored one.
+            preparing =
+                activity.lifecycleScope.launchSafely(TAG) {
+                    val url = attempt(TAG, "The portal gave no stream to cast") { resolve(item.url) }.getOrNull() ?: return@launchSafely
+                    lastLoad = null
+                    load(item.copy(url = url), live, positionMs)
+                }
+            return
+        }
         if (saved == null) {
             if (dlna.active) {
                 dlna.load(item, live, from)

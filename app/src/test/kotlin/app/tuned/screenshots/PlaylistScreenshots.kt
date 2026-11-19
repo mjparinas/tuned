@@ -17,4 +17,7 @@ class PlaylistScreenshots : Screenshots() {
     // screenshots never show (docs/decisions/premium.md).
     @Test
     fun addLink() = shot("playlist-add-link", AddPlaylistRoute(Credentials.Kind.Link.name), wait = text(R.string.login_playlist_url))
+
+    @Test
+    fun addPortal() = shot("playlist-add-portal", AddPlaylistRoute(Credentials.Kind.Stalker.name), wait = text(R.string.login_mac))
 }

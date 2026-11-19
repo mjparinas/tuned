@@ -10,6 +10,7 @@ import app.tuned.data.db.GuideChannelEntity
 import app.tuned.data.db.GuideWriter
 import app.tuned.data.db.ProgrammeEntity
 import app.tuned.data.db.TunedDatabase
+import kotlinx.coroutines.flow.Flow
 import java.io.InputStream
 
 /**
@@ -82,22 +83,47 @@ class GuideImport(
         val programmes =
             XmltvParser.programmes(
                 parser,
-                keep = { id, start, stop ->
-                    id !in before && targets[id]?.any { (to, by) -> inWindow(to, start + shift + by, stop + shift + by) } == true
-                },
+                keep = { id, start, stop -> wanted(id, start, stop, before) },
                 onChannel = { id, name -> channels.putIfAbsent(id, name) },
             )
-        for (p in programmes) {
-            filled += p.channelId
-            for ((to, by) in targets[p.channelId].orEmpty()) {
-                if (inWindow(to, p.start + shift + by, p.stop + shift + by)) add(to, p, shift + by)
-            }
-            if (batch.size >= BATCH) {
-                writer.add(batch.toList())
-                batch.clear()
-                saved(count)
-            }
+        for (p in programmes) take(p, saved)
+        flush()
+    }
+
+    /** Reads programmes from another source than XMLTV (a Stalker portal's own guide), the same way as [read]. */
+    suspend fun read(
+        programmes: Flow<Programme>,
+        saved: (Int) -> Unit,
+    ) {
+        val before = HashSet(filled)
+        programmes.collect { p -> if (wanted(p.channelId, p.start, p.stop, before)) take(p, saved) }
+        flush()
+    }
+
+    /** A channel no earlier guide filled, and a programme inside the window for one of its copies. */
+    private fun wanted(
+        id: String,
+        start: Long,
+        stop: Long,
+        before: Set<String>,
+    ): Boolean = id !in before && targets[id]?.any { (to, by) -> inWindow(to, start + shift + by, stop + shift + by) } == true
+
+    private suspend fun take(
+        p: Programme,
+        saved: (Int) -> Unit,
+    ) {
+        filled += p.channelId
+        for ((to, by) in targets[p.channelId].orEmpty()) {
+            if (inWindow(to, p.start + shift + by, p.stop + shift + by)) add(to, p, shift + by)
         }
+        if (batch.size >= BATCH) {
+            writer.add(batch.toList())
+            batch.clear()
+            saved(count)
+        }
+    }
+
+    private suspend fun flush() {
         writer.add(batch.toList())
         batch.clear()
     }
