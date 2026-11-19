@@ -113,6 +113,8 @@ data class AppSettings(
     val backupCopies: Boolean = true,
     /** Switch the display to the video's frame rate where the screen offers it (Settings › Player). */
     val matchFrameRate: Boolean = true,
+    /** Plays the sound this many milliseconds later (or earlier when negative) than the picture, for lip sync (Settings › Player). */
+    val audioDelayMs: Int = 0,
     /** Minutes of a live channel kept on the device to pause and rewind; 0 turns it off (Settings › Player). */
     val liveRewindMinutes: Int = 30,
     /** Leave out empty event slots ("NO EVENT STREAMING"); see [Placeholders]. Melvin, 2026-11-17: hide them. */

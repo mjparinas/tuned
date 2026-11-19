@@ -86,6 +86,12 @@ internal fun PlaybackPage(
         settings.matchFrameRate,
         stringResource(R.string.settings_match_frame_rate_summary),
     ) { on -> vm.update { it.copy(matchFrameRate = on) } }
+    ChoiceRow(
+        stringResource(R.string.settings_audio_delay),
+        AUDIO_DELAYS_MS,
+        settings.audioDelayMs,
+        label = { ms -> audioDelayLabel(ms) },
+    ) { ms -> vm.update { it.copy(audioDelayMs = ms) } }
     SwitchRow(
         stringResource(R.string.settings_gestures),
         settings.playerGestures,
@@ -111,6 +117,16 @@ internal fun PlaybackPage(
     ) { ms -> vm.update { it.copy(seekForwardMs = ms) } }
     SettingRow(stringResource(R.string.settings_clear_history), onClick = vm::clearHistory)
     SubtitleSettings(settings, vm::update)
+}
+
+/** Sound earlier (negative) or later than the picture, in milliseconds. */
+private val AUDIO_DELAYS_MS = listOf(-500, -400, -300, -250, -200, -150, -100, -50, 0, 50, 100, 150, 200, 250, 300, 400, 500)
+
+@Composable
+private fun audioDelayLabel(ms: Int): String = when {
+    ms < 0 -> stringResource(R.string.settings_audio_delay_earlier, -ms)
+    ms > 0 -> stringResource(R.string.settings_audio_delay_later, ms)
+    else -> stringResource(R.string.settings_audio_delay_off)
 }
 
 private fun bufferLabel(mode: BufferMode): Int = when (mode) {
