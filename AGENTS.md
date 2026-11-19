@@ -12,6 +12,7 @@ Tuned is a native Android IPTV player. It signs in to an Xtream Codes-style serv
 ./gradlew detekt :app:lintGithubDebug # static analysis and Android Lint; any finding fails
 ./gradlew :app:generateGithubReleaseBaselineProfile  # baseline profile on an emulator (Baseline profile workflow does it in CI)
 ./gradlew :smoketest:pixel6Api34GithubDebugAndroidTest  # device smoke test on an emulator (CI runs it on every pull request)
+./gradlew :app:testGithubDebugUnitTest -Pscreenshots  # every screen drawn on the JVM with sample data, PNGs in app/build/outputs/roborazzi
 npm ci && npm run format              # Prettier for YAML, JSON and Markdown; CI runs format:check
 ```
 
@@ -52,6 +53,7 @@ Kotlin, Jetpack Compose with Material 3, Navigation Compose (type-safe routes), 
 - **Big files are split by area so features land side by side.** Each DAO has its own file in `data/db/` (shared SQL filters in `DaoQueries.kt`), entities are grouped by table (`ItemEntities.kt`, `LibraryEntities.kt` and so on), the Home screen's tabs have their own files (`LiveList.kt`, `Grids.kt`, `Posters.kt`), and `AppContainer.kt` only builds the app's shared objects; switching, removing and signing out of playlists is `PlaylistSession`. Put new code in the file for its area rather than growing a shared one. Two pull requests that both bump the database version: the one that merges second renumbers its migration and schema file when it merges `staging` in.
 - **A new screen** is a route and a `composable<…>` in its feature's navigation file (`ui/PlaylistNav.kt`, `ui/BrowseNav.kt`, `ui/SettingsNav.kt`), not in `MainActivity`. Moves several screens share (play, tune, open a person, go home) are on `AppNav`.
 - **A player feature** lives in its own file in `player/` (as `SkipIntro`, `Backups`, `SubtitleSearch`, `PlaybackProgress` and `PlayerMedia` do), and `PlayerActivity` only creates it and calls its hooks, so the activity grows by a few lines per feature rather than by the feature.
+- **Screenshots for every new feature** (Melvin, 2026-11-18: "i would like to see screenshots for all new features posted in these chats"; [screenshots](docs/decisions/screenshots.md)). A pull request that changes what a person sees adds or updates its picture in `app/src/test/kotlin/app/tuned/screenshots/` (a route and the text to wait for), adds the `screenshots` label, and posts the pictures from the `screenshots/<branch>` branch in its thread. They are drawn on the JVM in minutes; no build or emulator.
 - A bug fix comes with a test that fails without it. Flaky tests are fixed at the cause, never retried.
 
 ## CI/CD (like Liftsmith)
@@ -59,6 +61,7 @@ Kotlin, Jetpack Compose with Material 3, Navigation Compose (type-safe routes), 
 - `ci.yml` on every pull request and push to `main` and `staging`: formatting (Prettier, ktlint), lint and static analysis (detekt, Android Lint), unit tests, the device smoke test on an emulator, and the Android build (an unsigned release build so R8 problems show up here; no debug APK, because Melvin installs only production releases, 2026-11-18). **"CI passed"** is the one required check. A tree that already passed, or a Markdown-only change after a passing commit, skips the work.
 - `promote-staging.yml`: `main` is production and every pull request targets `staging`. Run by hand, it promotes staging to main when "CI passed" is green (a direct merge, so it needs no repository setting), then merges main back into staging. **Every production release needs Melvin's go-ahead, each time** (2026-11-17; he holds releases until a batch of features is in), so the nightly schedule Liftsmith uses is off.
 - `release.yml`: on every promotion and on demand, a signed APK published as a **GitHub release** (`v<version>`, no build number), which installed copies offer to update to; plus a signed App Bundle for the Play **internal** track once its secret exists ([updates](docs/decisions/updates.md)). The version is semver, bumped automatically from the commits since the last release (`scripts/next-version.mjs`; `package.json` is a floor), and the version code comes from it (1.2.3 is 1002003). Skips with a notice until its secrets exist.
+- `screenshots.yml`: not part of CI and not required. On a pull request labelled `screenshots` (or run by hand), it draws every screen and pushes the PNGs to `screenshots/<branch>` ([screenshots](docs/decisions/screenshots.md)).
 - Secrets: `ANDROID_KEYSTORE_B64` (base64 upload keystore, alias `upload`), `ANDROID_KEYSTORE_PASSWORD`, `PLAY_SERVICE_ACCOUNT_JSON`, optional `PROMOTE_TOKEN`. The app's own service keys (`TMDB_API_KEY` for ratings and details, `OPENSUBTITLES_API_KEY` for subtitle search, and the others each feature adds) are release secrets built into `BuildConfig`, never committed and never typed into Settings; a build without one hides that feature. The first upload must be done by hand in Play Console before the API can upload.
 - **Pull request titles follow Conventional Commits**, because the squashed title decides the next version (Melvin, 2026-11-17: "Auto bump semver versions with each update"): `feat: …` bumps the minor, `fix: …` and anything else the patch, `feat!: …` or a `BREAKING CHANGE:` line the major.
 - Dependabot targets `staging` weekly: Gradle (minor and patch grouped), npm, GitHub Actions.
@@ -96,6 +99,7 @@ One file per topic in `docs/decisions/`, A to Z. Add a line when you add a topic
 - [Premium](docs/decisions/premium.md): the free app, the Premium unlock, prices, the GitHub and store builds, store policy.
 - [Profiles](docs/decisions/profiles.md): who's watching, kids profiles, profile PINs.
 - [Scope](docs/decisions/scope.md): what Tuned will never do, and what's decided but not built yet.
+- [Screenshots](docs/decisions/screenshots.md): every screen drawn on the JVM with sample data, the on-demand Screenshots workflow, posting them for each feature.
 - [Security](docs/decisions/security.md): login storage, cleartext HTTP, Android backup off (backup files removed 2026-11-18).
 - [Settings](docs/decisions/settings.md): the pages of Settings and what goes where.
 - [Speed](docs/decisions/speed.md): what keeps the app fast, and the budget.

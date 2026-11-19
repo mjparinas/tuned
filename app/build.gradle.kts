@@ -123,6 +123,21 @@ android {
     testOptions {
         unitTests.isReturnDefaultValues = true
         unitTests.isIncludeAndroidResources = true
+        unitTests.all { test ->
+            // Screenshots (docs/decisions/screenshots.md): `./gradlew :app:testGithubDebugUnitTest -Pscreenshots` draws every
+            // screen with sample data into build/outputs/roborazzi, and runs nothing else. Ordinary runs compile them (so a
+            // broken one fails CI) but skip them, since drawing takes longer than the other tests.
+            if (project.hasProperty("screenshots")) {
+                test.filter.includeTestsMatching("app.tuned.screenshots.*")
+                test.systemProperty("roborazzi.test.record", "true")
+                test.systemProperty("roborazzi.record.filePathStrategy", "relativePathFromRoborazziContextOutputDirectory")
+                test.testLogging.exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
+                // Each test class draws on its own; four at a time on CI's four cores.
+                test.maxParallelForks = Runtime.getRuntime().availableProcessors().coerceIn(1, 4)
+            } else {
+                test.exclude("app/tuned/screenshots/**")
+            }
+        }
     }
 }
 
@@ -216,6 +231,10 @@ dependencies {
     testImplementation(libs.robolectric)
     testImplementation(libs.androidx.test.core)
     testImplementation(libs.androidx.work.testing)
+    // Screenshots on the JVM (docs/decisions/screenshots.md); test-only, so nothing of it reaches an APK.
+    testImplementation(libs.roborazzi)
+    testImplementation(libs.roborazzi.compose)
+    testImplementation(libs.coil.test)
     // Screen-reader semantics are checked on Robolectric (docs/decisions/accessibility.md); the manifest gives the test an activity.
     testImplementation(libs.androidx.compose.ui.test.junit4)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
