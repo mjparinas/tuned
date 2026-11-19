@@ -48,7 +48,6 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
-import app.tuned.BuildConfig
 import app.tuned.R
 import app.tuned.container
 import app.tuned.core.PlaylistLink
@@ -73,17 +72,11 @@ import java.io.IOException
 import java.util.UUID
 import java.util.concurrent.TimeUnit
 
-/**
- * The default server; editable here and in Settings › Playlists (Melvin, 2026-11-17). Filled in at sign-in in GitHub
- * builds; empty in store builds, which never name a provider (docs/decisions/premium.md).
- */
-val DEFAULT_SERVER: String = BuildConfig.DEFAULT_SERVER
-
 /** What the form holds, before it becomes a [Credentials]. */
 data class PlaylistDraft(
     val kind: Credentials.Kind,
     val name: String = "",
-    val server: String = DEFAULT_SERVER,
+    val server: String = "",
     val username: String = "",
     val password: String = "",
     val link: String = "",
@@ -315,7 +308,7 @@ fun AddPlaylistScreen(
     val state by vm.state.collectAsStateWithLifecycle()
     val editing = remember(editIndex) { vm.editing(editIndex) }
     var name by rememberSaveable { mutableStateOf(editing?.name.orEmpty()) }
-    var server by rememberSaveable { mutableStateOf(editing?.server?.takeIf { kind == Credentials.Kind.Xtream } ?: DEFAULT_SERVER) }
+    var server by rememberSaveable { mutableStateOf(editing?.server?.takeIf { kind == Credentials.Kind.Xtream } ?: "") }
     var username by rememberSaveable { mutableStateOf(editing?.username.orEmpty()) }
     var password by rememberSaveable { mutableStateOf(editing?.password.orEmpty()) }
     var link by rememberSaveable { mutableStateOf(if (kind == Credentials.Kind.Link) editing?.playlistUrl.orEmpty() else "") }
@@ -380,6 +373,7 @@ fun AddPlaylistScreen(
                         value = server,
                         onValueChange = onServer,
                         label = { Text(stringResource(R.string.login_server)) },
+                        placeholder = { Text(stringResource(R.string.add_server_placeholder)) },
                         supportingText = { Text(stringResource(R.string.add_server_help)) },
                         singleLine = true,
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri, imeAction = ImeAction.Next),

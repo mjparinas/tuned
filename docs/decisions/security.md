@@ -14,7 +14,7 @@
 
 **Privacy policy** (2026-11-18). `docs/privacy.md`, published with `docs/index.md` through GitHub Pages, is the public policy Google's consent screen needs before sync's OAuth app can be published (and the Play listing will need). It says what stays on the device, which services Tuned talks to and why, and how the synced copy is locked. A change to what Tuned stores or sends updates it in the same pull request.
 
-**Cleartext HTTP is allowed** (`network_security_config.xml`), because IPTV servers, eros4k.ddns.net included, serve playlists and streams over plain HTTP on whatever host a stream redirects to. Android Lint's `InsecureBaseConfiguration` check is disabled for that reason.
+**Cleartext HTTP is allowed** (`network_security_config.xml`), because IPTV servers serve playlists and streams over plain HTTP on whatever host a stream redirects to. Android Lint's `InsecureBaseConfiguration` check is disabled for that reason.
 
 **Serving saved files to a TV** (2026-11-18). Casting a saved film or episode opens a small HTTP server on the phone (`core/FileServer`), reachable on the local network while the cast lasts and closed when it ends or the player closes. It serves only the files handed to it, under a path with 96 random bits, and nothing else on the device; the files hold no login.
 

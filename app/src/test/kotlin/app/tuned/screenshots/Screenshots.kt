@@ -20,6 +20,7 @@ import app.tuned.data.ThemeMode
 import app.tuned.ui.AppNav
 import app.tuned.ui.browseScreens
 import app.tuned.ui.common.LocalTimeZone
+import app.tuned.ui.common.TvSafeArea
 import app.tuned.ui.playlistScreens
 import app.tuned.ui.settingsScreens
 import app.tuned.ui.theme.TunedTheme
@@ -81,12 +82,14 @@ abstract class Screenshots {
         compose.setContent {
             TunedTheme(mode = settings.theme, pureBlack = settings.pureBlack, accent = settings.accent) {
                 CompositionLocalProvider(LocalTimeZone provides TimeZones.resolve(settings.timeZone)) {
-                    val nav = rememberNavController()
-                    val appNav = AppNav(nav, settings, play = {}, tune = {}, openPerson = {}, openHome = {}, openWelcome = {})
-                    NavHost(navController = nav, startDestination = route) {
-                        playlistScreens(appNav)
-                        browseScreens(appNav)
-                        settingsScreens(appNav)
+                    TvSafeArea {
+                        val nav = rememberNavController()
+                        val appNav = AppNav(nav, settings, play = {}, tune = {}, openPerson = {}, openHome = {}, openWelcome = {})
+                        NavHost(navController = nav, startDestination = route) {
+                            playlistScreens(appNav)
+                            browseScreens(appNav)
+                            settingsScreens(appNav)
+                        }
                     }
                 }
             }
@@ -119,3 +122,6 @@ const val PHONE = "w411dp-h891dp-xxhdpi"
 
 /** A 10-inch tablet held sideways, where the navigation rail and two panes show (docs/decisions/large-screens.md). */
 const val TABLET = "w1280dp-h800dp-land-xhdpi"
+
+/** A 1080p Android TV (960 by 540 dp), drawn inside its overscan margin (docs/decisions/tv.md). */
+const val TV = "w960dp-h540dp-land-television-xhdpi"

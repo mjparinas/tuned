@@ -2,6 +2,7 @@ package app.tuned.ui.onboarding
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -31,6 +32,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import app.tuned.R
 import app.tuned.data.Credentials
@@ -49,48 +51,99 @@ fun WelcomeScreen(
     onBack: () -> Unit,
 ) {
     Scaffold(topBar = { if (!firstRun) BackTopBar(stringResource(R.string.playlists_add), onBack) }) { padding ->
-        Column(
-            Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = 24.dp, vertical = 32.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            if (firstRun) {
-                Image(painterResource(R.drawable.ic_brand_mark), contentDescription = null, modifier = Modifier.size(88.dp))
-                Text(stringResource(R.string.welcome_title), style = MaterialTheme.typography.headlineMedium)
-                Text(
-                    stringResource(R.string.welcome_body),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.widthIn(max = 480.dp),
-                )
-                Spacer(Modifier.height(8.dp))
+        BoxWithConstraints(Modifier.fillMaxSize().padding(padding)) {
+            // A TV (960 by 540 dp, less its overscan margin) or a phone held sideways is too short for the logo, the
+            // welcome and three cards in one column, which pushed the logo off the top of a real TV. There the welcome
+            // sits beside the cards instead, so the whole screen fits without scrolling.
+            if (firstRun && maxWidth >= SIDE_BY_SIDE_MIN_WIDTH && maxHeight < SIDE_BY_SIDE_MAX_HEIGHT) {
+                Row(
+                    Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = 24.dp, vertical = 16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(32.dp, Alignment.CenterHorizontally),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Column(
+                        Modifier.weight(1f).verticalScroll(rememberScrollState()),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(12.dp),
+                    ) {
+                        Welcome(logoSize = 72.dp)
+                    }
+                    Column(
+                        Modifier.weight(1.2f).verticalScroll(rememberScrollState()),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(12.dp),
+                    ) {
+                        Kinds(onPick)
+                        Privacy()
+                    }
+                }
             } else {
-                Text(
-                    stringResource(R.string.welcome_pick),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.widthIn(max = 560.dp).fillMaxWidth(),
-                )
-            }
-            KindCard(Icons.Filled.Dns, R.string.kind_xtream, R.string.kind_xtream_summary) { onPick(Credentials.Kind.Xtream) }
-            KindCard(Icons.Filled.Link, R.string.kind_link, R.string.kind_link_summary) { onPick(Credentials.Kind.Link) }
-            KindCard(Icons.Filled.FolderOpen, R.string.kind_file, R.string.kind_file_summary) { onPick(Credentials.Kind.File) }
-            if (firstRun) {
-                Spacer(Modifier.height(4.dp))
-                Text(
-                    stringResource(R.string.login_privacy),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    textAlign = TextAlign.Center,
-                )
+                Column(
+                    Modifier
+                        .fillMaxSize()
+                        .verticalScroll(rememberScrollState())
+                        .padding(horizontal = 24.dp, vertical = 32.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    if (firstRun) {
+                        Welcome(logoSize = 88.dp)
+                        Spacer(Modifier.height(8.dp))
+                    } else {
+                        Text(
+                            stringResource(R.string.welcome_pick),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.widthIn(max = 560.dp).fillMaxWidth(),
+                        )
+                    }
+                    Kinds(onPick)
+                    if (firstRun) {
+                        Spacer(Modifier.height(4.dp))
+                        Privacy()
+                    }
+                }
             }
         }
     }
+}
+
+/** Wider than a phone held upright, so two columns have room. */
+private val SIDE_BY_SIDE_MIN_WIDTH = 600.dp
+
+/** Shorter than the single column needs (about 600 dp with the logo, the welcome, three cards and the privacy line). */
+private val SIDE_BY_SIDE_MAX_HEIGHT = 620.dp
+
+@Composable
+private fun Welcome(logoSize: Dp) {
+    Image(painterResource(R.drawable.ic_brand_mark), contentDescription = null, modifier = Modifier.size(logoSize))
+    Text(stringResource(R.string.welcome_title), style = MaterialTheme.typography.headlineMedium, textAlign = TextAlign.Center)
+    Text(
+        stringResource(R.string.welcome_body),
+        style = MaterialTheme.typography.bodyMedium,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        textAlign = TextAlign.Center,
+        modifier = Modifier.widthIn(max = 480.dp),
+    )
+}
+
+@Composable
+private fun Kinds(onPick: (Credentials.Kind) -> Unit) {
+    KindCard(Icons.Filled.Dns, R.string.kind_xtream, R.string.kind_xtream_summary) { onPick(Credentials.Kind.Xtream) }
+    KindCard(Icons.Filled.Link, R.string.kind_link, R.string.kind_link_summary) { onPick(Credentials.Kind.Link) }
+    KindCard(Icons.Filled.FolderOpen, R.string.kind_file, R.string.kind_file_summary) { onPick(Credentials.Kind.File) }
+}
+
+@Composable
+private fun Privacy() {
+    Text(
+        stringResource(R.string.login_privacy),
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        textAlign = TextAlign.Center,
+    )
 }
 
 @Composable

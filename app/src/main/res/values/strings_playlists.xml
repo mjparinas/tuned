@@ -31,6 +31,7 @@
     <string name="kind_file_summary">An .m3u file saved on this device</string>
 
     <string name="add_xtream_hint">Enter the details your provider sent you. You can also paste a whole Xtream link into the server box.</string>
+    <string name="add_server_placeholder" translatable="false">http://server:port</string>
     <string name="add_server_help">For example http://example.com:8080</string>
     <string name="add_link_hint">Paste the playlist link your provider sent you.</string>
     <string name="add_link_is_xtream">This is an Xtream login link, so Tuned will sign in with it and catch-up works too.</string>
