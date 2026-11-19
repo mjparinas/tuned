@@ -100,6 +100,9 @@ class CastControl(
     /** The TV being cast to, for the note over the video. */
     private var tvName: String? = null
 
+    /** A cast left with nothing playing, ended as the player opened: its end doesn't move the phone's player. */
+    private var stopped: CastSession? = null
+
     /** A DLNA TV says nothing back, so the controls show what was last asked of it. */
     private var dlnaPaused = false
 
@@ -198,6 +201,7 @@ class CastControl(
             ) = started(s)
 
             override fun onSessionEnding(s: CastSession) {
+                if (s === stopped) return
                 lastPositionMs = s.remoteMediaClient?.approximateStreamPosition ?: 0L
             }
 
@@ -206,6 +210,10 @@ class CastControl(
                 error: Int,
             ) {
                 AppLog.i(TAG) { "Cast ended: ${code(error)}" }
+                if (s === stopped) {
+                    stopped = null
+                    return
+                }
                 ended()
             }
 
@@ -246,17 +254,31 @@ class CastControl(
 
     init {
         context?.sessionManager?.addSessionManagerListener(listener, CastSession::class.java)
-        // Opening the player while already casting carries on casting.
         context
             ?.sessionManager
             ?.currentCastSession
             ?.takeIf { it.isConnected }
-            ?.let {
-                attach(it)
-                tvName = name(it)
-                playing()
-            }
+            ?.let(::carryOnOrStop)
         dlna.resume()
+    }
+
+    /**
+     * Opening the player while the TV still plays (or is paused on) the last video carries on casting. A cast that was
+     * stopped on the TV leaves its app open with nothing playing; the next show used to go to it anyway (Melvin,
+     * 2026-11-19: "when you're casting a show and you stop it, and you start another show, don't keep trying to cast"),
+     * so the cast ends instead and the show plays on the phone.
+     */
+    private fun carryOnOrStop(s: CastSession) {
+        val state = s.remoteMediaClient?.mediaStatus?.playerState
+        if (CastResume.carriesOn(state)) {
+            attach(s)
+            tvName = name(s)
+            playing()
+            return
+        }
+        AppLog.i(TAG) { "${name(s)} is connected but ${state?.let(::playerState) ?: "has nothing"}: ending the cast, playing here" }
+        stopped = s
+        context?.sessionManager?.endCurrentSession(true)
     }
 
     /** A TV was picked: the TV's app takes a few seconds to open, so the note says it is on its way. */
@@ -624,6 +646,14 @@ class CastControl(
             else -> "in an unknown state"
         }
     }
+}
+
+/** Whether a cast found on opening the player carries on. */
+internal object CastResume {
+    /** The TV is playing, paused, loading or buffering a video; idle or no media at all means it was stopped. */
+    fun carriesOn(playerState: Int?): Boolean = playerState != null &&
+        playerState != MediaStatus.PLAYER_STATE_IDLE &&
+        playerState != MediaStatus.PLAYER_STATE_UNKNOWN
 }
 
 /**
