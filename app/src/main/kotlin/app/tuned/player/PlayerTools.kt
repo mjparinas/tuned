@@ -319,11 +319,11 @@ class PlayerTools(
         activity.lifecycleScope.launchSafely("PlayerTools") {
             // Another player can't ask a portal for the stream, so it gets the real link.
             val url = attempt("PlayerTools", "The portal gave no stream") { hooks.resolve(item.url) }.getOrNull() ?: return@launchSafely
-            openElsewhere(player, item.name, url)
+            openWith(player, item.name, url)
         }
     }
 
-    private fun openElsewhere(
+    private fun openWith(
         player: ExoPlayer,
         name: String,
         url: String,
