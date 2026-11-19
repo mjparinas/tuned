@@ -19,7 +19,9 @@
 - Back while scrolled down goes to the top of the list first, as other TV apps do; the next Back leaves as before. A pane or dialog beside the list still closes first.
 - Focus is only put back within a moment of a page opening, so an item that scrolls into view later never pulls focus away from where the person is.
 
-A dedicated TV layout can come later if the phone layout proves awkward from the sofa.
+**Live TV uses the big screen** (Melvin, 2026-11-19: "use the big screen", from the UX audit). On a TV the channel list has the room to itself: the groups (Live events, Filters, All, Favourites, your lists, Recent and the provider's groups) run down a column on the left instead of a row across the top, so reaching a group is a few presses down rather than dozens sideways, and right goes into the channels. Beside the channels, the details of the one under the remote's focus: its logo, number and name, what's on now with the time and how far through it is, and what's next, each with its description from the guide (`ui/browse/ChannelInfo.kt`). The details are words and pictures from the guide on the device, never a preview of the channel, so there is still one stream connection ([scope](scope.md)); they take no focus, so the arrows stay in the list. They make room for the list on a TV too narrow for all three (a film or guide pane open beside the list, say). The guide grid and the phone and tablet layouts keep the row of chips.
+
+Beyond Live TV, a dedicated TV layout can come later if the phone layout proves awkward from the sofa.
 
 **The remote in the player** (`core/RemoteKeys.kt`, with tests). Media3's controls already handle play, pause, fast forward and rewind, and any arrow shows the controls. On top of that:
 

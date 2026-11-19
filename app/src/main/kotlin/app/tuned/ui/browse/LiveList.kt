@@ -38,6 +38,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.text.style.TextOverflow
@@ -72,6 +73,8 @@ internal fun LiveTab(
     onSearchEverything: (String) -> Unit,
     /** Changes when focus should come back to the list on a TV, such as the pane beside it closing. */
     focusReturn: Int = 0,
+    /** On a TV, the channel the remote moves onto, for the details beside the list. */
+    onFocusChannel: ((ChannelWithNow) -> Unit)? = null,
 ) {
     if (settings.liveGrid) {
         val channels = vm.channels.collectAsLazyPagingItems()
@@ -90,6 +93,7 @@ internal fun LiveTab(
             onOpenGuide,
             onSearchEverything,
             focusReturn,
+            onFocusChannel,
         )
     }
 }
@@ -105,6 +109,7 @@ private fun LiveList(
     onOpenGuide: (Long) -> Unit,
     onSearchEverything: (String) -> Unit,
     focusReturn: Int,
+    onFocusChannel: ((ChannelWithNow) -> Unit)?,
 ) {
     val channels = vm.channels.collectAsLazyPagingItems()
     val favourites by vm.favouriteIds.collectAsStateWithLifecycle()
@@ -127,7 +132,16 @@ private fun LiveList(
                 } else {
                     val favourite = channel.id in favourites
                     ChannelRow(
-                        modifier = tvFocusItem(focus, channel.id, first = index == 0),
+                        modifier =
+                            tvFocusItem(focus, channel.id, first = index == 0).then(
+                                if (onFocusChannel ==
+                                    null
+                                ) {
+                                    Modifier
+                                } else {
+                                    Modifier.onFocusChanged { if (it.hasFocus) onFocusChannel(channel) }
+                                },
+                            ),
                         channel = channel,
                         favourite = favourite,
                         showGuide = showGuide,
