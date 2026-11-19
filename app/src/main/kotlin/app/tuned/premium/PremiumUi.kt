@@ -37,9 +37,17 @@ fun LockedRow(title: String) {
 fun PremiumRow() {
     if (Premium.ALWAYS) return
     val context = LocalContext.current
+    val purchased by context.container.premium.purchased
+        .collectAsStateWithLifecycle()
     SettingRow(
         stringResource(R.string.premium_title),
-        stringResource(if (premiumUnlocked()) R.string.premium_summary_on else R.string.premium_summary_off),
+        stringResource(
+            when {
+                premiumUnlocked() -> R.string.premium_summary_on
+                purchased -> R.string.premium_summary_not_here
+                else -> R.string.premium_summary_off
+            },
+        ),
         onClick = { Premium.open(context) },
     )
 }

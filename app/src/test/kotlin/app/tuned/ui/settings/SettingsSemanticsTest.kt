@@ -39,7 +39,9 @@ class SettingsSemanticsTest {
     @Test
     fun aSectionHeaderIsAHeading() {
         compose.setContent { SectionHeader("Playback") }
-        compose.onNodeWithText("Playback").assert(SemanticsMatcher.keyIsDefined(SemanticsProperties.Heading))
+        // Shown in small capitals, read as written.
+        compose.onNodeWithText("PLAYBACK").assert(SemanticsMatcher.keyIsDefined(SemanticsProperties.Heading))
+        compose.onNodeWithContentDescription("Playback").assert(SemanticsMatcher.keyIsDefined(SemanticsProperties.Heading))
     }
 
     @Test

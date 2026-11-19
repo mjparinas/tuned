@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
@@ -16,7 +17,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.automirrored.filled.PlaylistPlay
 import androidx.compose.material.icons.filled.Autorenew
 import androidx.compose.material.icons.filled.CalendarMonth
@@ -28,7 +28,7 @@ import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.filled.PlayCircle
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Tv
-import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -119,20 +119,75 @@ enum class SettingsPage(
     @param:StringRes val title: Int,
     @param:StringRes val summary: Int,
     val icon: ImageVector,
+    internal val hue: BadgeHue,
+    internal val section: SettingsSection,
 ) {
-    PLAYLISTS(R.string.settings_page_playlists, R.string.settings_page_playlists_summary, Icons.AutoMirrored.Filled.PlaylistPlay),
-    PROFILES(R.string.settings_page_profiles, R.string.settings_page_profiles_summary, Icons.Filled.People),
-    CHANNELS(R.string.settings_page_channels, R.string.settings_page_channels_summary, Icons.Filled.Tv),
-    GUIDE(R.string.settings_page_guide, R.string.settings_page_guide_summary, Icons.Filled.CalendarMonth),
-    PLAYBACK(R.string.settings_playback, R.string.settings_page_playback_summary, Icons.Filled.PlayCircle),
-    RELIABILITY(R.string.settings_page_reliability, R.string.settings_page_reliability_summary, Icons.Filled.Autorenew),
-    APPEARANCE(R.string.settings_appearance, R.string.settings_page_appearance_summary, Icons.Filled.Palette),
-    ABOUT(R.string.settings_page_about, R.string.settings_page_about_summary, Icons.Filled.Info),
+    PLAYLISTS(
+        R.string.settings_page_playlists,
+        R.string.settings_page_playlists_summary,
+        Icons.AutoMirrored.Filled.PlaylistPlay,
+        BadgeHue.BLUE,
+        SettingsSection.ACCOUNT,
+    ),
+    PROFILES(
+        R.string.settings_page_profiles,
+        R.string.settings_page_profiles_summary,
+        Icons.Filled.People,
+        BadgeHue.BLUE,
+        SettingsSection.ACCOUNT,
+    ),
+    CHANNELS(
+        R.string.settings_page_channels,
+        R.string.settings_page_channels_summary,
+        Icons.Filled.Tv,
+        BadgeHue.VIOLET,
+        SettingsSection.WATCHING,
+    ),
+    GUIDE(
+        R.string.settings_page_guide,
+        R.string.settings_page_guide_summary,
+        Icons.Filled.CalendarMonth,
+        BadgeHue.VIOLET,
+        SettingsSection.WATCHING,
+    ),
+    PLAYBACK(
+        R.string.settings_playback,
+        R.string.settings_page_playback_summary,
+        Icons.Filled.PlayCircle,
+        BadgeHue.TEAL,
+        SettingsSection.WATCHING,
+    ),
+    RELIABILITY(
+        R.string.settings_page_reliability,
+        R.string.settings_page_reliability_summary,
+        Icons.Filled.Autorenew,
+        BadgeHue.RED,
+        SettingsSection.WATCHING,
+    ),
+    APPEARANCE(
+        R.string.settings_appearance,
+        R.string.settings_page_appearance_summary,
+        Icons.Filled.Palette,
+        BadgeHue.AMBER,
+        SettingsSection.APP,
+    ),
+    ABOUT(R.string.settings_page_about, R.string.settings_page_about_summary, Icons.Filled.Info, BadgeHue.AMBER, SettingsSection.APP),
+}
+
+/** The headed groups of Settings' first screen, each one card. */
+internal enum class SettingsSection(
+    @param:StringRes val title: Int,
+) {
+    ACCOUNT(R.string.settings_section_account),
+    WATCHING(R.string.settings_section_watching),
+    APP(R.string.settings_section_app),
 }
 
 /**
- * Settings' first screen: one row per page, plus captions, a page of its own. Downloads is in the home screen's bar,
- * so it has no row here (Melvin, 2026-11-18). A search box on top finds any setting on any page (`SettingsSearch.kt`).
+ * Settings' first screen: one row per page, plus captions, a page of its own, in headed cards with a coloured badge
+ * beside each page (Melvin, 2026-11-19). Downloads is in the home screen's bar, so it has no row here (Melvin,
+ * 2026-11-18). A search box on top finds any setting on any page (`SettingsSearch.kt`). The last card is about Tuned
+ * itself: its version and build, and What's new.
  */
 @Composable
 fun SettingsScreen(
@@ -150,31 +205,63 @@ fun SettingsScreen(
             SettingsResults(words, settings, vm, onOpen, onSignedOut)
             return@SettingsScaffold
         }
-        val pages = SettingsPage.entries
-        pages.take(pages.indexOf(SettingsPage.PLAYBACK) + 1).forEach { PageRow(it, onOpen) }
-        IconRow(
-            Icons.Filled.ClosedCaption,
-            stringResource(R.string.settings_captions),
-            stringResource(if (settings.captions.enabled) R.string.captions_on else R.string.captions_off),
-        ) { onOpen(CaptionSettingsRoute) }
-        pages.drop(pages.indexOf(SettingsPage.PLAYBACK) + 1).forEach { PageRow(it, onOpen) }
-        HorizontalDivider(Modifier.padding(top = 16.dp))
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        SettingsSection.entries.forEach { section ->
+            SectionHeader(stringResource(section.title))
+            SettingsPage.entries.filter { it.section == section }.forEach { page ->
+                PageRow(page, onOpen)
+                // Captions is a screen of its own, so it has its own row after Playback.
+                if (page == SettingsPage.PLAYBACK) CaptionsRow(settings, onOpen)
+            }
+        }
+        SectionHeader(stringResource(R.string.app_name))
+        VersionRow()
+    }
+}
+
+@Composable
+private fun CaptionsRow(
+    settings: AppSettings,
+    onOpen: (route: Any) -> Unit,
+) = IconRow(
+    Icons.Filled.ClosedCaption,
+    BadgeHue.TEAL,
+    stringResource(R.string.settings_captions),
+    stringResource(if (settings.captions.enabled) R.string.captions_on else R.string.captions_off),
+) { onOpen(CaptionSettingsRoute) }
+
+/**
+ * The version, the commit the build came from (plain text with no link, Melvin, 2026-11-18; empty when the build had no
+ * git), and a What's new button that shows this version's changes from its GitHub release notes. Store builds have no
+ * GitHub release to read, so they show the version alone.
+ */
+@Composable
+private fun VersionRow() {
+    var notes by rememberSaveable { mutableStateOf(false) }
+    Row(
+        Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 14.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Text(stringResource(R.string.settings_version_title), style = MaterialTheme.typography.titleMedium)
             Text(
                 stringResource(R.string.settings_version, BuildConfig.VERSION_NAME, BuildConfig.VERSION_CODE),
-                style = MaterialTheme.typography.bodySmall,
+                style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-            // The commit this build came from, as plain text with no link (Melvin, 2026-11-18). Empty when the build had no git.
             if (BuildConfig.GIT_COMMIT.isNotEmpty()) {
                 Text(
                     stringResource(R.string.settings_build_commit, BuildConfig.GIT_COMMIT),
-                    style = MaterialTheme.typography.bodySmall,
+                    style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
         }
+        if (BuildConfig.GITHUB_UPDATES) {
+            Spacer(Modifier.width(16.dp))
+            FilledTonalButton(onClick = { notes = true }) { Text(stringResource(R.string.whats_new)) }
+        }
     }
+    if (notes) WhatsNewSheet(onDismiss = { notes = false })
 }
 
 @Composable
@@ -201,7 +288,7 @@ private fun SettingsSearchField(
                 focusedIndicatorColor = Color.Transparent,
                 unfocusedIndicatorColor = Color.Transparent,
             ),
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp),
+        modifier = Modifier.outsideCards().fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
     )
 }
 
@@ -224,11 +311,7 @@ private fun SettingsResults(
     val captions = stringResource(R.string.settings_captions)
     if (hasWords(captions, words)) {
         shown++
-        IconRow(
-            Icons.Filled.ClosedCaption,
-            captions,
-            stringResource(if (settings.captions.enabled) R.string.captions_on else R.string.captions_off),
-        ) { onOpen(CaptionSettingsRoute) }
+        CaptionsRow(settings, onOpen)
     }
     SettingsPage.entries.forEach { page ->
         val count = counts.getValue(page)
@@ -250,7 +333,7 @@ private fun SettingsResults(
             stringResource(R.string.settings_search_none),
             style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(16.dp),
+            modifier = Modifier.outsideCards().padding(32.dp),
         )
     }
 }
@@ -297,12 +380,13 @@ private fun SettingsScaffold(
     content: @Composable () -> Unit,
 ) {
     Scaffold(topBar = { BackTopBar(title, onBack) }) { padding ->
-        Column(
+        SettingsGroups(
             Modifier
                 .padding(padding)
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
-                .navigationBarsPadding(),
+                .navigationBarsPadding()
+                .padding(bottom = 16.dp),
         ) { content() }
     }
 }
@@ -311,11 +395,13 @@ private fun SettingsScaffold(
 private fun PageRow(
     page: SettingsPage,
     onOpen: (route: Any) -> Unit,
-) = IconRow(page.icon, stringResource(page.title), stringResource(page.summary)) { onOpen(SettingsPageRoute(page.name)) }
+) = IconRow(page.icon, page.hue, stringResource(page.title), stringResource(page.summary)) { onOpen(SettingsPageRoute(page.name)) }
 
+/** A row that opens a page: its coloured badge, its name, and a line saying what's inside. */
 @Composable
 private fun IconRow(
     icon: ImageVector,
+    hue: BadgeHue,
     title: String,
     summary: String,
     onClick: () -> Unit,
@@ -323,16 +409,16 @@ private fun IconRow(
     Row(
         Modifier
             .fillMaxWidth()
+            .heightIn(min = 72.dp)
             .clickable(onClick = onClick)
-            .padding(horizontal = 16.dp, vertical = 14.dp),
+            .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-        Spacer(Modifier.width(20.dp))
-        Column(Modifier.weight(1f)) {
-            Text(title, style = MaterialTheme.typography.bodyLarge)
+        IconBadge(icon, hue)
+        Spacer(Modifier.width(16.dp))
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Text(title, style = MaterialTheme.typography.titleMedium)
             Text(summary, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
-        Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null)
     }
 }

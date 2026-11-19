@@ -47,6 +47,10 @@ private class PlayStore(
     private val connecting = Mutex()
     private var details: Map<String, ProductDetails> = emptyMap()
 
+    @Volatile private var found: SeatPurchase? = null
+
+    override fun purchase(): SeatPurchase? = found
+
     private suspend fun ready(): Boolean = connecting.withLock {
         if (client.isReady) return@withLock true
         suspendCancellableCoroutine { cont ->
@@ -67,6 +71,7 @@ private class PlayStore(
     override suspend fun owned(): Boolean? {
         if (!ready()) return null
         var owned = false
+        var seen: SeatPurchase? = null
         for (type in listOf(ProductType.INAPP, ProductType.SUBS)) {
             val result = client.queryPurchasesAsync(QueryPurchasesParams.newBuilder().setProductType(type).build())
             if (result.billingResult.responseCode != BillingClient.BillingResponseCode.OK) {
@@ -77,6 +82,7 @@ private class PlayStore(
                 .filter { it.purchaseState == Purchase.PurchaseState.PURCHASED && it.products.any { id -> id in PRODUCTS } }
                 .forEach { purchase ->
                     owned = true
+                    seen = seen ?: SeatPurchase(purchase.products.first { it in PRODUCTS }, purchase.purchaseToken)
                     // Play refunds a purchase that isn't acknowledged within three days.
                     if (!purchase.isAcknowledged) {
                         val params = AcknowledgePurchaseParams.newBuilder().setPurchaseToken(purchase.purchaseToken).build()
@@ -84,6 +90,7 @@ private class PlayStore(
                     }
                 }
         }
+        found = seen
         return owned
     }
 

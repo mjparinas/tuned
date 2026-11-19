@@ -2,6 +2,8 @@ package app.tuned.data
 
 import app.tuned.core.PassphraseCrypto
 import app.tuned.data.db.FavouriteEntity
+import app.tuned.data.db.ListEntity
+import app.tuned.data.db.ListItemEntity
 import app.tuned.data.db.TunedDatabase
 import app.tuned.data.db.WatchLaterEntity
 import kotlinx.coroutines.Dispatchers
@@ -37,6 +39,24 @@ class SyncCopyRepository(
         val settings: Map<String, JsonElement> = emptyMap(),
         val favourites: List<Favourite> = emptyList(),
         val watchLater: List<Later> = emptyList(),
+        /** The person's own lists beside Favourites ([OwnLists]); left out while there are none, so older copies match. */
+        val lists: List<OwnList> = emptyList(),
+    )
+
+    @Serializable
+    private data class OwnList(
+        val id: Long,
+        val name: String,
+        val position: Long,
+        val createdAt: Long,
+        val items: List<OwnListItem> = emptyList(),
+    )
+
+    @Serializable
+    private data class OwnListItem(
+        val itemId: Long,
+        val addedAt: Long,
+        val position: Long,
     )
 
     @Serializable
@@ -103,8 +123,26 @@ class SyncCopyRepository(
                         .first()
                         .map { Later(it.key, it.itemId, it.showKey, it.title, it.image, it.addedAt) }
                         .sortedBy { it.key },
+                lists = ownLists(),
             )
         json.encodeToString(Contents.serializer(), contents).toByteArray()
+    }
+
+    private suspend fun ownLists(): List<OwnList> {
+        val items = db.lists().allItems().groupBy { it.listId }
+        return db
+            .lists()
+            .allNow()
+            .sortedBy { it.id }
+            .map { l ->
+                OwnList(
+                    l.id,
+                    l.name,
+                    l.position,
+                    l.createdAt,
+                    items[l.id].orEmpty().map { OwnListItem(it.itemId, it.addedAt, it.position) }.sortedBy { it.itemId },
+                )
+            }
     }
 
     /**
@@ -120,6 +158,10 @@ class SyncCopyRepository(
         val library = db.library()
         library.clearFavourites()
         contents.favourites.forEach { library.addFavourite(FavouriteEntity(it.itemId, it.addedAt, it.position)) }
+        db.lists().replaceMine(
+            contents.lists.map { ListEntity(it.id, it.name, it.position, it.createdAt) },
+            contents.lists.flatMap { l -> l.items.map { ListItemEntity(l.id, it.itemId, it.addedAt, it.position) } },
+        )
         val later = db.watchLater()
         val keep = contents.watchLater.map { it.key }.toSet()
         later

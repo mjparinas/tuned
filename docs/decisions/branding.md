@@ -14,3 +14,7 @@
 | Ink    | `#121018` | Dark background                     |
 
 **Themes.** Light, dark and system (default), with two options in Settings › Appearance: _Wallpaper colours_ (Material You dynamic colour, Android 12+, off by default so the brand shows) and _Pure black_ (true black in dark mode for OLED screens, so the video is the only light in the room).
+
+## Contrast in every theme (Melvin, 2026-11-19)
+
+"Do 6", from the Horizon Maps review: status and accent colours deep enough to read on light backgrounds. Tuned already draws them from the theme's own light and dark tones rather than fixed colours, so one fix was needed: the Blue accent's light tone was 4.4:1 on the darkest card colour and is now `#1B57C4` (5:1). `ThemeContrastTest` now checks every accent in light, dark and pure black: primary, secondary, tertiary, error and the body text colours at 4.5:1 or better on every background and card colour, and the words on filled buttons and containers. A new accent or colour that falls short fails CI. Settings' badge and What's new colours have their own deep light and soft dark shades for the same reason ([settings](settings.md)).

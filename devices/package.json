@@ -1,0 +1,9 @@
+{
+  "name": "tuned-devices",
+  "private": true,
+  "description": "The Premium device list for Tuned's store build (docs/decisions/premium.md). No dependencies.",
+  "type": "module",
+  "engines": {
+    "node": "22.x"
+  }
+}

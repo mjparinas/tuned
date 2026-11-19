@@ -18,6 +18,7 @@ import app.tuned.data.db.ChannelWithNow
 import app.tuned.data.db.ContinueRow
 import app.tuned.data.db.GroupCount
 import app.tuned.data.db.ItemEntity
+import app.tuned.data.db.ListEntity
 import app.tuned.data.db.ProfileEntity
 import app.tuned.data.db.RegionCount
 import app.tuned.data.db.ShowSummary
@@ -55,6 +56,11 @@ sealed interface Filter {
 
     data class Group(
         val name: String,
+    ) : Filter
+
+    /** One of the person's own lists beside Favourites ([app.tuned.data.OwnLists]). */
+    data class OwnList(
+        val id: Long,
     ) : Filter
 }
 
@@ -177,9 +183,31 @@ class BrowseViewModel(
                     val group = (q.filter as? Filter.Group)?.name
                     val match = Search.match(q.search)
                     when (q.filter) {
-                        Filter.Favourites -> items.favouriteChannels(q.now, q.hidden, q.adult, group, q.search, match, topic, quick)
-                        Filter.Recent -> items.recentChannels(q.now, q.hidden, q.adult, group, q.search, match, topic, quick)
-                        else -> items.channels(q.now, q.hidden, q.adult, group, q.search, match, topic, quick)
+                        Filter.Favourites -> {
+                            items.favouriteChannels(q.now, q.hidden, q.adult, group, q.search, match, topic, quick)
+                        }
+
+                        is Filter.OwnList -> {
+                            container.db.lists().listChannels(
+                                q.filter.id,
+                                q.now,
+                                q.hidden,
+                                q.adult,
+                                group,
+                                q.search,
+                                match,
+                                topic,
+                                quick,
+                            )
+                        }
+
+                        Filter.Recent -> {
+                            items.recentChannels(q.now, q.hidden, q.adult, group, q.search, match, topic, quick)
+                        }
+
+                        else -> {
+                            items.channels(q.now, q.hidden, q.adult, group, q.search, match, topic, quick)
+                        }
                     }
                 }.flow
             }.cachedIn(viewModelScope)
@@ -196,6 +224,7 @@ class BrowseViewModel(
                         q.filter == Filter.Favourites,
                         q.search,
                         Search.match(q.search),
+                        (q.filter as? Filter.OwnList)?.id ?: 0,
                     )
                 }.flow
             }.cachedIn(viewModelScope)
@@ -295,6 +324,26 @@ class BrowseViewModel(
         favourite: Boolean,
     ) {
         container.picks.setFavourite(itemId, !favourite)
+    }
+
+    private val listFlows = mutableMapOf<ContentKind, StateFlow<List<ListEntity>>>()
+
+    /** The person's own lists with something of [kind] in them, for the chips (Live TV and Movies). */
+    fun lists(kind: ContentKind): StateFlow<List<ListEntity>> = listFlows.getOrPut(kind) {
+        container.lists.withKind(kind).stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+    }
+
+    fun renameList(
+        id: Long,
+        name: String,
+    ) {
+        viewModelScope.launchSafely("BrowseViewModel") { container.lists.rename(id, name) }
+    }
+
+    /** Deletes a list; a tab showing it goes back to everything. */
+    fun deleteList(id: Long) {
+        filters.values.forEach { f -> if (f.value == Filter.OwnList(id)) f.value = Filter.All }
+        viewModelScope.launchSafely("BrowseViewModel") { container.lists.delete(id) }
     }
 
     /** Hides a group from its section everywhere; Settings › Hidden groups brings it back. */

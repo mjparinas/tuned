@@ -62,6 +62,8 @@ jobs:
           TRAKT_CLIENT_ID: ${{ secrets.TRAKT_CLIENT_ID }}
           GOOGLE_TV_CLIENT_ID: ${{ secrets.GOOGLE_TV_CLIENT_ID }}
           GOOGLE_TV_CLIENT_SECRET: ${{ secrets.GOOGLE_TV_CLIENT_SECRET }}
+          # The Premium device list's address, a repository variable since it is in the app for anyone to see.
+          PREMIUM_DEVICES_URL: ${{ vars.PREMIUM_DEVICES_URL }}
           VERSION_CODE: ${{ steps.v.outputs.code }}
           VERSION_NAME: ${{ steps.v.outputs.version }}
           GIT_COMMIT: ${{ github.sha }}

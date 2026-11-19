@@ -13,6 +13,13 @@ Melvin first chose **Google Play in-app updates** (2026-11-17), then **GitHub Re
 - The app needs `REQUEST_INSTALL_PACKAGES` for this. Play doesn't allow that permission, so only the `github` build has it; the `play` build drops it and the updater, and its Settings show no update rows ([premium](premium.md)).
 - The bottom of Settings shows the version and, under it, the short commit hash the build came from ("Build 1a2b3c4"), as plain text with no link (Melvin, 2026-11-18: "add the github hash to the bottom of the settings page please. No links"). Release and CI builds pass `GIT_COMMIT` (for a pull request, its own head commit rather than the merge commit GitHub builds); a local build asks git, and a build without git hides the line.
 
+## What's new (Melvin, 2026-11-19)
+
+From Horizon Maps' screenshots, which Melvin wanted Settings to look like. Settings › Tuned › Version has a **What's new** button that opens a sheet for the installed version: a coloured header ("What's new in 1.11.0", with how many changes are new, improved and fixed), then the changes as cards under New, Improved and Fixed pills. The changes are this version's GitHub release notes (`--generate-notes`), read with `ReleaseNotes` (`:core`, tested): `feat` is new, `fix` is fixed, other types improved, and upkeep (dependency bumps, CI, docs, tests, promotions) is left out. The notes are fetched when the sheet opens and not stored; if GitHub can't be reached the sheet says so with Try again.
+
+- It never opens by itself after an update: Tuned has no pop-ups ([AGENTS.md](../../AGENTS.md), "Get out of the way").
+- Store builds have no GitHub release to read, so they show the version without the button.
+
 ## Google Play (later)
 
 `release.yml` also builds the `play` App Bundle and uploads it to the Play internal track once `PLAY_SERVICE_ACCOUNT_JSON` exists, with in-app update priority 5. Copies installed from Play ask Play on each start and update straight away (an immediate update), or, where Play allows only a flexible update, download in the background and restart into it. The very first Play upload has to be done by hand in Play Console.

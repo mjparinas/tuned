@@ -426,6 +426,7 @@ private fun CategoryChips(
     onOpenEvents: (() -> Unit)?,
 ) {
     val groups by vm.groups(kind).collectAsStateWithLifecycle()
+    val lists by vm.lists(kind).collectAsStateWithLifecycle()
     val filterFlow = vm.filter(kind)
     val filter by filterFlow.collectAsStateWithLifecycle()
     LazyRow(
@@ -454,6 +455,17 @@ private fun CategoryChips(
                 onClick = { filterFlow.value = Filter.Favourites },
                 leadingIcon = { Icon(Icons.Filled.Favorite, contentDescription = null, modifier = Modifier.size(16.dp)) },
                 label = { Text(stringResource(R.string.filter_favourites)) },
+            )
+        }
+        // The person's own lists come straight after Favourites, the built-in one (Live TV and Movies).
+        items(lists, key = { "l:" + it.id }) { list ->
+            val on = filter == Filter.OwnList(list.id)
+            OwnListChip(
+                list = list,
+                selected = on,
+                onSelect = { filterFlow.value = if (on) Filter.All else Filter.OwnList(list.id) },
+                onRename = { vm.renameList(list.id, it) },
+                onDelete = { vm.deleteList(list.id) },
             )
         }
         if (kind == ContentKind.LIVE) {
