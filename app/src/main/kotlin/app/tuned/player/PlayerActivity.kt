@@ -42,6 +42,7 @@ import app.tuned.diagnostics.AppLog
 import app.tuned.diagnostics.launchSafely
 import app.tuned.premium.Premium
 import app.tuned.ui.theme.playerAccent
+import app.tuned.widget.Widgets
 import app.tuned.work.TvHome
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -810,6 +811,7 @@ class PlayerActivity : FragmentActivity() {
                 container.appScope.launch {
                     container.db.library().saveProgress(HistoryEntity(id, position, duration, System.currentTimeMillis()))
                     TvHome.schedule(applicationContext) // the TV home screen's Continue watching row
+                    Widgets.refresh(applicationContext) // and the Continue watching widget
                 }
             }
         }

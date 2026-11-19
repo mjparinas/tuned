@@ -214,6 +214,7 @@ dependencies {
     implementation(libs.androidx.media3.ui)
     implementation(libs.androidx.media3.session)
     implementation(libs.androidx.glance.appwidget)
+    implementation(libs.androidx.glance.material3) // the widgets in the app's own colours
     implementation(libs.androidx.media3.cast)
 
     implementation(libs.coil.compose)

@@ -24,7 +24,7 @@ Each profile has its own **favourites, watch history (Continue Watching and watc
 - "Forgot PIN" takes the account password (or playlist link) instead.
 - One throttle (`PinThrottle`) covers every PIN on the device: five wrong in a row wait 30 seconds.
 - Switching profile locks adult categories again, since an unlock belongs to the person who typed the PIN.
-- **The player enforces the same rules as the lists** (security audit, 2026-11-18). The quick-settings tile, the favourites widget, Android TV's home screen cards and other apps' play intents open the player without going through a list, so the player itself (`PlayGate`) refuses an adult channel while adult categories are locked, and anything outside kids and family on a kids profile, with a short message. The widget and TV cards leave those channels out too. Before this, the tile reopened an adult channel after the unlock had ended.
+- **The player enforces the same rules as the lists** (security audit, 2026-11-18). The quick-settings tile, the favourites widget, Android TV's home screen cards and other apps' play intents open the player without going through a list, so the player itself (`PlayGate`) refuses an adult channel while adult categories are locked, and anything outside kids and family on a kids profile, with a short message. The home screen widgets (favourites and Continue watching) and TV cards leave those out too. Before this, the tile reopened an adult channel after the unlock had ended.
 
 ## Who's watching
 

@@ -53,6 +53,8 @@ data class ContinueRow(
     val episode: Int?,
     val positionMs: Long,
     val durationMs: Long,
+    /** When it was last watched, so films and episodes can be put in one list (the Continue watching widget). */
+    val watchedAt: Long = 0,
 ) {
     val fraction: Float get() = if (durationMs > 0) (positionMs.toFloat() / durationMs).coerceIn(0f, 1f) else 0f
 }
