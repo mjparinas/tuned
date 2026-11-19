@@ -6,5 +6,4 @@
     <string name="tv_live_time_range">%1$s to %2$s</string>
     <string name="tv_live_no_guide">No guide for this channel.</string>
     <string name="tv_live_pick">Move to a channel to see what\'s on.</string>
-    <string name="tv_live_groups">Groups</string>
 </resources>
