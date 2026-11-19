@@ -38,17 +38,7 @@ internal fun AboutPage(
         UpdateCheckRow()
     }
     SectionHeader(stringResource(R.string.settings_advanced))
-    var editUa by remember { mutableStateOf(false) }
-    SettingRow(
-        stringResource(R.string.settings_user_agent),
-        settings.userAgent.ifBlank { stringResource(R.string.settings_user_agent_default) },
-        onClick = { editUa = true },
-    )
-    if (editUa) {
-        TextDialog(stringResource(R.string.settings_user_agent), settings.userAgent, onDismiss = { editUa = false }) { ua ->
-            vm.update { it.copy(userAgent = ua.trim()) }
-        }
-    }
+    UserAgentRow(settings.userAgent) { ua -> vm.update { it.copy(userAgent = ua) } }
     SectionHeader(stringResource(R.string.settings_header_troubleshooting))
     ReportProblemRow()
     SettingRow(
