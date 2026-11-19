@@ -102,6 +102,16 @@ class BrowseViewModel(
 
     private val settings: StateFlow<AppSettings?> = container.settings.settings.stateIn(viewModelScope, SharingStarted.Eagerly, null)
 
+    /**
+     * The pinned groups, as [PinnedGroups] stores them: first in each tab's chip row. Declared before [channels], whose
+     * Live TV chips read it while the ViewModel is built; declared after, it was still null then and Live TV crashed.
+     */
+    val pins: StateFlow<String> =
+        settings
+            .map { it?.pinnedGroups.orEmpty() }
+            .distinctUntilChanged()
+            .stateIn(viewModelScope, SharingStarted.Eagerly, "")
+
     /** The profile in use, for the profile button. */
     val profile: StateFlow<ProfileEntity?> = container.profiles.current.stateIn(viewModelScope, SharingStarted.Eagerly, null)
 
@@ -288,13 +298,6 @@ class BrowseViewModel(
             }.combine(pins) { groups, pinned -> PinnedGroups.order(groups, pinned, kind.code) { it.groupName } }
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
     }
-
-    /** The pinned groups, as [PinnedGroups] stores them: first in each tab's chip row. */
-    val pins: StateFlow<String> =
-        settings
-            .map { it?.pinnedGroups.orEmpty() }
-            .distinctUntilChanged()
-            .stateIn(viewModelScope, SharingStarted.Eagerly, "")
 
     /** Pins a group to the front of its tab's chips, or unpins it (Melvin, 2026-11-19: "your own quick chips"). */
     fun togglePin(

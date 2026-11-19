@@ -1,0 +1,97 @@
+# Pictures of every screen for a branch, drawn on the JVM with made-up sample data (app/src/test/kotlin/app/tuned/screenshots),
+# in a few minutes and without an emulator or an APK (docs/decisions/screenshots.md). Not part of CI and not a required
+# check (Melvin, 2026-11-17: screenshots out of the pipeline): it runs only when asked, from the Actions tab or by a
+# thread with "Run workflow" on its branch, or when a pull request gets the "screenshots" label.
+#
+# The pictures go to the branch screenshots/<branch> (one commit, replaced each run) so they can be opened on GitHub
+# or read with the API, and to the run as an artifact. The branch is deleted when the pull request closes.
+name: Screenshots
+
+on:
+  workflow_dispatch:
+  pull_request:
+    types: [labeled, synchronize, closed]
+
+concurrency:
+  group: screenshots-${{ github.head_ref || github.ref_name }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  render:
+    name: Render screenshots
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.action != 'closed' && contains(github.event.pull_request.labels.*.name, 'screenshots'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: write
+    env:
+      BRANCH: ${{ github.head_ref || github.ref_name }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: ./.github/actions/setup-android
+      - name: Draw every screen
+        id: draw
+        run: |
+          start=$(date +%s)
+          ./gradlew :app:testGithubDebugUnitTest -Pscreenshots --continue
+          echo "seconds=$(( $(date +%s) - start ))" >> "$GITHUB_OUTPUT"
+      - uses: actions/upload-artifact@v7
+        if: ${{ !cancelled() }}
+        with:
+          name: screenshots
+          path: app/build/outputs/roborazzi
+          if-no-files-found: warn
+          retention-days: 14
+      # Kept even when a screen failed, since the picture shows what went wrong.
+      - name: Keep the pictures on screenshots/${{ env.BRANCH }}
+        if: ${{ !cancelled() }}
+        env:
+          SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+          SECONDS_TAKEN: ${{ steps.draw.outputs.seconds }}
+          SERVER: ${{ github.server_url }}
+          REPO: ${{ github.repository }}
+        run: |
+          out=app/build/outputs/roborazzi
+          ls "$out"/*.png > /dev/null 2>&1 || { echo "::warning::No pictures were drawn."; exit 0; }
+          dir=$(mktemp -d)
+          cp "$out"/*.png "$dir"/
+          cd "$dir"
+          {
+            echo "# Screenshots of \`$BRANCH\`"
+            echo
+            echo "From ${SHA:0:7}, drawn in ${SECONDS_TAKEN:-?} seconds of Gradle."
+            echo
+            for f in *.png; do echo "## ${f%.png}"; echo; echo "![${f%.png}]($f)"; echo; done
+          } > README.md
+          git init -q -b main
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -qm "Screenshots of $BRANCH at ${SHA:0:7}"
+          git push -qf "https://x-access-token:${{ github.token }}@github.com/$REPO.git" "HEAD:refs/heads/screenshots/$BRANCH"
+          {
+            echo "### Screenshots"
+            echo
+            echo "$(ls *.png | wc -l) pictures in ${SECONDS_TAKEN:-?} seconds of Gradle."
+            echo "Open them at $SERVER/$REPO/tree/screenshots/$BRANCH"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  clean:
+    name: Remove the pictures
+    if: github.event.action == 'closed'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write
+    steps:
+      - env:
+          GH_TOKEN: ${{ github.token }}
+          BRANCH: ${{ github.head_ref }}
+        run: gh api -X DELETE "repos/${{ github.repository }}/git/refs/heads/screenshots/$BRANCH" || true
