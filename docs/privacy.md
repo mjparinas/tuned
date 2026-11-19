@@ -2,7 +2,7 @@
 
 Last updated: November 19, 2026
 
-Tuned is an IPTV player for Android and Android TV. This policy explains what Tuned stores, what it sends and to whom. Tuned has no account with us, no ads and no analytics.
+Tuned is an IPTV player for Android and Android TV. This policy explains what Tuned stores, what it sends and to whom. A Tuned account is optional. Tuned has no ads and no analytics.
 
 ## What stays on your device
 
@@ -34,6 +34,14 @@ Sync is optional and off until you turn it on. When you sign in with Google, Tun
 The file holds your saved playlists (including their logins), settings, favourites and watch later, so your phone and TV stay the same. It isn't encrypted by Tuned: it is protected by your Google account, so anyone who can open your Drive could read it. Deleting the file removes the synced copy. Tuned never sees your Google password. Stop syncing signs the device out and asks Google to revoke Tuned's access. You can also remove Tuned's access at any time from your Google account's security settings.
 
 Tuned's use of information received from Google APIs follows the [Google API Services User Data Policy](https://developers.google.com/terms/api-services-user-data-policy), including the Limited Use requirements.
+
+## Your Tuned account
+
+An account is optional: watching never needs one. If you sign in with Google on the Tuned website or in the app, Tuned's service stores your email address and name from Google, the devices you sign in (the name Android gives them, such as "Pixel 8", the kind of device, a scrambled device ID and when each was last used), and what you bought. Payments on the website are handled by Stripe, and Tuned never sees your card.
+
+If you turn on backup, the service keeps your saved playlists (including their logins), settings, profiles, favourites, lists and watch later, so a new device can restore them. The backup isn't encrypted by Tuned. It is reachable only by devices signed in to your account, and the last 5 versions are kept.
+
+You can remove a device, delete your backup, or delete your whole account on the account page at any time. Deleting the account deletes all of this and cancels a yearly plan bought on the website.
 
 ## Sharing and selling
 

@@ -34,6 +34,8 @@ How the locks work (`premium/`):
 
 ## Three devices per purchase
 
+Accounts carry these rules over per account, with extra seats bought once or yearly up to 10 ([accounts](accounts.md)); what follows is how a purchase without an account works.
+
 Melvin, 2026-11-19: "for the paid version, it should limit the number of devices they can activate. like a phone, a tv, and maybe one more. beyond that, it should stop them", and a blocked device stays blocked "until they uninstall a version and deactivate it". Play itself puts a purchase on every device signed in to the Google account, so the count lives in a small device list on Vercel (`devices/`), which Melvin chose over Cloudflare, a file in the person's Drive, or Firebase (he already pays for Vercel Pro, whose terms allow a paid app; Hobby doesn't).
 
 - **The rule** (`core/DeviceSeats`, `devices/lib/seats.mjs`, both tested). Three devices per purchase. A device that already has a seat keeps it; a device with no seat takes a free one or hears "full" and stays locked, with Your devices on the Premium screen saying which devices hold the seats. A device that hasn't been used for 60 days gives its seat back on its own, so a lost or broken phone never holds one for good.

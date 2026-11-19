@@ -11,6 +11,11 @@ updates:
     directory: /
     target-branch: staging
     schedule: { interval: weekly }
+  # The server on Vercel (devices/): Neon's driver.
+  - package-ecosystem: npm
+    directory: /devices
+    target-branch: staging
+    schedule: { interval: weekly }
   - package-ecosystem: github-actions
     directory: /
     target-branch: staging
