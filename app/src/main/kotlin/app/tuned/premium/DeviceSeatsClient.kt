@@ -38,8 +38,7 @@ class DeviceSeatsClient(
     private val json = Json { ignoreUnknownKeys = true }
 
     /** Takes a seat for this device, or says the list is full. */
-    suspend fun activate(purchase: SeatPurchase): SeatAnswer =
-        post("activate", Ask(purchase.productId, purchase.token, device, name))
+    suspend fun activate(purchase: SeatPurchase): SeatAnswer = post("activate", Ask(purchase.productId, purchase.token, device, name))
 
     /** Frees [target]'s seat (this device's own, or another's) and answers for this device. */
     suspend fun deactivate(
@@ -53,7 +52,12 @@ class DeviceSeatsClient(
     ): SeatAnswer = withContext(Dispatchers.IO) {
         attempt(TAG, "Couldn't reach the device list") {
             val body = json.encodeToString(ask).toRequestBody(JSON)
-            val request = Request.Builder().url("$base/api/seats/$path").post(body).build()
+            val request =
+                Request
+                    .Builder()
+                    .url("$base/api/seats/$path")
+                    .post(body)
+                    .build()
             http.newCall(request).execute().use { response ->
                 if (!response.isSuccessful) return@use SeatAnswer.Unreachable
                 answer(json.decodeFromString<Reply>(response.body.string()))
