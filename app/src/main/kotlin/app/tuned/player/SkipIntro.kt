@@ -35,6 +35,7 @@ class SkipIntro(
     private val density = activity.resources.displayMetrics.density
     private var showKey: String? = null
     private var itemId: Long? = null
+
     /** The show's saved intro from earlier episodes. What this episode teaches is saved for the next ones, not used here. */
     private var intro: IntroSkip.Intro? = null
 
