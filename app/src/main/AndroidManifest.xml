@@ -78,12 +78,14 @@
                 <action android:name="com.google.android.gms.actions.SEARCH_ACTION" />
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
-            <!-- Signing in on a TV with this phone: the TV's QR code opens the app (docs/decisions/onboarding.md). -->
+            <!-- Signing in on a TV with this phone: the TV's QR code opens the app (docs/decisions/onboarding.md). The old
+                 vercel.app host stays for TVs on 1.13, whose QR codes still point there (docs/decisions/accounts.md). -->
             <intent-filter android:autoVerify="true">
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data android:scheme="https" />
+                <data android:host="www.tunedplayer.com" />
                 <data android:host="tuned-devices.vercel.app" />
                 <data android:path="/tv" />
             </intent-filter>
