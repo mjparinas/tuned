@@ -213,8 +213,8 @@
     <string name="logs_empty">Nothing logged yet</string>
     <string name="logs_empty_summary">Errors, warnings and crashes show up here as they happen.</string>
     <plurals name="logs_crashes">
-        <item quantity="one">%d crash report</item>
-        <item quantity="other">%d crash reports</item>
+        <item quantity="one">%d crash or freeze report</item>
+        <item quantity="other">%d crash and freeze reports</item>
     </plurals>
     <string name="settings_user_agent">User agent</string>
     <string name="settings_user_agent_default">Default (Tuned)</string>
