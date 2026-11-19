@@ -77,25 +77,44 @@ class TuneRepository(
     suspend fun qualityCopies(id: Long): List<QualityCopy> {
         val s = settings.settings.first()
         val item = db.items().get(id) ?: return emptyList()
-        val own = ChannelCopies.picture(item.name)
+        val originals = originalNames()
+        val own = ChannelCopies.picture(originals[item.id] ?: item.name)
         val others =
             Tuner
                 .rank(copyCandidates(item, s), System.currentTimeMillis())
-                .map { QualityCopy(it.id, it.name, ChannelCopies.picture(it.name)) }
+                .map { QualityCopy(it.id, it.name, ChannelCopies.picture(originals[it.id] ?: it.name)) }
                 .filter { it.picture != own }
                 .distinctBy { it.picture }
         if (others.isEmpty()) return emptyList()
         return (others + QualityCopy(item.id, item.name, own)).sortedByDescending { it.picture }
     }
 
+    /** A renamed channel's copies are found by the provider's own name, tags and all (docs/decisions/lists.md). */
+    private suspend fun originalNames(): Map<Long, String> = db.channelEdits().all().associate { it.itemId to it.originalName }
+
+    /** Logos of the channel's copies, for picking one when changing its logo; doesn't need backup copies switched on. */
+    suspend fun copyLogos(id: Long): List<String> {
+        val s = settings.settings.first()
+        val item = db.items().get(id) ?: return emptyList()
+        val ids = copyCandidates(item, s).map { it.id }
+        return db
+            .items()
+            .getAll(ids)
+            .mapNotNull { it.logo?.takeIf(String::isNotBlank) }
+            .filter { it != item.logo }
+            .distinct()
+            .take(MAX_LOGOS)
+    }
+
     private suspend fun copyCandidates(
         item: ItemEntity,
         s: AppSettings,
     ): List<TuneCandidate> {
-        val key = ChannelCopies.key(item.name) ?: return emptyList()
+        val originals = originalNames()
+        val key = ChannelCopies.key(originals[item.id] ?: item.name) ?: return emptyList()
         val rows = db.items().copyCandidates(item.id, Search.match(key), s.hiddenKeys(), s.showAdult)
         return rows
-            .filter { ChannelCopies.key(it.name) == key && ChannelCopies.sameRegion(it.region, item.region) }
+            .filter { ChannelCopies.key(originals[it.id] ?: it.name) == key && ChannelCopies.sameRegion(it.region, item.region) }
             .map {
                 TuneCandidate(
                     id = it.id,
@@ -133,5 +152,8 @@ class TuneRepository(
 
     private companion object {
         const val HOUR = 3_600_000L
+
+        /** Enough logos to choose from without a long row. */
+        const val MAX_LOGOS = 12
     }
 }

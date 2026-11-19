@@ -29,8 +29,9 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         GuideChannelEntity::class,
         ListEntity::class,
         ListItemEntity::class,
+        ChannelEditEntity::class,
     ],
-    version = 18,
+    version = 19,
     exportSchema = true,
 )
 abstract class TunedDatabase : RoomDatabase() {
@@ -64,6 +65,8 @@ abstract class TunedDatabase : RoomDatabase() {
 
     abstract fun lists(): ListDao
 
+    abstract fun channelEdits(): ChannelEditDao
+
     companion object {
         fun create(context: Context): TunedDatabase = Room
             .databaseBuilder(context, TunedDatabase::class.java, "tuned.db")
@@ -88,6 +91,7 @@ abstract class TunedDatabase : RoomDatabase() {
                 MIGRATION_15_16,
                 MIGRATION_16_17,
                 MIGRATION_17_18,
+                MIGRATION_18_19,
             ).addCallback(FirstProfile)
             // Going back to an older release (installing an older APK) can't keep a newer database: start it afresh
             // rather than crash on every launch. Upgrades always migrate, above.
@@ -289,6 +293,17 @@ abstract class TunedDatabase : RoomDatabase() {
                     db.execSQL(
                         "CREATE TABLE IF NOT EXISTS `list_items` (`listId` INTEGER NOT NULL, `itemId` INTEGER NOT NULL, " +
                             "`addedAt` INTEGER NOT NULL, `position` INTEGER NOT NULL, PRIMARY KEY(`listId`, `itemId`))",
+                    )
+                }
+            }
+
+        /** Adds renamed channels and their own logos ([ChannelEditEntity]). */
+        val MIGRATION_18_19 =
+            object : Migration(18, 19) {
+                override fun migrate(db: SupportSQLiteDatabase) {
+                    db.execSQL(
+                        "CREATE TABLE IF NOT EXISTS `channel_edits` (`itemId` INTEGER NOT NULL, `name` TEXT, `logo` TEXT, " +
+                            "`originalName` TEXT NOT NULL, `originalLogo` TEXT, PRIMARY KEY(`itemId`))",
                     )
                 }
             }

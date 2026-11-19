@@ -1,6 +1,7 @@
 package app.tuned.data
 
 import app.tuned.core.PassphraseCrypto
+import app.tuned.data.db.ChannelEditEntity
 import app.tuned.data.db.FavouriteEntity
 import app.tuned.data.db.ListEntity
 import app.tuned.data.db.ListItemEntity
@@ -41,6 +42,15 @@ class SyncCopyRepository(
         val watchLater: List<Later> = emptyList(),
         /** The person's own lists beside Favourites ([OwnLists]); left out while there are none, so older copies match. */
         val lists: List<OwnList> = emptyList(),
+        /** Renamed channels and their own logos ([ChannelEditor]); left out while there are none. */
+        val channelEdits: List<ChannelEdit> = emptyList(),
+    )
+
+    @Serializable
+    private data class ChannelEdit(
+        val itemId: Long,
+        val name: String? = null,
+        val logo: String? = null,
     )
 
     @Serializable
@@ -124,6 +134,12 @@ class SyncCopyRepository(
                         .map { Later(it.key, it.itemId, it.showKey, it.title, it.image, it.addedAt) }
                         .sortedBy { it.key },
                 lists = ownLists(),
+                channelEdits =
+                    db
+                        .channelEdits()
+                        .all()
+                        .map { ChannelEdit(it.itemId, it.name, it.logo) }
+                        .sortedBy { it.itemId },
             )
         json.encodeToString(Contents.serializer(), contents).toByteArray()
     }
@@ -158,6 +174,7 @@ class SyncCopyRepository(
         val library = db.library()
         library.clearFavourites()
         contents.favourites.forEach { library.addFavourite(FavouriteEntity(it.itemId, it.addedAt, it.position)) }
+        ChannelEditor(db).replaceAll(contents.channelEdits.map { ChannelEditEntity(it.itemId, it.name, it.logo, "", null) })
         db.lists().replaceMine(
             contents.lists.map { ListEntity(it.id, it.name, it.position, it.createdAt) },
             contents.lists.flatMap { l -> l.items.map { ListItemEntity(l.id, it.itemId, it.addedAt, it.position) } },
