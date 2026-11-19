@@ -40,6 +40,9 @@ export const validBox = (box) => typeof box === "string" && box.length > 104 && 
 
 const entryKey = (code) => `tv:${sha(code)}`;
 const boxKey = (code) => `tvbox:${sha(code)}`;
+/** Where a one-time account sign-in for the TV waits, put there by the website (docs/decisions/accounts.md). */
+const linkKey = (code) => `tvlink:${sha(code)}`;
+export { entryKey as tvEntryKey, linkKey as tvLinkKey };
 
 async function body(request) {
     try {
@@ -120,7 +123,10 @@ export function tvRelay(redis) {
                 return saved === "OK" ? json({ status: "ok" }) : json({ status: "already sent" }, 409);
             }),
 
-        /** POST { code, secret } from the TV, every few seconds: the box once it's there, which also ends the code. */
+        /**
+         * POST { code, secret } from the TV, every few seconds: the box once it's there, or an account sign-in from
+         * the website (`link`), either of which ends the code.
+         */
         take: (request) =>
             guarded(async () => {
                 const ask = await body(request);
@@ -131,9 +137,10 @@ export function tvRelay(redis) {
                 const given = Buffer.from(sha(ask.secret));
                 if (!timingSafeEqual(given, Buffer.from(found.secret))) return json({ status: "not found" }, 404);
                 const box = await redis.command("GETDEL", boxKey(code));
-                if (!box) return json({ status: "waiting" });
+                const link = await redis.command("GETDEL", linkKey(code));
+                if (!box && !link) return json({ status: "waiting" });
                 await redis.command("DEL", entryKey(code));
-                return json({ status: "ok", box });
+                return json(link ? { status: "ok", box: box ?? null, link } : { status: "ok", box });
             }),
     };
 }

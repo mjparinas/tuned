@@ -1,8 +1,6 @@
 package app.tuned.work
 
 import android.Manifest
-import android.app.NotificationChannel
-import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.pm.PackageManager
@@ -47,6 +45,8 @@ class Reminders(
         channelName: String,
         title: String,
         start: Long,
+        /** When the programme ends, so its notification (and the app icon's dot) goes away then; 0 when unknown. */
+        stop: Long,
         leadMinutes: Int,
         /** For a Live Events alert: tapping it auto-tunes this title instead of opening one channel. */
         tuneQuery: String? = null,
@@ -65,6 +65,7 @@ class Reminders(
                         ReminderWorker.CHANNEL_NAME to channelName,
                         ReminderWorker.TITLE to title,
                         ReminderWorker.START to start,
+                        ReminderWorker.STOP to stop,
                         ReminderWorker.TUNE to tuneQuery,
                     ),
                 ).build()
@@ -87,11 +88,26 @@ class Reminders(
         private const val TAG = "reminder"
         private const val KEY_TAG = "reminder-key:"
         private const val NAME = "reminder:"
+        private const val UNKNOWN_LENGTH_MS = 3 * 60 * 60_000L
+        private const val MIN_SHOWN_MS = 5 * 60_000L
 
         fun key(
             channelId: Long,
             start: Long,
         ): String = "$channelId@$start"
+
+        /**
+         * How long a reminder's notification stays: until the programme ends, or [UNKNOWN_LENGTH_MS] after it starts
+         * when the guide gave no end. Never less than [MIN_SHOWN_MS], so a reminder that fires late is still seen.
+         */
+        fun expiresAfter(
+            start: Long,
+            stop: Long,
+            now: Long,
+        ): Long {
+            val end = if (stop > start) stop else start + UNKNOWN_LENGTH_MS
+            return (end - now).coerceAtLeast(MIN_SHOWN_MS)
+        }
 
         /**
          * One reminder's notification and tap. Two alerts on one channel (two fights on the same pay-per-view channel)
@@ -114,6 +130,7 @@ class ReminderWorker(
         val channelName = inputData.getString(CHANNEL_NAME).orEmpty()
         val title = inputData.getString(TITLE).orEmpty()
         val start = inputData.getLong(START, 0)
+        val stop = inputData.getLong(STOP, 0)
         val tune = inputData.getString(TUNE)
         if (start + LATE_MS < System.currentTimeMillis()) return Result.success() // long over; say nothing
         val ctx = applicationContext
@@ -122,10 +139,7 @@ class ReminderWorker(
         ) {
             return Result.success()
         }
-        val manager = ctx.getSystemService(NotificationManager::class.java)
-        manager.createNotificationChannel(
-            NotificationChannel(CHANNEL, ctx.getString(R.string.reminder_channel), NotificationManager.IMPORTANCE_HIGH),
-        )
+        NotificationChannels.ensure(ctx)
         val open =
             PendingIntent.getActivity(
                 ctx,
@@ -145,6 +159,8 @@ class ReminderWorker(
                 .setCategory(NotificationCompat.CATEGORY_REMINDER)
                 .setContentIntent(open)
                 .setAutoCancel(true)
+                // Once it's over the reminder has nothing left to offer, so it leaves the shade and the icon's dot.
+                .setTimeoutAfter(Reminders.expiresAfter(start, stop, System.currentTimeMillis()))
                 .build()
         NotificationManagerCompat.from(ctx).notify(Reminders.requestCode(channelId, start), notification)
         return Result.success()
@@ -155,8 +171,9 @@ class ReminderWorker(
         const val CHANNEL_NAME = "channel_name"
         const val TITLE = "title"
         const val START = "start"
+        const val STOP = "stop"
         const val TUNE = "tune"
-        private const val CHANNEL = "reminders"
+        private const val CHANNEL = NotificationChannels.REMINDERS
         private const val LATE_MS = 30 * 60_000L
     }
 }

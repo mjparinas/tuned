@@ -65,7 +65,7 @@
     <string name="settings_sign_out">Sign out</string>
     <string name="settings_sign_out_summary">Reset Tuned to how it was when installed</string>
     <string name="settings_sign_out_title">Sign out?</string>
-    <string name="settings_sign_out_confirm">Tuned goes back to how it was when installed. Every playlist and login, the channels and guide, profiles, favourites, settings and PINs are removed, and Trakt and Google Drive are disconnected. Your synced copy in Google Drive stays in your Google account.</string>
+    <string name="settings_sign_out_confirm">Tuned goes back to how it was when installed. Every playlist and login, the channels and guide, profiles, favourites, settings and PINs are removed, and Trakt and your Tuned account are signed out on this device. Your backup stays in your Tuned account.</string>
     <plurals name="settings_sign_out_downloads">
         <item quantity="one">Also delete %1$d download (%2$s)?</item>
         <item quantity="other">Also delete %1$d downloads (%2$s)?</item>
@@ -358,6 +358,14 @@
     <string name="premium_devices_confirm_title">Deactivate %1$s?</string>
     <string name="premium_devices_confirm_this">Premium turns off on this device and its spot is free for another. You can turn it back on here while a spot is free.</string>
     <string name="premium_devices_confirm_other">Premium turns off on that device and its spot is free for another.</string>
+    <string name="premium_more_title">More devices</string>
+    <plurals name="premium_more_once_lead">
+        <item quantity="one">Add Premium to %1$d more device for %2$s, paid once.</item>
+        <item quantity="other">Add Premium to up to %1$d more devices for %2$s each, paid once. You choose how many on the next screen.</item>
+    </plurals>
+    <string name="premium_more_yearly_lead">Add Premium to one more device for %1$s a year.</string>
+    <string name="premium_more_buy_once">Add devices · %1$s each</string>
+    <string name="premium_more_buy_yearly">Add a device · %1$s a year</string>
     <string name="premium_devices_unreachable">Couldn\'t reach the device list. Try again in a moment.</string>
     <string name="settings_check_updates">Look for updates automatically</string>
     <string name="settings_check_updates_summary">Check GitHub for new versions when Tuned opens (at most hourly) and during background refreshes</string>

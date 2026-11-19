@@ -7,10 +7,13 @@ import android.os.PowerManager
 import androidx.annotation.OptIn
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
+import androidx.media3.session.DefaultMediaNotificationProvider
 import androidx.media3.session.MediaSession
 import androidx.media3.session.MediaSessionService
+import app.tuned.R
 import app.tuned.diagnostics.attempt
 import app.tuned.diagnostics.launchSafely
+import app.tuned.work.NotificationChannels
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -97,6 +100,15 @@ class BackgroundPlay(
 class PlaybackService : MediaSessionService() {
     override fun onCreate() {
         super.onCreate()
+        // Its own quiet channel: a dot on the app icon for something already playing would say nothing new.
+        NotificationChannels.ensure(this)
+        setMediaNotificationProvider(
+            DefaultMediaNotificationProvider
+                .Builder(this)
+                .setChannelId(NotificationChannels.PLAYBACK)
+                .setChannelName(R.string.playback_channel)
+                .build(),
+        )
         PlayerSession.current?.let { attempt(TAG, "Couldn't show the media notification") { addSession(it) } }
     }
 

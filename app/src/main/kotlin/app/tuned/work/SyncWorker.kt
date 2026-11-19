@@ -1,14 +1,11 @@
 package app.tuned.work
 
 import android.app.Notification
-import android.app.NotificationChannel
-import android.app.NotificationManager
 import android.content.Context
 import android.content.pm.ServiceInfo
 import android.os.Build
 import android.os.SystemClock
 import androidx.core.app.NotificationCompat
-import androidx.glance.appwidget.updateAll
 import androidx.work.CoroutineWorker
 import androidx.work.Data
 import androidx.work.ForegroundInfo
@@ -22,7 +19,7 @@ import app.tuned.diagnostics.attempt
 import app.tuned.diagnostics.logFailures
 import app.tuned.ui.SyncText
 import app.tuned.updates.UpdateNotice
-import app.tuned.widget.FavouritesWidget
+import app.tuned.widget.Widgets
 import java.io.IOException
 
 class SyncWorker(
@@ -55,9 +52,9 @@ class SyncWorker(
             } else {
                 container.sync.refreshAll(::report)
             }
-            // New guide data: alerts for followed teams' next games, and the widget's "on now" lines move on too.
+            // New guide data: alerts for followed teams' next games, and the widgets' "on now" lines move on too.
             attempt(TAG, "Couldn't set event alerts") { container.events.scheduleAlerts() }
-            attempt(TAG, "Couldn't update the widget") { FavouritesWidget().updateAll(applicationContext) }
+            Widgets.refresh(applicationContext)
             // A copy left running for days still hears about a new release.
             UpdateNotice.checkInBackground(applicationContext)
             Result.success()
@@ -92,10 +89,7 @@ class SyncWorker(
     /** A quiet notification with the same progress bar as the app. */
     private fun notification(progress: SyncProgress?): Notification {
         val context = applicationContext
-        val manager = context.getSystemService(NotificationManager::class.java)
-        manager.createNotificationChannel(
-            NotificationChannel(CHANNEL, context.getString(R.string.sync_channel), NotificationManager.IMPORTANCE_MIN),
-        )
+        NotificationChannels.ensure(context)
         val fraction = progress?.fraction
         return NotificationCompat
             .Builder(context, CHANNEL)
@@ -118,7 +112,7 @@ class SyncWorker(
         private const val KEY_STEP = "step"
         private const val KEY_DONE = "done"
         private const val KEY_TOTAL = "total"
-        private const val CHANNEL = "sync"
+        private const val CHANNEL = NotificationChannels.SYNC
         private const val NOTIFICATION_ID = 7
         private const val MAX_ATTEMPTS = 3
         private const val REPORT_EVERY_MS = 500L

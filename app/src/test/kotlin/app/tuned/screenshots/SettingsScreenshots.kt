@@ -1,16 +1,28 @@
 package app.tuned.screenshots
 
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Surface
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.unit.dp
 import app.tuned.R
+import app.tuned.core.AccountSeats
 import app.tuned.data.AppReset
 import app.tuned.data.CaptionStyle
 import app.tuned.data.LighterMode
+import app.tuned.premium.MoreDevicesOffer
+import app.tuned.premium.Offer
 import app.tuned.ui.CaptionSettingsRoute
 import app.tuned.ui.RegionSettingsRoute
 import app.tuned.ui.SettingsPageRoute
 import app.tuned.ui.SettingsRoute
+import app.tuned.ui.onboarding.QrModules
+import app.tuned.ui.settings.AccountSignIn
+import app.tuned.ui.settings.AccountSignInDialog
 import app.tuned.ui.settings.SettingsPage
 import app.tuned.ui.settings.SignOutDialog
 import app.tuned.ui.settings.SignOutDownloadsDialog
@@ -95,6 +107,50 @@ class SettingsScreenshots : Screenshots() {
         overlay = { SignOutDialog(onSignOut = {}, onCancel = {}) },
     )
 
+    /** Signing in to the Tuned account: the code to enter on the website (docs/decisions/accounts.md). */
+    @Test
+    fun accountSignIn() = shot(
+        "settings-account-sign-in",
+        SettingsPageRoute(SettingsPage.PLAYLISTS.name),
+        wait = text(R.string.tuned_account_waiting),
+        overlay = { AccountSignInDialog(SIGN_IN_CODE, text(R.string.tuned_account_sign_in), onRetry = {}, onClose = {}) },
+    )
+
+    /** The same on a TV, with a QR code of the website's page for the code. */
+    @Test
+    @Config(qualifiers = TV)
+    fun accountSignInTv() = shot(
+        "settings-account-sign-in-tv",
+        SettingsPageRoute(SettingsPage.PLAYLISTS.name),
+        wait = text(R.string.tuned_account_waiting),
+        overlay = { AccountSignInDialog(SIGN_IN_CODE, text(R.string.tuned_account_sign_in), onRetry = {}, onClose = {}) },
+    )
+
+    /** Settings › Guide and refresh › Notifications, which opens Android's page for the dot on the app icon. */
+    @Test
+    fun notifications() = shot(
+        "settings-notifications",
+        SettingsPageRoute(SettingsPage.GUIDE.name),
+        wait = text(R.string.settings_reminder_lead),
+        then = { compose.onNodeWithText(text(R.string.settings_notifications)).performScrollTo() },
+    )
+
+    /** Tuned Premium › More devices on a signed-in account with lifetime Premium: one-time seats from Play. */
+    @Test
+    fun premiumMoreDevices() = shot(
+        "premium-more-devices",
+        SettingsPageRoute(SettingsPage.ABOUT.name),
+        wait = text(R.string.premium_more_title),
+        overlay = {
+            Surface(Modifier.fillMaxSize()) {
+                Column(Modifier.padding(24.dp)) {
+                    MoreDevicesOffer(Offer(AccountSeats.SEAT_ONCE, "US$4.99", 0, yearly = false), most = 7, failed = false, onBuy = {})
+                    MoreDevicesOffer(Offer(AccountSeats.SEAT_YEARLY, "US$1.99", 0, yearly = true), most = 1, failed = false, onBuy = {})
+                }
+            }
+        },
+    )
+
     /** The user agent picklist, opened from Settings › About. */
     @Test
     fun userAgents() = shot(
@@ -104,6 +160,9 @@ class SettingsScreenshots : Screenshots() {
         then = { compose.onNodeWithText(text(R.string.settings_user_agent)).performScrollTo().performClick() },
     )
 }
+
+private const val SIGN_IN_PAGE = "https://tuned-devices.vercel.app/account?tv=K7QF29MD"
+private val SIGN_IN_CODE = AccountSignIn.State.Code("K7QF-29MD", SIGN_IN_PAGE, QrModules.of(SIGN_IN_PAGE))
 
 /** Every page of Settings, so a new page or row shows up without anyone adding a line. */
 @RunWith(ParameterizedRobolectricTestRunner::class)

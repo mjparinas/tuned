@@ -3,15 +3,15 @@ package app.tuned.core
 import java.security.MessageDigest
 
 /**
- * The rules of sync between devices (phone and TV) through the person's Google Drive app folder: what one run does, and
- * Google's answers while signing in with a code. Plain Kotlin so it is tested without a device.
+ * The rules of keeping a phone and a TV the same through the backup in the Tuned account (docs/decisions/accounts.md):
+ * what one run does. Plain Kotlin so it is tested without a device.
  */
 object CloudSync {
     enum class Step { NOTHING, PULL, PUSH }
 
     /**
      * What one run does, from three fingerprints of the synced copy: [local] (this device now), [synced] (what this
-     * device last sent or took, null before the first run) and [remote] (what Drive holds, null when it holds nothing).
+     * device last sent or took, null before the first run) and [remote] (what the backup holds, null when there is none).
      * Only one side changed: it wins. Both changed: the newer change wins, [remoteChangedAt] against [localChangedAt]
      * (when this device first saw its own change).
      */
@@ -24,7 +24,7 @@ object CloudSync {
     ): Step {
         if (remote == null) return Step.PUSH
         if (local == remote) return Step.NOTHING
-        // First run on this device with something already in Drive: take it rather than overwrite another device's.
+        // First run on this device with a backup already there: take it rather than overwrite another device's.
         if (synced == null) return Step.PULL
         val localChanged = local != synced
         val remoteChanged = remote != synced
@@ -36,81 +36,6 @@ object CloudSync {
         }
     }
 
-    /** A fingerprint of the synced copy (SHA-256), stored beside the file in Drive to tell whether it changed. */
+    /** A fingerprint of the synced copy (SHA-256), stored with the backup to tell whether it changed. */
     fun fingerprint(plain: ByteArray): String = MessageDigest.getInstance("SHA-256").digest(plain).joinToString("") { "%02x".format(it) }
-
-    enum class Poll { SIGNED_IN, WAIT, SLOW_DOWN, DENIED, EXPIRED, FAILED }
-
-    /** Google's answer while the person enters the code: the status and the "error" field of the reply. */
-    fun poll(
-        status: Int,
-        error: String?,
-    ): Poll = when {
-        status == HTTP_OK -> Poll.SIGNED_IN
-        error == "authorization_pending" -> Poll.WAIT
-        error == "slow_down" -> Poll.SLOW_DOWN
-        error == "access_denied" -> Poll.DENIED
-        error == "expired_token" -> Poll.EXPIRED
-        else -> Poll.FAILED
-    }
-
-    /** Why signing in to Google ended without an account, in words the dialog can explain. */
-    enum class Reason { OFFLINE, UNKNOWN_CLIENT, WRONG_CLIENT_TYPE, WRONG_SECRET, SCOPE_NOT_ALLOWED, DENIED, EXPIRED, OTHER }
-
-    /** A failed sign-in: the [reason], and Google's own words ([detail], null when Google wasn't reached) to show under it. */
-    data class Failure(
-        val reason: Reason,
-        val detail: String?,
-    )
-
-    /**
-     * Google's answer to a failed sign-in step ([status] null when Google wasn't reached at all), from the "error" and
-     * "error_description" fields of the reply. Before this, every one of them read "Couldn't reach Google", which hid a
-     * misconfigured OAuth client behind a network message.
-     */
-    fun failure(
-        status: Int?,
-        error: String?,
-        description: String?,
-    ): Failure {
-        if (status == null) return Failure(Reason.OFFLINE, null)
-        val reason =
-            when (error) {
-                "access_denied" -> Reason.DENIED
-                "expired_token" -> Reason.EXPIRED
-                "invalid_scope" -> Reason.SCOPE_NOT_ALLOWED
-                "unauthorized_client" -> Reason.WRONG_CLIENT_TYPE
-                "deleted_client" -> Reason.UNKNOWN_CLIENT
-                "invalid_client" -> invalidClient(description.orEmpty().lowercase())
-                else -> Reason.OTHER
-            }
-        val detail = listOfNotNull(error ?: "HTTP $status", description?.takeIf { it.isNotBlank() }).joinToString(": ")
-        return Failure(reason, detail)
-    }
-
-    /** Google's "invalid_client" covers an unknown client, the wrong kind of client and a wrong secret. */
-    private fun invalidClient(about: String): Reason = when {
-        "not found" in about || "deleted" in about -> Reason.UNKNOWN_CLIENT
-        "type" in about -> Reason.WRONG_CLIENT_TYPE
-        else -> Reason.WRONG_SECRET
-    }
-
-    /** Whether Drive turned a request down because the Drive API is off in the app's Google Cloud project. */
-    fun driveApiOff(
-        status: Int,
-        body: String,
-    ): Boolean = status == HTTP_FORBIDDEN && ("accessNotConfigured" in body || "SERVICE_DISABLED" in body)
-
-    /**
-     * The one scope asked for: only the files Tuned itself created in the person's Drive, nothing else of theirs.
-     * Not `drive.appdata` (the hidden app folder): Google's sign-in with a code refuses it ("Invalid device flow
-     * scope"), and that sign-in is the one Tuned uses on phones and TVs alike.
-     */
-    const val SCOPE = "https://www.googleapis.com/auth/drive.file"
-
-    /** The synced copy's name in the person's Drive. */
-    const val FILE_NAME = "Tuned sync"
-
-    private const val HTTP_OK = 200
-    private const val HTTP_FORBIDDEN = 403
 }

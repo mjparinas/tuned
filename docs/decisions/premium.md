@@ -22,17 +22,19 @@ Play's rules cover "any content your app displays or links to", and pay-TV compa
 
 Free: one playlist with its guide; Live TV, Movies, Shows, search, favourites, Continue Watching; the whole player (captions, audio, picture-in-picture, casting); the grid guide, channel numbers and flip back; TMDB details; backup copies; auto-tune and the Live Events page; Android TV.
 
-Premium: more than one playlist; your own lists beside Favourites, and renaming channels and changing their logos ([lists](lists.md)); more than one profile (with kids profiles and PINs); the Premium profile pictures ([profiles](profiles.md)); pause and rewind live TV; recording; more than 3 downloads at a time; following events and their alerts; sync between devices; Trakt; themes and accent colours other than the default.
+Premium: more than one playlist; your own lists beside Favourites, and renaming channels and changing their logos ([lists](lists.md)); more than one profile (with kids profiles and PINs); the Premium profile pictures ([profiles](profiles.md)); pause and rewind live TV; recording; more than 3 downloads at a time; following events and their alerts; the backup in a Tuned account that keeps devices the same ([accounts](accounts.md)); Trakt; themes and accent colours other than the default.
 
 How the locks work (`premium/`):
 
 - `Premium` holds one `unlocked` state. The `github` build is always unlocked (`BuildConfig.PREMIUM_ALWAYS`). The `play` build remembers the last answer on the device and asks Play again in the background each time the app comes to the front, so Premium works offline and nothing waits on Play.
-- A locked setting (live rewind, sync sign-in, Trakt sign-in) shows "Premium" and a lock (`LockedRow`). A locked action (adding a second playlist or profile, a fourth download, following an event, turning an alert on, recording, a non-default accent, a Premium profile picture, Add to list, Rename channel, Change logo) opens the Premium screen instead (`Premium.allow`). Turning things off, browsing and Tune always work.
+- A locked setting (live rewind, Tuned account sign-in, Trakt sign-in) shows "Premium" and a lock (`LockedRow`). A locked action (adding a second playlist or profile, a fourth download, following an event, turning an alert on, recording, a non-default accent, a Premium profile picture, Add to list, Rename channel, Change logo) opens the Premium screen instead (`Premium.allow`). Turning things off, browsing and Tune always work.
 - Pause and rewind live TV is off in the player while locked, whatever the setting says.
 - `PremiumActivity` is the one Premium screen: what's included, the two prices as Play writes them, the trial, Restore purchase. It opens only from a locked feature or Settings › About › Tuned Premium (store build only). No pop-ups, banners, nags or countdowns.
 - Billing lives only in the `play` build (`app/src/play/kotlin/app/tuned/premium/StoreFor.kt`, Play Billing 7); the `github` build has no billing library at all. Purchases are acknowledged when Play reports them, since Play refunds unacknowledged ones after three days.
 
 ## Three devices per purchase
+
+Accounts carry these rules over per account, with extra seats bought once or yearly up to 10 ([accounts](accounts.md)); what follows is how a purchase without an account works.
 
 Melvin, 2026-11-19: "for the paid version, it should limit the number of devices they can activate. like a phone, a tv, and maybe one more. beyond that, it should stop them", and a blocked device stays blocked "until they uninstall a version and deactivate it". Play itself puts a purchase on every device signed in to the Google account, so the count lives in a small device list on Vercel (`devices/`), which Melvin chose over Cloudflare, a file in the person's Drive, or Firebase (he already pays for Vercel Pro, whose terms allow a paid app; Hobby doesn't).
 

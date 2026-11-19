@@ -1,7 +1,29 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="widget_favourites">Favourite channels</string>
-    <string name="widget_favourites_description">Your favourite channels and what\'s on now. Tap one to watch.</string>
-    <string name="widget_empty">Tap the heart on a channel to see it here.</string>
+    <string name="widget_favourites_description">Your favourite channels\' logos and what\'s on now. Tap one to watch.</string>
+    <string name="widget_empty_title">No favourites yet</string>
+    <string name="widget_empty">Tap the heart on a channel and it shows up here.</string>
+    <string name="widget_add_favourites">Add favourites</string>
+    <string name="widget_signed_out">Sign in to Tuned</string>
+    <string name="widget_signed_out_body">Your favourite channels show up here once a playlist is added.</string>
+    <string name="widget_open_tuned">Open Tuned</string>
+    <!-- What a screen reader says for a channel tile: the channel's name, and the programme on now. -->
+    <string name="widget_watch">Watch %1$s</string>
+    <string name="widget_watch_on_now">Watch %1$s. On now: %2$s</string>
+
+    <string name="widget_continue">Continue watching</string>
+    <string name="widget_continue_description">Films and episodes you\'ve started, with the time left. Tap one to pick up where you left off.</string>
+    <string name="widget_continue_empty_title">Nothing in progress</string>
+    <string name="widget_continue_empty">Films and episodes you start show up here.</string>
+    <string name="widget_continue_signed_out_body">Films and episodes you\'ve started show up here once a playlist is added.</string>
+    <string name="widget_episode_number">S%1$d E%2$d</string>
+    <!-- A screen reader's line for a Continue watching card: what it is, then the time left. -->
+    <string name="widget_resume">Resume %1$s. %2$s</string>
+    <plurals name="widget_minutes_left">
+        <item quantity="one">%d min left</item>
+        <item quantity="other">%d min left</item>
+    </plurals>
+
     <string name="tile_last_channel">Last channel</string>
 </resources>

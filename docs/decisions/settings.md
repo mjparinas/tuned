@@ -6,10 +6,10 @@ Melvin: "go through settings and figure out how to improve and reduce the comple
 
 The first Settings screen is a short list of pages, each with an icon and a line saying what's inside, so a person finds a setting by its area instead of scrolling past sixty rows:
 
-- **Playlists and account**: playlists, the account's status, Trakt and sync between devices (each only in builds with its keys), sign out.
+- **Playlists and account**: playlists, the account's status, Trakt (only in builds with its key), the Tuned account and its backup ([accounts](accounts.md)), sign out.
 - **Profiles and parental controls**: profiles, adult categories and the parental PIN.
 - **Channels and lists**: start screen, starting on the last channel, the guide in the list, the grid guide, channel numbers, always showing the scroll bar, favourite order, and what's hidden (countries, groups, 24/7 channels).
-- **Guide and refresh**: refresh now, when the playlist and guide download, pull to refresh, Wi-Fi only, guide days, guide fixes, the time zone guide and event times show in (the phone's own by default; Melvin, 2026-11-18) and reminders.
+- **Guide and refresh**: refresh now, when the playlist and guide download, pull to refresh, Wi-Fi only, guide days, guide fixes, the time zone guide and event times show in (the phone's own by default; Melvin, 2026-11-18), reminders, and Notifications, which opens Android's page for Tuned's notifications and the dot on the app icon ([playlist](playlist.md)).
 - **Playback**: audio language, resume, autoplay, skip intro, live rewind, buffering, then the screen and controls (landscape, picture-in-picture, background play, frame rate, sound delay, tunnelled playback (TV only), gestures, how long controls stay, skip lengths), clearing history, and Subtitles (finding subtitles by itself and the optional OpenSubtitles account), shown only in builds with the OpenSubtitles key.
 - **Captions**: opens the caption screen directly, since it is already a page.
 - **When a channel fails**: auto-reconnect, backup copies, channel health, and auto-tune's wait and quality. These were spread across Playback, Content and Auto-tune; they answer one question.

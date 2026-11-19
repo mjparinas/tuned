@@ -1,6 +1,5 @@
 package app.tuned.data
 
-import app.tuned.core.PassphraseCrypto
 import app.tuned.data.db.ChannelEditEntity
 import app.tuned.data.db.FavouriteEntity
 import app.tuned.data.db.GuideFixEntity
@@ -168,7 +167,7 @@ class SyncCopyRepository(
         val everything: Boolean get() = settings || favourites > 0 || lists > 0 || watchLater > 0
     }
 
-    /** Reads a copy without taking it; throws [PassphraseCrypto.NotOurs] for anything else. */
+    /** Reads a copy without taking it; throws [NotACopy] for anything else. */
     fun summary(plain: ByteArray): Summary {
         val contents = decodeContents(plain)
         return Summary(
@@ -311,7 +310,10 @@ class SyncCopyRepository(
 
     private fun decodeContents(plain: ByteArray): Contents = runCatching {
         json.decodeFromString(Contents.serializer(), plain.decodeToString())
-    }.getOrElse { throw PassphraseCrypto.NotOurs() }
+    }.getOrElse { throw NotACopy() }
+
+    /** Bytes that aren't a sync copy, or a damaged one. */
+    class NotACopy : Exception("Not a Tuned copy")
 
     private companion object {
         /** 2 added the profiles, guide fixes, intros and accounts (2026-11-19). */

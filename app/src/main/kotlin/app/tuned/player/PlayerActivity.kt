@@ -42,6 +42,7 @@ import app.tuned.diagnostics.AppLog
 import app.tuned.diagnostics.launchSafely
 import app.tuned.premium.Premium
 import app.tuned.ui.theme.playerAccent
+import app.tuned.widget.Widgets
 import app.tuned.work.TvHome
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -255,7 +256,7 @@ class PlayerActivity : FragmentActivity() {
         // One connection to the provider at a time: downloads and channel scans wait while anything plays.
         container.playerOpen.value = true
         container.offline.pause()
-        // A cast outlives this screen; downloads keep waiting while a TV plays.
+        // A cast carries on while the app is in the background; downloads keep waiting while a TV plays.
         container.tvCasting.watch()
         buildViews()
         hideSystemBars(window)
@@ -810,6 +811,7 @@ class PlayerActivity : FragmentActivity() {
                 container.appScope.launch {
                     container.db.library().saveProgress(HistoryEntity(id, position, duration, System.currentTimeMillis()))
                     TvHome.schedule(applicationContext) // the TV home screen's Continue watching row
+                    Widgets.refresh(applicationContext) // and the Continue watching widget
                 }
             }
         }
@@ -831,7 +833,7 @@ class PlayerActivity : FragmentActivity() {
         gestures?.release()
         tools.release()
         dial.release()
-        cast?.release()
+        cast?.release(leaving = isFinishing)
         reconnect.stop()
         background.release()
         session.release()

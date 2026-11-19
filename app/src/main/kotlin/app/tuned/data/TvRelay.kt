@@ -39,6 +39,11 @@ class TvRelay(
         class Box(
             val box: ByteArray,
         ) : Taken
+
+        /** The website signed this device in to a Tuned account: a one-time code for [TunedAccount.signIn]. */
+        class Linked(
+            val link: String,
+        ) : Taken
     }
 
     enum class Sent { Ok, Gone, AlreadySent, TooMany, Unreachable }
@@ -50,6 +55,7 @@ class TvRelay(
     suspend fun take(code: Code): Taken {
         val reply = post("take", Ask(code = code.code, secret = code.secret)) ?: return Taken.Unreachable
         return when {
+            reply.status == "ok" && reply.link != null -> Taken.Linked(reply.link)
             reply.status == "ok" && reply.box != null -> runCatching { Taken.Box(TvHandoff.unb64(reply.box)) }.getOrDefault(Taken.Gone)
             reply.status == "waiting" -> Taken.Waiting
             reply.status == "not found" -> Taken.Gone
@@ -117,6 +123,7 @@ class TvRelay(
         val seconds: Int = TvHandoff.CODE_SECONDS,
         val key: String? = null,
         val box: String? = null,
+        val link: String? = null,
     )
 
     private companion object {

@@ -3,9 +3,7 @@ package app.tuned.data
 import android.content.Context
 import androidx.core.content.edit
 import app.tuned.core.CloudSync
-import app.tuned.core.PassphraseCrypto
 import app.tuned.diagnostics.AppLog
-import app.tuned.diagnostics.attempt
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -14,37 +12,35 @@ import kotlinx.coroutines.sync.withLock
 import java.io.IOException
 
 /**
- * Sync between devices (from the app audit, item 13; Melvin chose his Google account's Drive app folder, 2026-11-17):
- * the saved playlists, settings, favourites and watch later ([SyncCopyRepository.syncCopy]) kept the same on a phone and
- * a TV. The copy goes to one file in the person's Drive as it is, with no passphrase (Melvin, 2026-11-18: "i dont think we
- * need encryption"), so signing in to Google is all a device needs. Each run takes the other device's copy or sends this one's
- * ([CloudSync.decide]); everything works offline and catches up on the next run.
+ * The backup in the person's Tuned account (docs/decisions/accounts.md), which keeps a phone and a TV the same: the saved
+ * playlists, settings, profiles, favourites and the rest ([SyncCopyRepository.syncCopy]). It replaced sync through Google
+ * Drive (Melvin, 2026-11-19: "i want to completely deprecate google drive sync"). Each run takes the other device's copy
+ * or sends this one's ([CloudSync.decide]); everything works offline and catches up on the next run.
  */
 class CloudSyncRepository(
     context: Context,
-    /** The Google account: signing in, and the copy in Drive. */
-    val drive: GoogleDrive,
+    /** The Tuned account, which holds the backup. */
+    val account: TunedAccount,
     private val syncCopy: SyncCopyRepository,
     /** A pulled copy signed this device in: start its first download. */
     private val onSignedIn: () -> Unit,
     /** A pulled copy changed the guide fixes: read the guide again. */
     private val onGuideChanged: () -> Unit = {},
 ) {
-    enum class Problem { NONE, OFFLINE, DRIVE_API_OFF }
+    enum class Problem { NONE, OFFLINE }
 
     /** How restoring from the welcome screen ended ([restore]). */
     enum class Restore {
         /** A playlist came back, with everything else: open the app. */
         RESTORED,
 
-        /** Drive holds no Tuned copy for this Google account yet. */
+        /** The account has no backup yet. */
         NOTHING_SAVED,
 
-        /** The copy came back, but held no playlist this device can open (only files, say). */
+        /** The backup came back, but held no playlist this device can open (only files, say). */
         NO_PLAYLIST,
 
         OFFLINE,
-        DRIVE_API_OFF,
     }
 
     data class Status(
@@ -52,69 +48,66 @@ class CloudSyncRepository(
         val problem: Problem,
     )
 
-    private val prefs = context.getSharedPreferences("tuned.cloudsync", Context.MODE_PRIVATE)
-    private val box = KeystoreBox("tuned.cloudsync")
+    private val prefs = context.getSharedPreferences("tuned.backup", Context.MODE_PRIVATE)
     private val lock = Mutex()
 
-    val available: Boolean get() = drive.available
-    val signedIn: StateFlow<Boolean> = drive.signedIn
+    val signedIn: StateFlow<Boolean> = account.signedIn
 
     private val statusFlow = MutableStateFlow(Status(prefs.getLong(KEY_LAST_SYNC, 0), Problem.NONE))
     val status: StateFlow<Status> = statusFlow.asStateFlow()
 
-    /** Stops syncing here: signs out of Google. What is on the device stays. */
+    /** Signs this device out of the account. What is on the device, and the backup, stay. */
     suspend fun stop() {
-        drive.signOut()
-        prefs.edit { clear() }
-        statusFlow.value = Status(0, Problem.NONE)
+        account.signOut()
+        forget()
     }
 
-    /** Signing out of Tuned: stops syncing on this device at once; other devices and the Drive copy are untouched. */
+    /** Signing out of Tuned: forgets the account here at once; other devices and the backup are untouched. */
     fun disconnect() {
-        drive.disconnect()
+        account.disconnect()
+        forget()
+    }
+
+    private fun forget() {
         prefs.edit(commit = true) { clear() }
         statusFlow.value = Status(0, Problem.NONE)
     }
 
     /**
      * One run: takes the other device's copy, sends this one's, or does nothing. Returns false when it should be tried
-     * again later (offline, or Drive didn't answer).
+     * again later (offline, the server didn't answer, or another device saved at the same moment).
      */
     suspend fun run(): Boolean = lock.withLock {
-        if (!drive.available || !drive.signedIn.value) return@withLock true
+        if (!account.signedIn.value) return@withLock true
         try {
             sync()
             val now = System.currentTimeMillis()
             prefs.edit { putLong(KEY_LAST_SYNC, now) }
             statusFlow.value = Status(now, Problem.NONE)
             true
-        } catch (e: GoogleDrive.DriveApiOff) {
-            AppLog.w(TAG, "Google Drive turned the request down", e)
-            statusFlow.value = statusFlow.value.copy(problem = Problem.DRIVE_API_OFF)
-            true
         } catch (e: IOException) {
-            AppLog.w(TAG, "Couldn't sync with Google Drive", e)
+            AppLog.w(TAG, "Couldn't reach the backup", e)
             statusFlow.value = statusFlow.value.copy(problem = Problem.OFFLINE)
             false
         }
     }
 
     /**
-     * The welcome screen's "Restore from Google Drive": takes the copy in Drive as it is, never sending this fresh
-     * device's empty one over it. Sync stays signed in afterwards, so the device keeps in step from then on.
+     * The welcome screen's "Restore from your Tuned account": takes the backup as it is, never sending this fresh
+     * device's empty copy over it. The device stays signed in afterwards, so it keeps in step from then on.
      */
     suspend fun restore(): Restore = lock.withLock {
-        if (!drive.available || !drive.signedIn.value) return@withLock Restore.NOTHING_SAVED
+        if (!account.signedIn.value) return@withLock Restore.NOTHING_SAVED
         try {
-            val found = drive.find() ?: return@withLock Restore.NOTHING_SAVED
+            val found = account.find() ?: return@withLock Restore.NOTHING_SAVED
             val applied =
                 try {
-                    syncCopy.applySyncCopy(readable(drive.download(found.id)))
-                } catch (_: PassphraseCrypto.NotOurs) {
-                    AppLog.w(TAG, "Couldn't read the copy in Drive to restore it")
+                    syncCopy.applySyncCopy(found.copy)
+                } catch (e: SyncCopyRepository.NotACopy) {
+                    AppLog.w(TAG, "Couldn't read the backup to restore it", e)
                     return@withLock Restore.NOTHING_SAVED
                 }
-            found.fingerprint?.let { markSynced(it) }
+            markSynced(found.fingerprint ?: CloudSync.fingerprint(found.copy), found.version)
             val now = System.currentTimeMillis()
             prefs.edit { putLong(KEY_LAST_SYNC, now) }
             statusFlow.value = Status(now, Problem.NONE)
@@ -125,11 +118,8 @@ class CloudSyncRepository(
             } else {
                 Restore.NO_PLAYLIST
             }
-        } catch (e: GoogleDrive.DriveApiOff) {
-            AppLog.w(TAG, "Google Drive turned the restore down", e)
-            Restore.DRIVE_API_OFF
         } catch (e: IOException) {
-            AppLog.w(TAG, "Couldn't restore from Google Drive", e)
+            AppLog.w(TAG, "Couldn't restore the backup", e)
             Restore.OFFLINE
         }
     }
@@ -145,79 +135,54 @@ class CloudSyncRepository(
                 putLong(KEY_CHANGED_AT, System.currentTimeMillis())
             }
         }
-        val remote = drive.find()
+        val remote = account.find()
+        val remoteFingerprint = remote?.let { it.fingerprint ?: CloudSync.fingerprint(it.copy) }
         val localChangedAt = prefs.getLong(KEY_CHANGED_AT, 0)
-        when (CloudSync.decide(local, synced, remote?.fingerprint, remote?.changedAt ?: 0, localChangedAt)) {
+        when (CloudSync.decide(local, synced, remoteFingerprint, remote?.changedAt ?: 0, localChangedAt)) {
             CloudSync.Step.NOTHING -> {
-                markSynced(local)
+                markSynced(local, remote?.version ?: 0)
             }
 
             CloudSync.Step.PUSH -> {
-                push(plain, local, remote?.id)
+                // A Conflict (another device saved since find) is an IOException: the next run decides again.
+                account.upload(plain, local, System.currentTimeMillis(), remote?.version ?: 0)
+                markSynced(local, (remote?.version ?: 0) + 1)
             }
 
             CloudSync.Step.PULL -> {
                 val found = requireNotNull(remote)
                 val applied =
                     try {
-                        syncCopy.applySyncCopy(readable(drive.download(found.id)))
-                    } catch (_: PassphraseCrypto.NotOurs) {
-                        // A damaged copy, or a locked one this device can't open: this device's replaces it rather
-                        // than leaving sync stuck.
-                        AppLog.w(TAG, "Couldn't read the copy in Drive; sending this device's")
-                        push(plain, local, found.id)
+                        syncCopy.applySyncCopy(found.copy)
+                    } catch (e: SyncCopyRepository.NotACopy) {
+                        // A damaged copy: this device's replaces it rather than leaving the backup stuck.
+                        AppLog.w(TAG, "Couldn't read the backup; sending this device's", e)
+                        account.upload(plain, local, System.currentTimeMillis(), found.version)
+                        markSynced(local, found.version + 1)
                         return
                     }
-                markSynced(requireNotNull(found.fingerprint))
+                markSynced(requireNotNull(remoteFingerprint), found.version)
                 if (applied.guideChanged) onGuideChanged()
                 if (applied.signedIn) onSignedIn()
             }
         }
     }
 
-    private suspend fun push(
-        plain: ByteArray,
+    private fun markSynced(
         fingerprint: String,
-        existing: String?,
-    ) {
-        drive.upload(plain, fingerprint, System.currentTimeMillis(), existing)
-        markSynced(fingerprint)
-        // Drive now holds a plain copy, so the passphrase an older version kept is no longer needed.
-        prefs.edit { remove(KEY_LEGACY_PASSPHRASE) }
-    }
-
-    /**
-     * The copy as plain bytes. One an older version locked with a passphrase opens with the passphrase this device
-     * still holds from then; without it, or with the wrong one, it counts as unreadable ([PassphraseCrypto.NotOurs]).
-     */
-    private fun readable(bytes: ByteArray): ByteArray {
-        if (!PassphraseCrypto.isSealed(bytes)) return bytes
-        val passphrase = legacyPassphrase() ?: throw PassphraseCrypto.NotOurs()
-        return try {
-            PassphraseCrypto.open(bytes, passphrase)
-        } catch (_: PassphraseCrypto.WrongPassphrase) {
-            throw PassphraseCrypto.NotOurs()
-        }
-    }
-
-    private fun markSynced(fingerprint: String) = prefs.edit {
+        version: Int,
+    ) = prefs.edit {
         putString(KEY_SYNCED, fingerprint)
         putString(KEY_NOTICED, fingerprint)
-    }
-
-    private fun legacyPassphrase(): CharArray? {
-        val blob = prefs.getString(KEY_LEGACY_PASSPHRASE, null) ?: return null
-        return attempt(TAG, "Couldn't read the sync passphrase") { box.open(blob).toCharArray() }.getOrNull()
+        putInt(KEY_VERSION, version)
     }
 
     private companion object {
-        const val TAG = "CloudSync"
-
-        /** Kept by versions before 2026-11-18, which locked the copy; read only to open such a copy once. */
-        const val KEY_LEGACY_PASSPHRASE = "passphrase"
+        const val TAG = "Backup"
         const val KEY_SYNCED = "synced"
         const val KEY_NOTICED = "noticed"
         const val KEY_CHANGED_AT = "changedAt"
         const val KEY_LAST_SYNC = "lastSync"
+        const val KEY_VERSION = "version"
     }
 }

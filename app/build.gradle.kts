@@ -43,10 +43,6 @@ android {
                         .get()
                 }.getOrNull()
         buildConfigField("String", "GIT_COMMIT", "\"${gitCommit.orEmpty().trim().take(7)}\"")
-        // Sync between devices (docs/decisions/sync.md): Google's "TVs and limited input devices" client, from the release
-        // workflow's secrets, never committed. Without it sync stays hidden.
-        buildConfigField("String", "GOOGLE_TV_CLIENT_ID", "\"${System.getenv("GOOGLE_TV_CLIENT_ID").orEmpty()}\"")
-        buildConfigField("String", "GOOGLE_TV_CLIENT_SECRET", "\"${System.getenv("GOOGLE_TV_CLIENT_SECRET").orEmpty()}\"")
     }
 
     // Two builds of the same app (docs/decisions/premium.md). `github` is what GitHub Releases ship: it updates itself
@@ -214,6 +210,7 @@ dependencies {
     implementation(libs.androidx.media3.ui)
     implementation(libs.androidx.media3.session)
     implementation(libs.androidx.glance.appwidget)
+    implementation(libs.androidx.glance.material3) // the widgets in the app's own colours
     implementation(libs.androidx.media3.cast)
 
     implementation(libs.coil.compose)

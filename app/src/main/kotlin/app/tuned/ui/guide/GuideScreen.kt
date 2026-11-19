@@ -127,7 +127,7 @@ class GuideViewModel(
             reminders.cancel(c.id, p.start)
         } else {
             viewModelScope.launchSafely("Guide") {
-                reminders.set(c.id, c.name, p.title, p.start, settings.settings.first().reminderLeadMinutes)
+                reminders.set(c.id, c.name, p.title, p.start, p.stop, settings.settings.first().reminderLeadMinutes)
             }
         }
     }

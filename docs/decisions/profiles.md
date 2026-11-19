@@ -8,7 +8,7 @@ Each profile has its own **favourites, watch history (Continue Watching and watc
 
 - The profiles live in Room (`profiles`), and the one in use is a single row in `current_profile`. Every list query reads that row in SQL, so a switch refreshes every list, pager and Continue Watching row at once with no code passing a profile id around. Writes go through DAO methods that stamp the profile in use.
 - The profile in use is mirrored into DataStore (`profile_id`, `kids_profile`, `profile_count`) so the first frame knows it without opening the database. `ProfileRepository` writes both and puts the mirror right at start. The mirror is never backed up.
-- **Profiles sync between devices** (Melvin, 2026-11-19): every profile, its avatar and PIN hash, and everything it keeps travel in the Drive copy, so a TV restored from Drive has the phone's profiles ([sync](sync.md)).
+- **Profiles sync between devices** (Melvin, 2026-11-19): every profile, its avatar and PIN hash, and everything it keeps travel in the backup, so a TV restored from the Tuned account has the phone's profiles ([accounts](accounts.md)).
 - Upgrading (database version 13) gives everything already saved to the first profile, named "Me" until renamed.
 
 ## Kids profiles
@@ -24,7 +24,7 @@ Each profile has its own **favourites, watch history (Continue Watching and watc
 - "Forgot PIN" takes the account password (or playlist link) instead.
 - One throttle (`PinThrottle`) covers every PIN on the device: five wrong in a row wait 30 seconds.
 - Switching profile locks adult categories again, since an unlock belongs to the person who typed the PIN.
-- **The player enforces the same rules as the lists** (security audit, 2026-11-18). The quick-settings tile, the favourites widget, Android TV's home screen cards and other apps' play intents open the player without going through a list, so the player itself (`PlayGate`) refuses an adult channel while adult categories are locked, and anything outside kids and family on a kids profile, with a short message. The widget and TV cards leave those channels out too. Before this, the tile reopened an adult channel after the unlock had ended.
+- **The player enforces the same rules as the lists** (security audit, 2026-11-18). The quick-settings tile, the favourites widget, Android TV's home screen cards and other apps' play intents open the player without going through a list, so the player itself (`PlayGate`) refuses an adult channel while adult categories are locked, and anything outside kids and family on a kids profile, with a short message. The home screen widgets (favourites and Continue watching) and TV cards leave those out too. Before this, the tile reopened an adult channel after the unlock had ended.
 
 ## Who's watching
 
