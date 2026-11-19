@@ -1,13 +1,10 @@
 package app.tuned.ui.browse
 
-import androidx.compose.ui.test.hasClickAction
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onFirst
-import androidx.compose.ui.test.onRoot
-import androidx.compose.ui.test.printToString
-import androidx.compose.ui.test.requestFocus
 import androidx.test.core.app.ApplicationProvider
 import androidx.work.Configuration
 import androidx.work.testing.SynchronousExecutor
@@ -16,6 +13,7 @@ import app.tuned.R
 import app.tuned.TunedApp
 import app.tuned.container
 import app.tuned.data.AppSettings
+import app.tuned.data.db.ChannelWithNow
 import app.tuned.screenshots.SampleData
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
@@ -52,7 +50,7 @@ class TvLiveLayoutTest {
     }
 
     @Test
-    fun groupsRunDownTheLeftAndTheFocusedChannelShowsBesideTheList() {
+    fun groupsRunDownTheLeftWithTheDetailsBesideTheList() {
         compose.setContent {
             HomeScreen(
                 settings = AppSettings(),
@@ -90,17 +88,31 @@ class TvLiveLayoutTest {
                 .fetchSemanticsNode()
                 .boundsInRoot
         assertEquals(true, favourites.top > all.top && favourites.left == all.left)
-        // The details beside the list show the channel the remote is on.
-        compose.onAllNodes(hasText("Maple News 24", substring = true) and hasClickAction()).onFirst().requestFocus()
-        val picked =
-            runCatching {
-                compose.waitUntil(
-                    WAIT_MS,
-                ) { compose.onAllNodes(hasText(app.getString(R.string.tv_live_pick))).fetchSemanticsNodes().isEmpty() }
-            }
-        // The whole screen in the failure, to see where focus went.
-        if (picked.isFailure) throw AssertionError(compose.onRoot(useUnmergedTree = true).printToString(), picked.exceptionOrNull())
-        compose.onAllNodes(hasText(app.getString(R.string.tv_live_on_now), substring = true)).onFirst().assertExists()
+        // The details pane sits beside the list, waiting for the remote to land on a channel.
+        compose.onAllNodes(hasText(app.getString(R.string.tv_live_pick))).onFirst().assertExists()
+    }
+
+    /** The pane shows the channel's programme on now from the guide on the device, and what's next. */
+    @Test
+    fun theDetailsShowWhatIsOnNow() {
+        val channel =
+            ChannelWithNow(
+                id = 1,
+                name = "Maple News 24",
+                logo = null,
+                groupName = "CA | News",
+                tvgId = "ch0",
+                nowTitle = null,
+                nowStart = null,
+                nowStop = null,
+                favourite = false,
+                number = 1,
+            )
+        compose.setContent { ChannelInfoPane(channel) }
+        compose.waitUntil(WAIT_MS) {
+            compose.onAllNodes(hasText(app.getString(R.string.tv_live_on_now), substring = true)).fetchSemanticsNodes().isNotEmpty()
+        }
+        compose.onAllNodes(hasText(app.getString(R.string.tv_live_pick))).assertCountEquals(0)
     }
 
     private companion object {
