@@ -19,7 +19,7 @@ import org.robolectric.annotation.Config
 /**
  * On a real TV the welcome screen's single column was taller than the screen, so the logo sat cut off at the top edge
  * (Melvin, 2026-11-19). On a TV-sized screen, inside the TV's overscan margin, everything shows at once: the welcome,
- * all four kinds, Restore from Google Drive and the privacy line, with nothing scrolled away.
+ * all four kinds and the privacy line, with nothing scrolled away.
  */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [35], qualifiers = "w853dp-h480dp-land-television-xhdpi")
@@ -41,9 +41,9 @@ class WelcomeScreenTvTest {
             R.string.kind_link,
             R.string.kind_file,
             R.string.kind_stalker_summary,
-            R.string.restore_drive_summary,
             R.string.login_privacy,
         ).forEach { id ->
+            // Restore from Google Drive is left out: it hides itself in builds without the app's Google keys, as here.
             val node = compose.onNodeWithText(text(id))
             node.assertIsDisplayed()
             // Whole, not just partly on screen: a card cut off at the bottom edge used to pass.
