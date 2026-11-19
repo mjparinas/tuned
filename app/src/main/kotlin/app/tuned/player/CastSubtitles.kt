@@ -120,7 +120,7 @@ internal class CastSubtitles(
                 when (status?.playerState) {
                     MediaStatus.PLAYER_STATE_PLAYING -> true to Player.STATE_READY
                     MediaStatus.PLAYER_STATE_PAUSED -> false to Player.STATE_READY
-                    MediaStatus.PLAYER_STATE_IDLE -> false to idle(status?.idleReason ?: 0)
+                    MediaStatus.PLAYER_STATE_IDLE -> false to idle(status.idleReason)
                     else -> true to Player.STATE_BUFFERING // loading, buffering, or nothing heard yet
                 }
             val length = client?.streamDuration ?: 0L

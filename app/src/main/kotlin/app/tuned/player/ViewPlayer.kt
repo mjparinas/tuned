@@ -55,7 +55,7 @@ class ViewPlayer(
 
     /** The TV started, stopped, moved or changed its subtitles, or a cast began or ended: the controls look again. */
     fun tvChanged() {
-        val events = Player.Events(FlagSet.Builder().addAll(*TV_EVENTS).build())
+        val events = Player.Events(FlagSet.Builder().apply { TV_EVENTS.forEach(::add) }.build())
         synchronized(watchers) { watchers.toList() }.forEach { it.onEvents(this, events) }
     }
 

@@ -14,32 +14,28 @@ object WebVtt {
         srt: String,
         offsetMs: Long = 0,
     ): String {
-        val out = StringBuilder("WEBVTT\n\n")
         val blocks =
             srt
                 .removePrefix(BOM)
                 .replace("\r\n", "\n")
                 .replace('\r', '\n')
                 .split(BLANK_LINES)
-        for (block in blocks) {
-            val lines = block.lines().dropWhile { it.isBlank() }
-            val timing = lines.indexOfFirst { ARROW in it }
-            if (timing < 0) continue
-            val (start, end) = times(lines[timing]) ?: continue
-            val from = start + offsetMs
-            val to = end + offsetMs
-            if (to <= 0 || to <= from) continue
-            val text = lines.drop(timing + 1).map(::clean).filter { it.isNotBlank() }
-            if (text.isEmpty()) continue
-            out
-                .append(stamp(from.coerceAtLeast(0)))
-                .append(" --> ")
-                .append(stamp(to))
-                .append('\n')
-            text.forEach { out.append(it).append('\n') }
-            out.append('\n')
-        }
-        return out.toString()
+        return blocks.mapNotNull { cue(it, offsetMs) }.joinToString("", prefix = "WEBVTT\n\n")
+    }
+
+    /** One SubRip block as a WebVTT cue, or null when it has no timing or text, or ends before the start once moved. */
+    private fun cue(
+        block: String,
+        offsetMs: Long,
+    ): String? {
+        val lines = block.lines().dropWhile { it.isBlank() }
+        val timing = lines.indexOfFirst { ARROW in it }
+        val (start, end) = lines.getOrNull(timing)?.let(::times) ?: return null
+        val from = start + offsetMs
+        val to = end + offsetMs
+        val text = lines.drop(timing + 1).map(::clean).filter { it.isNotBlank() }
+        if (to <= 0 || to <= from || text.isEmpty()) return null
+        return stamp(from.coerceAtLeast(0)) + " --> " + stamp(to) + "\n" + text.joinToString("") { it + "\n" } + "\n"
     }
 
     /** The start and end of a SubRip timing line ("00:01:02,500 --> 00:01:04,000"), in ms. */
@@ -52,10 +48,9 @@ object WebVtt {
     }
 
     private fun ms(time: String): Long? {
-        val match = TIME.matchEntire(time) ?: return null
-        val (h, m, s, frac) = match.destructured
-        val millis = frac.padEnd(3, '0').take(3).toLong()
-        return ((h.toLong() * 60 + m.toLong()) * 60 + s.toLong()) * 1000 + millis
+        val parts = TIME.matchEntire(time)?.groupValues ?: return null
+        val millis = parts[4].padEnd(3, '0').take(3).toLong()
+        return ((parts[1].toLong() * 60 + parts[2].toLong()) * 60 + parts[3].toLong()) * 1000 + millis
     }
 
     private fun stamp(ms: Long): String {
