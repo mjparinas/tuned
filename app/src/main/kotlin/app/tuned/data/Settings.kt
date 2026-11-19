@@ -51,6 +51,9 @@ enum class BufferMode(
     SMOOTH(30_000, 120_000, 3_000),
 }
 
+/** Lighter mode for weak TV boxes: [AUTO] turns it on for a low-memory device or one that keeps freezing. */
+enum class LighterMode { AUTO, ON, OFF }
+
 enum class CaptionEdge { NONE, OUTLINE, DROP_SHADOW, RAISED, DEPRESSED }
 
 enum class CaptionFont { DEFAULT, SANS, SERIF, MONO, CASUAL }
@@ -79,6 +82,7 @@ data class AppSettings(
     val dynamicColour: Boolean = false,
     val pureBlack: Boolean = false,
     val accent: Accent = Accent.VIOLET,
+    val lighterMode: LighterMode = LighterMode.AUTO,
     val startTab: StartTab = StartTab.LIVE,
     val lastTab: Int = 0,
     val hiddenRegions: Set<String> = emptySet(),

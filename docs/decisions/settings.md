@@ -13,7 +13,7 @@ The first Settings screen is a short list of pages, each with an icon and a line
 - **Playback**: audio language, resume, autoplay, skip intro, live rewind, buffering, then the screen and controls (landscape, picture-in-picture, background play, frame rate, sound delay, tunnelled playback (TV only), gestures, how long controls stay, skip lengths), clearing history, and Subtitles (finding subtitles by itself and the optional OpenSubtitles account), shown only in builds with the OpenSubtitles key.
 - **Captions**: opens the caption screen directly, since it is already a page.
 - **When a channel fails**: auto-reconnect, backup copies, channel health, and auto-tune's wait and quality. These were spread across Playback, Content and Auto-tune; they answer one question.
-- **Appearance**: theme, dynamic colour, accent, pure black.
+- **Appearance**: theme, dynamic colour, accent, pure black, lighter mode ([speed](speed.md)).
 - **Downloads** is not in Settings (Melvin, 2026-11-18: "settings doesn't need downloads since it already has it on the home screen"). It is in the home screen's bar; Wi-Fi only for downloads stays under Guide and refresh.
 - **Updates and advanced**: update checks, the user agent (a picklist of common players, or your own) and Logs (developer mode was removed on 2026-11-18; see [diagnostics](diagnostics.md)). (The TMDB key moved out of Settings into a build secret on 2026-11-18; see [player](player.md).)
 

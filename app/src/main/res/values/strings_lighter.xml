@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Lighter mode for weak TV boxes (docs/decisions/speed.md). -->
+    <string name="settings_lighter">Lighter mode</string>
+    <string name="lighter_auto">Automatic</string>
+    <string name="lighter_auto_on">Automatic: on for this device</string>
+    <string name="lighter_on">On: no fades or animations, lighter pictures</string>
+    <string name="lighter_off">Off</string>
+</resources>
