@@ -145,6 +145,7 @@ internal val SETTING_FIELDS: List<SettingField<*, *>> =
         bool("tunneled_playback", { tunneledPlayback }) { copy(tunneledPlayback = it) }.notBackedUp(),
         int("live_rewind_minutes", { liveRewindMinutes }) { copy(liveRewindMinutes = it) },
         bool("picture_in_picture", { pictureInPicture }) { copy(pictureInPicture = it) },
+        bool("background_play", { backgroundPlay }) { copy(backgroundPlay = it) },
         bool("media_buttons", { mediaButtons }) { copy(mediaButtons = it) },
         bool("player_gestures", { playerGestures }) { copy(playerGestures = it) },
         bool("auto_reconnect", { autoReconnect }) { copy(autoReconnect = it) },

@@ -1,6 +1,7 @@
 package app.tuned.player
 
 import android.annotation.SuppressLint
+import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.content.pm.ActivityInfo
@@ -59,7 +60,21 @@ import java.util.concurrent.ConcurrentHashMap
 @OptIn(UnstableApi::class)
 class PlayerActivity : FragmentActivity() {
     private var player: ExoPlayer? = null
-    private val session = PlayerSession(this) { settings.mediaButtons }
+    private val session =
+        PlayerSession(
+            context = this,
+            enabled = { settings.mediaButtons },
+            background = { settings.backgroundPlay },
+            sessionActivity = {
+                // Back to this player as it is: the same request, which the single-task player doesn't restart.
+                PendingIntent.getActivity(this, 0, Intent(intent), PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
+            },
+        )
+
+    /** Leaving the app or locking the screen keeps the sound playing; see [BackgroundPlay]. */
+    private val background by lazy {
+        BackgroundPlay(this, lifecycleScope, { settings.backgroundPlay }, { player }, { cast?.casting == true })
+    }
     private lateinit var playerView: PlayerView
     private lateinit var overlay: LinearLayout
     private lateinit var titleView: TextView
@@ -579,9 +594,12 @@ class PlayerActivity : FragmentActivity() {
             .setSeekForwardIncrementMs(settings.seekForwardMs)
             .setAudioAttributes(PlayerSetup.audio, true)
             .setHandleAudioBecomingNoisy(true)
+            // Playing on with the screen off needs the CPU and Wi-Fi kept awake (only while it plays).
+            .setWakeMode(if (settings.backgroundPlay) C.WAKE_MODE_NETWORK else C.WAKE_MODE_NONE)
             .build()
             .apply {
                 addListener(listener(live))
+                addListener(background.listener)
                 addListener(skipIntro.listener)
                 addListener(subtitleSearch.listener)
             }
@@ -778,6 +796,11 @@ class PlayerActivity : FragmentActivity() {
         if (hasFocus) hideSystemBars(window)
     }
 
+    override fun onStart() {
+        super.onStart()
+        background.onStart()
+    }
+
     override fun onStop() {
         super.onStop()
         // Outlives the activity, so the last position is saved even as it closes.
@@ -792,9 +815,9 @@ class PlayerActivity : FragmentActivity() {
                 }
             }
         }
-        // Leaving the app, or closing the picture-in-picture window, stops the activity: playback ends there.
-        // (In picture-in-picture the activity is only paused, so it keeps playing.)
-        if (!isChangingConfigurations) {
+        // Leaving the app, or closing the picture-in-picture window, stops the activity: playback ends there, unless
+        // it carries on in the background. (In picture-in-picture the activity is only paused, so it keeps playing.)
+        if (!isChangingConfigurations && !background.keepPlaying(isInPictureInPictureMode)) {
             player?.pause()
             finish()
         }
@@ -812,6 +835,7 @@ class PlayerActivity : FragmentActivity() {
         dial.release()
         cast?.release()
         reconnect.stop()
+        background.release()
         session.release()
         // The stream closes before downloads carry on, so the provider never sees two connections.
         player?.release()
