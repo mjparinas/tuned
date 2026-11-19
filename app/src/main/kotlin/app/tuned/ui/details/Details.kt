@@ -72,6 +72,8 @@ import app.tuned.data.db.ItemEntity
 import app.tuned.diagnostics.launchSafely
 import app.tuned.diagnostics.startActivitySafely
 import app.tuned.ui.common.focusRing
+import app.tuned.ui.common.rememberStartFocus
+import app.tuned.ui.common.startFocus
 import app.tuned.ui.library.LibraryViewModel
 import app.tuned.ui.library.WatchLaterButton
 import app.tuned.ui.library.WatchedButton
@@ -135,6 +137,8 @@ fun MovieScreen(
     onOpenPerson: (CastMember) -> Unit = {},
     vm: DetailsViewModel = viewModel(),
 ) {
+    val start = rememberStartFocus()
+
     LaunchedEffect(itemId) { vm.loadItem(itemId) }
     val item by vm.item.collectAsStateWithLifecycle()
     val details by vm.details.collectAsStateWithLifecycle()
@@ -185,9 +189,11 @@ fun MovieScreen(
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                     itemVerticalAlignment = Alignment.CenterVertically,
                 ) {
+                    // On a TV the remote starts on Play, so OK plays (or resumes) straight away.
                     Button(
                         onClick = { onPlay(itemId) },
                         contentPadding = PaddingValues(horizontal = 28.dp, vertical = 12.dp),
+                        modifier = Modifier.startFocus(start),
                     ) {
                         Icon(Icons.Filled.PlayArrow, null)
                         Spacer(Modifier.width(8.dp))

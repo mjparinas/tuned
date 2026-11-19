@@ -25,6 +25,11 @@ import org.robolectric.annotation.Config
 class SettingsScreenshots : Screenshots() {
     @Test fun settings() = shot("settings", SettingsRoute, wait = text(R.string.settings_playback))
 
+    /** A tablet shows the pages and the page picked side by side. */
+    @Test
+    @Config(qualifiers = TABLET)
+    fun settingsTablet() = shot("settings-tablet", SettingsRoute, wait = text(R.string.settings_playback))
+
     /** The cards and coloured badges in the light theme, where the badge colours are deepest. */
     @Test fun settingsLight() = shot("settings-light", SettingsRoute, wait = text(R.string.settings_playback), settings = LIGHT)
 

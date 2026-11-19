@@ -9,4 +9,6 @@
 
 Width comes from `LocalWindowInfo.containerSize` in Compose (it follows split screen and folding) and from `Configuration.screenWidthDp` in the player. No setting: these are the platform's conventions, and a phone looks exactly as before.
 
-Not yet: a two-pane Settings screen, and a dedicated TV layout (see [TV](tv.md)).
+- **Settings side by side** (Melvin, 2026-11-19: "Do them all", from the UX audit). On expanded screens Settings shows its pages on the left (38 % of the width) and the page picked on the right, Playlists at first, instead of one column stretched across the screen; the picked page's row is highlighted and read as selected. Search stays on the left and its results work as on a phone. What a page opens (Captions, the playlists screen, the logs) still opens full screen. This includes a TV, whose width counts as expanded.
+
+Not yet: a dedicated TV layout beyond Live TV (see [TV](tv.md)).

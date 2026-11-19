@@ -3,6 +3,7 @@ package app.tuned.ui.browse
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -172,7 +173,8 @@ internal fun OwnListChip(
     var deleting by remember { mutableStateOf(false) }
     val renameLabel = stringResource(R.string.list_rename)
     val deleteLabel = stringResource(R.string.list_delete)
-    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+    // A flow row, so in a TV's narrow column of groups Rename and Delete wrap under the list rather than off the edge.
+    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), itemVerticalAlignment = Alignment.CenterVertically) {
         FilterChip(
             selected = selected,
             onClick = onSelect,
