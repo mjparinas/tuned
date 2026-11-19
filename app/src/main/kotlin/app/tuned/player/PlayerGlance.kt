@@ -114,17 +114,30 @@ class InfoPills(
         val res = context.resources
         val speakers =
             when (pills.speakers) {
-                null -> null
-                StreamInfo.Speakers.MONO -> res.getString(R.string.player_pill_mono) to res.getString(R.string.player_pill_mono_spoken)
-                StreamInfo.Speakers.STEREO ->
+                null -> {
+                    null
+                }
+
+                StreamInfo.Speakers.MONO -> {
+                    res.getString(R.string.player_pill_mono) to res.getString(R.string.player_pill_mono_spoken)
+                }
+
+                StreamInfo.Speakers.STEREO -> {
                     res.getString(R.string.player_pill_stereo) to res.getString(R.string.player_pill_stereo_spoken)
-                StreamInfo.Speakers.SURROUND_5_1 ->
+                }
+
+                StreamInfo.Speakers.SURROUND_5_1 -> {
                     res.getString(R.string.player_pill_5_1) to res.getString(R.string.player_pill_5_1_spoken)
-                StreamInfo.Speakers.SURROUND_7_1 ->
+                }
+
+                StreamInfo.Speakers.SURROUND_7_1 -> {
                     res.getString(R.string.player_pill_7_1) to res.getString(R.string.player_pill_7_1_spoken)
-                StreamInfo.Speakers.OTHER ->
+                }
+
+                StreamInfo.Speakers.OTHER -> {
                     res.getString(R.string.player_pill_channels, pills.channels) to
                         res.getQuantityString(R.plurals.player_pill_channels_spoken, pills.channels, pills.channels)
+                }
             }
         return listOfNotNull(
             pills.resolution?.let { it to null },
