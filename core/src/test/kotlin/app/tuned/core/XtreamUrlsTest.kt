@@ -9,8 +9,8 @@ class XtreamUrlsTest {
     @Test
     fun `builds playlist and guide urls with encoded login`() {
         assertEquals(
-            "http://eros4k.ddns.net/get.php?username=a+b&password=p%26w&type=m3u_plus&output=ts",
-            XtreamUrls.playlist("eros4k.ddns.net/", "a b", "p&w"),
+            "http://iptv.example.net/get.php?username=a+b&password=p%26w&type=m3u_plus&output=ts",
+            XtreamUrls.playlist("iptv.example.net/", "a b", "p&w"),
         )
         assertEquals("https://h:8080/xmltv.php?username=u&password=p", XtreamUrls.guide("https://h:8080", "u", "p"))
     }

@@ -47,23 +47,20 @@ android {
     }
 
     // Two builds of the same app (docs/decisions/premium.md). `github` is what GitHub Releases ship: it updates itself
-    // from GitHub and fills in the default server. `play` is for Google Play and other stores: no self-updater (stores
-    // don't allow REQUEST_INSTALL_PACKAGES), and the server field starts empty so the app never looks like it comes with
-    // a provider.
+    // from GitHub. `play` is for Google Play and other stores: no self-updater (stores don't allow
+    // REQUEST_INSTALL_PACKAGES). Neither fills in a server: the Xtream form starts empty (Melvin, 2026-11-19).
     flavorDimensions += "store"
     productFlavors {
         create("github") {
             dimension = "store"
             buildConfigField("boolean", "GITHUB_UPDATES", "true")
             buildConfigField("boolean", "PREMIUM_ALWAYS", "true")
-            buildConfigField("String", "DEFAULT_SERVER", "\"http://eros4k.ddns.net\"")
             buildConfigField("String", "DEVICES_URL", "\"\"")
         }
         create("play") {
             dimension = "store"
             buildConfigField("boolean", "GITHUB_UPDATES", "false")
             buildConfigField("boolean", "PREMIUM_ALWAYS", "false")
-            buildConfigField("String", "DEFAULT_SERVER", "\"\"")
             // The Premium device list (docs/decisions/premium.md); without it a store build has no device limit.
             buildConfigField("String", "DEVICES_URL", "\"${System.getenv("PREMIUM_DEVICES_URL").orEmpty()}\"")
         }

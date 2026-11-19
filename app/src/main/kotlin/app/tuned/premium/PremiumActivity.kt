@@ -40,6 +40,7 @@ import app.tuned.R
 import app.tuned.container
 import app.tuned.diagnostics.launchSafely
 import app.tuned.ui.common.BackTopBar
+import app.tuned.ui.common.TvSafeArea
 import app.tuned.ui.theme.TunedTheme
 
 /**
@@ -58,7 +59,7 @@ class PremiumActivity : ComponentActivity() {
                 pureBlack = current.pureBlack,
                 accent = current.accent,
             ) {
-                PremiumScreen(this, onBack = ::finish)
+                TvSafeArea { PremiumScreen(this, onBack = ::finish) }
             }
         }
     }

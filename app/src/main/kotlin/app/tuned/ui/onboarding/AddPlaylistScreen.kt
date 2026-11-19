@@ -7,6 +7,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
@@ -15,6 +16,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.toggleable
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
@@ -23,6 +26,7 @@ import androidx.compose.material.icons.filled.FolderOpen
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.Button
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -37,8 +41,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
@@ -49,7 +55,6 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
-import app.tuned.BuildConfig
 import app.tuned.R
 import app.tuned.container
 import app.tuned.core.PlaylistLink
@@ -63,6 +68,8 @@ import app.tuned.diagnostics.DeviceClock
 import app.tuned.diagnostics.attempt
 import app.tuned.diagnostics.launchSafely
 import app.tuned.ui.common.BackTopBar
+import app.tuned.ui.common.focusRing
+import app.tuned.ui.common.isTelevision
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -75,17 +82,11 @@ import java.io.IOException
 import java.util.UUID
 import java.util.concurrent.TimeUnit
 
-/**
- * The default server; editable here and in Settings › Playlists (Melvin, 2026-11-17). Filled in at sign-in in GitHub
- * builds; empty in store builds, which never name a provider (docs/decisions/premium.md).
- */
-val DEFAULT_SERVER: String = BuildConfig.DEFAULT_SERVER
-
 /** What the form holds, before it becomes a [Credentials]. */
 data class PlaylistDraft(
     val kind: Credentials.Kind,
     val name: String = "",
-    val server: String = DEFAULT_SERVER,
+    val server: String = "",
     val username: String = "",
     val password: String = "",
     val link: String = "",
@@ -343,9 +344,8 @@ fun AddPlaylistScreen(
     var server by rememberSaveable {
         mutableStateOf(
             when (kind) {
-                Credentials.Kind.Xtream -> editing?.server ?: DEFAULT_SERVER
-                Credentials.Kind.Stalker -> editing?.server.orEmpty()
-                else -> DEFAULT_SERVER
+                Credentials.Kind.Xtream, Credentials.Kind.Stalker -> editing?.server.orEmpty()
+                else -> ""
             },
         )
     }
@@ -356,7 +356,10 @@ fun AddPlaylistScreen(
     var guide by rememberSaveable { mutableStateOf(editing?.guideUrl.orEmpty()) }
     var file by rememberSaveable { mutableStateOf<Uri?>(null) }
     var fileName by rememberSaveable { mutableStateOf("") }
-    var showPassword by rememberSaveable { mutableStateOf(false) }
+    // A TV's on-screen keyboard is slow to type on and hides what was typed, so there the password shows by default
+    // (Melvin, 2026-11-19: "dont hide the password… we dont know if we mistyped it when we encounter an error").
+    val tv = isTelevision()
+    var showPassword by rememberSaveable { mutableStateOf(tv) }
     val pick =
         rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
             if (uri != null) {
@@ -416,6 +419,7 @@ fun AddPlaylistScreen(
                         value = server,
                         onValueChange = onServer,
                         label = { Text(stringResource(R.string.login_server)) },
+                        placeholder = { Text(stringResource(R.string.add_server_placeholder)) },
                         supportingText = { Text(stringResource(R.string.add_server_help)) },
                         singleLine = true,
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri, imeAction = ImeAction.Next),
@@ -435,7 +439,13 @@ fun AddPlaylistScreen(
                         label = { Text(stringResource(R.string.login_password)) },
                         singleLine = true,
                         visualTransformation = if (showPassword) VisualTransformation.None else PasswordVisualTransformation(),
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Next),
+                        // Ascii is Android's visible-password keyboard: no suggestions, and the keyboard shows what's typed.
+                        keyboardOptions =
+                            KeyboardOptions(
+                                keyboardType = if (showPassword) KeyboardType.Ascii else KeyboardType.Password,
+                                autoCorrectEnabled = false,
+                                imeAction = ImeAction.Next,
+                            ),
                         trailingIcon = {
                             IconButton(onClick = { showPassword = !showPassword }) {
                                 Icon(
@@ -447,6 +457,9 @@ fun AddPlaylistScreen(
                         },
                         modifier = field,
                     )
+                    // A remote can't reach the eye inside the field (left and right move the cursor), so a TV also gets
+                    // the choice as its own row.
+                    if (tv) ShowPasswordRow(showPassword, field) { showPassword = it }
                 }
 
                 Credentials.Kind.Link -> {
@@ -563,4 +576,25 @@ private fun Hint(text: Int) {
         color = MaterialTheme.colorScheme.onSurfaceVariant,
         modifier = Modifier.widthIn(max = 560.dp).fillMaxWidth(),
     )
+}
+
+/** "Show password" as a row a remote can land on and press, for TVs. */
+@Composable
+private fun ShowPasswordRow(
+    shown: Boolean,
+    modifier: Modifier,
+    onChange: (Boolean) -> Unit,
+) {
+    val shape = RoundedCornerShape(8.dp)
+    Row(
+        modifier
+            .heightIn(min = 48.dp)
+            .focusRing(shape, MaterialTheme.colorScheme.primary)
+            .toggleable(value = shown, role = Role.Checkbox, onValueChange = onChange)
+            .padding(horizontal = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Checkbox(checked = shown, onCheckedChange = null)
+        Text(stringResource(R.string.login_show_password), modifier = Modifier.padding(start = 12.dp))
+    }
 }
