@@ -3,6 +3,7 @@ package app.tuned.player
 import android.content.Context
 import android.os.SystemClock
 import android.view.ContextThemeWrapper
+import android.widget.Toast
 import androidx.core.net.toUri
 import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.lifecycleScope
@@ -68,8 +69,11 @@ class CastControl(
     private val isLive: () -> Boolean,
     /** The saved copy of a film or episode, by item id, which the TV is given from the phone instead of the stream. */
     private val savedFile: (Long) -> File?,
-    /** Shows a lasting note over the video ("Playing on Living Room TV"), or hides it with null. */
-    private val onStatus: (String?) -> Unit,
+    /**
+     * Shows a lasting note over the video ("Playing on Living Room TV"), or hides it with null. Busy notes ("Connecting
+     * to SHIELD…", "Starting on SHIELD…") show a spinner beside them until the TV plays, fails or the cast ends.
+     */
+    private val onStatus: (text: String?, busy: Boolean) -> Unit,
 ) {
     @Suppress("DEPRECATION") // the Task-based replacement needs an executor and a callback for the same result
     private val context: CastContext? =
@@ -84,6 +88,9 @@ class CastControl(
     private var streamFolder: String? = null
     private var lastPlayerState = MediaStatus.PLAYER_STATE_UNKNOWN
 
+    /** The TV being cast to, for the note over the video. */
+    private var tvName: String? = null
+
     /** What the TV says about the media: logged, so a cast that shows "No media selected" says why. */
     private val mediaCallback =
         object : RemoteMediaClient.Callback() {
@@ -96,6 +103,9 @@ class CastControl(
                 } else {
                     AppLog.i(TAG) { "TV is ${playerState(status.playerState)}" }
                 }
+                // The TV shows the picture: the spinner's work is done.
+                val state = status.playerState
+                if (state == MediaStatus.PLAYER_STATE_PLAYING || state == MediaStatus.PLAYER_STATE_PAUSED) playing()
             }
 
             override fun onMediaError(error: MediaError) {
@@ -105,7 +115,7 @@ class CastControl(
                         " (${CastCodecs.describeError(error.detailedErrorCode)}), extra ${error.customData}",
                 )
                 // Say so over the video rather than leave "Playing on SHIELD" showing over nothing.
-                session?.let { onStatus(activity.getString(R.string.cast_failed, name(it))) }
+                session?.let { onStatus(activity.getString(R.string.cast_failed, name(it)), false) }
             }
         }
 
@@ -121,7 +131,7 @@ class CastControl(
                     .build()
         }
 
-    private val dlna = DlnaControl(activity, activity, onStarted = ::handOff, onEnded = ::ended)
+    private val dlna = DlnaControl(activity, activity, onStarted = ::handOff, onPlaying = ::playing, onEnded = ::ended)
 
     val casting get() = session?.isConnected == true || dlna.active
 
@@ -152,19 +162,31 @@ class CastControl(
             override fun onSessionStartFailed(
                 s: CastSession,
                 error: Int,
-            ) = AppLog.w(TAG, "Couldn't connect to ${name(s)}: ${code(error)}")
+            ) {
+                AppLog.w(TAG, "Couldn't connect to ${name(s)}: ${code(error)}")
+                notConnected(s)
+            }
 
             override fun onSessionResumeFailed(
                 s: CastSession,
                 error: Int,
-            ) = AppLog.w(TAG, "Couldn't reconnect to ${name(s)}: ${code(error)}")
+            ) {
+                AppLog.w(TAG, "Couldn't reconnect to ${name(s)}: ${code(error)}")
+                notConnected(s)
+            }
 
-            override fun onSessionStarting(s: CastSession) = AppLog.i(TAG) { "Connecting to ${describe(s)}" }
+            override fun onSessionStarting(s: CastSession) {
+                AppLog.i(TAG) { "Connecting to ${describe(s)}" }
+                connecting(s)
+            }
 
             override fun onSessionResuming(
                 s: CastSession,
                 sessionId: String,
-            ) = AppLog.i(TAG) { "Reconnecting to ${describe(s)}" }
+            ) {
+                AppLog.i(TAG) { "Reconnecting to ${describe(s)}" }
+                connecting(s)
+            }
 
             override fun onSessionSuspended(
                 s: CastSession,
@@ -179,8 +201,31 @@ class CastControl(
             ?.sessionManager
             ?.currentCastSession
             ?.takeIf { it.isConnected }
-            ?.let { attach(it) }
+            ?.let {
+                attach(it)
+                tvName = name(it)
+                playing()
+            }
         dlna.resume()
+    }
+
+    /** A TV was picked: the TV's app takes a few seconds to open, so the note says it is on its way. */
+    private fun connecting(s: CastSession) {
+        tvName = name(s)
+        onStatus(activity.getString(R.string.cast_connecting, name(s)), true)
+    }
+
+    /** The TV couldn't be reached (or the person cancelled): the phone carries on, so the note goes. */
+    private fun notConnected(s: CastSession) {
+        onStatus(null, false)
+        if (session != null) return
+        Toast.makeText(activity, activity.getString(R.string.cast_connect_failed, name(s)), Toast.LENGTH_LONG).show()
+    }
+
+    /** The TV is showing it. */
+    private fun playing() {
+        val name = tvName ?: return
+        onStatus(activity.getString(R.string.cast_playing_on, name), false)
     }
 
     /** The TV takes over: the phone lets go of its stream so the provider sees a single connection. */
@@ -203,9 +248,15 @@ class CastControl(
      */
     private fun handOff(name: String) {
         lastPositionMs = 0L
-        onStatus(activity.getString(R.string.cast_playing_on, name))
-        val exo = player() ?: return AppLog.w(TAG, "No player to hand over to the TV")
-        val item = current() ?: return AppLog.w(TAG, "Nothing playing to send to the TV")
+        tvName = name
+        val exo = player()
+        val item = current()
+        if (exo == null || item == null) {
+            onStatus(activity.getString(R.string.cast_playing_on, name), false)
+            return AppLog.w(TAG, if (exo == null) "No player to hand over to the TV" else "Nothing playing to send to the TV")
+        }
+        // Until the TV plays it: a saved file is got ready first, and the TV's player takes a moment to start.
+        onStatus(activity.getString(R.string.cast_starting, name), true)
         val positionMs = exo.currentPosition
         exo.stop()
         load(item, isLive(), positionMs)
@@ -219,7 +270,8 @@ class CastControl(
         stopServing()
         session?.remoteMediaClient?.unregisterCallback(mediaCallback)
         session = null
-        onStatus(null)
+        tvName = null
+        onStatus(null, false)
         val exo = player() ?: return
         if (!isLive() && lastPositionMs > 0) exo.seekTo(lastPositionMs)
         exo.prepare()
@@ -314,7 +366,7 @@ class CastControl(
 
     private fun noWifi(file: File) {
         AppLog.w(TAG, "${file.name} is saved, but the phone has no Wi-Fi address to serve it from")
-        onStatus(activity.getString(R.string.cast_no_wifi))
+        onStatus(activity.getString(R.string.cast_no_wifi), false)
     }
 
     /** Where the TV is in the film or episode, as position and length in ms; null when nothing is playing there. */
@@ -383,7 +435,7 @@ class CastControl(
         if (session !== s) return
         val wait = CastMedia.retryDelayMs(r.attempt)
         if (wait == null) {
-            onStatus(activity.getString(R.string.cast_failed, name(s)))
+            onStatus(activity.getString(R.string.cast_failed, name(s)), false)
             return
         }
         retry =

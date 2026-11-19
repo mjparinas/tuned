@@ -203,7 +203,7 @@ class PlayerActivity : FragmentActivity() {
                 ),
         )
     }
-    private lateinit var statusView: TextView
+    private lateinit var statusView: StatusNote
     private val audioCheck by lazy {
         AudioCheck { codec -> Toast.makeText(this, getString(R.string.player_no_sound, codec), Toast.LENGTH_LONG).show() }
     }
@@ -346,8 +346,9 @@ class PlayerActivity : FragmentActivity() {
                 )
                 gravity = Gravity.CENTER_VERTICAL
             }
+        // Before the tools: opening the player mid-cast shows its note as the cast button is set up.
+        statusView = StatusNote(this)
         setUpTools()
-        statusView = statusText(this)
         // TV remote buttons go to the tools before the player's own controls; see [PlayerTools.onKey].
         val root =
             object : FrameLayout(this) {
@@ -419,7 +420,7 @@ class PlayerActivity : FragmentActivity() {
                 current = { player?.let { queue.getOrNull(it.currentMediaItemIndex) } },
                 isLive = ::live,
                 savedFile = { id -> savedFiles[id] },
-                onStatus = { text -> if (text == null) statusView.visibility = View.GONE else showStatus(text) },
+                onStatus = { text, busy -> if (text == null) statusView.visibility = View.GONE else statusView.show(text, busy) },
             ).also { c -> tools.addButton(c.button) }
         tools.addButton(recorder.button)
     }
@@ -445,10 +446,7 @@ class PlayerActivity : FragmentActivity() {
         playerView.setOnTouchListener(g)
     }
 
-    private fun showStatus(text: String) {
-        statusView.text = text
-        statusView.visibility = View.VISIBLE
-    }
+    private fun showStatus(text: String) = statusView.show(text, busy = false)
 
     private var flashJob: Job? = null
 
