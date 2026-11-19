@@ -14,7 +14,7 @@
 - Anything tappable is at least 48dp to a finger, with `minimumInteractiveComponentSize()` when it draws smaller.
 - Text is in `sp` and grows with the system font size. A field or button that holds text has a minimum height (`heightIn(min = …)`), never a fixed one, so large text isn't cut off.
 - Colours come from the theme (Material 3 roles meet contrast in light and dark). Captions keep the FCC palette, and each colour has a name.
-- A screen drawn on a see-through container (like "Who's watching?" over its accent glow) sets its text colour to `onBackground` itself, since Compose otherwise falls back to black, which vanished on the dark theme (Melvin, 2026-11-19: "hard to read, not enough contrast"). `ProfilesContrastTest` checks 4.5:1 in every theme and accent.
+- A screen drawn on a see-through container (like "Who's watching?" over its accent glow) sets its text colour to `onBackground` itself, since Compose otherwise falls back to black, which vanished on the dark theme (Melvin, 2026-11-19: "hard to read, not enough contrast"). `ProfilesContrastTest` checks 4.5:1 in every theme and accent. The names on its tiles and the other text there are coloured `onBackground` directly too, not left to the surrounding content colour, after the names still showed near-black on Melvin's phone (2026-11-19: "Names are still hard to read"); `ProfileTileContrastTest` draws a tile with nothing around it and checks the name's pixels against the backdrop.
 
 The semantics of shared Settings widgets are checked by `SettingsSemanticsTest` (Compose UI test on Robolectric).
 
