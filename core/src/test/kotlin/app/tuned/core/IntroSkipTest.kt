@@ -54,4 +54,38 @@ class IntroSkipTest {
         assertNull(IntroSkip.decode("9:3"))
         assertNull(IntroSkip.decode("a:b"))
     }
+
+    @Test
+    fun anIntroLongerThanTwoMinutesIsNotBelieved() {
+        assertNull(IntroSkip.learn(10_000, 150_000)) // 2:20 of "intro"
+        assertEquals(Intro(10_000, 130_000), IntroSkip.learn(10_000, 130_000))
+        // One saved before the limit existed is ignored, and the Settings length is offered instead.
+        assertEquals(Intro(0, 30_000), IntroSkip.intro(Intro(31_000, 151_000), 30_000))
+    }
+
+    @Test
+    fun fastForwardingWithSkipForwardDoesNotKeepTheButtonOnScreen() {
+        // Melvin, 2026-11-19: the button was still up at 2:00 with Skip intro set to 30 s. He pressed Skip intro, then
+        // +30 four times; each tap stretched the "intro" and the button followed him.
+        val lesson = IntroSkip.Lesson()
+        assertFalse(lesson.skipped)
+        assertTrue(lesson.seek(31_000, 61_000))
+        assertTrue(lesson.skipped) // past the intro by hand: no button for the rest of this episode
+        lesson.seek(62_000, 92_000)
+        lesson.seek(93_000, 123_000)
+        assertEquals(Intro(31_000, 123_000), lesson.intro)
+        lesson.seek(124_000, 154_000) // past two minutes: fast-forwarding, not an intro
+        assertNull(lesson.intro)
+        assertTrue(lesson.spoiled)
+        assertFalse(lesson.seek(10_000, 70_000)) // and nothing more is learned from this episode
+        assertTrue(lesson.skipped)
+    }
+
+    @Test
+    fun aSeekBackOrInTheMiddleTeachesNothing() {
+        val lesson = IntroSkip.Lesson()
+        assertFalse(lesson.seek(20 * 60_000L, 21 * 60_000L))
+        assertFalse(lesson.seek(90_000, 30_000))
+        assertFalse(lesson.skipped)
+    }
 }
