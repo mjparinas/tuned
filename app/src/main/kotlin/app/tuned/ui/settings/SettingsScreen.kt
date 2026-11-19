@@ -2,11 +2,12 @@ package app.tuned.ui.settings
 
 import android.app.Application
 import androidx.annotation.StringRes
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
@@ -14,6 +15,7 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -36,9 +38,11 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -49,6 +53,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
@@ -56,12 +61,14 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import app.tuned.BuildConfig
 import app.tuned.R
 import app.tuned.container
+import app.tuned.core.ScreenLayout
 import app.tuned.data.AppReset
 import app.tuned.data.AppSettings
 import app.tuned.diagnostics.launchSafely
 import app.tuned.ui.CaptionSettingsRoute
 import app.tuned.ui.SettingsPageRoute
 import app.tuned.ui.common.BackTopBar
+import app.tuned.ui.common.windowWidthDp
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.map
@@ -208,25 +215,66 @@ fun SettingsScreen(
     onSignedOut: () -> Unit,
     vm: SettingsViewModel = viewModel(),
 ) {
-    SettingsScaffold(stringResource(R.string.settings), onBack) {
-        var query by rememberSaveable { mutableStateOf("") }
+    var query by rememberSaveable { mutableStateOf("") }
+    val pages: @Composable (open: (route: Any) -> Unit, shown: SettingsPage?) -> Unit = { open, shown ->
         SettingsSearchField(query) { query = it }
         val words = remember(query) { settingsWords(query) }
         if (words.isNotEmpty()) {
-            SettingsResults(words, settings, vm, onOpen, onSignedOut)
-            return@SettingsScaffold
+            SettingsResults(words, settings, vm, open, onSignedOut)
+        } else {
+            SettingsSection.entries.forEach { section ->
+                SectionHeader(stringResource(section.title))
+                SettingsPage.entries.filter { it.section == section }.forEach { page ->
+                    PageRow(page, open, selected = page == shown)
+                    // Captions is a screen of its own, so it has its own row after Playback.
+                    if (page == SettingsPage.PLAYBACK) CaptionsRow(settings, open)
+                }
+            }
+            SectionHeader(stringResource(R.string.app_name))
+            VersionRow()
         }
-        SettingsSection.entries.forEach { section ->
-            SectionHeader(stringResource(section.title))
-            SettingsPage.entries.filter { it.section == section }.forEach { page ->
-                PageRow(page, onOpen)
-                // Captions is a screen of its own, so it has its own row after Playback.
-                if (page == SettingsPage.PLAYBACK) CaptionsRow(settings, onOpen)
+    }
+    if (!ScreenLayout.panes(windowWidthDp())) {
+        SettingsScaffold(stringResource(R.string.settings), onBack) { pages(onOpen, null) }
+        return
+    }
+    // A wide screen shows the pages and the page picked side by side, as a tablet's own Settings does (Melvin,
+    // 2026-11-19: "Do them all", from the UX audit), rather than one long column stretched across it. A page's row
+    // shows it in the right pane; what a page opens (Captions, Playlists, the logs) still opens full screen.
+    var shown by rememberSaveable { mutableStateOf(SettingsPage.PLAYLISTS.name) }
+    val page = SettingsPage.valueOf(shown)
+    val open: (route: Any) -> Unit = { route -> if (route is SettingsPageRoute) shown = route.page else onOpen(route) }
+    Scaffold(topBar = { BackTopBar(stringResource(R.string.settings), onBack) }) { padding ->
+        Row(Modifier.padding(padding).fillMaxSize()) {
+            SettingsGroups(
+                Modifier
+                    .weight(SettingsPanes.LIST)
+                    .fillMaxHeight()
+                    .verticalScroll(rememberScrollState())
+                    .navigationBarsPadding()
+                    .padding(bottom = 16.dp),
+            ) { pages(open, page) }
+            VerticalDivider()
+            key(page) {
+                SettingsGroups(
+                    Modifier
+                        .weight(1 - SettingsPanes.LIST)
+                        .fillMaxHeight()
+                        .verticalScroll(rememberScrollState())
+                        .navigationBarsPadding()
+                        .padding(bottom = 16.dp),
+                ) {
+                    SectionHeader(stringResource(page.title))
+                    SettingsPageContent(page, settings, vm, onOpen, onSignedOut)
+                }
             }
         }
-        SectionHeader(stringResource(R.string.app_name))
-        VersionRow()
     }
+}
+
+/** The share of a wide screen the list of Settings' pages takes; the page shown takes the rest. */
+private object SettingsPanes {
+    const val LIST = 0.38f
 }
 
 @Composable
@@ -406,7 +454,11 @@ private fun SettingsScaffold(
 private fun PageRow(
     page: SettingsPage,
     onOpen: (route: Any) -> Unit,
-) = IconRow(page.icon, page.hue, stringResource(page.title), stringResource(page.summary)) { onOpen(SettingsPageRoute(page.name)) }
+    /** The page shown beside the list on a wide screen. */
+    selected: Boolean = false,
+) = IconRow(page.icon, page.hue, stringResource(page.title), stringResource(page.summary), selected) {
+    onOpen(SettingsPageRoute(page.name))
+}
 
 /** A row that opens a page: its coloured badge, its name, and a line saying what's inside. */
 @Composable
@@ -415,13 +467,16 @@ private fun IconRow(
     hue: BadgeHue,
     title: String,
     summary: String,
+    selected: Boolean = false,
     onClick: () -> Unit,
 ) {
     Row(
         Modifier
             .fillMaxWidth()
             .heightIn(min = 72.dp)
-            .clickable(onClick = onClick)
+            .then(if (selected) Modifier.background(MaterialTheme.colorScheme.secondaryContainer) else Modifier)
+            // The page shown is named as selected for a screen reader, not only by its colour.
+            .selectable(selected = selected, role = Role.Tab, onClick = onClick)
             .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
