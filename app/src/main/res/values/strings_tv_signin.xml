@@ -12,6 +12,7 @@
     <string name="tv_signin_type_instead">Type it on the TV instead</string>
     <string name="tv_signin_waiting">Getting a code…</string>
     <string name="tv_signin_offline">Couldn\'t reach Tuned\'s sign-in service. Check this TV\'s internet connection, or type the playlist in instead.</string>
+    <string name="tv_signin_no_backup">This TV is signed in to your Tuned account, but the account has no backup with a playlist yet. Type a playlist in instead, or back up from your phone first.</string>
     <string name="tv_signin_retry">Try again</string>
     <string name="tv_signin_arrived">From your phone</string>
     <string name="tv_signin_also">Also: %1$s</string>

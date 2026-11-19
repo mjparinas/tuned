@@ -74,6 +74,6 @@ class TunedDialogTest {
     private companion object {
         const val LONG =
             "Tuned goes back to how it was when installed. Every playlist and login, the channels and guide, profiles, " +
-                "favourites, settings and PINs are removed, and Trakt and Google Drive are disconnected."
+                "favourites, settings and PINs are removed, and Trakt and your Tuned account are signed out on this device."
     }
 }

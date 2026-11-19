@@ -115,14 +115,14 @@ class DeviceSeatsClient(
          * so reinstalling never uses up a seat.
          */
         @SuppressLint("HardwareIds") // the point: a reinstall on the same device must reuse its seat
-        private fun deviceId(context: Context): String {
+        internal fun deviceId(context: Context): String {
             val id = Settings.Secure.getString(context.contentResolver, Settings.Secure.ANDROID_ID).orEmpty()
             val digest = MessageDigest.getInstance("SHA-256").digest("tuned-seat:$id".toByteArray())
             return digest.joinToString("") { "%02x".format(it) }.take(ID_LENGTH)
         }
 
         /** The name the person gave the device ("Living room TV"), else its maker and model. */
-        private fun deviceName(context: Context): String {
+        internal fun deviceName(context: Context): String {
             val given = Settings.Global.getString(context.contentResolver, Settings.Global.DEVICE_NAME)
             val maker = Build.MANUFACTURER.replaceFirstChar(Char::uppercase)
             val model = if (Build.MODEL.startsWith(Build.MANUFACTURER, ignoreCase = true)) Build.MODEL else "$maker ${Build.MODEL}"

@@ -39,10 +39,6 @@ jobs:
       - uses: ./.github/actions/robolectric-cache
       - name: Draw every screen
         id: draw
-        env:
-          # A stand-in, not the real key: it only makes the screens that need Google sign-in (Restore from Google Drive
-          # on the welcome screen, Sync between devices) show, and nothing here ever talks to Google.
-          GOOGLE_TV_CLIENT_ID: screenshots
         run: |
           start=$(date +%s)
           ./gradlew :app:testGithubDebugUnitTest -Pscreenshots --continue

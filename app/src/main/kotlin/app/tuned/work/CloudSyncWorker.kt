@@ -17,7 +17,7 @@ import app.tuned.diagnostics.logFailures
 import java.util.concurrent.TimeUnit
 
 /**
- * Runs sync between devices ([app.tuned.data.CloudSyncRepository]) in the background, once a network is there: when
+ * Runs the backup in the Tuned account ([app.tuned.data.CloudSyncRepository]) in the background, once a network is there: when
  * the app opens (to take what another device changed) and when it leaves the screen (to send what changed here).
  */
 class CloudSyncWorker(
@@ -35,7 +35,7 @@ class CloudSyncWorker(
 
         fun schedule(context: Context) {
             val sync = context.container.cloudSync
-            if (!sync.available || !sync.signedIn.value) return
+            if (!sync.signedIn.value) return
             val request =
                 OneTimeWorkRequestBuilder<CloudSyncWorker>()
                     .setConstraints(Constraints.Builder().setRequiredNetworkType(NetworkType.CONNECTED).build())

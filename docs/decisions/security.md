@@ -10,7 +10,7 @@
 
 **Backups are off** (`allowBackup=false` and data extraction rules that exclude everything), so neither the encrypted login nor the cached URLs (which contain it) reach a cloud backup or a device transfer.
 
-**Backup files: removed** (Melvin, 2026-11-18: "Remove the file back up feature"). Settings › Back up and Restore, and "Restore from a backup" on the welcome screen, are gone; moving to a new phone or a TV is sync between devices ([sync](sync.md)). Files made with it no longer open. Its encryption stays as `core/PassphraseCrypto` (AES-256-GCM, PBKDF2-SHA256 with 310,000 rounds and a fresh salt each time, header authenticated), which now only reads sync copies older versions locked.
+**Backup files: removed** (Melvin, 2026-11-18: "Remove the file back up feature"). Settings › Back up and Restore, and "Restore from a backup" on the welcome screen, are gone; moving to a new phone or a TV is the backup in the Tuned account ([accounts](accounts.md)). Files made with it no longer open. Its encryption, `core/PassphraseCrypto`, was removed with Google Drive sync (2026-11-19).
 
 **Privacy policy** (2026-11-18). `docs/privacy.md`, published with `docs/index.md` through GitHub Pages, is the public policy Google's consent screen needs before sync's OAuth app can be published (and the Play listing will need). It says what stays on the device, which services Tuned talks to and why, and how the synced copy is locked. A change to what Tuned stores or sends updates it in the same pull request.
 
@@ -31,6 +31,6 @@ Melvin asked for "a pin to filter out adult content". Adult categories (the clas
 
 **Signing in on a TV with a phone** (2026-11-19). The one place outside the app that takes a login is the page at `tuned-devices.vercel.app/tv`, and it seals the login on the phone for one TV before sending, so the relay only holds a box it can't open, for 10 minutes at most ([onboarding](onboarding.md)). What the phone app sends that way (playlists, settings, favourites) is sealed the same way.
 
-**Sync between devices** (2026-11-18). The synced copy holds the saved playlists' logins and goes to a file in the person's Google Drive ("Tuned sync", visible in My Drive) without a passphrase (Melvin, 2026-11-18: "i dont think we need encryption"), so the logins are as safe as the Google account. The Google refresh token is sealed with a Keystore key and is never synced ([sync](sync.md)).
+**The backup in the Tuned account** (2026-11-19). It holds the saved playlists' logins as plain JSON on Tuned's server, not encrypted (Melvin, 2026-11-19: "i dont want to encrypt backups"), reachable only by devices signed in to the account. The device's account token is sealed with a Keystore key and stored only hashed on the server ([accounts](accounts.md)). Google Drive sync, which kept the same copy in a file in the person's Drive, was removed the same day.
 
 **OpenSubtitles account** (2026-11-17). The optional sign-in for subtitle search is encrypted with the same Keystore key as the login (`CredentialStore.subtitleAccount`), stays out of settings and sync, and is forgotten on sign-out. The API key is not a setting: it comes from the `OPENSUBTITLES_API_KEY` repository secret at release build time, like the TMDB key.
