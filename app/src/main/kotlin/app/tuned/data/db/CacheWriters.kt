@@ -237,11 +237,15 @@ class PlaylistWriter(
     }
 }
 
-/** Keeps the Shows tab's per-show table ([ShowGroupEntity]) in step with the playlist. */
+/**
+ * Keeps the Shows tab's per-show table ([ShowGroupEntity]) in step with the playlist. A show's picture is its own
+ * cover when one is kept ([ShowCoverEntity]), ahead of its episodes' pictures, which can be their screenshots.
+ */
 object ShowGroups {
     const val COLUMNS = "showKey, groupName, region, adult, showName, logo, episodes, sortOrder"
     const val SELECT =
-        "SELECT showKey, groupName, region, adult, COALESCE(MIN(showName), showKey), MAX(logo), COUNT(*), MIN(sortOrder) " +
+        "SELECT showKey, groupName, region, adult, COALESCE(MIN(showName), showKey), " +
+            "COALESCE((SELECT c.cover FROM show_covers c WHERE c.showKey = items.showKey), MAX(logo)), COUNT(*), MIN(sortOrder) " +
             "FROM items WHERE kind = 2 AND showKey IS NOT NULL GROUP BY showKey, groupName, region, adult"
 
     /** Worked out beside the live table, then swapped in with one quick copy, so the Shows tab never waits long. */

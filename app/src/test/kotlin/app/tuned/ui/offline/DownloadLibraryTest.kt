@@ -51,6 +51,16 @@ class DownloadLibraryTest {
     }
 
     @Test
+    fun `a show uses its own TMDB poster over the playlist's picture, which can be an episode screenshot`() {
+        val rows = listOf(row(1, addedAt = 10, show = "Simpsons", season = 1, episode = 1))
+        val withTmdb = DownloadLibrary.of(rows, mapOf("simpsons" to "tmdb-poster")).shows.single()
+        val without = DownloadLibrary.of(rows).shows.single()
+        assertEquals("tmdb-poster", withTmdb.poster)
+        assertEquals("poster-Simpsons", without.poster)
+        assertEquals("Simpsons", without.lookupName)
+    }
+
+    @Test
     fun `shows still downloading come first, then the most recently saved`() {
         val library =
             DownloadLibrary.of(

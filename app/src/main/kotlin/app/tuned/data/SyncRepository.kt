@@ -21,6 +21,7 @@ import app.tuned.data.db.CatchUpEntity
 import app.tuned.data.db.GuideWriter
 import app.tuned.data.db.ItemEntity
 import app.tuned.data.db.PlaylistWriter
+import app.tuned.data.db.ShowCoverEntity
 import app.tuned.data.db.ShowGroups
 import app.tuned.data.db.TunedDatabase
 import app.tuned.diagnostics.AppLog
@@ -450,10 +451,19 @@ class SyncRepository(
         add: suspend (PlaylistEntry) -> Unit,
     ) {
         val fetched = db.shows().fetchedEpisodes().groupBy { it.showKey }
+        val covers = mutableListOf<ShowCoverEntity>()
         api.shows(first) { show, order ->
-            val kept = fetched[Episodes.showKey(show.name)]
-            if (kept.isNullOrEmpty()) add(XtreamApi.seriesStandIn(show, order)) else kept.forEach { add(it.toEntry()) }
+            val key = Episodes.showKey(show.name)
+            val kept = fetched[key]
+            if (kept.isNullOrEmpty()) {
+                add(XtreamApi.seriesStandIn(show, order))
+            } else {
+                kept.forEach { add(it.toEntry()) }
+                // An opened show's episodes carry their own screenshots, so its cover is kept beside them.
+                show.icon?.takeIf { it.isNotBlank() }?.let { covers += ShowCoverEntity(key, it) }
+            }
         }
+        if (covers.isNotEmpty()) db.shows().saveCovers(covers)
     }
 
     /**
@@ -474,6 +484,8 @@ class SyncRepository(
                     standIn.sortOrder,
                 ).map { it.toRow() }
         if (episodes.isEmpty()) return
+        // The stand-in carried the show's cover; its episodes carry their own screenshots instead.
+        standIn.logo?.takeIf { it.isNotBlank() }?.let { db.shows().saveCovers(listOf(ShowCoverEntity(showKey, it))) }
         db.shows().replaceStandIn(standIn.id, episodes)
         ShowGroups.rebuild(db)
     }
