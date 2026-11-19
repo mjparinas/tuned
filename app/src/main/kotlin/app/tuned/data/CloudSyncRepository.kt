@@ -69,6 +69,13 @@ class CloudSyncRepository(
         statusFlow.value = Status(0, Problem.NONE)
     }
 
+    /** Signing out of Tuned: stops syncing on this device at once; other devices and the Drive copy are untouched. */
+    fun disconnect() {
+        drive.disconnect()
+        prefs.edit(commit = true) { clear() }
+        statusFlow.value = Status(0, Problem.NONE)
+    }
+
     /**
      * One run: takes the other device's copy, sends this one's, or does nothing. Returns false when it should be tried
      * again later (offline, or Drive didn't answer).

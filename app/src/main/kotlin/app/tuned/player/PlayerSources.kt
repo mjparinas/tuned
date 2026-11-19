@@ -3,11 +3,13 @@ package app.tuned.player
 import android.content.Context
 import android.net.Uri
 import androidx.annotation.OptIn
+import androidx.core.net.toUri
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.datasource.DataSource
 import androidx.media3.datasource.DefaultDataSource
 import androidx.media3.datasource.ResolvingDataSource
 import androidx.media3.datasource.okhttp.OkHttpDataSource
+import app.tuned.core.Stalker
 import okhttp3.OkHttpClient
 
 /**
@@ -30,6 +32,12 @@ object PlayerSources {
         headers: (Uri) -> Map<String, String> = { emptyMap() },
         /** Wraps the network source, for the live rewind copy ([LiveTimeshift.factory]). */
         network: (DataSource.Factory) -> DataSource.Factory = { it },
+        /**
+         * A Stalker portal's channel turned into the stream to open (`data/StalkerLinks`), asked for on the loader thread
+         * each time the channel opens, since the portal's links expire. The live rewind copy sees the stored link, which
+         * stays the same across reconnects where the real one doesn't.
+         */
+        portal: (String) -> String = { it },
     ): DataSource.Factory {
         val okhttp = OkHttpDataSource.Factory(http).setDefaultRequestProperties(mapOf("User-Agent" to userAgent))
         val withHeaders =
@@ -37,6 +45,15 @@ object PlayerSources {
                 val extra = headers(spec.uri)
                 if (extra.isEmpty()) spec else spec.withAdditionalHeaders(extra)
             }
-        return DefaultDataSource.Factory(context, network(withHeaders))
+        val fromPortal =
+            ResolvingDataSource.Factory(withHeaders) { spec ->
+                if (!Stalker.isLink(spec.uri.toString())) {
+                    spec
+                } else {
+                    // Portals' stream servers often serve only what says it is a MAG box.
+                    spec.withUri(portal(spec.uri.toString()).toUri()).withAdditionalHeaders(mapOf("User-Agent" to Stalker.USER_AGENT))
+                }
+            }
+        return DefaultDataSource.Factory(context, network(fromPortal))
     }
 }

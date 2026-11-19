@@ -8,9 +8,11 @@ import androidx.annotation.OptIn
 import androidx.core.net.toUri
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
+import androidx.media3.common.MimeTypes
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.ui.PlayerView
+import app.tuned.core.Stalker
 import app.tuned.core.StreamLink
 import app.tuned.data.db.ItemEntity
 import java.io.File
@@ -27,10 +29,13 @@ internal fun ItemEntity.toMediaItem(
             .host
             ?.let { streamHeaders[it] = link.headers }
     }
+    // A portal's channel gets its real link only as it opens, so an HLS one is named HLS up front.
+    val hls = file == null && Stalker.parse(link.url)?.cmd?.let(Stalker::isHls) == true
     return MediaItem
         .Builder()
         .setMediaId(id.toString())
         .setUri(file?.toUri() ?: link.url.toUri())
+        .apply { if (hls) setMimeType(MimeTypes.APPLICATION_M3U8) }
         .setMediaMetadata(MediaMetadata.Builder().setTitle(name).build())
         .build()
 }

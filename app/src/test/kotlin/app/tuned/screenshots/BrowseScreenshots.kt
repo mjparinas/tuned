@@ -42,6 +42,10 @@ class BrowseScreenshots : Screenshots() {
         },
     )
 
+    @Test
+    @Config(qualifiers = TV)
+    fun liveTvOnTv() = shot("browse-live-tv-tv", HomeRoute, wait = "Maple News 24")
+
     @Test fun liveTvLight() = shot("browse-live-tv-light", HomeRoute, wait = "Maple News 24", settings = LIGHT)
 
     @Test fun movies() = shot("browse-movies", HomeRoute, wait = "Glass Harbour", settings = DARK.copy(startTab = StartTab.MOVIES))

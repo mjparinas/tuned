@@ -4,6 +4,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import app.tuned.R
+import app.tuned.data.AppReset
 import app.tuned.data.CaptionStyle
 import app.tuned.data.LighterMode
 import app.tuned.ui.CaptionSettingsRoute
@@ -11,6 +12,8 @@ import app.tuned.ui.RegionSettingsRoute
 import app.tuned.ui.SettingsPageRoute
 import app.tuned.ui.SettingsRoute
 import app.tuned.ui.settings.SettingsPage
+import app.tuned.ui.settings.SignOutDialog
+import app.tuned.ui.settings.SignOutDownloadsDialog
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.ParameterizedRobolectricTestRunner
@@ -56,6 +59,24 @@ class SettingsScreenshots : Screenshots() {
         RegionSettingsRoute,
         wait = text(R.string.settings_countries),
         settings = DARK.copy(hiddenRegions = setOf("DE", "EXYU")),
+    )
+
+    @Test
+    fun signOut() = shot(
+        "settings-sign-out",
+        SettingsPageRoute(SettingsPage.PLAYLISTS.name),
+        wait = text(R.string.settings_sign_out_title),
+        overlay = { SignOutDialog(onSignOut = {}, onCancel = {}) },
+    )
+
+    @Test
+    fun signOutDownloads() = shot(
+        "settings-sign-out-downloads",
+        SettingsPageRoute(SettingsPage.PLAYLISTS.name),
+        wait = text(R.string.settings_sign_out_delete),
+        overlay = {
+            SignOutDownloadsDialog(AppReset.Saved(count = 12, bytes = 8_400_000_000), onDelete = {}, onKeep = {}, onCancel = {})
+        },
     )
 
     /** The user agent picklist, opened from Settings › About. */
