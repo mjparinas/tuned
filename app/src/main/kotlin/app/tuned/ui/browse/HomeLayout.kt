@@ -2,6 +2,8 @@ package app.tuned.ui.browse
 
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationRail
 import androidx.compose.material3.NavigationRailItem
@@ -58,6 +60,8 @@ internal fun HomeRail(
     selected: Int?,
     onSelect: (Int) -> Unit,
     onOpenDownloads: () -> Unit,
+    /** Null on a kids profile, which has no way into Settings. */
+    onOpenSettings: (() -> Unit)?,
 ) {
     NavigationRail {
         Spacer(Modifier.height(8.dp))
@@ -75,6 +79,15 @@ internal fun HomeRail(
             icon = { DownloadsIcon() },
             label = { Text(stringResource(R.string.downloads)) },
         )
+        // Settings under Downloads on tablets and TV (Melvin, 2026-11-19); phones keep it in the menu by search.
+        if (onOpenSettings != null) {
+            NavigationRailItem(
+                selected = false,
+                onClick = onOpenSettings,
+                icon = { Icon(Icons.Filled.Settings, contentDescription = null) },
+                label = { Text(stringResource(R.string.settings)) },
+            )
+        }
     }
 }
 

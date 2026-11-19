@@ -211,7 +211,9 @@ fun HomeScreen(
     }
 
     Row(Modifier.fillMaxSize()) {
-        if (rail) HomeRail(selected.takeUnless { downloads }, select, openDownloads)
+        // A kids profile has no way into Settings; switching profile (with a PIN) is the way out.
+        val openSettings = onOpenSettings.takeUnless { settings.kidsProfile }
+        if (rail) HomeRail(selected.takeUnless { downloads }, select, openDownloads, openSettings)
         Scaffold(
             modifier = Modifier.weight(1 - ScreenLayout.DETAIL_FRACTION),
             snackbarHost = { SnackbarHost(snackbar) },
@@ -238,8 +240,8 @@ fun HomeScreen(
                     onToggleGrid = { vm.setLiveGrid(!settings.liveGrid) },
                     // The words typed on the tab carry over, so the search isn't typed twice.
                     onOpenSearch = { onOpenSearch(text.trim()) },
-                    // A kids profile has no way into Settings; switching profile (with a PIN) is the way out.
-                    onOpenSettings = onOpenSettings.takeUnless { settings.kidsProfile },
+                    // With the rail (tablets and TV) Settings is on the rail instead, so it isn't in two places.
+                    onOpenSettings = openSettings.takeUnless { rail },
                     profile = profile.takeIf { settings.profileCount > 1 },
                     onOpenProfiles = onOpenProfiles,
                 )
