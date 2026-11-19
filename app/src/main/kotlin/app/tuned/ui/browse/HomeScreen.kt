@@ -32,6 +32,7 @@ import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Movie
 import androidx.compose.material.icons.filled.People
+import androidx.compose.material.icons.filled.PushPin
 import androidx.compose.material.icons.filled.Radar
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
@@ -39,6 +40,7 @@ import androidx.compose.material.icons.filled.TravelExplore
 import androidx.compose.material.icons.filled.Tv
 import androidx.compose.material.icons.filled.VideoLibrary
 import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material.icons.outlined.PushPin
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
@@ -92,6 +94,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import app.tuned.R
 import app.tuned.container
 import app.tuned.core.ContentKind
+import app.tuned.core.PinnedGroups
 import app.tuned.core.ScreenLayout
 import app.tuned.data.AppSettings
 import app.tuned.data.CastMember
@@ -427,6 +430,7 @@ private fun CategoryChips(
     val groups by vm.groups(kind).collectAsStateWithLifecycle()
     val filterFlow = vm.filter(kind)
     val filter by filterFlow.collectAsStateWithLifecycle()
+    val pins by vm.pins.collectAsStateWithLifecycle()
     LazyRow(
         contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -473,16 +477,36 @@ private fun CategoryChips(
                 vm.hideGroup(kind, g.groupName)
                 onHidden(kind, g.groupName, hiddenMessage)
             }
+            // Pinned groups sit first, in pin order (vm.groups), marked with a pin; the chosen group's pin pins or unpins it.
+            val pinned = PinnedGroups.isPinned(pins, kind.code, g.groupName)
+            val pinLabel = stringResource(if (pinned) R.string.group_unpin else R.string.group_pin)
+            val pin = { vm.togglePin(kind, g.groupName) }
             FilterChip(
                 selected = on,
                 onClick = { filterFlow.value = if (on) Filter.All else Filter.Group(g.groupName) },
                 label = { Text(g.groupName) },
+                leadingIcon =
+                    if (pinned && !on) {
+                        {
+                            Icon(
+                                Icons.Filled.PushPin,
+                                contentDescription = stringResource(R.string.group_pinned),
+                                modifier = Modifier.size(16.dp),
+                            )
+                        }
+                    } else {
+                        null
+                    },
                 // The small eye inside the chip is hard to reach with a screen reader, so hiding is also an action on the chip.
                 modifier =
                     if (on) {
                         Modifier.semantics {
                             customActions =
                                 listOf(
+                                    CustomAccessibilityAction(pinLabel) {
+                                        pin()
+                                        true
+                                    },
                                     CustomAccessibilityAction(hideLabel) {
                                         hide()
                                         true
@@ -496,12 +520,19 @@ private fun CategoryChips(
                 trailingIcon =
                     if (on) {
                         {
-                            Icon(
-                                Icons.Filled.VisibilityOff,
-                                contentDescription = stringResource(R.string.group_hide),
-                                modifier =
-                                    Modifier.size(18.dp).clickable(onClick = hide),
-                            )
+                            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                                Icon(
+                                    if (pinned) Icons.Filled.PushPin else Icons.Outlined.PushPin,
+                                    contentDescription = pinLabel,
+                                    modifier = Modifier.size(18.dp).clickable(onClick = pin),
+                                )
+                                Icon(
+                                    Icons.Filled.VisibilityOff,
+                                    contentDescription = stringResource(R.string.group_hide),
+                                    modifier =
+                                        Modifier.size(18.dp).clickable(onClick = hide),
+                                )
+                            }
                         }
                     } else {
                         null

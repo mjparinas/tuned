@@ -10,4 +10,11 @@
     <string name="group_hide">Hide this group</string>
     <string name="group_hidden">%1$s hidden</string>
     <string name="group_hidden_undo">Undo</string>
+    <string name="group_pin">Pin to the front</string>
+    <string name="group_unpin">Unpin</string>
+    <string name="group_pinned">Pinned</string>
+    <string name="settings_app_shortcuts">Shortcuts on the app icon</string>
+    <string name="settings_app_shortcuts_summary">Press and hold Tuned\'s icon for Search, Live events and the channel you watched last</string>
+    <string name="shortcut_search">Search</string>
+    <string name="shortcut_last_channel">Watch %1$s</string>
 </resources>

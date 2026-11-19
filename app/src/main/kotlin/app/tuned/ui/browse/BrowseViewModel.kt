@@ -10,6 +10,7 @@ import androidx.paging.cachedIn
 import app.tuned.container
 import app.tuned.core.ContentKind
 import app.tuned.core.HiddenGroups
+import app.tuned.core.PinnedGroups
 import app.tuned.core.Search
 import app.tuned.data.AppSettings
 import app.tuned.data.SyncProgress
@@ -255,7 +256,25 @@ class BrowseViewModel(
                 } else {
                     items.groups(kind.code, hidden, adult)
                 }
-            }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+            }.combine(pins) { groups, pinned -> PinnedGroups.order(groups, pinned, kind.code) { it.groupName } }
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+    }
+
+    /** The pinned groups, as [PinnedGroups] stores them: first in each tab's chip row. */
+    val pins: StateFlow<String> =
+        settings
+            .map { it?.pinnedGroups.orEmpty() }
+            .distinctUntilChanged()
+            .stateIn(viewModelScope, SharingStarted.Eagerly, "")
+
+    /** Pins a group to the front of its tab's chips, or unpins it (Melvin, 2026-11-19: "your own quick chips"). */
+    fun togglePin(
+        kind: ContentKind,
+        group: String,
+    ) {
+        viewModelScope.launchSafely("BrowseViewModel") {
+            container.settings.update { it.copy(pinnedGroups = PinnedGroups.toggle(it.pinnedGroups, kind.code, group)) }
+        }
     }
 
     val refreshing = container.scheduler.refreshing.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), false)
