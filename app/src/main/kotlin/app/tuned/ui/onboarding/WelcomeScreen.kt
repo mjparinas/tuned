@@ -48,6 +48,8 @@ fun WelcomeScreen(
     firstRun: Boolean,
     onPick: (Credentials.Kind) -> Unit,
     onBack: () -> Unit,
+    /** First run: Restore from Google Drive brought everything back ([RestoreFromDrive]). */
+    onRestored: (askProfile: Boolean) -> Unit = {},
 ) {
     Scaffold(topBar = { if (!firstRun) BackTopBar(stringResource(R.string.playlists_add), onBack) }) { padding ->
         Column(
@@ -82,6 +84,7 @@ fun WelcomeScreen(
             KindCard(Icons.Filled.Link, R.string.kind_link, R.string.kind_link_summary) { onPick(Credentials.Kind.Link) }
             KindCard(Icons.Filled.FolderOpen, R.string.kind_file, R.string.kind_file_summary) { onPick(Credentials.Kind.File) }
             KindCard(Icons.Filled.Router, R.string.kind_stalker, R.string.kind_stalker_summary) { onPick(Credentials.Kind.Stalker) }
+            if (firstRun) RestoreFromDrive(onRestored)
             if (firstRun) {
                 Spacer(Modifier.height(4.dp))
                 Text(
@@ -96,7 +99,7 @@ fun WelcomeScreen(
 }
 
 @Composable
-private fun KindCard(
+internal fun KindCard(
     icon: ImageVector,
     title: Int,
     summary: Int,

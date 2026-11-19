@@ -2,7 +2,7 @@
 
 **Several playlists, added one at a time** (Melvin, 2026-11-17: "support multiple playlist streams… adding the username and password login on the main page doesn't really make sense… make it easy for users to add those"). The first screen no longer asks for a server, username, password and two links at once.
 
-- **Welcome** (first run only): the brand, one line ("Add a playlist from your TV provider to start watching"), and four cards for what providers hand out: **Xtream Codes login**, **Playlist link** (M3U or M3U8, with an optional guide link), **Playlist file** (an `.m3u` on the device) and **MAC portal** (below). There is nothing else to get through: no tour, no permissions.
+- **Welcome** (first run only): the brand, one line ("Add a playlist from your TV provider to start watching"), and four cards for what providers hand out: **Xtream Codes login**, **Playlist link** (M3U or M3U8, with an optional guide link), **Playlist file** (an `.m3u` on the device) and **MAC portal** (below). Under them, **Restore from Google Drive** brings back the playlists, profiles and every setting from another device in one step (Melvin, 2026-11-19; [sync](sync.md)). There is nothing else to get through: no tour, no permissions.
 - **One form per kind**, each with an optional name ("Sports", "Living room"). The Xtream form keeps the default server (`http://eros4k.ddns.net`) filled in and still checks the login with the server's small account answer before opening the app.
 - **Pasted links are read for what they are** (`core/PlaylistLink`). A `get.php` or `player_api.php` link with a username and password becomes an Xtream login, so catch-up and account status work too; pasted into the Xtream server box, it fills in all three fields. Anything else that looks like a web address is a plain link, with `http://` added when missing.
 - **Files are copied into the app** (`files/playlists/`, one file each), so the playlist still loads after the original is moved or deleted, and refreshes read it from there instead of the network. A file that doesn't start like an M3U playlist is refused. Files aren't synced to other devices, since they belong to this one.
@@ -18,4 +18,4 @@
 
 **One playlist at a time.** The app still holds one playlist's channels and guide (switching clears them and downloads the other), so lists, search and favourites never mix providers and the database stays small. When the first download fails, "Change playlist" opens Settings › Playlists instead of signing out.
 
-**Sync between devices** carries every saved playlist except files ([sync](sync.md)). Backup files were removed (Melvin, 2026-11-18).
+**Sync between devices** carries every saved playlist except files, and everything else the person set up ([sync](sync.md)). Backup files were removed (Melvin, 2026-11-18).

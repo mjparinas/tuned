@@ -216,9 +216,17 @@
         <item quantity="one">%d crash or freeze report</item>
         <item quantity="other">%d crash and freeze reports</item>
     </plurals>
+    <string name="report_title">Report a problem</string>
+    <string name="report_summary">Shares the version, this device, the latest crash or freeze and the recent log, with no login. You pick where it goes.</string>
+    <string name="report_copied">Nothing here can share it, so the report was copied. Paste it into an email or message.</string>
+    <string name="report_failed">Couldn\'t share or copy the report. Logs below has the same details.</string>
+    <string name="report_subject">Tuned %1$s problem report</string>
     <string name="clock_hint">This device\'s date and time look wrong. When they are, secure connections fail and it looks like the server is down. Check them in Android\'s settings (Date and time), then try again.</string>
     <string name="settings_user_agent">User agent</string>
-    <string name="settings_user_agent_default">Default (Tuned)</string>
+    <string name="settings_user_agent_default">Tuned (default)</string>
+    <string name="settings_user_agent_custom">Custom…</string>
+    <string name="settings_user_agent_custom_summary">Custom: %1$s</string>
+    <string name="settings_user_agent_custom_hint">Type the user agent your provider asked for</string>
     <string name="settings_version">Tuned %1$s (%2$d)</string>
     <string name="settings_build_commit">Build %1$s</string>
 

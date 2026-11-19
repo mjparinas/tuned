@@ -1,12 +1,16 @@
 package app.tuned.player
 
 import android.content.Context
+import android.content.res.ColorStateList
 import android.graphics.Color
 import android.graphics.Typeface
 import android.util.TypedValue
+import android.view.Gravity
 import android.view.View
 import android.view.Window
 import android.widget.ImageButton
+import android.widget.LinearLayout
+import android.widget.ProgressBar
 import android.widget.TextView
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
@@ -31,15 +35,69 @@ internal fun subtitleText(context: Context) = TextView(context).apply {
     doAfterTextChanged { visibility = if (it.isNullOrEmpty()) View.GONE else View.VISIBLE }
 }
 
-/** The centred message for holds and errors, hidden until there is one. */
-internal fun statusText(context: Context) = TextView(context).apply {
-    setTextColor(Color.WHITE)
-    textSize = 14f
-    visibility = View.GONE
-    setBackgroundColor(0x99000000.toInt())
-    val pad = (12 * resources.displayMetrics.density).toInt()
-    setPadding(pad * 2, pad, pad * 2, pad)
+/**
+ * The centred message for holds and errors, hidden until there is one. While something is on its way (a cast
+ * connecting to the TV, or starting there) a small spinner shows beside the words, so a tap that takes a few seconds
+ * is seen to be working; the words say the same for anyone who can't see it.
+ */
+internal class StatusNote(
+    context: Context,
+) : LinearLayout(context) {
+    private val words =
+        TextView(context).apply {
+            setTextColor(Color.WHITE)
+            textSize = 14f
+        }
+    private val spinner =
+        ProgressBar(context).apply {
+            isIndeterminate = true
+            indeterminateTintList = ColorStateList.valueOf(Color.WHITE)
+            visibility = View.GONE
+            importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
+        }
+
+    /** Setting the words on their own takes the spinner away; [show] keeps it for work under way. */
+    var text: CharSequence
+        get() = words.text
+        set(value) {
+            show(value, busy = false)
+        }
+
+    init {
+        orientation = HORIZONTAL
+        gravity = Gravity.CENTER_VERTICAL
+        visibility = View.GONE
+        setBackgroundColor(0x99000000.toInt())
+        val pad = (12 * resources.displayMetrics.density).toInt()
+        setPadding(pad * 2, pad, pad * 2, pad)
+        accessibilityLiveRegion = View.ACCESSIBILITY_LIVE_REGION_POLITE
+        val size = (20 * resources.displayMetrics.density).toInt()
+        addView(spinner, LayoutParams(size, size).apply { marginEnd = pad })
+        addView(words)
+    }
+
+    fun show(
+        value: CharSequence,
+        busy: Boolean,
+    ) {
+        words.text = value
+        spinner.visibility = if (busy) View.VISIBLE else View.GONE
+        visibility = View.VISIBLE
+    }
 }
+
+/**
+ * A control that can't work right now (most while casting, where the TV plays the video) stays in its place, greyed
+ * out and disabled, rather than doing nothing or saying so in a message (Melvin, 2026-11-19: "Any functionality that
+ * you cant use on the UI just disable them, and make them greyed out"). TalkBack reads it as disabled.
+ */
+internal fun View.usable(on: Boolean) {
+    isEnabled = on
+    alpha = if (on) 1f else DISABLED_ALPHA
+}
+
+/** Material's opacity for disabled content. */
+private const val DISABLED_ALPHA = 0.38f
 
 internal fun backButton(
     context: Context,

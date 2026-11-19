@@ -59,6 +59,8 @@ abstract class TunedDatabase : RoomDatabase() {
 
     abstract fun guideFixes(): GuideFixDao
 
+    abstract fun sync(): SyncDao
+
     abstract fun channelNumbers(): ChannelNumberDao
 
     abstract fun liveFilters(): LiveFilterDao
