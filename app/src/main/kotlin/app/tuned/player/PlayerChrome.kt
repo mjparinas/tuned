@@ -86,6 +86,19 @@ internal class StatusNote(
     }
 }
 
+/**
+ * A control that can't work right now (most while casting, where the TV plays the video) stays in its place, greyed
+ * out and disabled, rather than doing nothing or saying so in a message (Melvin, 2026-11-19: "Any functionality that
+ * you cant use on the UI just disable them, and make them greyed out"). TalkBack reads it as disabled.
+ */
+internal fun View.usable(on: Boolean) {
+    isEnabled = on
+    alpha = if (on) 1f else DISABLED_ALPHA
+}
+
+/** Material's opacity for disabled content. */
+private const val DISABLED_ALPHA = 0.38f
+
 internal fun backButton(
     context: Context,
     onBack: () -> Unit,
