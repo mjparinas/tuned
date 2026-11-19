@@ -1,6 +1,7 @@
 package app.tuned.screenshots
 
 import androidx.annotation.StringRes
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasText
@@ -28,7 +29,9 @@ import coil3.ImageLoader
 import coil3.SingletonImageLoader
 import coil3.annotation.DelicateCoilApi
 import coil3.test.FakeImageLoaderEngine
+import com.github.takahirom.roborazzi.ExperimentalRoborazziApi
 import com.github.takahirom.roborazzi.captureRoboImage
+import com.github.takahirom.roborazzi.captureScreenRoboImage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import org.junit.Before
@@ -49,6 +52,7 @@ import org.robolectric.annotation.GraphicsMode
  * Each area has its own file ([BrowseScreenshots], [SettingsScreenshots], [PlaylistScreenshots]); a new screen adds
  * one line to its area's file.
  */
+@OptIn(ExperimentalRoborazziApi::class) // captureScreenRoboImage, for dialogs, which draw in their own window
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 @Config(sdk = [35], qualifiers = PHONE)
 abstract class Screenshots {
@@ -79,6 +83,8 @@ abstract class Screenshots {
         wait: String,
         settings: AppSettings = DARK,
         then: () -> Unit = {},
+        /** Drawn over the screen, such as a dialog; the picture then takes in every window, not just the screen's. */
+        overlay: (@Composable () -> Unit)? = null,
     ) {
         runBlocking(Dispatchers.IO) { app.container.settings.update { settings } }
         compose.setContent {
@@ -93,6 +99,7 @@ abstract class Screenshots {
                             settingsScreens(appNav)
                         }
                     }
+                    overlay?.invoke()
                 }
             }
         }
@@ -103,7 +110,7 @@ abstract class Screenshots {
             }
         if (shown.isSuccess) then()
         compose.waitForIdle()
-        compose.onRoot().captureRoboImage("$name.png")
+        if (overlay == null) compose.onRoot().captureRoboImage("$name.png") else captureScreenRoboImage("$name.png")
         shown.getOrThrow()
     }
 

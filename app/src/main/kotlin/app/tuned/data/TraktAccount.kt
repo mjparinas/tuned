@@ -127,6 +127,16 @@ class TraktAccount(
         return Trakt.Poll.EXPIRED
     }
 
+    /**
+     * Signing out of Tuned: forgets the account and its settings on this device. Trakt isn't asked to drop the token,
+     * since sync shares the same sign-in with the person's other devices, and revoking it would sign them out too.
+     */
+    fun disconnect() {
+        prefs.edit(commit = true) { clear() }
+        sessionFlow.value = null
+        scrobbleFlow.value = true
+    }
+
     /** Forgets the account here and tells Trakt to drop the token. */
     suspend fun signOut() {
         val s = sessionFlow.value ?: return

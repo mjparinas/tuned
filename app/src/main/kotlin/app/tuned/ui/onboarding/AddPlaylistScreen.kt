@@ -46,6 +46,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
@@ -57,6 +58,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import app.tuned.R
 import app.tuned.container
 import app.tuned.core.PlaylistLink
+import app.tuned.core.Stalker
 import app.tuned.core.Streams
 import app.tuned.core.XtreamAccount
 import app.tuned.core.XtreamUrls
@@ -89,6 +91,8 @@ data class PlaylistDraft(
     val password: String = "",
     val link: String = "",
     val guide: String = "",
+    /** A MAC portal's MAC address; its address is [server]. */
+    val mac: String = "",
 )
 
 class AddPlaylistViewModel(
@@ -187,6 +191,11 @@ class AddPlaylistViewModel(
                 }
             }
 
+            Credentials.Kind.Stalker -> {
+                val mac = Stalker.normalizeMac(draft.mac) ?: return Built.Error(app.getString(R.string.add_bad_mac))
+                stalker(Credentials.stalker(Stalker.normalizePortal(draft.server), mac, guide, name))
+            }
+
             Credentials.Kind.File -> {
                 val url =
                     when {
@@ -209,6 +218,22 @@ class AddPlaylistViewModel(
             } catch (e: IllegalArgumentException) {
                 // OkHttp refuses an address it can't parse ("my server", "http://").
                 AppLog.w("Login", "Not a server address", e)
+                app.getString(R.string.login_bad_server)
+            }
+        return if (error == null) Built.Ok(login) else Built.Error(error)
+    }
+
+    /** A portal checks a MAC by handing the box a token; one it doesn't know gets none. */
+    private suspend fun stalker(login: Credentials): Built {
+        val error =
+            try {
+                val accepted = withContext(Dispatchers.IO) { container.stalker.portal(login).signIn() }
+                if (accepted) null else app.getString(R.string.login_mac_refused)
+            } catch (e: IOException) {
+                AppLog.w("Login", "Couldn't reach the portal", e)
+                XtreamUrls.redact(e.message ?: e.javaClass.simpleName, login.username, login.password)
+            } catch (e: IllegalArgumentException) {
+                AppLog.w("Login", "Not a portal address", e)
                 app.getString(R.string.login_bad_server)
             }
         return if (error == null) Built.Ok(login) else Built.Error(error)
@@ -316,8 +341,16 @@ fun AddPlaylistScreen(
     val state by vm.state.collectAsStateWithLifecycle()
     val editing = remember(editIndex) { vm.editing(editIndex) }
     var name by rememberSaveable { mutableStateOf(editing?.name.orEmpty()) }
-    var server by rememberSaveable { mutableStateOf(editing?.server?.takeIf { kind == Credentials.Kind.Xtream } ?: "") }
-    var username by rememberSaveable { mutableStateOf(editing?.username.orEmpty()) }
+    var server by rememberSaveable {
+        mutableStateOf(
+            when (kind) {
+                Credentials.Kind.Xtream, Credentials.Kind.Stalker -> editing?.server.orEmpty()
+                else -> ""
+            },
+        )
+    }
+    var mac by rememberSaveable { mutableStateOf(editing?.username?.takeIf { kind == Credentials.Kind.Stalker }.orEmpty()) }
+    var username by rememberSaveable { mutableStateOf(editing?.username?.takeIf { kind == Credentials.Kind.Xtream }.orEmpty()) }
     var password by rememberSaveable { mutableStateOf(editing?.password.orEmpty()) }
     var link by rememberSaveable { mutableStateOf(if (kind == Credentials.Kind.Link) editing?.playlistUrl.orEmpty() else "") }
     var guide by rememberSaveable { mutableStateOf(editing?.guideUrl.orEmpty()) }
@@ -342,9 +375,10 @@ fun AddPlaylistScreen(
                 Credentials.Kind.Xtream -> server.isNotBlank() && username.isNotBlank() && password.isNotBlank()
                 Credentials.Kind.Link -> linkKind != null
                 Credentials.Kind.File -> file != null || editing != null
+                Credentials.Kind.Stalker -> server.isNotBlank() && Stalker.normalizeMac(mac) != null
             }
     val submit = {
-        if (canSubmit) vm.save(PlaylistDraft(kind, name, server, username, password, link, guide), file, editing, onDone)
+        if (canSubmit) vm.save(PlaylistDraft(kind, name, server, username, password, link, guide, mac), file, editing, onDone)
     }
     // Pasting a whole Xtream link into the server box fills in all three.
     val onServer: (String) -> Unit = { text ->
@@ -364,6 +398,7 @@ fun AddPlaylistScreen(
                 Credentials.Kind.Xtream -> R.string.kind_xtream
                 Credentials.Kind.Link -> R.string.kind_link
                 Credentials.Kind.File -> R.string.kind_file
+                Credentials.Kind.Stalker -> R.string.kind_stalker
             },
         )
     Scaffold(topBar = { BackTopBar(title, onBack) }) { padding ->
@@ -442,6 +477,37 @@ fun AddPlaylistScreen(
                     )
                 }
 
+                Credentials.Kind.Stalker -> {
+                    Hint(R.string.add_stalker_hint)
+                    OutlinedTextField(
+                        value = server,
+                        onValueChange = { server = it },
+                        label = { Text(stringResource(R.string.login_portal)) },
+                        supportingText = { Text(stringResource(R.string.add_portal_help)) },
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri, imeAction = ImeAction.Next),
+                        modifier = field,
+                    )
+                    OutlinedTextField(
+                        value = mac,
+                        onValueChange = { mac = it },
+                        label = { Text(stringResource(R.string.login_mac)) },
+                        supportingText = {
+                            val typed = mac.isNotBlank() && Stalker.normalizeMac(mac) == null
+                            Text(stringResource(if (typed) R.string.add_bad_mac else R.string.add_mac_help))
+                        },
+                        isError = mac.length >= MAC_LENGTH && Stalker.normalizeMac(mac) == null,
+                        singleLine = true,
+                        keyboardOptions =
+                            KeyboardOptions(
+                                capitalization = KeyboardCapitalization.Characters,
+                                keyboardType = KeyboardType.Ascii,
+                                imeAction = ImeAction.Next,
+                            ),
+                        modifier = field,
+                    )
+                }
+
                 Credentials.Kind.File -> {
                     Hint(R.string.add_file_hint)
                     OutlinedButton(onClick = { pick.launch(arrayOf("*/*")) }, modifier = field.heightIn(min = 52.dp)) {
@@ -487,7 +553,8 @@ fun AddPlaylistScreen(
                     Text(stringResource(if (editing != null) R.string.add_save else R.string.add_submit))
                 }
             }
-            if (state.busy && kind != Credentials.Kind.File && (kind == Credentials.Kind.Xtream || linkKind is PlaylistLink.Xtream)) {
+            val checks = kind == Credentials.Kind.Xtream || kind == Credentials.Kind.Stalker || linkKind is PlaylistLink.Xtream
+            if (state.busy && kind != Credentials.Kind.File && checks) {
                 Text(
                     stringResource(R.string.login_checking),
                     style = MaterialTheme.typography.bodySmall,
@@ -497,6 +564,9 @@ fun AddPlaylistScreen(
         }
     }
 }
+
+/** "00:1A:79:12:34:56": shorter than this is still being typed, so it isn't marked wrong yet. */
+private const val MAC_LENGTH = 17
 
 @Composable
 private fun Hint(text: Int) {

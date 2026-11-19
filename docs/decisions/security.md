@@ -25,7 +25,7 @@ Melvin asked for "a pin to filter out adult content". Adult categories (the clas
 - The PIN is stored only as a salted PBKDF2-SHA256 hash (`PinHash`, 120,000 rounds) in DataStore, never as the digits.
 - The unlock lives in memory only. It ends when the app process ends, or 5 minutes after the app leaves the screen, so a phone handed over later shows nothing adult.
 - Five wrong PINs in a row wait 30 seconds before the next try.
-- "Forgot PIN" takes the account password (or, for a playlist link login, the link) and then sets a new PIN. The PIN stays across sign-out, because it guards the device rather than one login.
+- "Forgot PIN" takes the account password (or, for a playlist link login, the link) and then sets a new PIN. Signing out removes the PIN with everything else (Melvin, 2026-11-19: sign-out resets the app "to a preinstalled state"; until then the PIN stayed across sign-out). See [onboarding](onboarding.md#sign-out).
 
 **Saved playlists** (2026-11-17). Every login used on the device is kept, encrypted with the same Keystore key as the one in use, so Settings › Playlists can switch between them without typing them again. Switching to another provider clears the cached channels, guide and catch-up list and downloads the other playlist, so the lists never mix and the app still holds one playlist at a time. Signing out forgets all of them, and deletes playlist files copied into the app. The synced copy holds every saved playlist except files ([sync](sync.md)).
 
