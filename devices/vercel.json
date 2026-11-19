@@ -6,6 +6,14 @@
     {
       "source": "/tv",
       "destination": "/tv/index.html"
+    },
+    {
+      "source": "/account",
+      "destination": "/account/index.html"
+    },
+    {
+      "source": "/app/signed-in",
+      "destination": "/app/signed-in.html"
     }
   ],
   "headers": [

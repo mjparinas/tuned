@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { LIFETIME, orderKey, reading, YEARLY } from "./play.mjs";
+import { entitlementReading, LIFETIME, orderKey, reading, SEAT_ONCE, SEAT_YEARLY, YEARLY } from "./play.mjs";
 
 const now = Date.parse("2026-11-19T00:00:00Z");
 
@@ -20,4 +20,16 @@ test("a lifetime purchase counts while Play says it is purchased", () => {
 
 test("order numbers match however they're typed", () => {
     assert.equal(orderKey("  gpa.1234-5678-9012-34567..0 "), "GPA.1234-5678-9012-34567");
+});
+
+test("an account's Play purchase: seats bought several at once, and a yearly one with its end", () => {
+    assert.deepEqual(entitlementReading(SEAT_ONCE, { purchaseState: 0, quantity: 3 }, now), {
+        status: "active",
+        quantity: 3,
+        expiresAt: null,
+    });
+    assert.equal(entitlementReading(SEAT_ONCE, { purchaseState: 1 }, now).status, "refunded");
+    const yearly = entitlementReading(SEAT_YEARLY, { lineItems: [{ expiryTime: "2027-11-19T00:00:00Z" }] }, now);
+    assert.deepEqual(yearly, { status: "active", quantity: 1, expiresAt: Date.parse("2027-11-19T00:00:00Z") });
+    assert.equal(entitlementReading(YEARLY, { lineItems: [{ expiryTime: "2026-01-01T00:00:00Z" }] }, now).status, "expired");
 });

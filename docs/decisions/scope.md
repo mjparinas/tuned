@@ -15,7 +15,9 @@ This file keeps the decisions that don't belong to one area yet: what Tuned will
 
 Each line names Melvin's words and date. Move it into the topic's file when it merges.
 
-Nothing is waiting here now. Everything that was listed has merged and is recorded in its topic: never hiding sports and event channels ([channel scan](channel-scan.md)); Downloads by show with space left, offline mode and cache first ([offline](offline.md)); real episode names everywhere ([player](player.md)); actor pages ([people](people.md)); Live Events ([events](events.md)); the full grid guide ([playlist](playlist.md)); profiles with a PIN ([profiles](profiles.md)); phone and TV sync ([sync](sync.md)); Trakt ([Trakt](trakt.md)).
+- **Accounts in the app, and Google Drive removed** (Melvin, 2026-11-19: "i want to completely deprecate google drive sync", "dont bother with google drive migration", "i dont want to encrypt backups"). The server is built ([accounts](accounts.md)); still to build: Settings › Account and backup (sign in with Google in a browser tab, Your devices, the backup instead of Drive sync), Restore from your Tuned account on the welcome screen, the TV signing in to the account from "Sign in with your phone", seats per account in place of per purchase, Play's `seat_once` and `seat_yearly` products, and deleting the Drive code, `core/PassphraseCrypto` and the `GOOGLE_TV_CLIENT_*` secrets, with no import.
+
+Everything else that was listed has merged and is recorded in its topic: never hiding sports and event channels ([channel scan](channel-scan.md)); Downloads by show with space left, offline mode and cache first ([offline](offline.md)); real episode names everywhere ([player](player.md)); actor pages ([people](people.md)); Live Events ([events](events.md)); the full grid guide ([playlist](playlist.md)); profiles with a PIN ([profiles](profiles.md)); phone and TV sync ([sync](sync.md)); Trakt ([Trakt](trakt.md)).
 
 ## Offered, not decided
 

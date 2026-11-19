@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { ALPHABET, newCode, normalizeCode, tvRelay, validBox, validKey } from "./tv.mjs";
+import { ALPHABET, newCode, normalizeCode, tvLinkKey, tvRelay, validBox, validKey } from "./tv.mjs";
 import * as page from "../public/tv/seal.js";
 
 /** Enough of Redis for the relay: strings with expiry, counters. */
@@ -107,6 +107,17 @@ test("the TV takes what the phone sealed, once, and the relay can't read it", as
     const opened = await page.open(page.unb64(taken.box), made.code, tv.pair.privateKey, tv.raw);
     assert.deepEqual(opened, plain);
     assert.equal((await relay.take(post({ code: made.code, secret: made.secret }))).status, 404, "the code ends once taken");
+});
+
+test("an account sign-in from the website reaches the TV once, and ends the code", async () => {
+    const redis = fakeRedis();
+    const relay = tvRelay(redis);
+    const tv = await tvKeys();
+    const made = await (await relay.code(post({ key: tv.key }))).json();
+    await redis.command("SET", tvLinkKey(made.code), "one-time-link", "EX", 600, "NX");
+    const taken = await (await relay.take(post({ code: made.code, secret: made.secret }))).json();
+    assert.deepEqual(taken, { status: "ok", box: null, link: "one-time-link" });
+    assert.equal((await relay.take(post({ code: made.code, secret: made.secret }))).status, 404);
 });
 
 test("the typed-code path hands over the TV's key, and both screens show the same check", async () => {
