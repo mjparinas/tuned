@@ -32,6 +32,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
@@ -129,13 +130,15 @@ private fun NotesHeader(changes: List<ReleaseNotes.Change>?) {
         )
         if (changes != null) {
             val counts = ReleaseNotes.counts(changes)
+            val new = counts.getValue(Kind.NEW)
+            val improved = counts.getValue(Kind.IMPROVED)
+            val fixed = counts.getValue(Kind.FIXED)
             Text(
-                stringResource(
-                    R.string.whats_new_counts,
-                    counts.getValue(Kind.NEW),
-                    counts.getValue(Kind.IMPROVED),
-                    counts.getValue(Kind.FIXED),
-                ),
+                listOf(
+                    pluralStringResource(R.plurals.whats_new_count_new, new, new),
+                    pluralStringResource(R.plurals.whats_new_count_improved, improved, improved),
+                    pluralStringResource(R.plurals.whats_new_count_fixed, fixed, fixed),
+                ).joinToString(" · "),
                 style = MaterialTheme.typography.bodyLarge,
                 color = on,
             )

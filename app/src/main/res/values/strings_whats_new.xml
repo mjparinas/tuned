@@ -9,7 +9,18 @@
     <string name="whats_new">What\'s new</string>
     <string name="whats_new_kicker">Tuned · Update</string>
     <string name="whats_new_title">What\'s new in %1$s</string>
-    <string name="whats_new_counts">%1$d new · %2$d improved · %3$d fixed</string>
+    <plurals name="whats_new_count_new">
+        <item quantity="one">%d new</item>
+        <item quantity="other">%d new</item>
+    </plurals>
+    <plurals name="whats_new_count_improved">
+        <item quantity="one">%d improved</item>
+        <item quantity="other">%d improved</item>
+    </plurals>
+    <plurals name="whats_new_count_fixed">
+        <item quantity="one">%d fixed</item>
+        <item quantity="other">%d fixed</item>
+    </plurals>
     <string name="whats_new_kind_new">New</string>
     <string name="whats_new_kind_improved">Improved</string>
     <string name="whats_new_kind_fixed">Fixed</string>
