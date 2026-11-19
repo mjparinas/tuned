@@ -1,5 +1,6 @@
 package app.tuned.ui.theme
 
+import android.content.Context
 import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -13,6 +14,7 @@ import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -169,6 +171,24 @@ internal fun tunedScheme(
 ): ColorScheme {
     val scheme = if (dark) Dark.withAccent(accent, dark = true) else Light.withAccent(accent, dark = false)
     return if (dark && pureBlack) scheme.pureBlack() else scheme
+}
+
+/**
+ * The accent the player draws in (its seek bar), as a View colour. The player is always dark, so this is the dark
+ * theme's primary for the chosen accent, or the wallpaper's when dynamic colour is on, matching the rest of the app.
+ */
+fun playerAccent(
+    context: Context,
+    accent: Accent,
+    dynamicColour: Boolean,
+): Int {
+    val scheme =
+        if (dynamicColour && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            dynamicDarkColorScheme(context)
+        } else {
+            tunedScheme(dark = true, accent = accent, pureBlack = false)
+        }
+    return scheme.primary.toArgb()
 }
 
 @Composable
