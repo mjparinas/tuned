@@ -317,34 +317,15 @@ class PlayerActivity : FragmentActivity() {
             }
         titleView = titleText(this)
         subtitleView = subtitleText(this)
-        val density = resources.displayMetrics.density
         // Back sits with the title, so it shows whenever the controls do (system back and gestures work too).
         val back = backButton(this) { onBackPressedDispatcher.onBackPressed() }
-        val titles =
-            LinearLayout(this).apply {
-                orientation = LinearLayout.VERTICAL
-                addView(titleView)
-                addView(subtitleView)
-            }
-        overlay =
-            LinearLayout(this).apply {
-                orientation = LinearLayout.HORIZONTAL
-                setBackgroundResource(R.drawable.player_top_scrim)
-                val pad = (24 * density).toInt()
-                setPadding(pad / 2, pad / 2, pad, pad * 2)
-                addView(back, LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT))
-                addView(
-                    titles,
-                    LinearLayout
-                        .LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f)
-                        .apply { marginStart = (4 * density).toInt() },
-                )
-                gravity = Gravity.CENTER_VERTICAL
-            }
+        val titles = titleColumn(this, titleView, subtitleView)
+        overlay = topBar(this, back, titles)
         // Before the tools: opening the player mid-cast shows its note as the cast button is set up.
         statusView = StatusNote(this)
         setUpTools()
-        attachGlance(titles)
+        // The time of day at the top right, after the tools, and the stream's pills under the title.
+        addGlance(overlay, titles, pills)
         // TV remote buttons go to the tools before the player's own controls; see [PlayerTools.onKey].
         val root =
             object : FrameLayout(this) {
@@ -375,14 +356,6 @@ class PlayerActivity : FragmentActivity() {
             },
         )
         setContentView(root)
-    }
-
-    /** The pills under the title and the time of day at the top right, after the tools; see PlayerGlance. */
-    private fun attachGlance(titles: LinearLayout) {
-        val density = resources.displayMetrics.density
-        val wrap = ViewGroup.LayoutParams.WRAP_CONTENT
-        titles.addView(pills.view, LinearLayout.LayoutParams(wrap, wrap).apply { topMargin = (6 * density).toInt() })
-        overlay.addView(playerClock(this), LinearLayout.LayoutParams(wrap, wrap).apply { marginStart = (12 * density).toInt() })
     }
 
     /** The player features drawn over the video, each in its own file. */

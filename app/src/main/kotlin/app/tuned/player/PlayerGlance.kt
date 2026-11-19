@@ -52,6 +52,18 @@ internal fun tintScrubber(
 
 private const val BUFFERED_ALPHA = 0x66
 
+/** Puts the pills under the title in [titles] and the clock at the end of the top bar, after the tools. */
+internal fun addGlance(
+    overlay: LinearLayout,
+    titles: LinearLayout,
+    pills: InfoPills,
+) {
+    val density = overlay.resources.displayMetrics.density
+    val wrap = LinearLayout.LayoutParams.WRAP_CONTENT
+    titles.addView(pills.view, LinearLayout.LayoutParams(wrap, wrap).apply { topMargin = (6 * density).toInt() })
+    overlay.addView(playerClock(overlay.context), LinearLayout.LayoutParams(wrap, wrap).apply { marginStart = (12 * density).toInt() })
+}
+
 /**
  * The stream's picture size, frame rate, sound codec and speakers ("1920x1080", "24 FPS", "AAC", "STEREO"), read from
  * what ExoPlayer is playing. A pill whose value the stream doesn't give is left out, and the row is gone when none
@@ -82,7 +94,7 @@ class InfoPills(
                 player: Player,
                 events: Player.Events,
             ) {
-                if (events.containsAny(*WATCHED)) update()
+                if (WATCHED.any(events::contains)) update()
             }
         }
 
