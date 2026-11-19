@@ -592,7 +592,10 @@ class PlayerActivity : FragmentActivity() {
                         .setPreferredAudioLanguage(settings.audioLanguage.ifBlank { null })
                         .setPreferredTextLanguage(captions.language.ifBlank { null })
                         .setSelectUndeterminedTextLanguage(true)
-                        .setTrackTypeDisabled(C.TRACK_TYPE_TEXT, !captions.enabled),
+                        .setTrackTypeDisabled(C.TRACK_TYPE_TEXT, !captions.enabled)
+                        // Android TV: the TV's video hardware keeps picture and sound together. Media3 uses it only
+                        // when the TV's decoders for both the picture and the sound support it, and plays as usual otherwise.
+                        .setTunnelingEnabled(settings.tunneledPlayback),
                 )
             }
         // Decoder fallback, and the sound delay from Settings › Player (lip sync); see [TunedRenderersFactory].
