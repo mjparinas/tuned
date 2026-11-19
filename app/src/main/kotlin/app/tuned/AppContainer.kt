@@ -2,6 +2,7 @@ package app.tuned
 
 import android.content.Context
 import app.tuned.data.AccountRepository
+import app.tuned.data.ChannelEditor
 import app.tuned.data.ChannelScanner
 import app.tuned.data.CloudSyncRepository
 import app.tuned.data.Connectivity
@@ -79,6 +80,7 @@ class AppContainer(
     val offline by lazy { Offline(context, db, settings, ::watching) }
     val recordings by lazy { Recordings(context) }
     val lists by lazy { OwnLists(db) }
+    val channelEditor by lazy { ChannelEditor(db) }
     val picks by lazy { Picks(db, appScope) { TvHome.schedule(context) } }
     val connectivity by lazy { Connectivity(context, appScope) }
     val metadata by lazy { MetadataRepository(http, BuildConfig.TMDB_API_KEY, db.metadata(), appScope, connectivity::onlineNow) }

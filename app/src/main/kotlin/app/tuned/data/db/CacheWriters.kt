@@ -130,6 +130,8 @@ class PlaylistWriter(
             discard()
             return 0
         }
+        // The person's renamed channels and logos go over the provider's, before the cache takes them.
+        ChannelEdits.applyTo(sql, if (direct) "items" else NEXT)
         if (!direct) apply()
         ShowGroups.rebuild(db)
         Upkeep.optimize(db)
