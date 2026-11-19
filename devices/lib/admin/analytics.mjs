@@ -176,7 +176,7 @@ export function cleanPageView(body, request) {
     let referrer = null;
     try {
         const host = new URL(body.referrer).hostname.replace(/^www\./, "");
-        const own = new URL(request.url).hostname;
+        const own = new URL(request.url).hostname.replace(/^www\./, "");
         referrer = host && host !== own ? host.slice(0, 80) : null;
     } catch {
         referrer = null;

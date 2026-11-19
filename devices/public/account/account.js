@@ -1,5 +1,7 @@
 // The account page (docs/decisions/accounts.md): devices and seats, buying Premium and seats through Stripe, the
 // backup, pairing a TV, signing out and deleting the account. Everything goes through /api with the session cookie.
+import { normalizeCode } from "/tv/seal.js";
+
 const $ = (id) => document.getElementById(id);
 const status = $("status");
 const params = new URLSearchParams(location.search);
@@ -23,6 +25,21 @@ const refusals = {
     unavailable: "Something went wrong on our side. Try again in a moment.",
 };
 const say = (text) => (status.textContent = text ?? "");
+
+/**
+ * A message inside the card it belongs to (Melvin, 2026-11-19: errors "should show in the same tile"), red for an
+ * error and teal for done. The field it is about, if any, is marked invalid so its outline turns red too.
+ */
+function tell(id, text, tone = "error", field = null) {
+    const line = $(id);
+    line.textContent = text ?? "";
+    line.dataset.tone = tone;
+    if (field) $(field).setAttribute("aria-invalid", String(Boolean(text) && tone === "error"));
+}
+const clear = (id, field) => tell(id, "", "error", field);
+
+// The same rules the server uses (lib/admin/codes.mjs normalizeCode): letters, numbers and dashes, 4 to 24 long.
+const codeLooksRight = (value) => /^[A-Z0-9][A-Z0-9-]{2,22}[A-Z0-9]$/.test(value.trim().toUpperCase().replace(/\s+/g, "-"));
 
 async function call(method, path, body) {
     try {
@@ -81,8 +98,8 @@ function render() {
                 if (answer.status === "ok") {
                     me = answer;
                     render();
-                    say(`${d.name} was removed and signed out.`);
-                } else say(refusals[answer.status] ?? refusals.unavailable);
+                    tell("devices-message", `${d.name} was removed and signed out.`, "ok");
+                } else tell("devices-message", refusals[answer.status] ?? refusals.unavailable);
             };
             row.append(text, remove);
             return row;
@@ -124,10 +141,10 @@ async function load() {
 }
 
 async function checkout(product, quantity = 1) {
-    say("Opening checkout…");
+    tell("buy-message", "Opening checkout…", "ok");
     const answer = await call("POST", "/api/stripe/checkout", { product, quantity });
     if (answer.status === "ok") location.href = answer.url;
-    else say(refusals[answer.status] ?? refusals.unavailable);
+    else tell("buy-message", refusals[answer.status] ?? refusals.unavailable);
 }
 
 for (const button of document.querySelectorAll("[data-product]")) button.onclick = () => checkout(button.dataset.product);
@@ -135,7 +152,7 @@ $("buy-seat").onclick = () => checkout(me.seats.seatKind, Number($("seat-count")
 $("billing").onclick = async () => {
     const answer = await call("POST", "/api/stripe/portal");
     if (answer.status === "ok") location.href = answer.url;
-    else say(refusals.unavailable);
+    else tell("buy-message", refusals.unavailable);
 };
 
 // Codes made on the admin's Codes tab (docs/decisions/admin.md).
@@ -151,31 +168,47 @@ const codeAnswers = {
     "too many": "Too many tries. Try again in an hour.",
 };
 $("redeem").onclick = async () => {
-    const answer = await call("POST", "/api/codes/redeem", { code: $("code").value });
-    say(codeAnswers[answer.status] ?? refusals.unavailable);
+    const code = $("code").value;
+    if (!code.trim()) return tell("code-message", "Type the code first.", "error", "code");
+    if (!codeLooksRight(code)) {
+        return tell("code-message", "That isn't the right format. A code is letters and numbers, like TUNED-7KQM-2XPA.", "error", "code");
+    }
+    const answer = await call("POST", "/api/codes/redeem", { code });
+    tell("code-message", codeAnswers[answer.status] ?? refusals.unavailable, answer.status === "ok" ? "ok" : "error", "code");
     if (answer.status === "ok") {
         $("code").value = "";
         load();
     }
 };
 
-async function pair(code) {
+async function pair(code, where, field = null) {
+    if (!String(code ?? "").trim()) return tell(where, "Type the code on the screen first.", "error", field);
+    if (!normalizeCode(code)) return tell(where, refusals["bad code"], "error", field);
     const answer = await call("POST", "/api/account/tv", { code });
-    say(answer.status === "ok" ? "Done. Your device is signing in now." : (refusals[answer.status] ?? refusals.unavailable));
-    return answer.status === "ok";
+    const ok = answer.status === "ok";
+    tell(
+        where,
+        ok ? "Done. Your device is signing in now." : (refusals[answer.status] ?? refusals.unavailable),
+        ok ? "ok" : "error",
+        field,
+    );
+    return ok;
 }
-$("pair").onclick = () => pair($("pair-code").value);
+$("pair").onclick = () => pair($("pair-code").value, "pair-message", "pair-code");
 $("tv-yes").onclick = async () => {
-    if (await pair(params.get("tv"))) $("tv").hidden = true;
+    if (await pair(params.get("tv"), "tv-message")) {
+        $("tv").hidden = true;
+        tell("pair-message", "Done. Your device is signing in now.", "ok");
+    }
 };
 $("tv-no").onclick = () => ($("tv").hidden = true);
 
 $("delete-backup").onclick = async () => {
     const answer = await call("DELETE", "/api/backup", {});
     if (answer.status === "ok") {
-        say("Your backup was deleted. A signed-in device will save a new one next time it opens.");
         await load();
-    } else say(refusals.unavailable);
+        tell("backup-message", "Your backup was deleted. A signed-in device will save a new one next time it opens.", "ok");
+    } else tell("backup-message", refusals.unavailable);
 };
 $("sign-out").onclick = async () => {
     await call("POST", "/api/auth/signout", {});
@@ -183,20 +216,40 @@ $("sign-out").onclick = async () => {
     render();
     say("Signed out.");
 };
-let confirmDelete = false;
-$("delete-account").onclick = async () => {
-    if (!confirmDelete) {
-        confirmDelete = true;
-        $("delete-line").hidden = false;
-        return;
-    }
+// Deleting the account asks in a pop-up that only goes ahead once "delete" is typed (Melvin, 2026-11-19).
+const dialog = $("delete-dialog");
+const typedDelete = () => $("delete-word").value.trim().toLowerCase() === "delete";
+$("delete-account").onclick = () => {
+    $("delete-word").value = "";
+    $("delete-confirm").disabled = true;
+    clear("delete-message");
+    dialog.showModal();
+    $("delete-word").focus();
+};
+$("delete-word").oninput = () => ($("delete-confirm").disabled = !typedDelete());
+$("delete-cancel").onclick = () => dialog.close();
+dialog.onclick = (event) => {
+    if (event.target === dialog) dialog.close();
+};
+$("delete-form").onsubmit = async (event) => {
+    event.preventDefault();
+    if (!typedDelete()) return;
+    $("delete-confirm").disabled = true;
     const answer = await call("POST", "/api/account/delete", {});
     if (answer.status === "ok") {
+        dialog.close();
         me = null;
         render();
         say("Your account was deleted.");
-    } else say(refusals.unavailable);
+    } else {
+        $("delete-confirm").disabled = false;
+        tell("delete-message", refusals.unavailable);
+    }
 };
+
+// Typing again clears an old message, so a red line never sits under a fixed code.
+$("code").oninput = () => clear("code-message", "code");
+$("pair-code").oninput = () => clear("pair-message", "pair-code");
 
 if (params.get("error")) say(errors[params.get("error")] ?? errors.failed);
 if (params.get("bought")) say("Thanks. It can take a minute to show here.");

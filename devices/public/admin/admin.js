@@ -1945,11 +1945,12 @@ async function gate() {
             h(
                 "a",
                 {
-                    class: "btn primary",
+                    class: "gsi",
                     href: "/api/admin/signin",
                     "aria-disabled": s.ready ? null : "true",
                     style: s.ready ? null : "pointer-events:none;opacity:.5",
                 },
+                h("img", { src: "/google.svg", alt: "", width: 20, height: 20 }),
                 "Sign in with Google",
             ),
         );

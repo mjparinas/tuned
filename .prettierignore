@@ -8,3 +8,9 @@ app/schemas/
 *.kts
 *.xml
 gradle/wrapper/
+# The public website's generated pages (node devices/build-site.mjs writes them; docs/decisions/website.md).
+devices/public/index.html
+devices/public/blog/**/*.html
+devices/public/features.json
+devices/public/chrome.js
+devices/public/check/vendor/*.js
