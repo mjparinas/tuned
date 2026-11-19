@@ -19,6 +19,7 @@ import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Dns
 import androidx.compose.material.icons.filled.FolderOpen
 import androidx.compose.material.icons.filled.Link
+import androidx.compose.material.icons.filled.PhoneAndroid
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedCard
@@ -40,13 +41,14 @@ import app.tuned.ui.common.focusRing
 /**
  * The first thing a new install shows, and Settings › Playlists › Add: one question, "what kind of playlist?", with
  * the three kinds providers hand out. The form for the chosen kind comes next ([AddPlaylistScreen]), so nobody faces
- * a server, username, password and two links at once.
+ * a server, username, password and two links at once. On a TV, signing in with a phone ([TvSignInScreen]) comes first.
  */
 @Composable
 fun WelcomeScreen(
     firstRun: Boolean,
     onPick: (Credentials.Kind) -> Unit,
     onBack: () -> Unit,
+    onPhone: (() -> Unit)? = null,
 ) {
     Scaffold(topBar = { if (!firstRun) BackTopBar(stringResource(R.string.playlists_add), onBack) }) { padding ->
         Column(
@@ -77,6 +79,8 @@ fun WelcomeScreen(
                     modifier = Modifier.widthIn(max = 560.dp).fillMaxWidth(),
                 )
             }
+            // On a TV, typing a login with the remote is the hard part, so the phone comes first (onboarding.md).
+            onPhone?.let { KindCard(Icons.Filled.PhoneAndroid, R.string.tv_signin_card, R.string.tv_signin_card_summary, it) }
             KindCard(Icons.Filled.Dns, R.string.kind_xtream, R.string.kind_xtream_summary) { onPick(Credentials.Kind.Xtream) }
             KindCard(Icons.Filled.Link, R.string.kind_link, R.string.kind_link_summary) { onPick(Credentials.Kind.Link) }
             KindCard(Icons.Filled.FolderOpen, R.string.kind_file, R.string.kind_file_summary) { onPick(Credentials.Kind.File) }

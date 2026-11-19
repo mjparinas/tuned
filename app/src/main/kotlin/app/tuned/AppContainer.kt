@@ -14,6 +14,7 @@ import app.tuned.data.MetadataRepository
 import app.tuned.data.Offline
 import app.tuned.data.OwnLists
 import app.tuned.data.PeopleRepository
+import app.tuned.data.PhoneSignIn
 import app.tuned.data.Picks
 import app.tuned.data.PlaylistSession
 import app.tuned.data.ProfileRepository
@@ -25,6 +26,7 @@ import app.tuned.data.SyncCopyRepository
 import app.tuned.data.SyncRepository
 import app.tuned.data.TraktAccount
 import app.tuned.data.TuneRepository
+import app.tuned.data.TvRelay
 import app.tuned.data.db.TunedDatabase
 import app.tuned.diagnostics.DeviceClock
 import app.tuned.diagnostics.loggingHandler
@@ -113,4 +115,11 @@ class AppContainer(
 
     /** Adding, switching, removing and signing out of playlists. */
     val session by lazy { PlaylistSession(context, credentials, settings, db, reminders, scheduler, account, scanControl) }
+
+    /** Signing in on a TV with a phone (docs/decisions/onboarding.md): the relay, and taking what arrives. */
+    val tvRelay by lazy { TvRelay(http, tvSignInUrl) }
+
+    /** Where [tvRelay] lives; tests point it at a stand-in before first use. */
+    var tvSignInUrl: String = BuildConfig.TV_SIGNIN_URL
+    val phoneSignIn by lazy { PhoneSignIn(credentials, syncCopy, session) { premium.unlocked.value } }
 }

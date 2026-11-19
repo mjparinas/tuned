@@ -119,3 +119,6 @@ const val PHONE = "w411dp-h891dp-xxhdpi"
 
 /** A 10-inch tablet held sideways, where the navigation rail and two panes show (docs/decisions/large-screens.md). */
 const val TABLET = "w1280dp-h800dp-land-xhdpi"
+
+/** A 1080p TV, 960 by 540 dp, for screens only a TV shows. */
+const val TV = "w960dp-h540dp-land-television-xhdpi"
