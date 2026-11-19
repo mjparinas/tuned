@@ -7,6 +7,7 @@
     <string name="tuned_account_asking">Getting a code…</string>
     <!-- %1$s: the website's address, such as "tuned-devices.vercel.app/account". -->
     <string name="tuned_account_enter_code">Scan the code, or on any phone or computer go to %1$s, sign in with Google and enter this code under Pair a TV:</string>
+    <string name="tuned_account_open_or_enter">Tap Open the website and sign in with Google. Or on a computer go to %1$s, sign in and enter this code under Pair a TV:</string>
     <string name="tuned_account_waiting">Waiting for you to sign in…</string>
     <string name="tuned_account_open_site">Open the website</string>
     <string name="tuned_account_failed">Couldn\'t reach Tuned\'s server. Check the connection and try again.</string>

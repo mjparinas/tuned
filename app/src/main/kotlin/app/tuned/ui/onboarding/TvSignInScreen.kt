@@ -38,6 +38,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -305,11 +306,14 @@ private fun Showing(
 
 /** Black on white with a quiet zone, whatever the theme, so every phone camera reads it. */
 @Composable
-internal fun Qr(modules: QrModules) {
+internal fun Qr(
+    modules: QrModules,
+    size: Dp = 260.dp,
+) {
     val label = stringResource(R.string.tv_signin_qr)
     Box(
         Modifier
-            .size(260.dp)
+            .size(size)
             .clip(RoundedCornerShape(12.dp))
             .background(Color.White)
             .padding(16.dp)

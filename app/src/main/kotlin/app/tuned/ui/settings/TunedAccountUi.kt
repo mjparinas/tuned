@@ -3,7 +3,10 @@ package app.tuned.ui.settings
 import android.app.Application
 import android.content.Intent
 import android.text.format.DateUtils
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.material3.MaterialTheme
@@ -32,10 +35,10 @@ import app.tuned.diagnostics.startActivitySafely
 import app.tuned.premium.LockedRow
 import app.tuned.premium.premiumUnlocked
 import app.tuned.ui.common.TunedDialog
+import app.tuned.ui.common.isTelevision
 import app.tuned.ui.onboarding.Qr
 import app.tuned.ui.onboarding.QrModules
 import app.tuned.work.CloudSyncWorker
-import app.tuned.work.TvHome
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -242,7 +245,8 @@ internal fun AccountSignInDialog(
     onClose: () -> Unit,
 ) {
     val context = LocalContext.current
-    val tv = TvHome.isTv(context)
+    // The screen's own mode, not the leanback feature, so a TV-sized window draws it as a TV does.
+    val tv = isTelevision()
     TunedDialog(
         onDismissRequest = onClose,
         title = { Text(title) },
@@ -253,17 +257,24 @@ internal fun AccountSignInDialog(
                 }
 
                 is AccountSignIn.State.Code -> {
-                    Column(horizontalAlignment = Alignment.Start) {
-                        val site = state.page.substringAfter("://").substringBefore('?')
-                        Text(stringResource(R.string.tuned_account_enter_code, site))
-                        Spacer(Modifier.height(16.dp))
-                        SignInCode(state.code)
-                        if (tv) {
+                    val site = state.page.substringAfter("://").substringBefore('?')
+                    val steps: @Composable () -> Unit = {
+                        Column(horizontalAlignment = Alignment.Start) {
+                            Text(stringResource(if (tv) R.string.tuned_account_enter_code else R.string.tuned_account_open_or_enter, site))
                             Spacer(Modifier.height(16.dp))
-                            Qr(state.qr)
+                            SignInCode(state.code)
+                            Spacer(Modifier.height(16.dp))
+                            Text(stringResource(R.string.tuned_account_waiting), style = MaterialTheme.typography.bodySmall)
                         }
-                        Spacer(Modifier.height(16.dp))
-                        Text(stringResource(R.string.tuned_account_waiting), style = MaterialTheme.typography.bodySmall)
+                    }
+                    if (tv) {
+                        // Side by side, so the dialog stays inside a TV's 540 dp with the QR code at a size a phone can scan.
+                        Row(horizontalArrangement = Arrangement.spacedBy(24.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Qr(state.qr, size = 200.dp)
+                            Box(Modifier.weight(1f)) { steps() }
+                        }
+                    } else {
+                        steps()
                     }
                 }
 
