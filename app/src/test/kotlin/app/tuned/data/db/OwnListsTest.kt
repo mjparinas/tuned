@@ -31,7 +31,7 @@ class OwnListsTest {
 
     private suspend fun listChannels(listId: Long) = db
         .items()
-        .listChannels(listId, 0, emptyList(), false, null, "", "", "", emptyList())
+        .listChannels(listId, 0, emptyList(), false, null, "", "", "", listOf("any"))
         .all()
         .map { it.id }
 
