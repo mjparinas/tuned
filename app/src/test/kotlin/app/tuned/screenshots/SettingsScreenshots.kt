@@ -7,6 +7,9 @@ import app.tuned.ui.RegionSettingsRoute
 import app.tuned.ui.SettingsPageRoute
 import app.tuned.ui.SettingsRoute
 import app.tuned.ui.settings.SettingsPage
+import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.ParameterizedRobolectricTestRunner
@@ -31,6 +34,15 @@ class SettingsScreenshots : Screenshots() {
         RegionSettingsRoute,
         wait = text(R.string.settings_countries),
         settings = DARK.copy(hiddenRegions = setOf("DE", "EXYU")),
+    )
+
+    /** The user agent picklist, opened from Settings › About. */
+    @Test
+    fun userAgents() = shot(
+        "settings-user-agents",
+        SettingsPageRoute(SettingsPage.ABOUT.name),
+        wait = text(R.string.settings_user_agent),
+        then = { compose.onNodeWithText(text(R.string.settings_user_agent)).performScrollTo().performClick() },
     )
 }
 

@@ -23,7 +23,7 @@
 
 **Audio language.** Settings › Playback › Preferred audio language; the player picks a matching track when the stream has one, and the settings menu switches tracks while watching.
 
-**Start speed.** TS streams use the extractor flags that allow non-IDR key frames and detect access units, so live channels start sooner. Buffering has three modes (Fast start, Balanced, Smooth). OkHttp is the data source, shared with the rest of the app, with an optional custom user agent.
+**Start speed.** TS streams use the extractor flags that allow non-IDR key frames and detect access units, so live channels start sooner. Buffering has three modes (Fast start, Balanced, Smooth). OkHttp is the data source, shared with the rest of the app, with a user agent picked from common players or typed in ([settings](settings.md)).
 
 **Live streams that drop** are retried quietly up to five times (1.5 s, 3 s and so on to 7.5 s) before an error shows; a live channel that never showed a picture gets one retry before its backup copies are tried. Falling behind the live window jumps back to live.
 
