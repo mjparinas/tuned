@@ -715,11 +715,14 @@ internal fun DownloadsIcon(downloads: DownloadsViewModel = viewModel()) {
     }
 }
 
-/** Live TV on a TV: the column of groups and the focused channel's details either side of the channels. */
-private val TV_GROUPS_WIDTH = 180.dp
-private val TV_LIST_MIN_WIDTH = 280.dp
-private val TV_INFO_MIN_WIDTH = 200.dp
-private val TV_INFO_MAX_WIDTH = 320.dp
+/**
+ * Live TV on a TV: the column of groups and the focused channel's details either side of the channels. The list keeps
+ * room for a channel's name beside its buttons; the details are left out before the names get cut short.
+ */
+private val TV_GROUPS_WIDTH = 160.dp
+private val TV_LIST_MIN_WIDTH = 340.dp
+private val TV_INFO_MIN_WIDTH = 180.dp
+private val TV_INFO_MAX_WIDTH = 260.dp
 
 /** The profile button beside the search box: its height (56dp, a Material text field's) and the picture inside it. */
 private val PROFILE_BUTTON = 56.dp
