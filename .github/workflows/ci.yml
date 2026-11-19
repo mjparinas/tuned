@@ -21,11 +21,13 @@ jobs:
   #  1. Nothing, when this exact tree already passed. "CI passed" records the tree it tested as a commit status
   #     ("CI passed tree"), so the staging push after a squash merge, the promotion pull request, the push
   #     to main and the merge back into staging finish in seconds.
-  #  2. Only Prettier and the gate, when every changed file is Markdown (Melvin, 2026-11-19: "dont run ci if there are
-  #     only markdown file changes"). Markdown can't break a build, a test or the app, so this no longer waits on the
-  #     commit before it having passed; Prettier still checks it, in seconds, so the next pull request isn't the one to
-  #     fail on its formatting. The tree is recorded as passed only when the commit before it passed too.
-  #  3. Everything otherwise.
+  #  2. Only Prettier and the gate, when every changed file is Markdown or under docs/ (Melvin, 2026-11-19: "dont run
+  #     ci if there are only markdown file changes"). Docs can't break a build, a test or the app, so this doesn't wait
+  #     on the commit before it having passed; Prettier still checks them, in seconds, so the next pull request isn't
+  #     the one to fail on their formatting. The tree is recorded as passed only when the commit before it passed too.
+  #  3. Only what the change touches (Melvin, 2026-11-19: "if there are only changes to the web app, only build the
+  #     webapp and skip mobile builds and vice versa"): the website's tests for devices/, the app's Gradle jobs for the
+  #     app, and both for anything shared (workflows, scripts/, package.json). scripts/ci-changes.mjs decides.
   changes:
     name: Changed files
     runs-on: ubuntu-latest
@@ -36,7 +38,9 @@ jobs:
       statuses: read
     outputs:
       run: ${{ steps.diff.outputs.run }}
-      markdown: ${{ steps.diff.outputs.markdown }}
+      docs: ${{ steps.diff.outputs.docs }}
+      mobile: ${{ steps.diff.outputs.mobile }}
+      web: ${{ steps.diff.outputs.web }}
       record: ${{ steps.diff.outputs.record }}
       tree: ${{ steps.diff.outputs.tree }}
     steps:
@@ -52,7 +56,7 @@ jobs:
         run: |
           tree=$(git rev-parse 'HEAD^{tree}')
           echo "tree=$tree" >> "$GITHUB_OUTPUT"
-          everything() { echo "run=true" >> "$GITHUB_OUTPUT"; exit 0; }
+          everything() { { echo "run=true"; echo "mobile=true"; echo "web=true"; } >> "$GITHUB_OUTPUT"; exit 0; }
           passed() {
             [ -n "$1" ] || return 1
             desc=$(gh api "repos/$REPO/commits/$1/statuses?per_page=100" \
@@ -82,25 +86,32 @@ jobs:
           files=$(git diff --name-only "$base" HEAD)
           echo "$files"
           [ -n "$files" ] || everything
-          not_md=$(grep -vE '\.md$' <<< "$files" || true)
-          if [ -z "$not_md" ]; then
-            { echo "run=false"; echo "markdown=true"; } >> "$GITHUB_OUTPUT"
+          needs=$(node scripts/ci-changes.mjs <<< "$files") || everything
+          echo "$needs"
+          if [ "$needs" = $'mobile=false\nweb=false' ]; then
+            { echo "run=false"; echo "docs=true"; } >> "$GITHUB_OUTPUT"
             if passed "$base" "$(git rev-parse "$base^{tree}")"; then
-              echo "::notice::Only Markdown changed and ${base:0:7} passed CI, so only Prettier runs."
+              echo "::notice::Only Markdown or docs/ changed and ${base:0:7} passed CI, so only Prettier runs."
             else
               echo "record=false" >> "$GITHUB_OUTPUT"
-              echo "::notice::Only Markdown changed, so only Prettier runs. ${base:0:7} hasn't passed CI (yet), so this tree isn't recorded as passed."
+              echo "::notice::Only Markdown or docs/ changed, so only Prettier runs. ${base:0:7} hasn't passed CI (yet), so this tree isn't recorded as passed."
             fi
             exit 0
           fi
-          echo "run=true" >> "$GITHUB_OUTPUT"
+          { echo "run=true"; echo "$needs"; } >> "$GITHUB_OUTPUT"
+          # A skipped half is vouched for only by the commit before it, so record the tree only when that one passed.
+          if [ "$needs" != $'mobile=true\nweb=true' ] && ! passed "$base" "$(git rev-parse "$base^{tree}")"; then
+            echo "record=false" >> "$GITHUB_OUTPUT"
+          fi
+          grep -q 'mobile=true' <<< "$needs" || echo "::notice::Only the website (devices/) changed, so the app's builds and tests are skipped."
+          grep -q 'web=true' <<< "$needs" || echo "::notice::The website (devices/) didn't change, so its tests are skipped."
 
   # Node only, so it needs no Java or Gradle and finishes in under a minute. ktlint runs in Checks, which has Gradle.
-  # On a Markdown-only change only Prettier runs.
+  # On a docs-only change only Prettier runs, and the website's tests run only when devices/ (or something shared) changed.
   format:
     name: Formatting
     needs: changes
-    if: needs.changes.outputs.run == 'true' || needs.changes.outputs.markdown == 'true'
+    if: needs.changes.outputs.run == 'true' || needs.changes.outputs.docs == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -114,7 +125,7 @@ jobs:
         if: needs.changes.outputs.run == 'true'
         run: node --test scripts/*.test.mjs
       - name: Premium device list tests
-        if: needs.changes.outputs.run == 'true'
+        if: needs.changes.outputs.web == 'true'
         run: node --test devices/lib/*.test.mjs devices/lib/admin/*.test.mjs
       - name: Prettier (YAML, JSON, Markdown)
         run: npx prettier --check .
@@ -125,7 +136,7 @@ jobs:
   checks:
     name: Lint, static analysis and unit tests
     needs: changes
-    if: needs.changes.outputs.run == 'true'
+    if: needs.changes.outputs.mobile == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -159,7 +170,7 @@ jobs:
   android:
     name: Android build
     needs: changes
-    if: needs.changes.outputs.run == 'true'
+    if: needs.changes.outputs.mobile == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:
@@ -180,7 +191,7 @@ jobs:
   device:
     name: Device smoke test
     needs: changes
-    if: needs.changes.outputs.run == 'true'
+    if: needs.changes.outputs.mobile == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 40
     steps:
