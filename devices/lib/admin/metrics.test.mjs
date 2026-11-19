@@ -16,13 +16,21 @@ test("a funnel step is never more than the one before", () => {
     assert.equal(steps[3].ofFirst, 4);
     assert.equal(steps[3].ofPrevious, 5);
     assert.deepEqual(biggestDrop(steps), { from: "Played something", to: "Bought Premium", lost: 95 });
-    assert.equal(biggestDrop(funnel([{ label: "a", count: 3 }, { label: "b", count: 0 }])), null);
+    assert.equal(
+        biggestDrop(
+            funnel([
+                { label: "a", count: 3 },
+                { label: "b", count: 0 },
+            ]),
+        ),
+        null,
+    );
 });
 
 test("revenue is gross at list price, net of each store's fee, and refunds come off", () => {
     const r = revenue([
         { source: "play", product: "premium_lifetime", quantity: 1, status: "active" },
-        { source: "web", product: "extra_seat", quantity: 2, status: "active" },
+        { source: "web", product: "seat_once", quantity: 2, status: "active" },
         { source: "web", product: "premium_yearly", quantity: 1, status: "refunded" },
         { source: "grant", product: "premium_lifetime", quantity: 1, status: "active" },
     ]);
@@ -31,7 +39,13 @@ test("revenue is gross at list price, net of each store's fee, and refunds come 
     assert.equal(r.refunds, 999);
     assert.equal(r.count, 2);
     assert.equal(mrr([{ source: "play", product: "premium_yearly", quantity: 1, status: "active" }]), 83);
-    assert.equal(monthlyCosts([{ cents: 2000, every: "month" }, { cents: 1200, every: "year" }]), 2100);
+    assert.equal(
+        monthlyCosts([
+            { cents: 2000, every: "month" },
+            { cents: 1200, every: "year" },
+        ]),
+        2100,
+    );
 });
 
 test("periods, changes and empty days", () => {

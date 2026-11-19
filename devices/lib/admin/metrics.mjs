@@ -47,7 +47,7 @@ export function biggestDrop(steps, min = 5) {
 }
 
 /** List prices in US cents. The stores and Stripe can't say what tax took, so revenue is gross at list price. */
-export const PRICES = { premium_yearly: 999, premium_lifetime: 2499, extra_seat: 499, extra_seat_yearly: 199 };
+export const PRICES = { premium_yearly: 999, premium_lifetime: 2499, seat_once: 499, seat_yearly: 199 };
 export const FEES = { play: (cents) => Math.round(cents * 0.15), web: (cents) => Math.round(cents * 0.029) + 30, grant: () => 0 };
 
 /**
@@ -78,7 +78,8 @@ export function mrr(rows) {
     let cents = 0;
     for (const row of rows) {
         if (row.status !== "active" || row.source === "grant") continue;
-        if (row.product === "premium_yearly" || row.product === "extra_seat_yearly") cents += ((PRICES[row.product] ?? 0) * Math.max(1, row.quantity ?? 1)) / 12;
+        if (row.product === "premium_yearly" || row.product === "seat_yearly")
+            cents += ((PRICES[row.product] ?? 0) * Math.max(1, row.quantity ?? 1)) / 12;
     }
     return Math.round(cents);
 }

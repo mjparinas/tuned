@@ -3,24 +3,31 @@
 // state of it: a new report or a bigger number brings it back.
 
 /**
- * `facts`: { openReports, oldestReportDays, paymentFailures, refunds, digestLateHours, missingSettings: [{names,
- * powers}], maintenance } and `hidden`: { [key]: untilMs | null (dismissed) }.
+ * `facts`: { openReports, oldestReportDays, refunds, digestLateHours, missingSettings: [{ names, powers }] } and `hidden`: { [key]: untilMs | null (dismissed) }.
  */
 export function derive(facts, hidden = {}, now = Date.now()) {
     const items = [];
     const add = (key, title, detail, tab, kind) => items.push({ key, title, detail, tab, kind });
-    if (facts.maintenance) add("maintenance", "Maintenance mode is on", "The app's server calls answer 'back soon' until it's switched off.", "System", "urgent");
     if (facts.openReports > 0)
         add(
             `reports:${facts.openReports}`,
             facts.openReports === 1 ? "1 problem report to read" : `${facts.openReports} problem reports to read`,
-            facts.oldestReportDays > 0 ? `The oldest is ${facts.oldestReportDays} days old.` : "Sent today.",
+            facts.oldestReportDays > 1
+                ? `The oldest is ${facts.oldestReportDays} days old.`
+                : facts.oldestReportDays === 1
+                  ? "The oldest is a day old."
+                  : "Sent today.",
             "Reports",
             "people",
         );
-    if (facts.paymentFailures > 0)
-        add(`payfail:${facts.paymentFailures}`, `${facts.paymentFailures} failed payments in 14 days`, "Check Stripe or Play Console.", "Revenue", "money");
-    if (facts.refunds > 0) add(`refunds:${facts.refunds}`, `${facts.refunds} refunds in 14 days`, "Their seats were given back.", "Revenue", "money");
+    if (facts.refunds > 0)
+        add(
+            `refunds:${facts.refunds}`,
+            facts.refunds === 1 ? "1 refund in 14 days" : `${facts.refunds} refunds in 14 days`,
+            "Their seats were given back.",
+            "Revenue",
+            "money",
+        );
     if (facts.digestLateHours != null && facts.digestLateHours > 26)
         add("cron-late", "The daily job hasn't run", `Last ran ${Math.round(facts.digestLateHours)} hours ago.`, "Automations", "urgent");
     for (const s of facts.missingSettings ?? [])

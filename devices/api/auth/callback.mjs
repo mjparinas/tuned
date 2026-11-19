@@ -11,7 +11,8 @@ export async function GET(request) {
             const link = await newLink(done.account, done.after.challenge);
             return Response.redirect(`${url.origin}/app/signed-in?code=${encodeURIComponent(link)}`, 302);
         }
-        const page = done.after.tv ? `/account?tv=${done.after.tv}` : "/account";
+        // An admin sign-in (lib/admin/api.mjs) comes back to the admin, which then asks for its second step.
+        const page = done.after.to === "admin" ? "/admin" : done.after.tv ? `/account?tv=${done.after.tv}` : "/account";
         return new Response(null, {
             status: 302,
             headers: { Location: `${url.origin}${page}`, "Set-Cookie": await newSession(done.account) },

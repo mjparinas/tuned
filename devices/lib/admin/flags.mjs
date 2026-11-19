@@ -13,8 +13,24 @@ export const FLAGS = [
     { key: "channel_scan", label: "Channel scan", group: "Features", type: "bool", default: true },
     { key: "downloads", label: "Downloads", group: "Features", type: "bool", default: true },
     { key: "cast", label: "Cast to a TV", group: "Features", type: "bool", default: true },
-    { key: "usage_batch_minutes", label: "Minutes between usage stats uploads", group: "App", type: "int", default: 60, min: 15, max: 1440 },
-    { key: "min_version_code", label: "Oldest version that may run without updating (0 is any)", group: "App", type: "int", default: 0, min: 0, max: 2_000_000_000 },
+    {
+        key: "usage_batch_minutes",
+        label: "Minutes between usage stats uploads",
+        group: "App",
+        type: "int",
+        default: 60,
+        min: 15,
+        max: 1440,
+    },
+    {
+        key: "min_version_code",
+        label: "Oldest version that may run without updating (0 is any)",
+        group: "App",
+        type: "int",
+        default: 0,
+        min: 0,
+        max: 2_000_000_000,
+    },
 ];
 
 const BY_KEY = Object.fromEntries(FLAGS.map((f) => [f.key, f]));

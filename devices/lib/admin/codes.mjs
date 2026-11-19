@@ -5,7 +5,7 @@ import { randomBytes } from "node:crypto";
 const LETTERS = "23456789ABCDEFGHJKMNPQRSTUVWXYZ";
 export const KINDS = {
     premium: { label: "Premium for life", product: "premium_lifetime" },
-    seats: { label: "Extra seats", product: "extra_seat" },
+    seats: { label: "Extra seats", product: "seat_once" },
 };
 export const MAX_SEATS_PER_CODE = 10;
 
@@ -31,7 +31,8 @@ export function checkNewCode(input, random = randomBytes) {
     const code = input.code ? normalizeCode(input.code) : newCode(random);
     if (!code) return { error: "Use 4 to 24 letters, digits or dashes." };
     const quantity = kind === "seats" ? Number(input.quantity) : 1;
-    if (!Number.isInteger(quantity) || quantity < 1 || quantity > MAX_SEATS_PER_CODE) return { error: `Seats are 1 to ${MAX_SEATS_PER_CODE}.` };
+    if (!Number.isInteger(quantity) || quantity < 1 || quantity > MAX_SEATS_PER_CODE)
+        return { error: `Seats are 1 to ${MAX_SEATS_PER_CODE}.` };
     const maxUses = Number(input.maxUses ?? 1);
     if (!Number.isInteger(maxUses) || maxUses < 1 || maxUses > 10_000) return { error: "Uses are 1 to 10,000." };
     const days = input.days ? Number(input.days) : null;

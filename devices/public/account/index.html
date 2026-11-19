@@ -183,7 +183,7 @@
             <section id="signed-out" class="card" hidden>
                 <h2>Sign in</h2>
                 <p>Sign in with Google to see your devices, buy Premium or more seats, and manage your backup.</p>
-                <a id="sign-in" href="/api/auth/google"><button type="button">Sign in with Google</button></a>
+                <a id="sign-in" href="/api/auth/google" data-track="sign-in"><button type="button">Sign in with Google</button></a>
             </section>
 
             <section id="tv" class="card" hidden>
@@ -211,17 +211,32 @@
                     <h2 id="buy-title">Tuned Premium</h2>
                     <p class="small" id="buy-line"></p>
                     <div class="actions" id="buy-premium">
-                        <button type="button" data-product="premium_yearly">Yearly</button>
-                        <button type="button" data-product="premium_lifetime">Lifetime</button>
+                        <button type="button" data-product="premium_yearly" data-track="buy-yearly">Yearly</button>
+                        <button type="button" data-product="premium_lifetime" data-track="buy-lifetime">Lifetime</button>
                     </div>
                     <div class="actions" id="buy-seats" hidden>
                         <label for="seat-count" class="small">Extra seats</label>
                         <select id="seat-count"></select>
-                        <button type="button" id="buy-seat">Buy seats</button>
+                        <button type="button" id="buy-seat" data-track="buy-seat">Buy seats</button>
                     </div>
                     <div class="actions">
                         <button type="button" class="quiet" id="billing" hidden>Receipts and billing</button>
                     </div>
+                </section>
+
+                <section class="card">
+                    <h2>Have a code?</h2>
+                    <p class="small">A code from Tuned gives Premium or extra seats to this account.</p>
+                    <label for="code">Code</label>
+                    <input
+                        id="code"
+                        autocomplete="off"
+                        autocapitalize="characters"
+                        spellcheck="false"
+                        maxlength="24"
+                        placeholder="TUNED-XXXX-XXXX"
+                    />
+                    <div class="actions"><button type="button" id="redeem" data-track="redeem-code">Use code</button></div>
                 </section>
 
                 <section class="card">
@@ -237,7 +252,7 @@
                     <p class="small">Type the eight-character code your TV shows under "Sign in with your phone".</p>
                     <label for="pair-code">Code on the TV</label>
                     <input id="pair-code" autocomplete="off" autocapitalize="characters" placeholder="K7QF-29MD" />
-                    <div class="actions"><button type="button" id="pair">Sign in the TV</button></div>
+                    <div class="actions"><button type="button" id="pair" data-track="pair-tv">Sign in the TV</button></div>
                 </section>
 
                 <section class="card">
@@ -253,5 +268,6 @@
             </div>
         </main>
         <script type="module" src="/account/account.js"></script>
+        <script src="/beacon.js" defer></script>
     </body>
 </html>

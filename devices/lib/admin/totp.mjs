@@ -22,7 +22,9 @@ export function base32(bytes) {
 }
 
 export function fromBase32(text) {
-    const clean = String(text).toUpperCase().replace(/[^A-Z2-7]/g, "");
+    const clean = String(text)
+        .toUpperCase()
+        .replace(/[^A-Z2-7]/g, "");
     let bits = 0;
     let value = 0;
     const out = [];
@@ -72,7 +74,14 @@ export const otpauth = (secret, email) =>
     `otpauth://totp/Tuned%20admin:${encodeURIComponent(email)}?secret=${secret}&issuer=Tuned%20admin&digits=6&period=${STEP_SECONDS}`;
 
 const RECOVERY = "23456789ABCDEFGHJKMNPQRSTUVWXYZ";
-export const hashRecovery = (code) => createHash("sha256").update(String(code).toUpperCase().replace(/[^A-Z0-9]/g, "")).digest("hex");
+export const hashRecovery = (code) =>
+    createHash("sha256")
+        .update(
+            String(code)
+                .toUpperCase()
+                .replace(/[^A-Z0-9]/g, ""),
+        )
+        .digest("hex");
 
 /** Eight codes like `K7QM-2XPA`: shown once, kept only as hashes. */
 export function newRecoveryCodes(random = randomBytes) {

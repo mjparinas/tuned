@@ -24,18 +24,18 @@ test("roles come from the two lists, admins first", () => {
 
 test("to-dos come back when their data changes, and after a snooze", () => {
     const now = Date.parse("2026-11-19T20:00:00Z");
-    const facts = { openReports: 2, oldestReportDays: 3, missingSettings: [{ names: ["DATABASE_URL"], powers: "Neon" }], maintenance: true };
+    const facts = { openReports: 2, oldestReportDays: 3, missingSettings: [{ names: ["DATABASE_URL"], powers: "Neon" }] };
     const all = derive(facts, {}, now);
     assert.deepEqual(
         all.map((i) => i.key),
-        ["maintenance", "reports:2", "setup:DATABASE_URL"],
+        ["reports:2", "setup:DATABASE_URL"],
     );
-    assert.equal(derive(facts, { "reports:2": null }, now).length, 2);
-    assert.equal(derive({ ...facts, openReports: 3 }, { "reports:2": null }, now).length, 3);
+    assert.equal(derive(facts, { "reports:2": null }, now).length, 1);
+    assert.equal(derive({ ...facts, openReports: 3 }, { "reports:2": null }, now).length, 2);
     const until = snoozeUntil("tomorrow", now);
     assert.equal(new Date(until).toISOString(), "2026-11-20T08:00:00.000Z");
-    assert.equal(derive(facts, { "reports:2": until }, now).length, 2);
-    assert.equal(derive(facts, { "reports:2": until }, until).length, 3);
+    assert.equal(derive(facts, { "reports:2": until }, now).length, 1);
+    assert.equal(derive(facts, { "reports:2": until }, until).length, 2);
     assert.equal(freshness(30, 26, 50), "amber");
     assert.equal(freshness(null, 1, 2), "red");
 });

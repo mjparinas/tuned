@@ -102,7 +102,7 @@ jobs:
       - name: Release version script tests
         run: node --test scripts/*.test.mjs
       - name: Premium device list tests
-        run: node --test devices/lib/*.test.mjs
+        run: node --test devices/lib/*.test.mjs devices/lib/admin/*.test.mjs
       - name: Prettier (YAML, JSON, Markdown)
         run: npx prettier --check .
 

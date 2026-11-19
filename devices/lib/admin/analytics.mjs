@@ -4,7 +4,10 @@
 import { createHash } from "node:crypto";
 
 const text = (max) => (v) => (typeof v === "string" && v.length > 0 ? v.slice(0, max) : undefined);
-const oneOf = (...allowed) => (v) => (allowed.includes(v) ? v : undefined);
+const oneOf =
+    (...allowed) =>
+    (v) =>
+        allowed.includes(v) ? v : undefined;
 const int = (min, max) => (v) => (Number.isInteger(v) && v >= min && v <= max ? v : undefined);
 const bool = (v) => (typeof v === "boolean" ? v : undefined);
 
@@ -56,7 +59,7 @@ export const EVENTS = {
         ),
     },
     premium_seen: { from: text(40) },
-    premium_bought: { product: oneOf("premium_yearly", "premium_lifetime", "extra_seat"), trial: bool },
+    premium_bought: { product: oneOf("premium_yearly", "premium_lifetime", "seat_once", "seat_yearly"), trial: bool },
     premium_restored: {},
     seat_full: {},
     account_signed_in: { via: oneOf("phone", "tv_qr", "website") },
@@ -153,7 +156,13 @@ export function describeAgent(ua = "") {
                 : /Linux/.test(ua)
                   ? "Linux"
                   : "Other";
-    const device = /\bTV\b|SmartTV|AFT|BRAVIA|GoogleTV/i.test(ua) ? "tv" : /Mobi|iPhone|Android(?!.*Tablet)/.test(ua) ? "phone" : /iPad|Tablet/.test(ua) ? "tablet" : "desktop";
+    const device = /\bTV\b|SmartTV|AFT|BRAVIA|GoogleTV/i.test(ua)
+        ? "tv"
+        : /Mobi|iPhone|Android(?!.*Tablet)/.test(ua)
+          ? "phone"
+          : /iPad|Tablet/.test(ua)
+            ? "tablet"
+            : "desktop";
     return { browser, os, device };
 }
 

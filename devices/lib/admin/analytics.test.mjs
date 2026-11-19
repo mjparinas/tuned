@@ -30,7 +30,8 @@ test("only allow-listed events and properties get through", () => {
 
 test("no event may carry anything that names what's watched or a login", () => {
     const banned = /channel|title|film|show|url|server|user|pass|login|search|query|ip/i;
-    for (const [name, fields] of Object.entries(EVENTS)) for (const key of Object.keys(fields)) assert.doesNotMatch(key, banned, `${name}.${key}`);
+    for (const [name, fields] of Object.entries(EVENTS))
+        for (const key of Object.keys(fields)) assert.doesNotMatch(key, banned, `${name}.${key}`);
 });
 
 test("a wrong install id is refused and odd times become now", () => {
@@ -56,7 +57,10 @@ test("page views keep the referrer's host only, and skip bots and Global Privacy
     assert.equal(cleanPageView({ path: "/" }, req({ "user-agent": "Googlebot/2.1" })), null);
     assert.equal(cleanPageView({ path: "/" }, req({ "user-agent": chrome, "sec-gpc": "1" })), null);
     assert.equal(cleanPageView({ path: "https://evil" }, req({ "user-agent": chrome })), null);
-    assert.equal(cleanPageView({ path: "/", referrer: "https://tuned-devices.vercel.app/tv" }, req({ "user-agent": chrome })).referrer, null);
+    assert.equal(
+        cleanPageView({ path: "/", referrer: "https://tuned-devices.vercel.app/tv" }, req({ "user-agent": chrome })).referrer,
+        null,
+    );
 });
 
 test("a visitor hash changes each day and never holds the address", () => {
