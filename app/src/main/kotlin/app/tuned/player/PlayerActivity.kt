@@ -19,7 +19,6 @@ import android.widget.Toast
 import androidx.annotation.OptIn
 import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.lifecycleScope
-import androidx.media3.common.AudioAttributes
 import androidx.media3.common.C
 import androidx.media3.common.MediaItem
 import androidx.media3.common.PlaybackException
@@ -27,12 +26,8 @@ import androidx.media3.common.Player
 import androidx.media3.common.Tracks
 import androidx.media3.common.VideoSize
 import androidx.media3.common.util.UnstableApi
-import androidx.media3.exoplayer.DefaultLoadControl
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
-import androidx.media3.exoplayer.trackselection.DefaultTrackSelector
-import androidx.media3.extractor.DefaultExtractorsFactory
-import androidx.media3.extractor.ts.DefaultTsPayloadReaderFactory
 import androidx.media3.ui.PlayerView
 import app.tuned.BuildConfig
 import app.tuned.R
@@ -572,49 +567,18 @@ class PlayerActivity : FragmentActivity() {
                 headers = { uri -> uri.host?.let(streamHeaders::get).orEmpty() },
                 network = { network -> if (live) timeshift.factory(network) else network },
             )
-        // TS streams from IPTV servers often start on a non-IDR frame; these flags start them sooner.
-        val extractors =
-            DefaultExtractorsFactory().setTsExtractorFlags(
-                DefaultTsPayloadReaderFactory.FLAG_ALLOW_NON_IDR_KEYFRAMES or DefaultTsPayloadReaderFactory.FLAG_DETECT_ACCESS_UNITS,
-            )
-        val buffer = settings.buffer
-        val load =
-            DefaultLoadControl
-                .Builder()
-                .setBufferDurationsMs(buffer.minMs, buffer.maxMs, buffer.startMs, buffer.startMs * 2)
-                .setPrioritizeTimeOverSizeThresholds(true)
-                .build()
-        val captions = settings.captions
-        val selector =
-            DefaultTrackSelector(this).apply {
-                setParameters(
-                    buildUponParameters()
-                        .setPreferredAudioLanguage(settings.audioLanguage.ifBlank { null })
-                        .setPreferredTextLanguage(captions.language.ifBlank { null })
-                        .setSelectUndeterminedTextLanguage(true)
-                        .setTrackTypeDisabled(C.TRACK_TYPE_TEXT, !captions.enabled)
-                        // Android TV: the TV's video hardware keeps picture and sound together. Media3 uses it only
-                        // when the TV's decoders for both the picture and the sound support it, and plays as usual otherwise.
-                        .setTunnelingEnabled(settings.tunneledPlayback),
-                )
-            }
         // Decoder fallback, and the sound delay from Settings › Player (lip sync); see [TunedRenderersFactory].
         val renderers = TunedRenderersFactory(this) { settings.audioDelayMs }
         return ExoPlayer
             .Builder(this, renderers)
-            .setMediaSourceFactory(DefaultMediaSourceFactory(http, extractors).setSubtitleParserFactory(subtitleTiming.parsers))
-            .setLoadControl(load)
-            .setTrackSelector(selector)
+            .setMediaSourceFactory(
+                DefaultMediaSourceFactory(http, PlayerSetup.extractors()).setSubtitleParserFactory(subtitleTiming.parsers),
+            ).setLoadControl(PlayerSetup.loadControl(settings))
+            .setTrackSelector(PlayerSetup.trackSelector(this, settings))
             .setSeekBackIncrementMs(settings.seekBackMs)
             .setSeekForwardIncrementMs(settings.seekForwardMs)
-            .setAudioAttributes(
-                AudioAttributes
-                    .Builder()
-                    .setUsage(C.USAGE_MEDIA)
-                    .setContentType(C.AUDIO_CONTENT_TYPE_MOVIE)
-                    .build(),
-                true,
-            ).setHandleAudioBecomingNoisy(true)
+            .setAudioAttributes(PlayerSetup.audio, true)
+            .setHandleAudioBecomingNoisy(true)
             .build()
             .apply {
                 addListener(listener(live))
