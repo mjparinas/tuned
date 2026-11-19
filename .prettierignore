@@ -8,3 +8,4 @@ app/schemas/
 *.kts
 *.xml
 gradle/wrapper/
+devices/public/check/vendor/*.js
