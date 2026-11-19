@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
@@ -30,6 +29,7 @@ import androidx.compose.ui.unit.dp
 import app.tuned.BuildConfig
 import app.tuned.R
 import app.tuned.core.UserAgents
+import app.tuned.ui.common.TunedDialog
 
 /**
  * Settings › About › User agent: a picklist of what common players and set-top boxes send, Tuned first and the
@@ -77,7 +77,7 @@ private fun UserAgentPicker(
     onDismiss: () -> Unit,
 ) {
     val tunedOwn = "Tuned/${BuildConfig.VERSION_NAME}"
-    AlertDialog(
+    TunedDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(R.string.settings_user_agent)) },
         text = {
@@ -133,7 +133,7 @@ private fun CustomUserAgentDialog(
     onSave: (String) -> Unit,
 ) {
     var text by remember { mutableStateOf(initial) }
-    AlertDialog(
+    TunedDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(R.string.settings_user_agent_custom)) },
         text = {

@@ -18,7 +18,6 @@ import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
@@ -44,6 +43,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import app.tuned.R
+import app.tuned.ui.common.TunedDialog
 
 @Composable
 fun SectionHeader(text: String) {
@@ -133,7 +133,7 @@ fun <T> ChoiceRow(
     var open by remember { mutableStateOf(false) }
     SettingRow(title = title, summary = label(selected), onClick = { open = true })
     if (open) {
-        AlertDialog(
+        TunedDialog(
             onDismissRequest = { open = false },
             title = { Text(title) },
             text = {
@@ -258,7 +258,7 @@ fun TextDialog(
     onSave: (String) -> Unit,
 ) {
     var text by remember { mutableStateOf(initial) }
-    AlertDialog(
+    TunedDialog(
         onDismissRequest = onDismiss,
         title = { Text(title) },
         text = { OutlinedTextField(value = text, onValueChange = { text = it }, singleLine = true, modifier = Modifier.fillMaxWidth()) },

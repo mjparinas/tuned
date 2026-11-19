@@ -18,6 +18,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.ParameterizedRobolectricTestRunner
 import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
 
 /** Settings, every one of its pages, and the screens they open. */
 @RunWith(RobolectricTestRunner::class)
@@ -77,6 +78,16 @@ class SettingsScreenshots : Screenshots() {
         overlay = {
             SignOutDownloadsDialog(AppReset.Saved(count = 12, bytes = 8_400_000_000), onDelete = {}, onKeep = {}, onCancel = {})
         },
+    )
+
+    /** The sign-out dialog on a TV: no wider than 560 dp, in the centre. */
+    @Test
+    @Config(qualifiers = TV)
+    fun signOutTv() = shot(
+        "settings-sign-out-tv",
+        SettingsPageRoute(SettingsPage.PLAYLISTS.name),
+        wait = text(R.string.settings_sign_out_title),
+        overlay = { SignOutDialog(onSignOut = {}, onCancel = {}) },
     )
 
     /** The user agent picklist, opened from Settings › About. */

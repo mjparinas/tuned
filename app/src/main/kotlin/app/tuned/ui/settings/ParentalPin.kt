@@ -4,7 +4,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -25,6 +24,7 @@ import app.tuned.core.PinHash
 import app.tuned.core.PinThrottle
 import app.tuned.data.CredentialStore
 import app.tuned.diagnostics.launchSafely
+import app.tuned.ui.common.TunedDialog
 import java.security.MessageDigest
 
 /** What the PIN dialog is for. */
@@ -128,7 +128,7 @@ fun PinDialog(
         }
     }
 
-    AlertDialog(
+    TunedDialog(
         onDismissRequest = onDone,
         title = {
             Text(

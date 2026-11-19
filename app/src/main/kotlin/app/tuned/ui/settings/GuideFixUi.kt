@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -37,6 +36,7 @@ import app.tuned.container
 import app.tuned.core.GuideFixes
 import app.tuned.data.AppSettings
 import app.tuned.diagnostics.launchSafely
+import app.tuned.ui.common.TunedDialog
 
 class GuideFixSettingsViewModel(
     app: Application,
@@ -94,7 +94,7 @@ private fun ExtraGuidesDialog(
 ) {
     val links = remember { initial.toMutableStateList() }
     var text by rememberSaveable { mutableStateOf("") }
-    AlertDialog(
+    TunedDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(R.string.settings_extra_guides)) },
         text = {

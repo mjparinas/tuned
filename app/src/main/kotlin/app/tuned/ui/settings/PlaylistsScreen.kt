@@ -22,7 +22,6 @@ import androidx.compose.material.icons.filled.Link
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Router
 import androidx.compose.material.icons.filled.Tv
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExtendedFloatingActionButton
@@ -53,6 +52,7 @@ import app.tuned.container
 import app.tuned.data.Credentials
 import app.tuned.diagnostics.launchSafely
 import app.tuned.ui.common.BackTopBar
+import app.tuned.ui.common.TunedDialog
 import app.tuned.ui.common.focusRing
 import kotlinx.coroutines.flow.MutableStateFlow
 
@@ -192,7 +192,7 @@ fun PlaylistsScreen(
     }
     removing?.let { login ->
         val last = saved.size == 1
-        AlertDialog(
+        TunedDialog(
             onDismissRequest = { removing = null },
             title = { Text(stringResource(R.string.playlists_remove_title, login.label)) },
             text = { Text(stringResource(if (last) R.string.playlists_remove_last else R.string.playlists_remove_body)) },

@@ -44,3 +44,9 @@ style:
     active: false
   LoopWithTooManyJumpStatements:
     maxJumpCount: 3
+  ForbiddenImport:
+    active: true
+    imports:
+      - value: "androidx.compose.material3.AlertDialog"
+        reason: "Use app.tuned.ui.common.TunedDialog, which keeps every pop-up off the screen's edges (docs/decisions/branding.md)."
+    excludes: ["**/ui/common/TunedDialog.kt"]

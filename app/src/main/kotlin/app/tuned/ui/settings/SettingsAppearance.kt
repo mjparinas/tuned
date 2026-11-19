@@ -2,17 +2,16 @@ package app.tuned.ui.settings
 
 import android.os.Build
 import androidx.compose.foundation.background
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
@@ -105,7 +104,7 @@ private fun themeLabel(mode: ThemeMode): Int = when (mode) {
 
 /** Accent colour: a row of round swatches, the chosen one ticked. */
 @Composable
-private fun AccentRow(
+internal fun AccentRow(
     selected: Accent,
     onPick: (Accent) -> Unit,
 ) {
@@ -113,14 +112,18 @@ private fun AccentRow(
     Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp)) {
         Text(stringResource(R.string.settings_accent), style = MaterialTheme.typography.bodyLarge)
         Spacer(Modifier.height(12.dp))
-        Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.horizontalScroll(rememberScrollState())) {
+        // Every swatch fits the row (Melvin, 2026-11-19: the last one was cut off on a phone): each takes an equal share
+        // of the width, up to 40 dp, and stays round, so a narrow phone gets slightly smaller circles rather than a cut-off one.
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
             Accent.entries.forEach { accent ->
                 val name = stringResource(accentLabel(accent))
                 Box(
                     contentAlignment = Alignment.Center,
                     modifier =
                         Modifier
-                            .size(40.dp)
+                            .weight(1f, fill = false)
+                            .widthIn(max = 40.dp)
+                            .aspectRatio(1f)
                             .clip(CircleShape)
                             .background(accent.swatch())
                             .selectable(selected = accent == selected, role = Role.RadioButton, onClick = { onPick(accent) })
