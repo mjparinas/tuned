@@ -11,6 +11,7 @@ import app.tuned.data.GoogleDrive
 import app.tuned.data.GuideFixRepository
 import app.tuned.data.MetadataRepository
 import app.tuned.data.Offline
+import app.tuned.data.OwnLists
 import app.tuned.data.PeopleRepository
 import app.tuned.data.Picks
 import app.tuned.data.PlaylistSession
@@ -24,6 +25,7 @@ import app.tuned.data.SyncRepository
 import app.tuned.data.TraktAccount
 import app.tuned.data.TuneRepository
 import app.tuned.data.db.TunedDatabase
+import app.tuned.diagnostics.DeviceClock
 import app.tuned.diagnostics.loggingHandler
 import app.tuned.player.TvCasting
 import app.tuned.premium.Premium
@@ -59,6 +61,7 @@ class AppContainer(
             .connectTimeout(15, TimeUnit.SECONDS)
             .readTimeout(60, TimeUnit.SECONDS)
             .retryOnConnectionFailure(true)
+            .addNetworkInterceptor(DeviceClock.interceptor)
             .build()
     }
     val sync by lazy { SyncRepository(db, http, credentials::load, settings, context.noBackupFilesDir.resolve("sync")) }
@@ -74,6 +77,7 @@ class AppContainer(
     val events by lazy { EventsRepository(db, settings, reminders) }
     val offline by lazy { Offline(context, db, settings, ::watching) }
     val recordings by lazy { Recordings(context) }
+    val lists by lazy { OwnLists(db) }
     val picks by lazy { Picks(db, appScope) { TvHome.schedule(context) } }
     val connectivity by lazy { Connectivity(context, appScope) }
     val metadata by lazy { MetadataRepository(http, BuildConfig.TMDB_API_KEY, db.metadata(), appScope, connectivity::onlineNow) }

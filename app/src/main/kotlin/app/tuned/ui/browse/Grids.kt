@@ -79,6 +79,7 @@ internal fun MovieGrid(
 ) {
     val movies = vm.movies.collectAsLazyPagingItems()
     val favourites by vm.favouriteIds.collectAsStateWithLifecycle()
+    val picker = rememberListPicker()
     val library: LibraryViewModel = viewModel()
     val watched by library.watched.collectAsStateWithLifecycle()
     val later by library.laterKeys.collectAsStateWithLifecycle()
@@ -122,6 +123,7 @@ internal fun MovieGrid(
                                 stringResource(if (done) R.string.mark_unwatched else R.string.mark_watched) to {
                                     library.setWatched(listOf(movie.id), !done)
                                 },
+                                stringResource(R.string.list_add) to { picker.open(movie.id) },
                             ),
                     )
                 }

@@ -57,6 +57,7 @@ import app.tuned.core.XtreamAccount
 import app.tuned.core.XtreamUrls
 import app.tuned.data.Credentials
 import app.tuned.diagnostics.AppLog
+import app.tuned.diagnostics.DeviceClock
 import app.tuned.diagnostics.attempt
 import app.tuned.diagnostics.launchSafely
 import app.tuned.ui.common.BackTopBar
@@ -203,7 +204,7 @@ class AddPlaylistViewModel(
                 if (check(login) == false) app.getString(R.string.login_wrong) else null
             } catch (e: IOException) {
                 AppLog.w("Login", "Couldn't check the login", e)
-                XtreamUrls.redact(e.message ?: e.javaClass.simpleName, login.username, login.password)
+                DeviceClock.explain(app, XtreamUrls.redact(e.message ?: e.javaClass.simpleName, login.username, login.password))
             } catch (e: IllegalArgumentException) {
                 // OkHttp refuses an address it can't parse ("my server", "http://").
                 AppLog.w("Login", "Not a server address", e)

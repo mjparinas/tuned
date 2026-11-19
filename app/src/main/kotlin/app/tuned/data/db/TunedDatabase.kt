@@ -27,8 +27,10 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         CurrentProfileEntity::class,
         GuideFixEntity::class,
         GuideChannelEntity::class,
+        ListEntity::class,
+        ListItemEntity::class,
     ],
-    version = 17,
+    version = 18,
     exportSchema = true,
 )
 abstract class TunedDatabase : RoomDatabase() {
@@ -60,6 +62,8 @@ abstract class TunedDatabase : RoomDatabase() {
 
     abstract fun liveFilters(): LiveFilterDao
 
+    abstract fun lists(): ListDao
+
     companion object {
         fun create(context: Context): TunedDatabase = Room
             .databaseBuilder(context, TunedDatabase::class.java, "tuned.db")
@@ -83,6 +87,7 @@ abstract class TunedDatabase : RoomDatabase() {
                 MIGRATION_14_15,
                 MIGRATION_15_16,
                 MIGRATION_16_17,
+                MIGRATION_17_18,
             ).addCallback(FirstProfile)
             // Going back to an older release (installing an older APK) can't keep a newer database: start it afresh
             // rather than crash on every launch. Upgrades always migrate, above.
@@ -269,6 +274,22 @@ abstract class TunedDatabase : RoomDatabase() {
             object : Migration(16, 17) {
                 override fun migrate(db: SupportSQLiteDatabase) {
                     db.execSQL("ALTER TABLE `profiles` ADD COLUMN `avatar` TEXT")
+                }
+            }
+
+        /** Adds the person's own lists beside Favourites ([ListEntity]); favourites stay where they are. */
+        val MIGRATION_17_18 =
+            object : Migration(17, 18) {
+                override fun migrate(db: SupportSQLiteDatabase) {
+                    db.execSQL(
+                        "CREATE TABLE IF NOT EXISTS `lists` (`id` INTEGER NOT NULL, `name` TEXT NOT NULL, `position` INTEGER NOT NULL, " +
+                            "`createdAt` INTEGER NOT NULL, `profileId` INTEGER NOT NULL DEFAULT 1, PRIMARY KEY(`id`))",
+                    )
+                    db.execSQL("CREATE INDEX IF NOT EXISTS `index_lists_profileId_position` ON `lists` (`profileId`, `position`)")
+                    db.execSQL(
+                        "CREATE TABLE IF NOT EXISTS `list_items` (`listId` INTEGER NOT NULL, `itemId` INTEGER NOT NULL, " +
+                            "`addedAt` INTEGER NOT NULL, `position` INTEGER NOT NULL, PRIMARY KEY(`listId`, `itemId`))",
+                    )
                 }
             }
 

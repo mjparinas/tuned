@@ -3,11 +3,13 @@ package app.tuned.ui.settings
 import android.text.format.DateUtils
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import app.tuned.R
 import app.tuned.core.TimeZones
 import app.tuned.data.AppSettings
+import app.tuned.diagnostics.DeviceClock
 import java.time.ZoneId
 
 @Composable
@@ -94,7 +96,7 @@ private fun TimeZoneRow(
 @Composable
 private fun lastSync(settings: AppSettings): String = when {
     settings.lastSyncError.isNotBlank() -> {
-        stringResource(R.string.settings_last_error, settings.lastSyncError)
+        DeviceClock.explain(LocalContext.current, stringResource(R.string.settings_last_error, settings.lastSyncError))
     }
 
     settings.lastPlaylistSync == 0L -> {
