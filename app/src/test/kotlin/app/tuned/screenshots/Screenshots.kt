@@ -91,9 +91,10 @@ abstract class Screenshots {
                 }
             }
         }
+        val matcher = hasText(wait, substring = true) or hasContentDescription(wait, substring = true)
         val shown =
             runCatching {
-                compose.waitUntil(WAIT_MS) { compose.onAllNodes(hasText(wait, substring = true) or hasContentDescription(wait, substring = true)).fetchSemanticsNodes().isNotEmpty() }
+                compose.waitUntil(WAIT_MS) { compose.onAllNodes(matcher).fetchSemanticsNodes().isNotEmpty() }
             }
         compose.waitForIdle()
         compose.onRoot().captureRoboImage("$name.png")
