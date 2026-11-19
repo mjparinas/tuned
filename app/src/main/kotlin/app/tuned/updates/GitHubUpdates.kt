@@ -11,6 +11,7 @@ import app.tuned.BuildConfig
 import app.tuned.core.ReleaseTag
 import app.tuned.data.Downloader
 import app.tuned.diagnostics.AppLog
+import app.tuned.diagnostics.attempt
 import app.tuned.diagnostics.startActivitySafely
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
@@ -143,6 +144,29 @@ class GitHubUpdates(
             }
         installer == PLAY_STORE
     }.getOrDefault(false)
+
+    /**
+     * The release notes of [versionName]'s GitHub release, for What's new in Settings, or null when GitHub can't be
+     * reached or has no such release (a debug build's version, say). Off the main thread; logs a failure.
+     */
+    suspend fun releaseNotes(versionName: String = BuildConfig.VERSION_NAME): String? = withContext(Dispatchers.IO) {
+        attempt(TAG, "release notes") {
+            val request =
+                Request
+                    .Builder()
+                    .url("$api/repos/$REPO/releases/tags/${ReleaseTag.of(versionName)}")
+                    .header("Accept", "application/vnd.github+json")
+                    .build()
+            http.newCall(request).execute().use { response ->
+                if (!response.isSuccessful) null else json.decodeFromString<Notes>(response.body.string()).body
+            }
+        }.getOrNull()
+    }
+
+    @Serializable
+    private data class Notes(
+        val body: String? = null,
+    )
 
     private fun latest(): Release? {
         val request =

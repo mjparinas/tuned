@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Settings' first screen: section headers and the version card -->
+    <string name="settings_section_account">Account</string>
+    <string name="settings_section_watching">Watching</string>
+    <string name="settings_section_app">App</string>
+    <string name="settings_version_title">Version</string>
+    <!-- What's new sheet, from the version's GitHub release notes -->
+    <string name="whats_new">What\'s new</string>
+    <string name="whats_new_kicker">Tuned · Update</string>
+    <string name="whats_new_title">What\'s new in %1$s</string>
+    <string name="whats_new_counts">%1$d new · %2$d improved · %3$d fixed</string>
+    <string name="whats_new_kind_new">New</string>
+    <string name="whats_new_kind_improved">Improved</string>
+    <string name="whats_new_kind_fixed">Fixed</string>
+    <string name="whats_new_loading">Loading this version\'s changes…</string>
+    <string name="whats_new_failed">Couldn\'t load this version\'s changes. Check the connection and try again.</string>
+    <string name="whats_new_empty">This version has no changes to list.</string>
+    <string name="whats_new_retry">Try again</string>
+    <string name="whats_new_done">Done</string>
+</resources>

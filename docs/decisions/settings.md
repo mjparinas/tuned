@@ -21,6 +21,15 @@ No setting was removed or renamed, so nobody loses a choice they made. Settings 
 
 **Search** (Melvin, 2026-11-18: "build all three", from the UI review). A search box sits at the top of Settings' first screen. Typing shows every matching setting from every page under its page's name, matched by every typed word against the row's title and what it currently says, ignoring case and accents. The results are the pages' own rows, so a switch flips right there and a choice opens its dialog. A page whose name matches is listed as a row that opens it, and so is Captions. Each row widget (`SettingRow`, `SwitchRow`, `ChoiceRow`, `SliderRow`, `ColourRow`) checks the query itself (`SettingsSearch.kt`), so a new setting is searchable with no list to keep up to date. A custom row that isn't built on those widgets calls `searchHides` itself, as the accent colours row does.
 
+## The look: headed cards and coloured badges (Melvin, 2026-11-19)
+
+Melvin, sending screenshots of Horizon Maps' settings: "Is there a way to style the settings nicely like in the screenshots". So:
+
+- **First screen.** The search box, then three headed sections, each one rounded card: **Account** (Playlists and account, Profiles and parental controls), **Watching** (Channels and lists, Guide and refresh, Playback, Captions, When a channel fails) and **App** (Appearance, Updates and advanced). Each page's row has a round tinted badge with its icon, its name, and a line saying what's inside; the badge colours follow the section (blue, violet and teal, red for failures, amber). The last card, **Tuned**, holds the version, the build's commit and a **What's new** button ([updates](updates.md)).
+- **Pages.** Section headers are small capitals over the card they head, and every run of rows between two headers sits on one rounded card. The pages are still flat lists of rows: `SettingsGroups` (`ui/settings/SettingsGroups.kt`) finds the runs between headers and draws a card behind each, so a new row joins its section's card with no extra code. Anything that should sit between cards rather than on one (the search box, a note) uses `Modifier.outsideCards()`.
+- **Contrast.** Each badge colour has a deep shade for light themes and a soft one for dark themes, so the icon stays clear of its tinted circle; the text keeps the theme's own colours. Headers stay headings for screen readers, which read them as written, not spelled out.
+- Horizon Maps is GPL-3.0, so only the look was taken, never its code: copying it would make Tuned, including the paid Play build, GPL too.
+
 ## How it's built
 
 Each page is its own file in `ui/settings/` (`SettingsPlayback.kt` and so on), listed in the `SettingsPage` enum, and opened with `SettingsPageRoute`. A new setting goes in its page's file; a new page is an enum entry, a branch in `SettingsPageContent` and a file. Rows that open another screen pass its route to `onOpen`. Stored settings are declared once each in `data/SettingFields.kt`.
