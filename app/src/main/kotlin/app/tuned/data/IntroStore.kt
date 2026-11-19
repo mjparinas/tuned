@@ -21,4 +21,9 @@ class IntroStore(
     ) {
         context.intros.edit { it[stringPreferencesKey(showKey)] = IntroSkip.encode(intro) }
     }
+
+    /** Signing out: every learned intro is forgotten. */
+    suspend fun clear() {
+        context.intros.edit { it.clear() }
+    }
 }

@@ -56,11 +56,13 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import app.tuned.BuildConfig
 import app.tuned.R
 import app.tuned.container
+import app.tuned.data.AppReset
 import app.tuned.data.AppSettings
 import app.tuned.diagnostics.launchSafely
 import app.tuned.ui.CaptionSettingsRoute
 import app.tuned.ui.SettingsPageRoute
 import app.tuned.ui.common.BackTopBar
+import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
@@ -101,10 +103,19 @@ class SettingsViewModel(
         viewModelScope.launchSafely("Settings") { container.db.library().clearHistory() }
     }
 
-    /** Signing out forgets the login, the cached playlist and guide, and stops background refreshes. */
-    fun signOut(onDone: () -> Unit) {
+    /** The downloads and recordings a sign-out asks about. */
+    suspend fun savedDownloads(): AppReset.Saved = container.reset.saved()
+
+    /**
+     * Signing out resets the app to how it was installed ([AppReset]). The reset runs in the app's scope, so leaving the
+     * screen can't stop it half way; [onDone] then opens the welcome screen.
+     */
+    fun signOut(
+        keepDownloads: Boolean,
+        onDone: () -> Unit,
+    ) {
         viewModelScope.launchSafely("Settings") {
-            container.session.signOut()
+            container.appScope.async { container.reset.signOut(keepDownloads) }.await()
             onDone()
         }
     }

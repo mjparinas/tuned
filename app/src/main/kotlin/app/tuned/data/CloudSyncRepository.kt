@@ -52,6 +52,14 @@ class CloudSyncRepository(
         statusFlow.value = Status(0, Problem.NONE)
     }
 
+    /** Signing out of Tuned: stops syncing here at once; returns the call that tells Google to drop the token. */
+    fun disconnect(): (suspend () -> Unit)? {
+        val revoke = drive.disconnect()
+        prefs.edit(commit = true) { clear() }
+        statusFlow.value = Status(0, Problem.NONE)
+        return revoke
+    }
+
     /**
      * One run: takes the other device's copy, sends this one's, or does nothing. Returns false when it should be tried
      * again later (offline, or Drive didn't answer).

@@ -158,6 +158,27 @@ class GoogleDrive(
         return CloudSync.Failure(CloudSync.Reason.EXPIRED, null)
     }
 
+    /**
+     * Forgets the account here at once and returns the call that tells Google to drop the token (or null when signed
+     * out). The synced copy in Drive is left alone: it is the person's, in their own Google account.
+     */
+    fun disconnect(): (suspend () -> Unit)? {
+        val refresh = refreshToken()
+        forget()
+        prefs.edit(commit = true) { clear() }
+        if (refresh == null) return null
+        return {
+            val form = FormBody.Builder().add("token", refresh).build()
+            send(
+                Request
+                    .Builder()
+                    .url(REVOKE_URL)
+                    .post(form)
+                    .build(),
+            )
+        }
+    }
+
     /** Forgets the account here and tells Google to drop the token. */
     suspend fun signOut() {
         val refresh = refreshToken()

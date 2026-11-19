@@ -107,6 +107,11 @@ class ChannelScanner(
         return result
     }
 
+    /** Signing out: the last scan's report is forgotten. */
+    suspend fun forgetReport() {
+        context.scanStore.edit { it.clear() }
+    }
+
     /**
      * The player found that [itemId] won't play while the internet and the service work ([ChannelScan.blameOnPlay]):
      * hide it now, unless the person chose to keep it. A scan that finds it working brings it back.

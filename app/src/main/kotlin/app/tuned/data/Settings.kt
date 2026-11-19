@@ -252,6 +252,12 @@ class SettingsRepository(
         adultUnlocked.value = false
     }
 
+    /** Signing out: every setting back to its default and the parental PIN gone, as on a fresh install. */
+    suspend fun reset() {
+        context.dataStore.edit { it.clear() }
+        adultUnlocked.value = false
+    }
+
     /** Records the profile in use (see [AppSettings.profileId]); only [ProfileRepository] calls this. */
     suspend fun mirrorProfile(
         id: Long,

@@ -56,6 +56,8 @@ class TunedApp :
             )
         }
         container = AppContainer(this)
+        // A sign-out the app was closed in the middle of finishes now, before the first screen is chosen.
+        container.reset.resumeIfPending()
         container.appScope.launchSafely("Freeze") { withContext(Dispatchers.IO) { FreezeWatch.collectPastFreezes(this@TunedApp) } }
         lockAdultWhenAway()
         CloudSyncWorker.watch(this)

@@ -117,6 +117,19 @@ class TraktAccount(
         return Trakt.Poll.EXPIRED
     }
 
+    /**
+     * Signing out of Tuned: forgets the account and its settings here at once, and returns the call that tells Trakt to
+     * drop the token (or null when signed out), for the caller to send when it can.
+     */
+    fun disconnect(): (suspend () -> Unit)? {
+        val s = sessionFlow.value
+        prefs.edit(commit = true) { clear() }
+        sessionFlow.value = null
+        scrobbleFlow.value = true
+        if (s == null) return null
+        return { post("/oauth/revoke", jsonBody(Trakt.revokeBody(BuildConfig.TRAKT_CLIENT_ID, s.access)), token = null) }
+    }
+
     /** Forgets the account here and tells Trakt to drop the token. */
     suspend fun signOut() {
         val s = sessionFlow.value ?: return
