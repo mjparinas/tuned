@@ -8,6 +8,7 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.ProcessLifecycleOwner
 import app.tuned.data.settleNewRegions
 import app.tuned.diagnostics.CrashReporter
+import app.tuned.diagnostics.FreezeWatch
 import app.tuned.diagnostics.launchSafely
 import app.tuned.work.CloudSyncWorker
 import coil3.ImageLoader
@@ -18,12 +19,14 @@ import coil3.disk.directory
 import coil3.memory.MemoryCache
 import coil3.network.okhttp.OkHttpNetworkFetcherFactory
 import coil3.request.crossfade
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class TunedApp :
     Application(),
@@ -34,6 +37,7 @@ class TunedApp :
     override fun onCreate() {
         super.onCreate()
         CrashReporter.install(this)
+        FreezeWatch.start(this)
         // Debug builds log any disk or network work on the main thread, so a slip that would stutter shows up early.
         if (BuildConfig.DEBUG) {
             StrictMode.setThreadPolicy(
@@ -52,6 +56,7 @@ class TunedApp :
             )
         }
         container = AppContainer(this)
+        container.appScope.launchSafely("Freeze") { withContext(Dispatchers.IO) { FreezeWatch.collectPastFreezes(this@TunedApp) } }
         lockAdultWhenAway()
         CloudSyncWorker.watch(this)
         container.appScope.launchSafely("Profiles") { container.profiles.sync() }
