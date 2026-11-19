@@ -110,6 +110,8 @@ internal val SETTING_FIELDS: List<SettingField<*, *>> =
         bool("always_show_scrollbar", { alwaysShowScrollbar }) { copy(alwaysShowScrollbar = it) },
         bool("start_on_last_channel", { startOnLastChannel }) { copy(startOnLastChannel = it) },
         bool("pull_to_refresh", { pullToRefresh }) { copy(pullToRefresh = it) },
+        string("pinned_groups", { pinnedGroups }) { copy(pinnedGroups = it) },
+        bool("app_shortcuts", { appShortcuts }) { copy(appShortcuts = it) },
         // What's hidden
         stringSet("hidden_regions", { hiddenRegions }) { copy(hiddenRegions = it) },
         stringSet("seen_regions", { seenRegions }) { copy(seenRegions = it) }.notBackedUp(),

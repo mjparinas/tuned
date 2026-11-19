@@ -86,6 +86,10 @@ data class AppSettings(
     val seenRegions: Set<String> = emptySet(),
     /** Hidden groups, as [app.tuned.core.HiddenGroups] keys. */
     val hiddenGroups: Set<String> = emptySet(),
+    /** Groups pinned to the front of their tab's chips, in pin order ([app.tuned.core.PinnedGroups]). */
+    val pinnedGroups: String = "",
+    /** Search, Live events and the last channel on the app icon's long-press menu. */
+    val appShortcuts: Boolean = true,
     /** Teams, leagues and fighters followed on Live Events ("Canucks", "UFC"), as typed. */
     val followedEvents: Set<String> = emptySet(),
     val showAdult: Boolean = false,
