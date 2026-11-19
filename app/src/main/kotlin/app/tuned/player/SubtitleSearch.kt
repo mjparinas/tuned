@@ -101,11 +101,8 @@ class SubtitleSearch(
 
     /** The toolbar button: search, list, and add the one picked. */
     fun pick() {
+        // Works while casting too: the subtitles picked go to the TV with the video (see [CastSubtitles]).
         val item = current()?.takeIf(::onDemand) ?: return
-        if (casting()) {
-            say(activity.getString(R.string.subtitle_search_not_casting))
-            return
-        }
         say(activity.getString(R.string.subtitle_search_searching))
         activity.lifecycleScope.launchSafely(TAG) {
             val search = repository.searchFor(item)

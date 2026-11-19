@@ -361,7 +361,10 @@ class PlayerActivity : FragmentActivity() {
         )
         root.addView(
             statusView,
-            FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT, Gravity.CENTER),
+            // Above the centre, so a lasting note ("Playing on SHIELD") doesn't cover the play button (Melvin, 2026-11-19).
+            FrameLayout
+                .LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT, Gravity.CENTER)
+                .apply { bottomMargin = (STATUS_RAISE_DP * resources.displayMetrics.density).toInt() },
         )
         attachFeatures(root)
         // The title shows and hides with the controls, so a tap reveals everything and the video is otherwise bare.
@@ -421,6 +424,8 @@ class PlayerActivity : FragmentActivity() {
                 isLive = ::live,
                 savedFile = { id -> savedFiles[id] },
                 onStatus = { text, busy -> if (text == null) statusView.visibility = View.GONE else statusView.show(text, busy) },
+                subtitleOffsetMs = { subtitleTiming.offsetMs },
+                onTvChanged = ::castChanged,
             ).also { c -> tools.addButton(c.button) }
         tools.addButton(recorder.button)
     }
@@ -447,6 +452,13 @@ class PlayerActivity : FragmentActivity() {
     }
 
     private fun showStatus(text: String) = statusView.show(text, busy = false)
+
+    /** A cast began or ended, or the TV changed: the controls show the TV, and what can't work there is greyed out. */
+    private fun castChanged() {
+        (playerView.player as? ViewPlayer)?.tvChanged()
+        tools.onControls(View.VISIBLE)
+        recorder.onControls(View.VISIBLE)
+    }
 
     private var flashJob: Job? = null
 
@@ -512,7 +524,7 @@ class PlayerActivity : FragmentActivity() {
         val exo = buildPlayer(live)
         player = exo
         trakt.attach(exo)
-        val shown = ViewPlayer(exo, { cast }, { statusView.visibility = View.GONE }, ::pauseLive, ::live)
+        val shown = ViewPlayer(exo, { cast?.tv }, { statusView.visibility = View.GONE }, ::pauseLive, ::live)
         playerView.player = shown
         // Media buttons and the Assistant act through the same player as the on-screen controls.
         session.attach(shown)
@@ -611,7 +623,10 @@ class PlayerActivity : FragmentActivity() {
             val id = mediaItem?.mediaId?.toLongOrNull() ?: return
             val item = queue.firstOrNull { it.id == id } ?: return
             updateOverlay(item)
-            if (cast?.casting == true) cast?.load(item, live, 0)
+            // Subtitles picked while casting reload the same video: the TV gets it again with them, where it was.
+            val c = cast?.takeIf { it.casting }
+            val again = reason == Player.MEDIA_ITEM_TRANSITION_REASON_PLAYLIST_CHANGED
+            if (c != null) c.load(item, live, if (again) c.positionOnTv(item) else 0)
             liveRetries = 0
             pictured = false
             player?.let(timeshift::onChannelChanged)
@@ -846,6 +861,9 @@ class PlayerActivity : FragmentActivity() {
 
     companion object {
         internal const val EXTRA_ID = "id"
+
+        /** Twice how far the status note sits above the centre: clear of the play button, below the title. */
+        private const val STATUS_RAISE_DP = 176
         internal const val EXTRA_TUNE = "tune"
         internal const val EXTRA_FROM = "catchup_from"
         private const val EXTRA_UNTIL = "catchup_until"

@@ -5,7 +5,6 @@
     <string name="subtitle_search_downloading">Downloading subtitles…</string>
     <string name="subtitle_search_added">Subtitles added from OpenSubtitles</string>
     <string name="subtitle_search_none">No subtitles found for this video</string>
-    <string name="subtitle_search_not_casting">Finding subtitles isn\'t available while casting</string>
     <string name="subtitle_search_no_key">Subtitle search isn\'t available in this build</string>
     <string name="subtitle_search_bad_key">OpenSubtitles turned down this app\'s key. Try again after the next update.</string>
     <string name="subtitle_search_bad_account">OpenSubtitles turned down the sign-in. Check it in Settings › Playback › Subtitles.</string>
