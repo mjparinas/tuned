@@ -9,6 +9,8 @@
 
 **Overscan margin** (Melvin, 2026-11-19: "The tuned app on a real TV has the logo touching the top of the screen, push that down"). Many TVs crop the edges of the picture, so on a TV every screen of the app and of Premium keeps Google's TV margins: 48 dp at the sides and 27 dp at the top and bottom, filled with the theme's background (`ui/common/TvSafeArea.kt`). It is decided by the system's TV UI mode, so phones and tablets are unchanged. The player stays full screen: the crop only trims the picture's edge.
 
+**No menus on Home** (Melvin, 2026-11-19: "tv needs to be more stream lined and things should be easily accessible. especially on the tv, you have plenty of real estate"). A TV always shows the side rail, and the three-dot menu beside search is gone: Search, Profile and Settings are on the rail under Downloads, and Live TV has a button beside search for the guide grid. See [Large screens](large-screens.md).
+
 A dedicated TV layout can come later if the phone layout proves awkward from the sofa.
 
 **The remote in the player** (`core/RemoteKeys.kt`, with tests). Media3's controls already handle play, pause, fast forward and rewind, and any arrow shows the controls. On top of that:

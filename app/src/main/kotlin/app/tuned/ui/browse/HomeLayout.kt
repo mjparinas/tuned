@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.TravelExplore
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationRail
 import androidx.compose.material3.NavigationRailItem
@@ -17,8 +18,10 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import app.tuned.R
 import app.tuned.data.CastMember
+import app.tuned.data.db.ProfileEntity
 import app.tuned.ui.details.MovieScreen
 import app.tuned.ui.guide.GuideScreen
+import app.tuned.ui.settings.ProfileBadge
 import app.tuned.ui.shows.ShowScreen
 
 /** What the pane beside the list shows on a wide screen: a film's page, a show's episodes or a channel's guide. */
@@ -53,6 +56,14 @@ internal data class Detail(
     }
 }
 
+/** What a TV's rail adds below Downloads, since a TV has no menu beside search. */
+internal class RailExtras(
+    val onOpenSearch: () -> Unit,
+    /** The profile now watching, or null with only one profile. */
+    val profile: ProfileEntity?,
+    val onOpenProfiles: () -> Unit,
+)
+
 /** On tablets and unfolded foldables the tabs run down the left edge instead of along the bottom. */
 @Composable
 internal fun HomeRail(
@@ -62,6 +73,8 @@ internal fun HomeRail(
     onOpenDownloads: () -> Unit,
     /** Null on a kids profile, which has no way into Settings. */
     onOpenSettings: (() -> Unit)?,
+    /** On a TV only: search and the profile, which a tablet keeps in the menu beside search. */
+    tvExtras: RailExtras? = null,
 ) {
     NavigationRail {
         Spacer(Modifier.height(8.dp))
@@ -79,6 +92,22 @@ internal fun HomeRail(
             icon = { DownloadsIcon() },
             label = { Text(stringResource(R.string.downloads)) },
         )
+        if (tvExtras != null) {
+            NavigationRailItem(
+                selected = false,
+                onClick = tvExtras.onOpenSearch,
+                icon = { Icon(Icons.Filled.TravelExplore, contentDescription = null) },
+                label = { Text(stringResource(R.string.rail_search)) },
+            )
+            tvExtras.profile?.let { profile ->
+                NavigationRailItem(
+                    selected = false,
+                    onClick = tvExtras.onOpenProfiles,
+                    icon = { ProfileBadge(profile, size = 32.dp) },
+                    label = { Text(stringResource(R.string.rail_profile)) },
+                )
+            }
+        }
         // Settings under Downloads on tablets and TV (Melvin, 2026-11-19); phones keep it in the menu by search.
         if (onOpenSettings != null) {
             NavigationRailItem(
