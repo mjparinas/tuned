@@ -141,6 +141,8 @@ internal val SETTING_FIELDS: List<SettingField<*, *>> =
         bool("match_frame_rate", { matchFrameRate }) { copy(matchFrameRate = it) },
         // Each device's speakers have their own lag, so the delay stays on the device rather than syncing.
         int("audio_delay_ms", { audioDelayMs }) { copy(audioDelayMs = it) }.notBackedUp(),
+        // Whether a TV's hardware handles it well is the TV's own business, so this stays on the device.
+        bool("tunneled_playback", { tunneledPlayback }) { copy(tunneledPlayback = it) }.notBackedUp(),
         int("live_rewind_minutes", { liveRewindMinutes }) { copy(liveRewindMinutes = it) },
         bool("picture_in_picture", { pictureInPicture }) { copy(pictureInPicture = it) },
         bool("media_buttons", { mediaButtons }) { copy(mediaButtons = it) },

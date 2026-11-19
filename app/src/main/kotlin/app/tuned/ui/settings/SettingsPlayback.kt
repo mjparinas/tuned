@@ -1,6 +1,7 @@
 package app.tuned.ui.settings
 
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import app.tuned.R
@@ -8,6 +9,7 @@ import app.tuned.data.AppSettings
 import app.tuned.data.BufferMode
 import app.tuned.premium.LockedRow
 import app.tuned.premium.premiumUnlocked
+import app.tuned.work.TvHome
 
 @Composable
 internal fun PlaybackPage(
@@ -92,6 +94,14 @@ internal fun PlaybackPage(
         settings.audioDelayMs,
         label = { ms -> audioDelayLabel(ms) },
     ) { ms -> vm.update { it.copy(audioDelayMs = ms) } }
+    // Phones and tablets almost never have tunnelled decoders, so the switch shows on Android TV only.
+    if (TvHome.isTv(LocalContext.current)) {
+        SwitchRow(
+            stringResource(R.string.settings_tunneled_playback),
+            settings.tunneledPlayback,
+            stringResource(R.string.settings_tunneled_playback_summary),
+        ) { on -> vm.update { it.copy(tunneledPlayback = on) } }
+    }
     SwitchRow(
         stringResource(R.string.settings_gestures),
         settings.playerGestures,
