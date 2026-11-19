@@ -6,7 +6,6 @@ import android.content.pm.ServiceInfo
 import android.os.Build
 import android.os.SystemClock
 import androidx.core.app.NotificationCompat
-import androidx.glance.appwidget.updateAll
 import androidx.work.CoroutineWorker
 import androidx.work.Data
 import androidx.work.ForegroundInfo
@@ -20,7 +19,7 @@ import app.tuned.diagnostics.attempt
 import app.tuned.diagnostics.logFailures
 import app.tuned.ui.SyncText
 import app.tuned.updates.UpdateNotice
-import app.tuned.widget.FavouritesWidget
+import app.tuned.widget.Widgets
 import java.io.IOException
 
 class SyncWorker(
@@ -53,9 +52,9 @@ class SyncWorker(
             } else {
                 container.sync.refreshAll(::report)
             }
-            // New guide data: alerts for followed teams' next games, and the widget's "on now" lines move on too.
+            // New guide data: alerts for followed teams' next games, and the widgets' "on now" lines move on too.
             attempt(TAG, "Couldn't set event alerts") { container.events.scheduleAlerts() }
-            attempt(TAG, "Couldn't update the widget") { FavouritesWidget().updateAll(applicationContext) }
+            Widgets.refresh(applicationContext)
             // A copy left running for days still hears about a new release.
             UpdateNotice.checkInBackground(applicationContext)
             Result.success()

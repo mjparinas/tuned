@@ -109,7 +109,7 @@ interface ItemDao {
     /** Movies or episodes started and not finished, last watched first, for the Continue Watching row. */
     @Query(
         """
-        SELECT i.id, i.name, i.logo, i.showName, i.season, i.episode, h.positionMs, h.durationMs
+        SELECT i.id, i.name, i.logo, i.showName, i.season, i.episode, h.positionMs, h.durationMs, h.watchedAt
         FROM history h
         JOIN items i ON i.id = h.itemId
         WHERE h.profileId = $ME AND i.kind = :kind

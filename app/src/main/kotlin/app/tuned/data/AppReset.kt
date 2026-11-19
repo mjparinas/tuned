@@ -10,6 +10,7 @@ import app.tuned.data.db.wipe
 import app.tuned.diagnostics.AppLog
 import app.tuned.diagnostics.attempt
 import app.tuned.diagnostics.launchSafely
+import app.tuned.widget.Widgets
 import app.tuned.work.TvHome
 import coil3.SingletonImageLoader
 import kotlinx.coroutines.Dispatchers
@@ -93,6 +94,7 @@ class AppReset(
                     step("the files") { files() },
                     step("the pictures") { pictures(keepDownloads) },
                     step("the profiles") { c.profiles.sync() },
+                    step("the home screen widgets") { Widgets.refresh(context) },
                 )
             val failed = steps.filter { (name, step) -> attempt(TAG, "Couldn't reset $name") { step() }.isFailure }.map { it.first }
             if (failed.isEmpty()) {

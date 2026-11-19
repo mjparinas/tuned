@@ -133,7 +133,7 @@
             android:name=".updates.InstallResultReceiver"
             android:exported="false" />
 
-        <!-- Home screen widget: favourite channels with what's on now. -->
+        <!-- Home screen widget: favourite channels' logos with what's on now. -->
         <receiver
             android:name=".widget.FavouritesWidgetReceiver"
             android:exported="true"
@@ -144,6 +144,19 @@
             <meta-data
                 android:name="android.appwidget.provider"
                 android:resource="@xml/widget_favourites" />
+        </receiver>
+
+        <!-- Home screen widget: films and episodes in progress. -->
+        <receiver
+            android:name=".widget.ContinueWidgetReceiver"
+            android:exported="true"
+            android:label="@string/widget_continue">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_continue" />
         </receiver>
 
         <!-- Quick-settings tile: straight back to the last channel. -->

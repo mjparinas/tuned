@@ -28,6 +28,9 @@ object AppShortcuts {
     const val SEARCH = "search"
     const val EVENTS = "events"
 
+    /** Opens the app where it was, from the home screen widgets: no screen of its own, and no jump to the last channel. */
+    const val HOME = "home"
+
     /** Sets the shortcuts to match the settings and the last channel. Reads the database: call off the main thread. */
     suspend fun update(context: Context) {
         if (TvHome.isTv(context)) return
