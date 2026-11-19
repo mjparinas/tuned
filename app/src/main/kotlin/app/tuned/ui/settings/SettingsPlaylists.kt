@@ -42,9 +42,11 @@ private fun SignOutRow(
         step = SignOutStep.CONFIRM
     })
     when (step) {
-        SignOutStep.NONE -> Unit
+        SignOutStep.NONE -> {
+            Unit
+        }
 
-        SignOutStep.CONFIRM ->
+        SignOutStep.CONFIRM -> {
             SignOutDialog(
                 onSignOut = {
                     scope.launchSafely("SignOut") {
@@ -55,8 +57,9 @@ private fun SignOutRow(
                 },
                 onCancel = { step = SignOutStep.NONE },
             )
+        }
 
-        SignOutStep.DOWNLOADS ->
+        SignOutStep.DOWNLOADS -> {
             saved?.let {
                 SignOutDownloadsDialog(
                     saved = it,
@@ -65,8 +68,11 @@ private fun SignOutRow(
                     onCancel = { step = SignOutStep.NONE },
                 )
             }
+        }
 
-        SignOutStep.WORKING -> SigningOutDialog()
+        SignOutStep.WORKING -> {
+            SigningOutDialog()
+        }
     }
 }
 

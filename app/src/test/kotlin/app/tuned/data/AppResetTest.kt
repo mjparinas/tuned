@@ -1,5 +1,6 @@
 package app.tuned.data
 
+import androidx.core.content.edit
 import androidx.test.core.app.ApplicationProvider
 import androidx.work.Configuration
 import androidx.work.testing.SynchronousExecutor
@@ -27,6 +28,8 @@ import kotlin.test.assertTrue
 class AppResetTest {
     private val app: TunedApp = ApplicationProvider.getApplicationContext()
     private val c get() = app.container
+    private val downloads get() = app.container.db.downloads()
+    private val library get() = app.container.db.library()
     private val offline get() = File(requireNotNull(app.getExternalFilesDir("offline")), "1.mp4")
     private val partial get() = File(requireNotNull(app.getExternalFilesDir("offline")), "2.mp4.part")
 
@@ -36,11 +39,11 @@ class AppResetTest {
         runBlocking(Dispatchers.IO) {
             c.settings.update { it.copy(theme = ThemeMode.LIGHT, accent = Accent.entries.last()) }
             c.settings.setAdultPin("1234")
-            c.db.library().addFavourite(FavouriteEntity(1, addedAt = 1))
+            library.addFavourite(FavouriteEntity(1, addedAt = 1))
             offline.writeText("film")
             partial.writeText("half")
-            c.db.downloads().upsert(DownloadEntity(1, "Heat", "http://h/u/p/1.mp4", offline.path, state = DownloadEntity.DONE, addedAt = 1))
-            c.db.downloads().upsert(DownloadEntity(2, "Ronin", "http://h/u/p/2.mp4", partial.path.removeSuffix(".part"), addedAt = 2))
+            downloads.upsert(DownloadEntity(1, "Heat", "http://h/u/p/1.mp4", offline.path, state = DownloadEntity.DONE, addedAt = 1))
+            downloads.upsert(DownloadEntity(2, "Ronin", "http://h/u/p/2.mp4", partial.path.removeSuffix(".part"), addedAt = 2))
         }
     }
 
@@ -54,8 +57,8 @@ class AppResetTest {
         assertEquals(AppSettings().theme, s.theme)
         assertEquals(AppSettings().accent, s.accent)
         assertFalse(c.settings.hasAdultPin.first())
-        assertEquals(emptyList(), c.db.library().favouriteIds().first())
-        assertEquals(0, c.db.downloads().count())
+        assertEquals(emptyList(), library.favouriteIds().first())
+        assertEquals(0, downloads.count())
         assertFalse(offline.exists())
         assertFalse(partial.exists())
         assertFalse(c.reset.pending)
@@ -65,7 +68,7 @@ class AppResetTest {
     fun keepLeavesFinishedDownloadsOnly() = runBlocking(Dispatchers.IO) {
         c.reset.signOut(keepDownloads = true)
 
-        val kept = c.db.downloads().all().first()
+        val kept = downloads.all().first()
         assertEquals(listOf(1L), kept.map { it.itemId })
         assertEquals("", kept.single().url) // the stream address can hold the login
         assertTrue(offline.exists())
@@ -76,7 +79,8 @@ class AppResetTest {
     @Test
     fun aResetCutShortFinishesAtTheNextStart() = runBlocking(Dispatchers.IO) {
         // As if the app was closed straight after the sign-out began.
-        app.getSharedPreferences("tuned.reset", 0).edit().putBoolean("pending_keep_downloads", false).commit()
+        val prefs = app.getSharedPreferences("tuned.reset", 0)
+        prefs.edit(commit = true) { putBoolean("pending_keep_downloads", false) }
         assertTrue(c.reset.pending)
 
         c.reset.resumeIfPending()
@@ -84,7 +88,7 @@ class AppResetTest {
 
         assertFalse(c.reset.pending)
         assertFalse(c.settings.hasAdultPin.first())
-        assertEquals(0, c.db.downloads().count())
+        assertEquals(0, downloads.count())
     }
 
     private companion object {

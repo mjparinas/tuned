@@ -129,7 +129,10 @@ class AppReset(
     private fun files() {
         context.filesDir.resolve(SUBTITLES).deleteRecursively()
         context.noBackupFilesDir.resolve(SYNC).deleteRecursively()
-        context.cacheDir.listFiles().orEmpty().forEach { it.deleteRecursively() }
+        context.cacheDir
+            .listFiles()
+            .orEmpty()
+            .forEach { it.deleteRecursively() }
     }
 
     /** Kept downloads keep their artwork (see [SavedArtwork]), so their pages look the same offline. */
