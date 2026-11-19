@@ -442,3 +442,69 @@ button.danger {
         column-gap: 24px;
     }
 }
+
+/* Sign-in choices: Google, and Apple coming soon in Apple's own black (white on dark) style. */
+.sign-in-options {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+}
+.sign-in-options p {
+    flex-basis: 100%;
+}
+button.apple {
+    gap: 8px;
+    background: #000000;
+    border-color: #000000;
+    color: #ffffff;
+}
+@media (prefers-color-scheme: dark) {
+    button.apple {
+        background: #ffffff;
+        border-color: #ffffff;
+        color: #000000;
+    }
+}
+
+/* Google's own Sign in with Google button (its branding guidelines): the four-colour G on white with a grey
+   outline, or on #131314 in dark, Roboto Medium, pill shaped. */
+.gsi {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    min-height: 48px;
+    padding: 10px 20px 10px 14px;
+    border: 1px solid #747775;
+    border-radius: 999px;
+    background: #ffffff;
+    color: #1f1f1f;
+    font:
+        500 15px/20px Roboto,
+        system-ui,
+        sans-serif;
+    letter-spacing: 0.25px;
+    text-decoration: none;
+    cursor: pointer;
+}
+.gsi img {
+    width: 20px;
+    height: 20px;
+}
+.gsi:hover {
+    background: #f8f9fa;
+}
+.gsi:focus-visible {
+    outline: 3px solid #4285f4;
+    outline-offset: 2px;
+}
+@media (prefers-color-scheme: dark) {
+    .gsi {
+        background: #131314;
+        border-color: #8e918f;
+        color: #e3e3e3;
+    }
+    .gsi:hover {
+        background: #1f1f20;
+    }
+}

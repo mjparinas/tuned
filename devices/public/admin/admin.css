@@ -811,3 +811,38 @@ code {
     outline: 2px solid var(--violet);
     outline-offset: 2px;
 }
+
+/* Google's own Sign in with Google button (its branding guidelines), dark here and white on the light theme. */
+.gsi {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    min-height: 48px;
+    padding: 10px 20px 10px 14px;
+    border: 1px solid #8e918f;
+    border-radius: 999px;
+    background: #131314;
+    color: #e3e3e3;
+    font:
+        500 15px/20px Roboto,
+        system-ui,
+        sans-serif;
+    letter-spacing: 0.25px;
+    text-decoration: none;
+    cursor: pointer;
+}
+.gsi img {
+    width: 20px;
+    height: 20px;
+}
+.gsi:focus-visible {
+    outline: 3px solid #4285f4;
+    outline-offset: 2px;
+}
+@media (prefers-color-scheme: light) {
+    .gsi {
+        background: #ffffff;
+        border-color: #747775;
+        color: #1f1f1f;
+    }
+}
