@@ -270,7 +270,7 @@ internal fun AccountSignInDialog(
                     if (tv) {
                         // Side by side, so the dialog stays inside a TV's 540 dp with the QR code at a size a phone can scan.
                         Row(horizontalArrangement = Arrangement.spacedBy(24.dp), verticalAlignment = Alignment.CenterVertically) {
-                            Qr(state.qr, size = 200.dp)
+                            Qr(state.qr, side = 200.dp)
                             Box(Modifier.weight(1f)) { steps() }
                         }
                     } else {

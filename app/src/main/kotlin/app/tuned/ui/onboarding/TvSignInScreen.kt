@@ -308,12 +308,12 @@ private fun Showing(
 @Composable
 internal fun Qr(
     modules: QrModules,
-    size: Dp = 260.dp,
+    side: Dp = 260.dp,
 ) {
     val label = stringResource(R.string.tv_signin_qr)
     Box(
         Modifier
-            .size(size)
+            .size(side)
             .clip(RoundedCornerShape(12.dp))
             .background(Color.White)
             .padding(16.dp)
