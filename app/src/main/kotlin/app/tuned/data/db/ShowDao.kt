@@ -42,6 +42,13 @@ interface ShowDao {
     @Query("DELETE FROM show_groups")
     suspend fun deleteShowGroups()
 
+    /** Opened Xtream shows' own covers ([ShowCoverEntity]). */
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun saveCovers(covers: List<ShowCoverEntity>)
+
+    @Query("DELETE FROM show_covers")
+    suspend fun deleteCovers()
+
     /** [ItemDao.groups] for Shows, from the per-show table: the same counts without reading every episode. */
     @Query(
         """

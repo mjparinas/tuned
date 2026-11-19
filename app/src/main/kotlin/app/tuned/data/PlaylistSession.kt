@@ -35,6 +35,7 @@ class PlaylistSession(
             if (TvHome.isTv(context)) attempt("TvHome", "Couldn't clear the home screen") { TvHome(context).clear() }
             db.items().deleteAll()
             db.shows().deleteShowGroups()
+            db.shows().deleteCovers()
             db.programmes().deleteAll()
             db.catchUp().deleteAll()
             db.channelScan().deleteAll()

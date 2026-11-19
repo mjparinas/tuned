@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -40,6 +39,7 @@ import app.tuned.container
 import app.tuned.data.db.ChannelEditEntity
 import app.tuned.diagnostics.launchSafely
 import app.tuned.premium.Premium
+import app.tuned.ui.common.TunedDialog
 
 /** Renaming a channel or changing its logo, or the Premium screen while that's locked (docs/decisions/premium.md). */
 @Stable
@@ -89,7 +89,7 @@ private fun RenameChannelDialog(
     val current = item ?: return
     var name by remember(current) { mutableStateOf(current.first) }
     val edit = current.second
-    AlertDialog(
+    TunedDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(R.string.channel_rename)) },
         text = {
@@ -154,7 +154,7 @@ private fun ChangeLogoDialog(
         onDismiss()
         scope.launchSafely(TAG) { container.channelEditor.set(itemId, edit?.name, logo) }
     }
-    AlertDialog(
+    TunedDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(R.string.channel_change_logo)) },
         text = {

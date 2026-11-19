@@ -7,7 +7,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CloudDownload
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -28,6 +27,7 @@ import app.tuned.container
 import app.tuned.data.CloudSyncRepository
 import app.tuned.diagnostics.launchSafely
 import app.tuned.ui.asksProfileAtStart
+import app.tuned.ui.common.TunedDialog
 import app.tuned.ui.settings.DriveSignIn
 import app.tuned.ui.settings.DriveSignInDialog
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -120,7 +120,7 @@ fun RestoreFromDrive(
         null -> {}
 
         RestoreViewModel.State.Restoring -> {
-            AlertDialog(
+            TunedDialog(
                 onDismissRequest = {},
                 title = { Text(stringResource(R.string.restore_drive)) },
                 text = {
@@ -139,7 +139,7 @@ fun RestoreFromDrive(
         }
 
         is RestoreViewModel.State.Ended -> {
-            AlertDialog(
+            TunedDialog(
                 onDismissRequest = vm::dismiss,
                 title = { Text(stringResource(R.string.restore_drive)) },
                 text = { Text(stringResource(endedText(s.result))) },

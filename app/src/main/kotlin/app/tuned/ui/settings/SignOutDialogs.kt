@@ -1,7 +1,6 @@
 package app.tuned.ui.settings
 
 import android.text.format.Formatter
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -11,6 +10,7 @@ import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import app.tuned.R
 import app.tuned.data.AppReset
+import app.tuned.ui.common.TunedDialog
 
 /** Step one of signing out: what it removes. */
 @Composable
@@ -18,7 +18,7 @@ internal fun SignOutDialog(
     onSignOut: () -> Unit,
     onCancel: () -> Unit,
 ) {
-    AlertDialog(
+    TunedDialog(
         onDismissRequest = onCancel,
         title = { Text(stringResource(R.string.settings_sign_out_title)) },
         text = { Text(stringResource(R.string.settings_sign_out_confirm)) },
@@ -39,7 +39,7 @@ internal fun SignOutDownloadsDialog(
     onCancel: () -> Unit,
 ) {
     val size = Formatter.formatShortFileSize(LocalContext.current, saved.bytes)
-    AlertDialog(
+    TunedDialog(
         onDismissRequest = onCancel,
         title = { Text(pluralStringResource(R.plurals.settings_sign_out_downloads, saved.count, saved.count, size)) },
         text = { Text(stringResource(R.string.settings_sign_out_downloads_keep_note)) },
@@ -51,7 +51,7 @@ internal fun SignOutDownloadsDialog(
 /** While the reset runs, usually well under a second. */
 @Composable
 internal fun SigningOutDialog() {
-    AlertDialog(
+    TunedDialog(
         onDismissRequest = {},
         text = { Text(stringResource(R.string.settings_signing_out)) },
         confirmButton = {},

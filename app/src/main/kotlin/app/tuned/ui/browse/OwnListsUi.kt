@@ -18,7 +18,6 @@ import androidx.compose.material.icons.automirrored.filled.PlaylistPlay
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.FilterChip
@@ -47,6 +46,7 @@ import app.tuned.container
 import app.tuned.data.db.ListEntity
 import app.tuned.diagnostics.launchSafely
 import app.tuned.premium.Premium
+import app.tuned.ui.common.TunedDialog
 
 /** Opens "Add to list" for a channel or film, or the Premium screen while lists are locked (docs/decisions/premium.md). */
 @Stable
@@ -91,7 +91,7 @@ private fun AddToListDialog(
         }
         return
     }
-    AlertDialog(
+    TunedDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(R.string.list_add_title)) },
         text = {
@@ -138,7 +138,7 @@ internal fun ListNameDialog(
     onDone: (String) -> Unit,
 ) {
     var name by remember { mutableStateOf(initial) }
-    AlertDialog(
+    TunedDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(title)) },
         text = {
@@ -199,7 +199,7 @@ internal fun OwnListChip(
         }
     }
     if (deleting) {
-        AlertDialog(
+        TunedDialog(
             onDismissRequest = { deleting = false },
             title = { Text(stringResource(R.string.list_delete_title, list.name)) },
             text = { Text(stringResource(R.string.list_delete_body)) },

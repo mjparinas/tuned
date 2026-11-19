@@ -7,7 +7,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -30,6 +29,7 @@ import app.tuned.R
 import app.tuned.core.DeviceSeats
 import app.tuned.core.SeatDevice
 import app.tuned.diagnostics.launchSafely
+import app.tuned.ui.common.TunedDialog
 
 /**
  * The devices using this purchase, on the Premium screen (docs/decisions/premium.md). On a device with a seat, each
@@ -83,7 +83,7 @@ internal fun PremiumDevices(premium: Premium) {
         note?.let { Text(stringResource(it), style = MaterialTheme.typography.bodyMedium) }
     }
     confirm?.let { device ->
-        AlertDialog(
+        TunedDialog(
             onDismissRequest = { confirm = null },
             title = { Text(stringResource(R.string.premium_devices_confirm_title, device.name)) },
             text = {

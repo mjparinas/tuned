@@ -103,6 +103,18 @@ data class ShowGroupEntity(
     val sortOrder: Int,
 )
 
+/**
+ * A show's own cover from the Xtream API, kept once the show has been opened. Its episodes then replace the stand-in
+ * row that carried the cover, and each brings its own screenshot as its picture, so without this the show's poster
+ * on the Shows tab and Downloads became one of its episodes' screenshots (Melvin, 2026-11-19: shows should use "the
+ * shows main cover/poster"). Read by [ShowGroups].
+ */
+@Entity(tableName = "show_covers")
+data class ShowCoverEntity(
+    @PrimaryKey val showKey: String,
+    val cover: String,
+)
+
 data class ShowSummary(
     val showKey: String,
     val showName: String,

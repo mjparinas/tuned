@@ -11,9 +11,11 @@ import app.tuned.core.ContentKind
 import app.tuned.core.Episodes
 import app.tuned.core.Search
 import app.tuned.data.db.CurrentProfileEntity
+import app.tuned.data.db.DownloadEntity
 import app.tuned.data.db.FavouriteEntity
 import app.tuned.data.db.HistoryEntity
 import app.tuned.data.db.ItemEntity
+import app.tuned.data.db.MetadataEntity
 import app.tuned.data.db.ProfileEntity
 import app.tuned.data.db.Profiles
 import app.tuned.data.db.ProgrammeEntity
@@ -107,6 +109,50 @@ object SampleData {
         db.library().saveProgress(HistoryEntity(SHOW_IDS, positionMs = 2_400_000, durationMs = 2_700_000, watchedAt = now))
         db.library().saveProgress(HistoryEntity(SHOW_IDS + 1, positionMs = 900_000, durationMs = 2_700_000, watchedAt = now - 1))
         db.library().saveProgress(HistoryEntity(MOVIE_IDS, positionMs = 1_800_000, durationMs = 6_600_000, watchedAt = now - 2))
+        seedDownloads(db, items, now)
+    }
+
+    /**
+     * A few saved episodes and a film for the Downloads page, all finished so no badge shows on Home. Each show has its
+     * TMDB answer on the device, as [app.tuned.data.SavedArtwork] leaves it, so its poster is the show's main cover.
+     */
+    @Suppress("MagicNumber") // Made-up file sizes and TMDB ids.
+    private suspend fun seedDownloads(
+        db: TunedDatabase,
+        items: List<ItemEntity>,
+        now: Long,
+    ) {
+        val saved =
+            items.filter { it.showName == "Harbour Town" && it.season in 1..2 && (it.episode ?: 0) <= 2 } +
+                items.filter { it.showName == "Snowline" && it.episode == 1 } +
+                items.first { it.id == MOVIE_IDS + 1 }
+        saved.forEachIndexed { i, item ->
+            val size = 650_000_000L + i * 40_000_000L
+            db.downloads().upsert(
+                DownloadEntity(item.id, item.name, item.url, "/offline/${item.id}.mp4", size, size, DownloadEntity.DONE, now - i),
+            )
+        }
+        listOf("Harbour Town", "Snowline").forEachIndexed { i, show ->
+            db.metadata().upsert(
+                MetadataEntity(
+                    cacheKey = "tv|$show",
+                    found = true,
+                    full = true,
+                    tmdbId = 900L + i,
+                    title = show,
+                    year = "2024",
+                    overview = null,
+                    rating = null,
+                    poster = poster(show),
+                    backdrop = null,
+                    genres = "",
+                    runtime = null,
+                    cast = "",
+                    trailer = null,
+                    fetchedAt = now,
+                ),
+            )
+        }
     }
 
     const val MOVIE_IDS = 1_000L

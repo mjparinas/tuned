@@ -176,6 +176,24 @@ class DownloadsViewModel(
         }
     }
 
+    private val posterInfo = MutableStateFlow<Map<String, String>>(emptyMap())
+    private val askedPosters = mutableSetOf<String>()
+
+    /** TMDB's poster for each downloaded show, by show key, as they become known. */
+    val posters: StateFlow<Map<String, String>> = posterInfo
+
+    /**
+     * Looks up a show's main poster on TMDB: from the device first, where it was saved with its episodes
+     * ([app.tuned.data.SavedArtwork]), so it shows offline too; the network only when the device has none.
+     */
+    fun loadPoster(show: ShowDownloads) {
+        if (!askedPosters.add(show.showKey)) return
+        viewModelScope.launchSafely("Downloads") {
+            val poster = metadata.summary(show.lookupName, tv = true)?.poster
+            if (!poster.isNullOrBlank()) posterInfo.value += show.showKey to poster
+        }
+    }
+
     fun retry(itemId: Long) {
         viewModelScope.launchSafely("Downloads") { offline.retry(itemId) }
     }
@@ -247,7 +265,9 @@ fun DownloadsScreen(
 ) {
     val rows by vm.page.collectAsStateWithLifecycle()
     val recorded by vm.recordings.collectAsStateWithLifecycle()
-    val library = remember(rows) { DownloadLibrary.of(rows) }
+    val posters by vm.posters.collectAsStateWithLifecycle()
+    val library = remember(rows, posters) { DownloadLibrary.of(rows, posters) }
+    LaunchedEffect(library.shows) { library.shows.forEach(vm::loadPoster) }
     var showKey by rememberSaveable { mutableStateOf<String?>(null) }
     var season by rememberSaveable { mutableStateOf<Int?>(null) }
     var inSeason by rememberSaveable { mutableStateOf(false) }
