@@ -30,8 +30,9 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         ListEntity::class,
         ListItemEntity::class,
         ChannelEditEntity::class,
+        ShowCoverEntity::class,
     ],
-    version = 19,
+    version = 20,
     exportSchema = true,
 )
 abstract class TunedDatabase : RoomDatabase() {
@@ -94,6 +95,7 @@ abstract class TunedDatabase : RoomDatabase() {
                 MIGRATION_16_17,
                 MIGRATION_17_18,
                 MIGRATION_18_19,
+                MIGRATION_19_20,
             ).addCallback(FirstProfile)
             // Going back to an older release (installing an older APK) can't keep a newer database: start it afresh
             // rather than crash on every launch. Upgrades always migrate, above.
@@ -306,6 +308,16 @@ abstract class TunedDatabase : RoomDatabase() {
                     db.execSQL(
                         "CREATE TABLE IF NOT EXISTS `channel_edits` (`itemId` INTEGER NOT NULL, `name` TEXT, `logo` TEXT, " +
                             "`originalName` TEXT NOT NULL, `originalLogo` TEXT, PRIMARY KEY(`itemId`))",
+                    )
+                }
+            }
+
+        /** Adds opened Xtream shows' own covers ([ShowCoverEntity]); the next refresh fills it in. */
+        val MIGRATION_19_20 =
+            object : Migration(19, 20) {
+                override fun migrate(db: SupportSQLiteDatabase) {
+                    db.execSQL(
+                        "CREATE TABLE IF NOT EXISTS `show_covers` (`showKey` TEXT NOT NULL, `cover` TEXT NOT NULL, PRIMARY KEY(`showKey`))",
                     )
                 }
             }
