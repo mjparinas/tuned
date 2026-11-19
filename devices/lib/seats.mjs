@@ -54,3 +54,14 @@ export function parse(body, products) {
     const label = typeof name === "string" && name.trim() ? name.trim().slice(0, 60) : "Android device";
     return { product, token, device, name: label, target: target ?? null };
 }
+
+/** Days between removals on the website, so an order number passed around can't keep making room. */
+export const SITE_DAYS = 30;
+
+/** The website removing one device (`target`) or every device (`"all"`). */
+export function removeFromSite(seats, target, now) {
+    const live = fresh(seats, now);
+    if (target === "all") return {};
+    delete live[target];
+    return live;
+}

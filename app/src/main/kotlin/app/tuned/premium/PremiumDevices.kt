@@ -25,6 +25,7 @@ import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import app.tuned.BuildConfig
 import app.tuned.R
 import app.tuned.core.DeviceSeats
 import app.tuned.core.SeatDevice
@@ -60,6 +61,13 @@ internal fun PremiumDevices(premium: Premium) {
         )
         devices.forEach { device ->
             DeviceRow(device, canDeactivate = unlocked) { confirm = device }
+        }
+        if (!unlocked && others >= DeviceSeats.LIMIT) {
+            // Someone who has lost every device with a seat frees them on the website with their order number.
+            Text(
+                stringResource(R.string.premium_devices_site, BuildConfig.DEVICES_URL.trimEnd('/').removePrefix("https://")),
+                style = MaterialTheme.typography.bodyMedium,
+            )
         }
         if (!unlocked && others < DeviceSeats.LIMIT) {
             Button(

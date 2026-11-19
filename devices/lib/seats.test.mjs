@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { activate, deactivate, EXPIRY_DAYS, fresh, LIMIT, list, parse } from "./seats.mjs";
+import { activate, deactivate, EXPIRY_DAYS, fresh, LIMIT, list, parse, removeFromSite } from "./seats.mjs";
 
 const DAY = 24 * 60 * 60 * 1000;
 const now = 1_800_000_000_000;
@@ -67,4 +67,9 @@ test("bad requests are refused", () => {
     assert.equal(parse({ ...good, target: "bad" }, products), null);
     assert.equal(parse(null, products), null);
     assert.equal(parse({ ...good, name: "" }, products).name, "Android device");
+});
+
+test("the website removes one device or all of them", () => {
+    assert.deepEqual(removeFromSite(three, "all", now), {});
+    assert.deepEqual(Object.keys(removeFromSite(three, id(2), now)), [id(1), id(3)]);
 });

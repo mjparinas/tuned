@@ -332,6 +332,7 @@
         <item quantity="other">Premium is already on %d devices. To use it here, deactivate one of them on a device that has Premium, from Settings › About › Tuned Premium. A device not used for 60 days frees its spot on its own.</item>
     </plurals>
     <string name="premium_devices_off_here">Premium isn\'t on for this device. There\'s a free spot, so you can turn it on here.</string>
+    <string name="premium_devices_site">Lost those devices? Go to %1$s and use the order number from Google Play\'s receipt email (it starts with GPA).</string>
     <string name="premium_devices_use_here">Use Premium on this device</string>
     <string name="premium_devices_this_one">This device</string>
     <string name="premium_devices_last_seen">Last used %1$s</string>
