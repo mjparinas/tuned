@@ -1,5 +1,8 @@
 package app.tuned.screenshots
 
+import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.isSelectable
+import androidx.compose.ui.test.performClick
 import app.tuned.R
 import app.tuned.core.Episodes
 import app.tuned.data.StartTab
@@ -11,9 +14,6 @@ import app.tuned.ui.MovieRoute
 import app.tuned.ui.ProfilesRoute
 import app.tuned.ui.SearchRoute
 import app.tuned.ui.ShowRoute
-import androidx.compose.ui.test.hasText
-import androidx.compose.ui.test.isSelectable
-import androidx.compose.ui.test.performClick
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -52,10 +52,9 @@ class BrowseScreenshots : Screenshots() {
 
     /** Downloads from the bar on Home, which stays below it. */
     @Test
-    fun downloadsOnHome() =
-        shot("browse-downloads-home", HomeRoute, wait = "Maple News 24") {
-            compose.onNode(hasText(text(R.string.downloads)) and isSelectable()).performClick()
-        }
+    fun downloadsOnHome() = shot("browse-downloads-home", HomeRoute, wait = "Maple News 24") {
+        compose.onNode(hasText(text(R.string.downloads)) and isSelectable()).performClick()
+    }
 
     @Test fun profiles() = shot("browse-profiles", ProfilesRoute(atStart = true), wait = text(R.string.profiles_title))
 }
