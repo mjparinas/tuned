@@ -8,6 +8,8 @@ import app.tuned.data.db.DownloadRow
 data class ShowDownloads(
     val showKey: String,
     val name: String,
+    /** The show's name as the playlist has it, which TMDB is asked by (and [app.tuned.data.SavedArtwork] saved under). */
+    val lookupName: String,
     val poster: String?,
     val seasons: List<SeasonDownloads>,
 ) {
@@ -39,10 +41,18 @@ data class DownloadLibrary(
 
     companion object {
         /**
+         * [posters] are the shows' own TMDB posters by show key, as saved with their episodes: the show's main cover
+         * (Melvin, 2026-11-19: "Shows on the download page should use the shows main cover/poster"). Without one, the
+         * playlist's show picture stands in, which for an Xtream show already opened can be one of its episodes'
+         * screenshots, so it comes second.
+         *
          * Shows with something still downloading come first, in the order they'll download, then the most recently
          * saved. Films on their way come first in queue order, then saved ones newest first.
          */
-        fun of(rows: List<DownloadRow>): DownloadLibrary {
+        fun of(
+            rows: List<DownloadRow>,
+            posters: Map<String, String> = emptyMap(),
+        ): DownloadLibrary {
             val (episodes, movies) = rows.partition { it.showKey != null }
             val byAdded = compareBy<DownloadRow> { it.download.addedAt }
             val byEpisode = compareBy<DownloadRow, Int?>(nullsLast()) { it.episode }.then(byAdded)
@@ -55,11 +65,16 @@ data class DownloadLibrary(
                                 .groupBy { it.season }
                                 .toSortedMap(nullsLast(naturalOrder()))
                                 .map { (season, eps) -> SeasonDownloads(season, eps.sortedWith(byEpisode)) }
+                        val lookupName = list.firstNotNullOfOrNull { it.showName } ?: key
                         ShowDownloads(
                             showKey = key,
                             // Without the provider's language tag: "The Simpsons", not "EN - The Simpsons" (Melvin, 2026-11-18).
-                            name = Titles.display(list.firstNotNullOfOrNull { it.showName } ?: key),
-                            poster = list.firstNotNullOfOrNull { it.showLogo } ?: seasons.firstNotNullOfOrNull { it.picture },
+                            name = Titles.display(lookupName),
+                            lookupName = lookupName,
+                            poster =
+                                posters[key]
+                                    ?: list.firstNotNullOfOrNull { it.showLogo }
+                                    ?: seasons.firstNotNullOfOrNull { it.picture },
                             seasons = seasons,
                         )
                     }.sortedWith(compareBy<ShowDownloads> { order(it.rows) })
