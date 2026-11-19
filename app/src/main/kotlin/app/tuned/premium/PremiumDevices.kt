@@ -74,7 +74,7 @@ internal fun PremiumDevices(
         if (!unlocked && others >= limit && plan == null) {
             // Someone who has lost every device with a seat frees them on the website with their order number.
             Text(
-                stringResource(R.string.premium_devices_site, BuildConfig.DEVICES_URL.trimEnd('/').removePrefix("https://")),
+                stringResource(R.string.premium_devices_site, "${BuildConfig.DEVICES_URL.trimEnd('/').removePrefix("https://")}/devices"),
                 style = MaterialTheme.typography.bodyMedium,
             )
         }
