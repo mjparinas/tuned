@@ -15,7 +15,12 @@ object WebVtt {
         offsetMs: Long = 0,
     ): String {
         val out = StringBuilder("WEBVTT\n\n")
-        val blocks = srt.removePrefix(BOM).replace("\r\n", "\n").replace('\r', '\n').split(BLANK_LINES)
+        val blocks =
+            srt
+                .removePrefix(BOM)
+                .replace("\r\n", "\n")
+                .replace('\r', '\n')
+                .split(BLANK_LINES)
         for (block in blocks) {
             val lines = block.lines().dropWhile { it.isBlank() }
             val timing = lines.indexOfFirst { ARROW in it }

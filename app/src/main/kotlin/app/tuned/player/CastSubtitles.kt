@@ -37,7 +37,10 @@ internal class CastSubtitles(
     fun trackFor(item: ItemEntity): MediaTrack? {
         stop()
         val config = subtitleOf(item) ?: return null
-        val file = config.uri.path?.let(::File)?.takeIf { it.isFile } ?: return null
+        val file =
+            config.uri.path
+                ?.let(::File)
+                ?.takeIf { it.isFile } ?: return null
         val shared = serve("subtitles-${item.id}", Made(file, offsetMs())) ?: return null
         folder = shared
         val language = config.language

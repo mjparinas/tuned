@@ -68,7 +68,13 @@ class PlayerScreenshots {
         val activity = Robolectric.buildActivity(ComponentActivity::class.java).setup().get()
         val exo = ExoPlayer.Builder(activity).build()
         exo.setMediaItems(
-            listOf(1L, 2L, 3L).map { id -> MediaItem.Builder().setMediaId("$id").setUri("http://tv.invalid/$id.mp4").build() },
+            listOf(1L, 2L, 3L).map { id ->
+                MediaItem
+                    .Builder()
+                    .setMediaId("$id")
+                    .setUri("http://tv.invalid/$id.mp4")
+                    .build()
+            },
             1,
             0,
         )
