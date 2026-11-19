@@ -1,6 +1,7 @@
 package app.tuned.player
 
 import java.util.Locale
+import kotlin.math.roundToInt
 
 /** The plain-words parts of the player's stream info panel, kept free of Media3 so they can be tested on the JVM. */
 object StreamInfo {
@@ -71,6 +72,45 @@ object StreamInfo {
      */
     fun hasQualityChoice(renditions: List<Pair<Int, Int>>): Boolean =
         renditions.map { (height, bitrate) -> quality(height, bitrate) }.distinct().size > 1
+
+    /** How the sound is laid out, for the player's pill; [OTHER] keeps the channel count. */
+    enum class Speakers { MONO, STEREO, SURROUND_5_1, SURROUND_7_1, OTHER }
+
+    /** The pills over the player's title: picture size, frame rate, sound codec and speakers, each null when unknown. */
+    data class Pills(
+        val resolution: String?,
+        val frameRate: Int?,
+        val codec: String?,
+        val speakers: Speakers?,
+        val channels: Int,
+    )
+
+    fun pills(
+        width: Int,
+        height: Int,
+        frameRate: Float,
+        audioMimeType: String?,
+        channels: Int,
+    ): Pills = Pills(
+        resolution = if (width > 0 && height > 0) "${width}x$height" else null,
+        // 23.976 reads as 24 and 59.94 as 60, as players and TVs show them.
+        frameRate = if (frameRate > 0) frameRate.roundToInt() else null,
+        codec = codec(audioMimeType)?.uppercase(Locale.ROOT),
+        speakers = speakers(channels),
+        channels = channels,
+    )
+
+    fun speakers(channels: Int): Speakers? = when {
+        channels <= 0 -> null
+        channels == 1 -> Speakers.MONO
+        channels == 2 -> Speakers.STEREO
+        channels == SURROUND_5_1_CHANNELS -> Speakers.SURROUND_5_1
+        channels == SURROUND_7_1_CHANNELS -> Speakers.SURROUND_7_1
+        else -> Speakers.OTHER
+    }
+
+    private const val SURROUND_5_1_CHANNELS = 6
+    private const val SURROUND_7_1_CHANNELS = 8
 
     private fun formatNumber(value: Float): String =
         if (value == value.toInt().toFloat()) value.toInt().toString() else String.format(Locale.ROOT, "%.1f", value)

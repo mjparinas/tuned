@@ -40,4 +40,28 @@ class StreamInfoTest {
         assertEquals("720p", StreamInfo.quality(720, 0))
         assertEquals("800 kbps", StreamInfo.quality(0, 800_000))
     }
+
+    @Test
+    fun pillsRoundTheFrameRateAndLeaveOutWhatIsUnknown() {
+        val p = StreamInfo.pills(1920, 1080, 23.976f, "audio/mp4a-latm", 2)
+        assertEquals("1920x1080", p.resolution)
+        assertEquals(24, p.frameRate)
+        assertEquals("AAC", p.codec)
+        assertEquals(StreamInfo.Speakers.STEREO, p.speakers)
+        val none = StreamInfo.pills(0, 0, -1f, null, -1)
+        assertNull(none.resolution)
+        assertNull(none.frameRate)
+        assertNull(none.codec)
+        assertNull(none.speakers)
+        assertEquals(60, StreamInfo.pills(1280, 720, 59.94f, null, 0).frameRate)
+    }
+
+    @Test
+    fun speakersNameTheCommonLayouts() {
+        assertEquals(StreamInfo.Speakers.MONO, StreamInfo.speakers(1))
+        assertEquals(StreamInfo.Speakers.SURROUND_5_1, StreamInfo.speakers(6))
+        assertEquals(StreamInfo.Speakers.SURROUND_7_1, StreamInfo.speakers(8))
+        assertEquals(StreamInfo.Speakers.OTHER, StreamInfo.speakers(4))
+        assertNull(StreamInfo.speakers(0))
+    }
 }

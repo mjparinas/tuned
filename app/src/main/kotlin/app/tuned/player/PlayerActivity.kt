@@ -41,6 +41,7 @@ import app.tuned.data.db.ItemEntity
 import app.tuned.diagnostics.AppLog
 import app.tuned.diagnostics.launchSafely
 import app.tuned.premium.Premium
+import app.tuned.ui.theme.playerAccent
 import app.tuned.work.TvHome
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -101,6 +102,9 @@ class PlayerActivity : FragmentActivity() {
         )
     }
     private val levelBars by lazy { LevelBars(this) }
+
+    /** Picture size, frame rate and sound under the title; see [InfoPills]. */
+    private val pills by lazy { InfoPills(this, { player }, { cast?.casting == true }) }
     private lateinit var tools: PlayerTools
     private var cast: CastControl? = null
 
@@ -260,6 +264,7 @@ class PlayerActivity : FragmentActivity() {
             settings = container.settings.settings.first()
             if (settings.landscapePlayback) requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
             tools.applyFit(settings.videoFit)
+            tintScrubber(playerView, playerAccent(this@PlayerActivity, settings.accent, settings.dynamicColour))
             if (settings.playerGestures) setUpGestures()
             if (settings.autoReconnect) reconnect.start()
             val query = intent.getStringExtra(EXTRA_TUNE)
@@ -339,6 +344,7 @@ class PlayerActivity : FragmentActivity() {
         // Before the tools: opening the player mid-cast shows its note as the cast button is set up.
         statusView = StatusNote(this)
         setUpTools()
+        attachGlance(titles)
         // TV remote buttons go to the tools before the player's own controls; see [PlayerTools.onKey].
         val root =
             object : FrameLayout(this) {
@@ -361,6 +367,7 @@ class PlayerActivity : FragmentActivity() {
         playerView.setControllerVisibilityListener(
             PlayerView.ControllerVisibilityListener { visibility ->
                 overlay.visibility = visibility
+                if (visibility == View.VISIBLE) pills.update()
                 tools.onControls(visibility)
                 recorder.onControls(visibility)
                 jumpToLive.onControls(visibility)
@@ -368,6 +375,14 @@ class PlayerActivity : FragmentActivity() {
             },
         )
         setContentView(root)
+    }
+
+    /** The pills under the title and the time of day at the top right, after the tools; see PlayerGlance. */
+    private fun attachGlance(titles: LinearLayout) {
+        val density = resources.displayMetrics.density
+        val wrap = ViewGroup.LayoutParams.WRAP_CONTENT
+        titles.addView(pills.view, LinearLayout.LayoutParams(wrap, wrap).apply { topMargin = (6 * density).toInt() })
+        overlay.addView(playerClock(this), LinearLayout.LayoutParams(wrap, wrap).apply { marginStart = (12 * density).toInt() })
     }
 
     /** The player features drawn over the video, each in its own file. */
@@ -452,6 +467,7 @@ class PlayerActivity : FragmentActivity() {
         if (cast?.casting == true) playerView.findViewById<View>(androidx.media3.ui.R.id.exo_settings)?.usable(false)
         tools.onControls(View.VISIBLE)
         recorder.onControls(View.VISIBLE)
+        pills.update()
     }
 
     private var flashJob: Job? = null
@@ -607,6 +623,7 @@ class PlayerActivity : FragmentActivity() {
                 addListener(background.listener)
                 addListener(skipIntro.listener)
                 addListener(subtitleSearch.listener)
+                addListener(pills.listener)
             }
     }
 

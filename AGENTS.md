@@ -32,7 +32,7 @@ Kotlin, Jetpack Compose with Material 3, Navigation Compose (type-safe routes), 
 
 ## Product rules
 
-- **Get out of the way.** Opening the app shows channels from the cache at once; nothing waits on the network. The player shows only video until a tap; the controls hide themselves. No pop-ups, no onboarding beyond adding a first playlist ([onboarding](docs/decisions/onboarding.md)).
+- **Get out of the way.** Opening the app shows channels from the cache at once; nothing waits on the network. The player shows only video until a tap; the controls hide themselves, and with them the time of day and the stream's pills ([player](docs/decisions/player.md)). No pop-ups, no onboarding beyond adding a first playlist ([onboarding](docs/decisions/onboarding.md)).
 - **Speed first** ([speed](docs/decisions/speed.md)): lists are paged straight from Room; downloads stream into the database in batches; nothing heavy runs before the first frame.
 - **Customizable** (Melvin, 2026-11-17: "customizing most things in the settings"): a new behaviour gets a setting when people could reasonably want it either way, with the common choice as the default.
 - **Never ask for, log or commit a login.** The app stores it encrypted until sign-out ([security](docs/decisions/security.md)), and signing out resets the app to how it was installed, keeping downloads only if the person chooses to ([onboarding](docs/decisions/onboarding.md#sign-out)); a new store of data must be cleared by `data/AppReset`. Error messages go through `XtreamUrls.redact`; log lines through `AppLog`, which scrubs them ([diagnostics](docs/decisions/diagnostics.md)). Playlists and guides are never committed (`.gitignore` blocks `*.m3u`, `*.xmltv`, `.env`).
