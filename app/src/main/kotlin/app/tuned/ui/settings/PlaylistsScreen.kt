@@ -3,6 +3,7 @@ package app.tuned.ui.settings
 import android.app.Application
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -20,6 +21,7 @@ import androidx.compose.material.icons.filled.FolderOpen
 import androidx.compose.material.icons.filled.Link
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Router
+import androidx.compose.material.icons.filled.Tv
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExtendedFloatingActionButton
@@ -133,6 +135,7 @@ fun PlaylistsScreen(
     onBack: () -> Unit,
     onAdd: () -> Unit,
     onEdit: (index: Int, kind: Credentials.Kind) -> Unit,
+    onSendToTv: (() -> Unit)?,
     onSwitched: () -> Unit,
     onEmpty: () -> Unit,
     vm: PlaylistsViewModel = viewModel(),
@@ -154,7 +157,8 @@ fun PlaylistsScreen(
             )
         },
     ) { padding ->
-        LazyColumn(Modifier.padding(padding).fillMaxSize()) {
+        // Room under the last row for the Add button.
+        LazyColumn(Modifier.padding(padding).fillMaxSize(), contentPadding = PaddingValues(bottom = 88.dp)) {
             item {
                 Text(
                     stringResource(R.string.playlists_help),
@@ -172,6 +176,10 @@ fun PlaylistsScreen(
                     onEdit = { onEdit(index, login.kind) },
                     onRemove = { removing = login },
                 )
+            }
+            // Signing in on a TV with this phone (docs/decisions/onboarding.md); not shown on a TV itself.
+            if (onSendToTv != null && saved.any { it.kind != Credentials.Kind.File }) {
+                item { SendToTvRow(onSendToTv) }
             }
         }
     }
@@ -196,6 +204,28 @@ fun PlaylistsScreen(
             },
             dismissButton = { TextButton(onClick = { removing = null }) { Text(stringResource(R.string.cancel)) } },
         )
+    }
+}
+
+@Composable
+private fun SendToTvRow(onClick: () -> Unit) {
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .focusRing(RoundedCornerShape(8.dp), MaterialTheme.colorScheme.primary)
+            .clickable(onClick = onClick)
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(Icons.Filled.Tv, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+        Column(Modifier.weight(1f).padding(horizontal = 16.dp)) {
+            Text(stringResource(R.string.send_tv_row), style = MaterialTheme.typography.titleMedium)
+            Text(
+                stringResource(R.string.send_tv_row_summary),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
     }
 }
 

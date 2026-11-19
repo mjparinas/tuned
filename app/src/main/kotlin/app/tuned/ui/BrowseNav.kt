@@ -49,7 +49,7 @@ import kotlinx.serialization.Serializable
     val itemId: Long,
 )
 
-/** Settings › Downloads. */
+/** Downloads on its own, from the offline banner on any other screen; on Home it is a section beside the tabs. */
 @Serializable data object DownloadsRoute
 
 /** Home, search, details, the guide, events, downloads and profiles. */
@@ -77,7 +77,6 @@ fun NavGraphBuilder.browseScreens(app: AppNav) {
             onOpenSettings = { app.nav.navigate(SettingsRoute) },
             onOpenProfiles = { app.nav.navigate(ProfilesRoute()) },
             onOpenSearch = { app.nav.navigate(SearchRoute(it)) },
-            onOpenDownloads = { app.nav.navigate(DownloadsRoute) },
             onOpenEvents = { app.nav.navigate(EventsRoute) },
             onTune = app.tune,
             onOpenPlaylists = { app.nav.navigate(PlaylistsRoute) },

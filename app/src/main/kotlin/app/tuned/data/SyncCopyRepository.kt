@@ -148,15 +148,48 @@ class SyncCopyRepository(
      * later, in a fixed order so the same state always gives the same bytes. Which playlist is in use stays each
      * device's own, so a phone and a TV can watch different ones.
      */
-    suspend fun syncCopy(): ByteArray = withContext(Dispatchers.IO) {
+    suspend fun syncCopy(): ByteArray = copy(inUseFirst = false)
+
+    /**
+     * What the phone app sends a TV when signing it in (docs/decisions/onboarding.md): the same as [syncCopy], with the
+     * playlist in use first, so the TV starts on it.
+     */
+    suspend fun handoffCopy(): ByteArray = copy(inUseFirst = true)
+
+    /** What a copy holds, for the TV to show before taking it. */
+    data class Summary(
+        val playlists: List<Credentials>,
+        val settings: Boolean,
+        val favourites: Int,
+        val lists: Int,
+        val watchLater: Int,
+    ) {
+        /** More than playlists: a copy from the phone app rather than the phone page. */
+        val everything: Boolean get() = settings || favourites > 0 || lists > 0 || watchLater > 0
+    }
+
+    /** Reads a copy without taking it; throws [PassphraseCrypto.NotOurs] for anything else. */
+    fun summary(plain: ByteArray): Summary {
+        val contents = decodeContents(plain)
+        return Summary(
+            contents.playlists.map { it.toCredentials() },
+            contents.settings.isNotEmpty(),
+            contents.favourites.size,
+            contents.lists.size,
+            contents.watchLater.size,
+        )
+    }
+
+    private suspend fun copy(inUseFirst: Boolean): ByteArray = withContext(Dispatchers.IO) {
+        val inUse = if (inUseFirst) credentials.load() else null
         val contents =
             Contents(
                 playlists =
                     credentials
                         .saved()
                         .filter { it.kind != Credentials.Kind.File }
-                        .map { it.toLogin() }
-                        .sortedWith(compareBy({ it.server }, { it.username }, { it.playlistUrl })),
+                        .sortedWith(compareBy({ inUse?.samePlaylist(it) != true }, { it.server }, { it.username }, { it.playlistUrl }))
+                        .map { it.toLogin() },
                 settings =
                     settings
                         .snapshot()
@@ -220,9 +253,7 @@ class SyncCopyRepository(
      * ones; a device with none in use starts on the first.
      */
     suspend fun applySyncCopy(plain: ByteArray): Applied = withContext(Dispatchers.IO) {
-        val contents =
-            runCatching { json.decodeFromString(Contents.serializer(), plain.decodeToString()) }
-                .getOrElse { throw PassphraseCrypto.NotOurs() }
+        val contents = decodeContents(plain)
         settings.restore(contents.settings.mapNotNull { (k, v) -> decode(v)?.let { k to it } }.toMap())
         if (contents.profiles.isNotEmpty()) {
             ProfileSync(db).replace(contents.profiles)
@@ -277,6 +308,10 @@ class SyncCopyRepository(
             .forEach { later.remove(it.key) }
         contents.watchLater.forEach { later.add(WatchLaterEntity(it.key, it.itemId, it.showKey, it.title, it.image, it.addedAt)) }
     }
+
+    private fun decodeContents(plain: ByteArray): Contents = runCatching {
+        json.decodeFromString(Contents.serializer(), plain.decodeToString())
+    }.getOrElse { throw PassphraseCrypto.NotOurs() }
 
     private companion object {
         /** 2 added the profiles, guide fixes, intros and accounts (2026-11-19). */

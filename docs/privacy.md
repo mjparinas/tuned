@@ -1,8 +1,8 @@
 # Tuned privacy policy
 
-Last updated: November 18, 2026
+Last updated: November 19, 2026
 
-Tuned is an IPTV player for Android and Android TV. This policy explains what Tuned stores, what it sends and to whom. Tuned has no server of its own, no account with us, no ads and no analytics.
+Tuned is an IPTV player for Android and Android TV. This policy explains what Tuned stores, what it sends and to whom. Tuned has no account with us, no ads and no analytics.
 
 ## What stays on your device
 
@@ -22,6 +22,10 @@ Tuned connects to these services only to do what you ask:
 - **YouTube**, only when you open a trailer.
 - **GitHub**, in the version downloaded from GitHub, to check for and download updates.
 - **Google Play**, in the version from Google Play, for purchases. Google handles payment, and Tuned never sees your payment details.
+
+## Signing in on a TV with your phone
+
+When you sign in on a TV with your phone, the TV makes a one-time key and shows it in a QR code. Your phone (the Tuned app, or the page at tuned-devices.vercel.app/tv) locks what it sends with that key: your playlist login, and from the app also your settings, favourites, lists and watch later. Tuned's sign-in service only passes the locked copy to the TV. It can't unlock it, and it deletes it as soon as the TV takes it, or after 10 minutes. It keeps no record of what was sent; to limit misuse it counts requests per network address, keeping the address only scrambled and only for an hour.
 
 ## Sync with Google Drive
 

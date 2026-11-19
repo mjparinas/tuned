@@ -21,6 +21,23 @@
 
 **One playlist at a time.** The app still holds one playlist's channels and guide (switching clears them and downloads the other), so lists, search and favourites never mix providers and the database stays small. When the first download fails, "Change playlist" opens Settings › Playlists instead of signing out.
 
+**Sync between devices** carries every saved playlist except files ([sync](sync.md)). Backup files were removed (Melvin, 2026-11-18).
+
+## Sign in on a TV with your phone
+
+Melvin, 2026-11-19: "if i install this on an android tv, entering in the url to the iptv stream, username and password is very much a pain when you use the remote". From the plan he picked the TV code and QR, sending from the phone app, and the website form ("do a, b, d"), on the existing Vercel project ("use the vercel one"), sending everything from the app ("i want it to sync everything if possible"), free, and no playlist files ("leave out").
+
+- **On the TV** the welcome screen (and Add a playlist) starts with a "Sign in with your phone" card, the first thing focused, which opens a QR code and an eight-character code (`K7QF-29MD`, `ui/onboarding/TvSignInScreen`) that lasts 10 minutes and then makes a new one by itself. The ways to type a playlist are still under the card, and "Type it on the TV instead" goes back to them. Phones don't show the card.
+- **A phone without Tuned** scans the QR with its camera and gets `tuned-devices.vercel.app/tv`: the Xtream login or a playlist link, with a pasted `get.php` link filling in the login as in the app. Someone who can't scan types the code there instead, and both screens show the same four digits to check.
+- **A phone with Tuned** opens the app from the QR (an app link) or from Settings › Playlists › Send to a TV (`ui/onboarding/SendToTvScreen`, where a typed code is checked with the four digits), and sends everything sync between devices sends ([sync](sync.md)): every saved playlist except files, settings, the profiles with their favourites, lists and watch later, channel edits, guide fixes, and the Trakt and OpenSubtitles sign-ins. It is free, unlike Drive sync, because it is a one-time copy at set-up.
+- **The TV shows what arrived** (the playlist names and what else came, never a password) and saves it only on "Use it", so someone who reads the code off the screen can't add a playlist unseen; "Not mine" throws it away and shows a new code (`data/PhoneSignIn`). A TV with nothing on it takes everything; a TV already in use adds only the playlists and keeps its own settings and favourites. The playlist in use on the phone becomes the one in use on the TV. Without Premium the TV keeps only that one, since more than one playlist is Premium ([premium](premium.md)).
+
+**Nobody but the TV can read it** (`core/TvHandoff`, `devices/public/tv/seal.js`, `devices/lib/tv.mjs`, all tested, and a test opens a box the page sealed with the Kotlin code). The TV makes a one-time P-256 key pair; the QR link carries the public key after `#`, which browsers never send to a server. The phone seals with ECDH, HKDF-SHA256 and AES-256-GCM, with the code bound in. The relay keeps the key, a hash of the TV's poll secret and the sealed box under a hash of the code, for 10 minutes at most, deletes the box when the TV takes it, and limits codes and lookups per visitor. On the typed-code path the relay hands the phone the TV's key, so the four digits (from a hash of the key) prove it's the TV's own. P-256 rather than X25519 because every Android version Tuned runs on, Samsung's TV browsers since 2018 and every phone browser have it, so a Tizen Tuned can use the same relay. The page is served by the relay, so on the no-app path the page's code is what keeps the login private; it loads no third-party scripts and the project's Content-Security-Policy allows only its own.
+
+**Not built, and why:** a phone keyboard linked to the TV (the Google TV and SmartThings apps already type into any field, and it still means typing the login), and a page served by the TV over Wi-Fi with no server (Samsung TV apps can't listen on a port, and it fails on guest Wi-Fi and phones on mobile data).
+
+**App links** need the relay's `/.well-known/assetlinks.json` to list each signing key: it has the GitHub release key. The Play build's app-signing key goes there once the app is in Play Console; until then that build's QR opens the page, which links to the app with `tuned://tv`.
+
 ## Sign out
 
 **Signing out resets Tuned to how it was installed** (Melvin, 2026-11-19: "sign out should forget every playlist, downloaded channels, disconnects trakt, google drive, anything else that syncs, all settings", and "it should also remove who is using the account users, basically it should just reset the app to a preinstalled state"). Settings › Playlists › Sign out (`data/AppReset`) removes:
@@ -38,5 +55,3 @@
 **It can't stop half way.** The reset writes a marker before it removes anything and clears it only once every step succeeded; every step is safe to run twice. If the app is closed or crashes part way, the login is forgotten as the app next starts, before the first screen is chosen, and the rest finishes in the background. The database is emptied in one transaction.
 
 Removing the last playlist in Settings › Playlists still only forgets the playlist and its channels; Sign out is the full reset.
-
-**Sync between devices** carries every saved playlist except files, and everything else the person set up ([sync](sync.md)). Backup files were removed (Melvin, 2026-11-18).

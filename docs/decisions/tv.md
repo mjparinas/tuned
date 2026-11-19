@@ -9,6 +9,8 @@
 
 **Overscan margin** (Melvin, 2026-11-19: "The tuned app on a real TV has the logo touching the top of the screen, push that down"). Many TVs crop the edges of the picture, so on a TV every screen of the app and of Premium keeps Google's TV margins: 48 dp at the sides and 27 dp at the top and bottom, filled with the theme's background (`ui/common/TvSafeArea.kt`). It is decided by the system's TV UI mode, so phones and tablets are unchanged. The player stays full screen: the crop only trims the picture's edge.
 
+**No menus on Home** (Melvin, 2026-11-19: "tv needs to be more stream lined and things should be easily accessible. especially on the tv, you have plenty of real estate"). A TV always shows the side rail, and the three-dot menu beside search is gone: Search, Profile and Settings are on the rail under Downloads, and Live TV has a button beside search for the guide grid. See [Large screens](large-screens.md).
+
 A dedicated TV layout can come later if the phone layout proves awkward from the sofa.
 
 **The remote in the player** (`core/RemoteKeys.kt`, with tests). Media3's controls already handle play, pause, fast forward and rewind, and any arrow shows the controls. On top of that:
@@ -27,3 +29,5 @@ Holding an arrow keeps skipping; holding a channel button changes channel once, 
 **Home screen** (from the app audit, 2026-11-17). On Android TV, films and episodes in progress appear in the system's Continue watching row (Watch Next), and favourite channels in a Tuned row of their own (`work/TvHome.kt`, `androidx.tvprovider`). They are brought up to date a few seconds after the app opens, after playing and after a favourite changes, and removed on sign-out or a playlist switch. A card opens `MainActivity` with `ACTION_PLAY`, which starts the player with the lists underneath. Nothing runs on phones.
 
 **Tunnelled playback** (Melvin, 2026-11-19: "do 8", from the gap list). Settings › Player › Tunnelled playback, shown on Android TV only, hands the picture and sound to the TV's own video hardware, which keeps them in step itself and can play 4K and 50 or 60 fps sport more smoothly on TVs whose decoders support it. Media3 uses it only when the TV's decoders for both the picture and the sound of that stream support it, and plays as usual otherwise, so turning it on can't stop a channel playing. Off by default, as in other players: some TVs report support and then stutter or lose sync, so it's there to try when playback isn't smooth. It stays on the device rather than syncing, and Settings › Player › Sound delay doesn't apply while it's on, because the hardware keeps its own clock.
+
+**Signing in with a phone** (Melvin, 2026-11-19: entering the server, username and password "is very much a pain when you use the remote"). On a TV the welcome screen leads with "Sign in with your phone": a QR code and a short code, and the phone (with or without Tuned) does the typing ([onboarding](onboarding.md)).

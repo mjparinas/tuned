@@ -23,6 +23,7 @@ import androidx.navigation.compose.rememberNavController
 import app.tuned.R
 import app.tuned.container
 import app.tuned.core.TimeZones
+import app.tuned.core.TvHandoff
 import app.tuned.data.AppSettings
 import app.tuned.data.CastMember
 import app.tuned.diagnostics.launchSafely
@@ -48,6 +49,9 @@ class MainActivity : ComponentActivity() {
     /** A screen an app icon shortcut asked for ([AppShortcuts]), waiting to be opened. */
     private val incomingScreen = MutableStateFlow<String?>(null)
 
+    /** A TV's sign-in QR code, opened on this phone, waiting to be answered (docs/decisions/onboarding.md). */
+    private val incomingTv = MutableStateFlow<String?>(null)
+
     override fun onCreate(savedInstanceState: Bundle?) {
         val splash = installSplashScreen()
         super.onCreate(savedInstanceState)
@@ -59,6 +63,7 @@ class MainActivity : ComponentActivity() {
         val signedIn = container.credentials.load() != null
         incomingSearch.value = searchQuery(intent)
         incomingScreen.value = shortcutScreen(intent)
+        incomingTv.value = tvLink(intent)
         // A card on the Android TV home screen ([app.tuned.work.TvHome]): play it, with the lists underneath.
         val request = if (savedInstanceState == null && signedIn) playRequest(intent) else null
         if (request != null) PlayerActivity.start(this, request)
@@ -142,6 +147,12 @@ class MainActivity : ComponentActivity() {
             }
             incomingScreen.value = null
         }
+        val tvAsk by incomingTv.collectAsStateWithLifecycle()
+        LaunchedEffect(tvAsk) {
+            val link = tvAsk ?: return@LaunchedEffect
+            nav.navigate(SendToTvRoute(link)) { launchSingleTop = true }
+            incomingTv.value = null
+        }
         val openPerson: (CastMember) -> Unit = { person -> nav.navigate(PersonRoute(person.id ?: 0, person.name)) }
         val openHome: () -> Unit = { nav.navigate(HomeRoute) { popUpTo(0) { inclusive = true } } }
         val openWelcome: () -> Unit = { nav.navigate(WelcomeRoute) { popUpTo(0) { inclusive = true } } }
@@ -188,6 +199,7 @@ class MainActivity : ComponentActivity() {
         super.onNewIntent(intent)
         searchQuery(intent)?.let { incomingSearch.value = it }
         shortcutScreen(intent)?.let { incomingScreen.value = it }
+        tvLink(intent)?.let { incomingTv.value = it }
         playRequest(intent)?.let { PlayerActivity.start(this, it) }
     }
 
@@ -195,6 +207,11 @@ class MainActivity : ComponentActivity() {
         if (intent?.action != ACTION_PLAY) return null
         return intent.getLongExtra(EXTRA_PLAY_ID, 0).takeIf { it != 0L }
     }
+
+    private fun tvLink(intent: Intent?): String? = intent
+        ?.takeIf { it.action == Intent.ACTION_VIEW }
+        ?.dataString
+        ?.takeIf { TvHandoff.parseLink(it) != null }
 
     private fun shortcutScreen(intent: Intent?): String? =
         if (intent?.action == AppShortcuts.ACTION_OPEN) intent.getStringExtra(AppShortcuts.EXTRA_SCREEN) else null

@@ -3,12 +3,16 @@ package app.tuned.screenshots
 import androidx.compose.ui.test.hasAnyDescendant
 import androidx.compose.ui.test.hasScrollAction
 import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.isSelectable
+import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToNode
 import app.tuned.R
 import app.tuned.core.ContentKind
 import app.tuned.core.Episodes
 import app.tuned.core.PinnedGroups
 import app.tuned.data.StartTab
+import app.tuned.data.db.CurrentProfileEntity
+import app.tuned.data.db.ProfileEntity
 import app.tuned.ui.DownloadsRoute
 import app.tuned.ui.EventsRoute
 import app.tuned.ui.GuideRoute
@@ -17,6 +21,8 @@ import app.tuned.ui.MovieRoute
 import app.tuned.ui.ProfilesRoute
 import app.tuned.ui.SearchRoute
 import app.tuned.ui.ShowRoute
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.runBlocking
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -78,5 +84,27 @@ class BrowseScreenshots : Screenshots() {
 
     @Test fun downloads() = shot("browse-downloads", DownloadsRoute, wait = text(R.string.downloads))
 
+    /** Downloads from the bar on Home, which stays below it. */
+    @Test
+    fun downloadsOnHome() = shot(
+        "browse-downloads-home",
+        HomeRoute,
+        wait = "Maple News 24",
+        then = { compose.onNode(hasText(text(R.string.downloads)) and isSelectable()).performClick() },
+    )
+
     @Test fun profiles() = shot("browse-profiles", ProfilesRoute(atStart = true), wait = text(R.string.profiles_title))
+
+    /** Two named profiles, one for kids, opened from Home: the names must read clearly on the dark theme. */
+    @Test
+    fun profilesNamed() {
+        runBlocking(Dispatchers.IO) {
+            val profiles = app.container.db.profiles()
+            val first =
+                profiles.insert(ProfileEntity(name = "Alex", colour = 0, kids = false, pinHash = null, createdAt = 0, avatar = "fox"))
+            profiles.insert(ProfileEntity(name = "Sam", colour = 1, kids = true, pinHash = null, createdAt = 0))
+            profiles.setCurrent(CurrentProfileEntity(profileId = first))
+        }
+        shot("browse-profiles-named", ProfilesRoute(atStart = false), wait = "Sam")
+    }
 }
