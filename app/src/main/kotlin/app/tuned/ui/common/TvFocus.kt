@@ -74,12 +74,18 @@ class TvFocus internal constructor(
     /** Asks for the item last focused, or the first. Returns what it asked for, so [expire] can let it go. */
     internal fun restore(): Any? {
         if (!enabled) return null
-        return (saved.value?.let { Target.Key(it) } ?: Target.First).also { target = it }
+        return (saved.value?.let { Target.Key(it) } ?: Target.First).also {
+            target = it
+            opening = it
+        }
     }
 
     internal fun restoreFirst(): Any? {
         if (!enabled) return null
-        return Target.First.also { target = it }
+        return Target.First.also {
+            target = it
+            opening = it
+        }
     }
 
     /**
@@ -88,6 +94,7 @@ class TvFocus internal constructor(
      */
     internal fun expire(asked: Any?) {
         if (asked != null && target === asked) target = null
+        if (asked != null && opening === asked) opening = null
     }
 
     internal fun focusKey(key: Any) {
@@ -103,9 +110,16 @@ class TvFocus internal constructor(
         Target.First -> first
     }
 
+    /**
+     * After an item takes focus. A page jump's target is let go at once; the list's opening one stays until [expire],
+     * so a row that comes back (the playlist refreshing under it) takes focus again within that moment.
+     */
     internal fun done() {
-        target = null
+        if (target !== opening) target = null
     }
+
+    /** What the list's opening (or Back to top) asked for, held for the claim window. */
+    private var opening: Target? = null
 
     internal fun focused(
         key: Any,

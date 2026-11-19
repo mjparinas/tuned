@@ -11,8 +11,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsFocused
-import androidx.compose.ui.test.assertIsNotFocused
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isFocused
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
@@ -67,7 +68,8 @@ class TvFocusTest {
         list()
         compose.onNodeWithText("Channel 0").performKeyInput { pressKey(Key.PageDown) }
         compose.waitForIdle()
-        compose.onNodeWithText("Channel 0").assertIsNotFocused()
+        // Channel 0 has scrolled off, so it is gone or at least no longer focused.
+        compose.onAllNodes(hasText("Channel 0") and isFocused()).assertCountEquals(0)
         // About nine 60 dp rows fit the 540 dp screen, so one press goes well past the next row.
         val landed =
             compose

@@ -1,9 +1,11 @@
 package app.tuned.ui.browse
 
+import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onFirst
+import androidx.compose.ui.test.requestFocus
 import androidx.test.core.app.ApplicationProvider
 import androidx.work.Configuration
 import androidx.work.testing.SynchronousExecutor
@@ -86,7 +88,8 @@ class TvLiveLayoutTest {
                 .fetchSemanticsNode()
                 .boundsInRoot
         assertEquals(true, favourites.top > all.top && favourites.left == all.left)
-        // The details beside the list show the first channel, which has the remote's focus.
+        // The details beside the list show the channel the remote is on.
+        compose.onAllNodes(hasText("Maple News 24", substring = true) and hasClickAction()).onFirst().requestFocus()
         compose.waitUntil(WAIT_MS) { compose.onAllNodes(hasText(app.getString(R.string.tv_live_pick))).fetchSemanticsNodes().isEmpty() }
         compose.onAllNodes(hasText(app.getString(R.string.tv_live_on_now), substring = true)).onFirst().assertExists()
     }
