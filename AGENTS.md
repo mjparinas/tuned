@@ -27,7 +27,7 @@ Kotlin, Jetpack Compose with Material 3, Navigation Compose (type-safe routes), 
 - `:app` folders: `data/` (Room, DataStore settings, encrypted login, sync), `work/` (background refresh), `player/` (PlayerActivity), `ui/` (Compose screens, one screen and its ViewModel per file).
 - `:smoketest`: the github debug app on an emulator: sign in, play, change channel, back, and never two stream connections at once ([diagnostics](docs/decisions/diagnostics.md)).
 - `:fakeprovider`: plain Kotlin, the stand-in provider on the loopback that both device test modules use, with a generated clip and no login.
-- `devices/`: not Gradle. The Premium device list and its website on Vercel, plain Node with no dependencies, tests in `devices/lib/*.test.mjs` ([premium](docs/decisions/premium.md)).
+- `devices/`: not Gradle. The Premium device list and its website on Vercel, and the relay and page for signing in on a TV with a phone; plain Node with no dependencies, tests in `devices/lib/*.test.mjs` ([premium](docs/decisions/premium.md), [onboarding](docs/decisions/onboarding.md)).
 - `:baselineprofile`: drives the release app on an emulator to write its baseline profile and measure cold start ([speed](docs/decisions/speed.md)).
 
 ## Product rules
