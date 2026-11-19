@@ -3,7 +3,6 @@ package app.tuned.data.db
 import android.content.Context
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
-import app.tuned.core.Profiles
 import app.tuned.core.Search
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
