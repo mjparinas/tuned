@@ -935,3 +935,16 @@ body.web {
         grid-template-columns: repeat(2, 1fr);
     }
 }
+
+/* The footer sits at the bottom of a short page. */
+body:has(> footer.foot) {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+body:has(> footer.foot) > main {
+    width: 100%;
+}
+body > footer.foot {
+    margin-top: auto;
+}

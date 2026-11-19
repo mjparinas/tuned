@@ -11,6 +11,7 @@
         <link rel="icon" href="/icon.svg" type="image/svg+xml" />
         <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
         <link rel="stylesheet" href="/site.css" />
+        <link rel="stylesheet" href="/web.css" />
         <style>
             #all {
                 margin-top: 16px;
@@ -19,7 +20,7 @@
         </style>
     </head>
     <body>
-        <a class="brand" href="/account"><img src="/icon.svg" alt="" width="40" height="40" />Tuned</a>
+        <script src="/chrome.js" data-part="header"></script>
         <main>
             <h1>Tuned Premium devices</h1>
             <p>
@@ -119,5 +120,6 @@
             all.onclick = () => removeDevice("all");
         </script>
         <script src="/beacon.js" defer></script>
+        <script src="/chrome.js" data-part="footer"></script>
     </body>
 </html>

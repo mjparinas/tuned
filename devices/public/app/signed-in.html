@@ -11,14 +11,16 @@
         <link rel="icon" href="/icon.svg" type="image/svg+xml" />
         <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
         <link rel="stylesheet" href="/site.css" />
+        <link rel="stylesheet" href="/web.css" />
     </head>
     <body>
-        <a class="brand" href="/account"><img src="/icon.svg" alt="" width="40" height="40" />Tuned</a>
+        <script src="/chrome.js" data-part="header"></script>
         <main>
             <h1>You're signed in</h1>
             <p>Go back to Tuned to finish.</p>
             <a id="back" class="button" href="tuned://signed-in">Open Tuned</a>
         </main>
         <script src="/app/signed-in.js"></script>
+        <script src="/chrome.js" data-part="footer"></script>
     </body>
 </html>

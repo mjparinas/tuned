@@ -13,6 +13,10 @@ The public website at **www.tunedplayer.com** (Melvin registered it 2026-11-19; 
 - Never mention a sleep timer or a second video on screen ([scope](scope.md)); the one-connection rule is a selling point and is stated as such.
 - The old order-number page that was at `/` (for someone who lost every Premium device) moved to `/devices`, and the app's Your devices screen points there.
 
+## One header and footer on every page (Melvin, 2026-11-19)
+
+"Every page should have a header and footer, similar to the one on the home page." The header (the channel stack and name, Features, Blog, Account and Download) and the footer (links, the note that Tuned includes no channels, and the store trademarks) are written once, `siteHeader` and `siteFooter` in `lib/site-build.mjs`. The generated pages (landing page and blog) have them inline. The hand-written pages (`/account`, `/tv`, `/devices`, `/check`, `/app/signed-in`) load `site.css` and `web.css` and include `/chrome.js` twice, `<script src="/chrome.js" data-part="header"></script>` first in `<body>` and `data-part="footer"` last, which writes the same header and footer in place before the page draws. `chrome.js` is generated from the same functions, so a change to the header reaches every page. A new page does the same; a test checks the hand-written pages have both. The admin keeps its own look.
+
 ## The blog (Melvin, 2026-11-19)
 
 "Can you add blog posts that talk about whats new for each release and the date", and "ensure that each blog post has a CTA action, link to the android app".

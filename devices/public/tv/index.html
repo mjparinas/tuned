@@ -11,6 +11,7 @@
         <link rel="icon" href="/icon.svg" type="image/svg+xml" />
         <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
         <link rel="stylesheet" href="/site.css" />
+        <link rel="stylesheet" href="/web.css" />
         <style>
             .tabs {
                 display: flex;
@@ -52,7 +53,7 @@
         </style>
     </head>
     <body>
-        <a class="brand" href="/account"><img src="/icon.svg" alt="" width="40" height="40" />Tuned</a>
+        <script src="/chrome.js" data-part="header"></script>
         <main>
             <h1>Sign in on your TV</h1>
             <p id="intro">Fill this in here instead of with the remote. It's locked on this phone so only your TV can read it.</p>
@@ -129,5 +130,6 @@
         </main>
         <script type="module" src="/tv/tv.js"></script>
         <script src="/beacon.js" defer></script>
+        <script src="/chrome.js" data-part="footer"></script>
     </body>
 </html>
