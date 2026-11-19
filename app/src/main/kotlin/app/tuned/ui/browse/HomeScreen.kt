@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -50,6 +51,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExtendedFloatingActionButton
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -108,6 +110,7 @@ import app.tuned.ui.SyncText
 import app.tuned.ui.common.UpdateBanner
 import app.tuned.ui.common.VoiceSearchButton
 import app.tuned.ui.common.focusRing
+import app.tuned.ui.common.isTelevision
 import app.tuned.ui.common.windowWidthDp
 import app.tuned.ui.offline.DownloadsScreen
 import app.tuned.ui.offline.DownloadsViewModel
@@ -163,7 +166,9 @@ fun HomeScreen(
     val liveSearch by vm.search(ContentKind.LIVE).collectAsStateWithLifecycle()
     val profile by vm.profile.collectAsStateWithLifecycle()
     val widthDp = windowWidthDp()
-    val rail = ScreenLayout.rail(widthDp)
+    val tv = isTelevision()
+    // A TV always has the rail: everything is on screen there, one press away, with no menu (Melvin, 2026-11-19).
+    val rail = tv || ScreenLayout.rail(widthDp)
     val panes = ScreenLayout.panes(widthDp)
     // On a wide screen a film, show or guide opens beside the list; on anything narrower it opens full screen.
     var detail by rememberSaveable(stateSaver = Detail.saver) { mutableStateOf<Detail?>(null) }
@@ -211,7 +216,27 @@ fun HomeScreen(
     }
 
     Row(Modifier.fillMaxSize()) {
-        if (rail) HomeRail(selected.takeUnless { downloads }, select, openDownloads)
+        // A kids profile has no way into Settings; switching profile (with a PIN) is the way out.
+        val openSettings = onOpenSettings.takeUnless { settings.kidsProfile }
+        if (rail) {
+            HomeRail(
+                selected = selected.takeUnless { downloads },
+                onSelect = select,
+                onOpenDownloads = openDownloads,
+                onOpenSettings = openSettings,
+                // On a TV the menu's other items move to the rail too.
+                tvExtras =
+                    if (tv) {
+                        RailExtras(
+                            onOpenSearch = { onOpenSearch(vm.search(tab.kind).value.trim()) },
+                            profile = profile.takeIf { settings.profileCount > 1 },
+                            onOpenProfiles = onOpenProfiles,
+                        )
+                    } else {
+                        null
+                    },
+            )
+        }
         Scaffold(
             modifier = Modifier.weight(1 - ScreenLayout.DETAIL_FRACTION),
             snackbarHost = { SnackbarHost(snackbar) },
@@ -238,10 +263,11 @@ fun HomeScreen(
                     onToggleGrid = { vm.setLiveGrid(!settings.liveGrid) },
                     // The words typed on the tab carry over, so the search isn't typed twice.
                     onOpenSearch = { onOpenSearch(text.trim()) },
-                    // A kids profile has no way into Settings; switching profile (with a PIN) is the way out.
-                    onOpenSettings = onOpenSettings.takeUnless { settings.kidsProfile },
+                    // With the rail (tablets and TV) Settings is on the rail instead, so it isn't in two places.
+                    onOpenSettings = openSettings.takeUnless { rail },
                     profile = profile.takeIf { settings.profileCount > 1 },
                     onOpenProfiles = onOpenProfiles,
+                    tv = tv,
                 )
             },
             bottomBar = {
@@ -323,6 +349,8 @@ private fun SearchBarRow(
     onOpenSettings: (() -> Unit)?,
     profile: ProfileEntity?,
     onOpenProfiles: () -> Unit,
+    /** On a TV there is no menu: the guide toggle is a button here and the rest is on the rail. */
+    tv: Boolean = false,
 ) {
     var menu by remember { mutableStateOf(false) }
     Surface(color = MaterialTheme.colorScheme.surface) {
@@ -358,6 +386,10 @@ private fun SearchBarRow(
             )
             // One button beside the box, so search keeps the width (2026-11-18, UI review): the profile's badge when
             // there are profiles, otherwise the three dots. Everything else that used to sit here is in its menu.
+            if (tv) {
+                if (grid != null) GridToggleButton(grid, onToggleGrid)
+                return@Row
+            }
             val more = stringResource(R.string.home_menu)
             Box {
                 if (profile != null) {
@@ -660,3 +692,16 @@ internal fun DownloadsIcon(downloads: DownloadsViewModel = viewModel()) {
 /** The profile button beside the search box: its height (56dp, a Material text field's) and the picture inside it. */
 private val PROFILE_BUTTON = 56.dp
 private val PROFILE_BADGE = 48.dp
+
+/** Live TV on a TV: the list or the guide grid, one press away beside search instead of in a menu. */
+@Composable
+private fun GridToggleButton(
+    grid: Boolean,
+    onToggle: () -> Unit,
+) {
+    FilledTonalButton(onClick = onToggle, modifier = Modifier.padding(start = 12.dp).heightIn(min = 52.dp)) {
+        Icon(if (grid) Icons.AutoMirrored.Filled.List else Icons.Filled.GridView, contentDescription = null)
+        Spacer(Modifier.width(8.dp))
+        Text(stringResource(if (grid) R.string.grid_hide else R.string.grid_show))
+    }
+}
