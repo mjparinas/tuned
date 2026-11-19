@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Signing in on a TV with a phone (docs/decisions/onboarding.md). -->
+<resources>
+    <!-- On the TV -->
+    <string name="tv_signin_card">Sign in with your phone</string>
+    <string name="tv_signin_card_summary">Scan a code on this TV and fill it in on your phone instead of with the remote</string>
+    <string name="tv_signin_title">Sign in with your phone</string>
+    <string name="tv_signin_scan">Point your phone\'s camera at the code. Fill in your playlist there, or send everything from Tuned on your phone.</string>
+    <string name="tv_signin_or_go">Or go to %1$s and enter</string>
+    <string name="tv_signin_check">Check number %1$s</string>
+    <string name="tv_signin_qr">QR code to sign in with your phone</string>
+    <string name="tv_signin_type_instead">Type it on the TV instead</string>
+    <string name="tv_signin_waiting">Getting a code…</string>
+    <string name="tv_signin_offline">Couldn\'t reach Tuned\'s sign-in service. Check this TV\'s internet connection, or type the playlist in instead.</string>
+    <string name="tv_signin_retry">Try again</string>
+    <string name="tv_signin_arrived">From your phone</string>
+    <string name="tv_signin_also">Also: %1$s</string>
+    <string name="tv_signin_settings">settings</string>
+    <plurals name="tv_signin_favourites">
+        <item quantity="one">%d favourite</item>
+        <item quantity="other">%d favourites</item>
+    </plurals>
+    <plurals name="tv_signin_lists">
+        <item quantity="one">%d list</item>
+        <item quantity="other">%d lists</item>
+    </plurals>
+    <plurals name="tv_signin_watch_later">
+        <item quantity="one">%d in Watch later</item>
+        <item quantity="other">%d in Watch later</item>
+    </plurals>
+    <string name="tv_signin_only_playlists">This TV keeps its own settings and favourites; only the playlists are added.</string>
+    <string name="tv_signin_only_first">Without Premium, this TV keeps the first playlist.</string>
+    <string name="tv_signin_use">Use it</string>
+    <string name="tv_signin_not_mine">Not mine</string>
+    <string name="tv_signin_saving">Setting up…</string>
+
+    <!-- On the phone -->
+    <string name="send_tv_row">Send to a TV</string>
+    <string name="send_tv_row_summary">Sign in on a TV with this phone\'s playlists and settings</string>
+    <string name="send_tv_title">Send to a TV</string>
+    <string name="send_tv_enter">On the TV, open Tuned and pick Sign in with your phone. Then enter the code it shows, or scan it with your camera.</string>
+    <string name="send_tv_code">Code on the TV</string>
+    <string name="send_tv_next">Next</string>
+    <string name="send_tv_bad_code">That doesn\'t look like the code on the TV. It\'s eight letters and numbers.</string>
+    <string name="send_tv_not_found">No TV is showing that code. Check it, or wait for the TV to show a new one.</string>
+    <string name="send_tv_confirm_digits">Check that the TV shows this number:</string>
+    <string name="send_tv_matches">It matches</string>
+    <string name="send_tv_what">This sends the playlists, settings, profiles, favourites and lists from this phone, as sync between devices does. It\'s locked so only that TV can read it.</string>
+    <plurals name="send_tv_playlists">
+        <item quantity="one">%d playlist</item>
+        <item quantity="other">%d playlists</item>
+    </plurals>
+    <string name="send_tv_send">Send to the TV</string>
+    <string name="send_tv_sending">Sending…</string>
+    <string name="send_tv_sent">Sent. Press Use it on the TV.</string>
+    <string name="send_tv_gone">That code has run out. Scan the new one on the TV.</string>
+    <string name="send_tv_already">Something was already sent to that TV. Scan the new code on the TV to send again.</string>
+    <string name="send_tv_too_many">Too many tries. Try again in an hour.</string>
+    <string name="send_tv_unreachable">Couldn\'t reach Tuned\'s sign-in service. Check your connection and try again.</string>
+    <string name="send_tv_too_big">There\'s too much to send. Remove some favourites or Watch later and try again.</string>
+    <string name="send_tv_nothing">Add a playlist on this phone first, then send it to the TV.</string>
+</resources>

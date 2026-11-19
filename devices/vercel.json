@@ -2,6 +2,12 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "outputDirectory": "public",
   "ignoreCommand": "git diff --quiet HEAD^ HEAD -- .",
+  "rewrites": [
+    {
+      "source": "/tv",
+      "destination": "/tv/index.html"
+    }
+  ],
   "headers": [
     {
       "source": "/(.*)",

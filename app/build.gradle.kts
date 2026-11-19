@@ -26,6 +26,9 @@ android {
         buildConfigField("String", "TMDB_API_KEY", "\"${System.getenv("TMDB_API_KEY").orEmpty()}\"")
         // Trakt's app keys (docs/decisions/trakt.md): from the release workflow's secrets, never committed. Without
         // them the Trakt settings stay hidden.
+        // Signing in on a TV with a phone (docs/decisions/onboarding.md): the relay and phone page, in both builds.
+        val tvSignIn = System.getenv("TV_SIGNIN_URL")?.trim()?.takeIf { it.isNotEmpty() } ?: "https://tuned-devices.vercel.app"
+        buildConfigField("String", "TV_SIGNIN_URL", "\"$tvSignIn\"")
         buildConfigField("String", "TRAKT_CLIENT_ID", "\"${System.getenv("TRAKT_CLIENT_ID").orEmpty()}\"")
         // The commit this build came from, shown as plain text at the bottom of Settings (Melvin, 2026-11-18). CI and Release
         // pass GIT_COMMIT (a pull request's own head, not GitHub's merge commit); local builds ask git. Empty hides the line.
@@ -176,6 +179,7 @@ dependencies {
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.okhttp)
+    implementation(libs.zxing.core)
 
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.compose.ui)
