@@ -31,7 +31,10 @@ class BrowseViewModelTest {
         WorkManagerTestInitHelper.initializeTestWorkManager(app, Configuration.Builder().setExecutor(SynchronousExecutor()).build())
         val vm = BrowseViewModel(app)
         var chips: List<String>? = null
-        val watching = CoroutineScope(Dispatchers.Main).launch { vm.groups(ContentKind.LIVE).collect { list -> chips = list.map { it.groupName } } }
+        val watching =
+            CoroutineScope(Dispatchers.Main).launch {
+                vm.groups(ContentKind.LIVE).collect { list -> chips = list.map { it.groupName } }
+            }
         // Runs the chips' collection on the main thread, where the null pins threw.
         shadowOf(Looper.getMainLooper()).idle()
         watching.cancel()
