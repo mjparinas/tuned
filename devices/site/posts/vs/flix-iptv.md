@@ -9,24 +9,24 @@ Flix IPTV is a player for TVs that you activate per device after a trial. Tuned 
 
 ## At a glance
 
-|                                | Flix IPTV                            | Tuned                                                                                    |
-| ------------------------------ | ------------------------------------ | ---------------------------------------------------------------------------------------- |
-| Where it runs                  | Android TV, Fire TV and smart TVs    | Android phones, tablets, Chromebooks, Android TV and Google TV                           |
-| Playlist types                 | Managed in the app or on the website | Xtream Codes login, M3U link, M3U file, MAC portal (live TV and guide)                   |
-| TV guide                       | Not stated by the developer          | XMLTV guide as a list or a full grid, with reminders                                     |
-| Catch-up                       | Not stated by the developer          | Yes, on Xtream servers that keep recordings                                              |
-| Recording                      | Not stated by the developer          | Yes, the channel you are watching (Premium)                                              |
-| Pause and rewind live TV       | Not stated by the developer          | Yes, up to an hour kept on the device (Premium)                                          |
-| Several channels at once       | Not stated by the developer          | No, on purpose: one stream connection at a time                                          |
-| Casting to a TV                | Not stated by the developer          | Chromecast                                                                               |
-| Picture-in-picture             | Not stated by the developer          | Yes                                                                                      |
-| Offline downloads              | Not stated by the developer          | Films and episodes, whole seasons too (more than 3 at a time is Premium)                 |
-| Profiles and parental controls | Not stated by the developer          | Up to 6 profiles, kids profiles and PINs (Premium); adult categories locked behind a PIN |
-| Trakt                          | Not stated by the developer          | Yes, scrobbles films and episodes (Premium)                                              |
-| Film and show details          | Not stated by the developer          | TMDB ratings, trailers, cast and actor pages, saved on the device                        |
-| Subtitles                      | Not stated by the developer          | Full caption styling, timing fix, and subtitle search for films and episodes             |
-| Ads                            | Not stated by the developer          | None, ever                                                                               |
-| Price                          | Trial, then €8.99 once per device    | Free; Premium US$9.99 a year with a 7-day trial, or US$24.99 once                        |
+|                                | Flix IPTV                            | Tuned                                                                                                                                               |
+| ------------------------------ | ------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Where it runs                  | Android TV, Fire TV and smart TVs    | Android phones, tablets, Chromebooks, Android TV and Google TV                                                                                      |
+| Playlist types                 | Managed in the app or on the website | Xtream Codes login, M3U link, M3U file, MAC portal (live TV and guide)                                                                              |
+| TV guide                       | Not stated by the developer          | XMLTV guide as a list or a full grid, with reminders                                                                                                |
+| Catch-up                       | Not stated by the developer          | Yes, on Xtream servers that keep recordings                                                                                                         |
+| Recording                      | Not stated by the developer          | Yes, the channel you are watching (Premium)                                                                                                         |
+| Pause and rewind live TV       | Not stated by the developer          | Yes, up to an hour kept on the device (Premium)                                                                                                     |
+| Several channels at once       | Not stated by the developer          | No, on purpose: one stream connection at a time                                                                                                     |
+| Casting to a TV                | Not stated by the developer          | Chromecast                                                                                                                                          |
+| Picture-in-picture             | Not stated by the developer          | Yes                                                                                                                                                 |
+| Offline downloads              | Not stated by the developer          | Films and episodes, whole seasons too (more than 3 at a time is Premium)                                                                            |
+| Profiles and parental controls | Not stated by the developer          | Up to 6 profiles, kids profiles and PINs (Premium); adult categories locked behind a PIN                                                            |
+| Trakt                          | Not stated by the developer          | Yes, scrobbles films and episodes (Premium)                                                                                                         |
+| Film and show details          | Not stated by the developer          | TMDB ratings, trailers, cast and actor pages, saved on the device                                                                                   |
+| Subtitles                      | Not stated by the developer          | Full caption styling, timing fix, and subtitle search for films and episodes                                                                        |
+| Ads                            | Not stated by the developer          | None, ever                                                                                                                                          |
+| Price                          | Trial, then €8.99 once per device    | Free, everything unlocked in the download from this site; on Google Play (coming soon), Premium US$9.99 a year with a 7-day trial, or US$24.99 once |
 
 "Not stated by the developer" means we couldn't find it on the developer's own pages or store listing. It may still be there, so check before you rule it out.
 
@@ -34,7 +34,7 @@ Flix IPTV is a player for TVs that you activate per device after a trial. Tuned 
 
 Flix IPTV has a trial (its length isn't stated), then costs €8.99 once per device, and payments are final. When the trial ends without activation, its data is removed. Tuned is free with no trial clock; Premium is US$9.99 a year with a 7-day trial or US$24.99 once.
 
-Tuned's prices are what Google Play charges in the United States; Play shows them in your own currency. Premium covers up to three devices, and a Tuned account can add more.
+Right now Tuned downloads from this site, through GitHub Releases, and that version is free with every feature unlocked, Premium ones included. The Premium prices are for the Google Play version, which is coming soon; they are what Play charges in the United States, and Play shows them in your own currency. Premium on Play covers up to three devices, and a Tuned account can add more.
 
 ## Where Flix IPTV is ahead
 

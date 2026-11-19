@@ -9,24 +9,24 @@ iMPlayer, from HzApps, is a modern player on Android and Apple devices, with Tra
 
 ## At a glance
 
-|                                | iMPlayer                                                                | Tuned                                                                                    |
-| ------------------------------ | ----------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
-| Where it runs                  | Android, Google TV, Fire TV, iPhone, iPad, Apple TV and Mac             | Android phones, tablets, Chromebooks, Android TV and Google TV                           |
-| Playlist types                 | M3U, Xtream Codes and Stalker portal (Stalker per a third-party review) | Xtream Codes login, M3U link, M3U file, MAC portal (live TV and guide)                   |
-| TV guide                       | Full guide, with outside guide sources                                  | XMLTV guide as a list or a full grid, with reminders                                     |
-| Catch-up                       | Yes                                                                     | Yes, on Xtream servers that keep recordings                                              |
-| Recording                      | Yes (per a third-party review)                                          | Yes, the channel you are watching (Premium)                                              |
-| Pause and rewind live TV       | Local timeshift                                                         | Yes, up to an hour kept on the device (Premium)                                          |
-| Several channels at once       | Yes (on iPad on Apple devices)                                          | No, on purpose: one stream connection at a time                                          |
-| Casting to a TV                | Chromecast (iOS)                                                        | Chromecast                                                                               |
-| Picture-in-picture             | Yes                                                                     | Yes                                                                                      |
-| Offline downloads              | Not stated by the developer                                             | Films and episodes, whole seasons too (more than 3 at a time is Premium)                 |
-| Profiles and parental controls | Not stated by the developer                                             | Up to 6 profiles, kids profiles and PINs (Premium); adult categories locked behind a PIN |
-| Trakt                          | Yes, and Simkl                                                          | Yes, scrobbles films and episodes (Premium)                                              |
-| Film and show details          | TMDB                                                                    | TMDB ratings, trailers, cast and actor pages, saved on the device                        |
-| Subtitles                      | Caption styling                                                         | Full caption styling, timing fix, and subtitle search for films and episodes             |
-| Ads                            | None reported                                                           | None, ever                                                                               |
-| Price                          | Premium subscription US$24.99 on the App Store                          | Free; Premium US$9.99 a year with a 7-day trial, or US$24.99 once                        |
+|                                | iMPlayer                                                                | Tuned                                                                                                                                               |
+| ------------------------------ | ----------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Where it runs                  | Android, Google TV, Fire TV, iPhone, iPad, Apple TV and Mac             | Android phones, tablets, Chromebooks, Android TV and Google TV                                                                                      |
+| Playlist types                 | M3U, Xtream Codes and Stalker portal (Stalker per a third-party review) | Xtream Codes login, M3U link, M3U file, MAC portal (live TV and guide)                                                                              |
+| TV guide                       | Full guide, with outside guide sources                                  | XMLTV guide as a list or a full grid, with reminders                                                                                                |
+| Catch-up                       | Yes                                                                     | Yes, on Xtream servers that keep recordings                                                                                                         |
+| Recording                      | Yes (per a third-party review)                                          | Yes, the channel you are watching (Premium)                                                                                                         |
+| Pause and rewind live TV       | Local timeshift                                                         | Yes, up to an hour kept on the device (Premium)                                                                                                     |
+| Several channels at once       | Yes (on iPad on Apple devices)                                          | No, on purpose: one stream connection at a time                                                                                                     |
+| Casting to a TV                | Chromecast (iOS)                                                        | Chromecast                                                                                                                                          |
+| Picture-in-picture             | Yes                                                                     | Yes                                                                                                                                                 |
+| Offline downloads              | Not stated by the developer                                             | Films and episodes, whole seasons too (more than 3 at a time is Premium)                                                                            |
+| Profiles and parental controls | Not stated by the developer                                             | Up to 6 profiles, kids profiles and PINs (Premium); adult categories locked behind a PIN                                                            |
+| Trakt                          | Yes, and Simkl                                                          | Yes, scrobbles films and episodes (Premium)                                                                                                         |
+| Film and show details          | TMDB                                                                    | TMDB ratings, trailers, cast and actor pages, saved on the device                                                                                   |
+| Subtitles                      | Caption styling                                                         | Full caption styling, timing fix, and subtitle search for films and episodes                                                                        |
+| Ads                            | None reported                                                           | None, ever                                                                                                                                          |
+| Price                          | Premium subscription US$24.99 on the App Store                          | Free, everything unlocked in the download from this site; on Google Play (coming soon), Premium US$9.99 a year with a 7-day trial, or US$24.99 once |
 
 "Not stated by the developer" means we couldn't find it on the developer's own pages or store listing. It may still be there, so check before you rule it out.
 
@@ -34,7 +34,7 @@ iMPlayer, from HzApps, is a modern player on Android and Apple devices, with Tra
 
 iMPlayer is free to install, with a Premium subscription listed at US$24.99 on the App Store. A third-party review lists US$20 a year or US$35 for life, a 24-hour trial, up to five devices, and a free version limited to one playlist and live TV; we couldn't confirm those on the developer's own pages. Tuned's free version has no playlist limit on live TV, films and shows; Premium is US$9.99 a year with a 7-day trial or US$24.99 once.
 
-Tuned's prices are what Google Play charges in the United States; Play shows them in your own currency. Premium covers up to three devices, and a Tuned account can add more.
+Right now Tuned downloads from this site, through GitHub Releases, and that version is free with every feature unlocked, Premium ones included. The Premium prices are for the Google Play version, which is coming soon; they are what Play charges in the United States, and Play shows them in your own currency. Premium on Play covers up to three devices, and a Tuned account can add more.
 
 ## Where iMPlayer is ahead
 

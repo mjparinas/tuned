@@ -9,24 +9,24 @@ IPTV Pro, from Alexander Sofronov, is the paid version of one of the most instal
 
 ## At a glance
 
-|                                | IPTV Pro                                     | Tuned                                                                                    |
-| ------------------------------ | -------------------------------------------- | ---------------------------------------------------------------------------------------- |
-| Where it runs                  | Android phones, tablets, TVs and Chromebooks | Android phones, tablets, Chromebooks, Android TV and Google TV                           |
-| Playlist types                 | M3U, XSPF                                    | Xtream Codes login, M3U link, M3U file, MAC portal (live TV and guide)                   |
-| TV guide                       | XMLTV and JTV                                | XMLTV guide as a list or a full grid, with reminders                                     |
-| Catch-up                       | Not stated by the developer                  | Yes, on Xtream servers that keep recordings                                              |
-| Recording                      | Not stated by the developer                  | Yes, the channel you are watching (Premium)                                              |
-| Pause and rewind live TV       | Not stated by the developer                  | Yes, up to an hour kept on the device (Premium)                                          |
-| Several channels at once       | Not stated by the developer                  | No, on purpose: one stream connection at a time                                          |
-| Casting to a TV                | Not stated by the developer                  | Chromecast                                                                               |
-| Picture-in-picture             | Not stated by the developer                  | Yes                                                                                      |
-| Offline downloads              | Not stated by the developer                  | Films and episodes, whole seasons too (more than 3 at a time is Premium)                 |
-| Profiles and parental controls | Parental control                             | Up to 6 profiles, kids profiles and PINs (Premium); adult categories locked behind a PIN |
-| Trakt                          | Not stated by the developer                  | Yes, scrobbles films and episodes (Premium)                                              |
-| Film and show details          | Not stated by the developer                  | TMDB ratings, trailers, cast and actor pages, saved on the device                        |
-| Subtitles                      | Not stated by the developer                  | Full caption styling, timing fix, and subtitle search for films and episodes             |
-| Ads                            | Free version has ads; Pro has none           | None, ever                                                                               |
-| Price                          | Free with ads; Pro US$4.99 once              | Free; Premium US$9.99 a year with a 7-day trial, or US$24.99 once                        |
+|                                | IPTV Pro                                     | Tuned                                                                                                                                               |
+| ------------------------------ | -------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Where it runs                  | Android phones, tablets, TVs and Chromebooks | Android phones, tablets, Chromebooks, Android TV and Google TV                                                                                      |
+| Playlist types                 | M3U, XSPF                                    | Xtream Codes login, M3U link, M3U file, MAC portal (live TV and guide)                                                                              |
+| TV guide                       | XMLTV and JTV                                | XMLTV guide as a list or a full grid, with reminders                                                                                                |
+| Catch-up                       | Not stated by the developer                  | Yes, on Xtream servers that keep recordings                                                                                                         |
+| Recording                      | Not stated by the developer                  | Yes, the channel you are watching (Premium)                                                                                                         |
+| Pause and rewind live TV       | Not stated by the developer                  | Yes, up to an hour kept on the device (Premium)                                                                                                     |
+| Several channels at once       | Not stated by the developer                  | No, on purpose: one stream connection at a time                                                                                                     |
+| Casting to a TV                | Not stated by the developer                  | Chromecast                                                                                                                                          |
+| Picture-in-picture             | Not stated by the developer                  | Yes                                                                                                                                                 |
+| Offline downloads              | Not stated by the developer                  | Films and episodes, whole seasons too (more than 3 at a time is Premium)                                                                            |
+| Profiles and parental controls | Parental control                             | Up to 6 profiles, kids profiles and PINs (Premium); adult categories locked behind a PIN                                                            |
+| Trakt                          | Not stated by the developer                  | Yes, scrobbles films and episodes (Premium)                                                                                                         |
+| Film and show details          | Not stated by the developer                  | TMDB ratings, trailers, cast and actor pages, saved on the device                                                                                   |
+| Subtitles                      | Not stated by the developer                  | Full caption styling, timing fix, and subtitle search for films and episodes                                                                        |
+| Ads                            | Free version has ads; Pro has none           | None, ever                                                                                                                                          |
+| Price                          | Free with ads; Pro US$4.99 once              | Free, everything unlocked in the download from this site; on Google Play (coming soon), Premium US$9.99 a year with a 7-day trial, or US$24.99 once |
 
 "Not stated by the developer" means we couldn't find it on the developer's own pages or store listing. It may still be there, so check before you rule it out.
 
@@ -34,7 +34,7 @@ IPTV Pro, from Alexander Sofronov, is the paid version of one of the most instal
 
 The free IPTV app has ads. IPTV Pro is US$4.99 once and removes them, and adds starting on boot, playing the last channel and a longer playlist history. Tuned is free with no ads; Premium is US$9.99 a year with a 7-day trial or US$24.99 once.
 
-Tuned's prices are what Google Play charges in the United States; Play shows them in your own currency. Premium covers up to three devices, and a Tuned account can add more.
+Right now Tuned downloads from this site, through GitHub Releases, and that version is free with every feature unlocked, Premium ones included. The Premium prices are for the Google Play version, which is coming soon; they are what Play charges in the United States, and Play shows them in your own currency. Premium on Play covers up to three devices, and a Tuned account can add more.
 
 ## Where IPTV Pro is ahead
 
