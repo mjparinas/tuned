@@ -63,8 +63,17 @@
     <string name="settings_never_synced">Not updated yet</string>
     <string name="settings_last_error">Last refresh failed: %1$s</string>
     <string name="settings_sign_out">Sign out</string>
-    <string name="settings_sign_out_summary">Forget every playlist and the downloaded channels</string>
-    <string name="settings_sign_out_confirm">This removes every saved playlist and login, and the downloaded channels and guide from this device. Favourites stay.</string>
+    <string name="settings_sign_out_summary">Reset Tuned to how it was when installed</string>
+    <string name="settings_sign_out_title">Sign out?</string>
+    <string name="settings_sign_out_confirm">Tuned goes back to how it was when installed. Every playlist and login, the channels and guide, profiles, favourites, settings and PINs are removed, and Trakt and Google Drive are disconnected. Your synced copy in Google Drive stays in your Google account.</string>
+    <plurals name="settings_sign_out_downloads">
+        <item quantity="one">Also delete %1$d download (%2$s)?</item>
+        <item quantity="other">Also delete %1$d downloads (%2$s)?</item>
+    </plurals>
+    <string name="settings_sign_out_downloads_keep_note">Kept downloads still play from this device, and join their films and episodes again when you sign back in to the same playlist.</string>
+    <string name="settings_sign_out_delete">Delete</string>
+    <string name="settings_sign_out_keep">Keep</string>
+    <string name="settings_signing_out">Signing out…</string>
 
     <string name="settings_countries">Countries and languages</string>
     <string name="settings_countries_none_hidden">Showing every country</string>
@@ -213,11 +222,20 @@
     <string name="logs_empty">Nothing logged yet</string>
     <string name="logs_empty_summary">Errors, warnings and crashes show up here as they happen.</string>
     <plurals name="logs_crashes">
-        <item quantity="one">%d crash report</item>
-        <item quantity="other">%d crash reports</item>
+        <item quantity="one">%d crash or freeze report</item>
+        <item quantity="other">%d crash and freeze reports</item>
     </plurals>
+    <string name="report_title">Report a problem</string>
+    <string name="report_summary">Shares the version, this device, the latest crash or freeze and the recent log, with no login. You pick where it goes.</string>
+    <string name="report_copied">Nothing here can share it, so the report was copied. Paste it into an email or message.</string>
+    <string name="report_failed">Couldn\'t share or copy the report. Logs below has the same details.</string>
+    <string name="report_subject">Tuned %1$s problem report</string>
+    <string name="clock_hint">This device\'s date and time look wrong. When they are, secure connections fail and it looks like the server is down. Check them in Android\'s settings (Date and time), then try again.</string>
     <string name="settings_user_agent">User agent</string>
-    <string name="settings_user_agent_default">Default (Tuned)</string>
+    <string name="settings_user_agent_default">Tuned (default)</string>
+    <string name="settings_user_agent_custom">Custom…</string>
+    <string name="settings_user_agent_custom_summary">Custom: %1$s</string>
+    <string name="settings_user_agent_custom_hint">Type the user agent your provider asked for</string>
     <string name="settings_version">Tuned %1$s (%2$d)</string>
     <string name="settings_build_commit">Build %1$s</string>
 
@@ -317,10 +335,30 @@
     <string name="premium_nothing_to_restore">No Premium purchase found on this Google account.</string>
     <string name="premium_store_unreachable">Couldn\'t reach Google Play. Try again in a moment.</string>
     <string name="premium_loading">Asking Google Play for prices…</string>
-    <string name="premium_fine_print">The yearly plan renews until you cancel it in Google Play. One purchase covers every device on your Google account.</string>
+    <string name="premium_fine_print">The yearly plan renews until you cancel it in Google Play. One purchase covers up to 3 devices on your Google account, like a phone, a TV and one more.</string>
     <string name="premium_summary_on">On</string>
     <string name="premium_summary_off">Free plan. See what Premium adds</string>
     <string name="premium_locked">Premium</string>
+    <string name="premium_summary_not_here">Not on this device. See your devices</string>
+    <string name="premium_devices_title">Your devices</string>
+    <plurals name="premium_devices_lead">
+        <item quantity="one">Premium works on %d device at a time. Deactivate one to free its spot for another.</item>
+        <item quantity="other">Premium works on %d devices at a time. Deactivate one to free its spot for another.</item>
+    </plurals>
+    <plurals name="premium_devices_full">
+        <item quantity="one">Premium is already on %d device. To use it here, deactivate it on that device first, from Settings › About › Tuned Premium.</item>
+        <item quantity="other">Premium is already on %d devices. To use it here, deactivate one of them on a device that has Premium, from Settings › About › Tuned Premium. A device not used for 60 days frees its spot on its own.</item>
+    </plurals>
+    <string name="premium_devices_off_here">Premium isn\'t on for this device. There\'s a free spot, so you can turn it on here.</string>
+    <string name="premium_devices_site">Lost those devices? Go to %1$s and use the order number from Google Play\'s receipt email (it starts with GPA).</string>
+    <string name="premium_devices_use_here">Use Premium on this device</string>
+    <string name="premium_devices_this_one">This device</string>
+    <string name="premium_devices_last_seen">Last used %1$s</string>
+    <string name="premium_devices_deactivate">Deactivate</string>
+    <string name="premium_devices_confirm_title">Deactivate %1$s?</string>
+    <string name="premium_devices_confirm_this">Premium turns off on this device and its spot is free for another. You can turn it back on here while a spot is free.</string>
+    <string name="premium_devices_confirm_other">Premium turns off on that device and its spot is free for another.</string>
+    <string name="premium_devices_unreachable">Couldn\'t reach the device list. Try again in a moment.</string>
     <string name="settings_check_updates">Look for updates automatically</string>
     <string name="settings_check_updates_summary">Check GitHub for new versions when Tuned opens (at most hourly) and during background refreshes</string>
     <string name="settings_gestures">Gestures</string>
@@ -344,6 +382,13 @@
     <string name="live_filters_none">No channels match these filters</string>
     <string name="live_filter_sports">Sports</string>
     <string name="live_filter_ppv">PPV and events</string>
+    <string name="live_filter_news">News</string>
+    <string name="live_filter_kids">Kids</string>
+    <string name="live_filter_movies">Movie channels</string>
+    <string name="live_filter_music">Music</string>
+    <string name="live_filter_documentary">Documentaries</string>
+    <string name="live_filter_adult">Adult</string>
+    <string name="live_filter_adult_locked">Needs the parental PIN</string>
     <string name="continue_watching">Continue watching</string>
     <string name="continue_episode">%1$s · S%2$d E%3$d</string>
     <string name="settings_accent">Accent colour</string>

@@ -1,15 +1,15 @@
 package app.tuned.ui.settings
 
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.res.stringResource
 import app.tuned.R
+import app.tuned.data.AppReset
+import app.tuned.diagnostics.launchSafely
 import app.tuned.ui.PlaylistsRoute
 
 @Composable
@@ -22,23 +22,58 @@ internal fun PlaylistsPage(
     AccountStatusRows()
     TraktRows()
     CloudSyncRows()
-    var confirmSignOut by remember { mutableStateOf(false) }
+    SignOutRow(vm, onSignedOut)
+}
+
+/** Sign out: what it removes, then, when anything is saved, whether the downloads go too. */
+@Composable
+private fun SignOutRow(
+    vm: SettingsViewModel,
+    onSignedOut: () -> Unit,
+) {
+    var step by remember { mutableStateOf(SignOutStep.NONE) }
+    var saved by remember { mutableStateOf<AppReset.Saved?>(null) }
+    val scope = rememberCoroutineScope()
+    val signOut: (Boolean) -> Unit = { keep ->
+        step = SignOutStep.WORKING
+        vm.signOut(keepDownloads = keep, onDone = onSignedOut)
+    }
     SettingRow(stringResource(R.string.settings_sign_out), stringResource(R.string.settings_sign_out_summary), onClick = {
-        confirmSignOut =
-            true
+        step = SignOutStep.CONFIRM
     })
-    if (confirmSignOut) {
-        AlertDialog(
-            onDismissRequest = { confirmSignOut = false },
-            title = { Text(stringResource(R.string.settings_sign_out)) },
-            text = { Text(stringResource(R.string.settings_sign_out_confirm)) },
-            confirmButton = {
-                TextButton(onClick = {
-                    confirmSignOut = false
-                    vm.signOut(onSignedOut)
-                }) { Text(stringResource(R.string.settings_sign_out)) }
-            },
-            dismissButton = { TextButton(onClick = { confirmSignOut = false }) { Text(stringResource(R.string.cancel)) } },
-        )
+    when (step) {
+        SignOutStep.NONE -> {
+            Unit
+        }
+
+        SignOutStep.CONFIRM -> {
+            SignOutDialog(
+                onSignOut = {
+                    scope.launchSafely("SignOut") {
+                        val found = vm.savedDownloads()
+                        saved = found
+                        if (found.count > 0) step = SignOutStep.DOWNLOADS else signOut(false)
+                    }
+                },
+                onCancel = { step = SignOutStep.NONE },
+            )
+        }
+
+        SignOutStep.DOWNLOADS -> {
+            saved?.let {
+                SignOutDownloadsDialog(
+                    saved = it,
+                    onDelete = { signOut(false) },
+                    onKeep = { signOut(true) },
+                    onCancel = { step = SignOutStep.NONE },
+                )
+            }
+        }
+
+        SignOutStep.WORKING -> {
+            SigningOutDialog()
+        }
     }
 }
+
+private enum class SignOutStep { NONE, CONFIRM, DOWNLOADS, WORKING }

@@ -2,6 +2,8 @@ package app.tuned
 
 import android.content.Context
 import app.tuned.data.AccountRepository
+import app.tuned.data.AppReset
+import app.tuned.data.ChannelEditor
 import app.tuned.data.ChannelScanner
 import app.tuned.data.CloudSyncRepository
 import app.tuned.data.Connectivity
@@ -9,8 +11,10 @@ import app.tuned.data.CredentialStore
 import app.tuned.data.EventsRepository
 import app.tuned.data.GoogleDrive
 import app.tuned.data.GuideFixRepository
+import app.tuned.data.IntroStore
 import app.tuned.data.MetadataRepository
 import app.tuned.data.Offline
+import app.tuned.data.OwnLists
 import app.tuned.data.PeopleRepository
 import app.tuned.data.Picks
 import app.tuned.data.PlaylistSession
@@ -18,14 +22,17 @@ import app.tuned.data.ProfileRepository
 import app.tuned.data.Recordings
 import app.tuned.data.SavedArtwork
 import app.tuned.data.SettingsRepository
+import app.tuned.data.StalkerLinks
 import app.tuned.data.SubtitleRepository
 import app.tuned.data.SyncCopyRepository
 import app.tuned.data.SyncRepository
 import app.tuned.data.TraktAccount
 import app.tuned.data.TuneRepository
 import app.tuned.data.db.TunedDatabase
+import app.tuned.diagnostics.DeviceClock
 import app.tuned.diagnostics.loggingHandler
 import app.tuned.player.TvCasting
+import app.tuned.premium.DeviceSeatsClient
 import app.tuned.premium.Premium
 import app.tuned.updates.GitHubUpdates
 import app.tuned.work.OfflineWorker
@@ -59,21 +66,33 @@ class AppContainer(
             .connectTimeout(15, TimeUnit.SECONDS)
             .readTimeout(60, TimeUnit.SECONDS)
             .retryOnConnectionFailure(true)
+            .addNetworkInterceptor(DeviceClock.interceptor)
             .build()
     }
-    val sync by lazy { SyncRepository(db, http, credentials::load, settings, context.noBackupFilesDir.resolve("sync")) }
+
+    /** The signed-in Stalker portal, and turning its channels into streams for the player, scans and casting. */
+    val stalker by lazy { StalkerLinks(http, credentials::load) }
+    val sync by lazy { SyncRepository(db, http, credentials::load, settings, context.noBackupFilesDir.resolve("sync"), stalker) }
     val tune by lazy { TuneRepository(db, settings) }
     val scheduler = SyncScheduler(context)
     val guideFixes by lazy { GuideFixRepository(db, sync, scheduler, credentials) }
     val updates by lazy { GitHubUpdates(context, http) }
-    val syncCopy by lazy { SyncCopyRepository(credentials, settings, db) }
+    val syncCopy by lazy { SyncCopyRepository(credentials, settings, db, profiles, trakt, IntroStore(context)) }
     val cloudSync by lazy {
-        CloudSyncRepository(context, GoogleDrive(context, http), syncCopy) { scheduler.refreshNow(first = true) }
+        CloudSyncRepository(
+            context,
+            GoogleDrive(context, http),
+            syncCopy,
+            onSignedIn = { scheduler.refreshNow(first = true) },
+            onGuideChanged = { scheduler.refreshNow(guideOnly = true) },
+        )
     }
     val reminders by lazy { Reminders(context) }
     val events by lazy { EventsRepository(db, settings, reminders) }
     val offline by lazy { Offline(context, db, settings, ::watching) }
     val recordings by lazy { Recordings(context) }
+    val lists by lazy { OwnLists(db) }
+    val channelEditor by lazy { ChannelEditor(db) }
     val picks by lazy { Picks(db, appScope) { TvHome.schedule(context) } }
     val connectivity by lazy { Connectivity(context, appScope) }
     val metadata by lazy { MetadataRepository(http, BuildConfig.TMDB_API_KEY, db.metadata(), appScope, connectivity::onlineNow) }
@@ -81,7 +100,7 @@ class AppContainer(
     val trakt by lazy { TraktAccount(context, http) }
     val people by lazy { PeopleRepository(http, BuildConfig.TMDB_API_KEY, db.metadata(), connectivity::onlineNow) }
     val profiles by lazy { ProfileRepository(db, settings) }
-    val premium by lazy { Premium(context, appScope) }
+    val premium by lazy { Premium(context, appScope, DeviceSeatsClient.create(context, http)) }
     val subtitles by lazy { SubtitleRepository(http, settings, credentials, metadata, context.filesDir.resolve("subtitles")) }
 
     /** True while the player is open; downloads and channel scans hold back so only one stream is ever open. */
@@ -101,9 +120,12 @@ class AppContainer(
             .stateIn(appScope, SharingStarted.Eagerly, false)
     }
     val account by lazy { AccountRepository(http, credentials, settings, streamBusy) }
-    val channelScan by lazy { ChannelScanner(context, db, http, credentials, settings, streamBusy) }
+    val channelScan by lazy { ChannelScanner(context, db, http, credentials, settings, streamBusy, stalker::resolve) }
     val scanControl by lazy { ScanWorker.Control(context) }
 
     /** Adding, switching, removing and signing out of playlists. */
     val session by lazy { PlaylistSession(context, credentials, settings, db, reminders, scheduler, account, scanControl) }
+
+    /** Signing out: the app back as it was installed. */
+    val reset by lazy { AppReset(context, this) }
 }

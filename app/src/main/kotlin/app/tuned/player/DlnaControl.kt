@@ -10,6 +10,7 @@ import app.tuned.core.StreamLink
 import app.tuned.data.db.ItemEntity
 import app.tuned.diagnostics.AppLog
 import app.tuned.diagnostics.attempt
+import app.tuned.diagnostics.launchSafely
 import app.tuned.diagnostics.loggingHandler
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -28,6 +29,8 @@ class DlnaControl(
     private val owner: LifecycleOwner,
     /** The TV took over; the argument is its name. */
     private val onStarted: (String) -> Unit,
+    /** The TV said yes to Play. */
+    private val onPlaying: () -> Unit,
     /** The TV was let go of from the picker. */
     private val onEnded: () -> Unit,
 ) {
@@ -93,7 +96,7 @@ class DlnaControl(
         val url = savedUrl ?: StreamLink.address(item.url) // a TV takes no extra headers
         AppLog.i("Dlna") { "Sending to the TV: $url (${Dlna.mimeFor(url)}), live=$live, from ${positionMs / 1000} s" }
         send(Dlna.setUri(url, item.name, Dlna.mimeFor(url)), "SetAVTransportURI")
-        send(Dlna.play(), "Play")
+        send(Dlna.play(), "Play", onDone = onPlaying)
         if (!live && positionMs > 0) send(Dlna.seek(positionMs), "Seek")
     }
 
@@ -104,6 +107,8 @@ class DlnaControl(
     private fun send(
         body: String,
         action: String,
+        /** Run on the main thread when the TV accepts the command. */
+        onDone: (() -> Unit)? = null,
     ) {
         val url = controlUrl ?: return
         owner.lifecycleScope.launch(Dispatchers.IO + loggingHandler("Dlna")) {
@@ -120,6 +125,7 @@ class DlnaControl(
                     http.newCall(request).execute().use { response ->
                         if (response.isSuccessful) {
                             AppLog.i("Dlna") { "$action: ${response.code}" }
+                            onDone?.let { done -> owner.lifecycleScope.launchSafely("Dlna") { done() } }
                         } else {
                             AppLog.w("Dlna", "The TV answered $action with ${response.code} ${response.message}")
                         }

@@ -1,5 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="cast_connecting">Connecting to %1$s…</string>
+    <string name="cast_starting">Starting on %1$s…</string>
+    <string name="cast_connect_failed">Couldn\'t connect to %1$s</string>
     <string name="cast_playing_on">Playing on %1$s</string>
     <string name="cast_failed">%1$s couldn\'t play this. Settings › Updates and advanced › Logs has the details.</string>
     <string name="cast_no_wifi">Connect the phone to the same Wi-Fi as the TV to cast a saved film or episode.</string>

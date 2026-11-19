@@ -158,6 +158,15 @@ class GoogleDrive(
         return CloudSync.Failure(CloudSync.Reason.EXPIRED, null)
     }
 
+    /**
+     * Signing out of Tuned: forgets the account on this device. Google isn't asked to drop the access, which would cut
+     * off the person's other devices too; the synced copy in Drive is theirs and is left alone.
+     */
+    fun disconnect() {
+        forget()
+        prefs.edit(commit = true) { clear() }
+    }
+
     /** Forgets the account here and tells Google to drop the token. */
     suspend fun signOut() {
         val refresh = refreshToken()

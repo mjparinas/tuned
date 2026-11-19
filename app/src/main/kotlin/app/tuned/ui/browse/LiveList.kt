@@ -101,6 +101,8 @@ private fun LiveList(
 ) {
     val channels = vm.channels.collectAsLazyPagingItems()
     val favourites by vm.favouriteIds.collectAsStateWithLifecycle()
+    val picker = rememberListPicker()
+    val editPicker = rememberChannelEditPicker()
     val state = rememberLazyListState()
     Box(Modifier.fillMaxSize()) {
         LazyColumn(
@@ -124,6 +126,9 @@ private fun LiveList(
                         onPlay = { onPlay(channel.id) },
                         onGuide = { onOpenGuide(channel.id) },
                         onToggleFavourite = { vm.toggleFavourite(channel.id, favourite) },
+                        onAddToList = { picker.open(channel.id) },
+                        onRename = { editPicker.rename(channel.id) },
+                        onChangeLogo = { editPicker.changeLogo(channel.id) },
                     )
                 }
             }
@@ -161,6 +166,9 @@ private fun ChannelRow(
     onPlay: () -> Unit,
     onGuide: () -> Unit,
     onToggleFavourite: () -> Unit,
+    onAddToList: () -> Unit,
+    onRename: () -> Unit,
+    onChangeLogo: () -> Unit,
 ) {
     var menu by remember { mutableStateOf(false) }
     // Each channel is a rounded card, like a row on a modern website.
@@ -237,6 +245,27 @@ private fun ChannelRow(
                 onClick = {
                     menu = false
                     onToggleFavourite()
+                },
+            )
+            DropdownMenuItem(
+                text = { Text(stringResource(R.string.list_add)) },
+                onClick = {
+                    menu = false
+                    onAddToList()
+                },
+            )
+            DropdownMenuItem(
+                text = { Text(stringResource(R.string.channel_rename)) },
+                onClick = {
+                    menu = false
+                    onRename()
+                },
+            )
+            DropdownMenuItem(
+                text = { Text(stringResource(R.string.channel_change_logo)) },
+                onClick = {
+                    menu = false
+                    onChangeLogo()
                 },
             )
             if (channel.tvgId != null) {

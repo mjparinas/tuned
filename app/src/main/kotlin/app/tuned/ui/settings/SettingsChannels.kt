@@ -4,15 +4,22 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import app.tuned.R
 import app.tuned.core.Regions
 import app.tuned.data.AppSettings
 import app.tuned.data.StartTab
+import app.tuned.diagnostics.attempt
 import app.tuned.ui.FavouriteOrderRoute
 import app.tuned.ui.HiddenGroupsRoute
 import app.tuned.ui.RegionSettingsRoute
+import app.tuned.widget.AppShortcuts
+import app.tuned.work.TvHome
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 @Composable
 internal fun ChannelsPage(
@@ -50,6 +57,7 @@ internal fun ChannelsPage(
         settings.alwaysShowScrollbar,
         stringResource(R.string.settings_always_show_scrollbar_summary),
     ) { on -> vm.update { it.copy(alwaysShowScrollbar = on) } }
+    AppShortcutsRow(settings, vm)
     SettingRow(
         stringResource(R.string.settings_favourite_order),
         stringResource(R.string.settings_favourite_order_summary),
@@ -97,5 +105,23 @@ private fun countriesSummary(hidden: Set<String>): String {
         countries == 0 -> stringResource(R.string.regions_other_hidden)
         none -> pluralStringResource(R.plurals.countries_and_other_hidden, countries, countries)
         else -> pluralStringResource(R.plurals.countries_hidden, countries, countries)
+    }
+}
+
+/** Search, Live events and the last channel on the app icon's long-press menu ([AppShortcuts]). Phones and tablets only. */
+@Composable
+private fun AppShortcutsRow(
+    settings: AppSettings,
+    vm: SettingsViewModel,
+) {
+    val context = LocalContext.current
+    if (TvHome.isTv(context)) return
+    SwitchRow(
+        stringResource(R.string.settings_app_shortcuts),
+        settings.appShortcuts,
+        stringResource(R.string.settings_app_shortcuts_summary),
+    ) { on -> vm.update { it.copy(appShortcuts = on) } }
+    LaunchedEffect(settings.appShortcuts) {
+        withContext(Dispatchers.IO) { attempt("Shortcuts", "Couldn't update the app icon's shortcuts") { AppShortcuts.update(context) } }
     }
 }

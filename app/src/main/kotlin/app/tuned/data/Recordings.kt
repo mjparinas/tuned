@@ -108,6 +108,15 @@ class Recordings(
         changes.update { it + 1 }
     }
 
+    /** How many recordings there are and the space they take. */
+    fun usage(): Pair<Int, Long> = list().size to dir.listFiles().orEmpty().sumOf { it.length() }
+
+    /** Signing out with "Delete": every recording goes. */
+    fun deleteAll() {
+        dir.listFiles().orEmpty().forEach { it.deleteRecursively() }
+        changes.update { it + 1 }
+    }
+
     /** What the player opens for [r]: the file on the device, standing in for a film (seekable, nothing remembered). */
     fun item(r: Recording): ItemEntity = ItemEntity(
         id = CatchUpLinks.ID, // on its own: no resume, no next or previous

@@ -3,6 +3,7 @@ package app.tuned.data.db
 import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.Index
+import androidx.room.PrimaryKey
 import app.tuned.core.PlayGate
 import app.tuned.data.AppSettings
 
@@ -86,4 +87,30 @@ data class SeenEpisodeEntity(
     val itemId: Long,
     val showKey: String,
     @ColumnInfo(defaultValue = "1") val profileId: Long = Profiles.FIRST,
+)
+
+/**
+ * One of the person's own lists of channels and films (Melvin, 2026-11-19: "similar to how spotify does it … favourite
+ * is basically a playlist that you can add to by default but you can make your own"). Favourites stays the built-in
+ * one ([FavouriteEntity]); these sit beside it, each for one profile. [id] is made at random when the list is created
+ * rather than counted up, so the same list keeps the same id on every device that syncs it.
+ */
+@Entity(tableName = "lists", indices = [Index(value = ["profileId", "position"])])
+data class ListEntity(
+    @PrimaryKey val id: Long,
+    val name: String,
+    /** Where its chip sits among the person's lists; new ones go to the end. */
+    val position: Long,
+    val createdAt: Long,
+    @ColumnInfo(defaultValue = "1") val profileId: Long = Profiles.FIRST,
+)
+
+/** A channel or film in one of the person's lists, by its stable id, so it survives refreshes like a favourite does. */
+@Entity(tableName = "list_items", primaryKeys = ["listId", "itemId"])
+data class ListItemEntity(
+    val listId: Long,
+    val itemId: Long,
+    val addedAt: Long,
+    /** Where it sits in the list; new ones go to the end. */
+    val position: Long = addedAt,
 )

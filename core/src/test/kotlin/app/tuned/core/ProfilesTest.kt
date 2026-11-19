@@ -61,4 +61,12 @@ class ProfilesTest {
         assertFalse(throttle.waiting())
         assertEquals(PinThrottle.Result.OK, throttle.record(true))
     }
+
+    @Test
+    fun atMostSixProfiles() {
+        assertTrue(ProfileRules.canAdd(1))
+        assertTrue(ProfileRules.canAdd(5))
+        assertFalse(ProfileRules.canAdd(6))
+        assertFalse(ProfileRules.canAdd(7))
+    }
 }

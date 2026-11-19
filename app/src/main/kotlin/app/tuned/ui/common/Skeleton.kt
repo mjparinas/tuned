@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -18,6 +19,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.dp
 import androidx.paging.LoadState
 import androidx.paging.compose.LazyPagingItems
+import app.tuned.diagnostics.Lighter
 
 /** How many grey stand-ins fill a list while its first page loads. */
 const val SKELETON_ROWS = 12
@@ -31,6 +33,9 @@ private const val PULSE_LOW = 0.45f
  */
 @Composable
 fun Modifier.skeleton(): Modifier {
+    // Lighter mode keeps the block still: a pulse redraws every frame, which a weak TV box feels.
+    val still by Lighter.on.collectAsState()
+    if (still) return background(MaterialTheme.colorScheme.surfaceContainerHigh)
     val alpha by rememberInfiniteTransition(label = "skeleton").animateFloat(
         initialValue = 1f,
         targetValue = PULSE_LOW,

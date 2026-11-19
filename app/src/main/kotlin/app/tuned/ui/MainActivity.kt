@@ -28,18 +28,25 @@ import app.tuned.data.CastMember
 import app.tuned.diagnostics.launchSafely
 import app.tuned.player.PlayerActivity
 import app.tuned.ui.common.LocalTimeZone
+import app.tuned.ui.common.TvSafeArea
 import app.tuned.ui.common.WithOfflineBanner
 import app.tuned.ui.theme.TunedTheme
+import app.tuned.widget.AppShortcuts
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.withContext
 
 class MainActivity : ComponentActivity() {
     private lateinit var updates: AppUpdates
 
     /** A search from the Assistant, a TV remote's search button or the system search, waiting to be opened. */
     private val incomingSearch = MutableStateFlow<String?>(null)
+
+    /** A screen an app icon shortcut asked for ([AppShortcuts]), waiting to be opened. */
+    private val incomingScreen = MutableStateFlow<String?>(null)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         val splash = installSplashScreen()
@@ -51,13 +58,14 @@ class MainActivity : ComponentActivity() {
         splash.setKeepOnScreenCondition { settings.value == null }
         val signedIn = container.credentials.load() != null
         incomingSearch.value = searchQuery(intent)
+        incomingScreen.value = shortcutScreen(intent)
         // A card on the Android TV home screen ([app.tuned.work.TvHome]): play it, with the lists underneath.
         val request = if (savedInstanceState == null && signedIn) playRequest(intent) else null
         if (request != null) PlayerActivity.start(this, request)
         // Like a cable box: a fresh launch from the home screen goes straight into the last channel (a setting, off by
         // default). The lists are underneath, from the cache, for when the player closes.
         val fresh = savedInstanceState == null && signedIn && intent?.action == Intent.ACTION_MAIN
-        if (request == null && fresh && incomingSearch.value == null) {
+        if (request == null && fresh && incomingSearch.value == null && incomingScreen.value == null) {
             lifecycleScope.launchSafely("Main") {
                 val prefs = container.settings.settings.first()
                 if (!prefs.startsOnLastChannel()) return@launchSafely
@@ -77,7 +85,7 @@ class MainActivity : ComponentActivity() {
                 accent = current.accent,
             ) {
                 CompositionLocalProvider(LocalTimeZone provides TimeZones.resolve(current.timeZone)) {
-                    Navigation(current, signedIn)
+                    TvSafeArea { Navigation(current, signedIn) }
                 }
             }
         }
@@ -122,6 +130,17 @@ class MainActivity : ComponentActivity() {
             val query = pending ?: return@LaunchedEffect
             if (container.credentials.load() != null) nav.navigate(SearchRoute(query)) { launchSingleTop = true }
             incomingSearch.value = null
+        }
+        val screen by incomingScreen.collectAsStateWithLifecycle()
+        LaunchedEffect(screen) {
+            val name = screen ?: return@LaunchedEffect
+            if (container.credentials.load() != null) {
+                when (name) {
+                    AppShortcuts.SEARCH -> nav.navigate(SearchRoute()) { launchSingleTop = true }
+                    AppShortcuts.EVENTS -> nav.navigate(EventsRoute) { launchSingleTop = true }
+                }
+            }
+            incomingScreen.value = null
         }
         val openPerson: (CastMember) -> Unit = { person -> nav.navigate(PersonRoute(person.id ?: 0, person.name)) }
         val openHome: () -> Unit = { nav.navigate(HomeRoute) { popUpTo(0) { inclusive = true } } }
@@ -168,6 +187,7 @@ class MainActivity : ComponentActivity() {
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         searchQuery(intent)?.let { incomingSearch.value = it }
+        shortcutScreen(intent)?.let { incomingScreen.value = it }
         playRequest(intent)?.let { PlayerActivity.start(this, it) }
     }
 
@@ -175,6 +195,9 @@ class MainActivity : ComponentActivity() {
         if (intent?.action != ACTION_PLAY) return null
         return intent.getLongExtra(EXTRA_PLAY_ID, 0).takeIf { it != 0L }
     }
+
+    private fun shortcutScreen(intent: Intent?): String? =
+        if (intent?.action == AppShortcuts.ACTION_OPEN) intent.getStringExtra(AppShortcuts.EXTRA_SCREEN) else null
 
     /** "Search for UFC on Tuned" (Assistant), the TV remote's search, or the system search box. */
     private fun searchQuery(intent: Intent?): String? {
@@ -188,6 +211,8 @@ class MainActivity : ComponentActivity() {
         // Every time Tuned comes to the front, not only on a cold start: a copy left open for days still updates.
         updates.check()
         updates.resume()
+        // The app icon's shortcuts follow the last channel watched and the setting.
+        lifecycleScope.launchSafely("Shortcuts") { withContext(Dispatchers.IO) { AppShortcuts.update(this@MainActivity) } }
     }
 
     override fun onDestroy() {

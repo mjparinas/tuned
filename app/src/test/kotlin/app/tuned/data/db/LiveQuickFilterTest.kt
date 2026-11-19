@@ -17,7 +17,10 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import kotlin.test.assertEquals
 
-/** Live TV's quick filters: Sports, PPV, a country or a language, alone or together, on top of the chip chosen. */
+/**
+ * Live TV's quick filters: a kind of channel (Sports, News, Adult and so on), a country or a language, alone or
+ * together, on top of the chip chosen.
+ */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [35])
 class LiveQuickFilterTest {
@@ -41,19 +44,25 @@ class LiveQuickFilterTest {
             channel(10, "Sky Cinema F12", "UK| Movies", "UK"),
             channel(11, "NFL RedZone", "US| NFL", "US"),
             channel(12, "Preventive Health", "US| Health", "US"),
+            channel(13, "MTV Hits", "Music", null),
+            channel(14, "Nat Geo Wild", "Entertainment", null),
+            channel(15, "Late Night", "XXX", null, adult = true),
         )
 
-    private suspend fun shown(quick: LiveQuick): List<Long> {
+    private suspend fun shown(
+        quick: LiveQuick,
+        adult: Boolean = false,
+    ): List<Long> {
         db.items().insertAll(channels)
         val groups = channels.map { it.groupName }.distinct()
-        val source = db.items().channels(0, emptyList(), false, null, "", "", quick.topicQuery, quick.keys(groups))
+        val source = db.items().channels(0, emptyList(), adult, null, "", "", quick.topicQuery, quick.keys(groups))
         val page = source.load(PagingSource.LoadParams.Refresh(null, 500, false)) as PagingSource.LoadResult.Page
         return page.data.map { it.id }
     }
 
     @Test
     fun noFilterShowsEverything() = runTest {
-        assertEquals((1L..12L).toList(), shown(LiveQuick()))
+        assertEquals((1L..14L).toList(), shown(LiveQuick()))
     }
 
     @Test
@@ -66,6 +75,23 @@ class LiveQuickFilterTest {
     fun ppvFindsPayPerViewAndEventSlots() = runTest {
         // By name (PPV 7, Live Events 03) or category (Events); "Preventive" has "event" inside a word, so it stays out.
         assertEquals(listOf(4L, 5L, 8L), shown(LiveQuick(topic = LiveTopic.PPV)))
+    }
+
+    @Test
+    fun genresFindTheirCategoriesAndNames() = runTest {
+        assertEquals(listOf(2L), shown(LiveQuick(topic = LiveTopic.NEWS)))
+        assertEquals(listOf(9L), shown(LiveQuick(topic = LiveTopic.KIDS)))
+        assertEquals(listOf(10L), shown(LiveQuick(topic = LiveTopic.MOVIES)))
+        assertEquals(listOf(13L), shown(LiveQuick(topic = LiveTopic.MUSIC)))
+        // By name alone: Nat Geo is in a general category.
+        assertEquals(listOf(14L), shown(LiveQuick(topic = LiveTopic.DOCUMENTARY)))
+    }
+
+    @Test
+    fun adultKeepsOnlyAdultChannelsAndOnlyWhileUnlocked() = runTest {
+        assertEquals(listOf(15L), shown(LiveQuick(topic = LiveTopic.ADULT), adult = true))
+        // Locked, the Adult filter finds nothing rather than getting past the PIN.
+        assertEquals(emptyList(), shown(LiveQuick(topic = LiveTopic.ADULT), adult = false))
     }
 
     @Test
@@ -98,6 +124,7 @@ class LiveQuickFilterTest {
         name: String,
         group: String,
         region: String?,
+        adult: Boolean = false,
     ) = ItemEntity(
         id = id,
         kind = 0,
@@ -105,7 +132,7 @@ class LiveQuickFilterTest {
         searchName = Search.normalize(name),
         groupName = group,
         region = region,
-        adult = false,
+        adult = adult,
         logo = null,
         url = "http://example.invalid/$id",
         tvgId = null,

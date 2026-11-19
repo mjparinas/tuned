@@ -51,6 +51,9 @@ enum class BufferMode(
     SMOOTH(30_000, 120_000, 3_000),
 }
 
+/** Lighter mode for weak TV boxes: [AUTO] turns it on for a low-memory device or one that keeps freezing. */
+enum class LighterMode { AUTO, ON, OFF }
+
 enum class CaptionEdge { NONE, OUTLINE, DROP_SHADOW, RAISED, DEPRESSED }
 
 enum class CaptionFont { DEFAULT, SANS, SERIF, MONO, CASUAL }
@@ -79,6 +82,7 @@ data class AppSettings(
     val dynamicColour: Boolean = false,
     val pureBlack: Boolean = false,
     val accent: Accent = Accent.VIOLET,
+    val lighterMode: LighterMode = LighterMode.AUTO,
     val startTab: StartTab = StartTab.LIVE,
     val lastTab: Int = 0,
     val hiddenRegions: Set<String> = emptySet(),
@@ -86,6 +90,10 @@ data class AppSettings(
     val seenRegions: Set<String> = emptySet(),
     /** Hidden groups, as [app.tuned.core.HiddenGroups] keys. */
     val hiddenGroups: Set<String> = emptySet(),
+    /** Groups pinned to the front of their tab's chips, in pin order ([app.tuned.core.PinnedGroups]). */
+    val pinnedGroups: String = "",
+    /** Search, Live events and the last channel on the app icon's long-press menu. */
+    val appShortcuts: Boolean = true,
     /** Teams, leagues and fighters followed on Live Events ("Canucks", "UFC"), as typed. */
     val followedEvents: Set<String> = emptySet(),
     val showAdult: Boolean = false,
@@ -113,6 +121,10 @@ data class AppSettings(
     val backupCopies: Boolean = true,
     /** Switch the display to the video's frame rate where the screen offers it (Settings › Player). */
     val matchFrameRate: Boolean = true,
+    /** Plays the sound this many milliseconds later (or earlier when negative) than the picture, for lip sync (Settings › Player). */
+    val audioDelayMs: Int = 0,
+    /** Android TV: the TV's own video hardware keeps picture and sound together (Settings › Player). Off by default. */
+    val tunneledPlayback: Boolean = false,
     /** Minutes of a live channel kept on the device to pause and rewind; 0 turns it off (Settings › Player). */
     val liveRewindMinutes: Int = 30,
     /** Leave out empty event slots ("NO EVENT STREAMING"); see [Placeholders]. Melvin, 2026-11-17: hide them. */
@@ -120,6 +132,8 @@ data class AppSettings(
     /** Leave out round-the-clock "24/7" channels, films and shows; see [RoundTheClock]. Melvin, 2026-11-17 and 11-18. Off by default. */
     val hide247: Boolean = false,
     val pictureInPicture: Boolean = true,
+    /** Leaving the app or locking the screen keeps the sound playing, with a media notification (Settings › Player). */
+    val backgroundPlay: Boolean = true,
     /** Headphone, Bluetooth and remote media buttons and the Assistant control the player (Settings › Player). */
     val mediaButtons: Boolean = true,
     val playerGestures: Boolean = true,
@@ -239,6 +253,12 @@ class SettingsRepository(
     }
 
     fun lockAdult() {
+        adultUnlocked.value = false
+    }
+
+    /** Signing out: every setting back to its default and the parental PIN gone, as on a fresh install. */
+    suspend fun reset() {
+        context.dataStore.edit { it.clear() }
         adultUnlocked.value = false
     }
 

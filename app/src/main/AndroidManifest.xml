@@ -22,6 +22,9 @@
     <!-- Expedited refreshes run as a short foreground service on Android 11 and older. -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
+    <!-- Keep playing in the background (docs/decisions/player.md). -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
     <!-- Updates from GitHub Releases (docs/decisions/updates.md). A Play build would drop this: Play doesn't allow it. -->
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
 
@@ -88,6 +91,16 @@
             android:resizeableActivity="true"
             android:launchMode="singleTask"
             android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout|keyboard|keyboardHidden|navigation|uiMode" />
+
+        <!-- The media notification that keeps the player's sound going in the background (docs/decisions/player.md). -->
+        <service
+            android:name=".player.PlaybackService"
+            android:exported="false"
+            android:foregroundServiceType="mediaPlayback">
+            <intent-filter>
+                <action android:name="androidx.media3.session.MediaSessionService" />
+            </intent-filter>
+        </service>
 
         <!-- The one Premium screen (docs/decisions/premium.md). -->
         <activity

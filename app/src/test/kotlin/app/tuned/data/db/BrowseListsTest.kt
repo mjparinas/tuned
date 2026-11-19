@@ -126,13 +126,13 @@ class BrowseListsTest {
         val items = db.items()
         val shows = db.shows()
 
-        assertEquals(listOf(1L), items.items(1, hidden, false, null, false, "", "").all().map { it.id })
+        assertEquals(listOf(1L), items.items(1, hidden, false, null, false, "", "", 0).all().map { it.id })
         assertEquals(listOf("Action"), items.groups(1, hidden, false).first().map { it.groupName })
         assertEquals(listOf("Bluey"), shows.showsTab(hidden, false, null).all().map { it.showName })
         assertEquals(listOf("Kids"), shows.showGroupChips(hidden, false).first().map { it.groupName })
         assertEquals(listOf("Bluey"), items.shows(hidden, false, null, false, "", "").all().map { it.showName })
         // Off, everything is back.
-        assertEquals(2, items.items(1, emptyList(), false, null, false, "", "").all().size)
+        assertEquals(2, items.items(1, emptyList(), false, null, false, "", "", 0).all().size)
         assertEquals(3, shows.showsTab(emptyList(), false, null).all().size)
     }
 

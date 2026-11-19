@@ -27,8 +27,11 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         CurrentProfileEntity::class,
         GuideFixEntity::class,
         GuideChannelEntity::class,
+        ListEntity::class,
+        ListItemEntity::class,
+        ChannelEditEntity::class,
     ],
-    version = 17,
+    version = 19,
     exportSchema = true,
 )
 abstract class TunedDatabase : RoomDatabase() {
@@ -56,9 +59,15 @@ abstract class TunedDatabase : RoomDatabase() {
 
     abstract fun guideFixes(): GuideFixDao
 
+    abstract fun sync(): SyncDao
+
     abstract fun channelNumbers(): ChannelNumberDao
 
     abstract fun liveFilters(): LiveFilterDao
+
+    abstract fun lists(): ListDao
+
+    abstract fun channelEdits(): ChannelEditDao
 
     companion object {
         fun create(context: Context): TunedDatabase = Room
@@ -83,6 +92,8 @@ abstract class TunedDatabase : RoomDatabase() {
                 MIGRATION_14_15,
                 MIGRATION_15_16,
                 MIGRATION_16_17,
+                MIGRATION_17_18,
+                MIGRATION_18_19,
             ).addCallback(FirstProfile)
             // Going back to an older release (installing an older APK) can't keep a newer database: start it afresh
             // rather than crash on every launch. Upgrades always migrate, above.
@@ -94,7 +105,7 @@ abstract class TunedDatabase : RoomDatabase() {
             override fun onCreate(db: SupportSQLiteDatabase) = addFirstProfile(db)
         }
 
-        private fun addFirstProfile(db: SupportSQLiteDatabase) {
+        internal fun addFirstProfile(db: SupportSQLiteDatabase) {
             db.execSQL(
                 "INSERT OR IGNORE INTO `profiles` (`id`, `name`, `colour`, `kids`, `pinHash`, `createdAt`) " +
                     "VALUES (${Profiles.FIRST}, '', 0, 0, NULL, ${System.currentTimeMillis()})",
@@ -269,6 +280,33 @@ abstract class TunedDatabase : RoomDatabase() {
             object : Migration(16, 17) {
                 override fun migrate(db: SupportSQLiteDatabase) {
                     db.execSQL("ALTER TABLE `profiles` ADD COLUMN `avatar` TEXT")
+                }
+            }
+
+        /** Adds the person's own lists beside Favourites ([ListEntity]); favourites stay where they are. */
+        val MIGRATION_17_18 =
+            object : Migration(17, 18) {
+                override fun migrate(db: SupportSQLiteDatabase) {
+                    db.execSQL(
+                        "CREATE TABLE IF NOT EXISTS `lists` (`id` INTEGER NOT NULL, `name` TEXT NOT NULL, `position` INTEGER NOT NULL, " +
+                            "`createdAt` INTEGER NOT NULL, `profileId` INTEGER NOT NULL DEFAULT 1, PRIMARY KEY(`id`))",
+                    )
+                    db.execSQL("CREATE INDEX IF NOT EXISTS `index_lists_profileId_position` ON `lists` (`profileId`, `position`)")
+                    db.execSQL(
+                        "CREATE TABLE IF NOT EXISTS `list_items` (`listId` INTEGER NOT NULL, `itemId` INTEGER NOT NULL, " +
+                            "`addedAt` INTEGER NOT NULL, `position` INTEGER NOT NULL, PRIMARY KEY(`listId`, `itemId`))",
+                    )
+                }
+            }
+
+        /** Adds renamed channels and their own logos ([ChannelEditEntity]). */
+        val MIGRATION_18_19 =
+            object : Migration(18, 19) {
+                override fun migrate(db: SupportSQLiteDatabase) {
+                    db.execSQL(
+                        "CREATE TABLE IF NOT EXISTS `channel_edits` (`itemId` INTEGER NOT NULL, `name` TEXT, `logo` TEXT, " +
+                            "`originalName` TEXT NOT NULL, `originalLogo` TEXT, PRIMARY KEY(`itemId`))",
+                    )
                 }
             }
 

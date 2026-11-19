@@ -17,8 +17,8 @@ data class CrashReport(
 /**
  * Saves a report of any crash the app didn't handle, with the log lines that led up to it, so it can be read and
  * shared later from Settings › Updates and advanced › Logs. The crash itself still ends the app as it would have (an app left
- * running after one is in an unknown state), but nothing about it is lost. Reports stay on the device, at most
- * [KEEP] of them, and carry no login ([AppLog.scrub]).
+ * running after one is in an unknown state), but nothing about it is lost. Freezes are saved here too ([FreezeWatch]).
+ * Reports stay on the device, at most [KEEP] of them, and carry no login ([AppLog.scrub]).
  */
 object CrashReporter {
     private const val DIR = "crashes"
@@ -41,21 +41,61 @@ object CrashReporter {
         attempt(TAG, "Couldn't read a crash report") { CrashReport(file.lastModified(), file.readText()) }.getOrNull()
     }
 
+    /** When each saved freeze happened, from the file names, without reading them. Lists a folder: off the main thread. */
+    fun freezeTimes(context: Context): List<Long> = files(File(context.filesDir, DIR))
+        .filter { it.name.startsWith("freeze-") }
+        .mapNotNull {
+            it.name
+                .removePrefix("freeze-")
+                .removeSuffix(".txt")
+                .toLongOrNull()
+        }
+
     fun clear(context: Context) {
         files(File(context.filesDir, DIR)).forEach { it.delete() }
     }
 
     /** Never throws: a failure here must not hide the crash being reported. */
-    @Suppress("TooGenericExceptionCaught", "SwallowedException") // a second failure while crashing has nowhere to go
     private fun save(
         dir: File,
         thread: Thread,
         error: Throwable,
     ) {
+        val now = System.currentTimeMillis()
+        write(dir, "crash", now) { report(now, thread, error) }
+    }
+
+    /**
+     * Saves a freeze report: [what] happened (a sentence), the screen thread's stack at the time ([stack], already
+     * text), and the log before it. [timeMs] is when it happened, which for a freeze Android recorded is in the past.
+     */
+    fun saveFreeze(
+        context: Context,
+        timeMs: Long,
+        what: String,
+        stack: String,
+    ) = write(File(context.filesDir, DIR), "freeze", timeMs) {
+        buildString {
+            appendLine("Tuned ${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE}): $what")
+            appendLine("Time: ${TIME.format(Instant.ofEpochMilli(timeMs))}")
+            appendLine("Device: ${Build.MANUFACTURER} ${Build.MODEL}, Android ${Build.VERSION.RELEASE} (API ${Build.VERSION.SDK_INT})")
+            appendLine()
+            appendLine(AppLog.scrub(stack))
+            appendLine("Recent log:")
+            AppLog.snapshot().takeLast(RECENT_LINES).forEach { appendLine(it.format()) }
+        }
+    }
+
+    @Suppress("TooGenericExceptionCaught", "SwallowedException") // a second failure while crashing has nowhere to go
+    private fun write(
+        dir: File,
+        kind: String,
+        timeMs: Long,
+        text: () -> String,
+    ) {
         try {
             dir.mkdirs()
-            val now = System.currentTimeMillis()
-            File(dir, "crash-$now.txt").writeText(report(now, thread, error))
+            File(dir, "$kind-$timeMs.txt").writeText(text())
             files(dir).drop(KEEP).forEach { it.delete() }
         } catch (_: Throwable) {
             // Out of space or memory: the system's own crash log still has it.
@@ -78,7 +118,7 @@ object CrashReporter {
     }
 
     private fun files(dir: File): List<File> = dir
-        .listFiles { f -> f.isFile && f.name.startsWith("crash-") }
+        .listFiles { f -> f.isFile && (f.name.startsWith("crash-") || f.name.startsWith("freeze-")) }
         .orEmpty()
         .sortedByDescending { it.lastModified() }
 }

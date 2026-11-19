@@ -42,17 +42,27 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import app.tuned.R
 
 @Composable
 fun SectionHeader(text: String) {
     if (searching()) return
+    // Small capitals over each card, as in Horizon Maps' settings (Melvin, 2026-11-19). The screen reader still gets the
+    // words as written, and each header is a heading, so it can jump from section to section.
     Text(
-        text,
-        style = MaterialTheme.typography.labelLarge,
-        color = MaterialTheme.colorScheme.primary,
-        // A heading, so a screen reader can jump from section to section.
-        modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 24.dp, bottom = 4.dp).semantics { heading() },
+        text.uppercase(),
+        style = MaterialTheme.typography.labelLarge.copy(letterSpacing = 1.2.sp),
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier =
+            Modifier
+                .outsideCards()
+                .padding(horizontal = if (LocalInCards.current) 32.dp else 16.dp)
+                .padding(top = 20.dp, bottom = 8.dp)
+                .semantics {
+                    heading()
+                    contentDescription = text
+                },
     )
 }
 

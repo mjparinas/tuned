@@ -98,8 +98,10 @@ internal class LiveRecorder(
     /** With the controls: the button shows only on live channels that can be recorded, or while recording. */
     fun onControls(visibility: Int) {
         if (visibility != View.VISIBLE) return
-        val can = hooks.channel() != null && hooks.stream(hooks.uri()) != null && !hooks.casting()
+        val can = hooks.channel() != null && hooks.stream(hooks.uri()) != null
         button.visibility = if (can || active != null) View.VISIBLE else View.GONE
+        // The phone has no stream to record while the TV plays: shown greyed out rather than hidden.
+        button.usable(active != null || !hooks.casting())
     }
 
     /** Picture-in-picture: nothing over the video. */

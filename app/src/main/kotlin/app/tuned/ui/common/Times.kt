@@ -6,10 +6,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.platform.LocalContext
 import app.tuned.core.TimeZones
-import java.text.SimpleDateFormat
 import java.time.ZoneId
 import java.util.Date
 import java.util.TimeZone
+import android.icu.text.SimpleDateFormat as IcuDateFormat
+import android.icu.util.TimeZone as IcuTimeZone
 import android.text.format.DateFormat as AndroidDateFormat
 
 /** The zone guide and event times show in: Settings › Guide › Time zone, which follows the phone by default. */
@@ -31,8 +32,11 @@ class TimeLabels(
     private val dayFormat = pattern("EEE")
     private val dateFormat = AndroidDateFormat.getMediumDateFormat(context).apply { timeZone = tz }
 
-    private fun pattern(skeleton: String) =
-        SimpleDateFormat(AndroidDateFormat.getBestDateTimePattern(locale, skeleton), locale).apply { timeZone = tz }
+    // ICU's formatter, the one getBestDateTimePattern writes for: its patterns can use ICU-only letters ("ccc" for a
+    // stand-alone weekday), which java.text.SimpleDateFormat off a device (the screenshots) rejects.
+    private fun pattern(skeleton: String) = IcuDateFormat(AndroidDateFormat.getBestDateTimePattern(locale, skeleton), locale).apply {
+        timeZone = IcuTimeZone.getTimeZone(zone.id)
+    }
 
     fun time(at: Long): String = timeFormat.format(Date(at))
 

@@ -1,6 +1,7 @@
 package app.tuned.player
 
 import android.annotation.SuppressLint
+import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.content.pm.ActivityInfo
@@ -19,7 +20,6 @@ import android.widget.Toast
 import androidx.annotation.OptIn
 import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.lifecycleScope
-import androidx.media3.common.AudioAttributes
 import androidx.media3.common.C
 import androidx.media3.common.MediaItem
 import androidx.media3.common.PlaybackException
@@ -27,15 +27,9 @@ import androidx.media3.common.Player
 import androidx.media3.common.Tracks
 import androidx.media3.common.VideoSize
 import androidx.media3.common.util.UnstableApi
-import androidx.media3.exoplayer.DefaultLoadControl
-import androidx.media3.exoplayer.DefaultRenderersFactory
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
-import androidx.media3.exoplayer.trackselection.DefaultTrackSelector
-import androidx.media3.extractor.DefaultExtractorsFactory
-import androidx.media3.extractor.ts.DefaultTsPayloadReaderFactory
 import androidx.media3.ui.PlayerView
-import app.tuned.BuildConfig
 import app.tuned.R
 import app.tuned.container
 import app.tuned.core.ContentKind
@@ -59,13 +53,27 @@ import java.util.concurrent.ConcurrentHashMap
 /**
  * Full-screen playback. Nothing on screen but the video until a tap shows the standard Media3 controls: play and
  * pause, seek, previous and next (the next channel in the category, or the next episode), captions, and the
- * settings menu for audio language and speed. Built on Views, not Compose, because PlayerView is Media3's own
- * tested surface and starts fastest.
+ * settings menu for audio language and speed (films and episodes only; see [ViewPlayer]). Built on Views, not
+ * Compose, because PlayerView is Media3's own tested surface and starts fastest.
  */
 @OptIn(UnstableApi::class)
 class PlayerActivity : FragmentActivity() {
     private var player: ExoPlayer? = null
-    private val session = PlayerSession(this) { settings.mediaButtons }
+    private val session =
+        PlayerSession(
+            context = this,
+            enabled = { settings.mediaButtons },
+            background = { settings.backgroundPlay },
+            sessionActivity = {
+                // Back to this player as it is: the same request, which the single-task player doesn't restart.
+                PendingIntent.getActivity(this, 0, Intent(intent), PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
+            },
+        )
+
+    /** Leaving the app or locking the screen keeps the sound playing; see [BackgroundPlay]. */
+    private val background by lazy {
+        BackgroundPlay(this, lifecycleScope, { settings.backgroundPlay }, { player }, { cast?.casting == true })
+    }
     private lateinit var playerView: PlayerView
     private lateinit var overlay: LinearLayout
     private lateinit var titleView: TextView
@@ -194,20 +202,11 @@ class PlayerActivity : FragmentActivity() {
                 ),
         )
     }
-    private lateinit var statusView: TextView
+    private lateinit var statusView: StatusNote
     private val audioCheck by lazy {
         AudioCheck { codec -> Toast.makeText(this, getString(R.string.player_no_sound, codec), Toast.LENGTH_LONG).show() }
     }
-    private val timeshift by lazy {
-        LiveTimeshift(
-            context = this,
-            scope = lifecycleScope,
-            http = container.http,
-            userAgent = { settings.userAgent.ifBlank { "Tuned/${BuildConfig.VERSION_NAME}" } },
-            // Pause and rewind live TV is Premium (docs/decisions/premium.md).
-            keepMinutes = { if (container.premium.unlocked.value) settings.liveRewindMinutes else 0 },
-        )
-    }
+    private val timeshift by lazy { playerTimeshift { settings } }
 
     private val jumpToLive by lazy {
         JumpToLive(
@@ -337,8 +336,9 @@ class PlayerActivity : FragmentActivity() {
                 )
                 gravity = Gravity.CENTER_VERTICAL
             }
+        // Before the tools: opening the player mid-cast shows its note as the cast button is set up.
+        statusView = StatusNote(this)
         setUpTools()
-        statusView = statusText(this)
         // TV remote buttons go to the tools before the player's own controls; see [PlayerTools.onKey].
         val root =
             object : FrameLayout(this) {
@@ -351,7 +351,10 @@ class PlayerActivity : FragmentActivity() {
         )
         root.addView(
             statusView,
-            FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT, Gravity.CENTER),
+            // Above the centre, so a lasting note ("Playing on SHIELD") doesn't cover the play button (Melvin, 2026-11-19).
+            FrameLayout
+                .LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT, Gravity.CENTER)
+                .apply { bottomMargin = (STATUS_RAISE_DP * resources.displayMetrics.density).toInt() },
         )
         attachFeatures(root)
         // The title shows and hides with the controls, so a tap reveals everything and the video is otherwise bare.
@@ -397,6 +400,7 @@ class PlayerActivity : FragmentActivity() {
                         subtitles = subtitleTiming,
                         casting = { cast?.casting == true },
                         dial = dial,
+                        resolve = container.stalker::resolve,
                     ),
                 copies = qualityCopies,
             )
@@ -410,7 +414,10 @@ class PlayerActivity : FragmentActivity() {
                 current = { player?.let { queue.getOrNull(it.currentMediaItemIndex) } },
                 isLive = ::live,
                 savedFile = { id -> savedFiles[id] },
-                onStatus = { text -> if (text == null) statusView.visibility = View.GONE else showStatus(text) },
+                onStatus = { text, busy -> if (text == null) statusView.visibility = View.GONE else statusView.show(text, busy) },
+                subtitleOffsetMs = { subtitleTiming.offsetMs },
+                onTvChanged = ::castChanged,
+                resolve = container.stalker::resolve,
             ).also { c -> tools.addButton(c.button) }
         tools.addButton(recorder.button)
     }
@@ -436,9 +443,15 @@ class PlayerActivity : FragmentActivity() {
         playerView.setOnTouchListener(g)
     }
 
-    private fun showStatus(text: String) {
-        statusView.text = text
-        statusView.visibility = View.VISIBLE
+    private fun showStatus(text: String) = statusView.show(text, busy = false)
+
+    /** A cast began or ended, or the TV changed: the controls show the TV, and what can't work there is greyed out. */
+    private fun castChanged() {
+        (playerView.player as? ViewPlayer)?.tvChanged()
+        // Speed and sound tracks don't apply to the TV; Media3 enables the button again once the cast ends.
+        if (cast?.casting == true) playerView.findViewById<View>(androidx.media3.ui.R.id.exo_settings)?.usable(false)
+        tools.onControls(View.VISIBLE)
+        recorder.onControls(View.VISIBLE)
     }
 
     private var flashJob: Job? = null
@@ -505,7 +518,7 @@ class PlayerActivity : FragmentActivity() {
         val exo = buildPlayer(live)
         player = exo
         trakt.attach(exo)
-        val shown = ViewPlayer(exo, { cast }, { statusView.visibility = View.GONE }, ::pauseLive)
+        val shown = ViewPlayer(exo, { cast?.tv }, { statusView.visibility = View.GONE }, ::pauseLive, ::live)
         playerView.player = shown
         // Media buttons and the Assistant act through the same player as the on-screen controls.
         session.attach(shown)
@@ -564,7 +577,7 @@ class PlayerActivity : FragmentActivity() {
     private fun buildPlayer(live: Boolean): ExoPlayer {
         // Streams over OkHttp (through the live rewind copy on live TV), with the headers the playlist asks for;
         // saved downloads from the device.
-        val agent = settings.userAgent.ifBlank { "Tuned/${BuildConfig.VERSION_NAME}" }
+        val agent = settings.playerAgent()
         val http =
             PlayerSources.factory(
                 this,
@@ -572,50 +585,26 @@ class PlayerActivity : FragmentActivity() {
                 agent,
                 headers = { uri -> uri.host?.let(streamHeaders::get).orEmpty() },
                 network = { network -> if (live) timeshift.factory(network) else network },
+                portal = container.stalker::resolveNow,
             )
-        // TS streams from IPTV servers often start on a non-IDR frame; these flags start them sooner.
-        val extractors =
-            DefaultExtractorsFactory().setTsExtractorFlags(
-                DefaultTsPayloadReaderFactory.FLAG_ALLOW_NON_IDR_KEYFRAMES or DefaultTsPayloadReaderFactory.FLAG_DETECT_ACCESS_UNITS,
-            )
-        val buffer = settings.buffer
-        val load =
-            DefaultLoadControl
-                .Builder()
-                .setBufferDurationsMs(buffer.minMs, buffer.maxMs, buffer.startMs, buffer.startMs * 2)
-                .setPrioritizeTimeOverSizeThresholds(true)
-                .build()
-        val captions = settings.captions
-        val selector =
-            DefaultTrackSelector(this).apply {
-                setParameters(
-                    buildUponParameters()
-                        .setPreferredAudioLanguage(settings.audioLanguage.ifBlank { null })
-                        .setPreferredTextLanguage(captions.language.ifBlank { null })
-                        .setSelectUndeterminedTextLanguage(true)
-                        .setTrackTypeDisabled(C.TRACK_TYPE_TEXT, !captions.enabled),
-                )
-            }
-        // If a device's first decoder for a format fails to start, try its next one instead of giving up.
-        val renderers = DefaultRenderersFactory(this).setEnableDecoderFallback(true)
+        // Decoder fallback, and the sound delay from Settings › Player (lip sync); see [TunedRenderersFactory].
+        val renderers = TunedRenderersFactory(this) { settings.audioDelayMs }
         return ExoPlayer
             .Builder(this, renderers)
-            .setMediaSourceFactory(DefaultMediaSourceFactory(http, extractors).setSubtitleParserFactory(subtitleTiming.parsers))
-            .setLoadControl(load)
-            .setTrackSelector(selector)
+            .setMediaSourceFactory(
+                DefaultMediaSourceFactory(http, PlayerSetup.extractors()).setSubtitleParserFactory(subtitleTiming.parsers),
+            ).setLoadControl(PlayerSetup.loadControl(settings))
+            .setTrackSelector(PlayerSetup.trackSelector(this, settings))
             .setSeekBackIncrementMs(settings.seekBackMs)
             .setSeekForwardIncrementMs(settings.seekForwardMs)
-            .setAudioAttributes(
-                AudioAttributes
-                    .Builder()
-                    .setUsage(C.USAGE_MEDIA)
-                    .setContentType(C.AUDIO_CONTENT_TYPE_MOVIE)
-                    .build(),
-                true,
-            ).setHandleAudioBecomingNoisy(true)
+            .setAudioAttributes(PlayerSetup.audio, true)
+            .setHandleAudioBecomingNoisy(true)
+            // Playing on with the screen off needs the CPU and Wi-Fi kept awake (only while it plays).
+            .setWakeMode(if (settings.backgroundPlay) C.WAKE_MODE_NETWORK else C.WAKE_MODE_NONE)
             .build()
             .apply {
                 addListener(listener(live))
+                addListener(background.listener)
                 addListener(skipIntro.listener)
                 addListener(subtitleSearch.listener)
             }
@@ -629,7 +618,10 @@ class PlayerActivity : FragmentActivity() {
             val id = mediaItem?.mediaId?.toLongOrNull() ?: return
             val item = queue.firstOrNull { it.id == id } ?: return
             updateOverlay(item)
-            if (cast?.casting == true) cast?.load(item, live, 0)
+            // Subtitles picked while casting reload the same video: the TV gets it again with them, where it was.
+            val c = cast?.takeIf { it.casting }
+            val again = reason == Player.MEDIA_ITEM_TRANSITION_REASON_PLAYLIST_CHANGED
+            if (c != null) c.load(item, live, if (again) c.positionOnTv(item) else 0)
             liveRetries = 0
             pictured = false
             player?.let(timeshift::onChannelChanged)
@@ -812,6 +804,11 @@ class PlayerActivity : FragmentActivity() {
         if (hasFocus) hideSystemBars(window)
     }
 
+    override fun onStart() {
+        super.onStart()
+        background.onStart()
+    }
+
     override fun onStop() {
         super.onStop()
         // Outlives the activity, so the last position is saved even as it closes.
@@ -826,9 +823,9 @@ class PlayerActivity : FragmentActivity() {
                 }
             }
         }
-        // Leaving the app, or closing the picture-in-picture window, stops the activity: playback ends there.
-        // (In picture-in-picture the activity is only paused, so it keeps playing.)
-        if (!isChangingConfigurations) {
+        // Leaving the app, or closing the picture-in-picture window, stops the activity: playback ends there, unless
+        // it carries on in the background. (In picture-in-picture the activity is only paused, so it keeps playing.)
+        if (!isChangingConfigurations && !background.keepPlaying(isInPictureInPictureMode)) {
             player?.pause()
             finish()
         }
@@ -846,6 +843,7 @@ class PlayerActivity : FragmentActivity() {
         dial.release()
         cast?.release()
         reconnect.stop()
+        background.release()
         session.release()
         // The stream closes before downloads carry on, so the provider never sees two connections.
         player?.release()
@@ -858,6 +856,9 @@ class PlayerActivity : FragmentActivity() {
 
     companion object {
         internal const val EXTRA_ID = "id"
+
+        /** How far the status note sits above the centre: clear of the play button, below the title. */
+        private const val STATUS_RAISE_DP = 72
         internal const val EXTRA_TUNE = "tune"
         internal const val EXTRA_FROM = "catchup_from"
         private const val EXTRA_UNTIL = "catchup_until"

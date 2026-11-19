@@ -32,6 +32,7 @@ import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Movie
 import androidx.compose.material.icons.filled.People
+import androidx.compose.material.icons.filled.PushPin
 import androidx.compose.material.icons.filled.Radar
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
@@ -39,6 +40,7 @@ import androidx.compose.material.icons.filled.TravelExplore
 import androidx.compose.material.icons.filled.Tv
 import androidx.compose.material.icons.filled.VideoLibrary
 import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material.icons.outlined.PushPin
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
@@ -90,20 +92,21 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import app.tuned.R
-import app.tuned.container
 import app.tuned.core.ContentKind
+import app.tuned.core.PinnedGroups
 import app.tuned.core.ScreenLayout
 import app.tuned.data.AppSettings
 import app.tuned.data.CastMember
 import app.tuned.data.StartTab
 import app.tuned.data.SyncProgress
 import app.tuned.data.db.ProfileEntity
+import app.tuned.diagnostics.DeviceClock
 import app.tuned.ui.SyncText
+import app.tuned.ui.common.UpdateBanner
 import app.tuned.ui.common.VoiceSearchButton
 import app.tuned.ui.common.windowWidthDp
 import app.tuned.ui.offline.DownloadsViewModel
 import app.tuned.ui.settings.ProfileBadge
-import app.tuned.updates.GitHubUpdates
 import kotlinx.coroutines.launch
 
 internal data class Tab(
@@ -258,7 +261,7 @@ fun HomeScreen(
                     return@Column
                 }
                 requestedProgress?.let { RefreshBar(it) }
-                UpdateBanner()
+                UpdateBanner(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp))
                 CategoryChips(vm, tab.kind, onGroupHidden, onOpenEvents.takeIf { tab.kind == ContentKind.LIVE })
                 val lists: @Composable () -> Unit = {
                     when (tab.kind) {
@@ -287,29 +290,6 @@ fun HomeScreen(
             Box(Modifier.weight(ScreenLayout.DETAIL_FRACTION).fillMaxHeight()) {
                 DetailPane(open, onPlay = onPlay, onClose = { detail = null }, onOpenPerson = onOpenPerson)
             }
-        }
-    }
-}
-
-/** A newer Tuned was downloaded from GitHub: one tap installs it. Nothing shows otherwise. */
-@Composable
-private fun UpdateBanner() {
-    val context = LocalContext.current
-    val updates = context.container.updates
-    val state by updates.state.collectAsStateWithLifecycle()
-    val ready = state as? GitHubUpdates.State.Ready ?: return
-    Surface(
-        color = MaterialTheme.colorScheme.primaryContainer,
-        shape = RoundedCornerShape(16.dp),
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp),
-    ) {
-        Row(Modifier.padding(start = 16.dp, end = 8.dp, top = 4.dp, bottom = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-            Text(
-                stringResource(R.string.update_ready, ready.versionName),
-                style = MaterialTheme.typography.bodyMedium,
-                modifier = Modifier.weight(1f),
-            )
-            TextButton(onClick = { updates.install(context) }) { Text(stringResource(R.string.update_install)) }
         }
     }
 }
@@ -425,8 +405,10 @@ private fun CategoryChips(
     onOpenEvents: (() -> Unit)?,
 ) {
     val groups by vm.groups(kind).collectAsStateWithLifecycle()
+    val lists by vm.lists(kind).collectAsStateWithLifecycle()
     val filterFlow = vm.filter(kind)
     val filter by filterFlow.collectAsStateWithLifecycle()
+    val pins by vm.pins.collectAsStateWithLifecycle()
     LazyRow(
         contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -455,6 +437,17 @@ private fun CategoryChips(
                 label = { Text(stringResource(R.string.filter_favourites)) },
             )
         }
+        // The person's own lists come straight after Favourites, the built-in one (Live TV and Movies).
+        items(lists, key = { "l:" + it.id }) { list ->
+            val on = filter == Filter.OwnList(list.id)
+            OwnListChip(
+                list = list,
+                selected = on,
+                onSelect = { filterFlow.value = if (on) Filter.All else Filter.OwnList(list.id) },
+                onRename = { vm.renameList(list.id, it) },
+                onDelete = { vm.deleteList(list.id) },
+            )
+        }
         if (kind == ContentKind.LIVE) {
             item(key = "recent") {
                 FilterChip(
@@ -473,16 +466,36 @@ private fun CategoryChips(
                 vm.hideGroup(kind, g.groupName)
                 onHidden(kind, g.groupName, hiddenMessage)
             }
+            // Pinned groups sit first, in pin order (vm.groups), marked with a pin; the chosen group's pin pins or unpins it.
+            val pinned = PinnedGroups.isPinned(pins, kind.code, g.groupName)
+            val pinLabel = stringResource(if (pinned) R.string.group_unpin else R.string.group_pin)
+            val pin = { vm.togglePin(kind, g.groupName) }
             FilterChip(
                 selected = on,
                 onClick = { filterFlow.value = if (on) Filter.All else Filter.Group(g.groupName) },
                 label = { Text(g.groupName) },
+                leadingIcon =
+                    if (pinned && !on) {
+                        {
+                            Icon(
+                                Icons.Filled.PushPin,
+                                contentDescription = stringResource(R.string.group_pinned),
+                                modifier = Modifier.size(16.dp),
+                            )
+                        }
+                    } else {
+                        null
+                    },
                 // The small eye inside the chip is hard to reach with a screen reader, so hiding is also an action on the chip.
                 modifier =
                     if (on) {
                         Modifier.semantics {
                             customActions =
                                 listOf(
+                                    CustomAccessibilityAction(pinLabel) {
+                                        pin()
+                                        true
+                                    },
                                     CustomAccessibilityAction(hideLabel) {
                                         hide()
                                         true
@@ -496,12 +509,19 @@ private fun CategoryChips(
                 trailingIcon =
                     if (on) {
                         {
-                            Icon(
-                                Icons.Filled.VisibilityOff,
-                                contentDescription = stringResource(R.string.group_hide),
-                                modifier =
-                                    Modifier.size(18.dp).clickable(onClick = hide),
-                            )
+                            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                                Icon(
+                                    if (pinned) Icons.Filled.PushPin else Icons.Outlined.PushPin,
+                                    contentDescription = pinLabel,
+                                    modifier = Modifier.size(18.dp).clickable(onClick = pin),
+                                )
+                                Icon(
+                                    Icons.Filled.VisibilityOff,
+                                    contentDescription = stringResource(R.string.group_hide),
+                                    modifier =
+                                        Modifier.size(18.dp).clickable(onClick = hide),
+                                )
+                            }
                         }
                     } else {
                         null
@@ -539,7 +559,7 @@ private fun FirstRun(
             Text(stringResource(R.string.first_run_failed), style = MaterialTheme.typography.titleMedium)
             Spacer(Modifier.height(8.dp))
             Text(
-                error,
+                DeviceClock.explain(LocalContext.current, error),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center,
