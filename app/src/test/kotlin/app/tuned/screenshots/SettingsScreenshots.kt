@@ -1,5 +1,8 @@
 package app.tuned.screenshots
 
+import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import app.tuned.R
 import app.tuned.data.CaptionStyle
 import app.tuned.ui.CaptionSettingsRoute
@@ -7,9 +10,6 @@ import app.tuned.ui.RegionSettingsRoute
 import app.tuned.ui.SettingsPageRoute
 import app.tuned.ui.SettingsRoute
 import app.tuned.ui.settings.SettingsPage
-import androidx.compose.ui.test.onNodeWithText
-import androidx.compose.ui.test.performClick
-import androidx.compose.ui.test.performScrollTo
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.ParameterizedRobolectricTestRunner

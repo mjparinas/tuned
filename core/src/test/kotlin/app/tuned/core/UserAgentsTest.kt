@@ -26,7 +26,8 @@ class UserAgentsTest {
 
     @Test
     fun idsAndValuesAreUnique() {
-        assertEquals(UserAgents.presets.size, UserAgents.presets.map { it.id }.toSet().size)
-        assertEquals(UserAgents.presets.size, UserAgents.presets.map { it.value }.toSet().size)
+        val presets = UserAgents.presets
+        assertEquals(presets, presets.distinctBy { it.id })
+        assertEquals(presets, presets.distinctBy { it.value })
     }
 }
