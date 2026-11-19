@@ -124,6 +124,8 @@ android {
         unitTests.isReturnDefaultValues = true
         unitTests.isIncludeAndroidResources = true
         unitTests.all { test ->
+            // The whole failure in the log, not just its class and line, since the test report is only an artifact.
+            test.testLogging.exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
             // Screenshots (docs/decisions/screenshots.md): `./gradlew :app:testGithubDebugUnitTest -Pscreenshots` draws every
             // screen with sample data into build/outputs/roborazzi, and runs nothing else. Ordinary runs compile them (so a
             // broken one fails CI) but skip them, since drawing takes longer than the other tests.
@@ -131,7 +133,6 @@ android {
                 test.filter.includeTestsMatching("app.tuned.screenshots.*")
                 test.systemProperty("roborazzi.test.record", "true")
                 test.systemProperty("roborazzi.record.filePathStrategy", "relativePathFromRoborazziContextOutputDirectory")
-                test.testLogging.exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
                 // Each test class draws on its own; four at a time on CI's four cores.
                 test.maxParallelForks = Runtime.getRuntime().availableProcessors().coerceIn(1, 4)
             } else {

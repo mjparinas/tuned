@@ -1,5 +1,6 @@
 package app.tuned.ui.browse
 
+import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onFirst
@@ -20,6 +21,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
+import org.robolectric.annotation.GraphicsMode
 import kotlin.test.assertEquals
 
 /**
@@ -28,6 +30,7 @@ import kotlin.test.assertEquals
  * at once.
  */
 @RunWith(RobolectricTestRunner::class)
+@GraphicsMode(GraphicsMode.Mode.NATIVE) // text measured as on a device, as the screenshots are, so rows lay out
 @Config(sdk = [35], qualifiers = "w960dp-h540dp-land-television-xhdpi")
 class TvLiveLayoutTest {
     @get:Rule val compose = createComposeRule()
@@ -37,7 +40,11 @@ class TvLiveLayoutTest {
     @Before
     fun setUp() {
         WorkManagerTestInitHelper.initializeTestWorkManager(app, Configuration.Builder().setExecutor(SynchronousExecutor()).build())
-        runBlocking(Dispatchers.IO) { SampleData.seed(app.container.db) }
+        runBlocking(Dispatchers.IO) {
+            SampleData.seed(app.container.db)
+            // As the screenshots do: Home reads some of its settings from the store as well as its parameter.
+            app.container.settings.update { AppSettings() }
+        }
     }
 
     @Test
@@ -58,7 +65,13 @@ class TvLiveLayoutTest {
                 onOpenPlaylists = {},
             )
         }
-        compose.waitUntil(WAIT_MS) { compose.onAllNodes(hasText("Maple News 24")).fetchSemanticsNodes().isNotEmpty() }
+        compose.waitUntil(WAIT_MS) {
+            compose
+                .onAllNodes(
+                    hasText("Maple News 24", substring = true) or hasContentDescription("Maple News 24", substring = true),
+                ).fetchSemanticsNodes()
+                .isNotEmpty()
+        }
         // The groups' column holds All above Favourites, one under the other.
         val all =
             compose

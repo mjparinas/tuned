@@ -14,6 +14,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
@@ -26,7 +27,10 @@ import androidx.compose.ui.input.key.type
 import app.tuned.core.ListPaging
 import app.tuned.diagnostics.attempt
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 
 /**
  * Where a TV remote's focus is in one list or grid, so it can be put back and moved a page at a time (Melvin,
@@ -61,6 +65,9 @@ class TvFocus internal constructor(
 
     /** Keys of the items on screen that can take focus, so paging never lands on a row above them (Continue watching). */
     internal val items = HashSet<Any>()
+
+    /** Whether any item has shown yet; the list's rows come from the database a moment after the screen opens. */
+    internal var shown by mutableStateOf(false)
 
     /** Asks for the item last focused, or the first. Returns what it asked for, so [expire] can let it go. */
     internal fun restore(): Any? {
@@ -122,6 +129,8 @@ fun rememberTvFocus(returnKey: Any? = Unit): TvFocus {
     val focus = remember(tv) { TvFocus(saved, tv) }
     LaunchedEffect(focus, returnKey) {
         val asked = focus.restore()
+        // The window starts once the rows are there, so a slow first load from the database still gets focus.
+        snapshotFlow { focus.shown }.first { it }
         delay(CLAIM_WINDOW_MS)
         focus.expire(asked)
     }
@@ -143,6 +152,7 @@ fun tvFocusItem(
     val requester = remember { FocusRequester() }
     DisposableEffect(focus, key) {
         focus.items += key
+        focus.shown = true
         onDispose { focus.items -= key }
     }
     val mine = focus.claims(key, first)
@@ -214,8 +224,15 @@ private fun tvPaged(
                 val to = ListPaging.target(from, direction, onScreen.size, count())
                 scope.launch {
                     scrollTo(to)
-                    // The item at the new spot, or the nearest one after it that can take focus.
-                    visible().firstOrNull { (i, k) -> i >= to && k in focus.items }?.let { (_, k) -> focus.focusKey(k) }
+                    // The item at the new spot, or the nearest one after it that can take focus, once the list has laid
+                    // it out (which can be a frame after the scroll).
+                    val next =
+                        withTimeoutOrNull(CLAIM_WINDOW_MS) {
+                            snapshotFlow { visible().firstOrNull { (i, k) -> i >= to && k in focus.items }?.second }
+                                .filterNotNull()
+                                .first()
+                        }
+                    next?.let { focus.focusKey(it) }
                 }
             }
         }

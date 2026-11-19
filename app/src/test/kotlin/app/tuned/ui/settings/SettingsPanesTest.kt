@@ -5,6 +5,7 @@ import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.test.core.app.ApplicationProvider
 import androidx.work.Configuration
 import androidx.work.testing.SynchronousExecutor
@@ -44,7 +45,12 @@ class SettingsPanesTest {
         compose.onAllNodes(hasContentDescription(app.getString(R.string.settings_page_playlists))).onFirst().assertExists()
         assertEquals(0, compose.onAllNodes(hasContentDescription(appearance)).fetchSemanticsNodes().size)
 
-        compose.onAllNodes(hasText(appearance)).onFirst().performClick()
+        // Appearance is near the foot of the list, below the screen, so it is scrolled to first.
+        compose
+            .onAllNodes(hasText(appearance))
+            .onFirst()
+            .performScrollTo()
+            .performClick()
         compose.waitForIdle()
         compose.onAllNodes(hasContentDescription(appearance)).onFirst().assertExists()
         assertEquals(0, navigated)
