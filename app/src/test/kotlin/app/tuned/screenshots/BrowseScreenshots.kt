@@ -1,5 +1,9 @@
 package app.tuned.screenshots
 
+import androidx.compose.ui.test.hasAnyDescendant
+import androidx.compose.ui.test.hasScrollAction
+import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.performScrollToNode
 import app.tuned.R
 import app.tuned.core.ContentKind
 import app.tuned.core.Episodes
@@ -30,6 +34,12 @@ class BrowseScreenshots : Screenshots() {
         HomeRoute,
         wait = "Maple News 24",
         settings = DARK.copy(pinnedGroups = PinnedGroups.toggle("", ContentKind.LIVE.code, "UK | News")),
+        // The groups come after Favourites and Recent, off the right edge: scroll the chips to the pinned one.
+        then = {
+            compose
+                .onNode(hasScrollAction() and hasAnyDescendant(hasText(text(R.string.filter_favourites))))
+                .performScrollToNode(hasText("News", substring = true))
+        },
     )
 
     @Test fun liveTvLight() = shot("browse-live-tv-light", HomeRoute, wait = "Maple News 24", settings = LIGHT)
