@@ -36,6 +36,7 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
       - uses: ./.github/actions/setup-android
+      - uses: ./.github/actions/robolectric-cache
       - name: Draw every screen
         id: draw
         env:
