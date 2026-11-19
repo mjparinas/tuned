@@ -99,15 +99,15 @@ abstract class Screenshots {
     ): String = app.getString(id)
 
     companion object {
-        /** A typical phone: 411 by 891 dp at 3x, 1233 by 2673 pixels. */
-        const val PHONE = "w411dp-h891dp-xxhdpi"
-
-        /** A 10-inch tablet held sideways, where the navigation rail and two panes show (docs/decisions/large-screens.md). */
-        const val TABLET = "w1280dp-h800dp-land-xhdpi"
-
         val DARK = AppSettings(theme = ThemeMode.DARK)
         val LIGHT = AppSettings(theme = ThemeMode.LIGHT)
 
         private const val WAIT_MS = 15_000L
     }
 }
+
+/** A typical phone: 411 by 891 dp at 3x, 1233 by 2673 pixels. */
+const val PHONE = "w411dp-h891dp-xxhdpi"
+
+/** A 10-inch tablet held sideways, where the navigation rail and two panes show (docs/decisions/large-screens.md). */
+const val TABLET = "w1280dp-h800dp-land-xhdpi"
