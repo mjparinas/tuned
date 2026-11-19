@@ -28,7 +28,6 @@ import androidx.media3.common.Tracks
 import androidx.media3.common.VideoSize
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.DefaultLoadControl
-import androidx.media3.exoplayer.DefaultRenderersFactory
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import androidx.media3.exoplayer.trackselection.DefaultTrackSelector
@@ -596,8 +595,8 @@ class PlayerActivity : FragmentActivity() {
                         .setTrackTypeDisabled(C.TRACK_TYPE_TEXT, !captions.enabled),
                 )
             }
-        // If a device's first decoder for a format fails to start, try its next one instead of giving up.
-        val renderers = DefaultRenderersFactory(this).setEnableDecoderFallback(true)
+        // Decoder fallback, and the sound delay from Settings › Player (lip sync); see [TunedRenderersFactory].
+        val renderers = TunedRenderersFactory(this) { settings.audioDelayMs }
         return ExoPlayer
             .Builder(this, renderers)
             .setMediaSourceFactory(DefaultMediaSourceFactory(http, extractors).setSubtitleParserFactory(subtitleTiming.parsers))
