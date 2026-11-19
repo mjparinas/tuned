@@ -181,7 +181,13 @@ fun HomeScreen(
             }
         }
     }
-    BackHandler(enabled = detail != null) { detail = null }
+    // On a TV, closing the pane puts the remote's focus back on the item that opened it (ui/common/TvFocus).
+    var focusReturn by remember { mutableIntStateOf(0) }
+    val closeDetail: () -> Unit = {
+        detail = null
+        focusReturn += 1
+    }
+    BackHandler(enabled = detail != null, onBack = closeDetail)
     val openShow: (String, String) -> Unit = if (panes) { key, title -> detail = Detail.show(key, title) } else onOpenShow
     val openMovie: (Long) -> Unit = if (panes) { id -> detail = Detail.movie(id) } else onOpenMovie
     val openGuide: (Long) -> Unit = if (panes) { id -> detail = Detail.guide(id) } else onOpenGuide
@@ -312,9 +318,9 @@ fun HomeScreen(
                 CategoryChips(vm, tab.kind, onGroupHidden, onOpenEvents.takeIf { tab.kind == ContentKind.LIVE })
                 val lists: @Composable () -> Unit = {
                     when (tab.kind) {
-                        ContentKind.LIVE -> LiveTab(vm, settings, onPlay, openGuide, onOpenSearch)
-                        ContentKind.MOVIE -> MovieGrid(vm, onPlay, openMovie, settings.alwaysShowScrollbar, onOpenSearch)
-                        ContentKind.SERIES -> ShowGrid(vm, openShow, onPlay, settings.alwaysShowScrollbar, onOpenSearch)
+                        ContentKind.LIVE -> LiveTab(vm, settings, onPlay, openGuide, onOpenSearch, focusReturn)
+                        ContentKind.MOVIE -> MovieGrid(vm, onPlay, openMovie, settings.alwaysShowScrollbar, onOpenSearch, focusReturn)
+                        ContentKind.SERIES -> ShowGrid(vm, openShow, onPlay, settings.alwaysShowScrollbar, onOpenSearch, focusReturn)
                     }
                 }
                 // Pull to refresh is a setting, off by default; Settings › Refresh now always works.
@@ -335,7 +341,7 @@ fun HomeScreen(
         if (panes && open != null) {
             VerticalDivider()
             Box(Modifier.weight(ScreenLayout.DETAIL_FRACTION).fillMaxHeight()) {
-                DetailPane(open, onPlay = onPlay, onClose = { detail = null }, onOpenPerson = onOpenPerson)
+                DetailPane(open, onPlay = onPlay, onClose = closeDetail, onOpenPerson = onOpenPerson)
             }
         }
     }

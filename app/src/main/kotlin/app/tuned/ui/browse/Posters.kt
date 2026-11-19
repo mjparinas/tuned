@@ -72,11 +72,12 @@ fun Poster(
     watched: Boolean = false,
     /** More long-press menu entries: label and action. */
     extraMenu: List<Pair<String, () -> Unit>> = emptyList(),
+    modifier: Modifier = Modifier,
 ) {
     var menu by remember { mutableStateOf(false) }
     val hasMenu = onToggleFavourite != null || onPlayNow != null || extraMenu.isNotEmpty()
     Column(
-        Modifier
+        modifier
             .clip(RoundedCornerShape(10.dp))
             .focusRing(RoundedCornerShape(10.dp), MaterialTheme.colorScheme.primary)
             .combinedClickable(

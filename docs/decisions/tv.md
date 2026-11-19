@@ -11,6 +11,14 @@
 
 **No menus on Home** (Melvin, 2026-11-19: "tv needs to be more stream lined and things should be easily accessible. especially on the tv, you have plenty of real estate"). A TV always shows the side rail, and the three-dot menu beside search is gone: Search, Profile and Settings are on the rail under Downloads, and Live TV has a button beside search for the guide grid. See [Large screens](large-screens.md).
 
+**Where focus goes** (Melvin, 2026-11-19: "Optimize TV for remotes", from the UX audit; `ui/common/TvFocus.kt`, paging rule in `core/ListPaging` with tests). On a TV only:
+
+- Live TV, Movies and Shows open with the remote on the item last focused there, or the first one, so the first press of an arrow moves from something visible rather than from nothing. Closing a film, show or guide pane beside the list (or coming back from its page) puts focus back on the item that opened it.
+- A film's page opens with the remote on Play (or Resume), and a show's page on the season showing (or its first episode, when there is only one season), so OK does the likely thing at once.
+- Page up and down, and channel up and down, jump a screenful through a list or grid rather than one row, which matters with thousands of channels. Channel up goes up the list, as on a cable box.
+- Back while scrolled down goes to the top of the list first, as other TV apps do; the next Back leaves as before. A pane or dialog beside the list still closes first.
+- Focus is only put back within a moment of a page opening, so an item that scrolls into view later never pulls focus away from where the person is.
+
 A dedicated TV layout can come later if the phone layout proves awkward from the sofa.
 
 **The remote in the player** (`core/RemoteKeys.kt`, with tests). Media3's controls already handle play, pause, fast forward and rewind, and any arrow shows the controls. On top of that:
