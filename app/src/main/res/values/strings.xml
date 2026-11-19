@@ -216,6 +216,7 @@
         <item quantity="one">%d crash report</item>
         <item quantity="other">%d crash reports</item>
     </plurals>
+    <string name="clock_hint">This device\'s date and time look wrong. When they are, secure connections fail and it looks like the server is down. Check them in Android\'s settings (Date and time), then try again.</string>
     <string name="settings_user_agent">User agent</string>
     <string name="settings_user_agent_default">Default (Tuned)</string>
     <string name="settings_version">Tuned %1$s (%2$d)</string>

@@ -24,6 +24,7 @@ import app.tuned.data.SyncRepository
 import app.tuned.data.TraktAccount
 import app.tuned.data.TuneRepository
 import app.tuned.data.db.TunedDatabase
+import app.tuned.diagnostics.DeviceClock
 import app.tuned.diagnostics.loggingHandler
 import app.tuned.player.TvCasting
 import app.tuned.premium.Premium
@@ -59,6 +60,7 @@ class AppContainer(
             .connectTimeout(15, TimeUnit.SECONDS)
             .readTimeout(60, TimeUnit.SECONDS)
             .retryOnConnectionFailure(true)
+            .addNetworkInterceptor(DeviceClock.interceptor)
             .build()
     }
     val sync by lazy { SyncRepository(db, http, credentials::load, settings, context.noBackupFilesDir.resolve("sync")) }
