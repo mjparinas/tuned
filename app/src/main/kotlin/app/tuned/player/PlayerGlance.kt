@@ -65,7 +65,7 @@ internal fun addGlance(
 }
 
 /**
- * The stream's picture size, frame rate, sound codec and speakers ("1920x1080", "24 FPS", "AAC", "STEREO"), read from
+ * The stream's picture size, frame rate, sound codec and speakers ("1080p", "24 FPS", "AAC", "STEREO"), read from
  * what ExoPlayer is playing. A pill whose value the stream doesn't give is left out, and the row is gone when none
  * is known or while casting, where the phone plays nothing.
  */
