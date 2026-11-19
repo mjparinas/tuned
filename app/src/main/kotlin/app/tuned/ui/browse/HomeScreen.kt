@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -108,6 +109,7 @@ import app.tuned.ui.common.UpdateBanner
 import app.tuned.ui.common.VoiceSearchButton
 import app.tuned.ui.common.focusRing
 import app.tuned.ui.common.windowWidthDp
+import app.tuned.ui.offline.DownloadsScreen
 import app.tuned.ui.offline.DownloadsViewModel
 import app.tuned.ui.settings.ProfileBadge
 import kotlinx.coroutines.launch
@@ -138,7 +140,6 @@ fun HomeScreen(
     onOpenProfiles: () -> Unit,
     /** Search everything, starting from the words typed on the tab (empty for none). */
     onOpenSearch: (String) -> Unit,
-    onOpenDownloads: () -> Unit,
     onOpenEvents: () -> Unit,
     onTune: (String) -> Unit,
     onOpenPlaylists: () -> Unit,
@@ -182,7 +183,12 @@ fun HomeScreen(
     val openShow: (String, String) -> Unit = if (panes) { key, title -> detail = Detail.show(key, title) } else onOpenShow
     val openMovie: (Long) -> Unit = if (panes) { id -> detail = Detail.movie(id) } else onOpenMovie
     val openGuide: (Long) -> Unit = if (panes) { id -> detail = Detail.guide(id) } else onOpenGuide
+    // Downloads is a section of Home like the three tabs, so the bar stays under it; back returns to the tab before.
+    var downloads by rememberSaveable { mutableStateOf(false) }
+    BackHandler(enabled = downloads) { downloads = false }
+    val openDownloads = { downloads = true }
     val select: (Int) -> Unit = { index ->
+        downloads = false
         selected = index
         vm.rememberTab(index)
     }
@@ -205,13 +211,13 @@ fun HomeScreen(
     }
 
     Row(Modifier.fillMaxSize()) {
-        if (rail) HomeRail(selected, select, onOpenDownloads)
+        if (rail) HomeRail(selected.takeUnless { downloads }, select, openDownloads)
         Scaffold(
             modifier = Modifier.weight(1 - ScreenLayout.DETAIL_FRACTION),
             snackbarHost = { SnackbarHost(snackbar) },
             floatingActionButton = {
                 // Auto-tune: with a search on Live TV (a channel or an event, say "UFC"), find one that works and play it.
-                if (tab.kind == ContentKind.LIVE && liveSearch.isNotBlank()) {
+                if (!downloads && tab.kind == ContentKind.LIVE && liveSearch.isNotBlank()) {
                     ExtendedFloatingActionButton(
                         onClick = { onTune(liveSearch.trim()) },
                         icon = { Icon(Icons.Filled.Radar, contentDescription = null) },
@@ -220,6 +226,8 @@ fun HomeScreen(
                 }
             },
             topBar = {
+                // Downloads has its own title bar.
+                if (downloads) return@Scaffold
                 val search = vm.search(tab.kind)
                 val text by search.collectAsStateWithLifecycle()
                 SearchBarRow(
@@ -241,17 +249,24 @@ fun HomeScreen(
                     NavigationBar {
                         tabs.forEachIndexed { index, t ->
                             NavigationBarItem(
-                                selected = index == selected,
+                                selected = !downloads && index == selected,
                                 onClick = { select(index) },
                                 icon = { Icon(t.icon, contentDescription = null) },
                                 label = { Text(stringResource(t.label)) },
                             )
                         }
-                        DownloadsNavItem(onOpenDownloads)
+                        DownloadsNavItem(downloads, openDownloads)
                     }
                 }
             },
         ) { padding ->
+            if (downloads) {
+                // Its own title bar sits under the space Home's Scaffold already left for the status bar.
+                Box(Modifier.padding(padding).consumeWindowInsets(padding).fillMaxSize()) {
+                    DownloadsScreen(onPlay = onPlay, onBack = null)
+                }
+                return@Scaffold
+            }
             Column(Modifier.padding(padding).fillMaxSize()) {
                 if (empty == true) {
                     FirstRun(
@@ -616,11 +631,17 @@ private fun RefreshBar(progress: SyncProgress) {
     }
 }
 
-/** Downloads, beside the three sections: opens its own page, with a badge while anything is still to download. */
+/**
+ * Downloads, beside the three sections: opens in their place with the bar still below, and has a badge while anything
+ * is still to download.
+ */
 @Composable
-private fun RowScope.DownloadsNavItem(onClick: () -> Unit) {
+private fun RowScope.DownloadsNavItem(
+    selected: Boolean,
+    onClick: () -> Unit,
+) {
     NavigationBarItem(
-        selected = false,
+        selected = selected,
         onClick = onClick,
         icon = { DownloadsIcon() },
         label = { Text(stringResource(R.string.downloads)) },

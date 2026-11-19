@@ -15,14 +15,17 @@ import app.tuned.R
 @Composable
 fun BackTopBar(
     title: String,
-    onBack: () -> Unit,
+    /** Null for a page with nowhere to go back to, such as a section of Home: no arrow. */
+    onBack: (() -> Unit)?,
     actions: @Composable RowScope.() -> Unit = {},
 ) {
     TopAppBar(
         title = { Text(title, maxLines = 1, overflow = TextOverflow.Ellipsis) },
         navigationIcon = {
-            IconButton(onClick = onBack) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back))
+            if (onBack != null) {
+                IconButton(onClick = onBack) {
+                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back))
+                }
             }
         },
         actions = actions,

@@ -3,6 +3,8 @@ package app.tuned.screenshots
 import androidx.compose.ui.test.hasAnyDescendant
 import androidx.compose.ui.test.hasScrollAction
 import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.isSelectable
+import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToNode
 import app.tuned.R
 import app.tuned.core.ContentKind
@@ -81,6 +83,15 @@ class BrowseScreenshots : Screenshots() {
     @Test fun events() = shot("browse-events", EventsRoute, wait = text(R.string.events_title))
 
     @Test fun downloads() = shot("browse-downloads", DownloadsRoute, wait = text(R.string.downloads))
+
+    /** Downloads from the bar on Home, which stays below it. */
+    @Test
+    fun downloadsOnHome() = shot(
+        "browse-downloads-home",
+        HomeRoute,
+        wait = "Maple News 24",
+        then = { compose.onNode(hasText(text(R.string.downloads)) and isSelectable()).performClick() },
+    )
 
     @Test fun profiles() = shot("browse-profiles", ProfilesRoute(atStart = true), wait = text(R.string.profiles_title))
 
