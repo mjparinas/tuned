@@ -1,7 +1,13 @@
 package app.tuned.screenshots
 
+import androidx.compose.ui.test.hasAnyDescendant
+import androidx.compose.ui.test.hasScrollAction
+import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.performScrollToNode
 import app.tuned.R
+import app.tuned.core.ContentKind
 import app.tuned.core.Episodes
+import app.tuned.core.PinnedGroups
 import app.tuned.data.StartTab
 import app.tuned.ui.DownloadsRoute
 import app.tuned.ui.EventsRoute
@@ -20,6 +26,21 @@ import org.robolectric.annotation.Config
 @RunWith(RobolectricTestRunner::class)
 class BrowseScreenshots : Screenshots() {
     @Test fun liveTv() = shot("browse-live-tv", HomeRoute, wait = "Maple News 24")
+
+    /** A group pinned to the front of the chips, with its pin showing. */
+    @Test
+    fun liveTvPinned() = shot(
+        "browse-live-tv-pinned",
+        HomeRoute,
+        wait = "Maple News 24",
+        settings = DARK.copy(pinnedGroups = PinnedGroups.toggle("", ContentKind.LIVE.code, "UK | News")),
+        // The groups come after Favourites and Recent, off the right edge: scroll the chips to the pinned one.
+        then = {
+            compose
+                .onNode(hasScrollAction() and hasAnyDescendant(hasText(text(R.string.filter_favourites))))
+                .performScrollToNode(hasText("News", substring = true))
+        },
+    )
 
     @Test
     @Config(qualifiers = TV)
