@@ -24,10 +24,10 @@ Kotlin, Jetpack Compose with Material 3, Navigation Compose (type-safe routes), 
 
 - `:core`: plain Kotlin, no Android. The M3U and XMLTV parsers, sorting streams into Live TV, Movies and Shows, country detection, episode numbering, Xtream URLs. Anything that can be tested without a device goes here, with a test.
 - `:app`: the Android app, in two builds ([premium](docs/decisions/premium.md)): `github` (GitHub Releases, updates itself, everything unlocked) and `play` (Google Play and other stores: no self-updater, Premium sold through Play Billing). Neither build fills in a server (Melvin, 2026-11-19). Store builds never name a provider, channel or sports brand, in the app or the listing.
-- `:app` folders: `data/` (Room, DataStore settings, encrypted login, sync), `work/` (background refresh), `player/` (PlayerActivity), `ui/` (Compose screens, one screen and its ViewModel per file).
+- `:app` folders: `data/` (Room, DataStore settings, encrypted login, the Tuned account and its backup), `work/` (background refresh), `player/` (PlayerActivity), `ui/` (Compose screens, one screen and its ViewModel per file).
 - `:smoketest`: the github debug app on an emulator: sign in, play, change channel, back, and never two stream connections at once ([diagnostics](docs/decisions/diagnostics.md)).
 - `:fakeprovider`: plain Kotlin, the stand-in provider on the loopback that both device test modules use, with a generated clip and no login.
-- `devices/`: not Gradle. The Premium device list and its website on Vercel, and the relay and page for signing in on a TV with a phone; plain Node with no dependencies, tests in `devices/lib/*.test.mjs` ([premium](docs/decisions/premium.md), [onboarding](docs/decisions/onboarding.md)).
+- `devices/`: not Gradle. Tuned's server and website on Vercel: accounts with Google sign-in, device seats, Stripe, backups (Postgres on Neon, `devices/schema.sql`), the Premium device list, and the relay and page for signing in on a TV with a phone; plain Node whose one dependency is Neon's driver, tests in `devices/lib/*.test.mjs` ([accounts](docs/decisions/accounts.md), [premium](docs/decisions/premium.md), [onboarding](docs/decisions/onboarding.md)).
 - `:baselineprofile`: drives the release app on an emulator to write its baseline profile and measure cold start ([speed](docs/decisions/speed.md)).
 
 ## Product rules
@@ -85,6 +85,7 @@ Melvin, 2026-11-17: his product and development decisions "should be updated and
 One file per topic in `docs/decisions/`, A to Z. Add a line when you add a topic.
 
 - [Accessibility](docs/decisions/accessibility.md): TalkBack labels and states, 48dp targets, large text, the player's controls with a screen reader.
+- [Accounts](docs/decisions/accounts.md): the Tuned account (Google sign-in), seats per account and extra seats, Stripe, backups on our server.
 - [Architecture](docs/decisions/architecture.md): native Kotlin over Capacitor, modules, data flow.
 - [Auto-tune](docs/decisions/auto-tune.md): finding a working English stream for a live event, one connection at a time.
 - [Branding](docs/decisions/branding.md): name, the channel stack icon, colours, themes.
@@ -105,7 +106,7 @@ One file per topic in `docs/decisions/`, A to Z. Add a line when you add a topic
 - [Security](docs/decisions/security.md): login storage, cleartext HTTP, Android backup off (backup files removed 2026-11-18).
 - [Settings](docs/decisions/settings.md): the pages of Settings and what goes where.
 - [Speed](docs/decisions/speed.md): what keeps the app fast, and the budget.
-- [Sync](docs/decisions/sync.md): phone and TV kept the same through one file in Google Drive (`drive.file`), with no passphrase.
+- [Sync](docs/decisions/sync.md): removed. Google Drive sync, replaced by the backup in the Tuned account (2026-11-19).
 - [Trakt](docs/decisions/trakt.md): signing in with a code, scrobbling films and episodes, the app's keys.
 - [TV](docs/decisions/tv.md): Android TV launcher, focus outlines, remote keys in the player.
 - [Updates](docs/decisions/updates.md): GitHub Releases updater now, Play in-app updates later, semver tags.

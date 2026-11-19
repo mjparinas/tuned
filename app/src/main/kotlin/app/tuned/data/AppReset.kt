@@ -23,11 +23,11 @@ import kotlinx.coroutines.withTimeoutOrNull
 /**
  * Signing out puts Tuned back as it was when installed (Melvin, 2026-11-19: "basically it should just reset the app to
  * a preinstalled state"): every playlist and login, the cached channels and guide, every setting, profile and PIN, and
- * the Trakt and Google Drive accounts. The one choice is the downloads: delete them (the default) or keep them.
+ * the Trakt and Tuned accounts on this device. The one choice is the downloads: delete them (the default) or keep them.
  *
  * Not reset: Premium, which belongs to the Play account and the device seat, not to a playlist (it is asked again
- * afterwards), the crash reports and log in Settings › Updates and advanced, and the synced copy in Google Drive, which
- * is the person's own file in their own account.
+ * afterwards), the crash reports and log in Settings › Updates and advanced, and the backup in the Tuned account, so
+ * signing back in brings everything back.
  *
  * A reset that stops part way (the app is closed or crashes) finishes the next time the app starts: [PENDING] is written
  * before anything is removed and cleared only once every step succeeded, and every step is safe to run twice.
@@ -80,7 +80,7 @@ class AppReset(
                     step("the playlist files") { c.session.playlistFiles.deleteRecursively() },
                     step("the account status") { c.account.clear() },
                     step("Trakt") { c.trakt.disconnect() },
-                    step("Google Drive") { c.cloudSync.disconnect() },
+                    step("Tuned account") { c.cloudSync.disconnect() },
                     // Anything mid-write finishes before the database is emptied under it.
                     step("background work") { stopAllWork() },
                     step("the TV home screen") { if (TvHome.isTv(context)) TvHome(context).clear() },

@@ -11,6 +11,9 @@ import app.tuned.ui.CaptionSettingsRoute
 import app.tuned.ui.RegionSettingsRoute
 import app.tuned.ui.SettingsPageRoute
 import app.tuned.ui.SettingsRoute
+import app.tuned.ui.onboarding.QrModules
+import app.tuned.ui.settings.AccountSignIn
+import app.tuned.ui.settings.AccountSignInDialog
 import app.tuned.ui.settings.SettingsPage
 import app.tuned.ui.settings.SignOutDialog
 import app.tuned.ui.settings.SignOutDownloadsDialog
@@ -95,6 +98,25 @@ class SettingsScreenshots : Screenshots() {
         overlay = { SignOutDialog(onSignOut = {}, onCancel = {}) },
     )
 
+    /** Signing in to the Tuned account: the code to enter on the website (docs/decisions/accounts.md). */
+    @Test
+    fun accountSignIn() = shot(
+        "settings-account-sign-in",
+        SettingsPageRoute(SettingsPage.PLAYLISTS.name),
+        wait = text(R.string.tuned_account_waiting),
+        overlay = { AccountSignInDialog(SIGN_IN_CODE, text(R.string.tuned_account_sign_in), onRetry = {}, onClose = {}) },
+    )
+
+    /** The same on a TV, with a QR code of the website's page for the code. */
+    @Test
+    @Config(qualifiers = TV)
+    fun accountSignInTv() = shot(
+        "settings-account-sign-in-tv",
+        SettingsPageRoute(SettingsPage.PLAYLISTS.name),
+        wait = text(R.string.tuned_account_waiting),
+        overlay = { AccountSignInDialog(SIGN_IN_CODE, text(R.string.tuned_account_sign_in), onRetry = {}, onClose = {}) },
+    )
+
     /** Settings › Guide and refresh › Notifications, which opens Android's page for the dot on the app icon. */
     @Test
     fun notifications() = shot(
@@ -113,6 +135,9 @@ class SettingsScreenshots : Screenshots() {
         then = { compose.onNodeWithText(text(R.string.settings_user_agent)).performScrollTo().performClick() },
     )
 }
+
+private const val SIGN_IN_PAGE = "https://tuned-devices.vercel.app/account?tv=K7QF29MD"
+private val SIGN_IN_CODE = AccountSignIn.State.Code("K7QF-29MD", SIGN_IN_PAGE, QrModules.of(SIGN_IN_PAGE))
 
 /** Every page of Settings, so a new page or row shows up without anyone adding a line. */
 @RunWith(ParameterizedRobolectricTestRunner::class)

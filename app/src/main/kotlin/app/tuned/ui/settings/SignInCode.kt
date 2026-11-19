@@ -29,7 +29,7 @@ import app.tuned.R
 import app.tuned.diagnostics.attempt
 
 /**
- * The short code a sign-in dialog shows (Trakt, Google Drive), with a button that copies it, so it can be pasted on
+ * The short code a sign-in dialog shows (Trakt, the Tuned account), with a button that copies it, so it can be pasted on
  * the activation page when that's open on the same phone (Melvin, 2026-11-18). The icon turns into a tick once copied.
  */
 @Composable

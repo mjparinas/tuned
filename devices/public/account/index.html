@@ -1,0 +1,257 @@
+<!doctype html>
+<html lang="en-CA">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>Your Tuned account</title>
+        <meta name="robots" content="noindex" />
+        <style>
+            :root {
+                --bg: #fafafa;
+                --card: #ffffff;
+                --text: #16181d;
+                --muted: #5b616e;
+                --line: #e3e5ea;
+                --accent: #3a5bd9;
+                --danger: #b42318;
+            }
+            @media (prefers-color-scheme: dark) {
+                :root {
+                    --bg: #0f1115;
+                    --card: #181b21;
+                    --text: #eceef2;
+                    --muted: #a2a8b5;
+                    --line: #2a2e37;
+                    --accent: #8ea6ff;
+                    --danger: #ff8a80;
+                }
+            }
+            * {
+                box-sizing: border-box;
+            }
+            body {
+                margin: 0;
+                background: var(--bg);
+                color: var(--text);
+                font:
+                    16px/1.5 system-ui,
+                    -apple-system,
+                    "Segoe UI",
+                    Roboto,
+                    sans-serif;
+            }
+            main {
+                max-width: 520px;
+                margin: 0 auto;
+                padding: 48px 16px;
+            }
+            h1 {
+                font-size: 1.6rem;
+                margin: 0 0 8px;
+            }
+            p {
+                color: var(--muted);
+                margin: 0 0 16px;
+            }
+            .card {
+                background: var(--card);
+                border: 1px solid var(--line);
+                border-radius: 14px;
+                padding: 20px;
+                margin-top: 20px;
+            }
+            label {
+                display: block;
+                font-weight: 600;
+                margin-bottom: 6px;
+            }
+            input {
+                width: 100%;
+                min-height: 48px;
+                padding: 10px 12px;
+                font: inherit;
+                color: var(--text);
+                background: var(--bg);
+                border: 1px solid var(--line);
+                border-radius: 10px;
+            }
+            button {
+                min-height: 48px;
+                padding: 10px 16px;
+                font: inherit;
+                font-weight: 600;
+                border-radius: 10px;
+                border: 1px solid var(--accent);
+                background: var(--accent);
+                color: var(--bg);
+                cursor: pointer;
+            }
+            button.plain {
+                background: transparent;
+                color: var(--danger);
+                border-color: var(--line);
+            }
+            button:disabled {
+                opacity: 0.5;
+                cursor: default;
+            }
+            form button {
+                margin-top: 12px;
+                width: 100%;
+            }
+            ul {
+                list-style: none;
+                padding: 0;
+                margin: 0;
+            }
+            li {
+                display: flex;
+                align-items: center;
+                gap: 12px;
+                min-height: 56px;
+                border-bottom: 1px solid var(--line);
+            }
+            li:last-child {
+                border-bottom: 0;
+            }
+            li span {
+                flex: 1;
+            }
+            small {
+                display: block;
+                color: var(--muted);
+            }
+            #status {
+                margin-top: 16px;
+            }
+            #all {
+                margin-top: 16px;
+                width: 100%;
+            }
+        </style>
+        <style>
+            .row {
+                display: flex;
+                gap: 12px;
+                align-items: center;
+                justify-content: space-between;
+                padding: 12px 0;
+                border-top: 1px solid var(--line);
+            }
+            .row:first-of-type {
+                border-top: 0;
+            }
+            .actions {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 8px;
+                margin-top: 12px;
+            }
+            .small {
+                font-size: 0.9rem;
+                color: var(--muted);
+                margin: 0;
+            }
+            h2 {
+                font-size: 1.1rem;
+                margin: 0 0 8px;
+            }
+            select {
+                min-height: 48px;
+                font: inherit;
+                padding: 8px;
+                border-radius: 10px;
+                border: 1px solid var(--line);
+                background: var(--bg);
+                color: var(--text);
+            }
+            button.quiet {
+                background: transparent;
+                color: var(--accent);
+                border-color: var(--line);
+            }
+            [hidden] {
+                display: none !important;
+            }
+        </style>
+    </head>
+    <body>
+        <main>
+            <h1>Your Tuned account</h1>
+            <p id="status" role="status" aria-live="polite"></p>
+
+            <section id="signed-out" class="card" hidden>
+                <h2>Sign in</h2>
+                <p>Sign in with Google to see your devices, buy Premium or more seats, and manage your backup.</p>
+                <a id="sign-in" href="/api/auth/google"><button type="button">Sign in with Google</button></a>
+            </section>
+
+            <section id="tv" class="card" hidden>
+                <h2>Sign in this device?</h2>
+                <p>The TV or phone showing <strong id="tv-code"></strong> will be signed in to your account and get your backup.</p>
+                <div class="actions">
+                    <button type="button" id="tv-yes">Sign it in</button>
+                    <button type="button" class="quiet" id="tv-no">Not now</button>
+                </div>
+            </section>
+
+            <div id="signed-in" hidden>
+                <section class="card">
+                    <h2 id="who"></h2>
+                    <p class="small" id="plan"></p>
+                </section>
+
+                <section class="card">
+                    <h2>Devices</h2>
+                    <p class="small" id="seats"></p>
+                    <div id="devices"></div>
+                </section>
+
+                <section class="card" id="buy">
+                    <h2 id="buy-title">Tuned Premium</h2>
+                    <p class="small" id="buy-line"></p>
+                    <div class="actions" id="buy-premium">
+                        <button type="button" data-product="premium_yearly">Yearly</button>
+                        <button type="button" data-product="premium_lifetime">Lifetime</button>
+                    </div>
+                    <div class="actions" id="buy-seats" hidden>
+                        <label for="seat-count" class="small">Extra seats</label>
+                        <select id="seat-count"></select>
+                        <button type="button" id="buy-seat">Buy seats</button>
+                    </div>
+                    <div class="actions">
+                        <button type="button" class="quiet" id="billing" hidden>Receipts and billing</button>
+                    </div>
+                </section>
+
+                <section class="card">
+                    <h2>Backup</h2>
+                    <p class="small" id="backup"></p>
+                    <div class="actions">
+                        <button type="button" class="plain" id="delete-backup" hidden>Delete backup</button>
+                    </div>
+                </section>
+
+                <section class="card">
+                    <h2>Pair a TV</h2>
+                    <p class="small">Type the eight-character code your TV or phone shows when signing in to your Tuned account.</p>
+                    <label for="pair-code">Code on the screen</label>
+                    <input id="pair-code" autocomplete="off" autocapitalize="characters" placeholder="K7QF-29MD" />
+                    <div class="actions"><button type="button" id="pair">Sign in the TV</button></div>
+                </section>
+
+                <section class="card">
+                    <div class="actions">
+                        <button type="button" class="plain" id="sign-out">Sign out</button>
+                        <button type="button" class="plain" id="delete-account">Delete account</button>
+                    </div>
+                    <p class="small" id="delete-line" hidden>
+                        This deletes your account, devices and backup, and cancels a yearly plan bought here. A plan bought in Google Play
+                        is cancelled in Play. Press Delete account again to confirm.
+                    </p>
+                </section>
+            </div>
+        </main>
+        <script type="module" src="/account/account.js"></script>
+    </body>
+</html>

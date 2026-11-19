@@ -1,9 +1,12 @@
 {
   "name": "tuned-devices",
   "private": true,
-  "description": "The Premium device list for Tuned's store build (docs/decisions/premium.md). No dependencies.",
+  "description": "Tuned's website and server: accounts, device seats, backups, payments and TV sign-in (docs/decisions/accounts.md, premium.md). One dependency, Neon's driver for Postgres.",
   "type": "module",
   "engines": {
     "node": "22.x"
+  },
+  "dependencies": {
+    "@neondatabase/serverless": "1.2.0"
   }
 }

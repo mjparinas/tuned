@@ -41,9 +41,9 @@ class WelcomeScreenTvTest {
             R.string.kind_link,
             R.string.kind_file,
             R.string.kind_stalker_summary,
+            R.string.restore_account,
             R.string.login_privacy,
         ).forEach { id ->
-            // Restore from Google Drive is left out: it hides itself in builds without the app's Google keys, as here.
             val node = compose.onNodeWithText(text(id))
             node.assertIsDisplayed()
             // Whole, not just partly on screen: a card cut off at the bottom edge used to pass.

@@ -28,23 +28,23 @@ import app.tuned.data.CloudSyncRepository
 import app.tuned.diagnostics.launchSafely
 import app.tuned.ui.asksProfileAtStart
 import app.tuned.ui.common.TunedDialog
-import app.tuned.ui.settings.DriveSignIn
-import app.tuned.ui.settings.DriveSignInDialog
+import app.tuned.ui.settings.AccountSignIn
+import app.tuned.ui.settings.AccountSignInDialog
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 
 /**
- * The welcome screen's Restore from Google Drive (Melvin, 2026-11-19: "The homepage of the tuned app should let you also
- * sign into Google drive and load all your settings automatically"): Google's sign-in with a code, as in Settings › Sync
- * between devices, then the copy in Drive in place of this fresh install's, and straight into the app.
+ * The welcome screen's Restore from your Tuned account (Melvin, 2026-11-19: "The homepage of the tuned app should let you
+ * also sign into Google drive and load all your settings automatically"; Drive was replaced by the Tuned account the same
+ * day): signing in with a code, as in Settings › Tuned account, then the backup in place of this fresh install's, and
+ * straight into the app.
  */
 class RestoreViewModel(
     app: Application,
 ) : AndroidViewModel(app) {
     private val sync = app.container.cloudSync
-    val available = sync.available
 
     sealed interface State {
         data object Restoring : State
@@ -62,15 +62,15 @@ class RestoreViewModel(
     private val stateFlow = MutableStateFlow<State?>(null)
     val state: StateFlow<State?> = stateFlow.asStateFlow()
 
-    private val driveSignIn = DriveSignIn(viewModelScope, sync.drive) { restore() }
-    val signIn: StateFlow<DriveSignIn.State?> = driveSignIn.state
+    private val accountSignIn = AccountSignIn(viewModelScope, app.container.tvRelay, sync.account) { restore() }
+    val signIn: StateFlow<AccountSignIn.State?> = accountSignIn.state
 
     /** Signs in first, unless this device already is (an earlier try that found nothing). */
     fun start() {
-        if (sync.signedIn.value) restore() else driveSignIn.start()
+        if (sync.signedIn.value) restore() else accountSignIn.start()
     }
 
-    fun closeSignIn() = driveSignIn.close()
+    fun closeSignIn() = accountSignIn.close()
 
     fun dismiss() {
         stateFlow.value = null
@@ -97,37 +97,36 @@ class RestoreViewModel(
     }
 
     private companion object {
-        const val TAG = "RestoreFromDrive"
+        const val TAG = "RestoreFromAccount"
     }
 }
 
-/** The card under the three kinds of playlist, and the dialogs it opens. Hidden in builds without the app's Google keys. */
+/** The card under the kinds of playlist, and the dialogs it opens. */
 @Composable
-fun RestoreFromDrive(
+fun RestoreFromAccount(
     onRestored: (askProfile: Boolean) -> Unit,
     vm: RestoreViewModel = viewModel(),
 ) {
-    if (!vm.available) return
     val context = LocalContext.current
     val signIn by vm.signIn.collectAsStateWithLifecycle()
     val state by vm.state.collectAsStateWithLifecycle()
-    // Sync is Premium (docs/decisions/premium.md); a Play purchase comes back on its own on a new device.
-    KindCard(Icons.Filled.CloudDownload, R.string.restore_drive, R.string.restore_drive_summary) {
+    // Backing up between devices is Premium (docs/decisions/premium.md); a Play purchase comes back on its own on a new device.
+    KindCard(Icons.Filled.CloudDownload, R.string.restore_account, R.string.restore_account_summary) {
         if (context.container.premium.allow(context)) vm.start()
     }
-    signIn?.let { DriveSignInDialog(it, stringResource(R.string.restore_drive), onRetry = vm::start, onClose = vm::closeSignIn) }
+    signIn?.let { AccountSignInDialog(it, stringResource(R.string.restore_account), onRetry = vm::start, onClose = vm::closeSignIn) }
     when (val s = state) {
         null -> {}
 
         RestoreViewModel.State.Restoring -> {
             TunedDialog(
                 onDismissRequest = {},
-                title = { Text(stringResource(R.string.restore_drive)) },
+                title = { Text(stringResource(R.string.restore_account)) },
                 text = {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         CircularProgressIndicator(Modifier.size(24.dp))
                         Spacer(Modifier.width(16.dp))
-                        Text(stringResource(R.string.restore_drive_working))
+                        Text(stringResource(R.string.restore_account_working))
                     }
                 },
                 confirmButton = {},
@@ -141,12 +140,12 @@ fun RestoreFromDrive(
         is RestoreViewModel.State.Ended -> {
             TunedDialog(
                 onDismissRequest = vm::dismiss,
-                title = { Text(stringResource(R.string.restore_drive)) },
+                title = { Text(stringResource(R.string.restore_account)) },
                 text = { Text(stringResource(endedText(s.result))) },
                 confirmButton = { TextButton(onClick = vm::dismiss) { Text(stringResource(android.R.string.ok)) } },
                 dismissButton =
                     if (s.result == CloudSyncRepository.Restore.OFFLINE) {
-                        { TextButton(onClick = vm::start) { Text(stringResource(R.string.cloud_sync_try_again)) } }
+                        { TextButton(onClick = vm::start) { Text(stringResource(R.string.tuned_account_try_again)) } }
                     } else {
                         null
                     },
@@ -156,8 +155,7 @@ fun RestoreFromDrive(
 }
 
 private fun endedText(result: CloudSyncRepository.Restore): Int = when (result) {
-    CloudSyncRepository.Restore.NOTHING_SAVED -> R.string.restore_drive_nothing
-    CloudSyncRepository.Restore.NO_PLAYLIST -> R.string.restore_drive_no_playlist
-    CloudSyncRepository.Restore.DRIVE_API_OFF -> R.string.cloud_sync_drive_api_off
-    CloudSyncRepository.Restore.OFFLINE, CloudSyncRepository.Restore.RESTORED -> R.string.restore_drive_offline
+    CloudSyncRepository.Restore.NOTHING_SAVED -> R.string.restore_account_nothing
+    CloudSyncRepository.Restore.NO_PLAYLIST -> R.string.restore_account_no_playlist
+    CloudSyncRepository.Restore.OFFLINE, CloudSyncRepository.Restore.RESTORED -> R.string.restore_account_offline
 }
