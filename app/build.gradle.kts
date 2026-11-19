@@ -57,12 +57,15 @@ android {
             buildConfigField("boolean", "GITHUB_UPDATES", "true")
             buildConfigField("boolean", "PREMIUM_ALWAYS", "true")
             buildConfigField("String", "DEFAULT_SERVER", "\"http://eros4k.ddns.net\"")
+            buildConfigField("String", "DEVICES_URL", "\"\"")
         }
         create("play") {
             dimension = "store"
             buildConfigField("boolean", "GITHUB_UPDATES", "false")
             buildConfigField("boolean", "PREMIUM_ALWAYS", "false")
             buildConfigField("String", "DEFAULT_SERVER", "\"\"")
+            // The Premium device list (docs/decisions/premium.md); without it a store build has no device limit.
+            buildConfigField("String", "DEVICES_URL", "\"${System.getenv("PREMIUM_DEVICES_URL").orEmpty()}\"")
         }
     }
 
