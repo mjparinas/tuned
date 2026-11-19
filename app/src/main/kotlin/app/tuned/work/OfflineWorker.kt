@@ -1,8 +1,6 @@
 package app.tuned.work
 
 import android.app.Notification
-import android.app.NotificationChannel
-import android.app.NotificationManager
 import android.content.Context
 import android.content.pm.ServiceInfo
 import android.os.Build
@@ -104,10 +102,7 @@ class OfflineWorker(
 
     private fun notification(progress: Pair<String, Int>?): Notification {
         val context = applicationContext
-        val manager = context.getSystemService(NotificationManager::class.java)
-        manager.createNotificationChannel(
-            NotificationChannel(CHANNEL, context.getString(R.string.downloads), NotificationManager.IMPORTANCE_LOW),
-        )
+        NotificationChannels.ensure(context)
         val percent = progress?.second ?: -1
         return NotificationCompat
             .Builder(context, CHANNEL)
@@ -124,7 +119,7 @@ class OfflineWorker(
     companion object {
         const val NAME = "offline"
         private const val TAG = "Downloads"
-        private const val CHANNEL = "downloads"
+        private const val CHANNEL = NotificationChannels.DOWNLOADS
         private const val NOTIFICATION_ID = 8
         private const val REPORT_EVERY_MS = 500L
         private const val PROGRESS_MAX = 1_000

@@ -1,8 +1,6 @@
 package app.tuned.work
 
 import android.app.Notification
-import android.app.NotificationChannel
-import android.app.NotificationManager
 import android.content.Context
 import android.content.pm.ServiceInfo
 import android.os.Build
@@ -74,10 +72,7 @@ class ScanWorker(
         total: Int,
     ): Notification {
         val context = applicationContext
-        val manager = context.getSystemService(NotificationManager::class.java)
-        manager.createNotificationChannel(
-            NotificationChannel(CHANNEL, context.getString(R.string.scan_channel), NotificationManager.IMPORTANCE_MIN),
-        )
+        NotificationChannels.ensure(context)
         return NotificationCompat
             .Builder(context, CHANNEL)
             .setSmallIcon(R.drawable.ic_stat_tuned)
@@ -118,7 +113,7 @@ class ScanWorker(
 
     private companion object {
         const val NAME = "channel-scan"
-        const val CHANNEL = "scan"
+        const val CHANNEL = NotificationChannels.SCAN
         const val NOTIFICATION_ID = 11
         const val KEY_DONE = "done"
         const val KEY_TOTAL = "total"

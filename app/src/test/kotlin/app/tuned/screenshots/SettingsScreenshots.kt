@@ -95,6 +95,15 @@ class SettingsScreenshots : Screenshots() {
         overlay = { SignOutDialog(onSignOut = {}, onCancel = {}) },
     )
 
+    /** Settings › Guide and refresh › Notifications, which opens Android's page for the dot on the app icon. */
+    @Test
+    fun notifications() = shot(
+        "settings-notifications",
+        SettingsPageRoute(SettingsPage.GUIDE.name),
+        wait = text(R.string.settings_reminder_lead),
+        then = { compose.onNodeWithText(text(R.string.settings_notifications)).performScrollTo() },
+    )
+
     /** The user agent picklist, opened from Settings › About. */
     @Test
     fun userAgents() = shot(
