@@ -63,10 +63,10 @@ class ProfilesTest {
     }
 
     @Test
-    fun atMostFiveProfiles() {
+    fun atMostSixProfiles() {
         assertTrue(ProfileRules.canAdd(1))
-        assertTrue(ProfileRules.canAdd(4))
-        assertFalse(ProfileRules.canAdd(5))
+        assertTrue(ProfileRules.canAdd(5))
+        assertFalse(ProfileRules.canAdd(6))
         assertFalse(ProfileRules.canAdd(7))
     }
 }
