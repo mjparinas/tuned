@@ -311,11 +311,7 @@ private fun SettingsResults(
     val captions = stringResource(R.string.settings_captions)
     if (hasWords(captions, words)) {
         shown++
-        IconRow(
-            Icons.Filled.ClosedCaption,
-            captions,
-            stringResource(if (settings.captions.enabled) R.string.captions_on else R.string.captions_off),
-        ) { onOpen(CaptionSettingsRoute) }
+        CaptionsRow(settings, onOpen)
     }
     SettingsPage.entries.forEach { page ->
         val count = counts.getValue(page)

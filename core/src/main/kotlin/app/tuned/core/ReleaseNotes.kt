@@ -52,8 +52,9 @@ object ReleaseNotes {
         val kind: Kind
         val m = type.find(text)
         if (m != null) {
-            val (name, scope, _, rest) = m.destructured
-            val t = name.lowercase()
+            val t = m.groupValues[1].lowercase()
+            val scope = m.groupValues[2]
+            val rest = m.groupValues[4]
             if (t in upkeep || scope.contains("deps")) return null
             kind =
                 when (t) {
