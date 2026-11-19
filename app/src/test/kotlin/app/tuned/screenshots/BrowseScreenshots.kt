@@ -52,6 +52,16 @@ class BrowseScreenshots : Screenshots() {
 
     @Test fun shows() = shot("browse-shows", HomeRoute, wait = "Snowline", settings = DARK.copy(startTab = StartTab.SHOWS))
 
+    /** With more than one profile, the profile button sits beside the search box, as tall as it. */
+    @Test
+    fun showsWithProfiles() =
+        shot("browse-shows-profiles", HomeRoute, wait = "Snowline", settings = DARK.copy(startTab = StartTab.SHOWS, profileCount = 2))
+
+    @Test
+    @Config(qualifiers = TV)
+    fun liveTvOnTvWithProfiles() =
+        shot("browse-live-tv-tv-profiles", HomeRoute, wait = "Maple News 24", settings = DARK.copy(profileCount = 2))
+
     @Test
     @Config(qualifiers = TABLET)
     fun liveTvTablet() = shot("browse-live-tv-tablet", HomeRoute, wait = "Maple News 24")

@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
@@ -84,6 +85,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.CustomAccessibilityAction
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.customActions
 import androidx.compose.ui.semantics.semantics
@@ -104,6 +106,7 @@ import app.tuned.diagnostics.DeviceClock
 import app.tuned.ui.SyncText
 import app.tuned.ui.common.UpdateBanner
 import app.tuned.ui.common.VoiceSearchButton
+import app.tuned.ui.common.focusRing
 import app.tuned.ui.common.windowWidthDp
 import app.tuned.ui.offline.DownloadsViewModel
 import app.tuned.ui.settings.ProfileBadge
@@ -342,10 +345,23 @@ private fun SearchBarRow(
             // there are profiles, otherwise the three dots. Everything else that used to sit here is in its menu.
             val more = stringResource(R.string.home_menu)
             Box {
-                IconButton(onClick = { menu = true }, modifier = Modifier.semantics { contentDescription = more }) {
-                    if (profile != null) {
-                        ProfileBadge(profile, size = 28.dp)
-                    } else {
+                if (profile != null) {
+                    // As tall as the search box beside it (Melvin, 2026-11-19: "make the user button bigger"). The ring
+                    // shows on the outer edge while a TV remote is on it, clear of the picture inside.
+                    Box(
+                        Modifier
+                            .padding(start = 8.dp, end = 4.dp)
+                            .size(PROFILE_BUTTON)
+                            .clip(CircleShape)
+                            .focusRing(CircleShape, MaterialTheme.colorScheme.primary)
+                            .clickable(role = Role.Button) { menu = true }
+                            .semantics { contentDescription = more },
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        ProfileBadge(profile, size = PROFILE_BADGE)
+                    }
+                } else {
+                    IconButton(onClick = { menu = true }, modifier = Modifier.semantics { contentDescription = more }) {
                         Icon(Icons.Filled.MoreVert, contentDescription = null)
                     }
                 }
@@ -619,3 +635,7 @@ internal fun DownloadsIcon(downloads: DownloadsViewModel = viewModel()) {
         Icon(Icons.Filled.DownloadForOffline, contentDescription = null)
     }
 }
+
+/** The profile button beside the search box: its height (56dp, a Material text field's) and the picture inside it. */
+private val PROFILE_BUTTON = 56.dp
+private val PROFILE_BADGE = 48.dp
