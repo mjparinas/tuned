@@ -79,6 +79,11 @@ internal fun PlaybackPage(
         vm.update { it.copy(pictureInPicture = on) }
     }
     SwitchRow(
+        stringResource(R.string.settings_background_play),
+        settings.backgroundPlay,
+        stringResource(R.string.settings_background_play_summary),
+    ) { on -> vm.update { it.copy(backgroundPlay = on) } }
+    SwitchRow(
         stringResource(R.string.settings_media_buttons),
         settings.mediaButtons,
         stringResource(R.string.settings_media_buttons_summary),
