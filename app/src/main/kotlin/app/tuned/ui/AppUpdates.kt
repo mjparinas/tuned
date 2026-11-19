@@ -4,7 +4,9 @@ import androidx.activity.ComponentActivity
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.contract.ActivityResultContracts
+import app.tuned.BuildConfig
 import app.tuned.container
+import app.tuned.data.ServerFlags
 import com.google.android.play.core.appupdate.AppUpdateManagerFactory
 import com.google.android.play.core.appupdate.AppUpdateOptions
 import com.google.android.play.core.install.InstallStateUpdatedListener
@@ -48,7 +50,10 @@ class AppUpdates(
             // the check short. The check never throws.
             val container = activity.container
             container.appScope.launch {
-                if (container.settings.settings
+                // A version older than the admin's `min_version_code` looks for an update even with the setting off.
+                val tooOld = ServerFlags.now.value.tooOld(BuildConfig.VERSION_CODE)
+                if (tooOld ||
+                    container.settings.settings
                         .first()
                         .checkUpdates
                 ) {

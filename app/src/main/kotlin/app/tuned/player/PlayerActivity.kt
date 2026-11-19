@@ -36,6 +36,7 @@ import app.tuned.core.ContentKind
 import app.tuned.core.PlayGate
 import app.tuned.core.Titles
 import app.tuned.data.AppSettings
+import app.tuned.data.ServerFlags
 import app.tuned.data.db.HistoryEntity
 import app.tuned.data.db.ItemEntity
 import app.tuned.diagnostics.AppLog
@@ -113,6 +114,7 @@ class PlayerActivity : FragmentActivity() {
     private var savedFiles: Map<Long, File> = emptyMap()
     private val subtitleTiming = SubtitleTiming()
     private val progress by lazy { PlaybackProgress(container) }
+    private val playUsage by lazy { PlayUsage(container.usage) }
     private val subtitleSearch by lazy {
         SubtitleSearch(this, container.subtitles, { player }, { queue }, { settings }, { cast?.casting == true }, ::flash)
     }
@@ -407,7 +409,7 @@ class PlayerActivity : FragmentActivity() {
                 subtitleOffsetMs = { subtitleTiming.offsetMs },
                 onTvChanged = ::castChanged,
                 resolve = container.stalker::resolve,
-            ).also { c -> tools.addButton(c.button) }
+            ).also { c -> if (ServerFlags.now.value.cast) tools.addButton(c.button) } // the admin's `cast` switch
         tools.addButton(recorder.button)
     }
 
@@ -627,9 +629,10 @@ class PlayerActivity : FragmentActivity() {
                 ?.currentMediaItem
                 ?.mediaId
                 ?.toLongOrNull()
-                ?.let {
+                ?.let { id ->
                     pictured = true
-                    backups.pictureShown(it)
+                    backups.pictureShown(id)
+                    playUsage.pictured(queue.firstOrNull { it.id == id }, id in savedFiles, cast?.casting == true)
                 }
         }
 
@@ -680,7 +683,9 @@ class PlayerActivity : FragmentActivity() {
             val sayError = {
                 Toast.makeText(this@PlayerActivity, getString(R.string.player_error, error.errorCodeName), Toast.LENGTH_LONG).show()
             }
-            if (!live || !backups.takeOver(p.currentMediaItem?.mediaId?.toLongOrNull(), onNone = sayError)) sayError()
+            val failedId = p.currentMediaItem?.mediaId?.toLongOrNull()
+            playUsage.failed(queue.firstOrNull { it.id == failedId }, error)
+            if (!live || !backups.takeOver(failedId, onNone = sayError)) sayError()
         }
 
         override fun onTracksChanged(tracks: Tracks) {

@@ -81,6 +81,9 @@ class AppReset(
                     step("the account status") { c.account.clear() },
                     step("Trakt") { c.trakt.disconnect() },
                     step("Tuned account") { c.cloudSync.disconnect() },
+                    // A fresh install gets a new id, so the stats never tie the time before signing out to the time after.
+                    step("the usage stats") { c.usage.forget() },
+                    step("the saved flags") { ServerFlags.forget(context) },
                     // Anything mid-write finishes before the database is emptied under it.
                     step("background work") { stopAllWork() },
                     step("the TV home screen") { if (TvHome.isTv(context)) TvHome(context).clear() },

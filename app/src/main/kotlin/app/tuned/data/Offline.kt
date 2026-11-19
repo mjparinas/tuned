@@ -133,7 +133,8 @@ class Offline(
     /** The player closed, or something was added: carry on with what's left. */
     suspend fun start() {
         // Something added while a stream plays (in picture-in-picture, say) waits: the player starts it on closing.
-        if (watching() || db.downloads().next() == null) return
+        // The admin's `downloads` switch holds them all back; they carry on the next time this runs with it on.
+        if (watching() || !ServerFlags.now.value.downloads || db.downloads().next() == null) return
         val unmetered = settings.settings.first().unmeteredOnly
         val request =
             OneTimeWorkRequestBuilder<OfflineWorker>()

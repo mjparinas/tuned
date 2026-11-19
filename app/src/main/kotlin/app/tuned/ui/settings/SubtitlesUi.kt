@@ -20,6 +20,7 @@ import app.tuned.BuildConfig
 import app.tuned.R
 import app.tuned.container
 import app.tuned.data.AppSettings
+import app.tuned.data.ServerFlags
 import app.tuned.data.SubtitleAccount
 import app.tuned.ui.common.TunedDialog
 
@@ -33,7 +34,7 @@ fun SubtitleSettings(
     settings: AppSettings,
     update: ((AppSettings) -> AppSettings) -> Unit,
 ) {
-    if (BuildConfig.OPENSUBTITLES_API_KEY.isEmpty()) return
+    if (BuildConfig.OPENSUBTITLES_API_KEY.isEmpty() || !ServerFlags.now.value.subtitleSearch) return
     SectionHeader(stringResource(R.string.settings_subtitles))
     SwitchRow(
         stringResource(R.string.settings_auto_subtitles),

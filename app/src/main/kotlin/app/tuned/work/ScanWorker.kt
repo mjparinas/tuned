@@ -18,6 +18,7 @@ import androidx.work.WorkerParameters
 import androidx.work.workDataOf
 import app.tuned.R
 import app.tuned.container
+import app.tuned.data.ServerFlags
 import app.tuned.diagnostics.attempt
 import app.tuned.diagnostics.logFailures
 import kotlinx.coroutines.flow.Flow
@@ -92,6 +93,8 @@ class ScanWorker(
         private val work = WorkManager.getInstance(context)
 
         fun start() {
+            // The admin's `channel_scan` switch (docs/decisions/admin.md).
+            if (!ServerFlags.now.value.channelScan) return
             val request =
                 OneTimeWorkRequestBuilder<ScanWorker>()
                     .setConstraints(Constraints.Builder().setRequiredNetworkType(NetworkType.CONNECTED).build())

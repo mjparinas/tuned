@@ -26,6 +26,8 @@ class CloudSyncRepository(
     private val onSignedIn: () -> Unit,
     /** A pulled copy changed the guide fixes: read the guide again. */
     private val onGuideChanged: () -> Unit = {},
+    /** An event for the usage stats: "backup_saved" or "backup_restored" (docs/decisions/admin.md). */
+    private val onUsage: (String) -> Unit = {},
 ) {
     enum class Problem { NONE, OFFLINE }
 
@@ -114,6 +116,7 @@ class CloudSyncRepository(
             if (applied.guideChanged) onGuideChanged()
             if (applied.signedIn) {
                 onSignedIn()
+                onUsage("backup_restored")
                 Restore.RESTORED
             } else {
                 Restore.NO_PLAYLIST
@@ -147,6 +150,7 @@ class CloudSyncRepository(
                 // A Conflict (another device saved since find) is an IOException: the next run decides again.
                 account.upload(plain, local, System.currentTimeMillis(), remote?.version ?: 0)
                 markSynced(local, (remote?.version ?: 0) + 1)
+                onUsage("backup_saved")
             }
 
             CloudSync.Step.PULL -> {
