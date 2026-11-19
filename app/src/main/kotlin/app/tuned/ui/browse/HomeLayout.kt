@@ -54,7 +54,8 @@ internal data class Detail(
 /** On tablets and unfolded foldables the tabs run down the left edge instead of along the bottom. */
 @Composable
 internal fun HomeRail(
-    selected: Int,
+    /** The tab shown, or null while Downloads is. */
+    selected: Int?,
     onSelect: (Int) -> Unit,
     onOpenDownloads: () -> Unit,
 ) {
@@ -69,7 +70,7 @@ internal fun HomeRail(
             )
         }
         NavigationRailItem(
-            selected = false,
+            selected = selected == null,
             onClick = onOpenDownloads,
             icon = { DownloadsIcon() },
             label = { Text(stringResource(R.string.downloads)) },

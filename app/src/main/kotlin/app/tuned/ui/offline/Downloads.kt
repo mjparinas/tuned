@@ -241,7 +241,8 @@ private fun DownloadEntity.fraction(): Float? = if (total > 0) (bytes.toFloat() 
 @Composable
 fun DownloadsScreen(
     onPlay: (Long) -> Unit,
-    onBack: () -> Unit,
+    /** Null on Home, where Downloads is a section with the bar below rather than a page on top. */
+    onBack: (() -> Unit)?,
     vm: DownloadsViewModel = viewModel(),
 ) {
     val rows by vm.page.collectAsStateWithLifecycle()
