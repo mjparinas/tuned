@@ -1,0 +1,30 @@
+name: Restore the Android test runtime
+description: >
+  Restores the Android framework jars Robolectric downloads from Maven Central when the unit tests start, so a slow or
+  failed download can't fail the tests. The calling job saves them with actions/cache/save when there was no hit.
+outputs:
+  cache-hit:
+    description: "'true' when the jars came from the cache."
+    value: ${{ steps.restore.outputs.cache-hit }}
+  key:
+    description: The cache key, for actions/cache/save.
+    value: ${{ steps.key.outputs.key }}
+  path:
+    description: Where Robolectric keeps the jars.
+    value: ~/.m2/repository/org/robolectric
+runs:
+  using: composite
+  steps:
+    # Keyed on the Robolectric version and the SDK levels the tests ask for, which are what decide which jars it fetches.
+    - id: key
+      shell: bash
+      run: |
+        version=$(grep -m1 '^robolectric = ' gradle/libs.versions.toml | cut -d'"' -f2)
+        sdks=$(grep -rhoE 'sdk = \[[0-9, ]+\]' app/src/test | sort -u | tr -dc '0-9,' )
+        echo "key=robolectric-$version-sdk$sdks" >> "$GITHUB_OUTPUT"
+    - id: restore
+      uses: actions/cache/restore@v5
+      with:
+        path: ~/.m2/repository/org/robolectric
+        key: ${{ steps.key.outputs.key }}
+        restore-keys: robolectric-

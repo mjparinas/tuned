@@ -85,6 +85,7 @@ jobs:
           fi
           echo "run=true" >> "$GITHUB_OUTPUT"
 
+  # Node only, so it needs no Java or Gradle and finishes in under a minute. ktlint runs in Checks, which has Gradle.
   format:
     name: Formatting
     needs: changes
@@ -104,49 +105,40 @@ jobs:
         run: node --test devices/lib/*.test.mjs
       - name: Prettier (YAML, JSON, Markdown)
         run: npx prettier --check .
-      - uses: ./.github/actions/setup-android
-      - name: ktlint (Kotlin, through Spotless)
-        if: ${{ !cancelled() }}
-        run: ./gradlew spotlessCheck
 
-  analysis:
-    name: Lint and static analysis
+  # ktlint, detekt, Android Lint and the unit tests in one job (2026-11-19, AGENTS.md › CI/CD): they all need the
+  # debug variant compiled, so one runner compiles it once instead of two runners compiling it twice, and each run
+  # takes one runner fewer from the account's 20 at a time. It still finishes before the Android build.
+  checks:
+    name: Lint, static analysis and unit tests
     needs: changes
     if: needs.changes.outputs.run == 'true'
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7
       - uses: ./.github/actions/setup-android
-      # detekt and Android Lint both fail on any finding (warnings are errors).
-      - run: ./gradlew detekt :app:lintGithubDebug --continue
+      - uses: ./.github/actions/robolectric-cache
+        id: robolectric
+      # ktlint, detekt and Android Lint fail on any finding (warnings are errors). --continue runs every check and
+      # every test even after one fails, so one run shows everything that needs fixing.
+      - run: ./gradlew spotlessCheck detekt :app:lintGithubDebug :core:test :app:testGithubDebugUnitTest --continue
       - name: Print the findings
         if: failure()
         run: cat app/build/reports/lint-results-githubDebug.txt build/reports/detekt/detekt.txt 2>/dev/null || true
+      - name: Keep the Android test runtime for next time
+        if: ${{ !cancelled() && steps.robolectric.outputs.cache-hit != 'true' }}
+        uses: actions/cache/save@v5
+        with:
+          path: ${{ steps.robolectric.outputs.path }}
+          key: ${{ steps.robolectric.outputs.key }}
       - uses: actions/upload-artifact@v7
         if: failure()
         with:
-          name: lint-reports
+          name: check-reports
           path: |
             build/reports/detekt/
             app/build/reports/lint-results-githubDebug.html
-          retention-days: 7
-
-  test:
-    name: Unit tests
-    needs: changes
-    if: needs.changes.outputs.run == 'true'
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-    steps:
-      - uses: actions/checkout@v7
-      - uses: ./.github/actions/setup-android
-      - run: ./gradlew :core:test :app:testGithubDebugUnitTest --continue
-      - uses: actions/upload-artifact@v7
-        if: failure()
-        with:
-          name: test-reports
-          path: |
             core/build/reports/tests/
             app/build/reports/tests/
           retention-days: 7
@@ -163,7 +155,9 @@ jobs:
       # Unsigned release builds of both the GitHub and the store build, so R8 fails here on a missing keep rule, not in
       # Release. No debug APK: Melvin
       # (2026-11-18) installs only production releases, and lint and the unit tests already compile the debug variant.
-      - run: ./gradlew :app:assembleRelease
+      # Without the release lint pass (lintVital), which repeats Android Lint in Checks and took about 2 minutes of the
+      # build's CPU (Melvin, 2026-11-19). Release builds in release.yml still run it.
+      - run: ./gradlew :app:assembleRelease -x lintVitalGithubRelease -x lintVitalPlayRelease
         env:
           # The commit shown at the bottom of Settings: a pull request's own head, not the merge commit GitHub builds.
           GIT_COMMIT: ${{ github.event.pull_request.head.sha || github.sha }}
@@ -230,7 +224,7 @@ jobs:
 
   passed:
     name: CI passed
-    needs: [changes, decisions, format, analysis, test, android, device]
+    needs: [changes, decisions, format, checks, android, device]
     if: always()
     runs-on: ubuntu-latest
     permissions:
