@@ -74,12 +74,13 @@ class ShowCoversTest {
         helper.close()
     }
 
-    private fun shape(db: SupportSQLiteDatabase): List<String> =
+    private fun shape(db: SupportSQLiteDatabase): List<String> {
+        val columns = mutableListOf<String>()
         db.query("SELECT name, type, `notnull`, dflt_value, pk FROM pragma_table_info('show_covers')").use { c ->
-            buildList {
-                while (c.moveToNext()) add((0 until c.columnCount).joinToString("|") { c.getString(it) ?: "null" })
-            }
-        }.sorted()
+            while (c.moveToNext()) columns += (0 until c.columnCount).joinToString("|") { c.getString(it) ?: "null" }
+        }
+        return columns.sorted()
+    }
 
     private fun episode(
         id: Long,
