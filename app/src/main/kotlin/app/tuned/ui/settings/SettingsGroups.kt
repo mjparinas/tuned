@@ -123,19 +123,20 @@ private val CARD_GAP = 8.dp
 private val CARD_RADIUS = 24.dp
 
 /**
- * The colours of a page's round icon badge. Each has a deep shade for light themes and a soft one for dark themes, so the
- * icon stands out from its tinted circle at better than 3:1 either way.
+ * The colours of a page's round icon badge and of What's new's pills. Each has a deep shade for light themes and a soft
+ * one for dark themes, so the icon, and the pill's word, reads at 4.5:1 or better on its own tinted circle or pill
+ * either way (checked against every card colour Settings uses).
  */
 internal enum class BadgeHue(
     private val light: Long,
     private val dark: Long,
 ) {
-    BLUE(0xFF1A5FB4, 0xFF8AB4F8),
-    VIOLET(0xFF5B3FD9, 0xFFB9A6FF),
-    TEAL(0xFF00695C, 0xFF4DD0C2),
-    RED(0xFFC62828, 0xFFFF8A80),
-    AMBER(0xFF8A5100, 0xFFFFC266),
-    GREEN(0xFF2E7D32, 0xFF81C995),
+    BLUE(0xFF14509A, 0xFF8AB4F8),
+    VIOLET(0xFF5235C8, 0xFFB9A6FF),
+    TEAL(0xFF005D52, 0xFF4DD0C2),
+    RED(0xFF9E1B1B, 0xFFFF8A80),
+    AMBER(0xFF7A4700, 0xFFFFC266),
+    GREEN(0xFF1B5E20, 0xFF81C995),
     ;
 
     @Composable
