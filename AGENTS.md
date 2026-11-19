@@ -27,7 +27,7 @@ Kotlin, Jetpack Compose with Material 3, Navigation Compose (type-safe routes), 
 - `:app` folders: `data/` (Room, DataStore settings, encrypted login, the Tuned account and its backup), `work/` (background refresh), `player/` (PlayerActivity), `ui/` (Compose screens, one screen and its ViewModel per file).
 - `:smoketest`: the github debug app on an emulator: sign in, play, change channel, back, and never two stream connections at once ([diagnostics](docs/decisions/diagnostics.md)).
 - `:fakeprovider`: plain Kotlin, the stand-in provider on the loopback that both device test modules use, with a generated clip and no login.
-- `devices/`: not Gradle. Tuned's server and website on Vercel: accounts with Google sign-in, device seats, Stripe, backups (Postgres on Neon, `devices/schema.sql`), the Premium device list, and the relay and page for signing in on a TV with a phone; plain Node whose one dependency is Neon's driver, tests in `devices/lib/*.test.mjs` ([accounts](docs/decisions/accounts.md), [premium](docs/decisions/premium.md), [onboarding](docs/decisions/onboarding.md)).
+- `devices/`: not Gradle. Tuned's server and website on Vercel: accounts with Google sign-in, device seats, Stripe, backups (Postgres on Neon, `devices/schema.sql`), the admin at `/admin` (`devices/lib/admin/`, `devices/schema-admin.sql`, tests in `devices/lib/admin/*.test.mjs`; [admin](docs/decisions/admin.md)), the Premium device list, and the relay and page for signing in on a TV with a phone; plain Node whose one dependency is Neon's driver, tests in `devices/lib/*.test.mjs` ([accounts](docs/decisions/accounts.md), [premium](docs/decisions/premium.md), [onboarding](docs/decisions/onboarding.md)).
 - `:baselineprofile`: drives the release app on an emulator to write its baseline profile and measure cold start ([speed](docs/decisions/speed.md)).
 
 ## Product rules
@@ -86,6 +86,7 @@ One file per topic in `docs/decisions/`, A to Z. Add a line when you add a topic
 
 - [Accessibility](docs/decisions/accessibility.md): TalkBack labels and states, 48dp targets, large text, the player's controls with a screen reader.
 - [Accounts](docs/decisions/accounts.md): the Tuned account (Google sign-in), seats per account and extra seats, Stripe, backups on our server.
+- [Admin](docs/decisions/admin.md): the admin at `/admin` on the server's website, its 15 sections, two-step sign-in, and the anonymous usage stats, website counter, codes and flags behind it.
 - [Architecture](docs/decisions/architecture.md): native Kotlin over Capacitor, modules, data flow.
 - [Auto-tune](docs/decisions/auto-tune.md): finding a working English stream for a live event, one connection at a time.
 - [Branding](docs/decisions/branding.md): name, the channel stack icon, colours, themes.

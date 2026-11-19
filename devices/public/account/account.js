@@ -138,6 +138,27 @@ $("billing").onclick = async () => {
     else say(refusals.unavailable);
 };
 
+// Codes made on the admin's Codes tab (docs/decisions/admin.md).
+const codeAnswers = {
+    ok: "Done. It's on your account now.",
+    "not found": "That code doesn't work. Check it and try again.",
+    expired: "That code has expired.",
+    "used up": "That code has been used up.",
+    "already used": "You've already used that code.",
+    "already premium": "You already have Premium, so this code can't add it again.",
+    "premium first": "Seats from a code need Premium first.",
+    "too many seats": "An account can have at most ten seats.",
+    "too many": "Too many tries. Try again in an hour.",
+};
+$("redeem").onclick = async () => {
+    const answer = await call("POST", "/api/codes/redeem", { code: $("code").value });
+    say(codeAnswers[answer.status] ?? refusals.unavailable);
+    if (answer.status === "ok") {
+        $("code").value = "";
+        load();
+    }
+};
+
 async function pair(code) {
     const answer = await call("POST", "/api/account/tv", { code });
     say(answer.status === "ok" ? "Done. Your device is signing in now." : (refusals[answer.status] ?? refusals.unavailable));
