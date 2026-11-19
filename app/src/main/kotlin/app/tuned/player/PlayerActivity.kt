@@ -368,7 +368,7 @@ class PlayerActivity : FragmentActivity() {
         levelBars.attach(root)
     }
 
-    /** The buttons at the top right (channels, aspect, quality, info, lock); see [PlayerTools]. */
+    /** The buttons at the top right (channels, flip back, quality, fit, lock); see [PlayerTools]. */
     private fun setUpTools() {
         tools =
             PlayerTools(
@@ -388,7 +388,7 @@ class PlayerActivity : FragmentActivity() {
                         subtitles = subtitleTiming,
                         casting = { cast?.casting == true },
                         dial = dial,
-                        resolve = container.stalker::resolve,
+                        tv = TvHome.isTv(this),
                     ),
                 copies = qualityCopies,
             )

@@ -8,6 +8,7 @@ This file keeps the decisions that don't belong to one area yet: what Tuned will
 - **Multi-view and live previews.** Melvin, 2026-11-17: "not sure if i'm allowed to stream multiple streams, i dont want to get banned". Providers cap connections per account, so Tuned never holds more than one stream: nothing plays two channels at once, nothing prefetches, previews or checks channels in the background. Every feature that opens a stream (auto-tune, backup copies, scans, downloads, recording) waits for or releases the one connection.
 - **AirPlay.** Apple's protocol has no supported Android sender, and the reverse-engineered ones break on live streams (2026-11-17). Chromecast and DLNA cover TVs instead ([player](player.md)).
 - **Backup files.** Melvin, 2026-11-18: "Remove the file back up feature". Saving the login, settings and favourites to a passphrase-locked file, and restoring from one, is removed; sync between devices through Google Drive covers moving to a new device ([sync](sync.md)). Don't add it back or suggest it.
+- **A three-dot menu in the player, stream info and open in another player.** Melvin, 2026-11-19: "On the player I don't like the 3 dots. Get rid of stream info, get rid of open in another player. Make fit a button". The player's tools are buttons in its top row ([player](player.md)); don't put them back behind a menu or bring those two back.
 - **IMDb ratings through OMDb.** Offered and then dropped (2026-11-17): ratings stay on TMDB, so one free key is all a person needs.
 
 ## Decided, being built

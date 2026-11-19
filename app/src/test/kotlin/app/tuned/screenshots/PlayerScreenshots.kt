@@ -63,7 +63,7 @@ class PlayerScreenshots {
         busy = false,
     )
 
-    /** The seek bar in the accent, the time of day at the top right and the stream's pills under the title. */
+    /** The seek bar in the accent, the fit and lock buttons and time of day at the top right, the stream's pills under the title. */
     @Test
     fun controlsAtAGlance() = shot(
         "player-controls",
@@ -148,6 +148,9 @@ class PlayerScreenshots {
                 gravity = Gravity.CENTER_VERTICAL
                 addView(backButton(activity) {})
                 addView(titles, LinearLayout.LayoutParams(0, WRAP, 1f))
+                // The top row's own buttons (PlayerTools), with no three-dot menu: fit greyed out while the TV plays.
+                addView(toolButton(activity, R.drawable.ic_player_fit, R.string.player_fit).apply { usable(note == null) })
+                addView(toolButton(activity, R.drawable.ic_player_lock, R.string.player_lock))
                 addView(playerClock(activity))
             }
         val status = StatusNote(activity).apply { note?.let { show(it, busy) } }
