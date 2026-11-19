@@ -21,7 +21,10 @@ jobs:
   #  1. Nothing, when this exact tree already passed. "CI passed" records the tree it tested as a commit status
   #     ("CI passed tree"), so the staging push after a squash merge, the promotion pull request, the push
   #     to main and the merge back into staging finish in seconds.
-  #  2. Only the gate, when every changed file is Markdown and the commit before it passed.
+  #  2. Only Prettier and the gate, when every changed file is Markdown (Melvin, 2026-11-19: "dont run ci if there are
+  #     only markdown file changes"). Markdown can't break a build, a test or the app, so this no longer waits on the
+  #     commit before it having passed; Prettier still checks it, in seconds, so the next pull request isn't the one to
+  #     fail on its formatting. The tree is recorded as passed only when the commit before it passed too.
   #  3. Everything otherwise.
   changes:
     name: Changed files
@@ -33,6 +36,8 @@ jobs:
       statuses: read
     outputs:
       run: ${{ steps.diff.outputs.run }}
+      markdown: ${{ steps.diff.outputs.markdown }}
+      record: ${{ steps.diff.outputs.record }}
       tree: ${{ steps.diff.outputs.tree }}
     steps:
       - uses: actions/checkout@v7
@@ -78,18 +83,24 @@ jobs:
           echo "$files"
           [ -n "$files" ] || everything
           not_md=$(grep -vE '\.md$' <<< "$files" || true)
-          if [ -z "$not_md" ] && passed "$base" "$(git rev-parse "$base^{tree}")"; then
-            echo "run=false" >> "$GITHUB_OUTPUT"
-            echo "::notice::Only Markdown changed and ${base:0:7} passed CI, so the checks and builds are skipped."
+          if [ -z "$not_md" ]; then
+            { echo "run=false"; echo "markdown=true"; } >> "$GITHUB_OUTPUT"
+            if passed "$base" "$(git rev-parse "$base^{tree}")"; then
+              echo "::notice::Only Markdown changed and ${base:0:7} passed CI, so only Prettier runs."
+            else
+              echo "record=false" >> "$GITHUB_OUTPUT"
+              echo "::notice::Only Markdown changed, so only Prettier runs. ${base:0:7} hasn't passed CI (yet), so this tree isn't recorded as passed."
+            fi
             exit 0
           fi
           echo "run=true" >> "$GITHUB_OUTPUT"
 
   # Node only, so it needs no Java or Gradle and finishes in under a minute. ktlint runs in Checks, which has Gradle.
+  # On a Markdown-only change only Prettier runs.
   format:
     name: Formatting
     needs: changes
-    if: needs.changes.outputs.run == 'true'
+    if: needs.changes.outputs.run == 'true' || needs.changes.outputs.markdown == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -100,8 +111,10 @@ jobs:
           cache: npm
       - run: npm ci --no-audit --no-fund
       - name: Release version script tests
+        if: needs.changes.outputs.run == 'true'
         run: node --test scripts/*.test.mjs
       - name: Premium device list tests
+        if: needs.changes.outputs.run == 'true'
         run: node --test devices/lib/*.test.mjs devices/lib/admin/*.test.mjs
       - name: Prettier (YAML, JSON, Markdown)
         run: npx prettier --check .
@@ -237,6 +250,7 @@ jobs:
             exit 1
           fi
       - name: Record the tested tree
+        if: needs.changes.outputs.record != 'false'
         continue-on-error: true
         env:
           GH_TOKEN: ${{ github.token }}
