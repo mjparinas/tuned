@@ -2,6 +2,7 @@ package app.tuned
 
 import android.content.Context
 import app.tuned.data.AccountRepository
+import app.tuned.data.AppReset
 import app.tuned.data.ChannelEditor
 import app.tuned.data.ChannelScanner
 import app.tuned.data.CloudSyncRepository
@@ -124,4 +125,7 @@ class AppContainer(
 
     /** Adding, switching, removing and signing out of playlists. */
     val session by lazy { PlaylistSession(context, credentials, settings, db, reminders, scheduler, account, scanControl) }
+
+    /** Signing out: the app back as it was installed. */
+    val reset by lazy { AppReset(context, this) }
 }
