@@ -64,30 +64,35 @@ internal fun ChannelInfoPane(
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
-                return@Column
+            } else {
+                ChannelDetails(channel)
             }
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Logo(channel.logo, Modifier.size(width = 96.dp, height = 64.dp))
-                Spacer(Modifier.width(16.dp))
-                Column {
-                    if (channel.number > 0) {
-                        Text(
-                            channel.number.toString(),
-                            style = MaterialTheme.typography.labelLarge,
-                            color = MaterialTheme.colorScheme.primary,
-                        )
-                    }
-                    Text(
-                        channel.name,
-                        style = MaterialTheme.typography.titleLarge,
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                }
-            }
-            Programmes(channel)
         }
     }
+}
+
+@Composable
+private fun ChannelDetails(channel: ChannelWithNow) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Logo(channel.logo, Modifier.size(width = 96.dp, height = 64.dp))
+        Spacer(Modifier.width(16.dp))
+        Column {
+            if (channel.number > 0) {
+                Text(
+                    channel.number.toString(),
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.primary,
+                )
+            }
+            Text(
+                channel.name,
+                style = MaterialTheme.typography.titleLarge,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
+    }
+    Programmes(channel)
 }
 
 @Composable
@@ -104,11 +109,11 @@ private fun Programmes(channel: ChannelWithNow) {
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
-        return
-    }
-    programmes.forEachIndexed { i, p ->
-        val onNow = i == 0 && p.start <= now
-        Programme(p, if (onNow) R.string.tv_live_on_now else R.string.tv_live_next, onNow, now, full = i == 0)
+    } else {
+        programmes.forEachIndexed { i, p ->
+            val onNow = i == 0 && p.start <= now
+            Programme(p, if (onNow) R.string.tv_live_on_now else R.string.tv_live_next, onNow, now, full = i == 0)
+        }
     }
 }
 

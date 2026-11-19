@@ -5,6 +5,8 @@ import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onFirst
+import androidx.compose.ui.test.onRoot
+import androidx.compose.ui.test.printToString
 import androidx.compose.ui.test.requestFocus
 import androidx.test.core.app.ApplicationProvider
 import androidx.work.Configuration
@@ -90,7 +92,14 @@ class TvLiveLayoutTest {
         assertEquals(true, favourites.top > all.top && favourites.left == all.left)
         // The details beside the list show the channel the remote is on.
         compose.onAllNodes(hasText("Maple News 24", substring = true) and hasClickAction()).onFirst().requestFocus()
-        compose.waitUntil(WAIT_MS) { compose.onAllNodes(hasText(app.getString(R.string.tv_live_pick))).fetchSemanticsNodes().isEmpty() }
+        val picked =
+            runCatching {
+                compose.waitUntil(
+                    WAIT_MS,
+                ) { compose.onAllNodes(hasText(app.getString(R.string.tv_live_pick))).fetchSemanticsNodes().isEmpty() }
+            }
+        // The whole screen in the failure, to see where focus went.
+        if (picked.isFailure) throw AssertionError(compose.onRoot(useUnmergedTree = true).printToString(), picked.exceptionOrNull())
         compose.onAllNodes(hasText(app.getString(R.string.tv_live_on_now), substring = true)).onFirst().assertExists()
     }
 
