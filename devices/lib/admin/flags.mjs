@@ -13,6 +13,7 @@ export const FLAGS = [
     { key: "channel_scan", label: "Channel scan", group: "Features", type: "bool", default: true },
     { key: "downloads", label: "Downloads", group: "Features", type: "bool", default: true },
     { key: "cast", label: "Cast to a TV", group: "Features", type: "bool", default: true },
+    { key: "web_player", label: "Provider check and web player on the website", group: "Website", type: "bool", default: false },
     {
         key: "usage_batch_minutes",
         label: "Minutes between usage stats uploads",

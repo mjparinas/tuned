@@ -28,3 +28,8 @@ test("values of the wrong type are ignored", () => {
     assert.equal(flagsFor([{ key: "tmdb", value: "no" }], id(1)).tmdb, true);
     assert.equal(flagsFor([{ key: "nope", value: true }], id(1)).nope, undefined);
 });
+
+test("the web player starts off until an admin turns it on", () => {
+    assert.equal(flagsFor([], null).web_player, false);
+    assert.equal(flagsFor([{ key: "web_player", value: true, share: 100 }], null).web_player, true);
+});
