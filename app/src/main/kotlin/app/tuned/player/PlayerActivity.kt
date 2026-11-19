@@ -456,6 +456,8 @@ class PlayerActivity : FragmentActivity() {
     /** A cast began or ended, or the TV changed: the controls show the TV, and what can't work there is greyed out. */
     private fun castChanged() {
         (playerView.player as? ViewPlayer)?.tvChanged()
+        // Speed and sound tracks don't apply to the TV; Media3 enables the button again once the cast ends.
+        if (cast?.casting == true) playerView.findViewById<View>(androidx.media3.ui.R.id.exo_settings)?.usable(false)
         tools.onControls(View.VISIBLE)
         recorder.onControls(View.VISIBLE)
     }
@@ -862,8 +864,8 @@ class PlayerActivity : FragmentActivity() {
     companion object {
         internal const val EXTRA_ID = "id"
 
-        /** Twice how far the status note sits above the centre: clear of the play button, below the title. */
-        private const val STATUS_RAISE_DP = 176
+        /** How far the status note sits above the centre: clear of the play button, below the title. */
+        private const val STATUS_RAISE_DP = 72
         internal const val EXTRA_TUNE = "tune"
         internal const val EXTRA_FROM = "catchup_from"
         private const val EXTRA_UNTIL = "catchup_until"

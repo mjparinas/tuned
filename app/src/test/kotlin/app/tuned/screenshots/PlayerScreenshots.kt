@@ -3,6 +3,7 @@ package app.tuned.screenshots
 import android.graphics.Color
 import android.os.Looper
 import android.view.Gravity
+import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
 import android.widget.ImageButton
@@ -139,6 +140,7 @@ class PlayerScreenshots {
         activity.setContentView(root)
         playerView.showController()
         (playerView.player as ViewPlayer).tvChanged()
+        playerView.findViewById<View>(androidx.media3.ui.R.id.exo_settings)?.usable(false)
         shadowOf(Looper.getMainLooper()).idle()
         root.captureRoboImage("$name.png")
         exo.release()
@@ -157,8 +159,8 @@ class PlayerScreenshots {
     private companion object {
         const val MINUTE = 60_000L
 
-        /** The same as PlayerActivity's: the note sits half this above the centre. */
-        const val STATUS_RAISE_DP = 176
+        /** The same as PlayerActivity's: the note sits this far above the centre. */
+        const val STATUS_RAISE_DP = 72
     }
 }
 
