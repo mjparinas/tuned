@@ -261,7 +261,7 @@ fun HomeScreen(
                     return@Column
                 }
                 requestedProgress?.let { RefreshBar(it) }
-                UpdateBanner()
+                UpdateBanner(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp))
                 CategoryChips(vm, tab.kind, onGroupHidden, onOpenEvents.takeIf { tab.kind == ContentKind.LIVE })
                 val lists: @Composable () -> Unit = {
                     when (tab.kind) {

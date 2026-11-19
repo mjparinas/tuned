@@ -1,7 +1,6 @@
 package app.tuned.ui.common
 
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ButtonDefaults
@@ -26,7 +25,7 @@ import app.tuned.updates.GitHubUpdates
  * screen, so a first install that is already out of date can update before a playlist is added.
  */
 @Composable
-fun UpdateBanner(modifier: Modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp)) {
+fun UpdateBanner(modifier: Modifier = Modifier) {
     val context = LocalContext.current
     val updates = context.container.updates
     val state by updates.state.collectAsStateWithLifecycle()
