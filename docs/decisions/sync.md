@@ -2,7 +2,7 @@
 
 From the app audit, Melvin picked sync between his phone and TV (item 13), and chose "Your Google account (Drive app folder)" over a Tuned server or no cloud at all (2026-11-17), so there's no server of our own to run.
 
-**What syncs** (`SyncCopyRepository.syncCopy`). The saved playlists, every setting, favourites and watch later. Which playlist is in use stays each device's own, so the phone and the TV can watch different ones. A device with no playlist in use starts on the first synced one and downloads it. Device-only settings (sync times, the open tab) never sync.
+**What syncs** (`SyncCopyRepository.syncCopy`). The saved playlists, every setting, favourites and watch later. Which playlist is in use stays each device's own, so the phone and the TV can watch different ones. A device with no playlist in use starts on the first synced one and downloads it. Device-only settings (sync times, the open tab, the sound delay) never sync.
 
 **No passphrase** (Melvin, 2026-11-18: "i dont think we need encryption", picking "No passphrase, logins sync" over keeping the lock or leaving logins out). The copy goes to Drive as a plain JSON file, logins included, so signing in to Google is the whole setup on each device. The file ("Tuned sync") is visible in My Drive, so anyone who gets into the Google account could read the logins; Melvin accepted that. The fingerprint stored beside the file is a plain SHA-256 of the copy (`core/CloudSync.fingerprint`). A copy an older version locked with a passphrase is opened once with the passphrase that device still holds (`core/PassphraseCrypto`, kept only for this) and replaced with a plain one; a device without it sends its own copy instead.
 

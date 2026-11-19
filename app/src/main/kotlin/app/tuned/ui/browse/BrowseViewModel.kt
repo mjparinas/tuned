@@ -23,6 +23,10 @@ import app.tuned.data.db.RegionCount
 import app.tuned.data.db.ShowSummary
 import app.tuned.data.hiddenKeys
 import app.tuned.diagnostics.launchSafely
+import app.tuned.ui.settings.PinActions
+import app.tuned.ui.settings.PinResult
+import app.tuned.ui.settings.matches
+import app.tuned.ui.settings.toPinResult
 import app.tuned.work.TvHome
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
@@ -114,6 +118,43 @@ class BrowseViewModel(
 
     /** Live TV's quick filters (Sports, PPV, a country or a language), on top of the chip chosen. */
     val liveQuick = MutableStateFlow(LiveQuick())
+
+    init {
+        // Locking adult categories again (in Settings, or a kids profile) takes the Adult filter off with them.
+        viewModelScope.launchSafely("BrowseViewModel") {
+            settings.collect { s ->
+                if (s?.showAdult != true && liveQuick.value.topic?.isAdult == true) liveQuick.value = liveQuick.value.copy(topic = null)
+            }
+        }
+    }
+
+    /**
+     * Whether the Adult quick filter shows, and whether it needs the parental PIN first. Never on a kids profile, and
+     * only when the playlist has adult channels. Read only while the sheet is open.
+     */
+    val liveAdult: StateFlow<AdultGate> =
+        combine(settings, container.settings.hasAdultPin, container.db.liveFilters().hasAdultChannels()) { s, hasPin, any ->
+            when {
+                s == null || s.kidsProfile || !any -> AdultGate.Hidden
+                s.showAdult -> AdultGate.Unlocked
+                hasPin -> AdultGate.Locked
+                else -> AdultGate.NoPin
+            }
+        }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), AdultGate.Hidden)
+
+    /** The parental PIN, as Settings asks for it, so the Adult filter unlocks adult categories the same way. */
+    val adultPin: PinActions =
+        object : PinActions {
+            override suspend fun setPin(pin: String) = container.settings.setAdultPin(pin)
+
+            override suspend fun unlock(pin: String): PinResult {
+                val throttle = container.profiles.throttle
+                if (throttle.waiting()) return PinResult.TooMany
+                return throttle.record(container.settings.unlockAdult(pin)).toPinResult()
+            }
+
+            override fun matchesLogin(secret: String): Boolean = container.credentials.matches(secret)
+        }
 
     /** The countries the quick filters can offer: those among the live channels on show. Read only while the sheet is open. */
     val liveRegions: StateFlow<List<RegionCount>> =

@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.FilterChip
@@ -46,6 +47,8 @@ import app.tuned.core.ContentKind
 import app.tuned.core.LiveTopic
 import app.tuned.core.RegionLanguages
 import app.tuned.core.Regions
+import app.tuned.ui.settings.PinDialog
+import app.tuned.ui.settings.PinMode
 import app.tuned.ui.settings.languageName
 
 /** Where the channels come from: one country, or every country in the playlist that speaks a language ([RegionLanguages]). */
@@ -64,6 +67,12 @@ sealed interface LivePlace {
     ) : LivePlace
 }
 
+/**
+ * Whether the Adult quick filter is offered: not on a kids profile or a playlist with no adult channels; otherwise
+ * straight away while adult categories are unlocked, or after the parental PIN (or setting one, as Settings does).
+ */
+enum class AdultGate { Hidden, Locked, NoPin, Unlocked }
+
 /** Live TV's quick filters: at most one kind of channel and one country or language, narrowing together. */
 data class LiveQuick(
     val topic: LiveTopic? = null,
@@ -76,16 +85,18 @@ data class LiveQuick(
 
     /**
      * The keys [app.tuned.data.db.LIVE_QUICK] reads: the [groups] (Live TV's categories) that match the topic, then the
-     * country tags, or "any" for every country. At most [MAX_GROUPS] categories, so the query stays under SQLite's
-     * limit of 999 values on older phones.
+     * country tags, or "any" for every country, then "adult" for the Adult filter. At most [MAX_GROUPS] categories, so
+     * the query stays under SQLite's limit of 999 values on older phones.
      */
     fun keys(groups: List<String>): List<String> {
         val topicGroups = topic?.let { t -> groups.filter { t.matches(it) }.take(MAX_GROUPS).map { "g:$it" } }.orEmpty()
-        return topicGroups + (place?.tags ?: listOf(ANY))
+        val adult = listOfNotNull(ADULT.takeIf { topic?.isAdult == true })
+        return topicGroups + (place?.tags ?: listOf(ANY)) + adult
     }
 
     companion object {
         const val ANY = "any"
+        const val ADULT = "adult"
         private const val MAX_GROUPS = 800
     }
 }
@@ -139,6 +150,12 @@ private fun quickLabel(quick: LiveQuick): String? {
 private fun topicLabel(topic: LiveTopic): Int = when (topic) {
     LiveTopic.SPORTS -> R.string.live_filter_sports
     LiveTopic.PPV -> R.string.live_filter_ppv
+    LiveTopic.NEWS -> R.string.live_filter_news
+    LiveTopic.KIDS -> R.string.live_filter_kids
+    LiveTopic.MOVIES -> R.string.live_filter_movies
+    LiveTopic.MUSIC -> R.string.live_filter_music
+    LiveTopic.DOCUMENTARY -> R.string.live_filter_documentary
+    LiveTopic.ADULT -> R.string.live_filter_adult
 }
 
 @Composable
@@ -179,7 +196,7 @@ private fun LiveFiltersSheet(
             }
             item(key = "topics") {
                 Section(stringResource(R.string.live_filters_type)) {
-                    LiveTopic.entries.forEach { t ->
+                    LiveTopic.entries.filterNot { it.isAdult }.forEach { t ->
                         val on = quick.topic == t
                         FilterChip(
                             selected = on,
@@ -187,6 +204,7 @@ private fun LiveFiltersSheet(
                             label = { Text(stringResource(topicLabel(t))) },
                         )
                     }
+                    AdultChip(vm, quick, set)
                 }
             }
             if (languages.size > 1) {
@@ -219,6 +237,52 @@ private fun LiveFiltersSheet(
                 }
             }
         }
+    }
+}
+
+/**
+ * The Adult filter, behind the parental PIN (Melvin, 2026-11-19: "adult (behind pin)"). While adult categories are
+ * locked it shows a lock, and a tap asks for the PIN (or to set one) before choosing it; the PIN unlocks adult
+ * categories everywhere, exactly as the switch in Settings does, and only until the app closes.
+ */
+@Composable
+private fun AdultChip(
+    vm: BrowseViewModel,
+    quick: LiveQuick,
+    set: (LiveQuick) -> Unit,
+) {
+    val gate by vm.liveAdult.collectAsStateWithLifecycle()
+    var pin by remember { mutableStateOf<PinMode?>(null) }
+    if (gate == AdultGate.Hidden) return
+    val on = quick.topic == LiveTopic.ADULT
+    when (gate) {
+        AdultGate.Hidden -> {}
+
+        AdultGate.Unlocked -> {
+            FilterChip(
+                selected = on,
+                onClick = { set(quick.copy(topic = if (on) null else LiveTopic.ADULT)) },
+                label = { Text(stringResource(R.string.live_filter_adult)) },
+            )
+        }
+
+        AdultGate.Locked, AdultGate.NoPin -> {
+            FilterChip(
+                selected = false,
+                onClick = { pin = if (gate == AdultGate.Locked) PinMode.Unlock else PinMode.Create },
+                label = { Text(stringResource(R.string.live_filter_adult)) },
+                leadingIcon = {
+                    Icon(
+                        Icons.Filled.Lock,
+                        contentDescription = stringResource(R.string.live_filter_adult_locked),
+                        modifier = Modifier.size(16.dp),
+                    )
+                },
+            )
+        }
+    }
+    pin?.let { mode ->
+        PinDialog(mode, vm.adultPin, onDone = { pin = null }, onSuccess = { set(quick.copy(topic = LiveTopic.ADULT)) })
     }
 }
 

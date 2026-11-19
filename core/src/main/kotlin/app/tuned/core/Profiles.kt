@@ -50,6 +50,14 @@ enum class ProfileLock { NONE, PROFILE, PARENTAL }
 
 object ProfileRules {
     /**
+     * At most six profiles (Melvin, 2026-11-18: "there should be [a limit] otherwise the ui will be cluttered", then "change
+     * that to 6 so it's even"): six fill three even rows of two on a phone. A device that already has more keeps them.
+     */
+    const val MAX_PROFILES = 6
+
+    fun canAdd(count: Int): Boolean = count < MAX_PROFILES
+
+    /**
      * A profile with its own PIN always asks for it. Leaving a kids profile for a grown-up one without a PIN asks for
      * the parental PIN, so a child can't walk out of their profile; moving into a kids profile never asks.
      */

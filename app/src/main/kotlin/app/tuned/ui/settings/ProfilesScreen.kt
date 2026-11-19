@@ -2,6 +2,7 @@ package app.tuned.ui.settings
 
 import android.app.Application
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -14,6 +15,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -62,6 +64,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
@@ -79,6 +82,7 @@ import app.tuned.R
 import app.tuned.container
 import app.tuned.core.Avatars
 import app.tuned.core.ProfileLock
+import app.tuned.core.ProfileRules
 import app.tuned.data.Accent
 import app.tuned.data.db.ProfileEntity
 import app.tuned.diagnostics.launchSafely
@@ -219,26 +223,11 @@ fun ProfilesScreen(
         }
     }
 
-    val primary = MaterialTheme.colorScheme.primary
     val manageToggle: () -> Unit = { managing = !managing }
-    Scaffold(
-        containerColor = Color.Transparent,
-        modifier =
-            Modifier
-                .background(MaterialTheme.colorScheme.background)
-                // A soft glow of the accent behind the profiles, so the first screen feels like a welcome, not a form.
-                .drawBehind {
-                    drawRect(
-                        Brush.radialGradient(
-                            listOf(primary.copy(alpha = 0.22f), Color.Transparent),
-                            center = Offset(size.width / 2, size.height * 0.38f),
-                            radius = size.maxDimension * 0.62f,
-                        ),
-                    )
-                },
+    WelcomeScaffold(
         topBar = {
             if (atStart) {
-                Spacer(Modifier.statusBarsPadding())
+                BrandBar()
             } else {
                 BackTopBar(stringResource(if (managing) R.string.profiles_manage else R.string.profiles_title), onBack)
             }
@@ -272,7 +261,8 @@ fun ProfilesScreen(
                     list.forEach { p ->
                         key(p.id) { ProfileTile(p, selected = p.id == current?.id, managing = managing, onClick = { pick(p) }) }
                     }
-                    if (!kidsNow && managing) {
+                    // Hidden at the cap, so the picker never crowds (docs/decisions/profiles.md).
+                    if (!kidsNow && managing && ProfileRules.canAdd(list.size)) {
                         AddTile(onClick = {
                             // A second profile is Premium (docs/decisions/premium.md).
                             if (list.isEmpty() || context.container.premium.allow(context)) editing = newProfile(list.size)
@@ -340,6 +330,57 @@ fun ProfilesScreen(
             canDelete = p.id != 0L && p.id != current?.id && list.size > 1,
             vm = vm,
             onClose = { editing = null },
+        )
+    }
+}
+
+/**
+ * The picker's backdrop: the theme's background with a soft glow of the accent behind the profiles, so the first
+ * screen feels like a welcome, not a form. The container is see-through for the glow, so the text colour is set to
+ * onBackground here; left to itself it falls back to black, which is unreadable on the dark theme.
+ */
+@Composable
+internal fun WelcomeScaffold(
+    topBar: @Composable () -> Unit = {},
+    content: @Composable (PaddingValues) -> Unit,
+) {
+    val primary = MaterialTheme.colorScheme.primary
+    Scaffold(
+        containerColor = Color.Transparent,
+        contentColor = MaterialTheme.colorScheme.onBackground,
+        modifier =
+            Modifier
+                .background(MaterialTheme.colorScheme.background)
+                .drawBehind {
+                    drawRect(
+                        Brush.radialGradient(
+                            listOf(primary.copy(alpha = 0.22f), Color.Transparent),
+                            center = Offset(size.width / 2, size.height * 0.38f),
+                            radius = size.maxDimension * 0.62f,
+                        ),
+                    )
+                },
+        topBar = topBar,
+        content = content,
+    )
+}
+
+/** The app's mark and name in the upper left of "Who's watching?" at start, so the first screen says whose it is. */
+@Composable
+private fun BrandBar() {
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .statusBarsPadding()
+            .padding(start = 20.dp, end = 20.dp, top = 16.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Image(painterResource(R.drawable.ic_brand_mark), contentDescription = null, modifier = Modifier.size(32.dp))
+        Spacer(Modifier.width(10.dp))
+        Text(
+            stringResource(R.string.app_name),
+            style = MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.Bold,
         )
     }
 }

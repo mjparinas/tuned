@@ -364,6 +364,13 @@
     <string name="live_filters_none">No channels match these filters</string>
     <string name="live_filter_sports">Sports</string>
     <string name="live_filter_ppv">PPV and events</string>
+    <string name="live_filter_news">News</string>
+    <string name="live_filter_kids">Kids</string>
+    <string name="live_filter_movies">Movie channels</string>
+    <string name="live_filter_music">Music</string>
+    <string name="live_filter_documentary">Documentaries</string>
+    <string name="live_filter_adult">Adult</string>
+    <string name="live_filter_adult_locked">Needs the parental PIN</string>
     <string name="continue_watching">Continue watching</string>
     <string name="continue_episode">%1$s · S%2$d E%3$d</string>
     <string name="settings_accent">Accent colour</string>

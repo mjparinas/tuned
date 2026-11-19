@@ -1,6 +1,7 @@
 package app.tuned.player
 
 import android.annotation.SuppressLint
+import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.content.pm.ActivityInfo
@@ -19,7 +20,6 @@ import android.widget.Toast
 import androidx.annotation.OptIn
 import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.lifecycleScope
-import androidx.media3.common.AudioAttributes
 import androidx.media3.common.C
 import androidx.media3.common.MediaItem
 import androidx.media3.common.PlaybackException
@@ -27,13 +27,8 @@ import androidx.media3.common.Player
 import androidx.media3.common.Tracks
 import androidx.media3.common.VideoSize
 import androidx.media3.common.util.UnstableApi
-import androidx.media3.exoplayer.DefaultLoadControl
-import androidx.media3.exoplayer.DefaultRenderersFactory
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
-import androidx.media3.exoplayer.trackselection.DefaultTrackSelector
-import androidx.media3.extractor.DefaultExtractorsFactory
-import androidx.media3.extractor.ts.DefaultTsPayloadReaderFactory
 import androidx.media3.ui.PlayerView
 import app.tuned.BuildConfig
 import app.tuned.R
@@ -59,13 +54,27 @@ import java.util.concurrent.ConcurrentHashMap
 /**
  * Full-screen playback. Nothing on screen but the video until a tap shows the standard Media3 controls: play and
  * pause, seek, previous and next (the next channel in the category, or the next episode), captions, and the
- * settings menu for audio language and speed. Built on Views, not Compose, because PlayerView is Media3's own
- * tested surface and starts fastest.
+ * settings menu for audio language and speed (films and episodes only; see [ViewPlayer]). Built on Views, not
+ * Compose, because PlayerView is Media3's own tested surface and starts fastest.
  */
 @OptIn(UnstableApi::class)
 class PlayerActivity : FragmentActivity() {
     private var player: ExoPlayer? = null
-    private val session = PlayerSession(this) { settings.mediaButtons }
+    private val session =
+        PlayerSession(
+            context = this,
+            enabled = { settings.mediaButtons },
+            background = { settings.backgroundPlay },
+            sessionActivity = {
+                // Back to this player as it is: the same request, which the single-task player doesn't restart.
+                PendingIntent.getActivity(this, 0, Intent(intent), PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
+            },
+        )
+
+    /** Leaving the app or locking the screen keeps the sound playing; see [BackgroundPlay]. */
+    private val background by lazy {
+        BackgroundPlay(this, lifecycleScope, { settings.backgroundPlay }, { player }, { cast?.casting == true })
+    }
     private lateinit var playerView: PlayerView
     private lateinit var overlay: LinearLayout
     private lateinit var titleView: TextView
@@ -505,7 +514,7 @@ class PlayerActivity : FragmentActivity() {
         val exo = buildPlayer(live)
         player = exo
         trakt.attach(exo)
-        val shown = ViewPlayer(exo, { cast }, { statusView.visibility = View.GONE }, ::pauseLive)
+        val shown = ViewPlayer(exo, { cast }, { statusView.visibility = View.GONE }, ::pauseLive, ::live)
         playerView.player = shown
         // Media buttons and the Assistant act through the same player as the on-screen controls.
         session.attach(shown)
@@ -573,49 +582,24 @@ class PlayerActivity : FragmentActivity() {
                 headers = { uri -> uri.host?.let(streamHeaders::get).orEmpty() },
                 network = { network -> if (live) timeshift.factory(network) else network },
             )
-        // TS streams from IPTV servers often start on a non-IDR frame; these flags start them sooner.
-        val extractors =
-            DefaultExtractorsFactory().setTsExtractorFlags(
-                DefaultTsPayloadReaderFactory.FLAG_ALLOW_NON_IDR_KEYFRAMES or DefaultTsPayloadReaderFactory.FLAG_DETECT_ACCESS_UNITS,
-            )
-        val buffer = settings.buffer
-        val load =
-            DefaultLoadControl
-                .Builder()
-                .setBufferDurationsMs(buffer.minMs, buffer.maxMs, buffer.startMs, buffer.startMs * 2)
-                .setPrioritizeTimeOverSizeThresholds(true)
-                .build()
-        val captions = settings.captions
-        val selector =
-            DefaultTrackSelector(this).apply {
-                setParameters(
-                    buildUponParameters()
-                        .setPreferredAudioLanguage(settings.audioLanguage.ifBlank { null })
-                        .setPreferredTextLanguage(captions.language.ifBlank { null })
-                        .setSelectUndeterminedTextLanguage(true)
-                        .setTrackTypeDisabled(C.TRACK_TYPE_TEXT, !captions.enabled),
-                )
-            }
-        // If a device's first decoder for a format fails to start, try its next one instead of giving up.
-        val renderers = DefaultRenderersFactory(this).setEnableDecoderFallback(true)
+        // Decoder fallback, and the sound delay from Settings › Player (lip sync); see [TunedRenderersFactory].
+        val renderers = TunedRenderersFactory(this) { settings.audioDelayMs }
         return ExoPlayer
             .Builder(this, renderers)
-            .setMediaSourceFactory(DefaultMediaSourceFactory(http, extractors).setSubtitleParserFactory(subtitleTiming.parsers))
-            .setLoadControl(load)
-            .setTrackSelector(selector)
+            .setMediaSourceFactory(
+                DefaultMediaSourceFactory(http, PlayerSetup.extractors()).setSubtitleParserFactory(subtitleTiming.parsers),
+            ).setLoadControl(PlayerSetup.loadControl(settings))
+            .setTrackSelector(PlayerSetup.trackSelector(this, settings))
             .setSeekBackIncrementMs(settings.seekBackMs)
             .setSeekForwardIncrementMs(settings.seekForwardMs)
-            .setAudioAttributes(
-                AudioAttributes
-                    .Builder()
-                    .setUsage(C.USAGE_MEDIA)
-                    .setContentType(C.AUDIO_CONTENT_TYPE_MOVIE)
-                    .build(),
-                true,
-            ).setHandleAudioBecomingNoisy(true)
+            .setAudioAttributes(PlayerSetup.audio, true)
+            .setHandleAudioBecomingNoisy(true)
+            // Playing on with the screen off needs the CPU and Wi-Fi kept awake (only while it plays).
+            .setWakeMode(if (settings.backgroundPlay) C.WAKE_MODE_NETWORK else C.WAKE_MODE_NONE)
             .build()
             .apply {
                 addListener(listener(live))
+                addListener(background.listener)
                 addListener(skipIntro.listener)
                 addListener(subtitleSearch.listener)
             }
@@ -812,6 +796,11 @@ class PlayerActivity : FragmentActivity() {
         if (hasFocus) hideSystemBars(window)
     }
 
+    override fun onStart() {
+        super.onStart()
+        background.onStart()
+    }
+
     override fun onStop() {
         super.onStop()
         // Outlives the activity, so the last position is saved even as it closes.
@@ -826,9 +815,9 @@ class PlayerActivity : FragmentActivity() {
                 }
             }
         }
-        // Leaving the app, or closing the picture-in-picture window, stops the activity: playback ends there.
-        // (In picture-in-picture the activity is only paused, so it keeps playing.)
-        if (!isChangingConfigurations) {
+        // Leaving the app, or closing the picture-in-picture window, stops the activity: playback ends there, unless
+        // it carries on in the background. (In picture-in-picture the activity is only paused, so it keeps playing.)
+        if (!isChangingConfigurations && !background.keepPlaying(isInPictureInPictureMode)) {
             player?.pause()
             finish()
         }
@@ -846,6 +835,7 @@ class PlayerActivity : FragmentActivity() {
         dial.release()
         cast?.release()
         reconnect.stop()
+        background.release()
         session.release()
         // The stream closes before downloads carry on, so the provider never sees two connections.
         player?.release()
