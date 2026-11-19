@@ -59,8 +59,8 @@ import java.util.concurrent.ConcurrentHashMap
 /**
  * Full-screen playback. Nothing on screen but the video until a tap shows the standard Media3 controls: play and
  * pause, seek, previous and next (the next channel in the category, or the next episode), captions, and the
- * settings menu for audio language and speed (films and episodes only; see [ViewPlayer]). Built on Views, not Compose, because PlayerView is Media3's own
- * tested surface and starts fastest.
+ * settings menu for audio language and speed (films and episodes only; see [ViewPlayer]). Built on Views, not
+ * Compose, because PlayerView is Media3's own tested surface and starts fastest.
  */
 @OptIn(UnstableApi::class)
 class PlayerActivity : FragmentActivity() {
