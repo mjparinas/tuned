@@ -52,7 +52,8 @@ jobs:
             [ -n "$1" ] || return 1
             desc=$(gh api "repos/$REPO/commits/$1/statuses?per_page=100" \
               --jq '[.[] | select(.context == "CI passed tree")][0] | select(.state == "success") | .description' 2>/dev/null || true)
-            [ "$desc" = "Passed on tree $2" ]
+            # A pull request builds only the GitHub app, so its pass doesn't let a push skip the Play build.
+            [ "$desc" = "Passed on tree $2" ] || { [ "$EVENT" = pull_request ] && [ "$desc" = "Passed on tree $2 (GitHub build only)" ]; }
           }
 
           candidates="$(git rev-parse HEAD^@ 2>/dev/null || true)"
@@ -157,7 +158,11 @@ jobs:
       # (2026-11-18) installs only production releases, and lint and the unit tests already compile the debug variant.
       # Without the release lint pass (lintVital), which repeats Android Lint in Checks and took about 2 minutes of the
       # build's CPU (Melvin, 2026-11-19). Release builds in release.yml still run it.
-      - run: ./gradlew :app:assembleRelease -x lintVitalGithubRelease -x lintVitalPlayRelease
+      # A pull request builds only the GitHub app; pushes to staging and main build the Play app too, so a Play-only
+      # R8 problem shows on staging before any release (Melvin, 2026-11-19, until Play approves the app).
+      - run: >
+          ./gradlew ${{ github.event_name == 'pull_request' && ':app:assembleGithubRelease' || ':app:assembleRelease' }}
+          -x lintVitalGithubRelease -x lintVitalPlayRelease
         env:
           # The commit shown at the bottom of Settings: a pull request's own head, not the merge commit GitHub builds.
           GIT_COMMIT: ${{ github.event.pull_request.head.sha || github.sha }}
@@ -243,4 +248,4 @@ jobs:
           SHA: ${{ github.event.pull_request.head.sha || github.sha }}
         run: >
           gh api "repos/${{ github.repository }}/statuses/$SHA" -f state=success -f context="CI passed tree"
-          -f description="Passed on tree ${{ needs.changes.outputs.tree }}" --silent
+          -f description="Passed on tree ${{ needs.changes.outputs.tree }}${{ github.event_name == 'pull_request' && ' (GitHub build only)' || '' }}" --silent
