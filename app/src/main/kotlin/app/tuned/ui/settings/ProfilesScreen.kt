@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -219,23 +220,8 @@ fun ProfilesScreen(
         }
     }
 
-    val primary = MaterialTheme.colorScheme.primary
     val manageToggle: () -> Unit = { managing = !managing }
-    Scaffold(
-        containerColor = Color.Transparent,
-        modifier =
-            Modifier
-                .background(MaterialTheme.colorScheme.background)
-                // A soft glow of the accent behind the profiles, so the first screen feels like a welcome, not a form.
-                .drawBehind {
-                    drawRect(
-                        Brush.radialGradient(
-                            listOf(primary.copy(alpha = 0.22f), Color.Transparent),
-                            center = Offset(size.width / 2, size.height * 0.38f),
-                            radius = size.maxDimension * 0.62f,
-                        ),
-                    )
-                },
+    WelcomeScaffold(
         topBar = {
             if (atStart) {
                 Spacer(Modifier.statusBarsPadding())
@@ -342,6 +328,37 @@ fun ProfilesScreen(
             onClose = { editing = null },
         )
     }
+}
+
+/**
+ * The picker's backdrop: the theme's background with a soft glow of the accent behind the profiles, so the first
+ * screen feels like a welcome, not a form. The container is see-through for the glow, so the text colour is set to
+ * onBackground here; left to itself it falls back to black, which is unreadable on the dark theme.
+ */
+@Composable
+internal fun WelcomeScaffold(
+    topBar: @Composable () -> Unit = {},
+    content: @Composable (PaddingValues) -> Unit,
+) {
+    val primary = MaterialTheme.colorScheme.primary
+    Scaffold(
+        containerColor = Color.Transparent,
+        contentColor = MaterialTheme.colorScheme.onBackground,
+        modifier =
+            Modifier
+                .background(MaterialTheme.colorScheme.background)
+                .drawBehind {
+                    drawRect(
+                        Brush.radialGradient(
+                            listOf(primary.copy(alpha = 0.22f), Color.Transparent),
+                            center = Offset(size.width / 2, size.height * 0.38f),
+                            radius = size.maxDimension * 0.62f,
+                        ),
+                    )
+                },
+        topBar = topBar,
+        content = content,
+    )
 }
 
 @Composable
