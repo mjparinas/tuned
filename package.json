@@ -6,7 +6,7 @@
   "scripts": {
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "test": "node --test scripts/*.test.mjs"
+    "test": "node --test scripts/*.test.mjs devices/lib/*.test.mjs"
   },
   "devDependencies": {
     "prettier": "3.10.1"

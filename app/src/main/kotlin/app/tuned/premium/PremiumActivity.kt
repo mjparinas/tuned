@@ -71,10 +71,11 @@ private fun PremiumScreen(
 ) {
     val premium = activity.container.premium
     val unlocked by premium.unlocked.collectAsStateWithLifecycle()
+    val purchased by premium.purchased.collectAsStateWithLifecycle()
     var offers by remember { mutableStateOf<List<Offer>?>(null) }
     var note by remember { mutableStateOf<Int?>(null) }
     val scope = rememberCoroutineScope()
-    LaunchedEffect(unlocked) { if (!unlocked) offers = premium.store.offers() }
+    LaunchedEffect(unlocked) { if (!unlocked && !purchased) offers = premium.store.offers() }
     Scaffold(topBar = { BackTopBar(stringResource(R.string.premium_title), onBack) }) { padding ->
         Column(
             Modifier
@@ -90,7 +91,9 @@ private fun PremiumScreen(
             )
             FEATURES.forEach { Feature(stringResource(it)) }
             Spacer(Modifier.height(8.dp))
-            if (!unlocked) {
+            // Bought, but every seat is taken or this device gave its own up: the devices list, not the prices.
+            PremiumDevices(premium)
+            if (!unlocked && !purchased) {
                 val list = offers
                 when {
                     list == null -> {
