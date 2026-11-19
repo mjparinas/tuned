@@ -1,5 +1,8 @@
 package app.tuned.screenshots
 
+import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import app.tuned.R
 import app.tuned.data.CaptionStyle
 import app.tuned.ui.CaptionSettingsRoute
@@ -31,6 +34,15 @@ class SettingsScreenshots : Screenshots() {
         RegionSettingsRoute,
         wait = text(R.string.settings_countries),
         settings = DARK.copy(hiddenRegions = setOf("DE", "EXYU")),
+    )
+
+    /** The user agent picklist, opened from Settings › About. */
+    @Test
+    fun userAgents() = shot(
+        "settings-user-agents",
+        SettingsPageRoute(SettingsPage.ABOUT.name),
+        wait = text(R.string.settings_user_agent),
+        then = { compose.onNodeWithText(text(R.string.settings_user_agent)).performScrollTo().performClick() },
     )
 }
 

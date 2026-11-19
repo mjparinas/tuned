@@ -50,13 +50,15 @@ fun WelcomeScreen(
     firstRun: Boolean,
     onPick: (Credentials.Kind) -> Unit,
     onBack: () -> Unit,
+    /** First run: Restore from Google Drive brought everything back ([RestoreFromDrive]). */
+    onRestored: (askProfile: Boolean) -> Unit = {},
 ) {
     Scaffold(topBar = { if (!firstRun) BackTopBar(stringResource(R.string.playlists_add), onBack) }) { padding ->
         Column(Modifier.fillMaxSize().padding(padding), horizontalAlignment = Alignment.CenterHorizontally) {
             // The GitHub build checks for a newer release on every start, signed in or not, so a first install that is
             // already out of date offers the update here, before a playlist is added.
             if (firstRun) UpdateBanner(Modifier.widthIn(max = 560.dp).fillMaxWidth().padding(start = 24.dp, end = 24.dp, top = 12.dp))
-            WelcomeBody(firstRun, onPick)
+            WelcomeBody(firstRun, onPick, onRestored)
         }
     }
 }
@@ -65,6 +67,7 @@ fun WelcomeScreen(
 private fun WelcomeBody(
     firstRun: Boolean,
     onPick: (Credentials.Kind) -> Unit,
+    onRestored: (askProfile: Boolean) -> Unit,
 ) {
     BoxWithConstraints(Modifier.fillMaxSize()) {
         // A TV (960 by 540 dp, less its overscan margin) or a phone held sideways is too short for the logo, the
@@ -88,9 +91,10 @@ private fun WelcomeBody(
                 Column(
                     Modifier.weight(1.2f).verticalScroll(rememberScrollState()),
                     horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                    // Tighter than the phone's column, so four cards and the privacy line fit a TV's height.
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
-                    Kinds(onPick)
+                    Kinds(firstRun, onPick, onRestored)
                     Privacy()
                 }
             }
@@ -114,7 +118,7 @@ private fun WelcomeBody(
                         modifier = Modifier.widthIn(max = 560.dp).fillMaxWidth(),
                     )
                 }
-                Kinds(onPick)
+                Kinds(firstRun, onPick, onRestored)
                 if (firstRun) {
                     Spacer(Modifier.height(4.dp))
                     Privacy()
@@ -144,10 +148,15 @@ private fun Welcome(logoSize: Dp) {
 }
 
 @Composable
-private fun Kinds(onPick: (Credentials.Kind) -> Unit) {
+private fun Kinds(
+    firstRun: Boolean,
+    onPick: (Credentials.Kind) -> Unit,
+    onRestored: (askProfile: Boolean) -> Unit,
+) {
     KindCard(Icons.Filled.Dns, R.string.kind_xtream, R.string.kind_xtream_summary) { onPick(Credentials.Kind.Xtream) }
     KindCard(Icons.Filled.Link, R.string.kind_link, R.string.kind_link_summary) { onPick(Credentials.Kind.Link) }
     KindCard(Icons.Filled.FolderOpen, R.string.kind_file, R.string.kind_file_summary) { onPick(Credentials.Kind.File) }
+    if (firstRun) RestoreFromDrive(onRestored)
 }
 
 @Composable
@@ -161,7 +170,7 @@ private fun Privacy() {
 }
 
 @Composable
-private fun KindCard(
+internal fun KindCard(
     icon: ImageVector,
     title: Int,
     summary: Int,

@@ -71,12 +71,14 @@ abstract class Screenshots {
     /**
      * Draws [route] (any route of the app's navigation graph) and saves it as `[name].png`, once [wait] is on screen.
      * The picture is saved even when [wait] never shows, so a broken screen can be seen, and then the test fails.
+     * [then] runs once [wait] shows, for a picture of what a tap opens (a dialog, say).
      */
     protected fun shot(
         name: String,
         route: Any,
         wait: String,
         settings: AppSettings = DARK,
+        then: () -> Unit = {},
     ) {
         runBlocking(Dispatchers.IO) { app.container.settings.update { settings } }
         compose.setContent {
@@ -99,6 +101,7 @@ abstract class Screenshots {
             runCatching {
                 compose.waitUntil(WAIT_MS) { compose.onAllNodes(matcher).fetchSemanticsNodes().isNotEmpty() }
             }
+        if (shown.isSuccess) then()
         compose.waitForIdle()
         compose.onRoot().captureRoboImage("$name.png")
         shown.getOrThrow()

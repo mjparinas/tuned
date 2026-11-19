@@ -31,60 +31,81 @@ import app.tuned.diagnostics.startActivitySafely
 import app.tuned.premium.LockedRow
 import app.tuned.premium.premiumUnlocked
 import app.tuned.work.CloudSyncWorker
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
+/**
+ * Signing in to Google with a code: the code on screen, then how it ended. Shared by Settings › Sync between devices
+ * and the welcome screen's Restore from Google Drive ([app.tuned.ui.onboarding.RestoreFromDrive]).
+ */
+class DriveSignIn(
+    private val scope: CoroutineScope,
+    private val drive: GoogleDrive,
+    /** Signed in: the dialog has closed. */
+    private val onSignedIn: suspend () -> Unit,
+) {
+    sealed interface State {
+        data object Asking : State
+
+        data class Code(
+            val code: GoogleDrive.DeviceCode,
+        ) : State
+
+        data class Ended(
+            val failure: CloudSync.Failure,
+        ) : State
+    }
+
+    private val stateFlow = MutableStateFlow<State?>(null)
+    val state: StateFlow<State?> = stateFlow.asStateFlow()
+    private var job: Job? = null
+
+    fun start() {
+        job?.cancel()
+        stateFlow.value = State.Asking
+        job =
+            scope.launchSafely(TAG, onError = { stateFlow.value = State.Ended(CloudSync.failure(null, null, null)) }) {
+                val answer = drive.requestCode()
+                val code = answer.code
+                if (code == null) {
+                    stateFlow.value = State.Ended(answer.failure ?: CloudSync.failure(null, null, null))
+                    return@launchSafely
+                }
+                stateFlow.value = State.Code(code)
+                val failure = drive.awaitSignIn(code)
+                stateFlow.value = failure?.let { State.Ended(it) }
+                if (failure == null) onSignedIn()
+            }
+    }
+
+    fun close() {
+        job?.cancel()
+        stateFlow.value = null
+    }
+
+    private companion object {
+        const val TAG = "DriveSignIn"
+    }
+}
+
 class CloudSyncViewModel(
     private val app: Application,
 ) : AndroidViewModel(app) {
     private val sync = app.container.cloudSync
-    private val drive = sync.drive
     val available = sync.available
     val signedIn = sync.signedIn
     val status = sync.status
 
-    /** Signing in: the code on screen, then how it ended. */
-    sealed interface SignIn {
-        data object Asking : SignIn
+    // Signed in: the dialog closes and the first sync starts.
+    private val driveSignIn = DriveSignIn(viewModelScope, sync.drive) { syncNow() }
+    val signIn: StateFlow<DriveSignIn.State?> = driveSignIn.state
 
-        data class Code(
-            val code: GoogleDrive.DeviceCode,
-        ) : SignIn
+    fun startSignIn() = driveSignIn.start()
 
-        data class Ended(
-            val failure: CloudSync.Failure,
-        ) : SignIn
-    }
-
-    private val signInFlow = MutableStateFlow<SignIn?>(null)
-    val signIn: StateFlow<SignIn?> = signInFlow.asStateFlow()
-    private var job: Job? = null
-
-    fun startSignIn() {
-        job?.cancel()
-        signInFlow.value = SignIn.Asking
-        job =
-            viewModelScope.launchSafely(TAG, onError = { signInFlow.value = SignIn.Ended(CloudSync.failure(null, null, null)) }) {
-                val answer = drive.requestCode()
-                val code = answer.code
-                if (code == null) {
-                    signInFlow.value = SignIn.Ended(answer.failure ?: CloudSync.failure(null, null, null))
-                    return@launchSafely
-                }
-                signInFlow.value = SignIn.Code(code)
-                // Signed in (no failure): the dialog closes and the first sync starts.
-                val failure = drive.awaitSignIn(code)
-                signInFlow.value = failure?.let { SignIn.Ended(it) }
-                if (failure == null) syncNow()
-            }
-    }
-
-    fun closeSignIn() {
-        job?.cancel()
-        signInFlow.value = null
-    }
+    fun closeSignIn() = driveSignIn.close()
 
     fun syncNow() = CloudSyncWorker.schedule(app)
 
@@ -130,7 +151,7 @@ fun CloudSyncRows(vm: CloudSyncViewModel = viewModel()) {
     if (signedIn) {
         SettingRow(stringResource(R.string.cloud_sync_stop), stringResource(R.string.cloud_sync_stop_summary), onClick = vm::stop)
     }
-    signIn?.let { SignInDialog(it, onRetry = vm::startSignIn, onClose = vm::closeSignIn) }
+    signIn?.let { DriveSignInDialog(it, stringResource(R.string.cloud_sync_start), onRetry = vm::startSignIn, onClose = vm::closeSignIn) }
 }
 
 @Composable
@@ -166,23 +187,25 @@ private fun failureText(reason: CloudSync.Reason): Int = when (reason) {
     CloudSync.Reason.OTHER -> R.string.cloud_sync_other
 }
 
+/** Google's sign-in with a code, from [DriveSignIn]. */
 @Composable
-private fun SignInDialog(
-    state: CloudSyncViewModel.SignIn,
+internal fun DriveSignInDialog(
+    state: DriveSignIn.State,
+    title: String,
     onRetry: () -> Unit,
     onClose: () -> Unit,
 ) {
     val context = LocalContext.current
     AlertDialog(
         onDismissRequest = onClose,
-        title = { Text(stringResource(R.string.cloud_sync_start)) },
+        title = { Text(title) },
         text = {
             when (state) {
-                CloudSyncViewModel.SignIn.Asking -> {
+                DriveSignIn.State.Asking -> {
                     Text(stringResource(R.string.cloud_sync_asking))
                 }
 
-                is CloudSyncViewModel.SignIn.Code -> {
+                is DriveSignIn.State.Code -> {
                     Column {
                         Text(stringResource(R.string.cloud_sync_enter_code, state.code.verificationUrl.removePrefix("https://")))
                         Spacer(Modifier.height(16.dp))
@@ -192,7 +215,7 @@ private fun SignInDialog(
                     }
                 }
 
-                is CloudSyncViewModel.SignIn.Ended -> {
+                is DriveSignIn.State.Ended -> {
                     Column {
                         Text(stringResource(failureText(state.failure.reason)))
                         // Google's own words, so a setup problem on Google's side can be told from a network one.
@@ -206,17 +229,17 @@ private fun SignInDialog(
         },
         confirmButton = {
             when (state) {
-                is CloudSyncViewModel.SignIn.Code -> {
+                is DriveSignIn.State.Code -> {
                     TextButton(onClick = {
                         context.startActivitySafely(Intent(Intent.ACTION_VIEW, state.code.verificationUrl.toUri()), "CloudSyncSettings")
                     }) { Text(stringResource(R.string.cloud_sync_open_site)) }
                 }
 
-                is CloudSyncViewModel.SignIn.Ended -> {
+                is DriveSignIn.State.Ended -> {
                     TextButton(onClick = onRetry) { Text(stringResource(R.string.cloud_sync_try_again)) }
                 }
 
-                CloudSyncViewModel.SignIn.Asking -> {}
+                DriveSignIn.State.Asking -> {}
             }
         },
         dismissButton = { TextButton(onClick = onClose) { Text(stringResource(android.R.string.cancel)) } },
