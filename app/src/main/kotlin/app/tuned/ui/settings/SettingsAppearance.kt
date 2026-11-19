@@ -21,6 +21,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -35,7 +37,9 @@ import app.tuned.R
 import app.tuned.container
 import app.tuned.data.Accent
 import app.tuned.data.AppSettings
+import app.tuned.data.LighterMode
 import app.tuned.data.ThemeMode
+import app.tuned.diagnostics.Lighter
 import app.tuned.ui.theme.swatch
 
 @Composable
@@ -72,6 +76,25 @@ internal fun AppearancePage(
     ) { on ->
         vm.update { it.copy(pureBlack = on) }
     }
+    // For weak TV boxes; Automatic turns it on for a low-memory device or one that keeps freezing (docs/decisions/speed.md).
+    val lighterNow by Lighter.on.collectAsState()
+    ChoiceRow(
+        stringResource(R.string.settings_lighter),
+        LighterMode.entries,
+        settings.lighterMode,
+        label = { stringResource(lighterLabel(it, lighterNow)) },
+    ) { m ->
+        vm.update { it.copy(lighterMode = m) }
+    }
+}
+
+private fun lighterLabel(
+    mode: LighterMode,
+    onNow: Boolean,
+): Int = when (mode) {
+    LighterMode.AUTO -> if (onNow) R.string.lighter_auto_on else R.string.lighter_auto
+    LighterMode.ON -> R.string.lighter_on
+    LighterMode.OFF -> R.string.lighter_off
 }
 
 private fun themeLabel(mode: ThemeMode): Int = when (mode) {
