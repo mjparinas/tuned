@@ -2,7 +2,7 @@
 
 Melvin, 2026-11-19: a website "with registration, validates number of devices, accepts additional payments for more seats, and stores device backups, and qr codes for set up", replacing Google Drive ("i want to completely deprecate google drive sync"). The plan is `tuned/tuned-accounts-plan.md` in the project files. His answers the same day: accounts are optional, backups aren't encrypted ("i dont want to encrypt backups"), no Drive migration ("i dont have any customers"), the website sells through Stripe, the `github` build gets accounts and backups free with no seat limit, Google is the only sign-in, extra seats come both once and yearly ("do a and b"), and they can't be mixed ("make it so you can't mix lifetime account and yearly seats"). He is getting a domain; until then the site is `tuned-devices.vercel.app`.
 
-**Built:** the server (`devices/`) and, in the app, signing in, the backup in place of Google Drive sync, and Drive removed ([sync](sync.md)). Seats per account in the app and Play's seat products are under [scope](scope.md) › Decided, being built.
+**Built:** the server (`devices/`) and, in the app, signing in, the backup in place of Google Drive sync, Drive removed ([sync](sync.md)), seats per account, Play's seat products, and Send to a TV carrying the account.
 
 ## Where things live
 
@@ -28,12 +28,15 @@ The phone and TV keep SQLite (Room): Turso was measured against the app's own da
 - **Restore from your Tuned account** on the welcome screen signs in the same way and takes the backup as it is (`ui/onboarding/RestoreFromAccount`).
 - **A TV from the website:** the TV's "Sign in with your phone" page (`/tv`) links to the account page for its code; once approved, the TV signs in and restores the backup (`TvSignInScreen`).
 - **Signing out of Tuned** (`AppReset`) forgets the account on the device; the backup stays.
+- **Send to a TV** from a signed-in phone seals a one-time account code beside the copy (`data/HandoffAccount`), so the TV joins the same account when it takes the copy, without a second sign-in. Backups never carry one.
+- **Premium on a signed-in device** (store build, `premium/Premium`): the seat comes from the account (`/api/account/seat`) instead of the per-purchase list, reporting the Play purchases the device sees. Premium bought anywhere counts, the website included; if the account can't confirm it (Play down on the server), Play's own answer on the device still does. Signing in or out asks again at once. Your devices on the Premium screen is the account's list, with the account's limit; Deactivate on this device gives its seat back, and on another device removes it from the account (signing it out). Without an account, the per-purchase list works as before ([premium](premium.md#three-devices-per-purchase)).
 
 ## Seats
 
 The rules of [premium](premium.md#three-devices-per-purchase) carry over, now per account: Premium comes with **3 seats**, a device that has a seat keeps it, a device unused for 60 days gives its seat back, and only a clear "full" locks a device (offline or a server error keeps what it last heard).
 
-- **Extra seats**, at most **10 seats** per account (`lib/accounts.mjs`, `seatPlan`, tested). Bought once (`seat_once`, US$4.99) or yearly (`seat_yearly`, US$1.99), in Play or on the website.
+- **Extra seats**, at most **10 seats** per account (`lib/accounts.mjs`, `seatPlan`, and `core/AccountSeats`, tested). Bought once (`seat_once`, US$4.99) or yearly (`seat_yearly`, US$1.99), in Play or on the website.
+- **In Play**, Tuned Premium › More devices shows only on a signed-in account with Premium, and only the matching kind. `seat_once` is a one-time product with multi-quantity on, so the person picks how many in Play's sheet; once the account has recorded it (the seat answer's `recorded` lists token hashes), the app consumes it so more can be bought later, and the account keeps counting it. `seat_yearly` is a subscription, which a Google account holds once, so Play adds at most one yearly seat; more come only from the website, which the Play build never mentions.
 - **No mixing**: lifetime Premium takes only one-time seats and yearly Premium only yearly seats. Checkout refuses the other kind, and seats of the other kind never count. A second Premium is refused; lifetime wins if an account somehow has both.
 - **Taking a seat** (`/api/account/seat`) holds the account's lock in one transaction, so two TVs asking at once can't both get the last seat. The device reports the Play purchases it sees with each request, as it did before accounts; the server asks Play about each at most every six hours and keeps only the token's hash.
 - **The `github` build** never holds a seat and has no limit, as everything is unlocked in it. Its devices still show in Your devices.
@@ -59,5 +62,6 @@ The app's sync copy (everything sync between devices copies today) as plain JSON
 1. Vercel › `tuned-devices` › Storage: add **Neon** (sets `DATABASE_URL`), then run `devices/schema.sql` in its SQL editor. Upstash is still to add too.
 2. Google Cloud: a **Web application** OAuth client with the redirect `https://<site>/api/auth/callback`; its id and secret into `GOOGLE_WEB_CLIENT_ID` and `GOOGLE_WEB_CLIENT_SECRET`.
 3. Stripe: the four prices, the secret key, and a webhook to `https://<site>/api/stripe/webhook` with the five events above.
+4. Play Console: a one-time product `seat_once` (US$4.99, multi-quantity on) and a subscription `seat_yearly` (US$1.99 a year).
 
 Until each exists, that part answers "not set up" and nothing else changes. The site goes live only with a production release, since Vercel builds it from `main`.

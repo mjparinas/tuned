@@ -57,3 +57,48 @@ object DeviceSeats {
         SeatAnswer.Unreachable -> seat
     }
 }
+
+/**
+ * Seats per Tuned account (docs/decisions/accounts.md): Premium's [DeviceSeats.LIMIT] plus extra seats, at most
+ * [MAX] in all. Extra seats match the Premium kind (Melvin, 2026-11-19: "make it so you can't mix lifetime account
+ * and yearly seats"): lifetime Premium takes one-time seats, yearly Premium yearly ones.
+ */
+object AccountSeats {
+    const val MAX = 10
+    const val SEAT_ONCE = "seat_once"
+    const val SEAT_YEARLY = "seat_yearly"
+
+    /** The seat product that matches Premium of [premium] ("lifetime" or "yearly"); null without Premium. */
+    fun seatProduct(premium: String?): String? = when (premium) {
+        "lifetime" -> SEAT_ONCE
+        "yearly" -> SEAT_YEARLY
+        else -> null
+    }
+
+    /**
+     * The account's answer as the device list's: "active" and "full" as they are, and anything else ("none" when
+     * the server couldn't confirm Premium, say Play was down) as no answer, so it never locks anyone out.
+     */
+    fun answer(
+        seat: String,
+        devices: List<SeatDevice>,
+    ): SeatAnswer = when (seat) {
+        "active" -> SeatAnswer.Active(devices)
+        "full" -> SeatAnswer.Full(devices)
+        else -> SeatAnswer.Unreachable
+    }
+
+    /**
+     * How many more seats Play can sell in one purchase. A one-time seat can be bought in any quantity up to the
+     * cap; a yearly seat is a Play subscription, which an account holds once, so Play adds at most one.
+     */
+    fun playCanBuy(
+        product: String,
+        canBuy: Int,
+        ownsYearlySeat: Boolean,
+    ): Int = when {
+        canBuy <= 0 -> 0
+        product == SEAT_YEARLY -> if (ownsYearlySeat) 0 else 1
+        else -> canBuy
+    }
+}

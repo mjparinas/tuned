@@ -35,6 +35,15 @@ export function parsePurchases(list) {
         .filter((p) => PLAY_PRODUCTS.includes(p?.product) && typeof p?.token === "string" && p.token.length > 10 && p.token.length < 2048);
 }
 
+/**
+ * The hashes of the reported Play purchases the account has recorded as active. The app consumes a one-time seat
+ * purchase once it is recorded, so Play lets the person buy more seats later; the account keeps counting it.
+ */
+export function recordedPurchases(purchases, entitlements) {
+    const active = new Set(entitlements.filter((e) => e.source === "play" && e.status === "active").map((e) => e.ref));
+    return purchases.map((p) => sha(p.token)).filter((ref) => active.has(ref));
+}
+
 /** Everything the website and the app show about an account. */
 export async function summary(accountId, thisDevice = null, now = Date.now()) {
     const [account, entitlements, devices, backups] = await Promise.all([

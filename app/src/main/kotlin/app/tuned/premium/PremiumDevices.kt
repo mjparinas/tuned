@@ -1,5 +1,6 @@
 package app.tuned.premium
 
+import android.app.Activity
 import android.text.format.DateUtils
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -9,6 +10,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -26,8 +28,10 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.tuned.BuildConfig
 import app.tuned.R
+import app.tuned.core.AccountSeats
 import app.tuned.core.DeviceSeats
 import app.tuned.core.SeatDevice
+import app.tuned.data.AccountPlan
 import app.tuned.diagnostics.launchSafely
 import app.tuned.ui.common.TunedDialog
 
@@ -37,12 +41,17 @@ import app.tuned.ui.common.TunedDialog
  * this device appears once one is free.
  */
 @Composable
-internal fun PremiumDevices(premium: Premium) {
+internal fun PremiumDevices(
+    premium: Premium,
+    activity: Activity,
+) {
     if (!premium.limited) return
     val unlocked by premium.unlocked.collectAsStateWithLifecycle()
     val purchased by premium.purchased.collectAsStateWithLifecycle()
     val devices by premium.devices.collectAsStateWithLifecycle()
+    val plan by premium.plan.collectAsStateWithLifecycle()
     if (!purchased) return
+    val limit = plan?.limit ?: DeviceSeats.LIMIT
     // The list as it is now, in the background; the screen shows the last answer meanwhile.
     LaunchedEffect(Unit) { premium.refresh() }
     val scope = rememberCoroutineScope()
@@ -53,8 +62,8 @@ internal fun PremiumDevices(premium: Premium) {
         val others = devices.count { !it.current }
         Text(
             when {
-                unlocked -> pluralStringResource(R.plurals.premium_devices_lead, DeviceSeats.LIMIT, DeviceSeats.LIMIT)
-                others >= DeviceSeats.LIMIT -> pluralStringResource(R.plurals.premium_devices_full, others, others)
+                unlocked -> pluralStringResource(R.plurals.premium_devices_lead, limit, limit)
+                others >= limit -> pluralStringResource(R.plurals.premium_devices_full, others, others)
                 else -> stringResource(R.string.premium_devices_off_here)
             },
             style = MaterialTheme.typography.bodyMedium,
@@ -62,14 +71,14 @@ internal fun PremiumDevices(premium: Premium) {
         devices.forEach { device ->
             DeviceRow(device, canDeactivate = unlocked) { confirm = device }
         }
-        if (!unlocked && others >= DeviceSeats.LIMIT) {
+        if (!unlocked && others >= limit && plan == null) {
             // Someone who has lost every device with a seat frees them on the website with their order number.
             Text(
                 stringResource(R.string.premium_devices_site, BuildConfig.DEVICES_URL.trimEnd('/').removePrefix("https://")),
                 style = MaterialTheme.typography.bodyMedium,
             )
         }
-        if (!unlocked && others < DeviceSeats.LIMIT) {
+        if (!unlocked && others < limit) {
             Button(
                 onClick = {
                     scope.launchSafely(TAG) {
@@ -81,6 +90,7 @@ internal fun PremiumDevices(premium: Premium) {
             ) { Text(stringResource(R.string.premium_devices_use_here)) }
         }
         note?.let { Text(stringResource(it), style = MaterialTheme.typography.bodyMedium) }
+        plan?.let { if (unlocked) MoreDevices(premium, it, activity) }
     }
     confirm?.let { device ->
         TunedDialog(
@@ -103,6 +113,61 @@ internal fun PremiumDevices(premium: Premium) {
             },
             dismissButton = { TextButton(onClick = { confirm = null }) { Text(stringResource(android.R.string.cancel)) } },
         )
+    }
+}
+
+/**
+ * Extra seats on a signed-in account, from Play (docs/decisions/accounts.md): one-time seats for lifetime Premium,
+ * yearly ones for yearly Premium, never the other kind. Nothing here points to the website: the Play build sells
+ * only through Play.
+ */
+@Composable
+private fun MoreDevices(
+    premium: Premium,
+    plan: AccountPlan,
+    activity: Activity,
+) {
+    val product = AccountSeats.seatProduct(plan.premium) ?: return
+    val most = AccountSeats.playCanBuy(product, plan.canBuy, plan.ownsYearlySeat)
+    if (most <= 0) return
+    var offer by remember { mutableStateOf<Offer?>(null) }
+    LaunchedEffect(product) { offer = premium.store.seatOffer(product) }
+    val scope = rememberCoroutineScope()
+    var failed by remember { mutableStateOf(false) }
+    offer?.let { found ->
+        MoreDevicesOffer(found, most, failed) {
+            scope.launchSafely(TAG) { failed = !premium.store.buy(activity, found.productId) }
+        }
+    }
+}
+
+/** The extra-seat offer as drawn: what it costs, how many more, and the button that opens Play's purchase sheet. */
+@Composable
+internal fun MoreDevicesOffer(
+    offer: Offer,
+    most: Int,
+    failed: Boolean,
+    onBuy: () -> Unit,
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 8.dp)) {
+        Text(stringResource(R.string.premium_more_title), style = MaterialTheme.typography.titleMedium)
+        Text(
+            if (offer.yearly) {
+                stringResource(R.string.premium_more_yearly_lead, offer.price)
+            } else {
+                pluralStringResource(R.plurals.premium_more_once_lead, most, most, offer.price)
+            },
+            style = MaterialTheme.typography.bodyMedium,
+        )
+        OutlinedButton(onClick = onBuy, modifier = Modifier.fillMaxWidth()) {
+            Text(
+                stringResource(
+                    if (offer.yearly) R.string.premium_more_buy_yearly else R.string.premium_more_buy_once,
+                    offer.price,
+                ),
+            )
+        }
+        if (failed) Text(stringResource(R.string.premium_store_unreachable), style = MaterialTheme.typography.bodyMedium)
     }
 }
 

@@ -93,7 +93,7 @@ private fun PremiumScreen(
             FEATURES.forEach { Feature(stringResource(it)) }
             Spacer(Modifier.height(8.dp))
             // Bought, but every seat is taken or this device gave its own up: the devices list, not the prices.
-            PremiumDevices(premium)
+            PremiumDevices(premium, activity)
             if (!unlocked && !purchased) {
                 val list = offers
                 when {

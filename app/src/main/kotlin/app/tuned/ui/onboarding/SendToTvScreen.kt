@@ -37,6 +37,7 @@ import app.tuned.R
 import app.tuned.container
 import app.tuned.core.TvHandoff
 import app.tuned.data.Credentials
+import app.tuned.data.HandoffAccount
 import app.tuned.data.TvRelay
 import app.tuned.diagnostics.attempt
 import app.tuned.diagnostics.launchSafely
@@ -120,10 +121,14 @@ class SendToTvViewModel(
         if (ready.busy) return
         state.value = ready.copy(busy = true, error = null)
         viewModelScope.launchSafely(TAG) {
+            // Signed in to a Tuned account: a one-time code for it goes along, so the TV joins the same account.
+            val account = container.tunedAccount
+            val link = if (account.signedIn.value) account.newLink() else null
             val box =
                 withContext(Dispatchers.Default) {
                     attempt(TAG, "Couldn't seal the copy for the TV") {
-                        TvHandoff.seal(TvHandoff.pack(container.syncCopy.handoffCopy()), ready.target)
+                        val copy = HandoffAccount.withLink(container.syncCopy.handoffCopy(), link)
+                        TvHandoff.seal(TvHandoff.pack(copy), ready.target)
                     }.getOrNull()
                 }
             val outcome =

@@ -5,16 +5,21 @@ import android.content.Context
 import android.content.Intent
 import androidx.core.content.edit
 import app.tuned.BuildConfig
+import app.tuned.core.AccountSeats
 import app.tuned.core.DeviceSeats
 import app.tuned.core.SeatAnswer
 import app.tuned.core.SeatDevice
+import app.tuned.data.AccountPlan
+import app.tuned.data.TunedAccount
 import app.tuned.diagnostics.launchSafely
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.withContext
+import java.security.MessageDigest
 
 /** One thing a store sells: its product id, its price as the store writes it, and its free trial in days (0 for none). */
 data class Offer(
@@ -31,6 +36,15 @@ interface Store {
 
     /** The Premium purchase [owned] last found, for the device list; null when none, or nothing is sold. */
     fun purchase(): SeatPurchase? = null
+
+    /** Every purchase [owned] last found, Premium and seats, which a signed-in device reports to its account. */
+    fun purchases(): List<SeatPurchase> = emptyList()
+
+    /** The extra-seat product [productId] as the store sells it; null when it can't be asked or doesn't sell it. */
+    suspend fun seatOffer(productId: String): Offer? = null
+
+    /** Lets a one-time seat purchase be bought again, once the account has recorded it. */
+    suspend fun consume(token: String) = Unit
 
     /** What can be bought, cheapest first; empty when the store couldn't be asked. */
     suspend fun offers(): List<Offer>
@@ -52,6 +66,8 @@ class Premium(
     context: Context,
     private val scope: CoroutineScope,
     private val seats: DeviceSeatsClient? = null,
+    /** The Tuned account, which holds the seats once this device signs in to it (docs/decisions/accounts.md). */
+    private val tunedAccount: (() -> TunedAccount)? = null,
 ) {
     private val app = context.applicationContext
     private val prefs = app.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
@@ -68,8 +84,15 @@ class Premium(
     /** The devices using this purchase, as the list last said; empty before it has answered. */
     val devices: StateFlow<List<SeatDevice>> = _devices.asStateFlow()
 
-    /** True when this build limits Premium to [DeviceSeats.LIMIT] devices. */
+    /** True when this build limits Premium to a number of devices. */
     val limited: Boolean get() = seats != null
+    private val _plan = MutableStateFlow<AccountPlan?>(null)
+
+    /** What the account last said about Premium and its seats; null when signed out or not asked yet. */
+    val plan: StateFlow<AccountPlan?> = _plan.asStateFlow()
+
+    /** The signed-in account, in a build that limits devices; null otherwise. */
+    private fun account(): TunedAccount? = tunedAccount?.invoke()?.takeIf { limited && it.signedIn.value }
 
     init {
         if (!ALWAYS) {
@@ -79,6 +102,13 @@ class Premium(
                     seat.value = if (prefs.contains(KEY_SEAT)) prefs.getBoolean(KEY_SEAT, true) else null
                 }
                 update()
+            }
+            // Signing in to the account or out of it moves the seat there or back: ask again each time.
+            val make = tunedAccount
+            if (limited && make != null) {
+                scope.launchSafely(TAG) {
+                    withContext(Dispatchers.IO) { make() }.signedIn.drop(1).collect { check() }
+                }
             }
         }
     }
@@ -96,12 +126,41 @@ class Premium(
     }
 
     private suspend fun check(): Boolean? {
-        val answer = store.owned() ?: return null
+        val answer = store.owned()
+        val account = account()
+        if (account == null) _plan.value = null
+        if (account != null && !released()) {
+            val plan = account.seat(use = true, purchases = store.purchases())
+            if (plan != null) return heardAccount(plan, answer)
+        }
+        answer ?: return null
         remember(answer)
         val list = seats
         val purchase = store.purchase()
-        if (answer && list != null && purchase != null && !released()) heard(list.activate(purchase))
+        if (answer && list != null && purchase != null && account == null && !released()) heard(list.activate(purchase))
         return answer
+    }
+
+    /**
+     * The account's answer: Premium bought anywhere (Play, or the website) counts, and Play's own answer still does
+     * when the account couldn't confirm it. One-time seats the account has recorded are consumed in Play, so more
+     * can be bought later.
+     */
+    private suspend fun heardAccount(
+        plan: AccountPlan,
+        play: Boolean?,
+    ): Boolean {
+        _plan.value = plan
+        _devices.value = plan.devices
+        val owned = plan.premium != null || play == true
+        // Neither the account nor Play could say: keep what this device last heard, as offline does.
+        if (plan.premium != null || play != null) remember(owned)
+        heard(AccountSeats.answer(plan.seat, plan.devices))
+        store
+            .purchases()
+            .filter { it.productId == AccountSeats.SEAT_ONCE && sha256(it.token) in plan.recorded }
+            .forEach { store.consume(it.token) }
+        return owned
     }
 
     /**
@@ -109,12 +168,31 @@ class Premium(
      * [useHere]. False when the list couldn't be reached.
      */
     suspend fun deactivate(target: SeatDevice): Boolean {
+        account()?.let { return deactivate(it, target) }
         val list = seats ?: return false
         val purchase = store.purchase() ?: return false
         val answer = list.deactivate(purchase, target.id)
         if (answer == SeatAnswer.Unreachable) return false
         if (target.current) withContext(Dispatchers.IO) { prefs.edit { putBoolean(KEY_RELEASED, true) } }
         heard(answer)
+        return true
+    }
+
+    /** Frees a seat in the account: this device's own gives its seat back, another device is removed (signed out). */
+    private suspend fun deactivate(
+        account: TunedAccount,
+        target: SeatDevice,
+    ): Boolean {
+        val plan =
+            if (target.current) account.seat(use = false, purchases = emptyList()) else account.removeDevice(target.id)
+        if (plan == null) return false
+        _plan.value = plan
+        if (target.current) {
+            withContext(Dispatchers.IO) { prefs.edit { putBoolean(KEY_RELEASED, true) } }
+            heard(SeatAnswer.Full(plan.devices))
+        } else {
+            _devices.value = plan.devices
+        }
         return true
     }
 
@@ -170,6 +248,10 @@ class Premium(
         private const val KEY_SEAT = "seat"
         private const val KEY_RELEASED = "seat_released"
         private const val TAG = "Premium"
+
+        /** A purchase token's hash, as the account names the purchases it has recorded. */
+        private fun sha256(text: String): String =
+            MessageDigest.getInstance("SHA-256").digest(text.toByteArray()).joinToString("") { "%02x".format(it) }
 
         fun open(context: Context) {
             val intent = Intent(context, PremiumActivity::class.java)
