@@ -50,6 +50,12 @@ interface ProfileDao {
     @Query("DELETE FROM seen_episodes WHERE profileId = :id")
     suspend fun deleteSeen(id: Long)
 
+    @Query("DELETE FROM list_items WHERE listId IN (SELECT id FROM lists WHERE profileId = :id)")
+    suspend fun deleteListItems(id: Long)
+
+    @Query("DELETE FROM lists WHERE profileId = :id")
+    suspend fun deleteLists(id: Long)
+
     /** Removes a profile and everything it kept. The caller has moved off it first. */
     @Transaction
     suspend fun delete(id: Long) {
@@ -57,6 +63,8 @@ interface ProfileDao {
         deleteHistory(id)
         deleteWatchLater(id)
         deleteSeen(id)
+        deleteListItems(id)
+        deleteLists(id)
         deleteRow(id)
     }
 }

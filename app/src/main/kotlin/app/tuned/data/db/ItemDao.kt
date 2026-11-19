@@ -89,6 +89,24 @@ interface ItemDao {
         quick: List<String>,
     ): PagingSource<Int, ChannelWithNow>
 
+    /** The channels in one of the person's own lists ([ListEntity]), in the list's order. */
+    @Suppress("LongParameterList") // Every Live TV filter is a parameter of the one query, so the list stays one read.
+    @Query(
+        "SELECT $CHANNEL_COLUMNS, 0 AS favourite FROM items i JOIN list_items li ON li.itemId = i.id AND li.listId = :listId $NOW_JOIN " +
+            "WHERE $CHANNEL_FILTER $LIVE_QUICK ORDER BY li.position",
+    )
+    fun listChannels(
+        listId: Long,
+        now: Long,
+        hidden: List<String>,
+        adult: Boolean,
+        group: String?,
+        query: String,
+        match: String,
+        topic: String,
+        quick: List<String>,
+    ): PagingSource<Int, ChannelWithNow>
+
     /** Channels watched lately, latest first. */
     @Suppress("LongParameterList") // Every Live TV filter is a parameter of the one query, so the list stays one read.
     @Query(
@@ -150,10 +168,12 @@ interface ItemDao {
             $KIDS_ONLY_I
             AND (:group IS NULL OR i.groupName = :group)
             AND (:favouritesOnly = 0 OR i.id IN (SELECT itemId FROM favourites WHERE profileId = $ME))
+            AND (:listId = 0 OR i.id IN (SELECT itemId FROM list_items WHERE listId = :listId))
             AND (:query = '' OR i.id IN (SELECT docid FROM items_fts WHERE items_fts MATCH :match))
         ORDER BY i.sortOrder
         """,
     )
+    @Suppress("LongParameterList") // Every filter is a parameter of the one query, so the list stays one read.
     fun items(
         kind: Int,
         hidden: List<String>,
@@ -162,6 +182,8 @@ interface ItemDao {
         favouritesOnly: Boolean,
         query: String,
         match: String,
+        /** One of the person's own lists ([ListEntity]); 0 for none. */
+        listId: Long,
     ): PagingSource<Int, ItemEntity>
 
     @Query(
