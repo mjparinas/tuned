@@ -72,9 +72,12 @@ class BrowseScreenshots : Screenshots() {
 
     /** Downloads from the bar on Home, which stays below it. */
     @Test
-    fun downloadsOnHome() = shot("browse-downloads-home", HomeRoute, wait = "Maple News 24") {
-        compose.onNode(hasText(text(R.string.downloads)) and isSelectable()).performClick()
-    }
+    fun downloadsOnHome() = shot(
+        "browse-downloads-home",
+        HomeRoute,
+        wait = "Maple News 24",
+        then = { compose.onNode(hasText(text(R.string.downloads)) and isSelectable()).performClick() },
+    )
 
     @Test fun profiles() = shot("browse-profiles", ProfilesRoute(atStart = true), wait = text(R.string.profiles_title))
 }
