@@ -4,7 +4,7 @@ Melvin, 2026-11-19: "is it possible to stream through a web ui, that could be a 
 
 ## What was decided
 
-- **No relaying, ever.** Streams, playlists and guides go straight from the provider to the browser. Tuned's server only signs people in, checks Premium and hands over the account's backup. Never propose a stream relay or proxy through our servers.
+- **No relaying, ever.** Streams, playlists and guides go straight from the provider to the browser. Tuned's server only signs people in, checks Premium and hands over the account's backup. Never propose a stream relay or proxy through our servers. Melvin clarified the same day: "no relaying through tuned servers". A helper on the person's own computer that relays only when needed (as Stremio's local streaming server does at `127.0.0.1:11470`) fits that rule, but "i don't want to support relaying right now. that's a future feature", so it isn't built or planned yet.
 - **What that means.** A browser on an https page blocks `http://` streams unless the person allows insecure content for the site (Chrome, Edge, Firefox; Safari has no such setting), and it can only read a provider that answers with CORS. Providers without CORS, MAC portals (a page can't set `Cookie` or `User-Agent`) and a custom User-Agent can't work on the web. The page says so plainly and points to the app.
 - **Seats:** the web player doesn't take one of the 3 device seats, but only one browser per account plays at a time (a short lease; a second browser takes over and the first stops).
 - **Who gets it:** Premium bought in Play or on the website. The `github` build's everything-unlocked app doesn't count, since the server has no purchase on record.
