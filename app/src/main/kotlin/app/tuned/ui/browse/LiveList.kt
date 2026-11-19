@@ -120,7 +120,7 @@ private fun LiveList(
     Box(Modifier.fillMaxSize()) {
         LazyColumn(
             state = state,
-            modifier = Modifier.fillMaxSize().then(tvPagedList(focus, state)),
+            modifier = Modifier.fillMaxSize().tvPagedList(focus, state),
             contentPadding = PaddingValues(start = 12.dp, end = 12.dp, top = 4.dp, bottom = 16.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
@@ -133,7 +133,7 @@ private fun LiveList(
                     val favourite = channel.id in favourites
                     ChannelRow(
                         modifier =
-                            tvFocusItem(focus, channel.id, first = index == 0).then(
+                            Modifier.tvFocusItem(focus, channel.id, first = index == 0).then(
                                 if (onFocusChannel ==
                                     null
                                 ) {

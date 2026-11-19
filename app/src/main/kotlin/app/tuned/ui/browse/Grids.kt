@@ -97,7 +97,7 @@ internal fun MovieGrid(
             contentPadding = PaddingValues(12.dp),
             horizontalArrangement = Arrangement.spacedBy(10.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp),
-            modifier = Modifier.fillMaxSize().then(tvPagedGrid(focus, state)),
+            modifier = Modifier.fillMaxSize().tvPagedGrid(focus, state),
         ) {
             continueWatching(vm, ContentKind.MOVIE, onPlay)
             watchLaterRow(shows = false, visible = { fullList(vm, ContentKind.MOVIE) }, onOpenMovie = onOpenMovie, onOpenShow = { _, _ -> })
@@ -113,7 +113,7 @@ internal fun MovieGrid(
                     val done = movie.id in watched
                     val saved = WatchLaterEntity.movieKey(movie.id) in later
                     Poster(
-                        modifier = tvFocusItem(focus, movie.id, first = index == 0),
+                        modifier = Modifier.tvFocusItem(focus, movie.id, first = index == 0),
                         title = Titles.display(movie.name),
                         image = movie.logo,
                         favourite = favourite,
@@ -163,7 +163,7 @@ internal fun ShowGrid(
             contentPadding = PaddingValues(12.dp),
             horizontalArrangement = Arrangement.spacedBy(10.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp),
-            modifier = Modifier.fillMaxSize().then(tvPagedGrid(focus, state)),
+            modifier = Modifier.fillMaxSize().tvPagedGrid(focus, state),
         ) {
             continueWatching(vm, ContentKind.SERIES, onPlay)
             watchLaterRow(shows = true, visible = { fullList(vm, ContentKind.SERIES) }, onOpenMovie = {}, onOpenShow = onOpenShow)
@@ -175,7 +175,7 @@ internal fun ShowGrid(
                 } else {
                     val rating by produceState<Double?>(null, show.showName) { value = vm.rating(show.showName, tv = true) }
                     Poster(
-                        modifier = tvFocusItem(focus, show.showKey, first = index == 0),
+                        modifier = Modifier.tvFocusItem(focus, show.showKey, first = index == 0),
                         title = Titles.display(show.showName),
                         image = show.logo,
                         rating = rating,

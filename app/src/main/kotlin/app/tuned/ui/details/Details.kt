@@ -193,7 +193,7 @@ fun MovieScreen(
                     Button(
                         onClick = { onPlay(itemId) },
                         contentPadding = PaddingValues(horizontal = 28.dp, vertical = 12.dp),
-                        modifier = startFocus(start),
+                        modifier = Modifier.startFocus(start),
                     ) {
                         Icon(Icons.Filled.PlayArrow, null)
                         Spacer(Modifier.width(8.dp))

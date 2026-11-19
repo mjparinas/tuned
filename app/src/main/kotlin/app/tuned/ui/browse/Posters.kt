@@ -64,6 +64,7 @@ fun Poster(
     title: String,
     image: String?,
     onClick: () -> Unit,
+    modifier: Modifier = Modifier,
     subtitle: String? = null,
     favourite: Boolean = false,
     onToggleFavourite: (() -> Unit)? = null,
@@ -72,7 +73,6 @@ fun Poster(
     watched: Boolean = false,
     /** More long-press menu entries: label and action. */
     extraMenu: List<Pair<String, () -> Unit>> = emptyList(),
-    modifier: Modifier = Modifier,
 ) {
     var menu by remember { mutableStateOf(false) }
     val hasMenu = onToggleFavourite != null || onPlayNow != null || extraMenu.isNotEmpty()

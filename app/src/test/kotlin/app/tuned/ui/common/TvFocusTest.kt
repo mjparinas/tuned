@@ -40,12 +40,12 @@ class TvFocusTest {
         compose.setContent {
             val state = rememberLazyListState()
             val focus = rememberTvFocus()
-            LazyColumn(Modifier.fillMaxSize().then(tvPagedList(focus, state)), state = state) {
+            LazyColumn(Modifier.fillMaxSize().tvPagedList(focus, state), state = state) {
                 items(count = 500, key = { it.toLong() }) { index ->
                     Text(
                         "Channel $index",
                         Modifier
-                            .then(tvFocusItem(focus, index.toLong(), first = index == 0))
+                            .tvFocusItem(focus, index.toLong(), first = index == 0)
                             .fillMaxWidth()
                             .height(60.dp)
                             .clickable {},

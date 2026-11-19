@@ -184,7 +184,7 @@ fun ShowScreen(
                             selected = index == selected,
                             onClick = { selected = index },
                             // On a TV the remote starts on the season showing, one press from its episodes.
-                            modifier = if (index == selected) startFocus(start) else Modifier,
+                            modifier = if (index == selected) Modifier.startFocus(start) else Modifier,
                             text = { Text(stringResource(R.string.season, s)) },
                         )
                     }
@@ -242,7 +242,7 @@ fun ShowScreen(
                         onClick = { onPlay(ep.id) },
                         onToggleWatched = { done -> library.setWatched(listOf(ep.id), done) },
                         // With one season, the remote starts on its first episode.
-                        modifier = if (seasons.size <= 1 && ep.id == shown.first().id) startFocus(start) else Modifier,
+                        modifier = if (seasons.size <= 1 && ep.id == shown.first().id) Modifier.startFocus(start) else Modifier,
                     )
                 }
             }

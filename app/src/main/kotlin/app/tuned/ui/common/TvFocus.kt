@@ -8,6 +8,7 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.Stable
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -16,6 +17,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.composed
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
@@ -142,101 +144,105 @@ fun rememberTvFocus(returnKey: Any? = Unit): TvFocus {
  * [TvFocus] asks for this item and remembers it while focused. Put it before the item's clickable, so it reads that
  * clickable's focus.
  */
-@Composable
-fun tvFocusItem(
+fun Modifier.tvFocusItem(
     focus: TvFocus,
     key: Any,
     first: Boolean,
-): Modifier {
-    if (!focus.enabled) return Modifier
-    val requester = remember { FocusRequester() }
-    DisposableEffect(focus, key) {
-        focus.items += key
-        focus.shown = true
-        onDispose { focus.items -= key }
-    }
-    val mine = focus.claims(key, first)
-    LaunchedEffect(mine) {
-        if (mine) {
-            attempt(TAG, "Couldn't focus the list item") { requester.requestFocus() }
-            focus.done()
+): Modifier = if (!focus.enabled) {
+    this
+} else {
+    composed {
+        val requester = remember { FocusRequester() }
+        DisposableEffect(focus, key) {
+            focus.items += key
+            focus.shown = true
+            onDispose { focus.items -= key }
         }
+        val mine = focus.claims(key, first)
+        LaunchedEffect(mine) {
+            if (mine) {
+                attempt(TAG, "Couldn't focus the list item") { requester.requestFocus() }
+                focus.done()
+            }
+        }
+        Modifier
+            .focusRequester(requester)
+            .onFocusChanged { focus.focused(key, it.hasFocus) }
     }
-    return Modifier
-        .focusRequester(requester)
-        .onFocusChanged { focus.focused(key, it.hasFocus) }
 }
 
 /** The page keys and Back-to-top for a list ([LazyListState]); see [TvFocus]. Put it on the list. */
-@Composable
-fun tvPagedList(
+fun Modifier.tvPagedList(
     focus: TvFocus,
     state: LazyListState,
 ): Modifier = tvPaged(
     focus = focus,
     visible = { state.layoutInfo.visibleItemsInfo.map { it.index to it.key } },
     count = { state.layoutInfo.totalItemsCount },
-    scrolled = state.firstVisibleItemIndex > 0,
+    scrolled = { state.firstVisibleItemIndex > 0 },
     scrollTo = { state.scrollToItem(it) },
 )
 
 /** The page keys and Back-to-top for a grid ([LazyGridState]); see [TvFocus]. Put it on the grid. */
-@Composable
-fun tvPagedGrid(
+fun Modifier.tvPagedGrid(
     focus: TvFocus,
     state: LazyGridState,
 ): Modifier = tvPaged(
     focus = focus,
     visible = { state.layoutInfo.visibleItemsInfo.map { it.index to it.key } },
     count = { state.layoutInfo.totalItemsCount },
-    scrolled = state.firstVisibleItemIndex > 0,
+    scrolled = { state.firstVisibleItemIndex > 0 },
     scrollTo = { state.scrollToItem(it) },
 )
 
-@Composable
-private fun tvPaged(
+private fun Modifier.tvPaged(
     focus: TvFocus,
     /** Index and key of each item on screen, in order. */
     visible: () -> List<Pair<Int, Any>>,
     count: () -> Int,
-    scrolled: Boolean,
+    /** Whether the list is scrolled down; read through derivedStateOf, so scrolling doesn't recompose the screen. */
+    scrolled: () -> Boolean,
     scrollTo: suspend (Int) -> Unit,
-): Modifier {
-    if (!focus.enabled) return Modifier
-    val scope = rememberCoroutineScope()
-    // Only while focus is in this list, so Back still closes a pane or a dialog first.
-    BackHandler(enabled = scrolled && focus.focusedKey != null) {
-        scope.launch {
-            scrollTo(0)
-            val asked = focus.restoreFirst()
-            delay(CLAIM_WINDOW_MS)
-            focus.expire(asked)
-        }
-    }
-    return Modifier.onPreviewKeyEvent { event ->
-        val direction = ListPaging.direction(event.key.nativeKeyCode)
-        val key = focus.focusedKey
-        if (direction == 0 || key == null) return@onPreviewKeyEvent false
-        if (event.type == KeyEventType.KeyDown) {
-            val onScreen = visible().filter { (_, k) -> k in focus.items }
-            val from = onScreen.firstOrNull { (_, k) -> k == key }?.first
-            if (from != null) {
-                val to = ListPaging.target(from, direction, onScreen.size, count())
-                scope.launch {
-                    scrollTo(to)
-                    // The item at the new spot, or the nearest one after it that can take focus, once the list has laid
-                    // it out (which can be a frame after the scroll).
-                    val next =
-                        withTimeoutOrNull(CLAIM_WINDOW_MS) {
-                            snapshotFlow { visible().firstOrNull { (i, k) -> i >= to && k in focus.items }?.second }
-                                .filterNotNull()
-                                .first()
-                        }
-                    next?.let { focus.focusKey(it) }
-                }
+): Modifier = if (!focus.enabled) {
+    this
+} else {
+    composed {
+        val scope = rememberCoroutineScope()
+        val down by remember { derivedStateOf(scrolled) }
+        // Only while focus is in this list, so Back still closes a pane or a dialog first.
+        BackHandler(enabled = down && focus.focusedKey != null) {
+            scope.launch {
+                scrollTo(0)
+                val asked = focus.restoreFirst()
+                delay(CLAIM_WINDOW_MS)
+                focus.expire(asked)
             }
         }
-        true
+        Modifier.onPreviewKeyEvent { event ->
+            val direction = ListPaging.direction(event.key.nativeKeyCode)
+            val key = focus.focusedKey
+            if (direction == 0 || key == null) return@onPreviewKeyEvent false
+            if (event.type == KeyEventType.KeyDown) {
+                val onScreen = visible().filter { (_, k) -> k in focus.items }
+                val from = onScreen.firstOrNull { (_, k) -> k == key }?.first
+                if (from != null) {
+                    val to = ListPaging.target(from, direction, onScreen.size, count())
+                    scope.launch {
+                        scrollTo(to)
+                        // The item at the new spot, or the nearest one after it that can take focus, once the list has laid
+                        // it out (which can be a frame after the scroll).
+                        val next =
+                            withTimeoutOrNull(CLAIM_WINDOW_MS) {
+                                snapshotFlow { visible().firstOrNull { (i, k) -> i >= to && k in focus.items }?.second }
+                                    .filterNotNull()
+                                    .first()
+                            }
+                        next?.let { focus.focusKey(it) }
+                    }
+                }
+            }
+            true
+        }
     }
 }
 
@@ -260,16 +266,18 @@ fun rememberStartFocus(): StartFocus {
 }
 
 /** The modifier for the element [start] focuses; see [StartFocus]. Put it before the element's clickable. */
-@Composable
-fun startFocus(start: StartFocus): Modifier {
-    if (!start.enabled) return Modifier
-    val requester = remember { FocusRequester() }
-    LaunchedEffect(start) {
-        if (!start.taken && System.currentTimeMillis() - start.opened < CLAIM_WINDOW_MS) {
-            start.taken = attempt(TAG, "Couldn't focus the page's first button") { requester.requestFocus() }.isSuccess
+fun Modifier.startFocus(start: StartFocus): Modifier = if (!start.enabled) {
+    this
+} else {
+    composed {
+        val requester = remember { FocusRequester() }
+        LaunchedEffect(start) {
+            if (!start.taken && System.currentTimeMillis() - start.opened < CLAIM_WINDOW_MS) {
+                start.taken = attempt(TAG, "Couldn't focus the page's first button") { requester.requestFocus() }.isSuccess
+            }
         }
+        Modifier.focusRequester(requester)
     }
-    return Modifier.focusRequester(requester)
 }
 
 private const val TAG = "TvFocus"
