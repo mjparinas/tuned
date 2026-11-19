@@ -2,7 +2,7 @@
 
 **Name: Tuned** (Melvin, 2026-11-17).
 
-**Mark.** A rounded play button sending out two signal arcs, as in "tuned in". White play button and signal-teal arcs on a Tuned violet gradient. The adaptive icon has background, foreground and monochrome layers (the monochrome layer gives the Android 13+ themed icon). The status bar icon is the same mark in white. The splash screen shows the mark on the theme's background.
+**Mark.** A rounded play button sending out two signal arcs, as in "tuned in". White play button and signal-teal arcs on a Tuned violet gradient. The adaptive icon has background, foreground and monochrome layers (the monochrome layer gives the Android 13+ themed icon). The status bar icon is the same mark in white. The splash screen shows the mark on the theme's background, and "Who's watching?" at start shows the mark and the name in its upper left ([profiles](profiles.md)).
 
 **Colours.**
 

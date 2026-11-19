@@ -2,6 +2,7 @@ package app.tuned.ui.settings
 
 import android.app.Application
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -63,6 +64,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
@@ -224,7 +226,7 @@ fun ProfilesScreen(
     WelcomeScaffold(
         topBar = {
             if (atStart) {
-                Spacer(Modifier.statusBarsPadding())
+                BrandBar()
             } else {
                 BackTopBar(stringResource(if (managing) R.string.profiles_manage else R.string.profiles_title), onBack)
             }
@@ -359,6 +361,26 @@ internal fun WelcomeScaffold(
         topBar = topBar,
         content = content,
     )
+}
+
+/** The app's mark and name in the upper left of "Who's watching?" at start, so the first screen says whose it is. */
+@Composable
+private fun BrandBar() {
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .statusBarsPadding()
+            .padding(start = 20.dp, end = 20.dp, top = 16.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Image(painterResource(R.drawable.ic_brand_mark), contentDescription = null, modifier = Modifier.size(32.dp))
+        Spacer(Modifier.width(10.dp))
+        Text(
+            stringResource(R.string.app_name),
+            style = MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.Bold,
+        )
+    }
 }
 
 @Composable
