@@ -57,6 +57,11 @@ The app's sync copy (everything sync between devices copies today) as plain JSON
 
 `/account` (`public/account/`): sign in with Google, Premium and seats, Your devices with Remove, buying Premium or seats, receipts, the backup's date and Delete backup, Pair a TV, Sign out, and Delete account, which removes the account, its devices, purchase records and backups and cancels a Stripe subscription (a Play subscription is cancelled in Play). Play requires a way to delete an account on the web; this is it.
 
+- **Messages sit in their card** (Melvin, 2026-11-19: "when there is an error, it shouldn't show at the top of the page, it should show in the same tile"). A code, Pair a TV, the device sign-in, Devices, buying, the backup and deleting each answer inside their own card, red with a "!" for an error and teal with a tick when it's done, and the field it's about gets a red outline. Only page-wide news (signed out, account deleted, a failed Google sign-in, a purchase coming through) stays at the top.
+- **Codes are checked before they're sent** ("there should be validation saying that the format is not correct"): a code must be letters, numbers and dashes, 4 to 24 long, the same rule as the server (`lib/admin/codes.mjs`), and a TV's code must be its eight characters (`normalizeCode` in `public/tv/seal.js`), so a typo says so at once without using up a try.
+- **Delete account opens a pop-up** that says what goes and only deletes once "delete" is typed ("the pop up should force the user to type delete"); it replaced pressing the button twice. Cancel, Escape or a tap outside closes it.
+- **What Tuned does** (Melvin, 2026-11-19: "on the website, can you help articulate what features tuned has", "after they sign in"): a card on the signed-in account page listing the app's features in plain words, with the Premium ones tagged, kept to what the app does ([premium](premium.md#free-and-premium)). A feature added to or removed from the app updates this list in the same pull request.
+
 ## Setting it up (Melvin)
 
 1. Vercel › `tuned-devices` › Storage: add **Neon** (sets `DATABASE_URL`), then run `devices/schema.sql` in its SQL editor. Upstash is still to add too.
