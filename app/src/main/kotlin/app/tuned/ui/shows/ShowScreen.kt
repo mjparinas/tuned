@@ -64,6 +64,8 @@ import app.tuned.data.db.SeenEpisodeEntity
 import app.tuned.diagnostics.launchSafely
 import app.tuned.ui.common.BackTopBar
 import app.tuned.ui.common.focusRing
+import app.tuned.ui.common.rememberStartFocus
+import app.tuned.ui.common.startFocus
 import app.tuned.ui.details.DetailsBody
 import app.tuned.ui.details.DetailsViewModel
 import app.tuned.ui.details.MetaLine
@@ -172,6 +174,7 @@ fun ShowScreen(
     }
     val seasonEpisodes = if (tmdbId != null && season != null) episodeInfo[seasonKey(tmdbId, season)] else null
 
+    val start = rememberStartFocus()
     Scaffold(topBar = { BackTopBar(Titles.display(title), onBack) }) { padding ->
         Column(Modifier.padding(padding).fillMaxSize()) {
             if (seasons.size > 1) {
@@ -180,6 +183,8 @@ fun ShowScreen(
                         Tab(
                             selected = index == selected,
                             onClick = { selected = index },
+                            // On a TV the remote starts on the season showing, one press from its episodes.
+                            modifier = if (index == selected) Modifier.startFocus(start) else Modifier,
                             text = { Text(stringResource(R.string.season, s)) },
                         )
                     }
@@ -236,6 +241,8 @@ fun ShowScreen(
                         isNew = ep.id in fresh,
                         onClick = { onPlay(ep.id) },
                         onToggleWatched = { done -> library.setWatched(listOf(ep.id), done) },
+                        // With one season, the remote starts on its first episode.
+                        modifier = if (seasons.size <= 1 && ep.id == shown.first().id) Modifier.startFocus(start) else Modifier,
                     )
                 }
             }
@@ -251,10 +258,11 @@ private fun EpisodeRow(
     isNew: Boolean,
     onClick: () -> Unit,
     onToggleWatched: (Boolean) -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     val watched = history.isWatched()
     Row(
-        Modifier
+        modifier
             .fillMaxWidth()
             .focusRing(RectangleShape, MaterialTheme.colorScheme.primary)
             .clickable(onClick = onClick)

@@ -20,6 +20,7 @@ import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Dns
 import androidx.compose.material.icons.filled.FolderOpen
 import androidx.compose.material.icons.filled.Link
+import androidx.compose.material.icons.filled.PhoneAndroid
 import androidx.compose.material.icons.filled.Router
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -44,13 +45,15 @@ import app.tuned.ui.common.focusRing
 /**
  * The first thing a new install shows, and Settings › Playlists › Add: one question, "what kind of playlist?", with
  * the kinds providers hand out (an Xtream login, a link, a file or a MAC portal). The form for the chosen kind comes
- * next ([AddPlaylistScreen]), so nobody faces a server, username, password and two links at once.
+ * next ([AddPlaylistScreen]), so nobody faces a server, username, password and two links at once. On
+ * a TV, signing in with a phone ([TvSignInScreen]) comes first.
  */
 @Composable
 fun WelcomeScreen(
     firstRun: Boolean,
     onPick: (Credentials.Kind) -> Unit,
     onBack: () -> Unit,
+    onPhone: (() -> Unit)? = null,
     /** First run: Restore from Google Drive brought everything back ([RestoreFromDrive]). */
     onRestored: (askProfile: Boolean) -> Unit = {},
 ) {
@@ -59,7 +62,7 @@ fun WelcomeScreen(
             // The GitHub build checks for a newer release on every start, signed in or not, so a first install that is
             // already out of date offers the update here, before a playlist is added.
             if (firstRun) UpdateBanner(Modifier.widthIn(max = 560.dp).fillMaxWidth().padding(start = 24.dp, end = 24.dp, top = 12.dp))
-            WelcomeBody(firstRun, onPick, onRestored)
+            WelcomeBody(firstRun, onPick, onRestored, onPhone)
         }
     }
 }
@@ -69,10 +72,11 @@ private fun WelcomeBody(
     firstRun: Boolean,
     onPick: (Credentials.Kind) -> Unit,
     onRestored: (askProfile: Boolean) -> Unit,
+    onPhone: (() -> Unit)?,
 ) {
     BoxWithConstraints(Modifier.fillMaxSize()) {
         // A TV (960 by 540 dp, less its overscan margin) or a phone held sideways is too short for the logo, the
-        // welcome and three cards in one column, which pushed the logo off the top of a real TV. There the welcome
+        // welcome and the cards in one column, which pushed the logo off the top of a real TV. There the welcome
         // sits beside the cards instead, so the whole screen fits without scrolling.
         if (firstRun && maxWidth >= SIDE_BY_SIDE_MIN_WIDTH && maxHeight < SIDE_BY_SIDE_MAX_HEIGHT) {
             Row(
@@ -88,15 +92,17 @@ private fun WelcomeBody(
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
                     Welcome(logoSize = 72.dp)
+                    // Restore and the privacy line sit under the welcome, so the right column holds only the four
+                    // kinds and fits a TV's height (480 dp on some, less the overscan margin) without scrolling.
+                    RestoreFromDrive(onRestored)
+                    Privacy()
                 }
                 Column(
                     Modifier.weight(1.2f).verticalScroll(rememberScrollState()),
                     horizontalAlignment = Alignment.CenterHorizontally,
-                    // Tighter than the phone's column, so four cards and the privacy line fit a TV's height.
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
-                    Kinds(firstRun, onPick, onRestored)
-                    Privacy()
+                    Kinds(onPick, onPhone)
                 }
             }
         } else {
@@ -119,7 +125,8 @@ private fun WelcomeBody(
                         modifier = Modifier.widthIn(max = 560.dp).fillMaxWidth(),
                     )
                 }
-                Kinds(firstRun, onPick, onRestored)
+                Kinds(onPick, onPhone)
+                if (firstRun) RestoreFromDrive(onRestored)
                 if (firstRun) {
                     Spacer(Modifier.height(4.dp))
                     Privacy()
@@ -132,7 +139,7 @@ private fun WelcomeBody(
 /** Wider than a phone held upright, so two columns have room. */
 private val SIDE_BY_SIDE_MIN_WIDTH = 600.dp
 
-/** Shorter than the single column needs (about 600 dp with the logo, the welcome, three cards and the privacy line). */
+/** Shorter than the single column needs (about 700 dp with the logo, the welcome, four cards, restore and the privacy line). */
 private val SIDE_BY_SIDE_MAX_HEIGHT = 620.dp
 
 @Composable
@@ -150,15 +157,15 @@ private fun Welcome(logoSize: Dp) {
 
 @Composable
 private fun Kinds(
-    firstRun: Boolean,
     onPick: (Credentials.Kind) -> Unit,
-    onRestored: (askProfile: Boolean) -> Unit,
+    onPhone: (() -> Unit)?,
 ) {
+    // On a TV, typing a login with the remote is the hard part, so the phone comes first (onboarding.md).
+    onPhone?.let { KindCard(Icons.Filled.PhoneAndroid, R.string.tv_signin_card, R.string.tv_signin_card_summary, it) }
     KindCard(Icons.Filled.Dns, R.string.kind_xtream, R.string.kind_xtream_summary) { onPick(Credentials.Kind.Xtream) }
     KindCard(Icons.Filled.Link, R.string.kind_link, R.string.kind_link_summary) { onPick(Credentials.Kind.Link) }
     KindCard(Icons.Filled.FolderOpen, R.string.kind_file, R.string.kind_file_summary) { onPick(Credentials.Kind.File) }
     KindCard(Icons.Filled.Router, R.string.kind_stalker, R.string.kind_stalker_summary) { onPick(Credentials.Kind.Stalker) }
-    if (firstRun) RestoreFromDrive(onRestored)
 }
 
 @Composable

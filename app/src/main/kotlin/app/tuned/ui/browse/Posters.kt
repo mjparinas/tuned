@@ -64,6 +64,7 @@ fun Poster(
     title: String,
     image: String?,
     onClick: () -> Unit,
+    modifier: Modifier = Modifier,
     subtitle: String? = null,
     favourite: Boolean = false,
     onToggleFavourite: (() -> Unit)? = null,
@@ -76,7 +77,7 @@ fun Poster(
     var menu by remember { mutableStateOf(false) }
     val hasMenu = onToggleFavourite != null || onPlayNow != null || extraMenu.isNotEmpty()
     Column(
-        Modifier
+        modifier
             .clip(RoundedCornerShape(10.dp))
             .focusRing(RoundedCornerShape(10.dp), MaterialTheme.colorScheme.primary)
             .combinedClickable(

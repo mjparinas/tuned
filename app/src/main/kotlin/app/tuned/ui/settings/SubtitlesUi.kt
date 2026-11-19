@@ -3,7 +3,6 @@ package app.tuned.ui.settings
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -22,6 +21,7 @@ import app.tuned.R
 import app.tuned.container
 import app.tuned.data.AppSettings
 import app.tuned.data.SubtitleAccount
+import app.tuned.ui.common.TunedDialog
 
 /**
  * Settings › Playback › Subtitles, only in builds with the OpenSubtitles.com key (OPENSUBTITLES_API_KEY): whether a video with no
@@ -65,7 +65,7 @@ private fun AccountDialog(
 ) {
     var username by remember { mutableStateOf(initial?.username.orEmpty()) }
     var password by remember { mutableStateOf(initial?.password.orEmpty()) }
-    AlertDialog(
+    TunedDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(R.string.settings_opensubtitles_account)) },
         text = {

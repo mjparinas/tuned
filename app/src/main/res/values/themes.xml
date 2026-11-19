@@ -8,7 +8,7 @@
     <style name="Theme.Tuned.Starting" parent="Theme.SplashScreen">
         <item name="windowSplashScreenBackground">@color/splash_background</item>
         <item name="windowSplashScreenAnimatedIcon">@drawable/ic_launcher_foreground</item>
-        <item name="windowSplashScreenIconBackgroundColor">@color/tuned_violet</item>
+        <item name="windowSplashScreenIconBackgroundColor">@color/tuned_ink</item>
         <item name="postSplashScreenTheme">@style/Theme.Tuned</item>
     </style>
 

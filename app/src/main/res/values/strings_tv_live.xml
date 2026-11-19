@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Live TV on a TV: the groups down the left and the focused channel's details on the right. -->
+    <string name="tv_live_on_now">On now</string>
+    <string name="tv_live_next">Next</string>
+    <string name="tv_live_time_range">%1$s to %2$s</string>
+    <string name="tv_live_no_guide">No guide for this channel.</string>
+    <string name="tv_live_pick">Move to a channel to see what\'s on.</string>
+</resources>

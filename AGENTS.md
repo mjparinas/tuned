@@ -27,12 +27,12 @@ Kotlin, Jetpack Compose with Material 3, Navigation Compose (type-safe routes), 
 - `:app` folders: `data/` (Room, DataStore settings, encrypted login, sync), `work/` (background refresh), `player/` (PlayerActivity), `ui/` (Compose screens, one screen and its ViewModel per file).
 - `:smoketest`: the github debug app on an emulator: sign in, play, change channel, back, and never two stream connections at once ([diagnostics](docs/decisions/diagnostics.md)).
 - `:fakeprovider`: plain Kotlin, the stand-in provider on the loopback that both device test modules use, with a generated clip and no login.
-- `devices/`: not Gradle. The Premium device list and its website on Vercel, plain Node with no dependencies, tests in `devices/lib/*.test.mjs` ([premium](docs/decisions/premium.md)).
+- `devices/`: not Gradle. The Premium device list and its website on Vercel, and the relay and page for signing in on a TV with a phone; plain Node with no dependencies, tests in `devices/lib/*.test.mjs` ([premium](docs/decisions/premium.md), [onboarding](docs/decisions/onboarding.md)).
 - `:baselineprofile`: drives the release app on an emulator to write its baseline profile and measure cold start ([speed](docs/decisions/speed.md)).
 
 ## Product rules
 
-- **Get out of the way.** Opening the app shows channels from the cache at once; nothing waits on the network. The player shows only video until a tap; the controls hide themselves. No pop-ups, no onboarding beyond adding a first playlist ([onboarding](docs/decisions/onboarding.md)).
+- **Get out of the way.** Opening the app shows channels from the cache at once; nothing waits on the network. The player shows only video until a tap; the controls hide themselves, and with them the time of day and the stream's pills ([player](docs/decisions/player.md)). The player's tools are buttons in its top row, never behind a three-dot menu (Melvin, 2026-11-19). No pop-ups, no onboarding beyond adding a first playlist ([onboarding](docs/decisions/onboarding.md)).
 - **Speed first** ([speed](docs/decisions/speed.md)): lists are paged straight from Room; downloads stream into the database in batches; nothing heavy runs before the first frame.
 - **Customizable** (Melvin, 2026-11-17: "customizing most things in the settings"): a new behaviour gets a setting when people could reasonably want it either way, with the common choice as the default.
 - **Never ask for, log or commit a login.** The app stores it encrypted until sign-out ([security](docs/decisions/security.md)), and signing out resets the app to how it was installed, keeping downloads only if the person chooses to ([onboarding](docs/decisions/onboarding.md#sign-out)); a new store of data must be cleared by `data/AppReset`. Error messages go through `XtreamUrls.redact`; log lines through `AppLog`, which scrubs them ([diagnostics](docs/decisions/diagnostics.md)). Playlists and guides are never committed (`.gitignore` blocks `*.m3u`, `*.xmltv`, `.env`).
@@ -47,6 +47,7 @@ Kotlin, Jetpack Compose with Material 3, Navigation Compose (type-safe routes), 
 - Formatting is ktlint's (`.editorconfig`, width 140) through Spotless, and Prettier's for YAML, JSON and Markdown. Don't hand-format.
 - detekt (`config/detekt/detekt.yml`) and Android Lint (`warningsAsErrors`) fail CI on any finding. Fix the cause; suppress only with a comment saying why.
 - Every string a person reads is in `res/values/strings.xml`; numbers that change a word use `<plurals>`.
+- **Pop-ups are `TunedDialog`** (`ui/common/TunedDialog.kt`), never Material's `AlertDialog` directly (detekt enforces it), so every dialog keeps 24 dp off the screen's edges, stops at 560 dp and sits in the centre (Melvin, 2026-11-19: "these pop ups shouldn't take the full width"; [branding](docs/decisions/branding.md)).
 - **TV-safe** ([TV](docs/decisions/tv.md)): on a TV every screen sits inside the overscan margin (`TvSafeArea`, 48 dp sides, 27 dp top and bottom); a screen taller than 540 dp less that margin must scroll or change layout so nothing is cut off.
 - **Accessible by default** ([accessibility](docs/decisions/accessibility.md)): an icon-only button has a label, a state shown by colour is also given in words, switches are `toggleable`, tap targets are 48dp, and text containers use a minimum height, never a fixed one.
 - Fire-and-forget coroutines use `launchSafely(tag)`, and caught failures go to `AppLog` (`attempt` instead of `runCatching`), so nothing fails silently and nothing crashes the app ([diagnostics](docs/decisions/diagnostics.md)).
@@ -86,7 +87,7 @@ One file per topic in `docs/decisions/`, A to Z. Add a line when you add a topic
 - [Accessibility](docs/decisions/accessibility.md): TalkBack labels and states, 48dp targets, large text, the player's controls with a screen reader.
 - [Architecture](docs/decisions/architecture.md): native Kotlin over Capacitor, modules, data flow.
 - [Auto-tune](docs/decisions/auto-tune.md): finding a working English stream for a live event, one connection at a time.
-- [Branding](docs/decisions/branding.md): name, icon, colours, themes.
+- [Branding](docs/decisions/branding.md): name, the channel stack icon, colours, themes.
 - [Channel scan](docs/decisions/channel-scan.md): finding dead channels without blaming them for the internet or the server.
 - [Diagnostics](docs/decisions/diagnostics.md): crash reports, `launchSafely` and `attempt`, the log in Settings, keeping logins out of it.
 - [Large screens](docs/decisions/large-screens.md): navigation rail, list and detail panes, the guide beside the player on tablets.

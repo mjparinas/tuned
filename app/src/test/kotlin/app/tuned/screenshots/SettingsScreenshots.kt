@@ -6,6 +6,7 @@ import androidx.compose.ui.test.performScrollTo
 import app.tuned.R
 import app.tuned.data.AppReset
 import app.tuned.data.CaptionStyle
+import app.tuned.data.LighterMode
 import app.tuned.ui.CaptionSettingsRoute
 import app.tuned.ui.RegionSettingsRoute
 import app.tuned.ui.SettingsPageRoute
@@ -17,11 +18,38 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.ParameterizedRobolectricTestRunner
 import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
 
 /** Settings, every one of its pages, and the screens they open. */
 @RunWith(RobolectricTestRunner::class)
 class SettingsScreenshots : Screenshots() {
     @Test fun settings() = shot("settings", SettingsRoute, wait = text(R.string.settings_playback))
+
+    /** A tablet shows the pages and the page picked side by side. */
+    @Test
+    @Config(qualifiers = TABLET)
+    fun settingsTablet() = shot("settings-tablet", SettingsRoute, wait = text(R.string.settings_playback))
+
+    /** The cards and coloured badges in the light theme, where the badge colours are deepest. */
+    @Test fun settingsLight() = shot("settings-light", SettingsRoute, wait = text(R.string.settings_playback), settings = LIGHT)
+
+    /** Lighter mode turned on, so its row says what it does. */
+    @Test
+    fun lighterMode() = shot(
+        "settings-lighter-mode",
+        SettingsPageRoute(SettingsPage.APPEARANCE.name),
+        wait = text(R.string.settings_lighter),
+        settings = DARK.copy(lighterMode = LighterMode.ON),
+    )
+
+    /** Report a problem, under Troubleshooting in Settings › About. */
+    @Test
+    fun reportProblem() = shot(
+        "settings-report-problem",
+        SettingsPageRoute(SettingsPage.ABOUT.name),
+        wait = text(R.string.settings_user_agent),
+        then = { compose.onNodeWithText(text(R.string.report_title)).performScrollTo() },
+    )
 
     @Test
     fun captions() = shot(
@@ -55,6 +83,16 @@ class SettingsScreenshots : Screenshots() {
         overlay = {
             SignOutDownloadsDialog(AppReset.Saved(count = 12, bytes = 8_400_000_000), onDelete = {}, onKeep = {}, onCancel = {})
         },
+    )
+
+    /** The sign-out dialog on a TV: no wider than 560 dp, in the centre. */
+    @Test
+    @Config(qualifiers = TV)
+    fun signOutTv() = shot(
+        "settings-sign-out-tv",
+        SettingsPageRoute(SettingsPage.PLAYLISTS.name),
+        wait = text(R.string.settings_sign_out_title),
+        overlay = { SignOutDialog(onSignOut = {}, onCancel = {}) },
     )
 
     /** The user agent picklist, opened from Settings › About. */

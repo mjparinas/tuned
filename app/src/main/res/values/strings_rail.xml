@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- The side rail on a TV, which has no menu beside search: short labels under the icons. -->
+    <string name="rail_search">Search</string>
+    <string name="rail_profile">Profile</string>
+</resources>

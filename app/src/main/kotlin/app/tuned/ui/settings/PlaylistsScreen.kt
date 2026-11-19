@@ -3,6 +3,7 @@ package app.tuned.ui.settings
 import android.app.Application
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -18,14 +19,10 @@ import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Dns
 import androidx.compose.material.icons.filled.FolderOpen
 import androidx.compose.material.icons.filled.Link
-import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Router
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material.icons.filled.Tv
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -51,6 +48,7 @@ import app.tuned.container
 import app.tuned.data.Credentials
 import app.tuned.diagnostics.launchSafely
 import app.tuned.ui.common.BackTopBar
+import app.tuned.ui.common.TunedDialog
 import app.tuned.ui.common.focusRing
 import kotlinx.coroutines.flow.MutableStateFlow
 
@@ -125,7 +123,7 @@ fun PlaylistsRow(
 }
 
 /**
- * Every playlist saved on this device: tap one to switch to it, and its menu renames, edits or removes it. The app
+ * Every playlist saved on this device: tap one to switch to it; the buttons under it rename, edit or remove it. The app
  * holds one playlist's channels at a time, so switching downloads the other one (Settings › Playlists, 2026-11-17).
  */
 @Composable
@@ -133,6 +131,7 @@ fun PlaylistsScreen(
     onBack: () -> Unit,
     onAdd: () -> Unit,
     onEdit: (index: Int, kind: Credentials.Kind) -> Unit,
+    onSendToTv: (() -> Unit)?,
     onSwitched: () -> Unit,
     onEmpty: () -> Unit,
     vm: PlaylistsViewModel = viewModel(),
@@ -154,7 +153,8 @@ fun PlaylistsScreen(
             )
         },
     ) { padding ->
-        LazyColumn(Modifier.padding(padding).fillMaxSize()) {
+        // Room under the last row for the Add button.
+        LazyColumn(Modifier.padding(padding).fillMaxSize(), contentPadding = PaddingValues(bottom = 88.dp)) {
             item {
                 Text(
                     stringResource(R.string.playlists_help),
@@ -173,6 +173,10 @@ fun PlaylistsScreen(
                     onRemove = { removing = login },
                 )
             }
+            // Signing in on a TV with this phone (docs/decisions/onboarding.md); not shown on a TV itself.
+            if (onSendToTv != null && saved.any { it.kind != Credentials.Kind.File }) {
+                item { SendToTvRow(onSendToTv) }
+            }
         }
     }
 
@@ -184,7 +188,7 @@ fun PlaylistsScreen(
     }
     removing?.let { login ->
         val last = saved.size == 1
-        AlertDialog(
+        TunedDialog(
             onDismissRequest = { removing = null },
             title = { Text(stringResource(R.string.playlists_remove_title, login.label)) },
             text = { Text(stringResource(if (last) R.string.playlists_remove_last else R.string.playlists_remove_body)) },
@@ -200,6 +204,28 @@ fun PlaylistsScreen(
 }
 
 @Composable
+private fun SendToTvRow(onClick: () -> Unit) {
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .focusRing(RoundedCornerShape(8.dp), MaterialTheme.colorScheme.primary)
+            .clickable(onClick = onClick)
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(Icons.Filled.Tv, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+        Column(Modifier.weight(1f).padding(horizontal = 16.dp)) {
+            Text(stringResource(R.string.send_tv_row), style = MaterialTheme.typography.titleMedium)
+            Text(
+                stringResource(R.string.send_tv_row_summary),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
+}
+
+@Composable
 private fun PlaylistRow(
     login: Credentials,
     active: Boolean,
@@ -208,68 +234,59 @@ private fun PlaylistRow(
     onEdit: () -> Unit,
     onRemove: () -> Unit,
 ) {
-    var menu by remember { mutableStateOf(false) }
-    Row(
-        Modifier
-            .fillMaxWidth()
-            .focusRing(RoundedCornerShape(8.dp), MaterialTheme.colorScheme.primary)
-            .clickable(enabled = !active, onClick = onSwitch)
-            .padding(start = 16.dp, top = 8.dp, bottom = 8.dp, end = 4.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Icon(
-            when (login.kind) {
-                Credentials.Kind.Xtream -> Icons.Filled.Dns
-                Credentials.Kind.Link -> Icons.Filled.Link
-                Credentials.Kind.File -> Icons.Filled.FolderOpen
-                Credentials.Kind.Stalker -> Icons.Filled.Router
-            },
-            contentDescription = null,
-            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        Column(Modifier.weight(1f).padding(horizontal = 16.dp)) {
-            Text(login.label, style = MaterialTheme.typography.titleMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            val kind =
-                stringResource(
-                    when (login.kind) {
-                        Credentials.Kind.Xtream -> R.string.kind_xtream
-                        Credentials.Kind.Link -> R.string.kind_link
-                        Credentials.Kind.File -> R.string.kind_file
-                        Credentials.Kind.Stalker -> R.string.kind_stalker
-                    },
-                )
-            Text(
-                if (login.name.isBlank()) kind else "$kind · ${login.detail}",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
-        }
-        if (active) {
+    // Rename, Edit and Remove are buttons under the playlist, in sight and one press away, rather than in a three-dot
+    // menu (Melvin, 2026-11-19: "avoid 3 dot drop downs").
+    Column(Modifier.fillMaxWidth()) {
+        Row(
+            Modifier
+                .fillMaxWidth()
+                .focusRing(RoundedCornerShape(8.dp), MaterialTheme.colorScheme.primary)
+                .clickable(enabled = !active, onClick = onSwitch)
+                .padding(start = 16.dp, top = 8.dp, bottom = 8.dp, end = 16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
             Icon(
-                Icons.Filled.CheckCircle,
-                contentDescription = stringResource(R.string.playlists_active),
-                tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(24.dp),
+                when (login.kind) {
+                    Credentials.Kind.Xtream -> Icons.Filled.Dns
+                    Credentials.Kind.Link -> Icons.Filled.Link
+                    Credentials.Kind.File -> Icons.Filled.FolderOpen
+                    Credentials.Kind.Stalker -> Icons.Filled.Router
+                },
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-        }
-        IconButton(onClick = { menu = true }) {
-            Icon(Icons.Filled.MoreVert, contentDescription = stringResource(R.string.playlists_options, login.label))
-            DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
-                DropdownMenuItem(text = { Text(stringResource(R.string.playlists_rename)) }, onClick = {
-                    menu = false
-                    onRename()
-                })
-                DropdownMenuItem(text = { Text(stringResource(R.string.playlists_edit)) }, onClick = {
-                    menu = false
-                    onEdit()
-                })
-                DropdownMenuItem(text = { Text(stringResource(R.string.playlists_remove)) }, onClick = {
-                    menu = false
-                    onRemove()
-                })
+            Column(Modifier.weight(1f).padding(horizontal = 16.dp)) {
+                Text(login.label, style = MaterialTheme.typography.titleMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                val kind =
+                    stringResource(
+                        when (login.kind) {
+                            Credentials.Kind.Xtream -> R.string.kind_xtream
+                            Credentials.Kind.Link -> R.string.kind_link
+                            Credentials.Kind.File -> R.string.kind_file
+                            Credentials.Kind.Stalker -> R.string.kind_stalker
+                        },
+                    )
+                Text(
+                    if (login.name.isBlank()) kind else "$kind · ${login.detail}",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
             }
+            if (active) {
+                Icon(
+                    Icons.Filled.CheckCircle,
+                    contentDescription = stringResource(R.string.playlists_active),
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(24.dp),
+                )
+            }
+        }
+        Row(Modifier.padding(start = 56.dp, bottom = 4.dp)) {
+            TextButton(onClick = onRename) { Text(stringResource(R.string.playlists_rename)) }
+            TextButton(onClick = onEdit) { Text(stringResource(R.string.playlists_edit)) }
+            TextButton(onClick = onRemove) { Text(stringResource(R.string.playlists_remove)) }
         }
     }
 }

@@ -10,5 +10,4 @@
     <string name="list_delete">Delete list</string>
     <string name="list_delete_title">Delete “%s”?</string>
     <string name="list_delete_body">The list goes, but the channels and films in it stay where they are.</string>
-    <string name="list_options">Options for %s</string>
 </resources>

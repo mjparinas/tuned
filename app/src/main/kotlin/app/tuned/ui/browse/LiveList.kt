@@ -38,6 +38,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.text.style.TextOverflow
@@ -57,6 +58,9 @@ import app.tuned.ui.common.firstLoad
 import app.tuned.ui.common.focusRing
 import app.tuned.ui.common.peekOrNull
 import app.tuned.ui.common.rememberFastScroll
+import app.tuned.ui.common.rememberTvFocus
+import app.tuned.ui.common.tvFocusItem
+import app.tuned.ui.common.tvPagedList
 import app.tuned.ui.guide.GuideGridView
 
 /** Live TV as the channel list, or as the grid guide when that's switched on. */
@@ -67,6 +71,10 @@ internal fun LiveTab(
     onPlay: (Long) -> Unit,
     onOpenGuide: (Long) -> Unit,
     onSearchEverything: (String) -> Unit,
+    /** Changes when focus should come back to the list on a TV, such as the pane beside it closing. */
+    focusReturn: Int = 0,
+    /** On a TV, the channel the remote moves onto, for the details beside the list. */
+    onFocusChannel: ((ChannelWithNow) -> Unit)? = null,
 ) {
     if (settings.liveGrid) {
         val channels = vm.channels.collectAsLazyPagingItems()
@@ -84,6 +92,8 @@ internal fun LiveTab(
             onPlay,
             onOpenGuide,
             onSearchEverything,
+            focusReturn,
+            onFocusChannel,
         )
     }
 }
@@ -98,16 +108,19 @@ private fun LiveList(
     onPlay: (Long) -> Unit,
     onOpenGuide: (Long) -> Unit,
     onSearchEverything: (String) -> Unit,
+    focusReturn: Int,
+    onFocusChannel: ((ChannelWithNow) -> Unit)?,
 ) {
     val channels = vm.channels.collectAsLazyPagingItems()
     val favourites by vm.favouriteIds.collectAsStateWithLifecycle()
     val picker = rememberListPicker()
     val editPicker = rememberChannelEditPicker()
     val state = rememberLazyListState()
+    val focus = rememberTvFocus(focusReturn)
     Box(Modifier.fillMaxSize()) {
         LazyColumn(
             state = state,
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier.fillMaxSize().tvPagedList(focus, state),
             contentPadding = PaddingValues(start = 12.dp, end = 12.dp, top = 4.dp, bottom = 16.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
@@ -119,6 +132,16 @@ private fun LiveList(
                 } else {
                     val favourite = channel.id in favourites
                     ChannelRow(
+                        modifier =
+                            Modifier.tvFocusItem(focus, channel.id, first = index == 0).then(
+                                if (onFocusChannel ==
+                                    null
+                                ) {
+                                    Modifier
+                                } else {
+                                    Modifier.onFocusChanged { if (it.hasFocus) onFocusChannel(channel) }
+                                },
+                            ),
                         channel = channel,
                         favourite = favourite,
                         showGuide = showGuide,
@@ -169,12 +192,14 @@ private fun ChannelRow(
     onAddToList: () -> Unit,
     onRename: () -> Unit,
     onChangeLogo: () -> Unit,
+    /** On a TV, where the remote's focus comes back to ([tvFocusItem]). */
+    modifier: Modifier = Modifier,
 ) {
     var menu by remember { mutableStateOf(false) }
     // Each channel is a rounded card, like a row on a modern website.
     Box(Modifier.clip(MaterialTheme.shapes.medium).background(MaterialTheme.colorScheme.surfaceContainerLow)) {
         Row(
-            Modifier
+            modifier
                 .fillMaxWidth()
                 .focusRing(MaterialTheme.shapes.medium, MaterialTheme.colorScheme.primary)
                 .combinedClickable(
@@ -232,11 +257,11 @@ private fun ChannelRow(
                 }
             }
             FavouriteButton(favourite, onToggleFavourite)
-            if (channel.tvgId != null) {
-                IconButton(onClick = onGuide) {
-                    // Named with the channel, so a screen reader's list of buttons doesn't read "Guide" a hundred times.
-                    Icon(Icons.AutoMirrored.Filled.List, contentDescription = stringResource(R.string.a11y_guide_for, channel.name))
-                }
+            // Every channel has its page (its guide, with add to list, rename and change logo as buttons), so what the long
+            // press offers is also one press away on a remote, guide or not.
+            IconButton(onClick = onGuide) {
+                // Named with the channel, so a screen reader's list of buttons doesn't read "Guide" a hundred times.
+                Icon(Icons.AutoMirrored.Filled.List, contentDescription = stringResource(R.string.a11y_guide_for, channel.name))
             }
         }
         DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
@@ -268,15 +293,13 @@ private fun ChannelRow(
                     onChangeLogo()
                 },
             )
-            if (channel.tvgId != null) {
-                DropdownMenuItem(
-                    text = { Text(stringResource(R.string.guide_open)) },
-                    onClick = {
-                        menu = false
-                        onGuide()
-                    },
-                )
-            }
+            DropdownMenuItem(
+                text = { Text(stringResource(R.string.guide_open)) },
+                onClick = {
+                    menu = false
+                    onGuide()
+                },
+            )
         }
     }
 }

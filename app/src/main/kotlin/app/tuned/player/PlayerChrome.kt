@@ -7,6 +7,7 @@ import android.graphics.Typeface
 import android.util.TypedValue
 import android.view.Gravity
 import android.view.View
+import android.view.ViewGroup
 import android.view.Window
 import android.widget.ImageButton
 import android.widget.LinearLayout
@@ -25,6 +26,33 @@ internal fun titleText(context: Context) = TextView(context).apply {
     setTextColor(Color.WHITE)
     textSize = 18f
     setTypeface(typeface, Typeface.BOLD)
+}
+
+/** The title above the line under it. */
+internal fun titleColumn(
+    context: Context,
+    title: View,
+    subtitle: View,
+) = LinearLayout(context).apply {
+    orientation = LinearLayout.VERTICAL
+    addView(title)
+    addView(subtitle)
+}
+
+/** The bar across the top on its scrim: back, then [titles] taking the room left; the tools and the clock join at the end. */
+internal fun topBar(
+    context: Context,
+    back: View,
+    titles: View,
+) = LinearLayout(context).apply {
+    val density = resources.displayMetrics.density
+    orientation = LinearLayout.HORIZONTAL
+    setBackgroundResource(R.drawable.player_top_scrim)
+    val pad = (24 * density).toInt()
+    setPadding(pad / 2, pad / 2, pad, pad * 2)
+    addView(back, LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT))
+    addView(titles, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f).apply { marginStart = (4 * density).toInt() })
+    gravity = Gravity.CENTER_VERTICAL
 }
 
 /** The line under the title (what's on, or the show and episode), gone while there is nothing to say. */

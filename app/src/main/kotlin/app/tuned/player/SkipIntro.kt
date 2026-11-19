@@ -22,7 +22,8 @@ import kotlinx.coroutines.isActive
 
 /**
  * The "Skip intro" button on episodes (see [IntroSkip]): it shows near the start, at the bottom right, and jumps past
- * the intro. A skip forward by hand near the start teaches Tuned where this show's intro is, for its next episodes.
+ * the intro. A skip forward by hand near the start hides it for the rest of the episode and teaches Tuned where this
+ * show's intro is, for its next episodes ([IntroSkip.Lesson]).
  */
 class SkipIntro(
     private val activity: ComponentActivity,
@@ -34,10 +35,12 @@ class SkipIntro(
     private val density = activity.resources.displayMetrics.density
     private var showKey: String? = null
     private var itemId: Long? = null
+
+    /** The show's saved intro from earlier episodes. What this episode teaches is saved for the next ones, not used here. */
     private var intro: IntroSkip.Intro? = null
 
-    /** What this episode has taught so far, so taps of skip-forward in a row add up. */
-    private var learnedHere: IntroSkip.Intro? = null
+    /** This episode's skips by hand, so taps of skip-forward in a row add up. */
+    private var lesson = IntroSkip.Lesson()
     private var skipping = false
 
     private val button =
@@ -73,11 +76,12 @@ class SkipIntro(
                     skipping = false
                     return
                 }
+                // The player's own seek back to where a cast left off happens while it is stopped; it isn't a skip.
+                if (player()?.playbackState == Player.STATE_IDLE) return
                 val key = showKey ?: return
-                val learned = IntroSkip.learn(oldPosition.positionMs, newPosition.positionMs, learnedHere) ?: return
-                learnedHere = learned
-                intro = learned
-                activity.lifecycleScope.launchSafely("SkipIntro") { store.set(key, learned) }
+                if (!lesson.seek(oldPosition.positionMs, newPosition.positionMs)) return
+                val keep = lesson.intro ?: intro
+                activity.lifecycleScope.launchSafely("SkipIntro") { if (keep != null) store.set(key, keep) else store.remove(key) }
             }
         }
 
@@ -104,7 +108,7 @@ class SkipIntro(
         val key = item?.showKey
         if (item?.id != itemId) {
             itemId = item?.id
-            learnedHere = null
+            lesson = IntroSkip.Lesson()
         }
         if (key != showKey) {
             showKey = key
@@ -116,7 +120,7 @@ class SkipIntro(
         }
         val p = player()
         val offer = IntroSkip.intro(intro, lengthMs())
-        val show = key != null && p != null && p.isPlaying && IntroSkip.showButton(p.currentPosition, offer)
+        val show = key != null && !lesson.skipped && p != null && p.isPlaying && IntroSkip.showButton(p.currentPosition, offer)
         button.visibility = if (show) View.VISIBLE else View.GONE
     }
 

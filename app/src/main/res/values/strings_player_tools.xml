@@ -1,18 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="player_fit">Fit</string>
-    <string name="player_more">More</string>
+    <!-- The fit button's label for TalkBack, with what it is set to now, as in "Fit: Zoom to fill". -->
+    <string name="player_fit_now">Fit: %1$s</string>
     <string name="player_fit_fit">Fit to screen</string>
     <string name="player_fit_zoom">Zoom to fill</string>
     <string name="player_fit_stretch">Stretch</string>
     <string name="player_lock">Lock screen</string>
     <string name="player_unlock">Unlock screen</string>
     <string name="player_locked">Screen locked. Tap the lock to unlock.</string>
-    <string name="player_info">Stream info</string>
-    <string name="player_info_video">Video: %1$s</string>
-    <string name="player_info_audio">Audio: %1$s</string>
-    <string name="player_info_buffer">Buffer: %1$.1f s</string>
-    <string name="player_info_none">Waiting for the stream…</string>
     <string name="player_quality">Quality</string>
     <string name="player_quality_auto">Auto</string>
     <string name="player_quality_only_one">This stream has one quality</string>
@@ -25,8 +21,4 @@
     <string name="player_quality_untagged">Standard</string>
     <string name="player_guide">Channels</string>
     <string name="player_guide_close">Close channels</string>
-    <plurals name="player_audio_channels">
-        <item quantity="one">%d channel</item>
-        <item quantity="other">%d channels</item>
-    </plurals>
 </resources>

@@ -4,11 +4,14 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -17,10 +20,16 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Close
@@ -29,9 +38,7 @@ import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.History
-import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Movie
-import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.filled.PushPin
 import androidx.compose.material.icons.filled.Radar
 import androidx.compose.material.icons.filled.Search
@@ -45,9 +52,8 @@ import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Button
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExtendedFloatingActionButton
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -83,10 +89,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.CustomAccessibilityAction
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.customActions
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -99,12 +105,16 @@ import app.tuned.data.AppSettings
 import app.tuned.data.CastMember
 import app.tuned.data.StartTab
 import app.tuned.data.SyncProgress
+import app.tuned.data.db.ChannelWithNow
 import app.tuned.data.db.ProfileEntity
 import app.tuned.diagnostics.DeviceClock
 import app.tuned.ui.SyncText
 import app.tuned.ui.common.UpdateBanner
 import app.tuned.ui.common.VoiceSearchButton
+import app.tuned.ui.common.focusRing
+import app.tuned.ui.common.isTelevision
 import app.tuned.ui.common.windowWidthDp
+import app.tuned.ui.offline.DownloadsScreen
 import app.tuned.ui.offline.DownloadsViewModel
 import app.tuned.ui.settings.ProfileBadge
 import kotlinx.coroutines.launch
@@ -135,7 +145,6 @@ fun HomeScreen(
     onOpenProfiles: () -> Unit,
     /** Search everything, starting from the words typed on the tab (empty for none). */
     onOpenSearch: (String) -> Unit,
-    onOpenDownloads: () -> Unit,
     onOpenEvents: () -> Unit,
     onTune: (String) -> Unit,
     onOpenPlaylists: () -> Unit,
@@ -159,7 +168,9 @@ fun HomeScreen(
     val liveSearch by vm.search(ContentKind.LIVE).collectAsStateWithLifecycle()
     val profile by vm.profile.collectAsStateWithLifecycle()
     val widthDp = windowWidthDp()
-    val rail = ScreenLayout.rail(widthDp)
+    val tv = isTelevision()
+    // A TV always has the rail: everything is on screen there, one press away, with no menu (Melvin, 2026-11-19).
+    val rail = tv || ScreenLayout.rail(widthDp)
     val panes = ScreenLayout.panes(widthDp)
     // On a wide screen a film, show or guide opens beside the list; on anything narrower it opens full screen.
     var detail by rememberSaveable(stateSaver = Detail.saver) { mutableStateOf<Detail?>(null) }
@@ -175,11 +186,24 @@ fun HomeScreen(
             }
         }
     }
-    BackHandler(enabled = detail != null) { detail = null }
+    // The channel under the remote's focus in Live TV on a TV, for the details beside the list.
+    var focusedChannel by remember { mutableStateOf<ChannelWithNow?>(null) }
+    // On a TV, closing the pane puts the remote's focus back on the item that opened it (ui/common/TvFocus).
+    var focusReturn by remember { mutableIntStateOf(0) }
+    val closeDetail: () -> Unit = {
+        detail = null
+        focusReturn += 1
+    }
+    BackHandler(enabled = detail != null, onBack = closeDetail)
     val openShow: (String, String) -> Unit = if (panes) { key, title -> detail = Detail.show(key, title) } else onOpenShow
     val openMovie: (Long) -> Unit = if (panes) { id -> detail = Detail.movie(id) } else onOpenMovie
     val openGuide: (Long) -> Unit = if (panes) { id -> detail = Detail.guide(id) } else onOpenGuide
+    // Downloads is a section of Home like the three tabs, so the bar stays under it; back returns to the tab before.
+    var downloads by rememberSaveable { mutableStateOf(false) }
+    BackHandler(enabled = downloads) { downloads = false }
+    val openDownloads = { downloads = true }
     val select: (Int) -> Unit = { index ->
+        downloads = false
         selected = index
         vm.rememberTab(index)
     }
@@ -202,13 +226,33 @@ fun HomeScreen(
     }
 
     Row(Modifier.fillMaxSize()) {
-        if (rail) HomeRail(selected, select, onOpenDownloads)
+        // A kids profile has no way into Settings; switching profile (with a PIN) is the way out.
+        val openSettings = onOpenSettings.takeUnless { settings.kidsProfile }
+        if (rail) {
+            HomeRail(
+                selected = selected.takeUnless { downloads },
+                onSelect = select,
+                onOpenDownloads = openDownloads,
+                onOpenSettings = openSettings,
+                // On a TV the menu's other items move to the rail too.
+                tvExtras =
+                    if (tv) {
+                        RailExtras(
+                            onOpenSearch = { onOpenSearch(vm.search(tab.kind).value.trim()) },
+                            profile = profile.takeIf { settings.profileCount > 1 },
+                            onOpenProfiles = onOpenProfiles,
+                        )
+                    } else {
+                        null
+                    },
+            )
+        }
         Scaffold(
             modifier = Modifier.weight(1 - ScreenLayout.DETAIL_FRACTION),
             snackbarHost = { SnackbarHost(snackbar) },
             floatingActionButton = {
                 // Auto-tune: with a search on Live TV (a channel or an event, say "UFC"), find one that works and play it.
-                if (tab.kind == ContentKind.LIVE && liveSearch.isNotBlank()) {
+                if (!downloads && tab.kind == ContentKind.LIVE && liveSearch.isNotBlank()) {
                     ExtendedFloatingActionButton(
                         onClick = { onTune(liveSearch.trim()) },
                         icon = { Icon(Icons.Filled.Radar, contentDescription = null) },
@@ -217,6 +261,8 @@ fun HomeScreen(
                 }
             },
             topBar = {
+                // Downloads has its own title bar.
+                if (downloads) return@Scaffold
                 val search = vm.search(tab.kind)
                 val text by search.collectAsStateWithLifecycle()
                 SearchBarRow(
@@ -225,11 +271,9 @@ fun HomeScreen(
                     onChange = { search.value = it },
                     grid = if (tab.kind == ContentKind.LIVE) settings.liveGrid else null,
                     onToggleGrid = { vm.setLiveGrid(!settings.liveGrid) },
-                    // The words typed on the tab carry over, so the search isn't typed twice.
-                    onOpenSearch = { onOpenSearch(text.trim()) },
-                    // A kids profile has no way into Settings; switching profile (with a PIN) is the way out.
-                    onOpenSettings = onOpenSettings.takeUnless { settings.kidsProfile },
-                    profile = profile.takeIf { settings.profileCount > 1 },
+                    // The words typed on the tab carry over, so the search isn't typed twice. A TV has it on the rail.
+                    onOpenSearch = { onOpenSearch(text.trim()) }.takeUnless { tv },
+                    profile = profile.takeIf { settings.profileCount > 1 && !tv },
                     onOpenProfiles = onOpenProfiles,
                 )
             },
@@ -238,17 +282,33 @@ fun HomeScreen(
                     NavigationBar {
                         tabs.forEachIndexed { index, t ->
                             NavigationBarItem(
-                                selected = index == selected,
+                                selected = !downloads && index == selected,
                                 onClick = { select(index) },
                                 icon = { Icon(t.icon, contentDescription = null) },
                                 label = { Text(stringResource(t.label)) },
                             )
                         }
-                        DownloadsNavItem(onOpenDownloads)
+                        DownloadsNavItem(downloads, openDownloads)
+                        // Settings is the bar's last item on phones, one tap away rather than in a menu (Melvin, 2026-11-19).
+                        if (openSettings != null) {
+                            NavigationBarItem(
+                                selected = false,
+                                onClick = openSettings,
+                                icon = { Icon(Icons.Filled.Settings, contentDescription = null) },
+                                label = { Text(stringResource(R.string.settings)) },
+                            )
+                        }
                     }
                 }
             },
         ) { padding ->
+            if (downloads) {
+                // Its own title bar sits under the space Home's Scaffold already left for the status bar.
+                Box(Modifier.padding(padding).consumeWindowInsets(padding).fillMaxSize()) {
+                    DownloadsScreen(onPlay = onPlay, onBack = null)
+                }
+                return@Scaffold
+            }
             Column(Modifier.padding(padding).fillMaxSize()) {
                 if (empty == true) {
                     FirstRun(
@@ -262,25 +322,73 @@ fun HomeScreen(
                 }
                 requestedProgress?.let { RefreshBar(it) }
                 UpdateBanner(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp))
-                CategoryChips(vm, tab.kind, onGroupHidden, onOpenEvents.takeIf { tab.kind == ContentKind.LIVE })
+                // Live TV's channel list on a TV uses the room (Melvin, 2026-11-19: "use the big screen"): the groups down
+                // the left, the channels in the middle and what the focused channel is showing on the right.
+                val tvColumns = tv && tab.kind == ContentKind.LIVE && !settings.liveGrid
+                val events = onOpenEvents.takeIf { tab.kind == ContentKind.LIVE }
+                if (!tvColumns) CategoryChips(vm, tab.kind, onGroupHidden, events)
                 val lists: @Composable () -> Unit = {
                     when (tab.kind) {
-                        ContentKind.LIVE -> LiveTab(vm, settings, onPlay, openGuide, onOpenSearch)
-                        ContentKind.MOVIE -> MovieGrid(vm, onPlay, openMovie, settings.alwaysShowScrollbar, onOpenSearch)
-                        ContentKind.SERIES -> ShowGrid(vm, openShow, onPlay, settings.alwaysShowScrollbar, onOpenSearch)
+                        ContentKind.LIVE -> {
+                            LiveTab(
+                                vm,
+                                settings,
+                                onPlay,
+                                openGuide,
+                                onOpenSearch,
+                                focusReturn,
+                                onFocusChannel = if (tvColumns) ({ focusedChannel = it }) else null,
+                            )
+                        }
+
+                        ContentKind.MOVIE -> {
+                            MovieGrid(vm, onPlay, openMovie, settings.alwaysShowScrollbar, onOpenSearch, focusReturn)
+                        }
+
+                        ContentKind.SERIES -> {
+                            ShowGrid(vm, openShow, onPlay, settings.alwaysShowScrollbar, onOpenSearch, focusReturn)
+                        }
                     }
                 }
                 // Pull to refresh is a setting, off by default; Settings › Refresh now always works.
-                if (settings.pullToRefresh) {
-                    PullToRefreshBox(
-                        isRefreshing = requestedRefreshing && requestedProgress == null,
-                        onRefresh = vm::refresh,
-                        modifier = Modifier.fillMaxSize(),
-                    ) {
-                        lists()
+                val body: @Composable () -> Unit = {
+                    if (settings.pullToRefresh) {
+                        PullToRefreshBox(
+                            isRefreshing = requestedRefreshing && requestedProgress == null,
+                            onRefresh = vm::refresh,
+                            modifier = Modifier.fillMaxSize(),
+                        ) {
+                            lists()
+                        }
+                    } else {
+                        Box(Modifier.fillMaxSize()) { lists() }
+                    }
+                }
+                if (tvColumns) {
+                    BoxWithConstraints(Modifier.fillMaxSize()) {
+                        // The details take what the groups and a readable channel list leave, up to a limit, and are
+                        // left out on a TV too narrow for them (a pane open beside the list, say).
+                        val info = (maxWidth - TV_GROUPS_WIDTH - TV_LIST_MIN_WIDTH).coerceAtMost(TV_INFO_MAX_WIDTH)
+                        Row(Modifier.fillMaxSize()) {
+                            CategoryChips(
+                                vm,
+                                tab.kind,
+                                onGroupHidden,
+                                events,
+                                vertical = true,
+                                modifier = Modifier.width(TV_GROUPS_WIDTH).fillMaxHeight(),
+                            )
+                            Box(Modifier.weight(1f)) { body() }
+                            if (info >= TV_INFO_MIN_WIDTH) {
+                                ChannelInfoPane(
+                                    focusedChannel,
+                                    Modifier.width(info).fillMaxHeight().padding(start = 4.dp, end = 12.dp, top = 4.dp, bottom = 16.dp),
+                                )
+                            }
+                        }
                     }
                 } else {
-                    Box(Modifier.fillMaxSize()) { lists() }
+                    body()
                 }
             }
         }
@@ -288,7 +396,7 @@ fun HomeScreen(
         if (panes && open != null) {
             VerticalDivider()
             Box(Modifier.weight(ScreenLayout.DETAIL_FRACTION).fillMaxHeight()) {
-                DetailPane(open, onPlay = onPlay, onClose = { detail = null }, onOpenPerson = onOpenPerson)
+                DetailPane(open, onPlay = onPlay, onClose = closeDetail, onOpenPerson = onOpenPerson)
             }
         }
     }
@@ -301,12 +409,12 @@ private fun SearchBarRow(
     onChange: (String) -> Unit,
     grid: Boolean?,
     onToggleGrid: () -> Unit,
-    onOpenSearch: () -> Unit,
-    onOpenSettings: (() -> Unit)?,
+    /** Search everything, from the button at the box's start and the keyboard's search key. Null on a TV, where it is on the rail. */
+    onOpenSearch: (() -> Unit)?,
+    /** The profile now watching, or null with one profile or on a TV (whose rail has it). Its badge opens Who's watching. */
     profile: ProfileEntity?,
     onOpenProfiles: () -> Unit,
 ) {
-    var menu by remember { mutableStateOf(false) }
     Surface(color = MaterialTheme.colorScheme.surface) {
         Row(
             Modifier
@@ -319,7 +427,17 @@ private fun SearchBarRow(
                 value = text,
                 onValueChange = onChange,
                 placeholder = { Text(hint) },
-                leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
+                leadingIcon = {
+                    // No menu beside search any more (Melvin, 2026-11-19: "avoid 3 dot drop downs"): the icon at the box's
+                    // start is the way to search everything, and the keyboard's search key does the same.
+                    if (onOpenSearch != null) {
+                        IconButton(onClick = onOpenSearch) {
+                            Icon(Icons.Filled.TravelExplore, contentDescription = stringResource(R.string.search_everything))
+                        }
+                    } else {
+                        Icon(Icons.Filled.Search, contentDescription = null)
+                    }
+                },
                 trailingIcon = {
                     if (text.isNotEmpty()) {
                         IconButton(onClick = { onChange("") }) {
@@ -330,6 +448,8 @@ private fun SearchBarRow(
                     }
                 },
                 singleLine = true,
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                keyboardActions = KeyboardActions(onSearch = { onOpenSearch?.invoke() }),
                 shape = RoundedCornerShape(28.dp),
                 colors =
                     TextFieldDefaults.colors(
@@ -338,61 +458,28 @@ private fun SearchBarRow(
                     ),
                 modifier = Modifier.weight(1f).heightIn(min = 52.dp),
             )
-            // One button beside the box, so search keeps the width (2026-11-18, UI review): the profile's badge when
-            // there are profiles, otherwise the three dots. Everything else that used to sit here is in its menu.
-            val more = stringResource(R.string.home_menu)
-            Box {
-                IconButton(onClick = { menu = true }, modifier = Modifier.semantics { contentDescription = more }) {
-                    if (profile != null) {
-                        ProfileBadge(profile, size = 28.dp)
-                    } else {
-                        Icon(Icons.Filled.MoreVert, contentDescription = null)
-                    }
-                }
-                DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
-                    MenuRow(Icons.Filled.TravelExplore, stringResource(R.string.search_everything)) {
-                        menu = false
-                        onOpenSearch()
-                    }
-                    // Live TV only: switch between the channel list and the grid guide.
-                    if (grid != null) {
-                        MenuRow(
-                            if (grid) Icons.AutoMirrored.Filled.List else Icons.Filled.GridView,
-                            stringResource(if (grid) R.string.grid_hide else R.string.grid_show),
-                        ) {
-                            menu = false
-                            onToggleGrid()
-                        }
-                    }
-                    if (profile != null) {
-                        MenuRow(Icons.Filled.People, stringResource(R.string.profile_switch)) {
-                            menu = false
-                            onOpenProfiles()
-                        }
-                    }
-                    if (onOpenSettings != null) {
-                        MenuRow(Icons.Filled.Settings, stringResource(R.string.settings)) {
-                            menu = false
-                            onOpenSettings()
-                        }
-                    }
+            // Each button does one thing, in one press: the guide grid on Live TV, and the profile badge opening Who's
+            // watching. Settings is in the bottom bar on phones and on the rail elsewhere.
+            if (grid != null) GridToggleButton(grid, onToggleGrid)
+            if (profile != null) {
+                val switchLabel = stringResource(R.string.profile_switch)
+                // As tall as the search box beside it (Melvin, 2026-11-19: "make the user button bigger"). The ring
+                // shows on the outer edge while a TV remote is on it, clear of the picture inside.
+                Box(
+                    Modifier
+                        .padding(start = 8.dp, end = 4.dp)
+                        .size(PROFILE_BUTTON)
+                        .clip(CircleShape)
+                        .focusRing(CircleShape, MaterialTheme.colorScheme.primary)
+                        .clickable(role = Role.Button, onClick = onOpenProfiles)
+                        .semantics { contentDescription = switchLabel },
+                    contentAlignment = Alignment.Center,
+                ) {
+                    ProfileBadge(profile, size = PROFILE_BADGE)
                 }
             }
         }
     }
-}
-
-@Composable
-private fun MenuRow(
-    icon: ImageVector,
-    label: String,
-    onClick: () -> Unit,
-) {
-    DropdownMenuItem(
-        text = { Text(label) },
-        leadingIcon = { Icon(icon, contentDescription = null) },
-        onClick = onClick,
-    )
 }
 
 @Composable
@@ -403,16 +490,16 @@ private fun CategoryChips(
     onHidden: (ContentKind, String, String) -> Unit,
     /** Live events, first in Live TV's row (it used to be an icon beside search). Null elsewhere. */
     onOpenEvents: (() -> Unit)?,
+    modifier: Modifier = Modifier,
+    /** Down the left of Live TV on a TV, instead of a row across the top (Melvin, 2026-11-19: "use the big screen"). */
+    vertical: Boolean = false,
 ) {
     val groups by vm.groups(kind).collectAsStateWithLifecycle()
     val lists by vm.lists(kind).collectAsStateWithLifecycle()
     val filterFlow = vm.filter(kind)
     val filter by filterFlow.collectAsStateWithLifecycle()
     val pins by vm.pins.collectAsStateWithLifecycle()
-    LazyRow(
-        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
+    val content: LazyListScope.() -> Unit = {
         if (onOpenEvents != null) {
             item(key = "events") {
                 AssistChip(
@@ -470,64 +557,66 @@ private fun CategoryChips(
             val pinned = PinnedGroups.isPinned(pins, kind.code, g.groupName)
             val pinLabel = stringResource(if (pinned) R.string.group_unpin else R.string.group_pin)
             val pin = { vm.togglePin(kind, g.groupName) }
-            FilterChip(
-                selected = on,
-                onClick = { filterFlow.value = if (on) Filter.All else Filter.Group(g.groupName) },
-                label = { Text(g.groupName) },
-                leadingIcon =
-                    if (pinned && !on) {
-                        {
-                            Icon(
-                                Icons.Filled.PushPin,
-                                contentDescription = stringResource(R.string.group_pinned),
-                                modifier = Modifier.size(16.dp),
-                            )
-                        }
-                    } else {
-                        null
-                    },
-                // The small eye inside the chip is hard to reach with a screen reader, so hiding is also an action on the chip.
-                modifier =
-                    if (on) {
-                        Modifier.semantics {
-                            customActions =
-                                listOf(
-                                    CustomAccessibilityAction(pinLabel) {
-                                        pin()
-                                        true
-                                    },
-                                    CustomAccessibilityAction(hideLabel) {
-                                        hide()
-                                        true
-                                    },
-                                )
-                        }
-                    } else {
-                        Modifier
-                    },
-                // The chosen group can be hidden from here; Settings › Hidden groups brings it back.
-                trailingIcon =
-                    if (on) {
-                        {
-                            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            // A flow row, so in a TV's narrow column Pin and Hide wrap under the group rather than off the edge.
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                itemVerticalAlignment = Alignment.CenterVertically,
+            ) {
+                FilterChip(
+                    selected = on,
+                    onClick = { filterFlow.value = if (on) Filter.All else Filter.Group(g.groupName) },
+                    label = { Text(g.groupName) },
+                    leadingIcon =
+                        if (pinned && !on) {
+                            {
                                 Icon(
-                                    if (pinned) Icons.Filled.PushPin else Icons.Outlined.PushPin,
-                                    contentDescription = pinLabel,
-                                    modifier = Modifier.size(18.dp).clickable(onClick = pin),
-                                )
-                                Icon(
-                                    Icons.Filled.VisibilityOff,
-                                    contentDescription = stringResource(R.string.group_hide),
-                                    modifier =
-                                        Modifier.size(18.dp).clickable(onClick = hide),
+                                    Icons.Filled.PushPin,
+                                    contentDescription = stringResource(R.string.group_pinned),
+                                    modifier = Modifier.size(16.dp),
                                 )
                             }
-                        }
-                    } else {
-                        null
-                    },
-            )
+                        } else {
+                            null
+                        },
+                )
+                // The chosen group's pin and hide are chips of their own beside it, each a full-size target a remote
+                // can land on (they were small icons inside the chip). Settings › Hidden groups brings a group back.
+                if (on) {
+                    AssistChip(
+                        onClick = pin,
+                        leadingIcon = {
+                            Icon(
+                                if (pinned) Icons.Filled.PushPin else Icons.Outlined.PushPin,
+                                contentDescription = null,
+                                modifier = Modifier.size(16.dp),
+                            )
+                        },
+                        label = { Text(pinLabel) },
+                    )
+                    AssistChip(
+                        onClick = hide,
+                        leadingIcon = { Icon(Icons.Filled.VisibilityOff, contentDescription = null, modifier = Modifier.size(16.dp)) },
+                        label = { Text(hideLabel) },
+                    )
+                }
+            }
         }
+    }
+    // A TV's column: one group under the next, so the arrows go straight down the groups and right into the channels.
+    if (vertical) {
+        LazyColumn(
+            modifier,
+            contentPadding = PaddingValues(start = 12.dp, end = 8.dp, top = 6.dp, bottom = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(2.dp),
+            content = content,
+        )
+    } else {
+        LazyRow(
+            modifier,
+            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            content = content,
+        )
     }
 }
 
@@ -600,11 +689,17 @@ private fun RefreshBar(progress: SyncProgress) {
     }
 }
 
-/** Downloads, beside the three sections: opens its own page, with a badge while anything is still to download. */
+/**
+ * Downloads, beside the three sections: opens in their place with the bar still below, and has a badge while anything
+ * is still to download.
+ */
 @Composable
-private fun RowScope.DownloadsNavItem(onClick: () -> Unit) {
+private fun RowScope.DownloadsNavItem(
+    selected: Boolean,
+    onClick: () -> Unit,
+) {
     NavigationBarItem(
-        selected = false,
+        selected = selected,
         onClick = onClick,
         icon = { DownloadsIcon() },
         label = { Text(stringResource(R.string.downloads)) },
@@ -617,5 +712,40 @@ internal fun DownloadsIcon(downloads: DownloadsViewModel = viewModel()) {
     val pending by downloads.pending.collectAsStateWithLifecycle()
     BadgedBox(badge = { if (pending > 0) Badge { Text("$pending") } }) {
         Icon(Icons.Filled.DownloadForOffline, contentDescription = null)
+    }
+}
+
+/**
+ * Live TV on a TV: the column of groups and the focused channel's details either side of the channels. The list keeps
+ * room for a channel's name beside its buttons; the details are left out before the names get cut short.
+ */
+private val TV_GROUPS_WIDTH = 160.dp
+private val TV_LIST_MIN_WIDTH = 340.dp
+private val TV_INFO_MIN_WIDTH = 180.dp
+private val TV_INFO_MAX_WIDTH = 260.dp
+
+/** The profile button beside the search box: its height (56dp, a Material text field's) and the picture inside it. */
+private val PROFILE_BUTTON = 56.dp
+private val PROFILE_BADGE = 48.dp
+
+/**
+ * Live TV: the list or the guide grid, one press away beside search instead of in a menu. A TV has room for its words;
+ * a phone or tablet shows the icon alone, named for a screen reader.
+ */
+@Composable
+private fun GridToggleButton(
+    grid: Boolean,
+    onToggle: () -> Unit,
+) {
+    val icon = if (grid) Icons.AutoMirrored.Filled.List else Icons.Filled.GridView
+    val label = stringResource(if (grid) R.string.grid_hide else R.string.grid_show)
+    if (!isTelevision()) {
+        IconButton(onClick = onToggle, modifier = Modifier.padding(start = 4.dp)) { Icon(icon, contentDescription = label) }
+        return
+    }
+    FilledTonalButton(onClick = onToggle, modifier = Modifier.padding(start = 12.dp).heightIn(min = 52.dp)) {
+        Icon(icon, contentDescription = null)
+        Spacer(Modifier.width(8.dp))
+        Text(label)
     }
 }

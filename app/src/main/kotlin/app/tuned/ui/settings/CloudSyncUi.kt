@@ -6,7 +6,6 @@ import android.text.format.DateUtils
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -30,6 +29,7 @@ import app.tuned.diagnostics.launchSafely
 import app.tuned.diagnostics.startActivitySafely
 import app.tuned.premium.LockedRow
 import app.tuned.premium.premiumUnlocked
+import app.tuned.ui.common.TunedDialog
 import app.tuned.work.CloudSyncWorker
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
@@ -196,7 +196,7 @@ internal fun DriveSignInDialog(
     onClose: () -> Unit,
 ) {
     val context = LocalContext.current
-    AlertDialog(
+    TunedDialog(
         onDismissRequest = onClose,
         title = { Text(title) },
         text = {

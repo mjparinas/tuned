@@ -5,6 +5,7 @@
     <string name="downloads_empty">Nothing saved yet. Tap the download button on a film, an episode or a whole season to watch it offline.</string>
     <string name="download">Download</string>
     <string name="download_remove">Remove download</string>
+    <string name="download_remove_named">Remove the download of %1$s</string>
     <string name="download_retry">Try again</string>
     <string name="download_failed">Couldn\'t download</string>
     <string name="download_waiting">Waiting (downloads pause while something plays)</string>

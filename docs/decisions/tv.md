@@ -2,20 +2,32 @@
 
 **What** (backlog, 2026-11-17: "Android TV remote support"). The same APK installs on Android TV and Google TV, shows a banner on the TV home screen, and works with a remote alone.
 
-**One app, not a second one.** The phone screens already work with a remote: Compose moves focus between buttons, cards and rows with the arrows, and centre or OK clicks (a long press opens the same menu as a long touch). A separate Compose for TV interface (`androidx.tv`) would mean a second copy of every screen to keep in step, so instead:
+**One app, not a second one.** The phone screens already work with a remote: Compose moves focus between buttons, cards and rows with the arrows, and centre or OK clicks (a long press opens the same menu as a long touch, but nothing lives only there: every action in a long-press menu is also a button on the channel's or film's page, because few people find a long press on a remote; Melvin, 2026-11-19: "Optimize TV for remotes, avoid 3 dot drop downs"). A separate Compose for TV interface (`androidx.tv`) would mean a second copy of every screen to keep in step, so instead:
 
 - Everything a remote can land on (posters, channel rows, Continue Watching cards, search results, episodes, guide rows) shows a clear outline in the accent colour while focused (`ui/common/FocusRing.kt`). Touch never focuses these, so phones look the same.
 - The manifest says touch, Wi-Fi and leanback are optional, adds the TV launcher category, and gives the app a 320 × 180 banner (`drawable/tv_banner.xml`, a vector, so it stays sharp at 4K).
 
 **Overscan margin** (Melvin, 2026-11-19: "The tuned app on a real TV has the logo touching the top of the screen, push that down"). Many TVs crop the edges of the picture, so on a TV every screen of the app and of Premium keeps Google's TV margins: 48 dp at the sides and 27 dp at the top and bottom, filled with the theme's background (`ui/common/TvSafeArea.kt`). It is decided by the system's TV UI mode, so phones and tablets are unchanged. The player stays full screen: the crop only trims the picture's edge.
 
-A dedicated TV layout can come later if the phone layout proves awkward from the sofa.
+**No menus on Home** (Melvin, 2026-11-19: "tv needs to be more stream lined and things should be easily accessible. especially on the tv, you have plenty of real estate"). A TV always shows the side rail, and the three-dot menu beside search is gone: Search, Profile and Settings are on the rail under Downloads, and Live TV has a button beside search for the guide grid. See [Large screens](large-screens.md).
+
+**Where focus goes** (Melvin, 2026-11-19: "Optimize TV for remotes", from the UX audit; `ui/common/TvFocus.kt`, paging rule in `core/ListPaging` with tests). On a TV only:
+
+- Live TV, Movies and Shows open with the remote on the item last focused there, or the first one, so the first press of an arrow moves from something visible rather than from nothing. Closing a film, show or guide pane beside the list (or coming back from its page) puts focus back on the item that opened it.
+- A film's page opens with the remote on Play (or Resume), and a show's page on the season showing (or its first episode, when there is only one season), so OK does the likely thing at once.
+- Page up and down, and channel up and down, jump a screenful through a list or grid rather than one row, which matters with thousands of channels. Channel up goes up the list, as on a cable box.
+- Back while scrolled down goes to the top of the list first, as other TV apps do; the next Back leaves as before. A pane or dialog beside the list still closes first.
+- Focus is only put back within a moment of a page opening, so an item that scrolls into view later never pulls focus away from where the person is.
+
+**Live TV uses the big screen** (Melvin, 2026-11-19: "use the big screen", from the UX audit). On a TV the channel list has the room to itself: the groups (Live events, Filters, All, Favourites, your lists, Recent and the provider's groups) run down a column on the left instead of a row across the top, so reaching a group is a few presses down rather than dozens sideways, and right goes into the channels. Beside the channels, the details of the one under the remote's focus: its logo, number and name, what's on now with the time and how far through it is, and what's next, each with its description from the guide (`ui/browse/ChannelInfo.kt`). The details are words and pictures from the guide on the device, never a preview of the channel, so there is still one stream connection ([scope](scope.md)); they take no focus, so the arrows stay in the list. They make room for the list on a TV too narrow for all three (a film or guide pane open beside the list, say). The guide grid and the phone and tablet layouts keep the row of chips.
+
+Beyond Live TV, a dedicated TV layout can come later if the phone layout proves awkward from the sofa.
 
 **The remote in the player** (`core/RemoteKeys.kt`, with tests). Media3's controls already handle play, pause, fast forward and rewind, and any arrow shows the controls. On top of that:
 
 - On live TV, up and down change channel while the controls are hidden, as on a cable box. The channel up and down buttons (and page up and down) change channel at any time.
 - In films and episodes, left and right skip back and forward by the player's skip amounts while the controls are hidden.
-- The guide (or menu) button opens and closes the mini guide on live TV; the info button shows stream info.
+- The guide (or menu) button opens and closes the mini guide on live TV; the info button shows the controls, with the stream's pills (stream info was removed 2026-11-19). Fit is a button in the player's top row, reached with the arrows like the others; there is no screen lock on a TV.
 - Once the controls show, the arrows move between buttons as usual. While the screen is locked, keys do nothing but reveal the unlock button through back.
 
 Holding an arrow keeps skipping; holding a channel button changes channel once, so a long press can't flip through several channels and open several connections in a row.
@@ -27,3 +39,5 @@ Holding an arrow keeps skipping; holding a channel button changes channel once, 
 **Home screen** (from the app audit, 2026-11-17). On Android TV, films and episodes in progress appear in the system's Continue watching row (Watch Next), and favourite channels in a Tuned row of their own (`work/TvHome.kt`, `androidx.tvprovider`). They are brought up to date a few seconds after the app opens, after playing and after a favourite changes, and removed on sign-out or a playlist switch. A card opens `MainActivity` with `ACTION_PLAY`, which starts the player with the lists underneath. Nothing runs on phones.
 
 **Tunnelled playback** (Melvin, 2026-11-19: "do 8", from the gap list). Settings › Player › Tunnelled playback, shown on Android TV only, hands the picture and sound to the TV's own video hardware, which keeps them in step itself and can play 4K and 50 or 60 fps sport more smoothly on TVs whose decoders support it. Media3 uses it only when the TV's decoders for both the picture and the sound of that stream support it, and plays as usual otherwise, so turning it on can't stop a channel playing. Off by default, as in other players: some TVs report support and then stutter or lose sync, so it's there to try when playback isn't smooth. It stays on the device rather than syncing, and Settings › Player › Sound delay doesn't apply while it's on, because the hardware keeps its own clock.
+
+**Signing in with a phone** (Melvin, 2026-11-19: entering the server, username and password "is very much a pain when you use the remote"). On a TV the welcome screen leads with "Sign in with your phone": a QR code and a short code, and the phone (with or without Tuned) does the typing ([onboarding](onboarding.md)).

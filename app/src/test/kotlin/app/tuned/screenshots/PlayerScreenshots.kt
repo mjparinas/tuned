@@ -14,15 +14,21 @@ import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.PlayerView
 import app.tuned.R
+import app.tuned.data.Accent
+import app.tuned.player.InfoPills
 import app.tuned.player.StatusNote
+import app.tuned.player.StreamInfo
 import app.tuned.player.TvControls
 import app.tuned.player.TvState
 import app.tuned.player.ViewPlayer
 import app.tuned.player.backButton
 import app.tuned.player.placeBesideCaptions
+import app.tuned.player.playerClock
 import app.tuned.player.subtitleText
+import app.tuned.player.tintScrubber
 import app.tuned.player.titleText
 import app.tuned.player.usable
+import app.tuned.ui.theme.playerAccent
 import com.github.takahirom.roborazzi.captureRoboImage
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -57,14 +63,31 @@ class PlayerScreenshots {
         busy = false,
     )
 
+    /** The seek bar in the accent, the fit and lock buttons and time of day at the top right, the stream's pills under the title. */
+    @Test
+    fun controlsAtAGlance() = shot(
+        "player-controls",
+        TvState(
+            positionMs = 14 * MINUTE + 5_000,
+            durationMs = 41 * MINUTE + 30_000,
+            playWhenReady = true,
+            playbackState = Player.STATE_READY,
+            seekable = true,
+        ),
+        note = null,
+        busy = false,
+        glance = StreamInfo.pills(1920, 1080, 23.976f, "audio/mp4a-latm", 2),
+    )
+
     @Test
     fun castingStarting() = shot("player-casting-starting", TvState(), note = "Starting on SHIELD…", busy = true)
 
     private fun shot(
         name: String,
         state: TvState,
-        note: String,
+        note: String?,
         busy: Boolean,
+        glance: StreamInfo.Pills? = null,
     ) {
         val activity = Robolectric.buildActivity(ComponentActivity::class.java).setup().get()
         val exo = ExoPlayer.Builder(activity).build()
@@ -101,6 +124,7 @@ class PlayerScreenshots {
                 setShowPreviousButton(true)
                 player = ViewPlayer(exo, { tv }, {}, { false })
             }
+        tintScrubber(playerView, playerAccent(activity, Accent.VIOLET, dynamicColour = false))
         val search = toolButton(activity, R.drawable.ic_player_subtitle_search, R.string.subtitle_search)
         val timing = toolButton(activity, R.drawable.ic_player_subtitle_timing, R.string.subtitle_timing).apply { usable(false) }
         placeBesideCaptions(playerView, listOf(search, timing))
@@ -110,6 +134,10 @@ class PlayerScreenshots {
                 orientation = LinearLayout.VERTICAL
                 addView(titleText(activity).apply { text = "The Lighthouse Keeper" })
                 addView(subtitleText(activity).apply { text = "Harbour Town · S2 E4" })
+                if (glance != null) {
+                    val pills = InfoPills(activity, { null }, { false }).apply { show(glance) }
+                    addView(pills.view, LinearLayout.LayoutParams(WRAP, WRAP).apply { topMargin = (6 * density).toInt() })
+                }
             }
         val overlay =
             LinearLayout(activity).apply {
@@ -119,9 +147,13 @@ class PlayerScreenshots {
                 setPadding(pad / 2, pad / 2, pad, pad * 2)
                 gravity = Gravity.CENTER_VERTICAL
                 addView(backButton(activity) {})
-                addView(titles)
+                addView(titles, LinearLayout.LayoutParams(0, WRAP, 1f))
+                // The top row's own buttons (PlayerTools), with no three-dot menu: fit greyed out while the TV plays.
+                addView(toolButton(activity, R.drawable.ic_player_fit, R.string.player_fit).apply { usable(note == null) })
+                addView(toolButton(activity, R.drawable.ic_player_lock, R.string.player_lock))
+                addView(playerClock(activity))
             }
-        val status = StatusNote(activity).apply { show(note, busy) }
+        val status = StatusNote(activity).apply { note?.let { show(it, busy) } }
         val root =
             FrameLayout(activity).apply {
                 setBackgroundColor(Color.BLACK)
@@ -158,6 +190,7 @@ class PlayerScreenshots {
 
     private companion object {
         const val MINUTE = 60_000L
+        const val WRAP = ViewGroup.LayoutParams.WRAP_CONTENT
 
         /** The same as PlayerActivity's: the note sits this far above the centre. */
         const val STATUS_RAISE_DP = 72

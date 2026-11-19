@@ -64,6 +64,9 @@ import app.tuned.ui.common.firstLoad
 import app.tuned.ui.common.focusRing
 import app.tuned.ui.common.peekOrNull
 import app.tuned.ui.common.rememberFastScroll
+import app.tuned.ui.common.rememberTvFocus
+import app.tuned.ui.common.tvFocusItem
+import app.tuned.ui.common.tvPagedGrid
 import app.tuned.ui.common.windowWidthDp
 import app.tuned.ui.library.LibraryViewModel
 import app.tuned.ui.library.watchLaterRow
@@ -76,6 +79,8 @@ internal fun MovieGrid(
     onOpenMovie: (Long) -> Unit,
     alwaysShowScrollbar: Boolean,
     onSearchEverything: (String) -> Unit,
+    /** Changes when focus should come back to the grid on a TV, such as the pane beside it closing. */
+    focusReturn: Int = 0,
 ) {
     val movies = vm.movies.collectAsLazyPagingItems()
     val favourites by vm.favouriteIds.collectAsStateWithLifecycle()
@@ -84,6 +89,7 @@ internal fun MovieGrid(
     val watched by library.watched.collectAsStateWithLifecycle()
     val later by library.laterKeys.collectAsStateWithLifecycle()
     val state = rememberLazyGridState()
+    val focus = rememberTvFocus(focusReturn)
     Box(Modifier.fillMaxSize()) {
         LazyVerticalGrid(
             columns = GridCells.Adaptive(minSize = ScreenLayout.posterMinDp(windowWidthDp()).dp),
@@ -91,7 +97,7 @@ internal fun MovieGrid(
             contentPadding = PaddingValues(12.dp),
             horizontalArrangement = Arrangement.spacedBy(10.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp),
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier.fillMaxSize().tvPagedGrid(focus, state),
         ) {
             continueWatching(vm, ContentKind.MOVIE, onPlay)
             watchLaterRow(shows = false, visible = { fullList(vm, ContentKind.MOVIE) }, onOpenMovie = onOpenMovie, onOpenShow = { _, _ -> })
@@ -107,6 +113,7 @@ internal fun MovieGrid(
                     val done = movie.id in watched
                     val saved = WatchLaterEntity.movieKey(movie.id) in later
                     Poster(
+                        modifier = Modifier.tvFocusItem(focus, movie.id, first = index == 0),
                         title = Titles.display(movie.name),
                         image = movie.logo,
                         favourite = favourite,
@@ -141,11 +148,14 @@ internal fun ShowGrid(
     onPlay: (Long) -> Unit,
     alwaysShowScrollbar: Boolean,
     onSearchEverything: (String) -> Unit,
+    /** Changes when focus should come back to the grid on a TV, such as the pane beside it closing. */
+    focusReturn: Int = 0,
 ) {
     val shows = vm.shows.collectAsLazyPagingItems()
     val library: LibraryViewModel = viewModel()
     val later by library.laterKeys.collectAsStateWithLifecycle()
     val state = rememberLazyGridState()
+    val focus = rememberTvFocus(focusReturn)
     Box(Modifier.fillMaxSize()) {
         LazyVerticalGrid(
             columns = GridCells.Adaptive(minSize = ScreenLayout.posterMinDp(windowWidthDp()).dp),
@@ -153,7 +163,7 @@ internal fun ShowGrid(
             contentPadding = PaddingValues(12.dp),
             horizontalArrangement = Arrangement.spacedBy(10.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp),
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier.fillMaxSize().tvPagedGrid(focus, state),
         ) {
             continueWatching(vm, ContentKind.SERIES, onPlay)
             watchLaterRow(shows = true, visible = { fullList(vm, ContentKind.SERIES) }, onOpenMovie = {}, onOpenShow = onOpenShow)
@@ -165,6 +175,7 @@ internal fun ShowGrid(
                 } else {
                     val rating by produceState<Double?>(null, show.showName) { value = vm.rating(show.showName, tv = true) }
                     Poster(
+                        modifier = Modifier.tvFocusItem(focus, show.showKey, first = index == 0),
                         title = Titles.display(show.showName),
                         image = show.logo,
                         rating = rating,

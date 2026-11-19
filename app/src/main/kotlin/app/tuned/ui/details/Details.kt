@@ -8,6 +8,7 @@ import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -71,6 +72,8 @@ import app.tuned.data.db.ItemEntity
 import app.tuned.diagnostics.launchSafely
 import app.tuned.diagnostics.startActivitySafely
 import app.tuned.ui.common.focusRing
+import app.tuned.ui.common.rememberStartFocus
+import app.tuned.ui.common.startFocus
 import app.tuned.ui.library.LibraryViewModel
 import app.tuned.ui.library.WatchLaterButton
 import app.tuned.ui.library.WatchedButton
@@ -134,6 +137,8 @@ fun MovieScreen(
     onOpenPerson: (CastMember) -> Unit = {},
     vm: DetailsViewModel = viewModel(),
 ) {
+    val start = rememberStartFocus()
+
     LaunchedEffect(itemId) { vm.loadItem(itemId) }
     val item by vm.item.collectAsStateWithLifecycle()
     val details by vm.details.collectAsStateWithLifecycle()
@@ -178,10 +183,17 @@ fun MovieScreen(
                 Modifier.padding(horizontal = 20.dp).offset(y = (-56).dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp),
             ) {
-                Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                // Every action on the film in sight, wrapping to a second line on a narrow phone rather than squeezing.
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    itemVerticalAlignment = Alignment.CenterVertically,
+                ) {
+                    // On a TV the remote starts on Play, so OK plays (or resumes) straight away.
                     Button(
                         onClick = { onPlay(itemId) },
                         contentPadding = PaddingValues(horizontal = 28.dp, vertical = 12.dp),
+                        modifier = Modifier.startFocus(start),
                     ) {
                         Icon(Icons.Filled.PlayArrow, null)
                         Spacer(Modifier.width(8.dp))
@@ -192,6 +204,7 @@ fun MovieScreen(
                         DownloadButton(it)
                         WatchLaterButton(LibraryViewModel.movie(it.id, it.name, it.logo))
                         WatchedButton(it.id)
+                        FilmPicks(it.id)
                     }
                 }
                 DetailsBody(details, hasKey, onOpenPerson = onOpenPerson)
