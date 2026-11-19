@@ -33,7 +33,10 @@ class QualityCopies(
     private var lookup: Job? = null
 
     /** There is another quality to switch to. */
-    val available: Boolean get() = copies.size > 1 && !hooks.casting()
+    val available: Boolean get() = exist && !hooks.casting()
+
+    /** The channel has copies in other qualities, whether or not they can be switched to now (not while casting). */
+    val exist: Boolean get() = copies.size > 1
 
     /** A live channel started playing (null when what plays is not one): look up its copies. */
     fun onChannel(id: Long?) {

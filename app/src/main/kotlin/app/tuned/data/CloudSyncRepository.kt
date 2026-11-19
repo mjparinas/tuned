@@ -27,8 +27,25 @@ class CloudSyncRepository(
     private val syncCopy: SyncCopyRepository,
     /** A pulled copy signed this device in: start its first download. */
     private val onSignedIn: () -> Unit,
+    /** A pulled copy changed the guide fixes: read the guide again. */
+    private val onGuideChanged: () -> Unit = {},
 ) {
     enum class Problem { NONE, OFFLINE, DRIVE_API_OFF }
+
+    /** How restoring from the welcome screen ended ([restore]). */
+    enum class Restore {
+        /** A playlist came back, with everything else: open the app. */
+        RESTORED,
+
+        /** Drive holds no Tuned copy for this Google account yet. */
+        NOTHING_SAVED,
+
+        /** The copy came back, but held no playlist this device can open (only files, say). */
+        NO_PLAYLIST,
+
+        OFFLINE,
+        DRIVE_API_OFF,
+    }
 
     data class Status(
         val lastSyncAt: Long,
@@ -52,12 +69,11 @@ class CloudSyncRepository(
         statusFlow.value = Status(0, Problem.NONE)
     }
 
-    /** Signing out of Tuned: stops syncing here at once; returns the call that tells Google to drop the token. */
-    fun disconnect(): (suspend () -> Unit)? {
-        val revoke = drive.disconnect()
+    /** Signing out of Tuned: stops syncing on this device at once; other devices and the Drive copy are untouched. */
+    fun disconnect() {
+        drive.disconnect()
         prefs.edit(commit = true) { clear() }
         statusFlow.value = Status(0, Problem.NONE)
-        return revoke
     }
 
     /**
@@ -80,6 +96,41 @@ class CloudSyncRepository(
             AppLog.w(TAG, "Couldn't sync with Google Drive", e)
             statusFlow.value = statusFlow.value.copy(problem = Problem.OFFLINE)
             false
+        }
+    }
+
+    /**
+     * The welcome screen's "Restore from Google Drive": takes the copy in Drive as it is, never sending this fresh
+     * device's empty one over it. Sync stays signed in afterwards, so the device keeps in step from then on.
+     */
+    suspend fun restore(): Restore = lock.withLock {
+        if (!drive.available || !drive.signedIn.value) return@withLock Restore.NOTHING_SAVED
+        try {
+            val found = drive.find() ?: return@withLock Restore.NOTHING_SAVED
+            val applied =
+                try {
+                    syncCopy.applySyncCopy(readable(drive.download(found.id)))
+                } catch (_: PassphraseCrypto.NotOurs) {
+                    AppLog.w(TAG, "Couldn't read the copy in Drive to restore it")
+                    return@withLock Restore.NOTHING_SAVED
+                }
+            found.fingerprint?.let { markSynced(it) }
+            val now = System.currentTimeMillis()
+            prefs.edit { putLong(KEY_LAST_SYNC, now) }
+            statusFlow.value = Status(now, Problem.NONE)
+            if (applied.guideChanged) onGuideChanged()
+            if (applied.signedIn) {
+                onSignedIn()
+                Restore.RESTORED
+            } else {
+                Restore.NO_PLAYLIST
+            }
+        } catch (e: GoogleDrive.DriveApiOff) {
+            AppLog.w(TAG, "Google Drive turned the restore down", e)
+            Restore.DRIVE_API_OFF
+        } catch (e: IOException) {
+            AppLog.w(TAG, "Couldn't restore from Google Drive", e)
+            Restore.OFFLINE
         }
     }
 
@@ -107,7 +158,7 @@ class CloudSyncRepository(
 
             CloudSync.Step.PULL -> {
                 val found = requireNotNull(remote)
-                val signedIn =
+                val applied =
                     try {
                         syncCopy.applySyncCopy(readable(drive.download(found.id)))
                     } catch (_: PassphraseCrypto.NotOurs) {
@@ -118,7 +169,8 @@ class CloudSyncRepository(
                         return
                     }
                 markSynced(requireNotNull(found.fingerprint))
-                if (signedIn) onSignedIn()
+                if (applied.guideChanged) onGuideChanged()
+                if (applied.signedIn) onSignedIn()
             }
         }
     }

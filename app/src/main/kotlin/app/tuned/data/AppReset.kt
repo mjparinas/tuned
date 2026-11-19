@@ -72,17 +72,14 @@ class AppReset(
 
     private suspend fun run(keepDownloads: Boolean) = lock.withLock {
         withContext(Dispatchers.IO) {
-            // The accounts that sync are forgotten here at once; telling Trakt and Google waits for the end.
-            var revokeTrakt: (suspend () -> Unit)? = null
-            var revokeDrive: (suspend () -> Unit)? = null
             val steps =
                 listOf(
                     // The login first, so nothing new can start: refreshes, scans and downloads all need it.
                     step("the login") { c.credentials.clear() },
                     step("the playlist files") { c.session.playlistFiles.deleteRecursively() },
                     step("the account status") { c.account.clear() },
-                    step("Trakt") { revokeTrakt = c.trakt.disconnect() },
-                    step("Google Drive") { revokeDrive = c.cloudSync.disconnect() },
+                    step("Trakt") { c.trakt.disconnect() },
+                    step("Google Drive") { c.cloudSync.disconnect() },
                     // Anything mid-write finishes before the database is emptied under it.
                     step("background work") { stopAllWork() },
                     step("the TV home screen") { if (TvHome.isTv(context)) TvHome(context).clear() },
@@ -103,9 +100,6 @@ class AppReset(
             } else {
                 AppLog.w(TAG, "Sign-out finishes at the next start: ${failed.joinToString()}")
             }
-            // Now the accounts are told, after everything here is gone; offline, the tokens simply lapse.
-            revokeTrakt?.let { c.appScope.launchSafely(TAG) { it() } }
-            revokeDrive?.let { c.appScope.launchSafely(TAG) { it() } }
             // Premium belongs to the Play account and the device seat, not the playlist: ask again rather than lose it.
             c.premium.refresh()
         }

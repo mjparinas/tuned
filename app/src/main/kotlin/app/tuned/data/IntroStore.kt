@@ -26,4 +26,20 @@ class IntroStore(
     suspend fun clear() {
         context.intros.edit { it.clear() }
     }
+
+    /** Every learned intro as stored, by show key, for sync between devices ([SyncCopyRepository]). */
+    suspend fun all(): Map<String, String> = context.intros.data
+        .first()
+        .asMap()
+        .mapKeys { it.key.name }
+        .mapNotNull { (k, v) -> (v as? String)?.let { k to it } }
+        .toMap()
+
+    /** Puts another device's [all] in place of this one's. */
+    suspend fun replaceAll(intros: Map<String, String>) {
+        context.intros.edit { prefs ->
+            prefs.clear()
+            intros.forEach { (k, v) -> prefs[stringPreferencesKey(k)] = v }
+        }
+    }
 }

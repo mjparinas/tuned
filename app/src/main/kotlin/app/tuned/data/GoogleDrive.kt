@@ -159,24 +159,12 @@ class GoogleDrive(
     }
 
     /**
-     * Forgets the account here at once and returns the call that tells Google to drop the token (or null when signed
-     * out). The synced copy in Drive is left alone: it is the person's, in their own Google account.
+     * Signing out of Tuned: forgets the account on this device. Google isn't asked to drop the access, which would cut
+     * off the person's other devices too; the synced copy in Drive is theirs and is left alone.
      */
-    fun disconnect(): (suspend () -> Unit)? {
-        val refresh = refreshToken()
+    fun disconnect() {
         forget()
         prefs.edit(commit = true) { clear() }
-        if (refresh == null) return null
-        return {
-            val form = FormBody.Builder().add("token", refresh).build()
-            send(
-                Request
-                    .Builder()
-                    .url(REVOKE_URL)
-                    .post(form)
-                    .build(),
-            )
-        }
     }
 
     /** Forgets the account here and tells Google to drop the token. */

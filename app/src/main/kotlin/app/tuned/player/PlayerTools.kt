@@ -132,8 +132,12 @@ class PlayerTools(
                 R.string.player_open_with to ::openElsewhere,
                 R.string.player_lock to ::lock,
             )
+        // While casting the TV draws the picture and the phone has no stream: only the lock still applies.
+        val casting = hooks.casting()
         PopupMenu(activity, anchor).apply {
-            items.forEachIndexed { index, (label, _) -> menu.add(Menu.NONE, index, index, label) }
+            items.forEachIndexed { index, (label, _) ->
+                menu.add(Menu.NONE, index, index, label).isEnabled = !casting || label == R.string.player_lock
+            }
             setOnMenuItemClickListener { item ->
                 items.getOrNull(item.itemId)?.second?.invoke()
                 true
@@ -182,6 +186,8 @@ class PlayerTools(
             refreshQuality()
             guideButton.visibility = if (hooks.isLive() && hooks.queue().size > 1) View.VISIBLE else View.GONE
             flipButton.visibility = if (hooks.isLive() && hooks.dial.canFlipBack) View.VISIBLE else View.GONE
+            // The TV draws the captions, so their timing can't be moved there.
+            subtitleTimingButton.usable(!hooks.casting())
         }
     }
 
@@ -199,7 +205,8 @@ class PlayerTools(
 
     /** The copies or the stream changed, or the controls showed. */
     fun refreshQuality() {
-        qualityButton.isVisible = renditionChoice(tracks) || copies.available
+        qualityButton.isVisible = renditionChoice(tracks) || copies.exist
+        qualityButton.usable(!hooks.casting())
     }
 
     private fun renditionChoice(tracks: Tracks): Boolean =

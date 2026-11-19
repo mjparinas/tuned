@@ -1,5 +1,8 @@
 package app.tuned.screenshots
 
+import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import app.tuned.R
 import app.tuned.data.AppReset
 import app.tuned.data.CaptionStyle
@@ -52,6 +55,15 @@ class SettingsScreenshots : Screenshots() {
         overlay = {
             SignOutDownloadsDialog(AppReset.Saved(count = 12, bytes = 8_400_000_000), onDelete = {}, onKeep = {}, onCancel = {})
         },
+    )
+
+    /** The user agent picklist, opened from Settings › About. */
+    @Test
+    fun userAgents() = shot(
+        "settings-user-agents",
+        SettingsPageRoute(SettingsPage.ABOUT.name),
+        wait = text(R.string.settings_user_agent),
+        then = { compose.onNodeWithText(text(R.string.settings_user_agent)).performScrollTo().performClick() },
     )
 }
 
