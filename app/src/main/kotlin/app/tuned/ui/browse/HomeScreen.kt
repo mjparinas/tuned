@@ -98,6 +98,7 @@ import app.tuned.data.CastMember
 import app.tuned.data.StartTab
 import app.tuned.data.SyncProgress
 import app.tuned.data.db.ProfileEntity
+import app.tuned.diagnostics.DeviceClock
 import app.tuned.ui.SyncText
 import app.tuned.ui.common.VoiceSearchButton
 import app.tuned.ui.common.windowWidthDp
@@ -539,7 +540,7 @@ private fun FirstRun(
             Text(stringResource(R.string.first_run_failed), style = MaterialTheme.typography.titleMedium)
             Spacer(Modifier.height(8.dp))
             Text(
-                error,
+                DeviceClock.explain(LocalContext.current, error),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center,
