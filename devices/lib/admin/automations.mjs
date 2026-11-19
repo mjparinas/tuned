@@ -1,4 +1,4 @@
-// The Automations tab and the daily job behind it (docs/decisions/admin.md, as Liftsmith's alerts and morning
+// The Automations tab and the hourly job behind it (docs/decisions/admin.md, as Liftsmith's alerts and morning
 // digest): emails to ADMIN_EMAILS only, each kind switchable, each at most once every 6 hours (the digest once a day).
 
 export const AUTOMATIONS = [
@@ -14,7 +14,7 @@ export const ALERT_GAP_MS = 6 * 3_600_000;
 export const DIGEST_HOUR_UTC = 13;
 
 /**
- * What the daily job should send: `happened` since the last run, `failures` (today's wrong codes), the switches,
+ * What the hourly job should send: `happened` since the last run, `failures` (today's wrong codes), the switches,
  * when each kind last went out, and the time. Returns `[{ kind, subject, text }]`.
  */
 export function alertsToSend({ happened, failures, digest, switches, last, now }) {
