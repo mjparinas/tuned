@@ -3,6 +3,7 @@ package app.tuned.player
 import android.content.Context
 import android.net.Uri
 import androidx.annotation.OptIn
+import androidx.core.net.toUri
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.datasource.DataSource
 import androidx.media3.datasource.DefaultDataSource
@@ -50,7 +51,7 @@ object PlayerSources {
                     spec
                 } else {
                     // Portals' stream servers often serve only what says it is a MAG box.
-                    spec.withUri(Uri.parse(portal(spec.uri.toString()))).withAdditionalHeaders(mapOf("User-Agent" to Stalker.USER_AGENT))
+                    spec.withUri(portal(spec.uri.toString()).toUri()).withAdditionalHeaders(mapOf("User-Agent" to Stalker.USER_AGENT))
                 }
             }
         return DefaultDataSource.Factory(context, network(fromPortal))
