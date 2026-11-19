@@ -4,6 +4,10 @@
   "ignoreCommand": "git diff --quiet HEAD^ HEAD -- .",
   "rewrites": [
     {
+      "source": "/devices",
+      "destination": "/devices/index.html"
+    },
+    {
       "source": "/tv",
       "destination": "/tv/index.html"
     },
@@ -48,6 +52,15 @@
         {
           "key": "X-Robots-Tag",
           "value": "noindex, nofollow"
+        }
+      ]
+    },
+    {
+      "source": "/img/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=604800"
         }
       ]
     }
