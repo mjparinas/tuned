@@ -8,6 +8,7 @@ import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -178,7 +179,12 @@ fun MovieScreen(
                 Modifier.padding(horizontal = 20.dp).offset(y = (-56).dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp),
             ) {
-                Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                // Every action on the film in sight, wrapping to a second line on a narrow phone rather than squeezing.
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    itemVerticalAlignment = Alignment.CenterVertically,
+                ) {
                     Button(
                         onClick = { onPlay(itemId) },
                         contentPadding = PaddingValues(horizontal = 28.dp, vertical = 12.dp),
@@ -192,6 +198,7 @@ fun MovieScreen(
                         DownloadButton(it)
                         WatchLaterButton(LibraryViewModel.movie(it.id, it.name, it.logo))
                         WatchedButton(it.id)
+                        FilmPicks(it.id)
                     }
                 }
                 DetailsBody(details, hasKey, onOpenPerson = onOpenPerson)

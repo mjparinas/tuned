@@ -205,11 +205,14 @@ fun GuideScreen(
         },
     ) { padding ->
         if (programmes.isEmpty()) {
-            Text(
-                stringResource(R.string.guide_empty),
-                modifier = Modifier.padding(padding).padding(24.dp),
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
+            Column(Modifier.padding(padding)) {
+                ChannelActions(itemId)
+                Text(
+                    stringResource(R.string.guide_empty),
+                    modifier = Modifier.padding(24.dp),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
             return@Scaffold
         }
         val rows =
@@ -225,11 +228,13 @@ fun GuideScreen(
         LaunchedEffect(rows) {
             if (!scrolled) {
                 val current = rows.indexOfFirst { it.first.stop > now }
-                if (current > 0) listState.scrollToItem(current)
+                // One past it, since the channel's buttons are the list's first item.
+                if (current > 0) listState.scrollToItem(current + 1)
                 scrolled = true
             }
         }
         LazyColumn(Modifier.padding(padding).fillMaxSize(), state = listState, contentPadding = PaddingValues(bottom = 96.dp)) {
+            item(key = "actions") { ChannelActions(itemId) }
             items(rows, key = { it.first.rowId }) { (p, label, header) ->
                 val onNow = p.start <= now && p.stop > now
                 val replay = !onNow && CatchUp.available(p.start, now, catchUpDays)

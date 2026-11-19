@@ -1,5 +1,7 @@
 package app.tuned.screenshots
 
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.hasAnyDescendant
 import androidx.compose.ui.test.hasScrollAction
 import androidx.compose.ui.test.hasText
@@ -45,6 +47,22 @@ class BrowseScreenshots : Screenshots() {
             compose
                 .onNode(hasScrollAction() and hasAnyDescendant(hasText(text(R.string.filter_favourites))))
                 .performScrollToNode(hasText("News", substring = true))
+        },
+    )
+
+    /** A chosen group, with Pin to the front and Hide this group as chips of their own beside it. */
+    @Test
+    fun liveTvGroupChosen() = shot(
+        "browse-live-tv-group-chosen",
+        HomeRoute,
+        wait = "Maple News 24",
+        then = {
+            // The chips row is the one sideways scroller on Home. Matched by that, not by a chip's text, because the
+            // chip it was found by scrolls out of the tree on the way to the group.
+            val chips = hasScrollAction() and SemanticsMatcher.keyIsDefined(SemanticsProperties.HorizontalScrollAxisRange)
+            compose.onNode(chips).performScrollToNode(hasText("UK | News"))
+            compose.onNode(hasText("UK | News")).performClick()
+            compose.onNode(chips).performScrollToNode(hasText(text(R.string.group_hide)))
         },
     )
 

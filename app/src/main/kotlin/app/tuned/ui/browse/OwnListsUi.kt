@@ -1,6 +1,7 @@
 package app.tuned.ui.browse
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -15,10 +16,10 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.PlaylistPlay
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Checkbox
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -37,10 +38,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.CustomAccessibilityAction
 import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.semantics.customActions
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.tuned.R
@@ -158,7 +156,10 @@ internal fun ListNameDialog(
     )
 }
 
-/** A list's chip in the row above Live TV or Movies; its menu renames or deletes the list. */
+/**
+ * A list's chip in the row above Live TV or Movies. While it is chosen, Rename and Delete sit beside it as chips of their
+ * own, full-size and one press away, rather than in a small menu inside it (Melvin, 2026-11-19: "avoid 3 dot drop downs").
+ */
 @Composable
 internal fun OwnListChip(
     list: ListEntity,
@@ -167,54 +168,30 @@ internal fun OwnListChip(
     onRename: (String) -> Unit,
     onDelete: () -> Unit,
 ) {
-    var menu by remember { mutableStateOf(false) }
     var renaming by remember { mutableStateOf(false) }
     var deleting by remember { mutableStateOf(false) }
     val renameLabel = stringResource(R.string.list_rename)
     val deleteLabel = stringResource(R.string.list_delete)
-    FilterChip(
-        selected = selected,
-        onClick = onSelect,
-        leadingIcon = { Icon(Icons.AutoMirrored.Filled.PlaylistPlay, contentDescription = null, modifier = Modifier.size(16.dp)) },
-        label = { Text(list.name) },
-        // The small menu button is hard to reach with a screen reader, so renaming and deleting are actions on the chip.
-        modifier =
-            Modifier.semantics {
-                customActions =
-                    listOf(
-                        CustomAccessibilityAction(renameLabel) {
-                            renaming = true
-                            true
-                        },
-                        CustomAccessibilityAction(deleteLabel) {
-                            deleting = true
-                            true
-                        },
-                    )
-            },
-        trailingIcon =
-            if (selected) {
-                {
-                    Icon(
-                        Icons.Filled.MoreVert,
-                        contentDescription = stringResource(R.string.list_options, list.name),
-                        modifier = Modifier.size(18.dp).clickable { menu = true },
-                    )
-                    DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
-                        DropdownMenuItem(text = { Text(renameLabel) }, onClick = {
-                            menu = false
-                            renaming = true
-                        })
-                        DropdownMenuItem(text = { Text(deleteLabel) }, onClick = {
-                            menu = false
-                            deleting = true
-                        })
-                    }
-                }
-            } else {
-                null
-            },
-    )
+    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+        FilterChip(
+            selected = selected,
+            onClick = onSelect,
+            leadingIcon = { Icon(Icons.AutoMirrored.Filled.PlaylistPlay, contentDescription = null, modifier = Modifier.size(16.dp)) },
+            label = { Text(list.name) },
+        )
+        if (selected) {
+            AssistChip(
+                onClick = { renaming = true },
+                leadingIcon = { Icon(Icons.Filled.Edit, contentDescription = null, modifier = Modifier.size(16.dp)) },
+                label = { Text(renameLabel) },
+            )
+            AssistChip(
+                onClick = { deleting = true },
+                leadingIcon = { Icon(Icons.Filled.Delete, contentDescription = null, modifier = Modifier.size(16.dp)) },
+                label = { Text(deleteLabel) },
+            )
+        }
+    }
     if (renaming) {
         ListNameDialog(R.string.list_rename, list.name, onDismiss = { renaming = false }) { name ->
             renaming = false

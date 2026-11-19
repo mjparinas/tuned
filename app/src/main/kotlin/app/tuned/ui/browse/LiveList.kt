@@ -232,11 +232,11 @@ private fun ChannelRow(
                 }
             }
             FavouriteButton(favourite, onToggleFavourite)
-            if (channel.tvgId != null) {
-                IconButton(onClick = onGuide) {
-                    // Named with the channel, so a screen reader's list of buttons doesn't read "Guide" a hundred times.
-                    Icon(Icons.AutoMirrored.Filled.List, contentDescription = stringResource(R.string.a11y_guide_for, channel.name))
-                }
+            // Every channel has its page (its guide, with add to list, rename and change logo as buttons), so what the long
+            // press offers is also one press away on a remote, guide or not.
+            IconButton(onClick = onGuide) {
+                // Named with the channel, so a screen reader's list of buttons doesn't read "Guide" a hundred times.
+                Icon(Icons.AutoMirrored.Filled.List, contentDescription = stringResource(R.string.a11y_guide_for, channel.name))
             }
         }
         DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
@@ -268,15 +268,13 @@ private fun ChannelRow(
                     onChangeLogo()
                 },
             )
-            if (channel.tvgId != null) {
-                DropdownMenuItem(
-                    text = { Text(stringResource(R.string.guide_open)) },
-                    onClick = {
-                        menu = false
-                        onGuide()
-                    },
-                )
-            }
+            DropdownMenuItem(
+                text = { Text(stringResource(R.string.guide_open)) },
+                onClick = {
+                    menu = false
+                    onGuide()
+                },
+            )
         }
     }
 }
