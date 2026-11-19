@@ -39,6 +39,8 @@ internal class LiveTimeshift(
     private val userAgent: () -> String,
     /** How much to keep, from Settings › Player › Pause live TV; 0 turns it off. */
     private val keepMinutes: () -> Int,
+    /** A Stalker portal's channel turned into its stream (`data/StalkerLinks`); blocks, and runs on the recorder's thread. */
+    private val resolve: (String) -> String = { it },
 ) {
     private var buffer: LiveBuffer? = null
 
@@ -155,14 +157,14 @@ internal class LiveTimeshift(
         b: LiveBuffer,
         source: Uri,
     ): Boolean {
-        val request =
-            Request
-                .Builder()
-                .url(source.toString())
-                .header("User-Agent", userAgent())
-                .build()
         var got = false
         try {
+            val request =
+                Request
+                    .Builder()
+                    .url(resolve(source.toString()))
+                    .header("User-Agent", userAgent())
+                    .build()
             val c = http.newCall(request).also { call = it }
             c.execute().use { r ->
                 if (!r.isSuccessful) return false

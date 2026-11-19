@@ -47,6 +47,8 @@ class ChannelScanner(
     private val credentials: CredentialStore,
     private val settings: SettingsRepository,
     private val busy: StateFlow<Boolean>,
+    /** A Stalker portal's channel turned into its stream ([StalkerLinks]); any other link as it is. */
+    private val resolve: suspend (String) -> String = { it },
 ) {
     /** The last scan's outcome, for the report. */
     data class Summary(
@@ -167,7 +169,14 @@ class ChannelScanner(
             val link = StreamLink.split(db.items().get(id)?.url ?: return Failure.HTTP)
             while (true) {
                 busy.first { !it }
-                val look = interruptible { calls -> look(link.url, calls, link.headers) }
+                // A portal that won't hand out the stream is a connection problem, which the scan checks before blaming the channel.
+                val url =
+                    try {
+                        resolve(link.url)
+                    } catch (_: IOException) {
+                        return Failure.CONNECTION
+                    }
+                val look = interruptible { calls -> look(url, calls, link.headers) }
                 if (look != null) return look.failure
                 // The player opened or a download started mid-look: wait, then look again.
             }

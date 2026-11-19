@@ -7,6 +7,7 @@ import androidx.media3.datasource.DataSource
 import androidx.media3.datasource.DataSpec
 import androidx.media3.datasource.TransferListener
 import app.tuned.core.LocalHls
+import app.tuned.core.Stalker
 import app.tuned.core.TsSegmenter
 import java.io.File
 import java.io.FileOutputStream
@@ -219,6 +220,8 @@ internal class LiveBuffer(
         /** A live MPEG-TS link (Xtream's `/live/…/id.ts`, or any `.ts`); HLS and files are left alone. */
         fun isLiveTs(uri: Uri): Boolean {
             val scheme = uri.scheme ?: return false
+            // A portal's live channel, whose real link comes as it opens: MPEG-TS unless its command names HLS.
+            if (scheme == "stalker") return Stalker.parse(uri.toString())?.let { it.type == Stalker.LIVE && !Stalker.isHls(it.cmd) } == true
             if (scheme != "http" && scheme != "https") return false
             val path = uri.path.orEmpty().lowercase()
             if ("/timeshift/" in path) return false // a catch-up recording, which can seek already

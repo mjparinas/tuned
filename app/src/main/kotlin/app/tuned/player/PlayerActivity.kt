@@ -215,6 +215,7 @@ class PlayerActivity : FragmentActivity() {
             userAgent = { settings.userAgent.ifBlank { "Tuned/${BuildConfig.VERSION_NAME}" } },
             // Pause and rewind live TV is Premium (docs/decisions/premium.md).
             keepMinutes = { if (container.premium.unlocked.value) settings.liveRewindMinutes else 0 },
+            resolve = container.stalker::resolveNow,
         )
     }
 
@@ -406,6 +407,7 @@ class PlayerActivity : FragmentActivity() {
                         subtitles = subtitleTiming,
                         casting = { cast?.casting == true },
                         dial = dial,
+                        resolve = container.stalker::resolve,
                     ),
                 copies = qualityCopies,
             )
@@ -420,6 +422,7 @@ class PlayerActivity : FragmentActivity() {
                 isLive = ::live,
                 savedFile = { id -> savedFiles[id] },
                 onStatus = { text -> if (text == null) statusView.visibility = View.GONE else showStatus(text) },
+                resolve = container.stalker::resolve,
             ).also { c -> tools.addButton(c.button) }
         tools.addButton(recorder.button)
     }
@@ -581,6 +584,7 @@ class PlayerActivity : FragmentActivity() {
                 agent,
                 headers = { uri -> uri.host?.let(streamHeaders::get).orEmpty() },
                 network = { network -> if (live) timeshift.factory(network) else network },
+                portal = container.stalker::resolveNow,
             )
         // Decoder fallback, and the sound delay from Settings › Player (lip sync); see [TunedRenderersFactory].
         val renderers = TunedRenderersFactory(this) { settings.audioDelayMs }

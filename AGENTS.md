@@ -1,6 +1,6 @@
 # Tuned: guide for agents
 
-Tuned is a native Android IPTV player. It signs in to an Xtream Codes-style server (or any M3U and XMLTV link), caches the playlist and guide on the device, keeps them fresh in the background, and plays streams with Media3. The rule for every screen is Melvin's (2026-11-17): **"the UI is clean and intuitive and basically gets out of your way"**, and **speed comes first**. This file holds the rules that apply to every change. The decisions about each area, and why, are in one file per topic under `docs/decisions/` (listed below), so threads working on different areas don't edit the same file. Before working on an area, read its file. If a task seems to need a decision changed, raise it with the owner (Melvin) first.
+Tuned is a native Android IPTV player. It signs in to an Xtream Codes-style server, a MAC (Stalker) portal, or any M3U and XMLTV link, caches the playlist and guide on the device, keeps them fresh in the background, and plays streams with Media3. The rule for every screen is Melvin's (2026-11-17): **"the UI is clean and intuitive and basically gets out of your way"**, and **speed comes first**. This file holds the rules that apply to every change. The decisions about each area, and why, are in one file per topic under `docs/decisions/` (listed below), so threads working on different areas don't edit the same file. Before working on an area, read its file. If a task seems to need a decision changed, raise it with the owner (Melvin) first.
 
 ## Commands
 
@@ -89,7 +89,7 @@ One file per topic in `docs/decisions/`, A to Z. Add a line when you add a topic
 - [Lists](docs/decisions/lists.md): Favourites and your own lists beside it, like a music app's playlists; renaming channels and changing logos.
 - [Live events](docs/decisions/events.md): today's games and fights from the guide, Tune, following and alerts.
 - [Offline downloads](docs/decisions/offline.md): saving films and episodes, one connection at a time.
-- [Onboarding and playlists](docs/decisions/onboarding.md): the welcome screen, one form per playlist kind (Xtream, link, file), Settings › Playlists.
+- [Onboarding and playlists](docs/decisions/onboarding.md): the welcome screen, one form per playlist kind (Xtream, link, file, MAC portal), Settings › Playlists.
 - [People](docs/decisions/people.md): actor filmography pages, oldest first, with what is in the playlist marked.
 - [Playlist and guide](docs/decisions/playlist.md): Xtream URLs, how streams are sorted, countries and adult categories across providers, refresh.
 - [Player](docs/decisions/player.md): Media3 setup, controls, captions, audio, cast, backup copies, TMDB details.
