@@ -59,8 +59,8 @@ import java.util.concurrent.ConcurrentHashMap
 /**
  * Full-screen playback. Nothing on screen but the video until a tap shows the standard Media3 controls: play and
  * pause, seek, previous and next (the next channel in the category, or the next episode), captions, and the
- * settings menu for audio language and speed. Built on Views, not Compose, because PlayerView is Media3's own
- * tested surface and starts fastest.
+ * settings menu for audio language and speed (films and episodes only; see [ViewPlayer]). Built on Views, not
+ * Compose, because PlayerView is Media3's own tested surface and starts fastest.
  */
 @OptIn(UnstableApi::class)
 class PlayerActivity : FragmentActivity() {
@@ -505,7 +505,7 @@ class PlayerActivity : FragmentActivity() {
         val exo = buildPlayer(live)
         player = exo
         trakt.attach(exo)
-        val shown = ViewPlayer(exo, { cast }, { statusView.visibility = View.GONE }, ::pauseLive)
+        val shown = ViewPlayer(exo, { cast }, { statusView.visibility = View.GONE }, ::pauseLive, ::live)
         playerView.player = shown
         // Media buttons and the Assistant act through the same player as the on-screen controls.
         session.attach(shown)
