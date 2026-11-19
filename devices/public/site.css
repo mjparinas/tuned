@@ -508,3 +508,46 @@ button.apple {
         background: #1f1f20;
     }
 }
+
+/* What Tuned does: one tap-to-open group per area, as the landing page groups them. */
+#feature-groups details {
+    border-top: 1px solid var(--line);
+}
+#feature-groups details:first-child {
+    border-top: 0;
+}
+#feature-groups summary {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 48px;
+    font-weight: 600;
+    cursor: pointer;
+    list-style: none;
+}
+#feature-groups summary::-webkit-details-marker {
+    display: none;
+}
+#feature-groups summary::after {
+    content: "";
+    width: 8px;
+    height: 8px;
+    margin: 0 4px 0 auto;
+    border-right: 2px solid var(--muted);
+    border-bottom: 2px solid var(--muted);
+    transform: rotate(45deg);
+    transition: transform 0.15s;
+}
+#feature-groups details[open] summary::after {
+    transform: rotate(-135deg);
+}
+#feature-groups .count {
+    padding: 0 8px;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    background: var(--card-2);
+    color: var(--muted);
+}
+#feature-groups .features {
+    padding-bottom: 12px;
+}

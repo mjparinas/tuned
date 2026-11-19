@@ -138,6 +138,7 @@ async function load() {
     else if (answer.status === "signed out") me = null;
     else say(refusals.unavailable);
     render();
+    showFeatures();
 }
 
 async function checkout(product, quantity = 1) {
@@ -250,6 +251,52 @@ $("delete-form").onsubmit = async (event) => {
 // Typing again clears an old message, so a red line never sits under a fixed code.
 $("code").oninput = () => clear("code-message", "code");
 $("pair-code").oninput = () => clear("pair-message", "pair-code");
+
+// What Tuned does, from the same list as the landing page (/features.json, built from site/features.mjs), so the two
+// never disagree. Read once, after sign-in; each group opens on a tap so the page stays short.
+let featuresShown = false;
+async function showFeatures() {
+    if (featuresShown || !me) return;
+    featuresShown = true;
+    let groups = [];
+    try {
+        groups = (await (await fetch("/features.json")).json()).groups ?? [];
+    } catch {
+        groups = [];
+    }
+    $("features").hidden = groups.length === 0;
+    $("feature-groups").replaceChildren(
+        ...groups.map((group, index) => {
+            const details = document.createElement("details");
+            details.open = index === 0;
+            const summary = document.createElement("summary");
+            summary.textContent = group.title;
+            const count = document.createElement("span");
+            count.className = "count";
+            count.textContent = String(group.items.length);
+            summary.append(count);
+            const list = document.createElement("div");
+            list.className = "features";
+            for (const item of group.items) {
+                const row = document.createElement("div");
+                const title = document.createElement("b");
+                title.textContent = item.title;
+                if (item.premium) {
+                    const tag = document.createElement("span");
+                    tag.className = "tag";
+                    tag.textContent = "Premium";
+                    title.append(tag);
+                }
+                const body = document.createElement("span");
+                body.textContent = item.body;
+                row.append(title, body);
+                list.append(row);
+            }
+            details.append(summary, list);
+            return details;
+        }),
+    );
+}
 
 if (params.get("error")) say(errors[params.get("error")] ?? errors.failed);
 if (params.get("bought")) say("Thanks. It can take a minute to show here.");
