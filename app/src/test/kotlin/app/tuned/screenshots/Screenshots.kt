@@ -8,6 +8,9 @@ import androidx.compose.ui.test.onRoot
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.rememberNavController
 import androidx.test.core.app.ApplicationProvider
+import androidx.work.Configuration
+import androidx.work.testing.SynchronousExecutor
+import androidx.work.testing.WorkManagerTestInitHelper
 import app.tuned.TunedApp
 import app.tuned.container
 import app.tuned.core.TimeZones
@@ -54,6 +57,9 @@ abstract class Screenshots {
     @OptIn(DelicateCoilApi::class)
     @Before
     fun setUpSampleData() {
+        // The app turns WorkManager's start-up initializer off, and the Home, guide and Live Events screens ask it what
+        // is scheduled, so these screens need the test one.
+        WorkManagerTestInitHelper.initializeTestWorkManager(app, Configuration.Builder().setExecutor(SynchronousExecutor()).build())
         val engine = FakeImageLoaderEngine.Builder()
         SampleData.art.forEach { (key, image) -> engine.intercept(predicate = { it.toString() == key }, image = image) }
         SingletonImageLoader.setUnsafe(ImageLoader.Builder(app).components { add(engine.build()) }.build())
