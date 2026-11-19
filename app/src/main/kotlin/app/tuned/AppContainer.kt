@@ -11,6 +11,7 @@ import app.tuned.data.GoogleDrive
 import app.tuned.data.GuideFixRepository
 import app.tuned.data.MetadataRepository
 import app.tuned.data.Offline
+import app.tuned.data.OwnLists
 import app.tuned.data.PeopleRepository
 import app.tuned.data.Picks
 import app.tuned.data.PlaylistSession
@@ -76,6 +77,7 @@ class AppContainer(
     val events by lazy { EventsRepository(db, settings, reminders) }
     val offline by lazy { Offline(context, db, settings, ::watching) }
     val recordings by lazy { Recordings(context) }
+    val lists by lazy { OwnLists(db) }
     val picks by lazy { Picks(db, appScope) { TvHome.schedule(context) } }
     val connectivity by lazy { Connectivity(context, appScope) }
     val metadata by lazy { MetadataRepository(http, BuildConfig.TMDB_API_KEY, db.metadata(), appScope, connectivity::onlineNow) }

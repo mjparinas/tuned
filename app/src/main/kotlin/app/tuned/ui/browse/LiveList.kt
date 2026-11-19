@@ -101,6 +101,7 @@ private fun LiveList(
 ) {
     val channels = vm.channels.collectAsLazyPagingItems()
     val favourites by vm.favouriteIds.collectAsStateWithLifecycle()
+    val picker = rememberListPicker()
     val state = rememberLazyListState()
     Box(Modifier.fillMaxSize()) {
         LazyColumn(
@@ -124,6 +125,7 @@ private fun LiveList(
                         onPlay = { onPlay(channel.id) },
                         onGuide = { onOpenGuide(channel.id) },
                         onToggleFavourite = { vm.toggleFavourite(channel.id, favourite) },
+                        onAddToList = { picker.open(channel.id) },
                     )
                 }
             }
@@ -161,6 +163,7 @@ private fun ChannelRow(
     onPlay: () -> Unit,
     onGuide: () -> Unit,
     onToggleFavourite: () -> Unit,
+    onAddToList: () -> Unit,
 ) {
     var menu by remember { mutableStateOf(false) }
     // Each channel is a rounded card, like a row on a modern website.
@@ -237,6 +240,13 @@ private fun ChannelRow(
                 onClick = {
                     menu = false
                     onToggleFavourite()
+                },
+            )
+            DropdownMenuItem(
+                text = { Text(stringResource(R.string.list_add)) },
+                onClick = {
+                    menu = false
+                    onAddToList()
                 },
             )
             if (channel.tvgId != null) {

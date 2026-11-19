@@ -150,10 +150,12 @@ interface ItemDao {
             $KIDS_ONLY_I
             AND (:group IS NULL OR i.groupName = :group)
             AND (:favouritesOnly = 0 OR i.id IN (SELECT itemId FROM favourites WHERE profileId = $ME))
+            AND (:listId = 0 OR i.id IN (SELECT itemId FROM list_items WHERE listId = :listId))
             AND (:query = '' OR i.id IN (SELECT docid FROM items_fts WHERE items_fts MATCH :match))
         ORDER BY i.sortOrder
         """,
     )
+    @Suppress("LongParameterList") // Every filter is a parameter of the one query, so the list stays one read.
     fun items(
         kind: Int,
         hidden: List<String>,
@@ -162,6 +164,8 @@ interface ItemDao {
         favouritesOnly: Boolean,
         query: String,
         match: String,
+        /** One of the person's own lists ([ListEntity]); 0 for none. */
+        listId: Long,
     ): PagingSource<Int, ItemEntity>
 
     @Query(
