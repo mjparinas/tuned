@@ -55,10 +55,14 @@ class BrowseScreenshots : Screenshots() {
         HomeRoute,
         wait = "Maple News 24",
         then = {
-            val chips = compose.onNode(hasScrollAction() and hasAnyDescendant(hasText(text(R.string.filter_favourites))))
-            chips.performScrollToNode(hasText("UK | News"))
+            compose
+                .onNode(hasScrollAction() and hasAnyDescendant(hasText(text(R.string.filter_favourites))))
+                .performScrollToNode(hasText("UK | News"))
             compose.onNode(hasText("UK | News")).performClick()
-            chips.performScrollToNode(hasText(text(R.string.group_hide)))
+            // Favourites has scrolled off by now, so the row is found by the chosen group instead.
+            compose
+                .onNode(hasScrollAction() and hasAnyDescendant(hasText("UK | News")))
+                .performScrollToNode(hasText(text(R.string.group_hide)))
         },
     )
 
