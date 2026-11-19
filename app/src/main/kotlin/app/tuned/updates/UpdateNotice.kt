@@ -1,8 +1,6 @@
 package app.tuned.updates
 
 import android.Manifest
-import android.app.NotificationChannel
-import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
@@ -14,6 +12,7 @@ import androidx.core.content.ContextCompat
 import app.tuned.R
 import app.tuned.container
 import app.tuned.ui.MainActivity
+import app.tuned.work.NotificationChannels
 import kotlinx.coroutines.flow.first
 
 /**
@@ -21,7 +20,7 @@ import kotlinx.coroutines.flow.first
  * that opens the app, where the banner installs it with one tap.
  */
 object UpdateNotice {
-    private const val CHANNEL = "updates"
+    private const val CHANNEL = NotificationChannels.UPDATES
     private const val NOTIFICATION_ID = 9
 
     suspend fun checkInBackground(context: Context) {
@@ -40,6 +39,14 @@ object UpdateNotice {
         notify(context, ready.versionName)
     }
 
+    /**
+     * Opening Tuned clears the notification and its dot on the app icon: the banner inside the app says the same and
+     * installs it, so the icon doesn't keep a dot for news the person has already seen.
+     */
+    fun clear(context: Context) {
+        NotificationManagerCompat.from(context).cancel(NOTIFICATION_ID)
+    }
+
     private fun notify(
         context: Context,
         versionName: String,
@@ -49,9 +56,7 @@ object UpdateNotice {
         ) {
             return
         }
-        context.getSystemService(NotificationManager::class.java).createNotificationChannel(
-            NotificationChannel(CHANNEL, context.getString(R.string.update_channel), NotificationManager.IMPORTANCE_DEFAULT),
-        )
+        NotificationChannels.ensure(context)
         val open =
             PendingIntent.getActivity(
                 context,

@@ -1,5 +1,8 @@
 package app.tuned.ui.settings
 
+import android.content.Intent
+import android.net.Uri
+import android.provider.Settings as AndroidSettings
 import android.text.format.DateUtils
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalConfiguration
@@ -10,6 +13,8 @@ import app.tuned.R
 import app.tuned.core.TimeZones
 import app.tuned.data.AppSettings
 import app.tuned.diagnostics.DeviceClock
+import app.tuned.diagnostics.startActivitySafely
+import app.tuned.ui.common.isTelevision
 import java.time.ZoneId
 
 @Composable
@@ -67,6 +72,31 @@ internal fun GuidePage(
             }
         },
     ) { m -> vm.update { it.copy(reminderLeadMinutes = m) } }
+    NotificationsRow()
+}
+
+/**
+ * Android's own page for Tuned's notifications, where the dot on the app icon, sounds and each kind of alert are
+ * switched. Android owns those choices, so Tuned links to them rather than copying them. TVs have no icon dots.
+ */
+@Composable
+private fun NotificationsRow() {
+    if (isTelevision()) return
+    val context = LocalContext.current
+    SettingRow(
+        stringResource(R.string.settings_notifications),
+        stringResource(R.string.settings_notifications_summary),
+        onClick = {
+            val page =
+                Intent(AndroidSettings.ACTION_APP_NOTIFICATION_SETTINGS).putExtra(AndroidSettings.EXTRA_APP_PACKAGE, context.packageName)
+            if (!context.startActivitySafely(page, "GuideSettings")) {
+                context.startActivitySafely(
+                    Intent(AndroidSettings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.fromParts("package", context.packageName, null)),
+                    "GuideSettings",
+                )
+            }
+        },
+    )
 }
 
 /** Which zone guide and event times show in; follows the phone unless a zone is picked (Melvin, 2026-11-18). */

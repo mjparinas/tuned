@@ -63,7 +63,7 @@ class EventsRepository(
     ) {
         val channel = event.channels.firstOrNull() ?: return
         if (on) {
-            reminders.set(channel, "", event.title, event.start, settings.settings.first().reminderLeadMinutes, tuneQuery = event.title)
+            reminders.set(channel, "", event.title, event.start, event.stop, settings.settings.first().reminderLeadMinutes, tuneQuery = event.title)
         } else {
             reminders.cancel(channel, event.start)
         }

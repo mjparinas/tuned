@@ -1,8 +1,6 @@
 package app.tuned.work
 
 import android.app.Notification
-import android.app.NotificationChannel
-import android.app.NotificationManager
 import android.content.Context
 import android.content.pm.ServiceInfo
 import android.os.Build
@@ -92,10 +90,7 @@ class SyncWorker(
     /** A quiet notification with the same progress bar as the app. */
     private fun notification(progress: SyncProgress?): Notification {
         val context = applicationContext
-        val manager = context.getSystemService(NotificationManager::class.java)
-        manager.createNotificationChannel(
-            NotificationChannel(CHANNEL, context.getString(R.string.sync_channel), NotificationManager.IMPORTANCE_MIN),
-        )
+        NotificationChannels.ensure(context)
         val fraction = progress?.fraction
         return NotificationCompat
             .Builder(context, CHANNEL)
@@ -118,7 +113,7 @@ class SyncWorker(
         private const val KEY_STEP = "step"
         private const val KEY_DONE = "done"
         private const val KEY_TOTAL = "total"
-        private const val CHANNEL = "sync"
+        private const val CHANNEL = NotificationChannels.SYNC
         private const val NOTIFICATION_ID = 7
         private const val MAX_ATTEMPTS = 3
         private const val REPORT_EVERY_MS = 500L

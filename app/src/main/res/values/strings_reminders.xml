@@ -5,6 +5,9 @@
     <string name="remind_me">Remind me</string>
     <string name="reminder_cancel">Cancel reminder</string>
     <string name="settings_reminder_lead">Remind me before a programme</string>
+    <string name="settings_notifications">Notifications</string>
+    <string name="settings_notifications_summary">Reminders and alerts put a dot on the app icon. Turn it off, or change sounds, in Android\'s settings</string>
+    <string name="playback_channel">Now playing</string>
     <string name="reminder_at_start">When it starts</string>
     <plurals name="minutes_before">
         <item quantity="one">%d minute before</item>

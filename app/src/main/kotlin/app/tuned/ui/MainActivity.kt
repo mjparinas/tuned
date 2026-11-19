@@ -32,6 +32,7 @@ import app.tuned.ui.common.LocalTimeZone
 import app.tuned.ui.common.TvSafeArea
 import app.tuned.ui.common.WithOfflineBanner
 import app.tuned.ui.theme.TunedTheme
+import app.tuned.updates.UpdateNotice
 import app.tuned.widget.AppShortcuts
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -228,6 +229,7 @@ class MainActivity : ComponentActivity() {
         // Every time Tuned comes to the front, not only on a cold start: a copy left open for days still updates.
         updates.check()
         updates.resume()
+        UpdateNotice.clear(this)
         // The app icon's shortcuts follow the last channel watched and the setting.
         lifecycleScope.launchSafely("Shortcuts") { withContext(Dispatchers.IO) { AppShortcuts.update(this@MainActivity) } }
     }
