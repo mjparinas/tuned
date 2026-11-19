@@ -14,6 +14,16 @@ Melvin, 2026-11-18: "is there a quick way to get screenshots in this app without
 - **Locally:** `./gradlew :app:testGithubDebugUnitTest -Pscreenshots`. The PNGs are in `app/build/outputs/roborazzi`. Ordinary test runs compile the screenshot tests, so a broken one fails CI, but don't run them.
 - **On GitHub:** the Screenshots workflow (`.github/workflows/screenshots.yml`). It is not part of CI and never a required check (Melvin, 2026-11-17: "remove the screenshots from the pipeline"). It runs when a pull request has the `screenshots` label (again on each push while the label stays), or from Actions › Screenshots › Run workflow once the workflow is on `main`. It force-pushes the pictures, with a `README.md` that shows them all, to the branch `screenshots/<branch>`, and deletes that branch when the pull request closes. The run also keeps them as an artifact for 14 days and says how long the drawing took.
 
+## What a run costs
+
+Measured 2026-11-19 on GitHub's standard runner: about 7 minutes from start to pictures, of which drawing all 25 screens is about 40 seconds. The rest is setting up and compiling the app, which a pull request that changes app code can't skip. The full CI pipeline with its emulator takes longer, and no APK has to be installed. Locally, with the app already compiled, a run is the drawing plus a few seconds.
+
+**Wait for something only the finished screen has.** A shot waits for its text before drawing; text that a placeholder or another part of the screen already shows (a film that is also under Continue watching) gives a picture of a half-loaded screen.
+
+## Bugs they catch
+
+The first runs found Live TV crashing on open on staging (pinned groups, 2026-11-19): a screen that crashes fails its screenshot, so the run doubles as a quick check that every screen opens.
+
 ## Every new feature posts its screenshots
 
 A pull request that adds or changes something a person sees adds or updates its picture in the area's file, adds the `screenshots` label, and once the run finishes posts the pictures of the changed screens in the thread that asked for it. Threads read the PNGs from `screenshots/<branch>` with the GitHub API (`get_file_contents` on that ref).

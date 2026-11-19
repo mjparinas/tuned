@@ -2,6 +2,7 @@ package app.tuned.screenshots
 
 import androidx.annotation.StringRes
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onRoot
@@ -92,7 +93,7 @@ abstract class Screenshots {
         }
         val shown =
             runCatching {
-                compose.waitUntil(WAIT_MS) { compose.onAllNodes(hasText(wait, substring = true)).fetchSemanticsNodes().isNotEmpty() }
+                compose.waitUntil(WAIT_MS) { compose.onAllNodes(hasText(wait, substring = true) or hasContentDescription(wait, substring = true)).fetchSemanticsNodes().isNotEmpty() }
             }
         compose.waitForIdle()
         compose.onRoot().captureRoboImage("$name.png")
