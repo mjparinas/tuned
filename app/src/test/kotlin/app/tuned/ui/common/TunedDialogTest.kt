@@ -2,7 +2,8 @@ package app.tuned.ui.common
 
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.unit.Dp
@@ -42,9 +43,9 @@ class TunedDialogTest {
     )
 
     private fun assertMargins(): Seen {
-        var width = 0
+        var width = 0.dp
         compose.setContent {
-            width = LocalConfiguration.current.screenWidthDp
+            width = with(LocalDensity.current) { LocalWindowInfo.current.containerSize.width.toDp() }
             TunedDialog(
                 onDismissRequest = {},
                 confirmButton = { TextButton(onClick = {}) { Text("OK") } },
@@ -57,7 +58,7 @@ class TunedDialogTest {
         val seen =
             with(compose.density) {
                 val left = text.positionOnScreen.x.toDp()
-                Seen(left, left + text.size.width.toDp(), width.dp)
+                Seen(left, left + text.size.width.toDp(), width)
             }
         // The card's 24 dp of inner padding plus at least most of the 24 dp margin outside it. Without the margin, the
         // card touched the screen's edges and the text started 24 dp in.
