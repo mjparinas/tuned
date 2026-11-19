@@ -248,6 +248,7 @@ fun ProfilesScreen(
                         stringResource(if (managing) R.string.profiles_manage else R.string.profiles_title),
                         style = MaterialTheme.typography.headlineLarge,
                         fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onBackground,
                         textAlign = TextAlign.Center,
                         modifier = Modifier.fillMaxWidth(),
                     )
@@ -381,12 +382,17 @@ private fun BrandBar() {
             stringResource(R.string.app_name),
             style = MaterialTheme.typography.titleLarge,
             fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onBackground,
         )
     }
 }
 
+/**
+ * One profile on the picker. Its name and lock are coloured onBackground here rather than left to the surrounding
+ * content colour, which falls back to black wherever nothing sets it (the names were once near-black on the dark theme).
+ */
 @Composable
-private fun ProfileTile(
+internal fun ProfileTile(
     profile: ProfileEntity,
     selected: Boolean,
     managing: Boolean,
@@ -452,13 +458,19 @@ private fun ProfileTile(
         Spacer(Modifier.height(10.dp))
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(horizontal = 4.dp)) {
             if (profile.pinHash != null) {
-                Icon(Icons.Filled.Lock, contentDescription = stringResource(R.string.profile_locked), modifier = Modifier.size(14.dp))
+                Icon(
+                    Icons.Filled.Lock,
+                    contentDescription = stringResource(R.string.profile_locked),
+                    tint = MaterialTheme.colorScheme.onBackground,
+                    modifier = Modifier.size(14.dp),
+                )
                 Spacer(Modifier.width(4.dp))
             }
             Text(
                 displayName(profile),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium,
+                color = MaterialTheme.colorScheme.onBackground,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
@@ -500,10 +512,21 @@ private fun AddTile(onClick: () -> Unit) {
                     .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f))
                     .border(2.dp, MaterialTheme.colorScheme.outlineVariant, avatarShape),
                 contentAlignment = Alignment.Center,
-            ) { Icon(Icons.Filled.Add, contentDescription = null, modifier = Modifier.size(40.dp)) }
+            ) {
+                Icon(
+                    Icons.Filled.Add,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(40.dp),
+                )
+            }
         }
         Spacer(Modifier.height(10.dp))
-        Text(stringResource(R.string.profile_add), style = MaterialTheme.typography.titleMedium)
+        Text(
+            stringResource(R.string.profile_add),
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.onBackground,
+        )
     }
 }
 
