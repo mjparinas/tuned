@@ -29,6 +29,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.State
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -62,6 +64,7 @@ import app.tuned.core.Avatar
 import app.tuned.core.Avatars
 import app.tuned.data.Accent
 import app.tuned.data.db.ProfileEntity
+import app.tuned.diagnostics.Lighter
 import app.tuned.ui.common.focusRing
 import app.tuned.ui.theme.swatch
 
@@ -211,7 +214,8 @@ private fun AvatarOption(
 /** The ring's turn, in degrees: a slow loop when [animate], else still. */
 @Composable
 private fun premiumAngle(animate: Boolean): State<Float> {
-    if (!animate) return remember { mutableFloatStateOf(0f) }
+    val lighter by Lighter.on.collectAsState()
+    if (!animate || lighter) return remember { mutableFloatStateOf(0f) }
     return rememberInfiniteTransition(label = "premiumRing").animateFloat(
         initialValue = 0f,
         targetValue = 360f,

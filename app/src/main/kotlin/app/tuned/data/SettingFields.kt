@@ -101,6 +101,8 @@ internal val SETTING_FIELDS: List<SettingField<*, *>> =
         bool("dynamic_colour", { dynamicColour }) { copy(dynamicColour = it) },
         bool("pure_black", { pureBlack }) { copy(pureBlack = it) },
         choice("accent", { accent }) { copy(accent = it) },
+        // Whether a device is weak is the device's own business, so this stays on it rather than syncing.
+        choice("lighter_mode", { lighterMode }) { copy(lighterMode = it) }.notBackedUp(),
         // Start and lists
         choice("start_tab", { startTab }) { copy(startTab = it) },
         int("last_tab", { lastTab }) { copy(lastTab = it) }.notBackedUp(),

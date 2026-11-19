@@ -9,6 +9,7 @@ import androidx.lifecycle.ProcessLifecycleOwner
 import app.tuned.data.settleNewRegions
 import app.tuned.diagnostics.CrashReporter
 import app.tuned.diagnostics.FreezeWatch
+import app.tuned.diagnostics.Lighter
 import app.tuned.diagnostics.launchSafely
 import app.tuned.work.CloudSyncWorker
 import coil3.ImageLoader
@@ -18,6 +19,7 @@ import coil3.disk.DiskCache
 import coil3.disk.directory
 import coil3.memory.MemoryCache
 import coil3.network.okhttp.OkHttpNetworkFetcherFactory
+import coil3.request.allowRgb565
 import coil3.request.crossfade
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -38,6 +40,7 @@ class TunedApp :
         super.onCreate()
         CrashReporter.install(this)
         FreezeWatch.start(this)
+        Lighter.load(this)
         // Debug builds log any disk or network work on the main thread, so a slip that would stutter shows up early.
         if (BuildConfig.DEBUG) {
             StrictMode.setThreadPolicy(
@@ -56,7 +59,14 @@ class TunedApp :
             )
         }
         container = AppContainer(this)
-        container.appScope.launchSafely("Freeze") { withContext(Dispatchers.IO) { FreezeWatch.collectPastFreezes(this@TunedApp) } }
+        container.appScope.launchSafely("Freeze") {
+            withContext(Dispatchers.IO) { FreezeWatch.collectPastFreezes(this@TunedApp) }
+            // After the past freezes are in, so Automatic sees them; then again whenever the setting changes.
+            container.settings.settings
+                .map { it.lighterMode }
+                .distinctUntilChanged()
+                .collect { mode -> withContext(Dispatchers.IO) { Lighter.refresh(this@TunedApp, mode) } }
+        }
         lockAdultWhenAway()
         CloudSyncWorker.watch(this)
         container.appScope.launchSafely("Profiles") { container.profiles.sync() }
@@ -106,23 +116,30 @@ class TunedApp :
      * Coil reads its disk cache before the network and ignores servers' cache headers, so a picture seen once is
      * never fetched again until it's the least recently used one over the limit: 5% of the storage, 512 MB to 2 GB.
      */
-    override fun newImageLoader(context: PlatformContext): ImageLoader = ImageLoader
-        .Builder(context)
-        .components { add(OkHttpNetworkFetcherFactory(callFactory = { container.http })) }
-        .memoryCache { MemoryCache.Builder().maxSizePercent(context, 0.2).build() }
-        .diskCache {
-            DiskCache
-                .Builder()
-                .directory(context.filesDir.resolve("images"))
-                .maxSizePercent(IMAGE_CACHE_SHARE)
-                .minimumMaxSizeBytes(IMAGE_CACHE_MIN)
-                .maximumMaxSizeBytes(IMAGE_CACHE_MAX)
-                .build()
-        }.crossfade(true)
-        .build()
+    override fun newImageLoader(context: PlatformContext): ImageLoader {
+        // Lighter mode (weak TV boxes): pictures in half the memory, a smaller memory cache, and no fade-in.
+        val lighter = Lighter.on.value
+        return ImageLoader
+            .Builder(context)
+            .components { add(OkHttpNetworkFetcherFactory(callFactory = { container.http })) }
+            .memoryCache { MemoryCache.Builder().maxSizePercent(context, if (lighter) LIGHTER_MEMORY_SHARE else MEMORY_SHARE).build() }
+            .diskCache {
+                DiskCache
+                    .Builder()
+                    .directory(context.filesDir.resolve("images"))
+                    .maxSizePercent(IMAGE_CACHE_SHARE)
+                    .minimumMaxSizeBytes(IMAGE_CACHE_MIN)
+                    .maximumMaxSizeBytes(IMAGE_CACHE_MAX)
+                    .build()
+            }.crossfade(!lighter)
+            .allowRgb565(lighter)
+            .build()
+    }
 }
 
 private const val ADULT_RELOCK_MS = 5 * 60_000L
+private const val MEMORY_SHARE = 0.2
+private const val LIGHTER_MEMORY_SHARE = 0.1
 private const val IMAGE_CACHE_SHARE = 0.05
 private const val IMAGE_CACHE_MIN = 512L * 1024 * 1024
 private const val IMAGE_CACHE_MAX = 2L * 1024 * 1024 * 1024
