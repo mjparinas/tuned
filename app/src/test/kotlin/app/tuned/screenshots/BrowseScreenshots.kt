@@ -1,7 +1,9 @@
 package app.tuned.screenshots
 
 import app.tuned.R
+import app.tuned.core.ContentKind
 import app.tuned.core.Episodes
+import app.tuned.core.PinnedGroups
 import app.tuned.data.StartTab
 import app.tuned.ui.DownloadsRoute
 import app.tuned.ui.EventsRoute
@@ -20,6 +22,15 @@ import org.robolectric.annotation.Config
 @RunWith(RobolectricTestRunner::class)
 class BrowseScreenshots : Screenshots() {
     @Test fun liveTv() = shot("browse-live-tv", HomeRoute, wait = "Maple News 24")
+
+    /** A group pinned to the front of the chips, with its pin showing. */
+    @Test
+    fun liveTvPinned() = shot(
+        "browse-live-tv-pinned",
+        HomeRoute,
+        wait = "Maple News 24",
+        settings = DARK.copy(pinnedGroups = PinnedGroups.toggle("", ContentKind.LIVE.code, "UK | News")),
+    )
 
     @Test fun liveTvLight() = shot("browse-live-tv-light", HomeRoute, wait = "Maple News 24", settings = LIGHT)
 
