@@ -2,24 +2,18 @@ package app.tuned.player
 
 import android.annotation.SuppressLint
 import android.app.AlertDialog
-import android.content.Intent
-import android.graphics.Color
 import android.util.TypedValue
 import android.view.Gravity
 import android.view.KeyEvent
-import android.view.Menu
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
 import android.widget.ImageButton
 import android.widget.LinearLayout
-import android.widget.PopupMenu
-import android.widget.TextView
 import androidx.activity.ComponentActivity
 import androidx.activity.OnBackPressedCallback
 import androidx.annotation.OptIn
-import androidx.core.net.toUri
 import androidx.core.view.isVisible
 import androidx.lifecycle.lifecycleScope
 import androidx.media3.common.C
@@ -34,17 +28,15 @@ import app.tuned.R
 import app.tuned.core.RemoteKeys
 import app.tuned.data.VideoFit
 import app.tuned.data.db.ItemEntity
-import app.tuned.diagnostics.attempt
 import app.tuned.diagnostics.launchSafely
-import app.tuned.diagnostics.startActivitySafely
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.isActive
 
 /**
- * The buttons at the top right of the player, shown with the controls: channels (live), aspect, quality, stream info and
- * screen lock. The subtitle timing button sits beside the CC button instead ([placeBesideCaptions]). Each stays out of
- * the way until asked for, as everything in the player does.
+ * The buttons at the top right of the player, shown with the controls: channels and flip back (live), quality, fit and
+ * screen lock, each its own button with no menu behind three dots (Melvin, 2026-11-19: "I don't like the 3 dots"). The
+ * subtitle timing button sits beside the CC button instead ([placeBesideCaptions]). Each stays out of the way until
+ * asked for, as everything in the player does.
  */
 @OptIn(UnstableApi::class)
 class PlayerTools(
@@ -67,8 +59,8 @@ class PlayerTools(
         val casting: () -> Boolean,
         /** Typing a channel number and flipping back, on live TV. */
         val dial: ChannelDial,
-        /** A Stalker portal's channel turned into its stream (`data/StalkerLinks`), for another player to open. */
-        val resolve: suspend (String) -> String = { it },
+        /** Android TV: no screen lock there, since a remote has no touches to ignore. */
+        val tv: Boolean = false,
     )
 
     private val density = activity.resources.displayMetrics.density
@@ -82,18 +74,11 @@ class PlayerTools(
             visibility = View.GONE
             setBackgroundColor(0x99000000.toInt())
         }
-    private val info =
-        TextView(activity).apply {
-            setTextColor(Color.WHITE)
-            textSize = 13f
-            setBackgroundColor(0xB3000000.toInt())
-            val pad = (12 * density).toInt()
-            setPadding(pad, pad, pad, pad)
-            visibility = View.GONE
-        }
-    private var infoJob: Job? = null
     private var unlockJob: Job? = null
     private var fit = VideoFit.FIT
+    private val fitButton = button(R.drawable.ic_player_fit, R.string.player_fit) { nextFit() }.apply { describeFit(this) }
+    private val lockButton =
+        button(R.drawable.ic_player_lock, R.string.player_lock) { lock() }.apply { if (hooks.tv) visibility = View.GONE }
 
     var locked = false
         private set
@@ -117,44 +102,19 @@ class PlayerTools(
             addView(guideButton)
             addView(flipButton)
             addView(qualityButton)
-            addView(button(R.drawable.ic_player_more, R.string.player_more) { view -> showMore(view) })
+            addView(fitButton)
+            addView(lockButton)
         }
 
     /** Moves the captions earlier or later; placed beside the CC button by the player. */
     val subtitleTimingButton: ImageButton = button(R.drawable.ic_player_subtitle_timing, R.string.subtitle_timing) { pickSubtitleTiming() }
-
-    /**
-     * The tools used now and then sit behind one More button, so the top row keeps to what's used while watching
-     * (cast, record, channels, flip back, quality): up to nine buttons were in that row (2026-11-18, Melvin's UI review).
-     */
-    private fun showMore(anchor: View) {
-        val items =
-            listOf(
-                R.string.player_fit to ::nextFit,
-                R.string.player_info to ::toggleInfo,
-                R.string.player_open_with to ::openElsewhere,
-                R.string.player_lock to ::lock,
-            )
-        // While casting the TV draws the picture and the phone has no stream: only the lock still applies.
-        val casting = hooks.casting()
-        PopupMenu(activity, anchor).apply {
-            items.forEachIndexed { index, (label, _) ->
-                menu.add(Menu.NONE, index, index, label).isEnabled = !casting || label == R.string.player_lock
-            }
-            setOnMenuItemClickListener { item ->
-                items.getOrNull(item.itemId)?.second?.invoke()
-                true
-            }
-            show()
-        }
-    }
 
     /** Puts another button (the cast button) at the start of the toolbar. */
     fun addButton(view: View) {
         toolbar.addView(view, 0)
     }
 
-    /** Adds the panels (guide, info, unlock) over the video. */
+    /** Adds the panels (guide, unlock) over the video. */
     fun attach(root: FrameLayout) {
         root.addView(
             guide.scrim,
@@ -165,12 +125,6 @@ class PlayerTools(
             FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.MATCH_PARENT, Gravity.END),
         )
         guide.place()
-        root.addView(
-            info,
-            FrameLayout
-                .LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT, Gravity.BOTTOM or Gravity.START)
-                .apply { setMargins((24 * density).toInt(), 0, 0, (96 * density).toInt()) },
-        )
         root.addView(
             unlockButton,
             FrameLayout
@@ -189,8 +143,9 @@ class PlayerTools(
             refreshQuality()
             guideButton.visibility = if (hooks.isLive() && hooks.queue().size > 1) View.VISIBLE else View.GONE
             flipButton.visibility = if (hooks.isLive() && hooks.dial.canFlipBack) View.VISIBLE else View.GONE
-            // The TV draws the captions, so their timing can't be moved there.
+            // The TV draws the captions and the picture, so neither their timing nor the fit can change there.
             subtitleTimingButton.usable(!hooks.casting())
+            fitButton.usable(!hooks.casting())
         }
     }
 
@@ -239,6 +194,18 @@ class PlayerTools(
                 VideoFit.ZOOM -> AspectRatioFrameLayout.RESIZE_MODE_ZOOM
                 VideoFit.STRETCH -> AspectRatioFrameLayout.RESIZE_MODE_FILL
             }
+        describeFit(fitButton)
+    }
+
+    /** TalkBack hears what the fit button is set to, since the icon is the same for all three. */
+    private fun describeFit(view: View) {
+        view.contentDescription = activity.getString(R.string.player_fit_now, activity.getString(fitLabel(fit)))
+    }
+
+    private fun fitLabel(value: VideoFit): Int = when (value) {
+        VideoFit.FIT -> R.string.player_fit_fit
+        VideoFit.ZOOM -> R.string.player_fit_zoom
+        VideoFit.STRETCH -> R.string.player_fit_stretch
     }
 
     /** Rotation, folding or split screen: the guide moves beside or over the video to suit. */
@@ -247,14 +214,13 @@ class PlayerTools(
     /** Picture-in-picture: nothing but the video. */
     fun hidePanels() {
         guide.close()
-        info.visibility = View.GONE
-        infoJob?.cancel()
         unlockButton.visibility = View.GONE
         syncBack()
     }
 
     /**
-     * TV remotes ([RemoteKeys]): channel up and down, the guide and info buttons, and the arrows while the controls are
+     * TV remotes ([RemoteKeys]): channel up and down, the guide and info buttons (info shows the controls, with the
+     * stream's pills), and the arrows while the controls are
      * hidden. True when the key was used here; both the press and the release are taken, so Media3 doesn't also show
      * its controls for it. Nothing changes while the screen is locked, and while the guide is open only the guide
      * and menu buttons (which close it) are taken; the arrows move through its list.
@@ -305,7 +271,7 @@ class PlayerTools(
             }
 
             RemoteKeys.Action.INFO -> {
-                toggleInfo()
+                playerView.showController()
             }
 
             RemoteKeys.Action.LAST_CHANNEL -> {
@@ -316,42 +282,7 @@ class PlayerTools(
         }
     }
 
-    /**
-     * Hands the stream to another installed player (VLC, MX Player, Just Player) for a format Tuned can't play
-     * (from the app audit). Tuned stops its own stream first and closes, so the account never has two open.
-     */
-    private fun openElsewhere() {
-        val player = hooks.player() ?: return
-        val item = hooks.queue().getOrNull(player.currentMediaItemIndex) ?: return
-        activity.lifecycleScope.launchSafely("PlayerTools") {
-            // Another player can't ask a portal for the stream, so it gets the real link.
-            val url = attempt("PlayerTools", "The portal gave no stream") { hooks.resolve(item.url) }.getOrNull() ?: return@launchSafely
-            openWith(player, item.name, url)
-        }
-    }
-
-    private fun openWith(
-        player: ExoPlayer,
-        name: String,
-        url: String,
-    ) {
-        val view =
-            Intent(Intent.ACTION_VIEW)
-                .setDataAndType(url.toUri(), "video/*")
-                .putExtra(Intent.EXTRA_TITLE, name)
-                .putExtra("title", name) // what VLC and MX Player read
-        player.stop()
-        val chooser = Intent.createChooser(view, activity.getString(R.string.player_open_with))
-        if (activity.startActivitySafely(chooser, "PlayerTools")) {
-            activity.finish()
-        } else {
-            hooks.say(activity.getString(R.string.player_open_with_none))
-            player.prepare()
-        }
-    }
-
     fun release() {
-        infoJob?.cancel()
         unlockJob?.cancel()
     }
 
@@ -359,15 +290,7 @@ class PlayerTools(
         val next = VideoFit.entries[(fit.ordinal + 1) % VideoFit.entries.size]
         applyFit(next)
         hooks.onFitChanged(next)
-        hooks.say(
-            activity.getString(
-                when (next) {
-                    VideoFit.FIT -> R.string.player_fit_fit
-                    VideoFit.ZOOM -> R.string.player_fit_zoom
-                    VideoFit.STRETCH -> R.string.player_fit_stretch
-                },
-            ),
-        )
+        hooks.say(activity.getString(fitLabel(next)))
     }
 
     private fun toggleGuide() {
@@ -419,50 +342,6 @@ class PlayerTools(
 
     private fun syncBack() {
         back.isEnabled = locked || guide.isOpen
-    }
-
-    // ---- Stream info: what is actually playing, refreshed every second while open.
-
-    private fun toggleInfo() {
-        if (info.isVisible) {
-            info.visibility = View.GONE
-            infoJob?.cancel()
-            return
-        }
-        info.visibility = View.VISIBLE
-        infoJob =
-            activity.lifecycleScope.launchSafely("PlayerTools") {
-                while (isActive) {
-                    info.text = infoText()
-                    delay(1_000)
-                }
-            }
-    }
-
-    private fun infoText(): String {
-        val p = hooks.player() ?: return activity.getString(R.string.player_info_none)
-        val video = p.videoFormat
-        val audio = p.audioFormat
-        val lines =
-            listOfNotNull(
-                video?.let {
-                    val size = p.videoSize
-                    val text = StreamInfo.video(size.width, size.height, it.frameRate, it.sampleMimeType, it.bitrateOrAverage())
-                    activity.getString(R.string.player_info_video, text)
-                },
-                audio?.let {
-                    val channels =
-                        it.channelCount.takeIf { n -> n > 0 }?.let { n ->
-                            activity.resources.getQuantityString(R.plurals.player_audio_channels, n, n)
-                        }
-                    activity.getString(
-                        R.string.player_info_audio,
-                        StreamInfo.audio(it.sampleMimeType, channels, it.sampleRate, it.language),
-                    )
-                },
-                activity.getString(R.string.player_info_buffer, (p.totalBufferedDuration / 1_000f)),
-            )
-        return if (video == null && audio == null) activity.getString(R.string.player_info_none) else lines.joinToString("\n")
     }
 
     private fun Format.bitrateOrAverage(): Int = if (bitrate != Format.NO_VALUE) bitrate else averageBitrate

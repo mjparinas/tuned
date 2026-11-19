@@ -17,7 +17,7 @@ A dedicated TV layout can come later if the phone layout proves awkward from the
 
 - On live TV, up and down change channel while the controls are hidden, as on a cable box. The channel up and down buttons (and page up and down) change channel at any time.
 - In films and episodes, left and right skip back and forward by the player's skip amounts while the controls are hidden.
-- The guide (or menu) button opens and closes the mini guide on live TV; the info button shows stream info.
+- The guide (or menu) button opens and closes the mini guide on live TV; the info button shows the controls, with the stream's pills (stream info was removed 2026-11-19). Fit is a button in the player's top row, reached with the arrows like the others; there is no screen lock on a TV.
 - Once the controls show, the arrows move between buttons as usual. While the screen is locked, keys do nothing but reveal the unlock button through back.
 
 Holding an arrow keeps skipping; holding a channel button changes channel once, so a long press can't flip through several channels and open several connections in a row.
