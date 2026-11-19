@@ -155,7 +155,9 @@ jobs:
       # Unsigned release builds of both the GitHub and the store build, so R8 fails here on a missing keep rule, not in
       # Release. No debug APK: Melvin
       # (2026-11-18) installs only production releases, and lint and the unit tests already compile the debug variant.
-      - run: ./gradlew :app:assembleRelease
+      # Without the release lint pass (lintVital), which repeats Android Lint in Checks and took about 2 minutes of the
+      # build's CPU (Melvin, 2026-11-19). Release builds in release.yml still run it.
+      - run: ./gradlew :app:assembleRelease -x lintVitalGithubRelease -x lintVitalPlayRelease
         env:
           # The commit shown at the bottom of Settings: a pull request's own head, not the merge commit GitHub builds.
           GIT_COMMIT: ${{ github.event.pull_request.head.sha || github.sha }}
