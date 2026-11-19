@@ -21,7 +21,7 @@ internal fun PlaylistsPage(
     PlaylistsRow(onOpen = { onOpen(PlaylistsRoute) })
     AccountStatusRows()
     TraktRows()
-    CloudSyncRows()
+    TunedAccountRows()
     SignOutRow(vm, onSignedOut)
 }
 

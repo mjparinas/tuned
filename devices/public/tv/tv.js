@@ -36,6 +36,8 @@ function show(id) {
 function ready(found) {
     target = found;
     show("login");
+    // The website signs the TV in to the person's Tuned account, which restores its backup (docs/decisions/accounts.md).
+    $("useAccount").href = `/account?tv=${encodeURIComponent(found.code)}`;
     // The app sends everything (playlists, settings, favourites), so offer it on Android phones.
     if (/Android/i.test(navigator.userAgent)) {
         $("openApp").href = `tuned://tv#${found.code}.${b64(found.key)}`;

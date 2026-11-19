@@ -2,7 +2,7 @@
 
 Melvin, 2026-11-19: a website "with registration, validates number of devices, accepts additional payments for more seats, and stores device backups, and qr codes for set up", replacing Google Drive ("i want to completely deprecate google drive sync"). The plan is `tuned/tuned-accounts-plan.md` in the project files. His answers the same day: accounts are optional, backups aren't encrypted ("i dont want to encrypt backups"), no Drive migration ("i dont have any customers"), the website sells through Stripe, the `github` build gets accounts and backups free with no seat limit, Google is the only sign-in, extra seats come both once and yearly ("do a and b"), and they can't be mixed ("make it so you can't mix lifetime account and yearly seats"). He is getting a domain; until then the site is `tuned-devices.vercel.app`.
 
-**Built so far: the server** (`devices/`). The app's side (signing in, backups instead of Drive, removing Drive, Play's seat products) is under [scope](scope.md) › Decided, being built.
+**Built:** the server (`devices/`) and, in the app, signing in, the backup in place of Google Drive sync, and Drive removed ([sync](sync.md)). Seats per account in the app and Play's seat products are under [scope](scope.md) › Decided, being built.
 
 ## Where things live
 
@@ -19,6 +19,15 @@ The phone and TV keep SQLite (Room): Turso was measured against the app's own da
 - **The app on a phone** opens `/api/auth/google?app=<PKCE challenge>` in a browser tab; Google sends it back through the app link `/app/signed-in?code=…`, and the app swaps that two-minute code and its PKCE verifier for its own token (`/api/auth/token`). Works without Google Play services.
 - **A TV** signs in from its existing "Sign in with your phone" screen: a phone with Tuned asks `/api/auth/link` for a ten-minute code and seals it into what it sends the TV; a phone without Tuned opens the website, signs in, and approves the TV's code (`/api/account/tv`, or `/account?tv=CODE`), which the TV picks up from the relay (`take` answers with `link`). The website's Pair a TV box does the same with a typed code.
 - **A device's token** is random, stored only as a hash on its row in `devices`, and lasts until the device signs out or is removed. Removing a device on the website or another device signs it out at once.
+
+## In the app
+
+- **Signing in** (`data/TunedAccount`, `ui/settings/TunedAccountUi` › `AccountSignIn`): the same on a phone and a TV. The app gets a code from the TV sign-in relay and shows it with a QR code (on a TV) or an Open the website button (on a phone) for `<site>/account?tv=CODE`. The person signs in with Google there and approves; the relay hands the app a one-time code, which it swaps for its token. No Google sign-in or Google keys in the app. The token is sealed with a Keystore key; a 401 means the device was removed, and it forgets the account.
+- **Settings › Playlists and account › Tuned account**: Sign in (Premium in the store build, as Drive sync was), then Back up now with when it last did, and Sign out of your Tuned account (frees the seat; the backup and the device's own data stay).
+- **The backup** (`data/CloudSyncRepository`, `work/CloudSyncWorker`) runs when the app opens and when it leaves the screen, as Drive sync did: it stores the sync copy with its fingerprint and when it changed, and saves only on top of the version it read, so a race with another device is tried again on the next run.
+- **Restore from your Tuned account** on the welcome screen signs in the same way and takes the backup as it is (`ui/onboarding/RestoreFromAccount`).
+- **A TV from the website:** the TV's "Sign in with your phone" page (`/tv`) links to the account page for its code; once approved, the TV signs in and restores the backup (`TvSignInScreen`).
+- **Signing out of Tuned** (`AppReset`) forgets the account on the device; the backup stays.
 
 ## Seats
 

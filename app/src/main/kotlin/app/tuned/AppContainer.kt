@@ -9,7 +9,6 @@ import app.tuned.data.CloudSyncRepository
 import app.tuned.data.Connectivity
 import app.tuned.data.CredentialStore
 import app.tuned.data.EventsRepository
-import app.tuned.data.GoogleDrive
 import app.tuned.data.GuideFixRepository
 import app.tuned.data.IntroStore
 import app.tuned.data.MetadataRepository
@@ -29,6 +28,7 @@ import app.tuned.data.SyncCopyRepository
 import app.tuned.data.SyncRepository
 import app.tuned.data.TraktAccount
 import app.tuned.data.TuneRepository
+import app.tuned.data.TunedAccount
 import app.tuned.data.TvRelay
 import app.tuned.data.db.TunedDatabase
 import app.tuned.diagnostics.DeviceClock
@@ -83,7 +83,7 @@ class AppContainer(
     val cloudSync by lazy {
         CloudSyncRepository(
             context,
-            GoogleDrive(context, http),
+            TunedAccount(context, http) { tvSignInUrl },
             syncCopy,
             onSignedIn = { scheduler.refreshNow(first = true) },
             onGuideChanged = { scheduler.refreshNow(guideOnly = true) },

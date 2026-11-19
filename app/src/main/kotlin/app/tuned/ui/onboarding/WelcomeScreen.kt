@@ -54,7 +54,7 @@ fun WelcomeScreen(
     onPick: (Credentials.Kind) -> Unit,
     onBack: () -> Unit,
     onPhone: (() -> Unit)? = null,
-    /** First run: Restore from Google Drive brought everything back ([RestoreFromDrive]). */
+    /** First run: Restore from your Tuned account brought everything back ([RestoreFromAccount]). */
     onRestored: (askProfile: Boolean) -> Unit = {},
 ) {
     Scaffold(topBar = { if (!firstRun) BackTopBar(stringResource(R.string.playlists_add), onBack) }) { padding ->
@@ -94,7 +94,7 @@ private fun WelcomeBody(
                     Welcome(logoSize = 72.dp)
                     // Restore and the privacy line sit under the welcome, so the right column holds only the four
                     // kinds and fits a TV's height (480 dp on some, less the overscan margin) without scrolling.
-                    RestoreFromDrive(onRestored)
+                    RestoreFromAccount(onRestored)
                     Privacy()
                 }
                 Column(
@@ -126,7 +126,7 @@ private fun WelcomeBody(
                     )
                 }
                 Kinds(onPick, onPhone)
-                if (firstRun) RestoreFromDrive(onRestored)
+                if (firstRun) RestoreFromAccount(onRestored)
                 if (firstRun) {
                     Spacer(Modifier.height(4.dp))
                     Privacy()

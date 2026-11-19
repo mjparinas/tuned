@@ -16,9 +16,9 @@ const refusals = {
     "wrong seat kind": "Extra seats match your Premium: one-time seats with lifetime, yearly seats with yearly.",
     "too many seats": "An account can have at most ten seats.",
     "not for sale": "Buying here isn't set up yet.",
-    "not found": "That code has run out. Your TV shows a new one.",
-    "bad code": "That doesn't look like the code on your TV. It's eight letters and numbers.",
-    "already sent": "That TV has already been sent something. Use the new code it shows.",
+    "not found": "That code has run out. The screen shows a new one.",
+    "bad code": "That doesn't look like the code on the screen. It's eight letters and numbers.",
+    "already sent": "That device has already been sent something. Use the new code it shows.",
     "too many": "Too many tries. Try again in an hour.",
     unavailable: "Something went wrong on our side. Try again in a moment.",
 };
@@ -140,7 +140,7 @@ $("billing").onclick = async () => {
 
 async function pair(code) {
     const answer = await call("POST", "/api/account/tv", { code });
-    say(answer.status === "ok" ? "Done. Your TV is signing in now." : (refusals[answer.status] ?? refusals.unavailable));
+    say(answer.status === "ok" ? "Done. Your device is signing in now." : (refusals[answer.status] ?? refusals.unavailable));
     return answer.status === "ok";
 }
 $("pair").onclick = () => pair($("pair-code").value);

@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Settings › Playlists and account: the Tuned account and its backup (docs/decisions/accounts.md) -->
+    <string name="tuned_account">Tuned account</string>
+    <string name="tuned_account_sign_in">Sign in to your Tuned account</string>
+    <string name="tuned_account_sign_in_summary">Back up your playlists, settings and profiles, and keep your phone and TV the same</string>
+    <string name="tuned_account_asking">Getting a code…</string>
+    <!-- %1$s: the website's address, such as "tuned-devices.vercel.app/account". -->
+    <string name="tuned_account_enter_code">Scan the code, or on any phone or computer go to %1$s, sign in with Google and enter this code under Pair a TV:</string>
+    <string name="tuned_account_waiting">Waiting for you to sign in…</string>
+    <string name="tuned_account_open_site">Open the website</string>
+    <string name="tuned_account_failed">Couldn\'t reach Tuned\'s server. Check the connection and try again.</string>
+    <string name="tuned_account_try_again">Try again</string>
+    <!-- %1$s: the account's email address. -->
+    <string name="tuned_account_signed_in">Signed in as %1$s.</string>
+    <string name="tuned_account_backup_now">Back up now</string>
+    <string name="tuned_account_never">Not backed up yet</string>
+    <!-- %1$s: when, such as "5 minutes ago". -->
+    <string name="tuned_account_last">Last backed up %1$s</string>
+    <string name="tuned_account_offline">Couldn\'t reach your backup. It will try again.</string>
+    <string name="tuned_account_sign_out">Sign out of your Tuned account</string>
+    <string name="tuned_account_sign_out_summary">Signs this device out. Your backup and what\'s on this device stay.</string>
+    <!-- The welcome screen's Restore from your Tuned account -->
+    <string name="restore_account">Restore from your Tuned account</string>
+    <string name="restore_account_summary">Bring back your playlists, profiles and settings from another device</string>
+    <string name="restore_account_working">Restoring your playlists, profiles and settings…</string>
+    <string name="restore_account_nothing">This account has no backup yet. Add a playlist instead; once it\'s backed up, your other devices can restore it.</string>
+    <string name="restore_account_no_playlist">Your settings and profiles came back, but the backup has no playlist this device can open. Playlist files stay on the device they were added on. Add a playlist instead.</string>
+    <string name="restore_account_offline">Couldn\'t reach your backup. Check the connection and try again.</string>
+</resources>

@@ -46,6 +46,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import app.tuned.R
 import app.tuned.container
 import app.tuned.core.TvHandoff
+import app.tuned.data.CloudSyncRepository
 import app.tuned.data.SyncCopyRepository
 import app.tuned.data.TvRelay
 import app.tuned.diagnostics.AppLog
@@ -108,6 +109,12 @@ class TvSignInViewModel(
         data object Saving : State
 
         data object Offline : State
+
+        /** The website signed this TV in to a Tuned account and its backup came back: open the app. */
+        data object Restored : State
+
+        /** Signed in to the account, but its backup has no playlist yet. */
+        data object NoBackup : State
     }
 
     private val container = app.container
@@ -150,9 +157,21 @@ class TvSignInViewModel(
                 TvRelay.Taken.Gone -> return null
                 TvRelay.Taken.Unreachable -> if (++misses >= MAX_MISSES) return State.Offline
                 is TvRelay.Taken.Box -> return opened(taken.box, code.code, keys)
+                is TvRelay.Taken.Linked -> return signedInToAccount(taken.link)
             }
         }
         return null
+    }
+
+    /** The website signed this TV in to a Tuned account (docs/decisions/accounts.md): restore its backup. */
+    private suspend fun signedInToAccount(link: String): State {
+        state.value = State.Saving
+        if (!container.cloudSync.account.signIn(link)) return State.Offline
+        return when (container.cloudSync.restore()) {
+            CloudSyncRepository.Restore.RESTORED -> State.Restored
+            CloudSyncRepository.Restore.OFFLINE -> State.Offline
+            else -> State.NoBackup
+        }
     }
 
     private suspend fun opened(
@@ -212,11 +231,34 @@ fun TvSignInScreen(
             contentAlignment = Alignment.TopCenter,
         ) {
             when (val s = state) {
-                TvSignInViewModel.State.Loading -> Busy(stringResource(R.string.tv_signin_waiting))
-                TvSignInViewModel.State.Saving -> Busy(stringResource(R.string.tv_signin_saving))
-                TvSignInViewModel.State.Offline -> Offline(onRetry = vm::startOver, onType = onBack)
-                is TvSignInViewModel.State.Showing -> Showing(s, onType = onBack)
-                is TvSignInViewModel.State.Arrived -> Arrived(s.summary, onUse = { vm.use(onDone) }, onNotMine = vm::startOver)
+                TvSignInViewModel.State.Loading -> {
+                    Busy(stringResource(R.string.tv_signin_waiting))
+                }
+
+                TvSignInViewModel.State.Saving -> {
+                    Busy(stringResource(R.string.tv_signin_saving))
+                }
+
+                TvSignInViewModel.State.Offline -> {
+                    Offline(onRetry = vm::startOver, onType = onBack)
+                }
+
+                is TvSignInViewModel.State.Showing -> {
+                    Showing(s, onType = onBack)
+                }
+
+                is TvSignInViewModel.State.Arrived -> {
+                    Arrived(s.summary, onUse = { vm.use(onDone) }, onNotMine = vm::startOver)
+                }
+
+                TvSignInViewModel.State.Restored -> {
+                    LaunchedEffect(Unit) { onDone() }
+                    Busy(stringResource(R.string.tv_signin_saving))
+                }
+
+                TvSignInViewModel.State.NoBackup -> {
+                    NoBackup(onType = onBack)
+                }
             }
         }
     }
@@ -263,7 +305,7 @@ private fun Showing(
 
 /** Black on white with a quiet zone, whatever the theme, so every phone camera reads it. */
 @Composable
-private fun Qr(modules: QrModules) {
+internal fun Qr(modules: QrModules) {
     val label = stringResource(R.string.tv_signin_qr)
     Box(
         Modifier
@@ -282,6 +324,14 @@ private fun Qr(modules: QrModules) {
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun NoBackup(onType: () -> Unit) {
+    Column(Modifier.widthIn(max = 560.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        Text(stringResource(R.string.tv_signin_no_backup), style = MaterialTheme.typography.bodyLarge)
+        OutlinedButton(onClick = onType) { Text(stringResource(R.string.tv_signin_type_instead)) }
     }
 }
 

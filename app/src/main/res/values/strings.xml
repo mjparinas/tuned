@@ -65,7 +65,7 @@
     <string name="settings_sign_out">Sign out</string>
     <string name="settings_sign_out_summary">Reset Tuned to how it was when installed</string>
     <string name="settings_sign_out_title">Sign out?</string>
-    <string name="settings_sign_out_confirm">Tuned goes back to how it was when installed. Every playlist and login, the channels and guide, profiles, favourites, settings and PINs are removed, and Trakt and Google Drive are disconnected. Your synced copy in Google Drive stays in your Google account.</string>
+    <string name="settings_sign_out_confirm">Tuned goes back to how it was when installed. Every playlist and login, the channels and guide, profiles, favourites, settings and PINs are removed, and Trakt and your Tuned account are signed out on this device. Your backup stays in your Tuned account.</string>
     <plurals name="settings_sign_out_downloads">
         <item quantity="one">Also delete %1$d download (%2$s)?</item>
         <item quantity="other">Also delete %1$d downloads (%2$s)?</item>
