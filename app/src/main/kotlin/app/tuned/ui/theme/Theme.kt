@@ -95,7 +95,8 @@ private class Tones(
 
 private val accents =
     mapOf(
-        Accent.BLUE to Tones(0xFF1F5FD6, 0xFFD9E2FF, 0xFF001A43, 0xFFB0C6FF, 0xFF002D6E, 0xFF00449B, 0xFFD9E2FF),
+        // Blue's light tone was 0xFF1F5FD6, 4.4:1 on the darkest card colour; this one is 5:1 (Melvin, 2026-11-19).
+        Accent.BLUE to Tones(0xFF1B57C4, 0xFFD9E2FF, 0xFF001A43, 0xFFB0C6FF, 0xFF002D6E, 0xFF00449B, 0xFFD9E2FF),
         Accent.TEAL to Tones(0xFF006B5C, 0xFF9FF2DF, 0xFF00201B, 0xFF5FDCC3, 0xFF00382F, 0xFF005045, 0xFF9FF2DF),
         Accent.GREEN to Tones(0xFF386A20, 0xFFB8F397, 0xFF042100, 0xFF9CD67D, 0xFF0B3900, 0xFF205107, 0xFFB8F397),
         Accent.ORANGE to Tones(0xFF9A4600, 0xFFFFDBC8, 0xFF321300, 0xFFFFB68B, 0xFF532200, 0xFF763300, 0xFFFFDBC8),
@@ -160,6 +161,16 @@ val TunedShapes =
         extraLarge = RoundedCornerShape(32.dp),
     )
 
+/** Tuned's own colours (not the wallpaper's) for a theme, accent and pure black, as [TunedTheme] uses them. */
+internal fun tunedScheme(
+    dark: Boolean,
+    accent: Accent,
+    pureBlack: Boolean,
+): ColorScheme {
+    val scheme = if (dark) Dark.withAccent(accent, dark = true) else Light.withAccent(accent, dark = false)
+    return if (dark && pureBlack) scheme.pureBlack() else scheme
+}
+
 @Composable
 fun isDark(mode: ThemeMode): Boolean = when (mode) {
     ThemeMode.SYSTEM -> isSystemInDarkTheme()
@@ -178,18 +189,10 @@ fun TunedTheme(
     val dark = isDark(mode)
     val context = LocalContext.current
     var scheme =
-        when {
-            dynamicColour && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
-                if (dark) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
-            }
-
-            dark -> {
-                Dark.withAccent(accent, dark = true)
-            }
-
-            else -> {
-                Light.withAccent(accent, dark = false)
-            }
+        if (dynamicColour && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            if (dark) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
+        } else {
+            tunedScheme(dark, accent, pureBlack = false)
         }
     if (dark && pureBlack) scheme = scheme.pureBlack()
     MaterialTheme(colorScheme = scheme, typography = TunedType, shapes = TunedShapes, content = content)
