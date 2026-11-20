@@ -2,7 +2,10 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
+    ago,
     fileName,
+    fillLogin,
+    fromAppCopy,
     filterChannels,
     gridPlace,
     gridSlots,
@@ -181,4 +184,63 @@ test("a channel's .m3u file opens in any player, and names are safe for files", 
     assert.equal(text, '#EXTM3U\n#EXTINF:-1 tvg-id="a.ca" group-title="News",A   B C\nhttp://p/1.ts\n');
     assert.equal(fileName('TSN 1: "HD"/East'), "TSN 1 HD East.m3u");
     assert.equal(fileName(""), "channel.m3u");
+});
+
+test("the app's copy becomes channels and a guide, with the login put back", () => {
+    const copy = {
+        v: 1,
+        playlist: "74d5b50ccf496f21",
+        savedAt: 1_795_201_200_000,
+        channels: [
+            ["CBC", "Canada", "http://i/cbc.png", "cbc.ca", 1, "http://p:8080/live/{login}/1.ts"],
+            ["Odd", "", "", "", 0, "http://p/play?username={user}&password={pass}"],
+            ["Plain", "News", "", "", 3, "http://other/stream.m3u8"],
+            "not a channel",
+        ],
+        guide: {
+            "cbc.ca": [
+                [1_795_204_800, 1_795_208_400, "Later"],
+                [1_795_201_200, 1_795_204_800, "Now"],
+            ],
+            bad: "x",
+        },
+    };
+    const read = fromAppCopy(copy, { username: "me@x", password: "a/b" });
+    assert.deepEqual(
+        read.channels.map((c) => c.url),
+        ["http://p:8080/live/me%40x/a%2Fb/1.ts", "http://p/play?username=me%40x&password=a%2Fb", "http://other/stream.m3u8"],
+    );
+    assert.deepEqual(read.channels[0], {
+        name: "CBC",
+        group: "Canada",
+        logo: "http://i/cbc.png",
+        epgId: "cbc.ca",
+        number: "1",
+        url: "http://p:8080/live/me%40x/a%2Fb/1.ts",
+    });
+    assert.equal(read.channels[1].number, "");
+    assert.deepEqual(
+        read.guide.get("cbc.ca").map((p) => [p.title, p.start]),
+        [
+            ["Now", 1_795_201_200_000],
+            ["Later", 1_795_204_800_000],
+        ],
+    );
+    assert.equal(read.guide.has("bad"), false);
+    assert.equal(read.savedAt, 1_795_201_200_000);
+    // Without the login, the links that need it are left out rather than broken.
+    assert.deepEqual(
+        fromAppCopy(copy, null).channels.map((c) => c.name),
+        ["Plain"],
+    );
+    assert.equal(fromAppCopy({ v: 2 }, null), null);
+    assert.equal(fillLogin("http://a/b", null), "http://a/b");
+});
+
+test("how long ago, in words", () => {
+    const now = 10 * 86_400_000;
+    assert.equal(ago(now - 10_000, now), "just now");
+    assert.equal(ago(now - 60_000, now), "1 minute ago");
+    assert.equal(ago(now - 3 * 3_600_000, now), "3 hours ago");
+    assert.equal(ago(now - 3 * 86_400_000, now), "3 days ago");
 });

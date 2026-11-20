@@ -146,6 +146,8 @@ data class RemoteFlags(
     val channelScan: Boolean = true,
     val downloads: Boolean = true,
     val cast: Boolean = true,
+    /** The website's provider check and Channels and guide page; the app shares its channel list only while it's on. */
+    val webPlayer: Boolean = false,
     val usageBatchMinutes: Int = 60,
     val minVersionCode: Int = 0,
 ) {
@@ -183,6 +185,7 @@ data class RemoteFlags(
                 channelScan = bool("channel_scan", d.channelScan),
                 downloads = bool("downloads", d.downloads),
                 cast = bool("cast", d.cast),
+                webPlayer = bool("web_player", d.webPlayer),
                 usageBatchMinutes = int("usage_batch_minutes", d.usageBatchMinutes, BATCH_MINUTES),
                 minVersionCode = int("min_version_code", d.minVersionCode, VERSION_CODES),
             )

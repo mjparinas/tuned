@@ -31,7 +31,7 @@ When you sign in on a TV with your phone, the TV makes a one-time key and shows 
 
 An account is optional: watching never needs one. If you sign in with Google on the Tuned website or in the app, Tuned's service stores your email address and name from Google, the devices you sign in (the name Android gives them, such as "Pixel 8", the kind of device, a scrambled device ID and when each was last used), and what you bought. Payments on the website are handled by Stripe, and Tuned never sees your card.
 
-If you turn on backup, the service keeps your saved playlists (including their logins), settings, profiles, favourites, lists and watch later, so a new device can restore them. The backup isn't encrypted by Tuned. It is reachable only by devices signed in to your account, and the last 5 versions are kept.
+If you turn on backup, the service keeps your saved playlists (including their logins), settings, profiles, favourites, lists and watch later, so a new device can restore them. The backup isn't encrypted by Tuned. It is reachable only by devices signed in to your account, and the last 5 versions are kept. While you're signed in, the app also keeps a copy of the live channel list and the next 12 hours of guide of the playlist it is using in your account, without the playlist's password, so the website's Channels and guide page can show them and a new device can start from them; it goes with the backup when you delete it. Streams never pass through Tuned's service.
 
 You can remove a device, delete your backup, or delete your whole account on the account page at any time. Deleting the account deletes all of this and cancels a yearly plan bought on the website.
 

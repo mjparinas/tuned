@@ -63,3 +63,16 @@ CREATE TABLE IF NOT EXISTS webhook_events (
     id text PRIMARY KEY,
     received_at timestamptz NOT NULL DEFAULT now()
 );
+
+-- Each playlist's live channels and next 12 hours of guide, sent by the app for the website's Channels and guide page
+-- (docs/decisions/web.md › The app's copy): gzipped JSON in base64, the newest per playlist, a few playlists per account.
+CREATE TABLE IF NOT EXISTS channel_lists (
+    account_id uuid NOT NULL REFERENCES accounts (id) ON DELETE CASCADE,
+    playlist_id text NOT NULL,
+    data text NOT NULL,
+    size integer NOT NULL,
+    channels integer NOT NULL,
+    device_name text NOT NULL,
+    saved_at timestamptz NOT NULL DEFAULT now(),
+    PRIMARY KEY (account_id, playlist_id)
+);
