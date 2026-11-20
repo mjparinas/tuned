@@ -25,6 +25,7 @@ import com.tunedplayer.app.core.ContentKind
 import com.tunedplayer.app.core.HiddenGroups
 import com.tunedplayer.app.data.AppSettings
 import com.tunedplayer.app.data.db.GroupCount
+import com.tunedplayer.app.data.hiddenCountries
 import com.tunedplayer.app.diagnostics.launchSafely
 import com.tunedplayer.app.ui.common.BackTopBar
 import kotlinx.coroutines.flow.SharingStarted
@@ -46,7 +47,7 @@ class HiddenGroupsViewModel(
     val groups: StateFlow<Map<ContentKind, List<GroupCount>>> =
         container.settings.settings
             .filterNotNull()
-            .map { it.hiddenRegions.sorted() to it.showAdult }
+            .map { it.hiddenCountries().sorted() to it.showAdult }
             .distinctUntilChanged()
             .flatMapLatest { (regions, adult) ->
                 val items = container.db.items()

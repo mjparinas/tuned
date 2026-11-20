@@ -88,6 +88,15 @@ class SettingsScreenshots : Screenshots() {
         settings = DARK.copy(hiddenRegions = setOf("DE", "EXYU")),
     )
 
+    /** Only Canada and the United States on: English shows which, and "EN" has no row of its own (it follows them). */
+    @Test
+    fun countriesUsCanada() = shot(
+        "settings-countries-us-canada",
+        RegionSettingsRoute,
+        wait = text(R.string.settings_countries),
+        settings = DARK.copy(hiddenRegions = SampleData.allButUsCanada, seenRegions = SampleData.regions),
+    )
+
     @Test
     fun signOut() = shot(
         "settings-sign-out",
