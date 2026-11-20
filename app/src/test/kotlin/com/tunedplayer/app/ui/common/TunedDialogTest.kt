@@ -1,7 +1,9 @@
 package com.tunedplayer.app.ui.common
 
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.test.junit4.createComposeRule
@@ -70,7 +72,9 @@ class TunedDialogTest {
                 onDismissRequest = {},
                 confirmButton = { TextButton(onClick = {}) { Text("OK") } },
                 title = { Text("Sign out?") },
-                text = { Text(LONG) },
+                // Filling the card's width, so the text's edges are the card's less its padding: Robolectric's stand-in
+                // fonts measure the message far narrower than a real one.
+                text = { Text(LONG, Modifier.fillMaxWidth()) },
                 maxWidth = maxWidth,
             )
         }

@@ -17,11 +17,16 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
+import org.robolectric.annotation.GraphicsMode
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 
-/** A sign-in code never wraps (Melvin, 2026-11-20: "I don't ever want to see the code text wrapped to the next line"). */
+/**
+ * A sign-in code never wraps (Melvin, 2026-11-20: "I don't ever want to see the code text wrapped to the next line").
+ * Drawn with real fonts, as the screenshots are: Robolectric's stand-in fonts make any code fit, wrapped or not.
+ */
 @RunWith(RobolectricTestRunner::class)
+@GraphicsMode(GraphicsMode.Mode.NATIVE)
 @Config(sdk = [35], qualifiers = "w411dp-h891dp-xxhdpi")
 class OneLineCodeTest {
     @get:Rule
