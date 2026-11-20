@@ -370,6 +370,14 @@
     <string name="premium_devices_confirm_title">Deactivate %1$s?</string>
     <string name="premium_devices_confirm_this">Premium turns off on this device and its spot is free for another. You can turn it back on here while a spot is free.</string>
     <string name="premium_devices_confirm_other">Premium turns off on that device and its spot is free for another.</string>
+    <string name="premium_more_title">More devices</string>
+    <plurals name="premium_more_once_lead">
+        <item quantity="one">Add Premium to %1$d more device for %2$s, paid once.</item>
+        <item quantity="other">Add Premium to up to %1$d more devices for %2$s each, paid once. You choose how many on the next screen.</item>
+    </plurals>
+    <string name="premium_more_yearly_lead">Add Premium to one more device for %1$s a year.</string>
+    <string name="premium_more_buy_once">Add devices · %1$s each</string>
+    <string name="premium_more_buy_yearly">Add a device · %1$s a year</string>
     <string name="premium_devices_unreachable">Couldn\'t reach the device list. Try again in a moment.</string>
     <string name="settings_check_updates">Look for updates automatically</string>
     <string name="settings_check_updates_summary">Check GitHub for new versions when Tuned opens (at most hourly) and during background refreshes</string>

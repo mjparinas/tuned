@@ -48,6 +48,7 @@ import app.tuned.R
 import app.tuned.container
 import app.tuned.core.TvHandoff
 import app.tuned.data.CloudSyncRepository
+import app.tuned.data.HandoffAccount
 import app.tuned.data.SyncCopyRepository
 import app.tuned.data.TvRelay
 import app.tuned.diagnostics.AppLog
@@ -167,7 +168,7 @@ class TvSignInViewModel(
     /** The website signed this TV in to a Tuned account (docs/decisions/accounts.md): restore its backup. */
     private suspend fun signedInToAccount(link: String): State {
         state.value = State.Saving
-        if (!container.cloudSync.account.signIn(link)) return State.Offline
+        if (!container.tunedAccount.signIn(link)) return State.Offline
         return when (container.cloudSync.restore()) {
             CloudSyncRepository.Restore.RESTORED -> State.Restored
             CloudSyncRepository.Restore.OFFLINE -> State.Offline
@@ -196,6 +197,10 @@ class TvSignInViewModel(
         state.value = State.Saving
         viewModelScope.launchSafely(TAG) {
             if (container.phoneSignIn.take(arrived.plain)) {
+                // The phone was signed in to a Tuned account: join it too. Its copy already came, so no restore.
+                HandoffAccount.link(arrived.plain)?.let { link ->
+                    if (!container.tunedAccount.signIn(link)) AppLog.w(TAG, "Couldn't join the phone's Tuned account")
+                }
                 onDone()
             } else {
                 AppLog.w(TAG, "The phone sent no playlist")

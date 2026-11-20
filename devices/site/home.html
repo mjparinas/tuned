@@ -1,0 +1,550 @@
+<!--
+    The landing page's content (docs/decisions/website.md). devices/build-site.mjs puts it inside the shared page and
+    fills in the markers: @features (site/features.mjs), @badges-hero and @badges-soon (the store badges),
+    @download-hero, @latest-posts (the three newest posts), @cta, @feature-count and @version.
+    Screenshots are the app's own screens drawn with sample data (docs/decisions/screenshots.md), in public/img/.
+-->
+<section class="wrap hero">
+    <div>
+        <p class="eyebrow">IPTV player for Android</p>
+        <h1>Your playlist, <span class="grad">tuned in.</span></h1>
+        <p class="lede">
+            Tuned is a fast, quiet player for the TV you already pay for. Add your Xtream Codes login, M3U link or MAC portal, and your
+            channels, guide, films and shows are ready in seconds, on your phone, tablet and Android TV.
+        </p>
+        <div class="actions">
+            <!-- @download-hero -->
+            <a class="button big ghost" href="#features" data-cta="features-hero">See the features</a>
+        </div>
+        <ul class="checks">
+            <li>
+                <svg
+                    viewBox="0 0 24 24"
+                    width="18"
+                    height="18"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2.2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true"
+                >
+                    <path d="m5 12.5 4.5 4.5L19 7.5" /></svg
+                >Free, no ads
+            </li>
+            <li>
+                <svg
+                    viewBox="0 0 24 24"
+                    width="18"
+                    height="18"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2.2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true"
+                >
+                    <path d="m5 12.5 4.5 4.5L19 7.5" /></svg
+                >Phones, tablets and Android TV
+            </li>
+            <li>
+                <svg
+                    viewBox="0 0 24 24"
+                    width="18"
+                    height="18"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2.2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true"
+                >
+                    <path d="m5 12.5 4.5 4.5L19 7.5" /></svg
+                >Version
+                <!-- @version -->
+            </li>
+        </ul>
+        <!-- @badges-hero -->
+    </div>
+    <div class="hero-shots">
+        <div class="phone">
+            <img
+                src="/img/live-tv.webp"
+                alt="Tuned's Live TV on a phone: channels with what's on now, favourites and quick filters"
+                width="600"
+                height="1301"
+                fetchpriority="high"
+            />
+        </div>
+    </div>
+</section>
+
+<section class="facts" aria-label="Tuned at a glance">
+    <dl class="wrap">
+        <div>
+            <dt>ways to add a playlist</dt>
+            <dd>4</dd>
+        </div>
+        <div>
+            <dt>features, and counting</dt>
+            <dd><!-- @feature-count --></dd>
+        </div>
+        <div>
+            <dt>stream connection at a time</dt>
+            <dd>1</dd>
+        </div>
+        <div>
+            <dt>ads, ever</dt>
+            <dd>0</dd>
+        </div>
+    </dl>
+</section>
+
+<section class="section" aria-labelledby="how">
+    <div class="wrap">
+        <p class="eyebrow">How it works</p>
+        <h2 id="how" class="section-title">From login to live TV in a minute</h2>
+        <ol class="steps">
+            <li>
+                <span class="num" aria-hidden="true">1</span>
+                <h3>Add your playlist</h3>
+                <p class="muted">
+                    Type the login from your TV provider, paste a link, pick a file or enter a MAC portal. On a TV, scan a code and type it
+                    on your phone instead.
+                </p>
+            </li>
+            <li>
+                <span class="num" aria-hidden="true">2</span>
+                <h3>Tuned keeps it on the device</h3>
+                <p class="muted">
+                    Channels, the guide, films and shows are saved on the device and refreshed in the background, so the app opens straight
+                    to them.
+                </p>
+            </li>
+            <li>
+                <span class="num" aria-hidden="true">3</span>
+                <h3>Watch anywhere</h3>
+                <p class="muted">
+                    On the phone, a tablet, Android TV, or cast to the big screen. Your login stays encrypted on the device.
+                </p>
+            </li>
+        </ol>
+    </div>
+</section>
+
+<section class="section" aria-labelledby="tour">
+    <div class="wrap">
+        <p class="eyebrow">A closer look</p>
+        <h2 id="tour" class="section-title">Clean, quick, and out of your way</h2>
+        <p class="lede">Every screen is made to get you watching. No pop-ups, no clutter, and nothing waits on the network.</p>
+
+        <article class="showcase">
+            <div class="copy">
+                <p class="eyebrow">Live TV</p>
+                <h3>Every channel, and what's on now</h3>
+                <p class="muted">
+                    Your channels open at once from the device, with the programme on now and how far through it is. Flip to the full grid
+                    guide, filter by sport, news or country, or type a channel number on the remote.
+                </p>
+                <ul>
+                    <li>
+                        <span class="tick"
+                            ><svg
+                                viewBox="0 0 24 24"
+                                width="18"
+                                height="18"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="2.2"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                aria-hidden="true"
+                            >
+                                <path d="m5 12.5 4.5 4.5L19 7.5" /></svg></span
+                        >Grid guide, reminders and live events
+                    </li>
+                    <li>
+                        <span class="tick"
+                            ><svg
+                                viewBox="0 0 24 24"
+                                width="18"
+                                height="18"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="2.2"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                aria-hidden="true"
+                            >
+                                <path d="m5 12.5 4.5 4.5L19 7.5" /></svg></span
+                        >Pause, rewind and record live TV
+                    </li>
+                    <li>
+                        <span class="tick"
+                            ><svg
+                                viewBox="0 0 24 24"
+                                width="18"
+                                height="18"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="2.2"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                aria-hidden="true"
+                            >
+                                <path d="m5 12.5 4.5 4.5L19 7.5" /></svg></span
+                        >Switches to a backup copy when a channel dies
+                    </li>
+                </ul>
+            </div>
+            <div class="shots">
+                <div class="phone">
+                    <img src="/img/live-tv.webp" alt="Live TV with favourites and filters" width="600" height="1301" loading="lazy" />
+                </div>
+                <div class="phone">
+                    <img src="/img/guide.webp" alt="A channel's guide with reminders" width="600" height="1301" loading="lazy" />
+                </div>
+            </div>
+        </article>
+
+        <article class="showcase flip">
+            <div class="copy">
+                <p class="eyebrow">Movies and shows</p>
+                <h3>A real library, not a list of links</h3>
+                <p class="muted">
+                    Posters, ratings, summaries and trailers, real episode names instead of S1 E1, actor pages, and Continue watching across
+                    everything.
+                </p>
+                <ul>
+                    <li>
+                        <span class="tick"
+                            ><svg
+                                viewBox="0 0 24 24"
+                                width="18"
+                                height="18"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="2.2"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                aria-hidden="true"
+                            >
+                                <path d="m5 12.5 4.5 4.5L19 7.5" /></svg></span
+                        >Skip intro, next episode and Watch later
+                    </li>
+                    <li>
+                        <span class="tick"
+                            ><svg
+                                viewBox="0 0 24 24"
+                                width="18"
+                                height="18"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="2.2"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                aria-hidden="true"
+                            >
+                                <path d="m5 12.5 4.5 4.5L19 7.5" /></svg></span
+                        >Download a film or a whole season for the plane
+                    </li>
+                    <li>
+                        <span class="tick"
+                            ><svg
+                                viewBox="0 0 24 24"
+                                width="18"
+                                height="18"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="2.2"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                aria-hidden="true"
+                            >
+                                <path d="m5 12.5 4.5 4.5L19 7.5" /></svg></span
+                        >Your history on Trakt
+                    </li>
+                </ul>
+            </div>
+            <div class="shots">
+                <div class="phone">
+                    <img src="/img/shows.webp" alt="Shows with Continue watching and posters" width="600" height="1301" loading="lazy" />
+                </div>
+                <div class="phone">
+                    <img src="/img/downloads.webp" alt="Downloads, grouped by show" width="600" height="1301" loading="lazy" />
+                </div>
+            </div>
+        </article>
+
+        <article class="showcase">
+            <div class="copy">
+                <p class="eyebrow">The player</p>
+                <h3>Just the picture, until you tap</h3>
+                <p class="muted">
+                    The player starts fast and shows only video. A tap brings the time, the stream's details and the tools, each its own
+                    button: cast, record, channels, quality, fit and lock.
+                </p>
+                <ul>
+                    <li>
+                        <span class="tick"
+                            ><svg
+                                viewBox="0 0 24 24"
+                                width="18"
+                                height="18"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="2.2"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                aria-hidden="true"
+                            >
+                                <path d="m5 12.5 4.5 4.5L19 7.5" /></svg></span
+                        >Captions styled your way, and subtitle search
+                    </li>
+                    <li>
+                        <span class="tick"
+                            ><svg
+                                viewBox="0 0 24 24"
+                                width="18"
+                                height="18"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="2.2"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                aria-hidden="true"
+                            >
+                                <path d="m5 12.5 4.5 4.5L19 7.5" /></svg></span
+                        >Cast to Chromecast and DLNA TVs
+                    </li>
+                    <li>
+                        <span class="tick"
+                            ><svg
+                                viewBox="0 0 24 24"
+                                width="18"
+                                height="18"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="2.2"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                aria-hidden="true"
+                            >
+                                <path d="m5 12.5 4.5 4.5L19 7.5" /></svg></span
+                        >Picture-in-picture and background play
+                    </li>
+                </ul>
+            </div>
+            <div class="shots">
+                <div class="screen">
+                    <img
+                        src="/img/player.webp"
+                        alt="The player's controls over an episode, with its picture size, frame rate and sound"
+                        width="1200"
+                        height="554"
+                        loading="lazy"
+                    />
+                </div>
+            </div>
+        </article>
+
+        <article class="showcase flip">
+            <div class="copy">
+                <p class="eyebrow">Android TV</p>
+                <h3>Made for the remote</h3>
+                <p class="muted">
+                    The same app on Android TV and Google TV, with clear focus, channel numbers, and the guide on the big screen. Sign in by
+                    scanning a code with your phone instead of typing with the remote.
+                </p>
+                <ul>
+                    <li>
+                        <span class="tick"
+                            ><svg
+                                viewBox="0 0 24 24"
+                                width="18"
+                                height="18"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="2.2"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                aria-hidden="true"
+                            >
+                                <path d="m5 12.5 4.5 4.5L19 7.5" /></svg></span
+                        >Matches the TV to the video's frame rate
+                    </li>
+                    <li>
+                        <span class="tick"
+                            ><svg
+                                viewBox="0 0 24 24"
+                                width="18"
+                                height="18"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="2.2"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                aria-hidden="true"
+                            >
+                                <path d="m5 12.5 4.5 4.5L19 7.5" /></svg></span
+                        >Lighter mode for slower TV boxes
+                    </li>
+                    <li>
+                        <span class="tick"
+                            ><svg
+                                viewBox="0 0 24 24"
+                                width="18"
+                                height="18"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="2.2"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                aria-hidden="true"
+                            >
+                                <path d="m5 12.5 4.5 4.5L19 7.5" /></svg></span
+                        >Your playlists and settings follow you with a Tuned account
+                    </li>
+                </ul>
+            </div>
+            <div class="shots">
+                <div class="screen">
+                    <img
+                        src="/img/tv.webp"
+                        alt="Live TV on Android TV, with a side rail and the channel list"
+                        width="1200"
+                        height="675"
+                        loading="lazy"
+                    />
+                </div>
+            </div>
+        </article>
+
+        <article class="showcase">
+            <div class="copy">
+                <p class="eyebrow">For the whole home</p>
+                <h3>Everyone gets their own</h3>
+                <p class="muted">
+                    Up to six profiles, each with its own favourites, history and picture. Kids profiles and PINs keep the right things in
+                    front of the right people, and widgets put favourite channels on the home screen.
+                </p>
+            </div>
+            <div class="shots">
+                <div class="phone">
+                    <img src="/img/profiles.webp" alt="Who's watching, with two profiles" width="600" height="1301" loading="lazy" />
+                </div>
+                <div class="phone">
+                    <img
+                        src="/img/widgets.webp"
+                        alt="Favourite channels and Continue watching widgets"
+                        width="600"
+                        height="1301"
+                        loading="lazy"
+                    />
+                </div>
+            </div>
+        </article>
+    </div>
+</section>
+
+<section class="section" id="features" aria-labelledby="all-features">
+    <div class="wrap">
+        <p class="eyebrow">Features</p>
+        <h2 id="all-features" class="section-title">Everything in Tuned</h2>
+        <p class="lede">
+            All
+            <!-- @feature-count -->
+            features, in one place. Tuned is customizable too: most of what it does has a setting, with the common choice already picked.
+        </p>
+        <div class="feature-grid">
+            <!-- @features -->
+        </div>
+        <p class="premium-note muted">
+            <span class="pill">Premium</span> marks what Tuned Premium unlocks in the Google Play version. The Android APK from GitHub has
+            everything, free.
+        </p>
+    </div>
+</section>
+
+<section class="section" id="download" aria-labelledby="soon">
+    <div class="wrap">
+        <p class="eyebrow">Coming soon</p>
+        <h2 id="soon" class="section-title">Tuned is coming to more screens</h2>
+        <p class="lede">
+            Tuned is on Android phones, tablets and Android TV today. Apps for Samsung TVs, iPhone and iPad, and the Mac are on the way.
+        </p>
+        <div class="soon-card">
+            <ul class="platforms">
+                <li><b>Google Play</b><span>Coming soon</span></li>
+                <li><b>Samsung TV</b><span>Coming soon</span></li>
+                <li><b>iPhone and iPad</b><span>Coming soon</span></li>
+                <li><b>Mac</b><span>Coming soon</span></li>
+            </ul>
+            <!-- @badges-soon -->
+        </div>
+    </div>
+</section>
+
+<section class="section" aria-labelledby="faq">
+    <div class="wrap">
+        <p class="eyebrow">Questions</p>
+        <h2 id="faq" class="section-title">Good to know</h2>
+        <div class="faq">
+            <details>
+                <summary>Does Tuned come with channels?</summary>
+                <p class="muted">
+                    No. Tuned is a player: it plays the playlist from your own TV provider, through an Xtream Codes login, an M3U link or
+                    file, or a MAC portal. It doesn't sell or include any channels.
+                </p>
+            </details>
+            <details>
+                <summary>Is it free?</summary>
+                <p class="muted">
+                    Yes. The Android APK from GitHub is free, with every feature and no ads. The Google Play version, when it arrives, will
+                    be free too, with an optional Premium upgrade.
+                </p>
+            </details>
+            <details>
+                <summary>Which devices does it run on?</summary>
+                <p class="muted">
+                    Android phones and tablets on Android 8.0 or later, and Android TV and Google TV. Samsung TV, iPhone, iPad and Mac apps
+                    are coming soon.
+                </p>
+            </details>
+            <details>
+                <summary>How do I install the APK?</summary>
+                <p class="muted">
+                    Download it on your device, open it, and allow installs from your browser when Android asks. After that Tuned offers
+                    each new version itself.
+                </p>
+            </details>
+            <details>
+                <summary>Is my login safe?</summary>
+                <p class="muted">
+                    Your login is encrypted on the device and stays there until you sign out. It never goes in the app's log. If you turn on
+                    a Tuned account, its backup carries your playlists to your other devices.
+                </p>
+            </details>
+            <details>
+                <summary>Will it get my account blocked for streaming twice?</summary>
+                <p class="muted">
+                    Tuned only ever opens one stream connection. The old stream closes before the next opens, nothing loads ahead, and
+                    downloads wait while you watch.
+                </p>
+            </details>
+        </div>
+    </div>
+</section>
+
+<section class="section" aria-labelledby="latest">
+    <div class="wrap">
+        <div class="section-head" style="margin-top: 0">
+            <h2 id="latest" class="section-title">From the blog</h2>
+            <a class="more" href="/blog/">All posts ›</a>
+        </div>
+        <ul class="post-grid">
+            <!-- @latest-posts -->
+        </ul>
+        <!-- @cta -->
+    </div>
+</section>

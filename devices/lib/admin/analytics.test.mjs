@@ -47,7 +47,7 @@ test("a report needs words or a crash, and is capped", () => {
     assert.equal(report.install, install);
 });
 
-const req = (headers = {}, url = "https://tuned-devices.vercel.app/api/pv") => new Request(url, { method: "POST", headers });
+const req = (headers = {}, url = "https://www.tunedplayer.com/api/pv") => new Request(url, { method: "POST", headers });
 const chrome = "Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Mobile Safari/537.36";
 
 test("page views keep the referrer's host only, and skip bots and Global Privacy Control", () => {
@@ -57,10 +57,7 @@ test("page views keep the referrer's host only, and skip bots and Global Privacy
     assert.equal(cleanPageView({ path: "/" }, req({ "user-agent": "Googlebot/2.1" })), null);
     assert.equal(cleanPageView({ path: "/" }, req({ "user-agent": chrome, "sec-gpc": "1" })), null);
     assert.equal(cleanPageView({ path: "https://evil" }, req({ "user-agent": chrome })), null);
-    assert.equal(
-        cleanPageView({ path: "/", referrer: "https://tuned-devices.vercel.app/tv" }, req({ "user-agent": chrome })).referrer,
-        null,
-    );
+    assert.equal(cleanPageView({ path: "/", referrer: "https://www.tunedplayer.com/tv" }, req({ "user-agent": chrome })).referrer, null);
 });
 
 test("a visitor hash changes each day and never holds the address", () => {

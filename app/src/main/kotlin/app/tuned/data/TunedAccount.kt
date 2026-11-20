@@ -3,9 +3,13 @@ package app.tuned.data
 import android.content.Context
 import androidx.core.content.edit
 import app.tuned.BuildConfig
+import app.tuned.core.AccountSeats
+import app.tuned.core.DeviceSeats
+import app.tuned.core.SeatDevice
 import app.tuned.diagnostics.AppLog
 import app.tuned.diagnostics.attempt
 import app.tuned.premium.DeviceSeatsClient
+import app.tuned.premium.SeatPurchase
 import app.tuned.work.TvHome
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -20,6 +24,22 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 import java.io.IOException
+
+/**
+ * What the account says about Premium on its devices (docs/decisions/accounts.md): this device's [seat] ("active",
+ * "full", "none" or "released"), the Premium kind ("lifetime", "yearly" or null), how many devices it covers, how
+ * many more seats it can take, the devices holding seats, and which reported purchases ([recorded], as hashes of
+ * their tokens) it holds.
+ */
+data class AccountPlan(
+    val seat: String,
+    val premium: String?,
+    val limit: Int,
+    val canBuy: Int,
+    val devices: List<SeatDevice>,
+    val recorded: List<String>,
+    val ownsYearlySeat: Boolean,
+)
 
 /**
  * The person's Tuned account (docs/decisions/accounts.md): signed in with Google on Tuned's website, which hands this
@@ -134,6 +154,43 @@ class TunedAccount(
         }
     }
 
+    /**
+     * Asks the account for this device's Premium seat ([use] true) or gives it back ([use] false), reporting the
+     * store's [purchases] so the account knows what was bought in Play. Null when signed out or the server can't be
+     * reached, which never locks anyone out.
+     */
+    suspend fun seat(
+        use: Boolean,
+        purchases: List<SeatPurchase>,
+    ): AccountPlan? {
+        val ask = SeatAsk(use, purchases.map { Bought(it.productId, it.token) })
+        return seats(authorized(post("api/account/seat", json.encodeToString(SeatAsk.serializer(), ask))))
+    }
+
+    /** Removes another device from the account, which signs it out and frees its seat. Null when it couldn't. */
+    suspend fun removeDevice(id: String): AccountPlan? =
+        seats(authorized(post("api/account/devices", json.encodeToString(RemoveAsk.serializer(), RemoveAsk(id)))))
+
+    private suspend fun seats(request: Request?): AccountPlan? {
+        val (status, text) = send(request ?: return null) ?: return null
+        if (status != HTTP_OK) return null
+        val reply = attempt(TAG, "Couldn't read the account's seats") { json.decodeFromString(SeatReply.serializer(), text) }.getOrNull()
+        return reply?.let {
+            AccountPlan(
+                seat = it.seat,
+                premium = it.premium,
+                limit = it.seats.limit,
+                canBuy = it.seats.canBuy,
+                devices =
+                    it.devices
+                        .filter { device -> device.seated }
+                        .map { device -> SeatDevice(device.id, device.name, device.lastSeen, device.thisDevice) },
+                recorded = it.recorded,
+                ownsYearlySeat = it.purchases.any { bought -> bought.source == "play" && bought.product == AccountSeats.SEAT_YEARLY },
+            )
+        }
+    }
+
     /** Signs this device out of the account, which frees its seat. The backup and other devices are untouched. */
     suspend fun signOut() {
         authorized(post("api/auth/signout", "{}"))?.let { send(it) }
@@ -185,6 +242,54 @@ class TunedAccount(
             answer
         }
     }
+
+    @Serializable
+    private data class SeatAsk(
+        val use: Boolean,
+        val purchases: List<Bought>,
+    )
+
+    @Serializable
+    private data class Bought(
+        val product: String,
+        val token: String,
+    )
+
+    @Serializable
+    private data class RemoveAsk(
+        val remove: String,
+    )
+
+    @Serializable
+    private data class SeatReply(
+        val seat: String = "",
+        val premium: String? = null,
+        val seats: SeatCount = SeatCount(),
+        val devices: List<AccountDevice> = emptyList(),
+        val purchases: List<Owned> = emptyList(),
+        val recorded: List<String> = emptyList(),
+    )
+
+    @Serializable
+    private data class SeatCount(
+        val limit: Int = DeviceSeats.LIMIT,
+        val canBuy: Int = 0,
+    )
+
+    @Serializable
+    private data class AccountDevice(
+        val id: String,
+        val name: String,
+        val seated: Boolean = false,
+        val lastSeen: Long = 0,
+        val thisDevice: Boolean = false,
+    )
+
+    @Serializable
+    private data class Owned(
+        val source: String,
+        val product: String,
+    )
 
     @Serializable
     private data class TokenAsk(

@@ -2,6 +2,7 @@ package app.tuned.premium
 
 import android.app.Activity
 import android.content.Context
+import app.tuned.core.AccountSeats
 import app.tuned.diagnostics.AppLog
 import com.android.billingclient.api.AcknowledgePurchaseParams
 import com.android.billingclient.api.BillingClient
@@ -9,6 +10,7 @@ import com.android.billingclient.api.BillingClient.ProductType
 import com.android.billingclient.api.BillingClientStateListener
 import com.android.billingclient.api.BillingFlowParams
 import com.android.billingclient.api.BillingResult
+import com.android.billingclient.api.ConsumeParams
 import com.android.billingclient.api.PendingPurchasesParams
 import com.android.billingclient.api.ProductDetails
 import com.android.billingclient.api.Purchase
@@ -16,6 +18,7 @@ import com.android.billingclient.api.PurchasesUpdatedListener
 import com.android.billingclient.api.QueryProductDetailsParams
 import com.android.billingclient.api.QueryPurchasesParams
 import com.android.billingclient.api.acknowledgePurchase
+import com.android.billingclient.api.consumePurchase
 import com.android.billingclient.api.queryProductDetails
 import com.android.billingclient.api.queryPurchasesAsync
 import kotlinx.coroutines.suspendCancellableCoroutine
@@ -49,7 +52,11 @@ private class PlayStore(
 
     @Volatile private var found: SeatPurchase? = null
 
+    @Volatile private var all: List<SeatPurchase> = emptyList()
+
     override fun purchase(): SeatPurchase? = found
+
+    override fun purchases(): List<SeatPurchase> = all
 
     private suspend fun ready(): Boolean = connecting.withLock {
         if (client.isReady) return@withLock true
@@ -72,6 +79,7 @@ private class PlayStore(
         if (!ready()) return null
         var owned = false
         var seen: SeatPurchase? = null
+        val every = mutableListOf<SeatPurchase>()
         for (type in listOf(ProductType.INAPP, ProductType.SUBS)) {
             val result = client.queryPurchasesAsync(QueryPurchasesParams.newBuilder().setProductType(type).build())
             if (result.billingResult.responseCode != BillingClient.BillingResponseCode.OK) {
@@ -79,10 +87,14 @@ private class PlayStore(
                 return null
             }
             result.purchasesList
-                .filter { it.purchaseState == Purchase.PurchaseState.PURCHASED && it.products.any { id -> id in PRODUCTS } }
+                .filter { it.purchaseState == Purchase.PurchaseState.PURCHASED && it.products.any { id -> id in SOLD } }
                 .forEach { purchase ->
-                    owned = true
-                    seen = seen ?: SeatPurchase(purchase.products.first { it in PRODUCTS }, purchase.purchaseToken)
+                    val product = purchase.products.first { it in SOLD }
+                    every += SeatPurchase(product, purchase.purchaseToken)
+                    if (product in PRODUCTS) {
+                        owned = true
+                        seen = seen ?: SeatPurchase(product, purchase.purchaseToken)
+                    }
                     // Play refunds a purchase that isn't acknowledged within three days.
                     if (!purchase.isAcknowledged) {
                         val params = AcknowledgePurchaseParams.newBuilder().setPurchaseToken(purchase.purchaseToken).build()
@@ -91,23 +103,47 @@ private class PlayStore(
                 }
         }
         found = seen
+        all = every
         return owned
+    }
+
+    override suspend fun seatOffer(productId: String): Offer? {
+        if (!ready()) return null
+        val type = if (productId == AccountSeats.SEAT_YEARLY) ProductType.SUBS else ProductType.INAPP
+        val product = lookUp(productId, type) ?: return null
+        details = details + (productId to product)
+        return offer(product)
+    }
+
+    override suspend fun consume(token: String) {
+        if (!ready()) return
+        val result = client.consumePurchase(ConsumeParams.newBuilder().setPurchaseToken(token).build())
+        if (result.billingResult.responseCode != BillingClient.BillingResponseCode.OK) {
+            AppLog.w(TAG, "Couldn't consume a seat purchase: ${result.billingResult.debugMessage}")
+        }
+    }
+
+    private suspend fun lookUp(
+        id: String,
+        type: String,
+    ): ProductDetails? {
+        val product =
+            QueryProductDetailsParams.Product
+                .newBuilder()
+                .setProductId(id)
+                .setProductType(type)
+                .build()
+        val params = QueryProductDetailsParams.newBuilder().setProductList(listOf(product)).build()
+        return client.queryProductDetails(params).productDetailsList?.firstOrNull()
     }
 
     override suspend fun offers(): List<Offer> {
         if (!ready()) return emptyList()
         val found =
             listOf(Premium.YEARLY to ProductType.SUBS, Premium.LIFETIME to ProductType.INAPP).mapNotNull { (id, type) ->
-                val product =
-                    QueryProductDetailsParams.Product
-                        .newBuilder()
-                        .setProductId(id)
-                        .setProductType(type)
-                        .build()
-                val params = QueryProductDetailsParams.newBuilder().setProductList(listOf(product)).build()
-                client.queryProductDetails(params).productDetailsList?.firstOrNull()
+                lookUp(id, type)
             }
-        details = found.associateBy { it.productId }
+        details = details + found.associateBy { it.productId }
         return found.mapNotNull(::offer)
     }
 
@@ -143,6 +179,9 @@ private class PlayStore(
     private companion object {
         const val TAG = "Premium"
         val PRODUCTS = setOf(Premium.YEARLY, Premium.LIFETIME)
+
+        /** Premium and the account's extra seats (docs/decisions/accounts.md). */
+        val SOLD = PRODUCTS + setOf(AccountSeats.SEAT_ONCE, AccountSeats.SEAT_YEARLY)
 
         /** An ISO 8601 period such as P7D or P1W, in days. */
         fun days(period: String): Int {
