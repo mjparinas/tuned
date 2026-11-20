@@ -13,6 +13,8 @@ import {
     movieUrl,
     parseM3u,
     parseServer,
+    playlistUrl,
+    isPreviewHost,
     redact,
     streamKind,
     verdict,
@@ -42,8 +44,7 @@ let stopCurrent = () => {};
 
 /** Production follows the admin's web_player flag; preview deployments (signed in to Vercel) and localhost always show it. */
 async function enabled() {
-    const host = location.hostname;
-    if (host === "localhost" || host === "127.0.0.1" || (host.endsWith(".vercel.app") && host !== "tuned-devices.vercel.app")) return true;
+    if (isPreviewHost(location.hostname)) return true;
     try {
         const res = await fetch("/api/flags", { cache: "no-store" });
         return (await res.json())?.flags?.web_player === true;
@@ -522,6 +523,29 @@ async function run(fn) {
     }
 }
 
+let autoLink = "";
+
+/** Switching to Playlist link builds the M3U link from a filled-in Xtream login, unless the person typed their own. */
+function fillLinkFromLogin() {
+    const server = parseServer($("server").value);
+    const username = $("username").value.trim();
+    const password = $("password").value;
+    if (!server || !username || !password) return;
+    const current = $("playlist").value.trim();
+    if (current && current !== autoLink) return;
+    autoLink = playlistUrl(server.base, username, password);
+    $("playlist").value = autoLink;
+}
+
+/** And back: a pasted get.php link fills the empty Xtream fields. */
+function fillLoginFromLink() {
+    const link = parseServer($("playlist").value);
+    if (!link?.username) return;
+    if (!$("server").value.trim()) $("server").value = link.base;
+    if (!$("username").value.trim()) $("username").value = link.username;
+    if (!$("password").value) $("password").value = link.password;
+}
+
 function tabs() {
     const pairs = [
         ["tab-xtream", "xtream"],
@@ -529,6 +553,8 @@ function tabs() {
     ];
     for (const [tab, panel] of pairs)
         $(tab).addEventListener("click", () => {
+            if (panel === "link") fillLinkFromLogin();
+            else fillLoginFromLink();
             for (const [t, p] of pairs) {
                 $(t).setAttribute("aria-selected", String(t === tab));
                 $(p).hidden = p !== panel;
