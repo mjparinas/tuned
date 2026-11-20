@@ -1,12 +1,12 @@
 # Accounts, seats and backups
 
-Melvin, 2026-11-19: a website "with registration, validates number of devices, accepts additional payments for more seats, and stores device backups, and qr codes for set up", replacing Google Drive ("i want to completely deprecate google drive sync"). The plan is `tuned/tuned-accounts-plan.md` in the project files. His answers the same day: accounts are optional, backups aren't encrypted ("i dont want to encrypt backups"), no Drive migration ("i dont have any customers"), the website sells through Stripe, the `github` build gets accounts and backups free with no seat limit, Google is the only sign-in, extra seats come both once and yearly ("do a and b"), and they can't be mixed ("make it so you can't mix lifetime account and yearly seats"). He is getting a domain; until then the site is `tuned-devices.vercel.app`.
+Melvin, 2026-11-19: a website "with registration, validates number of devices, accepts additional payments for more seats, and stores device backups, and qr codes for set up", replacing Google Drive ("i want to completely deprecate google drive sync"). The plan is `tuned/tuned-accounts-plan.md` in the project files. His answers the same day: accounts are optional, backups aren't encrypted ("i dont want to encrypt backups"), no Drive migration ("i dont have any customers"), the website sells through Stripe, the `github` build gets accounts and backups free with no seat limit, Google is the only sign-in, extra seats come both once and yearly ("do a and b"), and they can't be mixed ("make it so you can't mix lifetime account and yearly seats"). The site is `https://www.tunedplayer.com` (see [Domain](#domain)).
 
 **Built:** the server (`devices/`) and, in the app, signing in, the backup in place of Google Drive sync, Drive removed ([sync](sync.md)), seats per account, Play's seat products, and Send to a TV carrying the account.
 
 ## Where things live
 
-The phone and TV keep SQLite (Room): Turso was measured against the app's own database and was about 6 times slower to open Live TV, took 22 minutes instead of 11 seconds to import a large playlist, and couldn't search parts of words. The server is the existing Vercel project `tuned-devices`:
+The phone and TV keep SQLite (Room): Turso was measured against the app's own database and was about 6 times slower to open Live TV, took 22 minutes instead of 11 seconds to import a large playlist, and couldn't search parts of words. The server is the existing Vercel project `tuned`:
 
 - **Postgres on Neon** (`devices/schema.sql`, `lib/db.mjs`, `lib/account-store.mjs`): accounts, their Google sign-ins, devices, purchases (`entitlements`, from Play or Stripe), backups. Neon's HTTP driver (`@neondatabase/serverless`) is the project's one dependency, loaded only when a request needs the database, so the tests need nothing installed. The schema is run by hand once in Neon's SQL editor and is safe to run again.
 - **Upstash Redis** (already there): website sessions, the one-time codes that sign a device in, sign-in state, rate limits, and the TV relay.
@@ -57,9 +57,24 @@ The app's sync copy (everything sync between devices copies today) as plain JSON
 
 `/account` (`public/account/`): sign in with Google, Premium and seats, Your devices with Remove, buying Premium or seats, receipts, the backup's date and Delete backup, Pair a TV, Sign out, and Delete account, which removes the account, its devices, purchase records and backups and cancels a Stripe subscription (a Play subscription is cancelled in Play). Play requires a way to delete an account on the web; this is it.
 
+- **Messages sit in their card** (Melvin, 2026-11-19: "when there is an error, it shouldn't show at the top of the page, it should show in the same tile"). A code, Pair a TV, the device sign-in, Devices, buying, the backup and deleting each answer inside their own card, red with a "!" for an error and teal with a tick when it's done, and the field it's about gets a red outline. Only page-wide news (signed out, account deleted, a failed Google sign-in, a purchase coming through) stays at the top.
+- **Codes are checked before they're sent** ("there should be validation saying that the format is not correct"): a code must be letters, numbers and dashes, 4 to 24 long, the same rule as the server (`lib/admin/codes.mjs`), and a TV's code must be its eight characters (`normalizeCode` in `public/tv/seal.js`), so a typo says so at once without using up a try.
+- **Delete account opens a pop-up** that says what goes and only deletes once "delete" is typed ("the pop up should force the user to type delete"); it replaced pressing the button twice. Cancel, Escape or a tap outside closes it.
+- **Google's own button** (Melvin, 2026-11-19: "use the official google login image for logins"). Sign in with Google on the account page and the admin is Google's branded button from its guidelines: the four-colour G (`public/google.svg`) on white with a grey outline, or on near-black in dark mode, Roboto Medium, pill shaped (`.gsi` in `site.css` and `admin/admin.css`).
+- **Sign in with Apple, coming soon** (Melvin, 2026-11-19: "add that apple login coming soon"). The sign-in card shows a Sign in with Apple button beside Google, in Apple's black style (white on a dark page), greyed out, with "Sign in with Apple is coming soon." under it. Google is still the only sign-in that works; the button gets wired up when Apple sign-in is built.
+- **What Tuned does** (Melvin, 2026-11-19: "on the website, can you help articulate what features tuned has", "after they sign in"): a card on the signed-in account page built from `/features.json`, the same list as the landing page (`site/features.mjs`, [website](website.md)), so there is one list to keep up to date. Each group opens on a tap (the first is open), with Premium items tagged.
+
+## Domain
+
+Melvin, 2026-11-19: "rename the vercel app to tuned", then "website registered: www.tunedplayer.com". The Vercel project is `tuned` (renamed from `tuned-devices`; `tuned.vercel.app` belongs to someone else). The site's address is **`https://www.tunedplayer.com`**; `tunedplayer.com` redirects to it (308), and DNS is at Cloudflare (CNAME to Vercel).
+
+- **`tuned-devices.vercel.app` stays on the project for good, with no redirect.** Tuned 1.13 has it built in for sign-in, backups, TV pairing and the device list, and installed apps can't be changed. A redirect would also drop the `Authorization` header when OkHttp crosses hosts, so the API must keep answering there directly.
+- Builds after 1.13 use the new address (`TV_SIGNIN_URL` in `app/build.gradle.kts`). The phone's app link takes both hosts, `www.tunedplayer.com` and the old one, so a newer phone opens a 1.13 TV's QR code too. The bare `tunedplayer.com` isn't in the app link because it redirects, and on Android 11 and older one unverifiable host stops every host from verifying.
+- Google sign-in sends people back to the address they came from (`/api/auth/callback` on the same origin), so the Google web client lists both `https://tuned-devices.vercel.app/api/auth/callback` and `https://www.tunedplayer.com/api/auth/callback`. The Stripe webhook, when it is set up, goes to `https://www.tunedplayer.com/api/stripe/webhook`.
+
 ## Setting it up (Melvin)
 
-1. Vercel › `tuned-devices` › Storage: add **Neon** (sets `DATABASE_URL`), then run `devices/schema.sql` in its SQL editor. Upstash is still to add too.
+1. Vercel › `tuned` › Storage: add **Neon** (sets `DATABASE_URL`), then run `devices/schema.sql` in its SQL editor. Upstash is still to add too.
 2. Google Cloud: a **Web application** OAuth client with the redirect `https://<site>/api/auth/callback`; its id and secret into `GOOGLE_WEB_CLIENT_ID` and `GOOGLE_WEB_CLIENT_SECRET`.
 3. Stripe: the four prices, the secret key, and a webhook to `https://<site>/api/stripe/webhook` with the five events above.
 4. Play Console: a one-time product `seat_once` (US$4.99, multi-quantity on) and a subscription `seat_yearly` (US$1.99 a year).

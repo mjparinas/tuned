@@ -9,11 +9,11 @@ plugins {
 }
 
 android {
-    namespace = "app.tuned"
+    namespace = "com.tunedplayer.app"
     compileSdk = 37
 
     defaultConfig {
-        applicationId = "app.tuned"
+        applicationId = "com.tunedplayer.app"
         minSdk = 26
         targetSdk = 36
         // Release builds take these from the workflow (run number and package.json), like Liftsmith.
@@ -27,7 +27,7 @@ android {
         // Trakt's app keys (docs/decisions/trakt.md): from the release workflow's secrets, never committed. Without
         // them the Trakt settings stay hidden.
         // Signing in on a TV with a phone (docs/decisions/onboarding.md): the relay and phone page, in both builds.
-        val tvSignIn = System.getenv("TV_SIGNIN_URL")?.trim()?.takeIf { it.isNotEmpty() } ?: "https://tuned-devices.vercel.app"
+        val tvSignIn = System.getenv("TV_SIGNIN_URL")?.trim()?.takeIf { it.isNotEmpty() } ?: "https://www.tunedplayer.com"
         buildConfigField("String", "TV_SIGNIN_URL", "\"$tvSignIn\"")
         buildConfigField("String", "TRAKT_CLIENT_ID", "\"${System.getenv("TRAKT_CLIENT_ID").orEmpty()}\"")
         // The commit this build came from, shown as plain text at the bottom of Settings (Melvin, 2026-11-18). CI and Release
@@ -126,13 +126,13 @@ android {
             // screen with sample data into build/outputs/roborazzi, and runs nothing else. Ordinary runs compile them (so a
             // broken one fails CI) but skip them, since drawing takes longer than the other tests.
             if (project.hasProperty("screenshots")) {
-                test.filter.includeTestsMatching("app.tuned.screenshots.*")
+                test.filter.includeTestsMatching("com.tunedplayer.app.screenshots.*")
                 test.systemProperty("roborazzi.test.record", "true")
                 test.systemProperty("roborazzi.record.filePathStrategy", "relativePathFromRoborazziContextOutputDirectory")
                 // Each test class draws on its own; four at a time on CI's four cores.
                 test.maxParallelForks = Runtime.getRuntime().availableProcessors().coerceIn(1, 4)
             } else {
-                test.exclude("app/tuned/screenshots/**")
+                test.exclude("com/tunedplayer/app/screenshots/**")
             }
         }
     }

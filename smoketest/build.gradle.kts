@@ -6,7 +6,7 @@ plugins {
 }
 
 android {
-    namespace = "app.tuned.smoketest"
+    namespace = "com.tunedplayer.app.smoketest"
     compileSdk = 37
 
     defaultConfig {

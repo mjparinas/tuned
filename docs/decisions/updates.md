@@ -21,6 +21,14 @@ From Horizon Maps' screenshots, which Melvin wanted Settings to look like. Setti
 - It never opens by itself after an update: Tuned has no pop-ups ([AGENTS.md](../../AGENTS.md), "Get out of the way").
 - Store builds have no GitHub release to read, so they show the version without the button.
 
+## Application id (Melvin, 2026-11-19)
+
+The application id and Kotlin package are **`com.tunedplayer.app`** (debug builds `com.tunedplayer.app.debug`), matching the website's domain (Melvin, 2026-11-19: "change the apps package name. should be something like com.tunedplayer.app, change this everywhere"). Releases up to 1.13 were `app.tuned`. It was changed before the first Play upload, because Play fixes an app's id for good once a build is uploaded.
+
+- **Android treats a new id as a different app.** A 1.13 copy's updater still finds the next GitHub release and hands its APK to Android's installer, which installs the new Tuned beside the old one rather than over it. Nothing on the device carries over: open the new app, choose Restore from your Tuned account on the welcome screen (the backup has the playlists, logins, favourites and lists), then uninstall the old app. A copy that never signed in to a Tuned account adds its playlist again.
+- **The server accepts both.** `devices/public/.well-known/assetlinks.json` lists both ids with the same signing key, so the TV sign-in link (`/tv`) keeps opening 1.13 copies and opens the new one. Play purchase checks (`devices/lib/play.mjs`) use the new id only, since nothing was ever sold under the old one.
+- Stored key names (settings, DataStore files, the database) are unchanged; they live inside each app's own storage, so the rename doesn't touch them.
+
 ## Google Play (later)
 
 `release.yml` also builds the `play` App Bundle and uploads it to the Play internal track once `PLAY_SERVICE_ACCOUNT_JSON` exists, with in-app update priority 5. Copies installed from Play ask Play on each start and update straight away (an immediate update), or, where Play allows only a flexible update, download in the background and restart into it. The very first Play upload has to be done by hand in Play Console.

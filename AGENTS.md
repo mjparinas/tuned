@@ -5,7 +5,7 @@ Tuned is a native Android IPTV player. It signs in to an Xtream Codes-style serv
 ## Commands
 
 ```bash
-./gradlew :app:assembleGithubDebug    # debug APK: app/build/outputs/apk/github/debug/app-github-debug.apk (id app.tuned.debug)
+./gradlew :app:assembleGithubDebug    # debug APK: app/build/outputs/apk/github/debug/app-github-debug.apk (id com.tunedplayer.app.debug)
 ./gradlew :core:test                  # parser and rule tests, plain JVM, seconds
 ./gradlew :app:testGithubDebugUnitTest # app unit tests
 ./gradlew spotlessApply               # format Kotlin (ktlint); CI runs spotlessCheck
@@ -23,11 +23,12 @@ Kotlin, Jetpack Compose with Material 3, Navigation Compose (type-safe routes), 
 ## Modules
 
 - `:core`: plain Kotlin, no Android. The M3U and XMLTV parsers, sorting streams into Live TV, Movies and Shows, country detection, episode numbering, Xtream URLs. Anything that can be tested without a device goes here, with a test.
+- Application id and Kotlin package: `com.tunedplayer.app` (Melvin, 2026-11-19; `app.tuned` up to 1.13, a separate app to Android, [updates](docs/decisions/updates.md#application-id-melvin-2026-11-19)).
 - `:app`: the Android app, in two builds ([premium](docs/decisions/premium.md)): `github` (GitHub Releases, updates itself, everything unlocked) and `play` (Google Play and other stores: no self-updater, Premium sold through Play Billing). Neither build fills in a server (Melvin, 2026-11-19). Store builds never name a provider, channel or sports brand, in the app or the listing.
 - `:app` folders: `data/` (Room, DataStore settings, encrypted login, the Tuned account and its backup), `work/` (background refresh), `player/` (PlayerActivity), `ui/` (Compose screens, one screen and its ViewModel per file).
 - `:smoketest`: the github debug app on an emulator: sign in, play, change channel, back, and never two stream connections at once ([diagnostics](docs/decisions/diagnostics.md)).
 - `:fakeprovider`: plain Kotlin, the stand-in provider on the loopback that both device test modules use, with a generated clip and no login.
-- `devices/`: not Gradle. Tuned's server and website on Vercel: accounts with Google sign-in, device seats, Stripe, backups (Postgres on Neon, `devices/schema.sql`), the admin at `/admin` (`devices/lib/admin/`, `devices/schema-admin.sql`, tests in `devices/lib/admin/*.test.mjs`; [admin](docs/decisions/admin.md)), the Premium device list, and the relay and page for signing in on a TV with a phone; plain Node whose one dependency is Neon's driver, tests in `devices/lib/*.test.mjs` ([accounts](docs/decisions/accounts.md), [premium](docs/decisions/premium.md), [onboarding](docs/decisions/onboarding.md)).
+- `devices/`: not Gradle. Tuned's server and website on Vercel: accounts with Google sign-in, device seats, Stripe, backups (Postgres on Neon, `devices/schema.sql`), the admin at `/admin` (`devices/lib/admin/`, `devices/schema-admin.sql`, tests in `devices/lib/admin/*.test.mjs`; [admin](docs/decisions/admin.md)), the Premium device list (`/devices`), the relay and page for signing in on a TV with a phone, and the public landing page and blog built from `devices/site/` by `node devices/build-site.mjs` ([website](docs/decisions/website.md)), all styled like the app from `public/site.css` ([branding](docs/decisions/branding.md#the-website-melvin-2026-11-19)); plain Node whose one dependency is Neon's driver, tests in `devices/lib/*.test.mjs` ([accounts](docs/decisions/accounts.md), [premium](docs/decisions/premium.md), [onboarding](docs/decisions/onboarding.md)).
 - `:baselineprofile`: drives the release app on an emulator to write its baseline profile and measure cold start ([speed](docs/decisions/speed.md)).
 
 ## Product rules
@@ -55,7 +56,7 @@ Kotlin, Jetpack Compose with Material 3, Navigation Compose (type-safe routes), 
 - **Big files are split by area so features land side by side.** Each DAO has its own file in `data/db/` (shared SQL filters in `DaoQueries.kt`), entities are grouped by table (`ItemEntities.kt`, `LibraryEntities.kt` and so on), the Home screen's tabs have their own files (`LiveList.kt`, `Grids.kt`, `Posters.kt`), and `AppContainer.kt` only builds the app's shared objects; switching, removing and signing out of playlists is `PlaylistSession`. Put new code in the file for its area rather than growing a shared one. Two pull requests that both bump the database version: the one that merges second renumbers its migration and schema file when it merges `staging` in.
 - **A new screen** is a route and a `composable<…>` in its feature's navigation file (`ui/PlaylistNav.kt`, `ui/BrowseNav.kt`, `ui/SettingsNav.kt`), not in `MainActivity`. Moves several screens share (play, tune, open a person, go home) are on `AppNav`.
 - **A player feature** lives in its own file in `player/` (as `SkipIntro`, `Backups`, `SubtitleSearch`, `PlaybackProgress` and `PlayerMedia` do), and `PlayerActivity` only creates it and calls its hooks, so the activity grows by a few lines per feature rather than by the feature.
-- **Screenshots for every new feature** (Melvin, 2026-11-18: "i would like to see screenshots for all new features posted in these chats"; [screenshots](docs/decisions/screenshots.md)). A pull request that changes what a person sees adds or updates its picture in `app/src/test/kotlin/app/tuned/screenshots/` (a route and the text to wait for), adds the `screenshots` label, and posts the pictures from the `screenshots/<branch>` branch in its thread. They are drawn on the JVM in minutes; no build or emulator.
+- **Screenshots for every new feature** (Melvin, 2026-11-18: "i would like to see screenshots for all new features posted in these chats"; [screenshots](docs/decisions/screenshots.md)). A pull request that changes what a person sees adds or updates its picture in `app/src/test/kotlin/com/tunedplayer/app/screenshots/` (a route and the text to wait for), adds the `screenshots` label, and posts the pictures from the `screenshots/<branch>` branch in its thread. They are drawn on the JVM in minutes; no build or emulator.
 - A bug fix comes with a test that fails without it. Flaky tests are fixed at the cause, never retried.
 
 ## CI/CD (like Liftsmith)
@@ -110,4 +111,6 @@ One file per topic in `docs/decisions/`, A to Z. Add a line when you add a topic
 - [Sync](docs/decisions/sync.md): removed. Google Drive sync, replaced by the backup in the Tuned account (2026-11-19).
 - [Trakt](docs/decisions/trakt.md): signing in with a code, scrobbling films and episodes, the app's keys.
 - [TV](docs/decisions/tv.md): Android TV launcher, focus outlines, remote keys in the player.
-- [Updates](docs/decisions/updates.md): GitHub Releases updater now, Play in-app updates later, semver tags.
+- [Updates](docs/decisions/updates.md): GitHub Releases updater now, Play in-app updates later, semver tags, the application id and moving from `app.tuned`.
+- [Web player](docs/decisions/web.md): Premium playback in a browser with no relaying, the free provider check at `/check`.
+- [Website](docs/decisions/website.md): the landing page on www.tunedplayer.com, the features list, store badges, the blog with a post per release, sitemap and robots.

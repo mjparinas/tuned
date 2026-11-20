@@ -93,7 +93,7 @@ const REPORTS = [
         model: "Galaxy S24",
         android: "14",
         what: "It closed when I cast a film to the TV.",
-        crash: "java.lang.IllegalStateException: MediaRouter not ready\n    at app.tuned.player.Cast.start(Cast.kt:88)",
+        crash: "java.lang.IllegalStateException: MediaRouter not ready\n    at com.tunedplayer.app.player.Cast.start(Cast.kt:88)",
         log: "",
         contact: "",
         status: "open",

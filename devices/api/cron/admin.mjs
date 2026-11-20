@@ -1,4 +1,4 @@
-// GET /api/cron/admin, once a day at 13:05 UTC from Vercel (vercel.json; the Hobby plan allows only daily jobs): alerts, the morning digest, and pruning old rows.
+// GET /api/cron/admin, every hour from Vercel (vercel.json): alerts, the morning digest, and pruning old rows.
 // Vercel sends CRON_SECRET as a bearer token; anything else is refused.
 import * as data from "../../lib/admin/data.mjs";
 import { command } from "../../lib/redis.mjs";
@@ -10,7 +10,7 @@ export async function GET(request) {
     try {
         const now = Date.now();
         const last = (await data.getSetting("alert_last")) ?? {};
-        const lastRun = (await data.getSetting("cron_last_run")) ?? now - 86_400_000;
+        const lastRun = (await data.getSetting("cron_last_run")) ?? now - 3_600_000;
         const alerts = alertsToSend({
             happened: await data.happenedSince(lastRun),
             failures: Number((await command("GET", `adminfail:${new Date(now).toISOString().slice(0, 10)}`)) ?? 0),
