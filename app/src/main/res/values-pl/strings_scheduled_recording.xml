@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="recording_set">Nagraj</string>
+    <string name="recording_cancel">Anuluj nagrywanie</string>
+    <string name="recording_scheduled">%1$s zostanie nagrany</string>
+    <string name="recording_clash">Na tę godzinę jest już zaplanowane inne nagranie. Tuned nagrywa jedno naraz.</string>
+    <string name="recording_running">Nagrywanie: %1$s</string>
+    <string name="settings_record_padding">Zaczynaj nagrania wcześniej i kończ później</string>
+    <string name="settings_record_padding_off">Punktualnie</string>
+    <plurals name="settings_record_padding_minutes">
+        <item quantity="one">%1$d minuta z każdej strony</item>
+        <item quantity="few">%1$d minuty z każdej strony</item>
+        <item quantity="many">%1$d minut z każdej strony</item>
+        <item quantity="other">%1$d minuty z każdej strony</item>
+    </plurals>
+</resources>

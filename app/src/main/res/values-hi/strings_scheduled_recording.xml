@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="recording_set">रिकॉर्ड करें</string>
+    <string name="recording_cancel">रिकॉर्डिंग रद्द करें</string>
+    <string name="recording_scheduled">%1$s रिकॉर्ड होगा</string>
+    <string name="recording_clash">उस समय के लिए दूसरी रिकॉर्डिंग तय है। Tuned एक बार में एक ही रिकॉर्ड करता है।</string>
+    <string name="recording_running">%1$s रिकॉर्ड हो रहा है</string>
+    <string name="settings_record_padding">रिकॉर्डिंग जल्दी शुरू और देर से खत्म करें</string>
+    <string name="settings_record_padding_off">समय पर</string>
+    <plurals name="settings_record_padding_minutes">
+        <item quantity="one">दोनों ओर %1$d मिनट</item>
+        <item quantity="other">दोनों ओर %1$d मिनट</item>
+    </plurals>
+</resources>

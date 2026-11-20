@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="recording_set">تسجيل</string>
+    <string name="recording_cancel">إلغاء التسجيل</string>
+    <string name="recording_scheduled">سيتم تسجيل %1$s</string>
+    <string name="recording_clash">هناك تسجيل آخر في هذا الوقت. يسجّل Tuned برنامجًا واحدًا في كل مرة.</string>
+    <string name="recording_running">جارٍ تسجيل %1$s</string>
+    <string name="settings_record_padding">بدء التسجيلات مبكرًا وإنهاؤها متأخرًا</string>
+    <string name="settings_record_padding_off">في الموعد</string>
+    <plurals name="settings_record_padding_minutes">
+        <item quantity="zero">%1$d دقيقة من كل جانب</item>
+        <item quantity="one">دقيقة واحدة من كل جانب</item>
+        <item quantity="two">دقيقتان من كل جانب</item>
+        <item quantity="few">%1$d دقائق من كل جانب</item>
+        <item quantity="many">%1$d دقيقة من كل جانب</item>
+        <item quantity="other">%1$d دقيقة من كل جانب</item>
+    </plurals>
+</resources>

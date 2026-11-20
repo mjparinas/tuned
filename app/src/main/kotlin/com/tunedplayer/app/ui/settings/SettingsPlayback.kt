@@ -57,6 +57,18 @@ internal fun PlaybackPage(
                 }
             },
         ) { m -> vm.update { it.copy(liveRewindMinutes = m) } }
+        ChoiceRow(
+            stringResource(R.string.settings_record_padding),
+            listOf(0, 1, 2, 5, 10),
+            settings.recordPaddingMinutes,
+            label = { m ->
+                if (m == 0) {
+                    stringResource(R.string.settings_record_padding_off)
+                } else {
+                    pluralStringResource(R.plurals.settings_record_padding_minutes, m, m)
+                }
+            },
+        ) { m -> vm.update { it.copy(recordPaddingMinutes = m) } }
     }
     ChoiceRow(
         stringResource(R.string.settings_buffer),

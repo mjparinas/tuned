@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="recording_set">Registra</string>
+    <string name="recording_cancel">Annulla registrazione</string>
+    <string name="recording_scheduled">%1$s verrà registrato</string>
+    <string name="recording_clash">C\'è già un\'altra registrazione a quell\'ora. Tuned registra un programma alla volta.</string>
+    <string name="recording_running">Registrazione di %1$s</string>
+    <string name="settings_record_padding">Inizia le registrazioni prima e finiscile dopo</string>
+    <string name="settings_record_padding_off">In orario</string>
+    <plurals name="settings_record_padding_minutes">
+        <item quantity="one">%1$d minuto prima e dopo</item>
+        <item quantity="many">%1$d minuti prima e dopo</item>
+        <item quantity="other">%1$d minuti prima e dopo</item>
+    </plurals>
+</resources>

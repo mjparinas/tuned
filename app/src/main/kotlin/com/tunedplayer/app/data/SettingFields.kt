@@ -151,6 +151,7 @@ internal val SETTING_FIELDS: List<SettingField<*, *>> =
         // Whether a TV's hardware handles it well is the TV's own business, so this stays on the device.
         bool("tunneled_playback", { tunneledPlayback }) { copy(tunneledPlayback = it) }.notBackedUp(),
         int("live_rewind_minutes", { liveRewindMinutes }) { copy(liveRewindMinutes = it) },
+        int("record_padding_minutes", { recordPaddingMinutes }) { copy(recordPaddingMinutes = it) },
         bool("picture_in_picture", { pictureInPicture }) { copy(pictureInPicture = it) },
         bool("background_play", { backgroundPlay }) { copy(backgroundPlay = it) },
         bool("media_buttons", { mediaButtons }) { copy(mediaButtons = it) },

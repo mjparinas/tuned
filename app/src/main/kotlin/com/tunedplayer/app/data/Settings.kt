@@ -138,6 +138,8 @@ data class AppSettings(
     val tunneledPlayback: Boolean = false,
     /** Minutes of a live channel kept on the device to pause and rewind; 0 turns it off (Settings › Player). */
     val liveRewindMinutes: Int = 30,
+    /** Scheduled recordings start this many minutes early and end this many late, for guides that run off (Settings › Player). */
+    val recordPaddingMinutes: Int = 2,
     /** Leave out empty event slots ("NO EVENT STREAMING"); see [Placeholders]. Melvin, 2026-11-17: hide them. */
     val hidePlaceholders: Boolean = true,
     /** Leave out round-the-clock "24/7" channels, films and shows; see [RoundTheClock]. Melvin, 2026-11-17 and 11-18. Off by default. */
