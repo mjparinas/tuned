@@ -5,10 +5,14 @@
         <item name="android:windowBackground">@color/splash_background</item>
     </style>
 
+    <!--
+        The splash is Tuned ink in light and dark mode, phone and TV, so the mark's white front button always shows
+        (Melvin, 2026-11-20: on the light background "you can't see the first white arrow"). It doesn't rely on the
+        icon's background circle, which not every Android version and launcher draws (docs/decisions/branding.md).
+    -->
     <style name="Theme.Tuned.Starting" parent="Theme.SplashScreen">
-        <item name="windowSplashScreenBackground">@color/splash_background</item>
+        <item name="windowSplashScreenBackground">@color/tuned_ink</item>
         <item name="windowSplashScreenAnimatedIcon">@drawable/ic_launcher_foreground</item>
-        <item name="windowSplashScreenIconBackgroundColor">@color/tuned_ink</item>
         <item name="postSplashScreenTheme">@style/Theme.Tuned</item>
     </style>
 
