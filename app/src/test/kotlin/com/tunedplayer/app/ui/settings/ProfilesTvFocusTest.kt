@@ -59,7 +59,9 @@ class ProfilesTvFocusTest {
         }
         val shown = runCatching { compose.waitUntil(15_000) { compose.onAllNodes(hasText("Sam")).fetchSemanticsNodes().isNotEmpty() } }
         // On a timeout, the failure says what was on screen instead.
-        if (shown.isFailure) throw AssertionError("The profiles never showed:\n" + compose.onRoot().printToString(), shown.exceptionOrNull())
+        if (shown.isFailure) {
+            throw AssertionError("The profiles never showed:\n" + compose.onRoot().printToString(), shown.exceptionOrNull())
+        }
         compose.waitForIdle()
     }
 
