@@ -3,6 +3,8 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
     access,
+    anywayTries,
+    canTryAnyway,
     apiUrl,
     codecMime,
     codecName,
@@ -121,4 +123,39 @@ test("previews show the check, production follows the flag", () => {
     assert.ok(!isPreviewHost("tuned-devices.vercel.app"));
     assert.ok(!isPreviewHost("tuned.vercel.app"));
     assert.ok(!isPreviewHost("www.tunedplayer.com"));
+});
+
+test("try playing anyway: the browser's own player first, then the library, one at a time", () => {
+    const login = { base: "http://a.example:8080", username: "me", password: "pw" };
+    assert.deepEqual(
+        anywayTries(" 1234 ", login).map((t) => [t.how, t.url]),
+        [
+            ["native", "http://a.example:8080/live/me/pw/1234.m3u8"],
+            ["hls", "http://a.example:8080/live/me/pw/1234.m3u8"],
+            ["ts", "http://a.example:8080/live/me/pw/1234.ts"],
+        ],
+    );
+    assert.deepEqual(
+        anywayTries("http://b.example/live/x.ts").map((t) => t.how),
+        ["native", "ts"],
+    );
+    assert.deepEqual(
+        anywayTries("https://b.example/a/index.m3u8").map((t) => t.how),
+        ["native", "hls"],
+    );
+    assert.deepEqual(
+        anywayTries("http://b.example/film.mp4").map((t) => t.how),
+        ["native"],
+    );
+    assert.deepEqual(anywayTries("1234"), [], "a channel number needs an Xtream login");
+    assert.deepEqual(anywayTries("not a link"), []);
+});
+
+test("try playing anyway is offered after a failed check, and a channel that plays says so", () => {
+    for (const a of ["blocked", "unreachable", "allow-insecure", "not-safari"]) assert.equal(canTryAnyway(a), true, a);
+    for (const a of ["works", "list-only", "login", "portal", "codec"]) assert.equal(canTryAnyway(a), false, a);
+    assert.equal(verdict({ api: "cors", anyway: "ok" }), "plays-anyway");
+    assert.equal(verdict({ api: "cors", anyway: "failed" }), "blocked");
+    assert.equal(verdict({ api: "ok", login: "ok", live: "ok", anyway: "ok" }), "works");
+    assert.equal(verdict({ api: "cors", login: "wrong", anyway: "ok" }), "login");
 });

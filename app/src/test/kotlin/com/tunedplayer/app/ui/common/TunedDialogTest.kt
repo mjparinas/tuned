@@ -1,7 +1,9 @@
 package com.tunedplayer.app.ui.common
 
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.test.junit4.createComposeRule
@@ -36,13 +38,29 @@ class TunedDialogTest {
         assertTrue(screen.right - screen.textRight >= 150.dp && screen.textLeft >= 150.dp, "$screen")
     }
 
+    /** The sign-in code dialogs ask for more room on a TV, so the code beside the QR code keeps to one line. */
+    @Test
+    @Config(qualifiers = "w960dp-h540dp-land-television-xhdpi")
+    fun aWideDialogOnATvUsesMoreThanMaterialsWidthAndStaysCentred() {
+        val screen = assertMargins(DialogWideMaxWidth)
+        // Material's own dialog stops at 560 dp, so its text was at most 512 dp wide.
+        assertTrue(screen.textRight - screen.textLeft > 600.dp, "$screen")
+        assertTrue(screen.textLeft >= 100.dp && screen.right - screen.textRight >= 100.dp, "$screen")
+    }
+
+    @Test
+    @Config(qualifiers = "w411dp-h891dp-xxhdpi")
+    fun aWideDialogStillLeavesRoomAtBothEdgesOfAPhone() {
+        assertMargins(DialogWideMaxWidth)
+    }
+
     private data class Seen(
         val textLeft: Dp,
         val textRight: Dp,
         val right: Dp,
     )
 
-    private fun assertMargins(): Seen {
+    private fun assertMargins(maxWidth: Dp = DialogMaxWidth): Seen {
         var width = 0.dp
         compose.setContent {
             width =
@@ -54,7 +72,10 @@ class TunedDialogTest {
                 onDismissRequest = {},
                 confirmButton = { TextButton(onClick = {}) { Text("OK") } },
                 title = { Text("Sign out?") },
-                text = { Text(LONG) },
+                // Filling the card's width, so the text's edges are the card's less its padding: Robolectric's stand-in
+                // fonts measure the message far narrower than a real one.
+                text = { Text(LONG, Modifier.fillMaxWidth()) },
+                maxWidth = maxWidth,
             )
         }
         // Measured on the screen rather than in the dialog's own window, which may be narrower than the screen.

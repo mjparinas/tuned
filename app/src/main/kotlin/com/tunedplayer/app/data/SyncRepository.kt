@@ -10,19 +10,21 @@ import com.tunedplayer.app.core.GuideFixes
 import com.tunedplayer.app.core.M3uParser
 import com.tunedplayer.app.core.PlaylistEntry
 import com.tunedplayer.app.core.PlaylistLink
+import com.tunedplayer.app.core.Programme
 import com.tunedplayer.app.core.Search
 import com.tunedplayer.app.core.StableId
 import com.tunedplayer.app.core.Stalker
-import com.tunedplayer.app.core.Streams
 import com.tunedplayer.app.core.TitleSort
 import com.tunedplayer.app.core.XtreamAccount
 import com.tunedplayer.app.core.XtreamApi
 import com.tunedplayer.app.core.XtreamUrls
+import com.tunedplayer.app.data.SyncProgress.Step
 import com.tunedplayer.app.data.db.CatchUpEntity
 import com.tunedplayer.app.data.db.CatchUpItemEntity
 import com.tunedplayer.app.data.db.GuideWriter
 import com.tunedplayer.app.data.db.ItemEntity
 import com.tunedplayer.app.data.db.PlaylistWriter
+import com.tunedplayer.app.data.db.ProgrammeEntity
 import com.tunedplayer.app.data.db.ShowCoverEntity
 import com.tunedplayer.app.data.db.ShowDetailsEntity
 import com.tunedplayer.app.data.db.ShowGroups
@@ -54,20 +56,6 @@ import java.io.IOException
 import java.io.InputStream
 import java.net.URI
 
-/** Where a refresh is, for the progress bars on sign-in, on the lists and in the notification. */
-data class SyncProgress(
-    val step: Step,
-    /** Bytes downloaded, or rows saved. */
-    val done: Long = 0,
-    /** Bytes in the file, or -1 when the server doesn't say (and while saving). */
-    val total: Long = -1,
-) {
-    enum class Step { Playlist, SavingPlaylist, Guide, SavingGuide }
-
-    /** 0 to 1 while the size is known, otherwise null (an indeterminate bar). */
-    val fraction: Float? get() = if (total > 0) (done.toFloat() / total).coerceIn(0f, 1f) else null
-}
-
 /**
  * Downloads the playlist and guide and swaps them into the database. Each file is first saved to disk by
  * [Downloader], which rides out slow and dropped connections, and is then read from disk in batches, so memory stays
@@ -87,6 +75,7 @@ class SyncRepository(
 ) {
     private val lock = Mutex()
     private val downloader = Downloader(http)
+    private val reads = ReadProgress()
     private val memo = PlaylistMemo(File(dir, "playlist.fingerprint"), BuildConfig.VERSION_CODE.toString())
 
     /** Set by a refresh that read an Xtream server's M3U, which lacks what the sorts need ([XtreamDetails]). */
@@ -99,16 +88,68 @@ class SyncRepository(
     )
 
     suspend fun refreshAll(progress: (SyncProgress) -> Unit = {}): Result = lock.withLock {
-        val items = refreshPlaylistLocked(progress)
-        val programmes = attempt(TAG_SYNC, "Guide refresh failed") { refreshGuideLocked(progress) }.getOrElse { 0 } // not fatal
+        val plan = Plan(progress)
+        plan.steps = SyncProgress.planFor(currentLogin(), headerGuide.exists())
+        plan.start()
+        val items = refreshPlaylistLocked(plan::report)
+        // A plain playlist's header names its guide, or doesn't: the steps now say which.
+        plan.steps = SyncProgress.planFor(currentLogin(), headerGuide.exists())
+        val programmes = attempt(TAG_SYNC, "Guide refresh failed") { refreshGuideLocked(plan::report) }.getOrElse { 0 } // not fatal
         // A portal's films and shows come last: they take many small calls, and Live TV and the guide are ready first.
         if (currentLogin()?.kind == Credentials.Kind.Stalker) {
-            attempt(TAG_SYNC, "The portal's films and shows failed") { refreshPortalLibrary(progress) }
+            attempt(TAG_SYNC, "The portal's films and shows failed") { refreshPortalLibrary(plan::report) }
         }
         Result(items, programmes)
     }
 
-    suspend fun refreshGuide(progress: (SyncProgress) -> Unit = {}): Int = lock.withLock { refreshGuideLocked(progress) }
+    suspend fun refreshGuide(progress: (SyncProgress) -> Unit = {}): Int = lock.withLock {
+        val plan = Plan(progress)
+        plan.steps = SyncProgress.GUIDE
+        plan.start()
+        refreshGuideLocked(plan::report)
+    }
+
+    /** Stamps each report with the refresh's steps, so the screens can number them. */
+    private class Plan(
+        private val sink: (SyncProgress) -> Unit,
+    ) {
+        @Volatile var steps: List<SyncProgress.Step> = emptyList()
+
+        /** The first step, before anything is downloaded, so the screens show the steps at once. */
+        fun start() = steps.firstOrNull()?.let { report(SyncProgress(it)) }
+
+        /** A report that fails to reach the screens is logged; the refresh itself carries on. */
+        fun report(progress: SyncProgress) {
+            attempt(TAG_SYNC, "Couldn't report progress") { sink(progress.copy(steps = steps)) }
+        }
+    }
+
+    /**
+     * Fills an empty cache from the copy kept in the Tuned account ([AccountChannels]) when the provider couldn't be
+     * read. The playlist's memo is forgotten, so the next refresh saves the provider's own file over it. Returns how
+     * many channels it saved; 0 when the cache already had channels (the provider got there first).
+     */
+    suspend fun fillFromCopy(
+        channels: List<PlaylistEntry>,
+        guide: List<Programme>,
+    ): Int = lock.withLock {
+        if (db.items().any()) return@withLock 0
+        memo.forget()
+        val count = importPlaylist(progress = {}) { add -> channels.forEach { add(it) } }
+        if (guide.isNotEmpty()) {
+            val writer = GuideWriter(db)
+            try {
+                writer.begin()
+                for (batch in guide.chunked(BATCH)) {
+                    writer.add(batch.map { ProgrammeEntity(0, it.channelId, it.start, it.stop, it.title, null) })
+                }
+                writer.commit()
+            } finally {
+                writer.discard()
+            }
+        }
+        count
+    }
 
     private suspend fun refreshPlaylistLocked(progress: (SyncProgress) -> Unit): Int {
         val login = currentLogin() ?: throw IOException("Not signed in")
@@ -125,6 +166,7 @@ class SyncRepository(
         // A country found for the first time follows the rest: hidden when most are.
         settleNewRegions(db, settings)
         settings.update { it.copy(lastPlaylistSync = System.currentTimeMillis(), lastSyncError = "") }
+        if (login.kind == Credentials.Kind.Xtream) progress(SyncProgress(SyncProgress.Step.Details))
         // Catch-up is a bonus: a server that doesn't answer leaves the last known channels as they were.
         if (login.playlistUrl.isBlank()) attempt("Sync", "Catch-up refresh failed") { refreshCatchUp(login) }
         // Times added, years and ratings for the Movies and Shows sorts, which an Xtream M3U leaves out. A bonus too.
@@ -150,7 +192,6 @@ class SyncRepository(
         if (login.kind == Credentials.Kind.Stalker) return importPortal(login, progress)
         val xtream = login.playlistUrl.isBlank()
         val url = login.playlistUrl.ifBlank { XtreamUrls.playlist(login.server, login.username, login.password) }
-        val saved = { rows: Int -> progress(SyncProgress(SyncProgress.Step.SavingPlaylist, rows.toLong())) }
         val api = XtreamImport(http, login, userAgent())
         // A plain playlist's catch-up comes from its own attributes, gathered as it's read (Xtream asks the API after).
         val catchUp = ArrayList<CatchUpEntity>()
@@ -158,7 +199,7 @@ class SyncRepository(
         var readCatchUp = false
         val m3u =
             runCatchingIo {
-                download(url, "playlist", SyncProgress.Step.Playlist, progress) { input, fingerprint ->
+                download(url, "playlist", Step.DownloadPlaylist, Step.ReadPlaylist, progress) { input, fingerprint ->
                     val print = fingerprint()
                     // The same file as last time changes nothing: keep the cache and skip the minutes of saving.
                     if (memo.unchanged(print, db.items().any())) {
@@ -167,7 +208,7 @@ class SyncRepository(
                     }
                     var fromOneFile = true
                     memo.forget()
-                    importPlaylist(saved) { add ->
+                    importPlaylist(progress) { add ->
                         catchUp.clear() // a download that starts over reads the playlist again
                         readCatchUp = true
                         var shows = 0
@@ -201,7 +242,7 @@ class SyncRepository(
         memo.forget() // the cache is about to come from the API, not from a file
         val fromApi =
             runCatchingIo {
-                importPlaylist(saved) { add ->
+                importPlaylist(progress) { add ->
                     var order = 0
                     api.channelsAndFilms { entry ->
                         order = entry.order + 1
@@ -229,11 +270,10 @@ class SyncRepository(
         progress: (SyncProgress) -> Unit,
     ): Int {
         memo.forget() // a portal has no file to compare
-        progress(SyncProgress(SyncProgress.Step.Playlist))
+        progress(SyncProgress(SyncProgress.Step.DownloadPlaylist))
         val channels = withContext(Dispatchers.IO) { stalker.portal(login).channels() }
-        val saved = { rows: Int -> progress(SyncProgress(SyncProgress.Step.SavingPlaylist, rows.toLong())) }
         // Only live channels change here; the films and shows from the last library refresh stay as they are.
-        return importPlaylist(saved, scope = "kind = 0") { add ->
+        return importPlaylist(progress, scope = "kind = 0") { add ->
             channels.forEachIndexed {
                 order,
                 channel,
@@ -253,7 +293,6 @@ class SyncRepository(
     private suspend fun refreshPortalLibrary(progress: (SyncProgress) -> Unit) {
         val login = currentLogin()?.takeIf { it.kind == Credentials.Kind.Stalker } ?: return
         val portal = stalker.portal(login)
-        val saved = { rows: Int -> progress(SyncProgress(SyncProgress.Step.SavingPlaylist, rows.toLong())) }
         val fetched = db.shows().fetchedEpisodes().groupBy { it.showKey }
         var order = db.items().count()
         var total = 0
@@ -273,10 +312,11 @@ class SyncRepository(
                 title to items
             }
         }
-        progress(SyncProgress(SyncProgress.Step.Playlist))
+        val library = SyncProgress.Step.Library
+        progress(SyncProgress(library))
         val films = section(Stalker.VOD)
         val shows = section(Stalker.SERIES)
-        importPlaylist(saved, scope = "kind != 0") { add ->
+        importPlaylist(progress, scope = "kind != 0", read = library, save = library) { add ->
             suspend fun show(
                 type: String,
                 category: String,
@@ -401,17 +441,16 @@ class SyncRepository(
         if (url == null && login.extraGuides.isEmpty()) return 0
         val s = settings.settings.first()
         val import = GuideImport(db, s.guideDays, s.guideOffsetMinutes)
-        val saved = { rows: Int -> progress(SyncProgress(SyncProgress.Step.SavingGuide, rows.toLong())) }
+        val saved = { rows: Int -> progress(reads.at(SyncProgress.Step.ReadGuide, rows)) }
         val count =
             try {
                 if (!import.begin()) return 0
-                if (url != null) download(url, "guide", SyncProgress.Step.Guide, progress) { input, _ -> import.read(input, saved) }
+                if (url != null) guideFile(url, progress) { input -> import.read(input, saved) }
                 // Extra guide links only fill gaps; one that fails leaves the rest of the guide as it is.
                 for (extra in login.extraGuides) {
-                    attempt(TAG_SYNC, "An extra guide failed") {
-                        download(extra, "guide", SyncProgress.Step.Guide, progress) { input, _ -> import.read(input, saved) }
-                    }
+                    attempt(TAG_SYNC, "An extra guide failed") { guideFile(extra, progress) { input -> import.read(input, saved) } }
                 }
+                progress(SyncProgress(SyncProgress.Step.SaveGuide))
                 import.commit()
             } finally {
                 import.discard() // a no-op after a commit; after a failure, the old guide stays
@@ -430,7 +469,7 @@ class SyncRepository(
     ): Int {
         val s = settings.settings.first()
         val import = GuideImport(db, s.guideDays, s.guideOffsetMinutes)
-        val saved = { rows: Int -> progress(SyncProgress(SyncProgress.Step.SavingGuide, rows.toLong())) }
+        val saved = { rows: Int -> progress(reads.at(SyncProgress.Step.ReadGuide, rows)) }
         // The portal files programmes under its own channel ids; the channels are stored under their guide ids.
         val guideIds =
             db
@@ -443,17 +482,16 @@ class SyncRepository(
         val count =
             try {
                 if (!import.begin()) return 0
-                progress(SyncProgress(SyncProgress.Step.Guide))
+                progress(SyncProgress(SyncProgress.Step.DownloadGuide))
                 val programmes =
                     channelFlow {
                         withContext(Dispatchers.IO) { portal.guide(hours) { p -> trySendBlocking(p) } }
                     }.buffer(BATCH).mapNotNull { p -> guideIds[p.channelId]?.let { p.copy(channelId = it) } }
                 import.read(programmes, saved)
                 for (extra in login.extraGuides) {
-                    attempt(TAG_SYNC, "An extra guide failed") {
-                        download(extra, "guide", SyncProgress.Step.Guide, progress) { input, _ -> import.read(input, saved) }
-                    }
+                    attempt(TAG_SYNC, "An extra guide failed") { guideFile(extra, progress) { input -> import.read(input, saved) } }
                 }
+                progress(SyncProgress(SyncProgress.Step.SaveGuide))
                 import.commit()
             } finally {
                 import.discard()
@@ -484,6 +522,7 @@ class SyncRepository(
         url: String,
         name: String,
         step: SyncProgress.Step,
+        readStep: SyncProgress.Step,
         progress: (SyncProgress) -> Unit,
         read: suspend (input: InputStream, fingerprint: suspend () -> String) -> T,
     ): T {
@@ -491,19 +530,26 @@ class SyncRepository(
             // A playlist picked from a file was copied into the app when it was added: read it where it is.
             val local = File(URI(url))
             if (!local.exists()) throw IOException("The playlist file is missing. Add it again in Settings › Playlists.")
-            return withContext(Dispatchers.IO) {
-                local.inputStream().use { read(Streams.maybeGunzip(it)) { fingerprintOf(local) } }
-            }
+            return reads.read(local, readStep, progress) { read(it) { fingerprintOf(local) } }
         }
         val ua = settings.settings.first().userAgent
         val file = File(dir, name)
         try {
+            // Until the server answers, the step says it is waiting rather than showing nothing.
+            progress(SyncProgress(step))
             downloader.download(url, file, ua) { bytes, total -> progress(SyncProgress(step, bytes, total)) }
-            return withContext(Dispatchers.IO) { file.inputStream().use { read(Streams.maybeGunzip(it)) { fingerprintOf(file) } } }
+            return reads.read(file, readStep, progress) { read(it) { fingerprintOf(file) } }
         } finally {
             file.delete()
         }
     }
+
+    /** A guide file, downloaded and then read. */
+    private suspend fun <T> guideFile(
+        url: String,
+        progress: (SyncProgress) -> Unit,
+        read: suspend (InputStream) -> T,
+    ): T = download(url, "guide", SyncProgress.Step.DownloadGuide, SyncProgress.Step.ReadGuide, progress) { input, _ -> read(input) }
 
     private suspend fun fingerprintOf(file: File) = withContext(Dispatchers.IO) { file.inputStream().use(memo::fingerprint) }
 
@@ -527,9 +573,12 @@ class SyncRepository(
      * on it meanwhile. A stream listed twice is kept once.
      */
     private suspend fun importPlaylist(
-        saved: (Int) -> Unit,
+        progress: (SyncProgress) -> Unit,
         /** Which cached streams this import replaces (SQL on `items`); the rest stay as they are. Null: all of them. */
         scope: String? = null,
+        /** The step reported while streams are read, and while they are saved into the cache. */
+        read: SyncProgress.Step = SyncProgress.Step.ReadPlaylist,
+        save: SyncProgress.Step = SyncProgress.Step.SavePlaylist,
         fill: suspend (add: suspend (PlaylistEntry) -> Unit) -> Unit,
     ): Int {
         val writer = PlaylistWriter(db, scope)
@@ -545,13 +594,16 @@ class SyncRepository(
                     if (batch.size == BATCH) {
                         writer.add(batch.toList())
                         batch.clear()
-                        saved(writer.count)
+                        progress(reads.at(read, writer.count))
                     }
                 }
             }
             writer.add(batch)
+            progress(reads.at(read, writer.count))
+            progress(SyncProgress(save))
             // An empty answer changes nothing, so it never wipes a good cache.
-            if (writer.commit() == 0) throw IOException("The playlist was empty")
+            val saved = writer.commit { applied, total -> progress(SyncProgress(save, applied, total)) }
+            if (saved == 0) throw IOException("The playlist was empty")
             return writer.count
         } finally {
             writer.discard() // a no-op after a commit; after a failure, the cache stays as it was

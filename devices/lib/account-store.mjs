@@ -166,9 +166,67 @@ export async function saveBackup(accountId, base, data, size, deviceName) {
 
 export async function deleteBackups(accountId) {
     await query(`DELETE FROM backups WHERE account_id = $1`, [accountId]);
+    // The channel lists the app shares come from the same playlists, so they go with the backup.
+    await ensureChannelLists();
+    await query(`DELETE FROM channel_lists WHERE account_id = $1`, [accountId]);
 }
 
-/** Deletes the account and, through the foreign keys, its devices, entitlements and backups. */
+// The channel lists' table, made the first time it's needed, so the website works before schema.sql is run again.
+let channelListsReady = null;
+function ensureChannelLists() {
+    channelListsReady ??= query(
+        `CREATE TABLE IF NOT EXISTS channel_lists (
+            account_id uuid NOT NULL REFERENCES accounts (id) ON DELETE CASCADE,
+            playlist_id text NOT NULL,
+            data text NOT NULL,
+            size integer NOT NULL,
+            channels integer NOT NULL,
+            device_name text NOT NULL,
+            saved_at timestamptz NOT NULL DEFAULT now(),
+            PRIMARY KEY (account_id, playlist_id)
+        )`,
+    ).catch((e) => {
+        channelListsReady = null;
+        throw e;
+    });
+    return channelListsReady;
+}
+
+/**
+ * Saves a playlist's channel list from the app (docs/decisions/web.md › The app's copy), replacing that playlist's last
+ * one, and keeps only the account's `keep` newest playlists.
+ */
+export async function saveChannelList(accountId, playlistId, data, size, channels, deviceName, keep) {
+    await ensureChannelLists();
+    await transaction([
+        [
+            `INSERT INTO channel_lists (account_id, playlist_id, data, size, channels, device_name, saved_at)
+             VALUES ($1, $2, $3, $4, $5, $6, now())
+             ON CONFLICT (account_id, playlist_id) DO UPDATE
+             SET data = EXCLUDED.data, size = EXCLUDED.size, channels = EXCLUDED.channels,
+                 device_name = EXCLUDED.device_name, saved_at = EXCLUDED.saved_at`,
+            [accountId, playlistId, data, size, channels, deviceName],
+        ],
+        [
+            `DELETE FROM channel_lists WHERE account_id = $1 AND playlist_id NOT IN
+             (SELECT playlist_id FROM channel_lists WHERE account_id = $1 ORDER BY saved_at DESC LIMIT $2)`,
+            [accountId, keep],
+        ],
+    ]);
+}
+
+/** A playlist's channel list from the app (gzipped JSON in base64), with when and where it was saved, or null. */
+export async function channelList(accountId, playlistId) {
+    await ensureChannelLists();
+    const rows = await query(`SELECT data, channels, device_name, saved_at FROM channel_lists WHERE account_id = $1 AND playlist_id = $2`, [
+        accountId,
+        playlistId,
+    ]);
+    const r = rows[0];
+    return r ? { data: r.data, channels: r.channels, device: r.device_name, savedAt: time(r.saved_at) } : null;
+}
+
+/** Deletes the account and, through the foreign keys, its devices, entitlements, backups and channel lists. */
 export async function deleteAccount(accountId) {
     await query(`DELETE FROM accounts WHERE id = $1`, [accountId]);
 }

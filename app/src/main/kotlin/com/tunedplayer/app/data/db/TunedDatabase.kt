@@ -42,6 +42,8 @@ abstract class TunedDatabase : RoomDatabase() {
 
     abstract fun programmes(): ProgrammeDao
 
+    abstract fun channelShare(): ChannelShareDao
+
     abstract fun library(): LibraryDao
 
     abstract fun catchUp(): CatchUpDao

@@ -197,12 +197,14 @@ export function redact(text, ...secrets) {
 /**
  * The one answer the check gives (the plan's five, plus the two cases where nothing could be tested).
  * facts: { portal, login: "ok" | "wrong" | null, api: access(), live: "ok" | "codec" | access() | null,
- *          film: "ok" | "codec" | "sound" | access() | null, needsInsecure, safari }
+ *          film: "ok" | "codec" | "sound" | access() | null, needsInsecure, safari,
+ *          anyway: "ok" when "Try playing anyway" played a channel the lists couldn't be read for }
  */
 export function verdict(facts) {
     if (facts.portal) return "portal";
     const results = [facts.api, facts.live].filter(Boolean);
     if (facts.login === "wrong") return "login";
+    if (facts.anyway === "ok" && facts.api !== "ok") return "plays-anyway";
     if (results.includes("cors")) return "blocked";
     if (results.includes("insecure")) return facts.safari ? "not-safari" : "allow-insecure";
     if (results.includes("unreachable")) return "unreachable";
@@ -210,4 +212,34 @@ export function verdict(facts) {
     if (facts.api === "ok" && facts.needsInsecure) return facts.safari ? "not-safari" : "works-after-setting";
     if (facts.api === "ok" && (facts.live === "ok" || facts.live == null)) return facts.live === "ok" ? "works" : "list-only";
     return "unreachable";
+}
+
+/** Answers after which the page offers "Try playing anyway" (Melvin, 2026-11-20: "a playlist might fail a check, can we try a webstream anyways?"). */
+const ANYWAY = new Set(["blocked", "unreachable", "allow-insecure", "not-safari", "plays-anyway"]);
+export const canTryAnyway = (answer) => ANYWAY.has(answer);
+
+/**
+ * What "Try playing anyway" tries, in order, one at a time: the browser's own player first, because a <video> needs
+ * no CORS, then the player library for the stream's kind (which does). `input` is a full stream link, or a channel's
+ * number for an Xtream login (`login`: { base, username, password }). Empty when there's nothing to try.
+ */
+export function anywayTries(input, login = null) {
+    const text = String(input ?? "").trim();
+    if (/^\d{1,10}$/.test(text) && login) {
+        const hls = liveUrl(login.base, login.username, login.password, text, "m3u8");
+        const ts = liveUrl(login.base, login.username, login.password, text, "ts");
+        return [
+            { url: hls, how: "native" },
+            { url: hls, how: "hls" },
+            { url: ts, how: "ts" },
+        ];
+    }
+    if (!/^https?:\/\/[^\s/]+/i.test(text)) return [];
+    const kind = streamKind(text);
+    return kind === "file"
+        ? [{ url: text, how: "native" }]
+        : [
+              { url: text, how: "native" },
+              { url: text, how: kind },
+          ];
 }

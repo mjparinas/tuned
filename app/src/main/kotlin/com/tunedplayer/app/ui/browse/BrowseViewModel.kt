@@ -405,6 +405,18 @@ class BrowseViewModel(
 
     fun refresh() = container.scheduler.refreshNow()
 
+    /** A first download is queued or running; null until known, which counts as yes so the spinner shows first. */
+    val requestedPending: StateFlow<Boolean?> =
+        container.scheduler.requestedPending.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
+
+    /** The first-run screen's Retry: starts over even when a stuck download is still queued. */
+    fun retryFirst() {
+        viewModelScope.launchSafely("BrowseViewModel") {
+            container.settings.update { it.copy(lastSyncError = "") }
+            container.scheduler.retryFirst()
+        }
+    }
+
     /** The poster badge's rating: from the device when seen before, otherwise one TMDB search (only with a key). */
     suspend fun rating(
         name: String,

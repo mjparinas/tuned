@@ -71,6 +71,16 @@ data class ItemUrl(
     val url: String,
 )
 
+/** A live channel as the website's Channels and guide page gets it ([com.tunedplayer.app.data.SharedChannels]). */
+data class SharedChannelRow(
+    val name: String,
+    val groupName: String,
+    val logo: String?,
+    val tvgId: String?,
+    val number: Int,
+    val url: String,
+)
+
 /** A live channel's guide id and link, to match it with its catch-up days. */
 data class LiveLink(
     val tvgId: String,

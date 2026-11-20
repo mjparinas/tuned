@@ -11,7 +11,8 @@
     gap: 8px;
     flex-shrink: 0;
 }
-.row-actions button {
+.row-actions button,
+.row-actions .button {
     padding: 8px 16px;
 }
 /* On a narrow phone, Edit and Remove drop under the playlist's name rather than pushing the page sideways. */
@@ -89,15 +90,20 @@ label.check input {
     margin-top: 0;
 }
 
-/* Settings rows: the label beside its switch or choice, as in the app's Settings. */
+/* Settings rows: the label beside its switch or choice, as in the app's Settings. A choice too long to sit beside its
+   label in a narrow card ("Fit the whole picture") drops under it whole rather than being cut off (Melvin, 2026-11-20). */
+.setting {
+    flex-wrap: wrap;
+}
 .setting label {
     margin: 0;
     font-weight: 400;
     font-size: 1rem;
-    flex: 1;
+    flex: 1 1 4rem;
 }
 .setting select {
-    max-width: 55%;
+    max-width: 100%;
+    margin-left: auto;
 }
 input.switch {
     appearance: none;

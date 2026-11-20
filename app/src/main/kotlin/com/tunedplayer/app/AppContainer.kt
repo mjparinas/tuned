@@ -1,6 +1,7 @@
 package com.tunedplayer.app
 
 import android.content.Context
+import com.tunedplayer.app.data.AccountChannels
 import com.tunedplayer.app.data.AccountRepository
 import com.tunedplayer.app.data.AppReset
 import com.tunedplayer.app.data.ChannelEditor
@@ -24,6 +25,7 @@ import com.tunedplayer.app.data.Recordings
 import com.tunedplayer.app.data.SavedArtwork
 import com.tunedplayer.app.data.ServerFlags
 import com.tunedplayer.app.data.SettingsRepository
+import com.tunedplayer.app.data.SharedChannels
 import com.tunedplayer.app.data.StalkerLinks
 import com.tunedplayer.app.data.SubtitleRepository
 import com.tunedplayer.app.data.SyncCopyRepository
@@ -97,6 +99,10 @@ class AppContainer(
             onRefresh = { scheduler.refreshNow() },
         )
     }
+
+    /** The live channels and guide the website's Channels and guide page reads (docs/decisions/web.md). */
+    val sharedChannels by lazy { SharedChannels(context, db, credentials::load, tunedAccount) }
+    val accountChannels by lazy { AccountChannels(tunedAccount, sync, credentials::load) }
     val reminders by lazy { Reminders(context) }
     val events by lazy { EventsRepository(db, settings, reminders) }
     val offline by lazy { Offline(context, db, settings) { watching() || recordingOpen.value } }

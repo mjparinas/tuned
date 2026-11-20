@@ -1,5 +1,12 @@
 package com.tunedplayer.app.screenshots
 
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.hasAnyDescendant
@@ -8,12 +15,14 @@ import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isSelectable
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToNode
+import androidx.compose.ui.unit.dp
 import com.tunedplayer.app.R
 import com.tunedplayer.app.core.ContentKind
 import com.tunedplayer.app.core.Episodes
 import com.tunedplayer.app.core.PinnedGroups
 import com.tunedplayer.app.core.TitleSort
 import com.tunedplayer.app.data.StartTab
+import com.tunedplayer.app.data.SyncProgress
 import com.tunedplayer.app.data.db.CurrentProfileEntity
 import com.tunedplayer.app.data.db.ProfileEntity
 import com.tunedplayer.app.ui.DownloadsRoute
@@ -24,6 +33,8 @@ import com.tunedplayer.app.ui.MovieRoute
 import com.tunedplayer.app.ui.ProfilesRoute
 import com.tunedplayer.app.ui.SearchRoute
 import com.tunedplayer.app.ui.ShowRoute
+import com.tunedplayer.app.ui.browse.FirstDownload
+import com.tunedplayer.app.ui.browse.RefreshBar
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import org.junit.Test
@@ -206,6 +217,16 @@ class BrowseScreenshots : Screenshots() {
 
     @Test fun profiles() = shot("browse-profiles", ProfilesRoute(atStart = true), wait = text(R.string.profiles_title))
 
+    /** "Who's watching?" on a TV: the glow fills the screen to its edges, with the profiles inside the overscan margin. */
+    @Test
+    @Config(qualifiers = TV)
+    fun profilesOnTv() = shot("browse-profiles-tv", ProfilesRoute(atStart = true), wait = text(R.string.profiles_title))
+
+    @Test
+    @Config(qualifiers = TV)
+    fun profilesOnTvLight() =
+        shot("browse-profiles-tv-light", ProfilesRoute(atStart = true), wait = text(R.string.profiles_title), settings = LIGHT)
+
     /** Two named profiles, one for kids, opened from Home: the names must read clearly on the dark theme. */
     @Test
     fun profilesNamed() {
@@ -217,5 +238,37 @@ class BrowseScreenshots : Screenshots() {
             profiles.setCurrent(CurrentProfileEntity(profileId = first))
         }
         shot("browse-profiles-named", ProfilesRoute(atStart = false), wait = "Sam")
+    }
+
+    /** The first download's numbered steps, part way through processing the channels. */
+    @Test fun firstDownload() = part("browse-first-download", "Processing channels") { FirstDownloadSample() }
+
+    @Test
+    @Config(qualifiers = TV)
+    fun firstDownloadTv() = part("browse-first-download-tv", "Processing channels") { FirstDownloadSample() }
+
+    /** Still downloading, from a server that gives no size: what has arrived so far. */
+    @Test
+    fun firstDownloadNoSize() = part("browse-first-download-no-size", "so far") {
+        Box(Modifier.fillMaxSize().padding(32.dp), contentAlignment = Alignment.Center) {
+            FirstDownload(SyncProgress(SyncProgress.Step.DownloadPlaylist, 23_700_000, steps = SAMPLE_STEPS))
+        }
+    }
+
+    /** The line above the lists while a refresh the person started runs. */
+    @Test
+    fun refreshBar() = part("browse-refresh-bar", "Step 5 of 7") {
+        Column {
+            RefreshBar(SyncProgress(SyncProgress.Step.DownloadGuide, 6_200_000, 18_500_000, steps = SAMPLE_STEPS))
+        }
+    }
+}
+
+private val SAMPLE_STEPS = SyncProgress.plan(fromFile = false, xtream = true, portal = false, guide = true)
+
+@Composable
+private fun FirstDownloadSample() {
+    Box(Modifier.fillMaxSize().padding(32.dp), contentAlignment = Alignment.Center) {
+        FirstDownload(SyncProgress(SyncProgress.Step.ReadPlaylist, 21_600_000, 48_000_000, rows = 12_345, steps = SAMPLE_STEPS))
     }
 }

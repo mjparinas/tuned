@@ -33,6 +33,8 @@
     <string name="favourite_remove">Rimuovi dai preferiti</string>
     <string name="first_run_loading">Preparazione dei tuoi canali…</string>
     <string name="first_run_failed">Impossibile caricare i tuoi canali</string>
+    <string name="sync_stalled">Il tuo fornitore non ha inviato nulla per 5 minuti, quindi il download è stato interrotto. Controlla la connessione e il server, poi riprova.</string>
+    <string name="sync_stopped">Il download si è interrotto prima che i tuoi canali fossero salvati. Riprova.</string>
     <string name="guide_open">Guida</string>
     <string name="guide_empty">Ancora nessuna guida per questo canale. Si scarica in background.</string>
     <string name="guide_on_now">In onda: %1$s</string>
@@ -46,8 +48,21 @@
     <string name="sync_channel">Aggiornamento dei canali</string>
     <string name="sync_running">Aggiornamento di canali e guida</string>
     <string name="sync_size_of">%1$s di %2$s</string>
-    <string name="sync_downloading_playlist">Download dei canali · %1$s</string>
-    <string name="sync_downloading_guide">Download della guida · %1$s</string>
+    <string name="first_run_keeps_going">Le playlist grandi possono richiedere qualche minuto la prima volta. Continua anche se esci dall\'app.</string>
+    <string name="sync_step_of">Passaggio %1$d di %2$d</string>
+    <string name="sync_step_download_playlist">Download dei canali</string>
+    <string name="sync_step_read_playlist">Elaborazione dei canali</string>
+    <string name="sync_step_save_playlist">Salvataggio dei canali</string>
+    <string name="sync_step_details">Recupero di catch-up e dettagli dei film</string>
+    <string name="sync_step_download_guide">Download della guida</string>
+    <string name="sync_step_read_guide">Elaborazione della guida</string>
+    <string name="sync_step_save_guide">Salvataggio della guida</string>
+    <string name="sync_step_library">Recupero di film e serie</string>
+    <string name="sync_waiting_server">In attesa del server…</string>
+    <string name="sync_size_so_far">%1$s finora</string>
+    <string name="sync_step_done">Fatto</string>
+    <string name="sync_step_now">In corso</string>
+    <string name="sync_step_waiting">Non iniziato</string>
     <string name="settings_refresh_now">Aggiorna ora</string>
     <string name="settings_pull_to_refresh">Trascina verso il basso per aggiornare</string>
     <string name="settings_pull_to_refresh_summary">Trascinare in basso un elenco scarica di nuovo playlist e guida</string>
@@ -272,15 +287,15 @@
         <item quantity="many">%d profili</item>
         <item quantity="other">%d profili</item>
     </plurals>
-    <plurals name="sync_saving_playlist">
-        <item quantity="one">Salvataggio dei canali · %1$s elemento</item>
-        <item quantity="many">Salvataggio dei canali · %1$s elementi</item>
-        <item quantity="other">Salvataggio dei canali · %1$s elementi</item>
+    <plurals name="sync_items">
+        <item quantity="one">%1$s elemento</item>
+        <item quantity="many">%1$s elementi</item>
+        <item quantity="other">%1$s elementi</item>
     </plurals>
-    <plurals name="sync_saving_guide">
-        <item quantity="one">Salvataggio della guida · %1$s programma</item>
-        <item quantity="many">Salvataggio della guida · %1$s programmi</item>
-        <item quantity="other">Salvataggio della guida · %1$s programmi</item>
+    <plurals name="sync_programmes">
+        <item quantity="one">%1$s programma</item>
+        <item quantity="many">%1$s programmi</item>
+        <item quantity="other">%1$s programmi</item>
     </plurals>
     <plurals name="episodes">
         <item quantity="one">%1$d episodio</item>

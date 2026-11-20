@@ -59,6 +59,8 @@ import com.tunedplayer.app.diagnostics.AppLog
 import com.tunedplayer.app.diagnostics.attempt
 import com.tunedplayer.app.diagnostics.launchSafely
 import com.tunedplayer.app.ui.common.BackTopBar
+import com.tunedplayer.app.ui.common.OneLineCode
+import com.tunedplayer.app.ui.common.unbreakable
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -292,11 +294,11 @@ private fun Showing(
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Text(stringResource(R.string.tv_signin_scan), style = MaterialTheme.typography.titleMedium)
             Text(
-                stringResource(R.string.tv_signin_or_go, s.site),
+                stringResource(R.string.tv_signin_or_go, unbreakable(s.site)),
                 style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-            Text(s.code, style = MaterialTheme.typography.displaySmall, fontWeight = FontWeight.Bold)
+            OneLineCode(s.code, MaterialTheme.typography.displaySmall.copy(fontWeight = FontWeight.Bold))
             Text(
                 stringResource(R.string.tv_signin_check, s.check),
                 style = MaterialTheme.typography.bodyMedium,

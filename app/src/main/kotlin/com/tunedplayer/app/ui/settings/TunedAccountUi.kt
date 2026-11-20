@@ -34,8 +34,11 @@ import com.tunedplayer.app.diagnostics.launchSafely
 import com.tunedplayer.app.diagnostics.startActivitySafely
 import com.tunedplayer.app.premium.LockedRow
 import com.tunedplayer.app.premium.premiumUnlocked
+import com.tunedplayer.app.ui.common.DialogMaxWidth
+import com.tunedplayer.app.ui.common.DialogWideMaxWidth
 import com.tunedplayer.app.ui.common.TunedDialog
 import com.tunedplayer.app.ui.common.isTelevision
+import com.tunedplayer.app.ui.common.unbreakable
 import com.tunedplayer.app.ui.onboarding.Qr
 import com.tunedplayer.app.ui.onboarding.QrModules
 import com.tunedplayer.app.work.CloudSyncWorker
@@ -257,7 +260,8 @@ internal fun AccountSignInDialog(
                 }
 
                 is AccountSignIn.State.Code -> {
-                    val site = state.page.substringAfter("://").substringBefore('?')
+                    // Kept whole, so the address isn't split after a dot (Melvin's TV, 2026-11-20).
+                    val site = unbreakable(state.page.substringAfter("://").substringBefore('?'))
                     val steps: @Composable () -> Unit = {
                         Column(horizontalAlignment = Alignment.Start) {
                             Text(stringResource(if (tv) R.string.tuned_account_enter_code else R.string.tuned_account_open_or_enter, site))
@@ -301,5 +305,7 @@ internal fun AccountSignInDialog(
             }
         },
         dismissButton = { TextButton(onClick = onClose) { Text(stringResource(android.R.string.cancel)) } },
+        // Wider on a TV, where the QR code sits beside the steps, so the code keeps to one line at full size.
+        maxWidth = if (tv) DialogWideMaxWidth else DialogMaxWidth,
     )
 }

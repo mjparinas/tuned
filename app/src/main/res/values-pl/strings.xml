@@ -33,6 +33,8 @@
     <string name="favourite_remove">Usuń z ulubionych</string>
     <string name="first_run_loading">Przygotowujemy Twoje kanały…</string>
     <string name="first_run_failed">Nie udało się wczytać kanałów</string>
+    <string name="sync_stalled">Dostawca nic nie wysłał od 5 minut, więc pobieranie zostało zatrzymane. Sprawdź internet i serwer, a potem spróbuj ponownie.</string>
+    <string name="sync_stopped">Pobieranie zatrzymało się, zanim kanały zostały zapisane. Spróbuj ponownie.</string>
     <string name="guide_open">Program</string>
     <string name="guide_empty">Ten kanał nie ma jeszcze programu. Pobiera się w tle.</string>
     <string name="guide_on_now">Teraz: %1$s</string>
@@ -46,8 +48,21 @@
     <string name="sync_channel">Odświeżanie kanałów</string>
     <string name="sync_running">Odświeżanie kanałów i programu</string>
     <string name="sync_size_of">%1$s z %2$s</string>
-    <string name="sync_downloading_playlist">Pobieranie kanałów · %1$s</string>
-    <string name="sync_downloading_guide">Pobieranie programu · %1$s</string>
+    <string name="first_run_keeps_going">Duże playlisty mogą za pierwszym razem zająć kilka minut. Pobieranie trwa dalej, gdy wyjdziesz z aplikacji.</string>
+    <string name="sync_step_of">Krok %1$d z %2$d</string>
+    <string name="sync_step_download_playlist">Pobieranie kanałów</string>
+    <string name="sync_step_read_playlist">Przetwarzanie kanałów</string>
+    <string name="sync_step_save_playlist">Zapisywanie kanałów</string>
+    <string name="sync_step_details">Pobieranie archiwum i szczegółów filmów</string>
+    <string name="sync_step_download_guide">Pobieranie programu</string>
+    <string name="sync_step_read_guide">Przetwarzanie programu</string>
+    <string name="sync_step_save_guide">Zapisywanie programu</string>
+    <string name="sync_step_library">Pobieranie filmów i seriali</string>
+    <string name="sync_waiting_server">Czekanie na serwer…</string>
+    <string name="sync_size_so_far">Na razie %1$s</string>
+    <string name="sync_step_done">Gotowe</string>
+    <string name="sync_step_now">W toku</string>
+    <string name="sync_step_waiting">Nie rozpoczęto</string>
     <string name="settings_refresh_now">Odśwież teraz</string>
     <string name="settings_pull_to_refresh">Przeciągnij w dół, aby odświeżyć</string>
     <string name="settings_pull_to_refresh_summary">Przeciągnięcie listy w dół ponownie pobiera playlistę i program</string>
@@ -275,17 +290,17 @@
         <item quantity="many">%d profili</item>
         <item quantity="other">%d profile</item>
     </plurals>
-    <plurals name="sync_saving_playlist">
-        <item quantity="one">Zapisywanie kanałów · %1$s pozycja</item>
-        <item quantity="few">Zapisywanie kanałów · %1$s pozycje</item>
-        <item quantity="many">Zapisywanie kanałów · %1$s pozycji</item>
-        <item quantity="other">Zapisywanie kanałów · %1$s pozycje</item>
+    <plurals name="sync_items">
+        <item quantity="one">%1$s pozycja</item>
+        <item quantity="few">%1$s pozycje</item>
+        <item quantity="many">%1$s pozycji</item>
+        <item quantity="other">%1$s pozycji</item>
     </plurals>
-    <plurals name="sync_saving_guide">
-        <item quantity="one">Zapisywanie programu · %1$s audycja</item>
-        <item quantity="few">Zapisywanie programu · %1$s audycje</item>
-        <item quantity="many">Zapisywanie programu · %1$s audycji</item>
-        <item quantity="other">Zapisywanie programu · %1$s audycje</item>
+    <plurals name="sync_programmes">
+        <item quantity="one">%1$s audycja</item>
+        <item quantity="few">%1$s audycje</item>
+        <item quantity="many">%1$s audycji</item>
+        <item quantity="other">%1$s audycji</item>
     </plurals>
     <plurals name="episodes">
         <item quantity="one">%1$d odcinek</item>

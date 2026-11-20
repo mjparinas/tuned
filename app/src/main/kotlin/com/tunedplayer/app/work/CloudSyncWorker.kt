@@ -16,6 +16,7 @@ import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import com.tunedplayer.app.container
 import com.tunedplayer.app.data.ServerFlags
+import com.tunedplayer.app.diagnostics.attempt
 import com.tunedplayer.app.diagnostics.logFailures
 import java.util.concurrent.TimeUnit
 
@@ -31,7 +32,11 @@ class CloudSyncWorker(
         val sync = applicationContext.container.cloudSync
         // The admin's `account_backup` switch pauses the hourly run too.
         if (!ServerFlags.now.value.accountBackup) return@logFailures Result.success()
-        if (sync.run()) Result.success() else Result.retry()
+        if (!sync.run()) return@logFailures Result.retry()
+        // Every signed-in app keeps its channel list in the account (Melvin, 2026-11-20), for the website's Channels and guide
+        // page and for a new or reset device whose provider download fails.
+        attempt(TAG, "Couldn't save the channel list to the account") { applicationContext.container.sharedChannels.run() }
+        Result.success()
     }
 
     companion object {

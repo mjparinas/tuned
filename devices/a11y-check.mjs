@@ -64,6 +64,52 @@ const sampleLibrary = {
     settings: webSettings.map((g) => ({ group: g.group, settings: g.settings.map((s) => ({ ...s, value: s.default })) })),
 };
 
+/** A made-up Xtream provider on the same server, for the channel list: a few channels and a guide around now. */
+const sampleLogin = {
+    status: "ok",
+    kind: "xtream",
+    name: "Living room",
+    server: "http://localhost:4191/provider",
+    username: "sam",
+    password: "example",
+    guide: "",
+    extraGuides: [],
+};
+const sampleCategories = [
+    { category_id: "1", category_name: "Canada" },
+    { category_id: "2", category_name: "Sports" },
+    { category_id: "3", category_name: "News" },
+];
+const sampleStreams = [
+    ["CBC Toronto", "1", "cbc.ca"],
+    ["CTV", "1", "ctv.ca"],
+    ["Global", "1", "global.ca"],
+    ["TSN 1", "2", "tsn1.ca"],
+    ["Sportsnet One", "2", "sn1.ca"],
+    ["CBC News Network", "3", "cbcnn.ca"],
+    ["CP24", "3", ""],
+].map(([name, cat, epg], i) => ({ stream_id: 100 + i, num: i + 1, name, category_id: cat, epg_channel_id: epg, stream_icon: "" }));
+const sampleShows = {
+    "cbc.ca": ["The National", "Hockey Night in Canada", "Hockey Night in Canada", "Coronation Street", "CBC News"],
+    "ctv.ca": ["CTV Evening News", "Etalk", "The Amazing Race Canada", "Shark Tank", "CTV News"],
+    "global.ca": ["Global News Hour", "Entertainment Tonight Canada", "Survivor", "Survivor", "Global National"],
+    "tsn1.ca": ["SportsCentre", "NHL: Oilers at Flames", "NHL: Oilers at Flames", "That's Hockey", "SportsCentre"],
+    "sn1.ca": ["Hockey Central", "NHL: Canadiens at Maple Leafs", "NHL: Canadiens at Maple Leafs", "Post-game", "Tim and Friends"],
+    "cbcnn.ca": ["Power and Politics", "The National", "About That", "The National", "Overnight"],
+};
+function sampleGuide() {
+    const half = 1_800_000;
+    const first = Math.floor(Date.now() / half) * half - half;
+    const t = (ms) => new Date(ms).toISOString().replace(/[-:T]/g, "").slice(0, 14) + " +0000";
+    const rows = Object.entries(sampleShows).flatMap(([id, titles], c) =>
+        titles.map((title, i) => {
+            const start = first + i * 2 * half - (c % 2) * half;
+            return `<programme start="${t(start)}" stop="${t(start + 2 * half)}" channel="${id}"><title>${title}</title></programme>`;
+        }),
+    );
+    return `<?xml version="1.0"?><tv>${rows.join("")}</tv>`;
+}
+
 /** devices/public as Vercel serves it: folders to index.html, `/tv` to tv/index.html, the API answering signed out. */
 function serve(port, { signedIn }) {
     return new Promise((resolve) => {
@@ -76,6 +122,19 @@ function serve(port, { signedIn }) {
             if (path === "/api/account/library" && signedIn) {
                 res.writeHead(200, { "Content-Type": "application/json" });
                 return res.end(JSON.stringify(sampleLibrary));
+            }
+            if (path === "/api/account/check" && signedIn) {
+                res.writeHead(200, { "Content-Type": "application/json" });
+                return res.end(JSON.stringify(sampleLogin));
+            }
+            if (path === "/provider/player_api.php" && signedIn) {
+                const action = new URL(req.url, "http://localhost").searchParams.get("action");
+                res.writeHead(200, { "Content-Type": "application/json" });
+                return res.end(JSON.stringify(action === "get_live_categories" ? sampleCategories : sampleStreams));
+            }
+            if (path === "/provider/xmltv.php" && signedIn) {
+                res.writeHead(200, { "Content-Type": "application/xml" });
+                return res.end(sampleGuide());
             }
             if (path.startsWith("/api/")) {
                 res.writeHead(200, { "Content-Type": "application/json" });
@@ -188,6 +247,7 @@ try {
         ...(await pages()).map((p) => ({ name: p, url: `http://localhost:4190${p}` })),
         { name: "/account (signed in)", url: "http://localhost:4191/account/" },
         { name: "/account/playlists (signed in)", url: "http://localhost:4191/account/playlists/" },
+        { name: "/account/channels (signed in)", url: "http://localhost:4191/account/channels/" },
         { name: "/admin", url: "http://localhost:4173/admin", sections: true },
     ];
     // Eight pages at a time, so the whole site takes well under a minute.

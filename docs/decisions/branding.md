@@ -23,6 +23,14 @@
 
 "These pop ups shouldn't take the full width." Every pop-up is `TunedDialog` (`ui/common/TunedDialog.kt`), Material 3's alert dialog with at least 24 dp between the card and each edge of the screen, no wider than 560 dp, and centred, on a phone, tablet or TV. Material's own dialog fills whatever width its window gives it, and where that window is the whole screen (some devices, and the JVM screenshots) a long message stretched it edge to edge with its rounded corners cut off. detekt's `ForbiddenImport` rule stops Material's `AlertDialog` being used directly, so a new dialog gets the margins too. The player's few platform dialogs (`android.app.AlertDialog`) already have the system's margins.
 
+### Sign-in codes stay on one line (Melvin, 2026-11-20)
+
+"Can you make the pop-up wider? I don't ever want to see the code text wrapped to the next line." On his TV, Restore from your Tuned account showed "ECUZ-KH4X" broken after the dash and the address broken after "www.tunedplayer.". So:
+
+- **A TV's sign-in code dialog is wider**: the Tuned account dialog (Restore from your Tuned account on the welcome screen, and Settings › Tuned account) asks `TunedDialog` for `maxWidth = DialogWideMaxWidth` (720 dp) on a TV, which draws the same Material card without Material's own 560 dp cap. It still keeps 24 dp off each edge and sits in the centre; on a phone it is the usual dialog.
+- **A code never wraps** (`OneLineCode`, `ui/common/OneLineCode.kt`): the Tuned account and Trakt codes and the TV's Sign in with your phone code are one line at full size when there is room, and shrink a step at a time (down to 12 sp) when there isn't, in any language, at any text size, on a phone or a TV. Any new code shown to be typed elsewhere uses it.
+- **An address isn't split mid-word**: the web address in those steps is passed through `unbreakable`, which puts a word joiner between its characters, so the whole address moves to the next line rather than breaking after a dot or slash.
+
 "The red is cut off on the right, either remove a colour, or push them closer together." All seven accent colours stay; the swatches in Settings › Appearance share the row's width (up to 40 dp each, 8 dp apart) instead of scrolling sideways, so the last one is never cut off on a narrow phone.
 
 ## The website (Melvin, 2026-11-19)

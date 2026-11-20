@@ -20,6 +20,10 @@
       "destination": "/account/playlists/index.html"
     },
     {
+      "source": "/account/channels",
+      "destination": "/account/channels/index.html"
+    },
+    {
       "source": "/check",
       "destination": "/check/index.html"
     },
@@ -38,7 +42,7 @@
   ],
   "headers": [
     {
-      "source": "/((?!check).*)",
+      "source": "/((?!check|account/channels).*)",
       "headers": [
         {
           "key": "X-Content-Type-Options",
@@ -96,6 +100,35 @@
         {
           "key": "Content-Security-Policy",
           "value": "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self' * http: https:; media-src 'self' * http: https: blob: data:; worker-src 'self' blob:; frame-ancestors 'none'; base-uri 'none'; form-action 'none'"
+        }
+      ]
+    },
+    {
+      "source": "/account/channels(.*)",
+      "headers": [
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "no-referrer"
+        },
+        {
+          "key": "X-Frame-Options",
+          "value": "DENY"
+        },
+        {
+          "key": "Strict-Transport-Security",
+          "value": "max-age=63072000"
+        },
+        {
+          "key": "Permissions-Policy",
+          "value": "camera=(), microphone=(), geolocation=(), payment=(), usb=()"
+        },
+        {
+          "key": "Content-Security-Policy",
+          "value": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: http: https:; connect-src 'self' http: https:; media-src 'none'; object-src 'none'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'"
         }
       ]
     },

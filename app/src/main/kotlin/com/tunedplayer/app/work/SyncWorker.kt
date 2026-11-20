@@ -30,7 +30,24 @@ class SyncWorker(
     private var lastStep: SyncProgress.Step? = null
     private var foreground = false
 
-    override suspend fun doWork(): Result = logFailures(TAG, failed = { Result.failure() }) { refresh() }
+    /** Ends a first download that stops moving, so the screen shows an error and Retry instead of spinning on. */
+    private val watchdog = StallWatchdog(StallWatchdog.FIRST_DOWNLOAD_LIMIT_MS, SystemClock::elapsedRealtime)
+
+    override suspend fun doWork(): Result = logFailures(
+        TAG,
+        failed = {
+            // Not a network failure (an unreadable answer, a bug): still said on the screen, never a silent spinner.
+            saveError(applicationContext.getString(R.string.sync_stopped))
+            Result.failure()
+        },
+    ) { refresh() }
+
+    /** What the first-run screen shows with Retry. A failure the refresh already described keeps its own words. */
+    private suspend fun saveError(message: String) {
+        attempt(TAG, "Couldn't save the refresh error") {
+            applicationContext.container.settings.update { it.copy(lastSyncError = it.lastSyncError.ifBlank { message }) }
+        }
+    }
 
     private suspend fun refresh(): Result {
         val container = applicationContext.container
@@ -47,10 +64,13 @@ class SyncWorker(
                 false
             }
         return try {
-            if (inputData.getString(KEY_MODE) == MODE_GUIDE) {
-                container.sync.refreshGuide(::report)
-            } else {
-                container.sync.refreshAll(::report)
+            // Watched only while nothing is cached: once channels are in, a slow guide or details step is no hang.
+            watchdog.watch(armed = { !container.db.items().any() }) {
+                if (inputData.getString(KEY_MODE) == MODE_GUIDE) {
+                    container.sync.refreshGuide(::report)
+                } else {
+                    container.sync.refreshAll(::report)
+                }
             }
             // New guide data: alerts for followed teams' next games, and the widgets' "on now" lines move on too.
             attempt(TAG, "Couldn't set event alerts") { container.events.scheduleAlerts() }
@@ -58,15 +78,36 @@ class SyncWorker(
             // A copy left running for days still hears about a new release.
             UpdateNotice.checkInBackground(applicationContext)
             Result.success()
+        } catch (e: StallWatchdog.Stalled) {
+            AppLog.w(TAG, "The first download stopped moving; ending it so Retry shows", e)
+            fromAccount() ?: run {
+                container.settings.update { it.copy(lastSyncError = applicationContext.getString(R.string.sync_stalled)) }
+                Result.failure()
+            }
         } catch (e: IOException) {
             AppLog.w(TAG, "Refresh failed (attempt ${runAttemptCount + 1})", e)
             // The download already retried with backoff; the first sign-in reports at once instead of waiting for more.
-            if (!inputData.getBoolean(KEY_FIRST, false) && runAttemptCount < MAX_ATTEMPTS) Result.retry() else Result.failure()
+            fromAccount()
+                ?: if (!inputData.getBoolean(KEY_FIRST, false) && runAttemptCount < MAX_ATTEMPTS) Result.retry() else Result.failure()
         }
+    }
+
+    /**
+     * The provider failed with nothing cached: Live TV from the copy kept in the Tuned account, and the provider tried
+     * again later (Melvin, 2026-11-20). Null when there is no copy to use, and the failure stands.
+     */
+    private suspend fun fromAccount(): Result? {
+        val container = applicationContext.container
+        val cached = attempt(TAG, "Couldn't check the cache") { container.db.items().any() }.getOrDefault(true)
+        if (cached || !container.accountChannels.fill()) return null
+        container.settings.update { it.copy(lastSyncError = "") }
+        Widgets.refresh(applicationContext)
+        return Result.retry()
     }
 
     /** Hands progress to the screens (WorkInfo.progress) and the notification, a few times a second at most. */
     private fun report(progress: SyncProgress) {
+        watchdog.saw(progress)
         val now = SystemClock.elapsedRealtime()
         if (progress.step == lastStep && now - lastReport < REPORT_EVERY_MS) return
         lastStep = progress.step
@@ -112,18 +153,30 @@ class SyncWorker(
         private const val KEY_STEP = "step"
         private const val KEY_DONE = "done"
         private const val KEY_TOTAL = "total"
+        private const val KEY_ROWS = "rows"
+        private const val KEY_STEPS = "steps"
         private const val CHANNEL = NotificationChannels.SYNC
         private const val NOTIFICATION_ID = 7
         private const val MAX_ATTEMPTS = 3
         private const val REPORT_EVERY_MS = 500L
         private const val PROGRESS_MAX = 1_000
 
-        private fun SyncProgress.toData(): Data = workDataOf(KEY_STEP to step.name, KEY_DONE to done, KEY_TOTAL to total)
+        internal fun SyncProgress.toData(): Data = workDataOf(
+            KEY_STEP to step.name,
+            KEY_DONE to done,
+            KEY_TOTAL to total,
+            KEY_ROWS to rows,
+            KEY_STEPS to steps.map { it.name }.toTypedArray(),
+        )
 
         /** The progress a running refresh last reported, or null before its first report. */
         fun progressOf(data: Data): SyncProgress? {
-            val step = data.getString(KEY_STEP)?.let { name -> SyncProgress.Step.entries.firstOrNull { it.name == name } } ?: return null
-            return SyncProgress(step, data.getLong(KEY_DONE, 0), data.getLong(KEY_TOTAL, -1))
+            val step = stepNamed(data.getString(KEY_STEP)) ?: return null
+            val steps = data.getNullableStringArray(KEY_STEPS)?.mapNotNull(::stepNamed)?.takeIf { it.isNotEmpty() } ?: listOf(step)
+            return SyncProgress(step, data.getLong(KEY_DONE, 0), data.getLong(KEY_TOTAL, -1), data.getLong(KEY_ROWS, -1), steps)
         }
+
+        /** A step from its name; null for one this version doesn't know. */
+        private fun stepNamed(name: String?): SyncProgress.Step? = SyncProgress.Step.entries.firstOrNull { it.name == name }
     }
 }

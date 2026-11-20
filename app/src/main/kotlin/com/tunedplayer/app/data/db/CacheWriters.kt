@@ -148,7 +148,10 @@ class PlaylistWriter(
      * Brings the live table in line with the new playlist and returns how many streams it holds. An empty playlist
      * changes nothing, so a server that answers with nothing can't wipe a good cache.
      */
-    suspend fun commit(): Int {
+    suspend fun commit(
+        /** Streams applied to the cache so far and how many differ, as each chunk lands. */
+        onApply: (applied: Long, total: Long) -> Unit = { _, _ -> },
+    ): Int {
         if (seen.isEmpty()) {
             discard()
             return 0
@@ -157,7 +160,7 @@ class PlaylistWriter(
         ChannelEdits.applyTo(sql, if (direct) "items" else NEXT)
         if (!direct) {
             keepSortDetails()
-            apply()
+            apply(onApply)
         }
         ShowGroups.rebuild(db)
         Upkeep.optimize(db)
@@ -183,7 +186,7 @@ class PlaylistWriter(
     }
 
     /** Changes only the streams that differ, a chunk per transaction. */
-    private suspend fun apply() {
+    private suspend fun apply(onApply: (applied: Long, total: Long) -> Unit) {
         // Which streams differ, worked out once, inside SQLite.
         sql.execSQL("DROP TABLE IF EXISTS temp.$CHANGED")
         sql.execSQL("CREATE TEMP TABLE $CHANGED (seq INTEGER PRIMARY KEY, id INTEGER NOT NULL)")
@@ -192,6 +195,7 @@ class PlaylistWriter(
         sql.execSQL("INSERT INTO $CHANGED (id) SELECT n.id FROM $NEXT n JOIN items i ON i.id = n.id WHERE NOT ($SAME)")
         sql.execSQL("INSERT INTO $CHANGED (id) SELECT id FROM $NEXT WHERE id NOT IN (SELECT id FROM items)")
         val total = sql.query("SELECT COUNT(*) FROM $CHANGED").use { if (it.moveToFirst()) it.getLong(0) else 0L }
+        if (total > 0) onApply(0, total)
         var from = 1L
         while (from <= total) {
             val to = from + APPLY_CHUNK - 1
@@ -201,6 +205,7 @@ class PlaylistWriter(
                 sql.execSQL("INSERT INTO items ($COLUMNS) SELECT $COLUMNS FROM $NEXT WHERE id IN $chunk")
             }
             from = to + 1
+            onApply(minOf(to, total), total)
         }
         sql.execSQL("DROP TABLE IF EXISTS temp.$CHANGED")
         discard()

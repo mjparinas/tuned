@@ -33,6 +33,8 @@
     <string name="favourite_remove">पसंदीदा से हटाएं</string>
     <string name="first_run_loading">आपके चैनल तैयार हो रहे हैं…</string>
     <string name="first_run_failed">आपके चैनल लोड नहीं हो सके</string>
+    <string name="sync_stalled">आपके प्रदाता ने 5 मिनट से कुछ नहीं भेजा, इसलिए डाउनलोड रोक दिया गया। अपना इंटरनेट और सर्वर जाँचें, फिर दोबारा कोशिश करें।</string>
+    <string name="sync_stopped">आपके चैनल सहेजे जाने से पहले डाउनलोड रुक गया। दोबारा कोशिश करें।</string>
     <string name="guide_open">गाइड</string>
     <string name="guide_empty">इस चैनल की गाइड अभी नहीं है। यह बैकग्राउंड में डाउनलोड होती है।</string>
     <string name="guide_on_now">अभी चल रहा है: %1$s</string>
@@ -46,8 +48,21 @@
     <string name="sync_channel">चैनल रीफ़्रेश हो रहे हैं</string>
     <string name="sync_running">चैनल और गाइड रीफ़्रेश हो रहे हैं</string>
     <string name="sync_size_of">%2$s में से %1$s</string>
-    <string name="sync_downloading_playlist">चैनल डाउनलोड हो रहे हैं · %1$s</string>
-    <string name="sync_downloading_guide">गाइड डाउनलोड हो रही है · %1$s</string>
+    <string name="first_run_keeps_going">बड़ी प्लेलिस्ट में पहली बार कुछ मिनट लग सकते हैं। ऐप छोड़ने पर भी यह चलता रहता है।</string>
+    <string name="sync_step_of">चरण %1$d / %2$d</string>
+    <string name="sync_step_download_playlist">चैनल डाउनलोड हो रहे हैं</string>
+    <string name="sync_step_read_playlist">चैनल प्रोसेस हो रहे हैं</string>
+    <string name="sync_step_save_playlist">चैनल सहेजे जा रहे हैं</string>
+    <string name="sync_step_details">कैच-अप और फ़िल्मों का विवरण लिया जा रहा है</string>
+    <string name="sync_step_download_guide">गाइड डाउनलोड हो रही है</string>
+    <string name="sync_step_read_guide">गाइड प्रोसेस हो रही है</string>
+    <string name="sync_step_save_guide">गाइड सहेजी जा रही है</string>
+    <string name="sync_step_library">फ़िल्में और शो लिए जा रहे हैं</string>
+    <string name="sync_waiting_server">सर्वर का इंतज़ार…</string>
+    <string name="sync_size_so_far">अब तक %1$s</string>
+    <string name="sync_step_done">हो गया</string>
+    <string name="sync_step_now">चल रहा है</string>
+    <string name="sync_step_waiting">शुरू नहीं हुआ</string>
     <string name="settings_refresh_now">अभी रीफ़्रेश करें</string>
     <string name="settings_pull_to_refresh">रीफ़्रेश करने के लिए नीचे खींचें</string>
     <string name="settings_pull_to_refresh_summary">किसी सूची को नीचे खींचने से प्लेलिस्ट और गाइड फिर से डाउनलोड होती हैं</string>
@@ -269,13 +284,13 @@
         <item quantity="one">%d प्रोफ़ाइल</item>
         <item quantity="other">%d प्रोफ़ाइल</item>
     </plurals>
-    <plurals name="sync_saving_playlist">
-        <item quantity="one">चैनल सहेजे जा रहे हैं · %1$s आइटम</item>
-        <item quantity="other">चैनल सहेजे जा रहे हैं · %1$s आइटम</item>
+    <plurals name="sync_items">
+        <item quantity="one">%1$s आइटम</item>
+        <item quantity="other">%1$s आइटम</item>
     </plurals>
-    <plurals name="sync_saving_guide">
-        <item quantity="one">गाइड सहेजी जा रही है · %1$s कार्यक्रम</item>
-        <item quantity="other">गाइड सहेजी जा रही है · %1$s कार्यक्रम</item>
+    <plurals name="sync_programmes">
+        <item quantity="one">%1$s कार्यक्रम</item>
+        <item quantity="other">%1$s कार्यक्रम</item>
     </plurals>
     <plurals name="episodes">
         <item quantity="one">%1$d एपिसोड</item>
