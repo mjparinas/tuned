@@ -2,6 +2,8 @@
 // changed through /api/account/library with the session cookie. Every device takes the change on its next sync.
 // Passwords and links never come back from the server; editing leaves a blank one as it was.
 
+import { drawNav, showLinkedSection } from "/account/nav.js";
+
 const $ = (id) => document.getElementById(id);
 let library = null;
 let editing = null;
@@ -148,8 +150,10 @@ async function saveSetting(s, value, control) {
 function render() {
     $("signed-out").hidden = Boolean(library);
     $("signed-in").hidden = !library;
+    $("account-nav").hidden = !library;
+    document.querySelector("main").classList.toggle("signed-in", Boolean(library));
     if (!library) return;
-    const list = $("playlists");
+    const list = $("playlist-list");
     list.replaceChildren(...library.playlists.map(playlistRow));
     if (!library.playlists.length) {
         const empty = document.createElement("p");
@@ -164,7 +168,10 @@ function render() {
         ...library.settings.map((group) => {
             const card = document.createElement("section");
             card.className = "card";
+            card.id = groupId(group.group);
             const title = document.createElement("h2");
+            title.id = `${card.id}-title`;
+            card.setAttribute("aria-labelledby", title.id);
             title.textContent = group.group;
             const rows = document.createElement("div");
             rows.append(...group.settings.map(settingRow));
@@ -178,6 +185,9 @@ function render() {
         }),
     );
 }
+
+const groupId = (name) => `settings-${name.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`;
+let navDrawn = false;
 
 const kind = () => document.querySelector('input[name="kind"]:checked').value;
 
@@ -304,6 +314,11 @@ async function load() {
     else if (answer.status === "signed out") library = null;
     else $("status").textContent = refusals.unavailable;
     render();
+    if (library && !navDrawn) {
+        navDrawn = true;
+        drawNav($("account-nav"), "playlists", [["playlists", "Playlists"], ...library.settings.map((g) => [groupId(g.group), g.group])]);
+        showLinkedSection();
+    }
     if (library?.refreshAskedAt) $("refresh").title = `Last asked ${when(library.refreshAskedAt)}`;
 }
 load();

@@ -2,7 +2,7 @@
 // "check the website for wcag, accessability, and other web standards"). CI runs it on every change to devices/:
 // `node devices/a11y-check.mjs`. It serves devices/public as Vercel does, opens every page in Chromium in light and
 // dark with reduced motion, and runs axe-core's WCAG 2.2 A and AA rules and its best practices. The account page is
-// checked signed out and signed in (with a made-up account), and the admin with admin-preview.mjs's sample data.
+// checked signed out and signed in (with a made-up account and library), and the admin with admin-preview.mjs's sample data.
 // It also checks that no page scrolls sideways at 320 px wide (WCAG 1.4.10) and that everything Tab reaches shows a
 // focus ring (2.4.7). Any finding fails, with the page, the rule and the elements.
 import { spawn } from "node:child_process";
@@ -45,6 +45,24 @@ const sampleAccount = {
     purchases: [{ source: "stripe" }],
     backup: { savedAt: Date.now() - day, device: "Pixel 8" },
 };
+const webSettings = JSON.parse(await readFile(join(fileURLToPath(new URL(".", import.meta.url)), "lib/web-settings.json"), "utf8"));
+const sampleLibrary = {
+    status: "ok",
+    exists: true,
+    playlists: [
+        {
+            id: "a",
+            kind: "xtream",
+            name: "Living room",
+            detail: "provider.example",
+            server: "http://provider.example",
+            username: "sam",
+            mac: "",
+        },
+        { id: "b", kind: "link", name: "", detail: "lists.example", server: "", username: "", mac: "" },
+    ],
+    settings: webSettings.map((g) => ({ group: g.group, settings: g.settings.map((s) => ({ ...s, value: s.default })) })),
+};
 
 /** devices/public as Vercel serves it: folders to index.html, `/tv` to tv/index.html, the API answering signed out. */
 function serve(port, { signedIn }) {
@@ -54,6 +72,10 @@ function serve(port, { signedIn }) {
             if (path === "/api/account/me" && signedIn) {
                 res.writeHead(200, { "Content-Type": "application/json" });
                 return res.end(JSON.stringify(sampleAccount));
+            }
+            if (path === "/api/account/library" && signedIn) {
+                res.writeHead(200, { "Content-Type": "application/json" });
+                return res.end(JSON.stringify(sampleLibrary));
             }
             if (path.startsWith("/api/")) {
                 res.writeHead(200, { "Content-Type": "application/json" });
@@ -165,6 +187,7 @@ try {
     const targets = [
         ...(await pages()).map((p) => ({ name: p, url: `http://localhost:4190${p}` })),
         { name: "/account (signed in)", url: "http://localhost:4191/account/" },
+        { name: "/account/playlists (signed in)", url: "http://localhost:4191/account/playlists/" },
         { name: "/admin", url: "http://localhost:4173/admin", sections: true },
     ];
     // Eight pages at a time, so the whole site takes well under a minute.

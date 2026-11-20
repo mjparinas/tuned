@@ -133,12 +133,21 @@ input.switch:disabled {
     opacity: 0.5;
 }
 
-/* On a desktop the settings cards join the account page's two-column grid (site.css, main.wide). */
+/*
+ * On a desktop (account.css) the form opens beside the list instead of under it, and the settings cards fill two
+ * columns top to bottom, so a short group never leaves a hole beside a long one and Tab order follows each column.
+ */
 @media (min-width: 960px) {
-    main.wide #settings {
-        display: contents;
+    main.account #signed-in:has(> #editor:not([hidden])) > #playlists {
+        grid-column: auto;
     }
-    main.wide #settings > .card {
-        margin-top: 0;
+    main.account #settings {
+        grid-column: 1 / -1;
+        columns: 2;
+        column-gap: 16px;
+    }
+    main.account #settings > .card {
+        margin: 0 0 16px;
+        break-inside: avoid;
     }
 }
