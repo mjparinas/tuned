@@ -1,6 +1,6 @@
 ---
 title: "Tuned vs VLC"
-description: "VLC and Tuned compared: a general media player against an IPTV player."
+description: "VLC and Tuned compared: a general media player against an IPTV player. A side-by-side comparison, with sources."
 date: 2026-11-19
 kind: compare
 ---

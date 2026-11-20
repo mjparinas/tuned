@@ -1,6 +1,6 @@
 ---
 title: "Tuned vs SET IPTV"
-description: "SET IPTV and Tuned compared: smart TVs, Xtream support, trial and lifetime price."
+description: "SET IPTV and Tuned compared: smart TVs, Xtream support, trial and lifetime price. A side-by-side IPTV player comparison, with sources."
 date: 2026-11-19
 kind: compare
 ---

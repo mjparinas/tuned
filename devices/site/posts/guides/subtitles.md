@@ -1,5 +1,6 @@
 ---
 title: How to use subtitles and captions in Tuned
+seoTitle: "How to use IPTV subtitles and captions in Tuned"
 description: Turn captions on, style them, fix their timing, and find subtitles for films and episodes that don't have any.
 date: 2026-11-19
 kind: guide

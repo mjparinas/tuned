@@ -1,5 +1,6 @@
 ---
 title: Provider errors in Tuned and what they mean
+seoTitle: "IPTV provider errors in Tuned and what they mean"
 description: Sign-in refused, channels won't load, a stream won't play: what each message means and how to fix it.
 date: 2026-11-19
 kind: guide

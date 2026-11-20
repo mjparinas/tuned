@@ -139,10 +139,38 @@ export function longDate(iso) {
 
 /** What each kind of post is called in the blog's sections, in the order they appear. */
 export const KINDS = [
-    { kind: "release", title: "What's new", blurb: "What changed in each release of Tuned, and when." },
-    { kind: "guide", title: "Guides", blurb: "Getting set up, and getting the most out of Tuned." },
-    { kind: "compare", title: "Comparisons", blurb: "How Tuned compares with other IPTV players." },
-    { kind: "roundup", title: "Roundups", blurb: "Lists of apps and devices worth knowing." },
+    {
+        kind: "release",
+        title: "What's new",
+        blurb: "What changed in each release of Tuned, and when.",
+        pageTitle: "What's new in Tuned: release notes",
+        description:
+            "Every release of Tuned, the IPTV player for Android phones, tablets and Android TV: what's new, what's faster and what was fixed, with dates.",
+    },
+    {
+        kind: "guide",
+        title: "Guides",
+        blurb: "Getting set up, and getting the most out of Tuned.",
+        pageTitle: "IPTV player guides for Tuned: Xtream Codes, M3U, EPG and more",
+        description:
+            "Step-by-step guides for Tuned: add an Xtream Codes, M3U or MAC portal playlist, set up the TV guide (EPG), fix buffering, and set up Android TV.",
+    },
+    {
+        kind: "compare",
+        title: "Comparisons",
+        blurb: "How Tuned compares with other IPTV players.",
+        pageTitle: "Tuned vs other IPTV players: 20 comparisons",
+        description:
+            "Tuned compared with TiviMate, IPTV Smarters Pro, OTT Navigator, Kodi and 16 more IPTV players: platforms, guide, recording, casting and price, with sources.",
+    },
+    {
+        kind: "roundup",
+        title: "Roundups",
+        blurb: "Lists of apps and devices worth knowing.",
+        pageTitle: "IPTV player roundups: the best apps for Android TV",
+        description:
+            "Roundups of the best IPTV players for Android TV and the best TiviMate alternatives, each compared feature by feature.",
+    },
 ];
 const kindTitle = (kind) => KINDS.find((k) => k.kind === kind)?.title ?? kind.charAt(0).toUpperCase() + kind.slice(1);
 
@@ -153,6 +181,7 @@ export function readPost(path, text) {
     const url = `/blog/${parts.join("/")}/`;
     for (const key of ["title", "description", "date"]) if (!data[key]) throw new Error(`${path}: frontmatter needs ${key}`);
     if (!/^\d{4}-\d{2}-\d{2}$/.test(data.date)) throw new Error(`${path}: date must be YYYY-MM-DD`);
+    if (data.updated && !/^\d{4}-\d{2}-\d{2}$/.test(data.updated)) throw new Error(`${path}: updated must be YYYY-MM-DD`);
     return { ...data, kind: data.kind || "post", path, url, folder: parts.slice(0, -1).join("/"), html: markdown(body) };
 }
 
@@ -201,10 +230,26 @@ export function releasePost({ tag, date, notes, intro }) {
         groups.find(([g]) => g === "Fixed") && `${groups.find(([g]) => g === "Fixed")[1].length} fixed`,
     ].filter(Boolean);
     const lead = intro?.trim() || `Tuned ${version} is out${counts.length ? `: ${counts.join(", ")}` : ""}.`;
-    const description = lead.split(/(?<=\.)\s/)[0].replace(/"/g, "'");
+    const description = releaseDescription(version, lead, lines).replace(/"/g, "'");
     const body = groups.map(([g, items]) => `## ${g}\n\n${items.map((l) => `- ${l.text}`).join("\n")}`).join("\n\n");
     return `---\ntitle: What's new in Tuned ${version}\ndescription: "${description}"\ndate: ${date}\nkind: release\nversion: ${version}\n---\n\n${lead}\n\n${body}${body ? "\n" : ""}`;
 }
+
+/**
+ * A release post's search description: the opening sentence, then the first changes until about 155 characters, so a
+ * patch release reads "Tuned 2.0.1 for Android fixes …" rather than "9 fixed".
+ */
+export function releaseDescription(version, lead, lines) {
+    let d = firstSentence(lead);
+    if (/ is out(: [^.]*)?\.$/.test(d)) d = `Tuned ${version}, the IPTV player for Android and Android TV, is out.`;
+    for (const l of lines) {
+        const next = `${d} ${l.text.replace(/\.$/, "")}.`;
+        if (next.length > 158) break;
+        d = next;
+    }
+    return d;
+}
+const firstSentence = (lead) => lead.split(/(?<=\.)\s/)[0];
 
 // ---------------------------------------------------------------- Pages
 
@@ -283,7 +328,7 @@ export const siteFooter = (site) => `<footer class="foot">
 <p>A fast, quiet IPTV player for Android. Tuned doesn't sell or include any channels: bring the playlist from your own TV provider.</p>
 </div>
 <nav aria-label="Tuned"><h2>Tuned</h2><a href="/#features">Features</a><a href="/blog/whats-new/">What's new</a><a href="${site.apk}">Download for Android</a></nav>
-<nav aria-label="Help"><h2>Help</h2><a href="/blog/">Blog</a><a href="/account">Your Tuned account</a><a href="/devices">Lost your devices?</a><a href="${site.privacy}" rel="noopener">Privacy</a></nav>
+<nav aria-label="Help"><h2>Help</h2><a href="/blog/guides/">Guides</a><a href="/blog/vs/">Compare IPTV players</a><a href="/blog/">Blog</a><a href="/account">Your Tuned account</a><a href="/devices">Lost your devices?</a><a href="${site.privacy}" rel="noopener">Privacy</a></nav>
 </div>
 <p class="wrap copy">© 2026 ${site.name}. Android, Google Play and the Google Play logo are trademarks of Google LLC. Apple, the Apple logo, iPhone, iPad and Mac are trademarks of Apple Inc. Samsung is a trademark of Samsung Electronics.</p>
 </footer>`;
@@ -305,10 +350,51 @@ export function chromeScript(site) {
 `;
 }
 
+/** The picture shared links show (1200 by 630, the size Open Graph and X expect). */
+export const OG_IMAGE = { src: "/img/og.png", width: 1200, height: 630, alt: "Tuned, the IPTV player for Android, on a phone and a TV" };
+
+/** BreadcrumbList structured data from [name, path] pairs, starting at the home page. */
+export const breadcrumbs = (site, trail) => ({
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [["Home", "/"], ...trail].map(([name, path], i) => ({
+        "@type": "ListItem",
+        position: i + 1,
+        name,
+        item: `${site.url}${path}`,
+    })),
+});
+
+/**
+ * The <title> for a post: `seoTitle` from the frontmatter when the heading alone doesn't say what people search for,
+ * and for comparisons "Tuned vs X: features and price compared".
+ */
+export const postTitle = (post) => post.seoTitle || (post.kind === "compare" ? `${post.title}: features and price compared` : post.title);
+
 /** The whole page around a body. */
-export function layout(site, { title, description, path, body, type = "website", jsonLd = [], fullTitle = false, image = "/img/og.png" }) {
+export function layout(
+    site,
+    {
+        title,
+        description,
+        path,
+        body,
+        type = "website",
+        jsonLd = [],
+        fullTitle = false,
+        image = OG_IMAGE,
+        published,
+        modified,
+        noindex = false,
+    },
+) {
     const url = `${site.url}${path}`;
-    const pageTitle = fullTitle ? title : `${title} · ${site.name}`;
+    // The tab and search result title: the name is added unless the title already says it.
+    const pageTitle = fullTitle || title.includes(site.name) ? title : `${title} · ${site.name}`;
+    const article =
+        type === "article" && published
+            ? `<meta property="article:published_time" content="${published}" />\n<meta property="article:modified_time" content="${modified ?? published}" />\n`
+            : "";
     const ld = jsonLd.map((j) => `<script type="application/ld+json">${JSON.stringify(j).replace(/</g, "\\u003c")}</script>`).join("\n");
     return `<!doctype html>
 <!-- Generated by devices/build-site.mjs from devices/site/. Edit the sources and run: node devices/build-site.mjs -->
@@ -318,14 +404,22 @@ export function layout(site, { title, description, path, body, type = "website",
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>${esc(pageTitle)}</title>
 <meta name="description" content="${esc(description)}" />
-<link rel="canonical" href="${url}" />
+${noindex ? '<meta name="robots" content="noindex" />' : `<link rel="canonical" href="${url}" />`}
 <meta property="og:type" content="${type}" />
 <meta property="og:site_name" content="${site.name}" />
+<meta property="og:locale" content="en_CA" />
 <meta property="og:title" content="${esc(title)}" />
 <meta property="og:description" content="${esc(description)}" />
 <meta property="og:url" content="${url}" />
-<meta property="og:image" content="${site.url}${image}" />
-<meta name="twitter:card" content="summary_large_image" />
+<meta property="og:image" content="${site.url}${image.src}" />
+<meta property="og:image:width" content="${image.width}" />
+<meta property="og:image:height" content="${image.height}" />
+<meta property="og:image:alt" content="${esc(image.alt)}" />
+${article}<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="${esc(title)}" />
+<meta name="twitter:description" content="${esc(description)}" />
+<meta name="twitter:image" content="${site.url}${image.src}" />
+<meta name="twitter:image:alt" content="${esc(image.alt)}" />
 <meta name="theme-color" content="#fcfaff" media="(prefers-color-scheme: light)" />
 <meta name="theme-color" content="#121018" media="(prefers-color-scheme: dark)" />
 <link rel="icon" href="/favicon.ico" sizes="48x48" />
@@ -357,22 +451,30 @@ export const postCard = (p) =>
 export function postPage(site, post, { latestVersion, related = [] }) {
     const section = KINDS.find((k) => k.kind === post.kind);
     const crumbs = [`<a href="/blog/">Blog</a>`];
-    if (post.folder) crumbs.push(`<a href="/blog/${post.folder}/">${esc(section?.title ?? post.folder)}</a>`);
+    const trail = [["Blog", "/blog/"]];
+    if (post.folder) {
+        crumbs.push(`<a href="/blog/${post.folder}/">${esc(section?.title ?? post.folder)}</a>`);
+        trail.push([section?.title ?? post.folder, `/blog/${post.folder}/`]);
+    }
+    trail.push([post.title, post.url]);
     const body = `<article class="wrap post">
 <nav class="crumbs" aria-label="Breadcrumb">${crumbs.join(' <span aria-hidden="true">›</span> ')}</nav>
 <h1>${esc(post.title)}</h1>
-<p class="meta"><time datetime="${post.date}">${longDate(post.date)}</time></p>
+<p class="meta"><time datetime="${post.date}">${longDate(post.date)}</time>${post.updated && post.updated !== post.date ? ` · Updated <time datetime="${post.updated}">${longDate(post.updated)}</time>` : ""}</p>
 <div class="prose">
 ${post.html}
 </div>
 ${ctaCard(site, "post", latestVersion)}
 ${related.length ? `<section aria-labelledby="more"><h2 id="more" class="section-title">More from the blog</h2><ul class="post-grid">${related.map(postCard).join("\n")}</ul></section>` : ""}
 </article>`;
+    const firstImage = /<img src="([^"]+)"/.exec(post.html)?.[1];
     return layout(site, {
-        title: post.title,
+        title: postTitle(post),
         description: post.description,
         path: post.url,
         type: "article",
+        published: post.date,
+        modified: post.updated,
         body,
         jsonLd: [
             {
@@ -381,7 +483,13 @@ ${related.length ? `<section aria-labelledby="more"><h2 id="more" class="section
                 headline: post.title,
                 description: post.description,
                 datePublished: post.date,
+                dateModified: post.updated ?? post.date,
+                inLanguage: "en-CA",
                 url: `${site.url}${post.url}`,
+                mainEntityOfPage: { "@type": "WebPage", "@id": `${site.url}${post.url}` },
+                image: `${site.url}${firstImage ?? OG_IMAGE.src}`,
+                articleSection: section?.title,
+                isPartOf: { "@type": "Blog", name: `${site.name} blog`, url: `${site.url}/blog/` },
                 author: { "@type": "Organization", name: site.name, url: site.url },
                 publisher: {
                     "@type": "Organization",
@@ -389,6 +497,7 @@ ${related.length ? `<section aria-labelledby="more"><h2 id="more" class="section
                     logo: { "@type": "ImageObject", url: `${site.url}/apple-touch-icon.png` },
                 },
             },
+            breadcrumbs(site, trail),
         ],
     });
 }
@@ -396,16 +505,20 @@ ${related.length ? `<section aria-labelledby="more"><h2 id="more" class="section
 /** The blog's front page (every post, by section) or one folder's page. */
 export function indexPage(site, { posts, folder, latestVersion }) {
     const sorted = [...posts].sort(byDate);
-    let title, description, sections;
+    let title, description, pageTitle, metaDescription, sections;
     if (folder) {
         const kind = sorted[0]?.kind;
         const meta = KINDS.find((k) => k.kind === kind);
         title = meta?.title ?? folder;
         description = meta?.blurb ?? `${title} from the ${site.name} blog.`;
+        pageTitle = meta?.pageTitle ?? `${title} · Blog`;
+        metaDescription = meta?.description ?? description;
         sections = `<ul class="post-grid">${sorted.map(postCard).join("\n")}</ul>`;
     } else {
         title = "Blog";
         description = `News, guides and what's new in each release of ${site.name}, the IPTV player for Android.`;
+        pageTitle = `${site.name} blog: IPTV player guides, comparisons and release notes`;
+        metaDescription = `Guides to setting up IPTV on Android and Android TV, honest comparisons with 20 other IPTV players, and what's new in each release of ${site.name}.`;
         const kinds = [...KINDS.map((k) => k.kind), ...new Set(sorted.map((p) => p.kind))].filter((k, i, a) => a.indexOf(k) === i);
         sections = kinds
             .map((kind) => {
@@ -430,7 +543,30 @@ ${crumbs}
 ${sections}
 ${ctaCard(site, "blog", latestVersion)}
 </div>`;
-    return layout(site, { title: folder ? `${title} · Blog` : title, description, path, body });
+    const trail = folder
+        ? [
+              ["Blog", "/blog/"],
+              [title, path],
+          ]
+        : [["Blog", "/blog/"]];
+    return layout(site, {
+        title: pageTitle,
+        description: metaDescription,
+        path,
+        body,
+        jsonLd: [
+            {
+                "@context": "https://schema.org",
+                "@type": folder ? "CollectionPage" : "Blog",
+                name: pageTitle,
+                description: metaDescription,
+                url: `${site.url}${path}`,
+                inLanguage: "en-CA",
+                publisher: { "@type": "Organization", name: site.name, url: site.url },
+            },
+            breadcrumbs(site, trail),
+        ],
+    });
 }
 
 /** The landing page: the template with the features, the badges and the newest posts filled in. */
@@ -469,10 +605,19 @@ ${g.items.map((f) => `<li><span class="tick">${icon("check", 18)}</span><span><b
                 name: site.name,
                 operatingSystem: "Android 8.0 or later",
                 applicationCategory: "MultimediaApplication",
+                applicationSubCategory: "IPTV player",
                 description,
                 url: site.url,
                 downloadUrl: site.url + site.apk,
+                installUrl: site.url + site.apk,
                 softwareVersion: latestVersion,
+                inLanguage: "en-CA",
+                image: `${site.url}/apple-touch-icon.png`,
+                screenshot: [...template.matchAll(/<img src="(\/img\/[^"]+\.webp)"/g)]
+                    .map(([, src]) => site.url + src)
+                    .filter((u, i, a) => a.indexOf(u) === i),
+                featureList: groups.flatMap((g) => g.items.map((f) => f.title)),
+                publisher: { "@type": "Organization", name: site.name, url: site.url },
                 offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
             },
             {
@@ -482,7 +627,7 @@ ${g.items.map((f) => `<li><span class="tick">${icon("check", 18)}</span><span><b
                 url: site.url,
                 logo: `${site.url}/apple-touch-icon.png`,
             },
-            { "@context": "https://schema.org", "@type": "WebSite", name: site.name, url: site.url },
+            { "@context": "https://schema.org", "@type": "WebSite", name: site.name, url: site.url, inLanguage: "en-CA" },
             ...faqJsonLd(template),
         ],
     });
@@ -513,7 +658,6 @@ export function faqJsonLd(template) {
     return questions.length ? [{ "@context": "https://schema.org", "@type": "FAQPage", mainEntity: questions }] : [];
 }
 
-/** sitemap.xml: the landing page, the blog's indexes and every post. */
 /**
  * /privacy/, from docs/privacy.md (the one privacy policy, also published with docs/): its "# " title becomes the page's
  * heading and its "Last updated" line the date under it (Melvin, 2026-11-20: "Fix the privacy page").
@@ -542,13 +686,14 @@ ${markdown(rest)}
     });
 }
 
+/** sitemap.xml: the landing page, the blog's indexes and every post. */
 export function sitemap(site, { posts, folders }) {
     const newest = [...posts].sort(byDate)[0]?.date;
     const entry = (path, lastmod, priority) =>
         `  <url><loc>${site.url}${path}</loc>${lastmod ? `<lastmod>${lastmod}</lastmod>` : ""}<priority>${priority}</priority></url>`;
     const lines = [entry("/", newest, "1.0"), entry("/blog/", newest, "0.8"), entry("/privacy/", undefined, "0.3")];
     for (const f of folders) lines.push(entry(`/blog/${f}/`, [...posts].filter((p) => p.folder === f).sort(byDate)[0]?.date, "0.6"));
-    for (const p of [...posts].sort(byDate)) lines.push(entry(p.url, p.date, p.kind === "release" ? "0.5" : "0.7"));
+    for (const p of [...posts].sort(byDate)) lines.push(entry(p.url, p.updated ?? p.date, p.kind === "release" ? "0.5" : "0.7"));
     return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${lines.join("\n")}\n</urlset>\n`;
 }
 
@@ -563,6 +708,70 @@ export function feed(site, posts) {
         )
         .join("\n");
     return `<?xml version="1.0" encoding="UTF-8"?>\n<rss version="2.0"><channel><title>${site.name} blog</title><link>${site.url}/blog/</link><description>News, guides and what's new in ${site.name}.</description><language>en-ca</language>\n${items}\n</channel></rss>\n`;
+}
+
+const STOP = new Set(
+    "a an and the to of in on for with your you is it its how what tuned vs or by from at be are can more best".split(" "),
+);
+const words = (p) =>
+    new Set(
+        `${p.title} ${p.description}`
+            .toLowerCase()
+            .split(/[^a-z0-9]+/)
+            .filter((w) => w.length > 2 && !STOP.has(w)),
+    );
+const overlap = (a, b) => [...a].filter((w) => b.has(w)).length;
+
+/**
+ * The three posts under "More from the blog", so every post links to others on the same subject rather than the same
+ * newest three (search engines and readers follow these). A release links to the releases before and after it and a
+ * guide; a guide, comparison or roundup links to the two closest posts of its kind (by shared words, then the next ones
+ * in order so each post gets linked) and the closest post of another kind that isn't release notes.
+ */
+export function relatedPosts(post, posts) {
+    const others = posts.filter((o) => o !== post);
+    const mine = words(post);
+    const rank = (list) => {
+        const ordered = [...list].sort((a, b) => a.path.localeCompare(b.path));
+        const at = ordered.findIndex((o) => o.path.localeCompare(post.path) > 0);
+        const rotated = at < 0 ? ordered : [...ordered.slice(at), ...ordered.slice(0, at)];
+        return rotated
+            .map((o, i) => ({ o, i, score: overlap(mine, words(o)) }))
+            .sort((a, b) => b.score - a.score || a.i - b.i)
+            .map(({ o }) => o);
+    };
+    if (post.kind === "release") {
+        const releases = posts
+            .filter((o) => o.kind === "release")
+            .sort((a, b) => (a.version ?? "").localeCompare(b.version ?? "", undefined, { numeric: true }));
+        const i = releases.indexOf(post);
+        const near = [releases[i + 1], releases[i - 1]].filter(Boolean);
+        return [...near, ...rank(others.filter((o) => o.kind === "guide")).slice(0, 3 - near.length)];
+    }
+    const same = rank(others.filter((o) => o.kind === post.kind)).slice(0, 2);
+    const other = rank(others.filter((o) => o.kind !== post.kind && o.kind !== "release")).slice(0, 3 - same.length);
+    return [...same, ...other];
+}
+
+/** /404.html, which Vercel serves for an address with no page: kept out of search, with a way back in. */
+export function notFoundPage(site) {
+    const body = `<div class="wrap blog">
+<h1>Page not found</h1>
+<p class="lede">That address doesn't match a page on the ${esc(site.name)} website. It may have moved, or the link may be mistyped.</p>
+<ul>
+<li><a href="/">The ${esc(site.name)} home page</a></li>
+<li><a href="/blog/guides/">Guides to setting up ${esc(site.name)}</a></li>
+<li><a href="/blog/vs/">How ${esc(site.name)} compares with other IPTV players</a></li>
+<li><a href="/blog/">The blog</a></li>
+</ul>
+</div>`;
+    return layout(site, {
+        title: "Page not found",
+        description: `That page isn't on the ${site.name} website. Try the home page, the guides or the comparisons with other IPTV players.`,
+        path: "/404.html",
+        body,
+        noindex: true,
+    });
 }
 
 /**
@@ -592,12 +801,7 @@ export function buildSite(site, { template, groups, posts: sources, privacy }) {
     };
     for (const f of folders)
         files[`blog/${f}/index.html`] = indexPage(site, { posts: posts.filter((p) => p.folder === f), folder: f, latestVersion });
-    for (const p of posts) {
-        const related = posts
-            .filter((o) => o !== p && o.kind === p.kind)
-            .sort(byDate)
-            .slice(0, 3);
-        files[`${p.url.slice(1)}index.html`] = postPage(site, p, { latestVersion, related });
-    }
+    files["404.html"] = notFoundPage(site);
+    for (const p of posts) files[`${p.url.slice(1)}index.html`] = postPage(site, p, { latestVersion, related: relatedPosts(p, posts) });
     return files;
 }

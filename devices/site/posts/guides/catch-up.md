@@ -1,5 +1,6 @@
 ---
 title: How to watch catch-up TV in Tuned
+seoTitle: "How to watch IPTV catch-up TV in Tuned"
 description: Replay programmes from the past few days on channels your provider records, from the guide or the grid.
 date: 2026-11-19
 kind: guide

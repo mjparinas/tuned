@@ -1,6 +1,6 @@
 ---
 title: "Tuned vs Smart IPTV"
-description: "Smart IPTV (SIPTV) and Tuned compared: smart TVs, playlists, guide and the one-time fee."
+description: "Smart IPTV (SIPTV) and Tuned compared: smart TVs, playlists, guide and the one-time fee. A side-by-side IPTV player comparison, with sources."
 date: 2026-11-19
 kind: compare
 ---

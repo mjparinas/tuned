@@ -1,5 +1,6 @@
 ---
 title: Tuned on tablets, foldables and Chromebooks
+seoTitle: "Tuned IPTV on tablets, foldables and Chromebooks"
 description: How Tuned uses a bigger screen: a navigation rail, lists and details side by side, and the guide beside the video.
 date: 2026-11-19
 kind: guide

@@ -1,5 +1,6 @@
 ---
 title: How to set up the TV guide (EPG) in Tuned
+seoTitle: "How to set up an IPTV TV guide (EPG) in Tuned"
 description: Get what's on now and next on every channel, the full grid guide, reminders, and fixes for channels with the wrong times.
 date: 2026-11-19
 kind: guide

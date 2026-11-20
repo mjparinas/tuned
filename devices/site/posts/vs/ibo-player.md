@@ -1,6 +1,6 @@
 ---
 title: "Tuned vs IBO Player"
-description: "IBO Player Pro and Tuned compared: platforms, activation, playlists and price."
+description: "IBO Player Pro and Tuned compared: platforms, activation, playlists and price. A side-by-side IPTV player comparison, with sources."
 date: 2026-11-19
 kind: compare
 ---
