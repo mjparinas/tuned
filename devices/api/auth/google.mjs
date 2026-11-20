@@ -1,6 +1,6 @@
 // GET /api/auth/google: starts "Sign in with Google". `?app=<PKCE challenge>` comes from the app and returns to it;
 // otherwise the browser comes back to the account page (`?tv=<code>` to sign a TV in after).
-import { googleStart, overLimit, signInReady, validChallenge } from "../../lib/auth.mjs";
+import { googleRedirect, overLimit, signInReady, validChallenge } from "../../lib/auth.mjs";
 import { normalizeCode } from "../../lib/tv.mjs";
 
 export async function GET(request) {
@@ -12,7 +12,7 @@ export async function GET(request) {
         const tv = normalizeCode(url.searchParams.get("tv"));
         const after = challenge ? (validChallenge(challenge) ? { to: "app", challenge } : null) : { to: "web", tv };
         if (!after) return Response.redirect(`${url.origin}/account?error=failed`, 302);
-        return Response.redirect(await googleStart(url.origin, after), 302);
+        return await googleRedirect(url.origin, after);
     } catch (error) {
         console.error(error);
         return Response.redirect(`${url.origin}/account?error=failed`, 302);

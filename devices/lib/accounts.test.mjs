@@ -11,6 +11,8 @@ import {
     pkceMatches,
     sameSite,
     seatPlan,
+    stateCookie,
+    stateMatches,
 } from "./accounts.mjs";
 
 const now = 1_800_000_000_000;
@@ -127,4 +129,14 @@ test("cookies, same-site checks and backup versions", () => {
     assert.equal(baseVersion("0"), 0);
     assert.equal(baseVersion("x"), null);
     assert.equal(baseVersion(null), null);
+});
+
+test("a Google sign-in finishes only in the browser that started it", () => {
+    const state = "s".repeat(43);
+    assert.match(stateCookie(state, 600), /^tuned_oauth=s{43}; Path=\/api\/auth\/callback; HttpOnly; Secure; SameSite=Lax; Max-Age=600$/);
+    assert.equal(stateMatches(`a=1; tuned_oauth=${state}`, state), true);
+    assert.equal(stateMatches(`tuned_oauth=${"t".repeat(43)}`, state), false);
+    assert.equal(stateMatches("", state), false);
+    assert.equal(stateMatches(null, state), false);
+    assert.equal(stateMatches(`tuned_oauth=${state}`, null), false);
 });

@@ -1,7 +1,7 @@
 // The admin's endpoints, /api/admin/<action> (docs/decisions/admin.md). Everything it needs comes in `deps`, so the
 // preview server (admin-preview.mjs) can hand in sample data and the tests a stand-in.
 //
-// deps: { data, sessions, redis, env, auth: { webAccount, account, googleStart, signInReady }, system, mail, now }
+// deps: { data, sessions, redis, env, auth: { webAccount, account, googleRedirect, signInReady }, system, mail, now }
 import { checkValue, FLAGS, flagsFor } from "./flags.mjs";
 import { checkNewCode } from "./codes.mjs";
 import { periodOf } from "./metrics.mjs";
@@ -71,7 +71,7 @@ export function adminApi(deps) {
         async signin(request) {
             if (!deps.auth.signInReady()) return json({ status: "sign-in isn't set up" }, 503);
             const origin = new URL(request.url).origin;
-            return Response.redirect(await deps.auth.googleStart(origin, { to: "admin" }), 302);
+            return await deps.auth.googleRedirect(origin, { to: "admin" });
         },
         async "two-factor"(request) {
             if (request.method !== "POST" || !sameOrigin(request)) return json({ status: "bad request" }, 400);

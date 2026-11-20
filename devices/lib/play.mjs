@@ -56,10 +56,16 @@ export function orderKey(order) {
         .replace(/\.\.\d+$/, "");
 }
 
+/**
+ * The line items of a subscription answer that are for `product`. The subscriptionsv2 endpoint takes only the token,
+ * so without this a cheaper subscription's token (a yearly seat) could be reported as yearly Premium.
+ */
+const itemsFor = (product, body) => (body.lineItems ?? []).filter((item) => item.productId === product);
+
 /** What a Play answer means: whether Premium is still paid for, and the order number on the receipt. */
 export function reading(product, body, now) {
     if (ONE_TIME.includes(product)) return { valid: body.purchaseState === 0, order: orderKey(body.orderId) };
-    const items = body.lineItems ?? [];
+    const items = itemsFor(product, body);
     const valid = items.some((item) => Date.parse(item.expiryTime) > now);
     const order = items.map((item) => item.latestSuccessfulOrderId).find(Boolean) ?? body.latestOrderId;
     return { valid, order: orderKey(order) };
@@ -71,7 +77,9 @@ export function entitlementReading(product, body, now) {
     if (ONE_TIME.includes(product)) {
         return { status: valid ? "active" : "refunded", quantity: Math.max(1, Number(body.quantity) || 1), expiresAt: null };
     }
-    const ends = (body.lineItems ?? []).map((item) => Date.parse(item.expiryTime)).filter(Number.isFinite);
+    const ends = itemsFor(product, body)
+        .map((item) => Date.parse(item.expiryTime))
+        .filter(Number.isFinite);
     return { status: valid ? "active" : "expired", quantity: 1, expiresAt: ends.length ? Math.max(...ends) : null };
 }
 

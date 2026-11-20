@@ -3,7 +3,7 @@
 // website sign-in into a device sign-in.
 import { createHash, randomBytes } from "node:crypto";
 import { command } from "./redis.mjs";
-import { cookie, googleClaims, newToken, sameSite, sha, validChallenge } from "./accounts.mjs";
+import { cookie, googleClaims, newToken, sameSite, sha, stateCookie, stateMatches, validChallenge } from "./accounts.mjs";
 import { accountFor, deviceFor } from "./account-store.mjs";
 
 export const SESSION_COOKIE = "tuned_session";
@@ -103,9 +103,16 @@ const googleConfig = () => {
 export const signInReady = () => googleConfig() !== null && Boolean(process.env.DATABASE_URL);
 
 /**
- * Where to send the browser to sign in with Google. `after` says what happens once signed in: `{ to: "web",
- * page }` opens a page of the site, `{ to: "app", challenge }` goes back to the app.
+ * Sends the browser to sign in with Google. `after` says what happens once signed in: `{ to: "web", tv }` opens
+ * the account page, `{ to: "app", challenge }` goes back to the app, `{ to: "admin" }` opens the admin. The redirect
+ * also sets the state cookie, so only this browser can finish the sign-in.
  */
+export async function googleRedirect(origin, after) {
+    const { url, state } = await googleStart(origin, after);
+    return new Response(null, { status: 302, headers: { Location: url, "Set-Cookie": stateCookie(state, STATE_SECONDS) } });
+}
+
+/** The start of a Google sign-in: Google's address and the state that must come back with the browser. */
 export async function googleStart(origin, after) {
     const google = googleConfig();
     const state = newToken();
@@ -124,13 +131,21 @@ export async function googleStart(origin, after) {
         code_challenge_method: "S256",
         prompt: "select_account",
     });
-    return `https://accounts.google.com/o/oauth2/v2/auth?${query}`;
+    return { url: `https://accounts.google.com/o/oauth2/v2/auth?${query}`, state };
 }
 
-/** Google sending the browser back: the account (made the first time) and what was asked for after, or null. */
-export async function googleFinish(origin, state, code) {
+/** Clears the state cookie once Google has sent the browser back. */
+export const clearStateCookie = () => stateCookie("", 0);
+
+/**
+ * Google sending the browser back: the account (made the first time) and what was asked for after, or null. Only
+ * the browser that started the sign-in (its state cookie) can finish it, so nobody can sign another person's
+ * browser in to their own account with a link.
+ */
+export async function googleFinish(origin, state, code, cookieHeader) {
     const google = googleConfig();
     if (typeof state !== "string" || typeof code !== "string") return null;
+    if (!stateMatches(cookieHeader, state)) return null;
     const raw = await command("GETDEL", `oauth:${sha(state)}`);
     if (!raw) return null;
     const { verifier, nonce, after } = JSON.parse(raw);

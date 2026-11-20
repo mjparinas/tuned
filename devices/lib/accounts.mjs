@@ -101,6 +101,21 @@ export function parseDevice(body) {
     return { device, kind, build, name };
 }
 
+/**
+ * The cookie that ties a Google sign-in to the browser that started it (login CSRF): it holds the sign-in's state,
+ * and Google's answer is taken only when the same state comes back in it. Sent to the callback path only.
+ */
+export const STATE_COOKIE = "tuned_oauth";
+export const stateCookie = (state, seconds) =>
+    `${STATE_COOKIE}=${state}; Path=/api/auth/callback; HttpOnly; Secure; SameSite=Lax; Max-Age=${seconds}`;
+
+/** True when the browser's state cookie holds the `state` Google sent back. */
+export function stateMatches(cookieHeader, state) {
+    const kept = cookie(cookieHeader, STATE_COOKIE);
+    if (typeof state !== "string" || !kept || kept.length !== state.length) return false;
+    return timingSafeEqual(Buffer.from(kept), Buffer.from(state));
+}
+
 /** The value of one cookie in a Cookie header. */
 export function cookie(header, name) {
     for (const part of String(header ?? "").split(";")) {
