@@ -79,6 +79,23 @@ class PlayerScreenshots {
         glance = StreamInfo.pills(1920, 1080, 23.976f, "audio/mp4a-latm", 2),
     )
 
+    /** Subtitles off on the phone: the subtitle timing button beside CC is greyed out (Melvin, 2026-11-20). */
+    @Test
+    fun subtitlesOff() = shot(
+        "player-subtitles-off",
+        TvState(
+            positionMs = 14 * MINUTE + 5_000,
+            durationMs = 41 * MINUTE + 30_000,
+            playWhenReady = true,
+            playbackState = Player.STATE_READY,
+            seekable = true,
+            subtitle = TvState.Subtitle("en", on = false),
+        ),
+        note = null,
+        busy = false,
+        captionsOn = false,
+    )
+
     @Test
     fun castingStarting() = shot("player-casting-starting", TvState(), note = "Starting on SHIELD…", busy = true)
 
@@ -88,6 +105,7 @@ class PlayerScreenshots {
         note: String?,
         busy: Boolean,
         glance: StreamInfo.Pills? = null,
+        captionsOn: Boolean = true,
     ) {
         val activity = Robolectric.buildActivity(ComponentActivity::class.java).setup().get()
         val exo = ExoPlayer.Builder(activity).build()
@@ -126,7 +144,10 @@ class PlayerScreenshots {
             }
         tintScrubber(playerView, playerAccent(activity, Accent.VIOLET, dynamicColour = false))
         val search = toolButton(activity, R.drawable.ic_player_subtitle_search, R.string.subtitle_search)
-        val timing = toolButton(activity, R.drawable.ic_player_subtitle_timing, R.string.subtitle_timing).apply { usable(false) }
+        val timing = toolButton(activity, R.drawable.ic_player_subtitle_timing, R.string.subtitle_timing).apply {
+                // Greyed out while casting (the TV draws the captions) or while subtitles are off.
+                usable(note == null && captionsOn)
+            }
         placeBesideCaptions(playerView, listOf(search, timing))
         val density = activity.resources.displayMetrics.density
         val titles =

@@ -141,10 +141,10 @@ class PlayerTools(
     fun onControls(visibility: Int) {
         if (visibility == View.VISIBLE) {
             refreshQuality()
+            refreshSubtitleTiming()
             guideButton.visibility = if (hooks.isLive() && hooks.queue().size > 1) View.VISIBLE else View.GONE
             flipButton.visibility = if (hooks.isLive() && hooks.dial.canFlipBack) View.VISIBLE else View.GONE
-            // The TV draws the captions and the picture, so neither their timing nor the fit can change there.
-            subtitleTimingButton.usable(!hooks.casting())
+            // The TV draws the picture, so the fit can't change there.
             fitButton.usable(!hooks.casting())
         }
     }
@@ -159,12 +159,21 @@ class PlayerTools(
     fun onTracks(tracks: Tracks) {
         this.tracks = tracks
         refreshQuality()
+        refreshSubtitleTiming()
     }
 
     /** The copies or the stream changed, or the controls showed. */
     fun refreshQuality() {
         qualityButton.isVisible = renditionChoice(tracks) || copies.exist
         qualityButton.usable(!hooks.casting())
+    }
+
+    /**
+     * Subtitle timing is greyed out while subtitles are off, and comes back as soon as a subtitle track is picked (the
+     * tracks change then); also while casting, where the TV draws the captions.
+     */
+    private fun refreshSubtitleTiming() {
+        subtitleTimingButton.usable(!hooks.casting() && SubtitleTiming.showing(tracks))
     }
 
     private fun renditionChoice(tracks: Tracks): Boolean =
