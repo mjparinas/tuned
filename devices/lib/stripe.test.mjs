@@ -83,6 +83,7 @@ test("checkout carries the account on the session and on a subscription", () => 
     assert.equal(yearly["line_items[0][quantity]"], "2");
     assert.equal(yearly.customer_email, "a@b.c");
     assert.equal(yearly["automatic_tax[enabled]"], "true");
+    assert.equal(yearly["customer_update[address]"], undefined);
     const once = checkoutFields({
         product: "premium_lifetime",
         quantity: 1,
@@ -94,4 +95,18 @@ test("checkout carries the account on the session and on a subscription", () => 
     assert.equal(once.mode, "payment");
     assert.equal(once.customer, "cus_1");
     assert.equal(once["subscription_data[metadata][account]"], undefined);
+});
+
+test("with tax on, a returning customer's address comes from checkout", () => {
+    const fields = checkoutFields({
+        product: "premium_lifetime",
+        quantity: 1,
+        price: "price_2",
+        account: "acc",
+        customer: "cus_1",
+        origin: "https://t.example",
+        tax: true,
+    });
+    assert.equal(fields["automatic_tax[enabled]"], "true");
+    assert.equal(fields["customer_update[address]"], "auto");
 });

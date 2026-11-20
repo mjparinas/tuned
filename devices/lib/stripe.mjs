@@ -105,7 +105,11 @@ export function checkoutFields({ product, quantity, price, account, email, custo
     }
     if (customer) fields.customer = customer;
     else if (email) fields.customer_email = email;
-    if (tax) fields["automatic_tax[enabled]"] = "true";
+    if (tax) {
+        fields["automatic_tax[enabled]"] = "true";
+        // Stripe Tax needs the buyer's address; a returning customer's is taken from what they type at checkout.
+        if (customer) fields["customer_update[address]"] = "auto";
+    }
     return fields;
 }
 
