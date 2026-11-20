@@ -127,6 +127,19 @@ jobs:
       - name: Premium device list tests
         if: needs.changes.outputs.web == 'true'
         run: node --test devices/lib/*.test.mjs devices/lib/admin/*.test.mjs
+      # Every page of the website in light and dark against WCAG 2.2 AA with axe-core, plus 320px reflow and focus
+      # rings (devices/a11y-check.mjs; docs/decisions/website.md › Accessibility and standards). About a minute.
+      - name: Cache Chromium for the accessibility check
+        if: needs.changes.outputs.web == 'true'
+        uses: actions/cache@v6
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+      - name: Website accessibility check
+        if: needs.changes.outputs.web == 'true'
+        run: |
+          npx playwright install --with-deps chromium
+          node devices/a11y-check.mjs
       - name: Prettier (YAML, JSON, Markdown)
         run: npx prettier --check .
 

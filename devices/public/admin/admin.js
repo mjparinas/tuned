@@ -300,7 +300,8 @@ function table(headers, rows, { empty = "Nothing yet." } = {}) {
             h(
                 "tr",
                 {},
-                headers.map((x) => h("th", { class: x.num ? "num" : null }, x.label)),
+                // A column of buttons has no visible heading; a screen reader still hears "Actions" (WCAG 1.3.1).
+                headers.map((x) => h("th", { class: x.num ? "num" : null }, x.label || h("span", { class: "sr-only" }, "Actions"))),
             ),
         ),
         h(

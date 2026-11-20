@@ -10,6 +10,7 @@
     --card: #ffffff;
     --card-2: #f0ecf6;
     --line: #e4e0eb;
+    --field-line: #79747e;
     --text: #1b1a21;
     --muted: #48454f;
     --primary: #5a35f0;
@@ -28,6 +29,7 @@
         --card: #1e1c25;
         --card-2: #29262f;
         --line: #34313a;
+        --field-line: #938f99;
         --text: #e6e1ea;
         --muted: #cac4d0;
         --primary: #c9beff;
@@ -156,7 +158,8 @@ select {
     font: inherit;
     color: var(--text);
     background: var(--card-2);
-    border: 1px solid transparent;
+    /* A field's edge is 3:1 against the card, so it can be found without the placeholder (WCAG 1.4.11, 2026-11-20). */
+    border: 1px solid var(--field-line);
     border-radius: 14px;
 }
 select {
@@ -169,7 +172,6 @@ input::placeholder {
 }
 input:focus,
 select:focus {
-    outline: none;
     border-color: var(--primary);
     background: var(--card);
 }
@@ -580,5 +582,17 @@ button.apple {
     }
     main.wide #signed-in > .span {
         grid-column: 1 / -1;
+    }
+}
+
+/* Someone who asked their device for less motion gets none: no fades, slides or smooth scrolling (WCAG 2.3.3, 2026-11-20). */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        transition-duration: 0.01ms !important;
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        scroll-behavior: auto !important;
     }
 }

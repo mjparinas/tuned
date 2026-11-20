@@ -84,10 +84,18 @@ export function markdown(md) {
             i += 2;
             const rows = [];
             while (i < lines.length && /^\s*\|/.test(lines[i])) rows.push(tableRow(lines[i++]));
-            const cell = (tag, c, j) => `<${tag}${aligns[j] ? ` style="text-align:${aligns[j]}"` : ""}>${inline(c)}</${tag}>`;
+            // A table whose top-left cell is empty has row headings in its first column (the comparisons' "Platforms",
+            // "Price" and so on), so those are <th scope="row"> and the empty corner is a plain cell: a heading with no
+            // text reads as nothing to a screen reader (WCAG 1.3.1, 2026-11-20 audit). The box scrolls sideways on a
+            // phone, so it can take focus and has a name, letting a keyboard scroll it too (2.1.1).
+            const rowHeads = head[0] === "";
+            const cell = (tag, c, j, scope) =>
+                `<${tag}${scope ? ` scope="${scope}"` : ""}${aligns[j] ? ` style="text-align:${aligns[j]}"` : ""}>${inline(c)}</${tag}>`;
+            const headCell = (c, j) => (c === "" ? cell("td", c, j) : cell("th", c, j, "col"));
+            const bodyCell = (c, j) => (rowHeads && j === 0 ? cell("th", c, j, "row") : cell("td", c, j));
             out.push(
-                `<div class="table"><table><thead><tr>${head.map((c, j) => cell("th", c, j)).join("")}</tr></thead><tbody>` +
-                    rows.map((r) => `<tr>${r.map((c, j) => cell("td", c, j)).join("")}</tr>`).join("") +
+                `<div class="table" tabindex="0" role="region" aria-label="Table"><table><thead><tr>${head.map(headCell).join("")}</tr></thead><tbody>` +
+                    rows.map((r) => `<tr>${r.map(bodyCell).join("")}</tr>`).join("") +
                     "</tbody></table></div>",
             );
             continue;
@@ -444,8 +452,10 @@ ${siteFooter(site)}
 }
 
 /** A card linking to a post. */
-export const postCard = (p) =>
-    `<li class="post-card"><a href="${p.url}"><span class="kind">${esc(kindTitle(p.kind))}</span><h3>${esc(p.title)}</h3><p>${esc(p.description)}</p><time datetime="${p.date}">${longDate(p.date)}</time></a></li>`;
+// `level` is the card's heading level: 3 under a section's h2, 2 straight under a folder page's h1, so headings never
+// skip a level (WCAG 1.3.1, 2026-11-20 audit).
+export const postCard = (p, level = 3) =>
+    `<li class="post-card"><a href="${p.url}"><span class="kind">${esc(kindTitle(p.kind))}</span><h${level}>${esc(p.title)}</h${level}><p>${esc(p.description)}</p><time datetime="${p.date}">${longDate(p.date)}</time></a></li>`;
 
 /** A post's own page. */
 export function postPage(site, post, { latestVersion, related = [] }) {
@@ -465,7 +475,7 @@ export function postPage(site, post, { latestVersion, related = [] }) {
 ${post.html}
 </div>
 ${ctaCard(site, "post", latestVersion)}
-${related.length ? `<section aria-labelledby="more"><h2 id="more" class="section-title">More from the blog</h2><ul class="post-grid">${related.map(postCard).join("\n")}</ul></section>` : ""}
+${related.length ? `<section aria-labelledby="more"><h2 id="more" class="section-title">More from the blog</h2><ul class="post-grid">${related.map((p) => postCard(p)).join("\n")}</ul></section>` : ""}
 </article>`;
     const firstImage = /<img src="([^"]+)"/.exec(post.html)?.[1];
     return layout(site, {
@@ -513,7 +523,7 @@ export function indexPage(site, { posts, folder, latestVersion }) {
         description = meta?.blurb ?? `${title} from the ${site.name} blog.`;
         pageTitle = meta?.pageTitle ?? `${title} · Blog`;
         metaDescription = meta?.description ?? description;
-        sections = `<ul class="post-grid">${sorted.map(postCard).join("\n")}</ul>`;
+        sections = `<ul class="post-grid">${sorted.map((p) => postCard(p, 2)).join("\n")}</ul>`;
     } else {
         title = "Blog";
         description = `News, guides and what's new in each release of ${site.name}, the IPTV player for Android.`;
@@ -530,7 +540,10 @@ export function indexPage(site, { posts, folder, latestVersion }) {
                     folderOf && list.every((p) => p.folder === folderOf)
                         ? `<a class="more" href="/blog/${folderOf}/">All ${esc(kindTitle(kind).toLowerCase())} ›</a>`
                         : "";
-                return `<section aria-labelledby="k-${kind}"><div class="section-head"><h2 id="k-${kind}" class="section-title">${esc(kindTitle(kind))}</h2>${all}</div>${meta ? `<p class="lede">${esc(meta.blurb)}</p>` : ""}<ul class="post-grid">${list.slice(0, 6).map(postCard).join("\n")}</ul></section>`;
+                return `<section aria-labelledby="k-${kind}"><div class="section-head"><h2 id="k-${kind}" class="section-title">${esc(kindTitle(kind))}</h2>${all}</div>${meta ? `<p class="lede">${esc(meta.blurb)}</p>` : ""}<ul class="post-grid">${list
+                    .slice(0, 6)
+                    .map((p) => postCard(p))
+                    .join("\n")}</ul></section>`;
             })
             .join("\n");
     }
@@ -582,7 +595,9 @@ ${g.items.map((f) => `<li><span class="tick">${icon("check", 18)}</span><span><b
         )
         .join("\n");
     const count = groups.reduce((n, g) => n + g.items.length, 0);
-    const latest = homePosts(site, posts).map(postCard).join("\n");
+    const latest = homePosts(site, posts)
+        .map((p) => postCard(p))
+        .join("\n");
     const body = template
         .replaceAll("<!-- @features -->", features)
         .replaceAll("<!-- @feature-count -->", String(count))
