@@ -161,7 +161,7 @@ class SettingsScreenshots : Screenshots() {
     )
 }
 
-private const val SIGN_IN_PAGE = "https://tuned-devices.vercel.app/account?tv=K7QF29MD"
+private const val SIGN_IN_PAGE = "https://www.tunedplayer.com/account?tv=K7QF29MD"
 private val SIGN_IN_CODE = AccountSignIn.State.Code("K7QF-29MD", SIGN_IN_PAGE, QrModules.of(SIGN_IN_PAGE))
 
 /** Every page of Settings, so a new page or row shows up without anyone adding a line. */

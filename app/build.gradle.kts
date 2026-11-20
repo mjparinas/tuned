@@ -27,7 +27,7 @@ android {
         // Trakt's app keys (docs/decisions/trakt.md): from the release workflow's secrets, never committed. Without
         // them the Trakt settings stay hidden.
         // Signing in on a TV with a phone (docs/decisions/onboarding.md): the relay and phone page, in both builds.
-        val tvSignIn = System.getenv("TV_SIGNIN_URL")?.trim()?.takeIf { it.isNotEmpty() } ?: "https://tuned-devices.vercel.app"
+        val tvSignIn = System.getenv("TV_SIGNIN_URL")?.trim()?.takeIf { it.isNotEmpty() } ?: "https://www.tunedplayer.com"
         buildConfigField("String", "TV_SIGNIN_URL", "\"$tvSignIn\"")
         buildConfigField("String", "TRAKT_CLIENT_ID", "\"${System.getenv("TRAKT_CLIENT_ID").orEmpty()}\"")
         // The commit this build came from, shown as plain text at the bottom of Settings (Melvin, 2026-11-18). CI and Release

@@ -82,6 +82,29 @@ jobs:
             --generate-notes \
             --latest
           echo "::notice::Released $TAG: https://github.com/${{ github.repository }}/releases/tag/$TAG"
+      - name: Blog post for the release
+        # The website's "What's new" post for this release (docs/decisions/website.md), from the notes just published,
+        # committed straight to main so the site has it the same day, then merged back into staging. Pushed with
+        # GITHUB_TOKEN, so it starts no workflow (no second release); Vercel deploys it. Only for releases from main.
+        if: env.HAS_KEY == 'true' && !inputs.bundle_only && github.ref == 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: v${{ steps.v.outputs.version }}
+        run: |
+          gh release view "$TAG" --json body --jq .body > "$RUNNER_TEMP/notes.md"
+          git fetch origin main
+          git checkout -B release-post origin/main
+          node devices/release-post.mjs "$TAG" "$(TZ=America/Vancouver date +%F)" "$RUNNER_TEMP/notes.md"
+          node devices/build-site.mjs
+          git add devices/site devices/public
+          if git diff --cached --quiet; then echo "No new post."; exit 0; fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "docs: what's new in Tuned ${TAG#v}"
+          git push origin HEAD:main
+          gh api "repos/${{ github.repository }}/merges" -f base=staging -f head=main -f commit_message="Bring main back into staging" \
+            || echo "::warning::Could not merge main back into staging; merge it by hand so the post isn't lost at the next promotion."
+          echo "::notice::Blog post: https://www.tunedplayer.com/blog/whats-new/tuned-$(echo "${TAG#v}" | tr . -)/"
       - uses: actions/upload-artifact@v7
         if: env.HAS_KEY == 'true'
         with:

@@ -25,7 +25,7 @@ Tuned connects to these services only to do what you ask:
 
 ## Signing in on a TV with your phone
 
-When you sign in on a TV with your phone, the TV makes a one-time key and shows it in a QR code. Your phone (the Tuned app, or the page at tuned-devices.vercel.app/tv) locks what it sends with that key: your playlist login, and from the app also your settings, favourites, lists and watch later. Tuned's sign-in service only passes the locked copy to the TV. It can't unlock it, and it deletes it as soon as the TV takes it, or after 10 minutes. It keeps no record of what was sent; to limit misuse it counts requests per network address, keeping the address only scrambled and only for an hour.
+When you sign in on a TV with your phone, the TV makes a one-time key and shows it in a QR code. Your phone (the Tuned app, or the page at www.tunedplayer.com/tv) locks what it sends with that key: your playlist login, and from the app also your settings, favourites, lists and watch later. Tuned's sign-in service only passes the locked copy to the TV. It can't unlock it, and it deletes it as soon as the TV takes it, or after 10 minutes. It keeps no record of what was sent; to limit misuse it counts requests per network address, keeping the address only scrambled and only for an hour.
 
 ## Your Tuned account
 

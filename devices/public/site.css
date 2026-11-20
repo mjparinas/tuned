@@ -1,0 +1,553 @@
+/*
+ * Tuned's website looks like the app (docs/decisions/branding.md#the-website): the app's Material 3 colours from
+ * ui/theme/Theme.kt, its rounded shapes (cards 20, text fields 14, buttons fully round), semibold titles, and the
+ * channel stack on ink at the top of every page. Light and dark follow the device, as the app's System theme does.
+ */
+:root {
+    color-scheme: light dark;
+    --bg: #fcfaff;
+    --glow: rgba(109, 74, 255, 0.1);
+    --card: #ffffff;
+    --card-2: #f0ecf6;
+    --line: #e4e0eb;
+    --text: #1b1a21;
+    --muted: #48454f;
+    --primary: #5a35f0;
+    --on-primary: #ffffff;
+    --primary-soft: #e6deff;
+    --on-primary-soft: #1c0a66;
+    --teal: #006b5c;
+    --danger: #ba1a1a;
+    --focus: #5a35f0;
+    --shadow: 0 1px 2px rgba(27, 26, 33, 0.05), 0 6px 20px rgba(27, 26, 33, 0.05);
+}
+@media (prefers-color-scheme: dark) {
+    :root {
+        --bg: #121018;
+        --glow: rgba(109, 74, 255, 0.22);
+        --card: #1e1c25;
+        --card-2: #29262f;
+        --line: #34313a;
+        --text: #e6e1ea;
+        --muted: #cac4d0;
+        --primary: #c9beff;
+        --on-primary: #2b10a0;
+        --primary-soft: #4325d6;
+        --on-primary-soft: #e6deff;
+        --teal: #5fdcc3;
+        --danger: #ffb4ab;
+        --focus: #c9beff;
+        --shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+    }
+}
+* {
+    box-sizing: border-box;
+}
+[hidden] {
+    display: none !important;
+}
+html {
+    background: var(--bg);
+}
+body {
+    margin: 0;
+    min-height: 100vh;
+    background: radial-gradient(120% 360px at 50% -120px, var(--glow), transparent 70%) no-repeat var(--bg);
+    color: var(--text);
+    font:
+        16px/1.5 Roboto,
+        system-ui,
+        -apple-system,
+        "Segoe UI",
+        sans-serif;
+    -webkit-font-smoothing: antialiased;
+}
+main {
+    max-width: 560px;
+    margin: 0 auto;
+    padding: 8px 16px 48px;
+}
+
+/* The top bar: the channel stack and the name, as on the app's welcome screen. */
+.brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    max-width: 560px;
+    margin: 0 auto;
+    padding: 20px 16px 12px;
+    color: var(--text);
+    text-decoration: none;
+    font-size: 1.25rem;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+}
+.brand img {
+    width: 40px;
+    height: 40px;
+    border-radius: 11px;
+    box-shadow: 0 4px 14px rgba(11, 10, 16, 0.35);
+}
+
+h1 {
+    font-size: 1.75rem;
+    line-height: 1.25;
+    font-weight: 700;
+    letter-spacing: -0.015em;
+    margin: 16px 0 8px;
+}
+h2 {
+    font-size: 1.125rem;
+    font-weight: 600;
+    margin: 0 0 6px;
+}
+p {
+    color: var(--muted);
+    margin: 0 0 16px;
+}
+strong {
+    color: var(--text);
+}
+a {
+    color: var(--primary);
+}
+.small,
+small {
+    font-size: 0.9rem;
+    color: var(--muted);
+}
+small {
+    display: block;
+}
+.small {
+    margin: 0;
+}
+
+.card {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 20px;
+    padding: 20px;
+    margin-top: 16px;
+    box-shadow: var(--shadow);
+}
+.card > :last-child {
+    margin-bottom: 0;
+}
+/* A card that sells something gets the mark's violet to teal edge. */
+.card.feature {
+    border: 1px solid transparent;
+    background:
+        linear-gradient(var(--card), var(--card)) padding-box,
+        linear-gradient(135deg, #8466ff, #5ff5da) border-box;
+}
+
+label {
+    display: block;
+    font-weight: 600;
+    font-size: 0.9rem;
+    margin: 12px 0 6px;
+}
+input,
+select {
+    width: 100%;
+    min-height: 52px;
+    padding: 12px 16px;
+    font: inherit;
+    color: var(--text);
+    background: var(--card-2);
+    border: 1px solid transparent;
+    border-radius: 14px;
+}
+select {
+    width: auto;
+    padding-right: 12px;
+}
+input::placeholder {
+    color: var(--muted);
+    opacity: 0.7;
+}
+input:focus,
+select:focus {
+    outline: none;
+    border-color: var(--primary);
+    background: var(--card);
+}
+
+/* Buttons are fully round, as Material 3's are in the app. */
+button,
+.button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 48px;
+    padding: 10px 24px;
+    font: inherit;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    text-decoration: none;
+    border-radius: 999px;
+    border: 1px solid var(--primary);
+    background: var(--primary);
+    color: var(--on-primary);
+    cursor: pointer;
+    transition:
+        filter 0.15s,
+        background-color 0.15s;
+}
+button:hover,
+.button:hover {
+    filter: brightness(1.08);
+}
+button.quiet {
+    background: transparent;
+    color: var(--primary);
+    border-color: var(--line);
+}
+button.plain {
+    background: transparent;
+    color: var(--danger);
+    border-color: var(--line);
+}
+button.quiet:hover,
+button.plain:hover {
+    filter: none;
+    background: var(--card-2);
+}
+button:disabled {
+    opacity: 0.45;
+    cursor: default;
+    filter: none;
+}
+:focus-visible {
+    outline: 3px solid var(--focus);
+    outline-offset: 2px;
+}
+form button {
+    margin-top: 16px;
+    width: 100%;
+}
+.actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin-top: 16px;
+}
+.actions label {
+    margin: 0;
+}
+
+/* Lists of devices. */
+ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+li,
+.row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    min-height: 56px;
+    padding: 10px 0;
+    border-top: 1px solid var(--line);
+}
+li:first-child,
+.row:first-child {
+    border-top: 0;
+}
+li span {
+    flex: 1;
+}
+.row > div:first-child > div {
+    font-weight: 600;
+}
+
+#status:empty {
+    display: none;
+}
+#status {
+    margin-top: 16px;
+    padding: 12px 16px;
+    border-radius: 14px;
+    background: var(--primary-soft);
+    color: var(--on-primary-soft);
+}
+.note {
+    margin-top: 24px;
+    font-size: 0.9rem;
+}
+
+@media (min-width: 720px) {
+    main {
+        padding-top: 24px;
+    }
+    h1 {
+        font-size: 2rem;
+    }
+    .card {
+        padding: 24px;
+    }
+}
+
+/* A row of buttons whose buttons are all hidden takes no room, and one that opens a card has no gap above it. */
+.actions:first-child {
+    margin-top: 0;
+}
+.actions:not(:has(> :not([hidden]))) {
+    display: none;
+}
+#devices:not(:has(.row)) {
+    margin-top: 8px;
+    color: var(--muted);
+    font-size: 0.9rem;
+}
+
+/* A card's own message: red for an error, teal for done (Melvin, 2026-11-19). */
+:root {
+    --error-soft: #ffdad6;
+    --on-error-soft: #410002;
+    --ok-soft: #9ff2df;
+    --on-ok-soft: #00201b;
+}
+@media (prefers-color-scheme: dark) {
+    :root {
+        --error-soft: #93000a;
+        --on-error-soft: #ffdad6;
+        --ok-soft: #005045;
+        --on-ok-soft: #9ff2df;
+    }
+}
+.message:empty {
+    display: none;
+}
+.message {
+    display: flex;
+    gap: 8px;
+    margin: 12px 0 0;
+    padding: 10px 14px;
+    border-radius: 14px;
+    font-size: 0.9rem;
+    background: var(--error-soft);
+    color: var(--on-error-soft);
+}
+.message::before {
+    content: "!";
+    flex: none;
+    display: grid;
+    place-items: center;
+    width: 20px;
+    height: 20px;
+    margin-top: 1px;
+    border-radius: 50%;
+    background: var(--danger);
+    color: var(--bg);
+    font-weight: 700;
+    font-size: 0.8rem;
+}
+.message[data-tone="ok"] {
+    background: var(--ok-soft);
+    color: var(--on-ok-soft);
+}
+.message[data-tone="ok"]::before {
+    content: "✓";
+    background: var(--teal);
+}
+input[aria-invalid="true"] {
+    border-color: var(--danger);
+}
+
+/* Pop-ups: centred, 24 px off the edges, at most 560 wide, like the app's TunedDialog. */
+dialog {
+    width: calc(100% - 48px);
+    max-width: 560px;
+    padding: 24px;
+    border: 1px solid var(--line);
+    border-radius: 24px;
+    background: var(--card);
+    color: var(--text);
+    box-shadow: 0 24px 64px rgba(0, 0, 0, 0.4);
+}
+dialog::backdrop {
+    background: rgba(11, 10, 16, 0.6);
+}
+dialog h2 {
+    font-size: 1.375rem;
+    margin-bottom: 12px;
+}
+.actions.end {
+    justify-content: flex-end;
+}
+dialog .actions button {
+    width: auto;
+    margin-top: 0;
+}
+button.danger {
+    background: var(--danger);
+    border-color: var(--danger);
+    color: var(--bg);
+}
+
+/* What Tuned does: a list of features on the account page. */
+.features {
+    display: grid;
+    gap: 4px;
+    margin-top: 8px;
+}
+.features div {
+    display: grid;
+    align-content: start;
+    grid-template-columns: 12px 1fr;
+    column-gap: 12px;
+    padding: 8px 0;
+}
+.features div::before {
+    content: "";
+    width: 10px;
+    height: 10px;
+    margin-top: 7px;
+    border-radius: 3px;
+    background: var(--dot, #8466ff);
+    grid-row: span 2;
+}
+.features div:nth-child(3n + 2) {
+    --dot: #5fdcc3;
+}
+.features div:nth-child(3n) {
+    --dot: var(--muted);
+}
+.features b {
+    font-weight: 600;
+}
+.features > div > span {
+    color: var(--muted);
+    font-size: 0.9rem;
+}
+.tag {
+    display: inline-block;
+    margin-left: 6px;
+    padding: 0 8px;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    vertical-align: 2px;
+    background: var(--primary-soft);
+    color: var(--on-primary-soft);
+}
+@media (min-width: 720px) {
+    .features {
+        grid-template-columns: 1fr 1fr;
+        column-gap: 24px;
+    }
+}
+
+/* Sign-in choices: Google, and Apple coming soon in Apple's own black (white on dark) style. */
+.sign-in-options {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+}
+.sign-in-options p {
+    flex-basis: 100%;
+}
+button.apple {
+    gap: 8px;
+    background: #000000;
+    border-color: #000000;
+    color: #ffffff;
+}
+@media (prefers-color-scheme: dark) {
+    button.apple {
+        background: #ffffff;
+        border-color: #ffffff;
+        color: #000000;
+    }
+}
+
+/* Google's own Sign in with Google button (its branding guidelines): the four-colour G on white with a grey
+   outline, or on #131314 in dark, Roboto Medium, pill shaped. */
+.gsi {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    min-height: 48px;
+    padding: 10px 20px 10px 14px;
+    border: 1px solid #747775;
+    border-radius: 999px;
+    background: #ffffff;
+    color: #1f1f1f;
+    font:
+        500 15px/20px Roboto,
+        system-ui,
+        sans-serif;
+    letter-spacing: 0.25px;
+    text-decoration: none;
+    cursor: pointer;
+}
+.gsi img {
+    width: 20px;
+    height: 20px;
+}
+.gsi:hover {
+    background: #f8f9fa;
+}
+.gsi:focus-visible {
+    outline: 3px solid #4285f4;
+    outline-offset: 2px;
+}
+@media (prefers-color-scheme: dark) {
+    .gsi {
+        background: #131314;
+        border-color: #8e918f;
+        color: #e3e3e3;
+    }
+    .gsi:hover {
+        background: #1f1f20;
+    }
+}
+
+/* What Tuned does: one tap-to-open group per area, as the landing page groups them. */
+#feature-groups details {
+    border-top: 1px solid var(--line);
+}
+#feature-groups details:first-child {
+    border-top: 0;
+}
+#feature-groups summary {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 48px;
+    font-weight: 600;
+    cursor: pointer;
+    list-style: none;
+}
+#feature-groups summary::-webkit-details-marker {
+    display: none;
+}
+#feature-groups summary::after {
+    content: "";
+    width: 8px;
+    height: 8px;
+    margin: 0 4px 0 auto;
+    border-right: 2px solid var(--muted);
+    border-bottom: 2px solid var(--muted);
+    transform: rotate(45deg);
+    transition: transform 0.15s;
+}
+#feature-groups details[open] summary::after {
+    transform: rotate(-135deg);
+}
+#feature-groups .count {
+    padding: 0 8px;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    background: var(--card-2);
+    color: var(--muted);
+}
+#feature-groups .features {
+    padding-bottom: 12px;
+}

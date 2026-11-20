@@ -57,12 +57,12 @@ class TvHandoffTest {
     @Test
     fun `the qr link carries the code and key, and reads back`() {
         val tv = TvHandoff.newKeys()
-        val link = TvHandoff.link("https://tuned-devices.vercel.app/", "K7QF29MD", tv.publicKey)
-        assertTrue(link.startsWith("https://tuned-devices.vercel.app/tv#K7QF29MD."))
+        val link = TvHandoff.link("https://www.tunedplayer.com/", "K7QF29MD", tv.publicKey)
+        assertTrue(link.startsWith("https://www.tunedplayer.com/tv#K7QF29MD."))
         assertEquals(TvHandoff.Target("K7QF29MD", tv.publicKey), TvHandoff.parseLink(link))
         assertEquals(
             TvHandoff.Target("K7QF29MD", tv.publicKey),
-            TvHandoff.parseLink(link.replace("https://tuned-devices.vercel.app/", "tuned://")),
+            TvHandoff.parseLink(link.replace("https://www.tunedplayer.com/", "tuned://")),
         )
     }
 
@@ -75,7 +75,7 @@ class TvHandoffTest {
             }
         assertNull(TvHandoff.parseLink("tuned://tv#K7QF29MD.${TvHandoff.b64(off)}"))
         assertNull(TvHandoff.parseLink("tuned://tv#K7QF29MD"))
-        assertNull(TvHandoff.parseLink("https://tuned-devices.vercel.app/tv"))
+        assertNull(TvHandoff.parseLink("https://www.tunedplayer.com/tv"))
         assertFailsWith<TvHandoff.NotOpened> { TvHandoff.seal(byteArrayOf(0), TvHandoff.Target("K7QF29MD", off)) }
     }
 
