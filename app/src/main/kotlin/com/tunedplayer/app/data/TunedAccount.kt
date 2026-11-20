@@ -165,6 +165,19 @@ class TunedAccount(
     }
 
     /**
+     * The copy of a playlist's channels and guide kept in the account ([com.tunedplayer.app.core.ChannelShare], JSON),
+     * or null when there is none. For a device whose first download from the provider failed. Throws [IOException]
+     * when the server can't be asked.
+     */
+    suspend fun channelList(playlistId: String): String? {
+        val request = signedIn(Request.Builder().url(url("api/account/channels?playlist=$playlistId")).get())
+        val (status, text) = call(request)
+        if (status == HTTP_NOT_FOUND) return null
+        if (status != HTTP_OK) throw IOException("The channel list answered $status")
+        return text
+    }
+
+    /**
      * Asks the account for this device's Premium seat ([use] true) or gives it back ([use] false), reporting the
      * store's [purchases] so the account knows what was bought in Play. Null when signed out or the server can't be
      * reached, which never locks anyone out.

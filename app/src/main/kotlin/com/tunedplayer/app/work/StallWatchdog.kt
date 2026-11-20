@@ -18,13 +18,13 @@ class StallWatchdog(
     private val now: () -> Long,
     private val checkEveryMs: Long = CHECK_EVERY_MS,
 ) {
-    private var last: Pair<SyncProgress.Step, Long>? = null
+    private var last: Triple<SyncProgress.Step, Long, Long>? = null
 
     @Volatile private var movedAt = now()
 
     /** Every progress report, before any throttling. */
     fun saw(progress: SyncProgress) {
-        val key = progress.step to progress.done
+        val key = Triple(progress.step, progress.done, progress.rows)
         if (key != last) {
             last = key
             movedAt = now()

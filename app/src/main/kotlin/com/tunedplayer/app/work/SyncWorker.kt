@@ -80,13 +80,29 @@ class SyncWorker(
             Result.success()
         } catch (e: StallWatchdog.Stalled) {
             AppLog.w(TAG, "The first download stopped moving; ending it so Retry shows", e)
-            container.settings.update { it.copy(lastSyncError = applicationContext.getString(R.string.sync_stalled)) }
-            Result.failure()
+            fromAccount() ?: run {
+                container.settings.update { it.copy(lastSyncError = applicationContext.getString(R.string.sync_stalled)) }
+                Result.failure()
+            }
         } catch (e: IOException) {
             AppLog.w(TAG, "Refresh failed (attempt ${runAttemptCount + 1})", e)
             // The download already retried with backoff; the first sign-in reports at once instead of waiting for more.
-            if (!inputData.getBoolean(KEY_FIRST, false) && runAttemptCount < MAX_ATTEMPTS) Result.retry() else Result.failure()
+            fromAccount()
+                ?: if (!inputData.getBoolean(KEY_FIRST, false) && runAttemptCount < MAX_ATTEMPTS) Result.retry() else Result.failure()
         }
+    }
+
+    /**
+     * The provider failed with nothing cached: Live TV from the copy kept in the Tuned account, and the provider tried
+     * again later (Melvin, 2026-11-20). Null when there is no copy to use, and the failure stands.
+     */
+    private suspend fun fromAccount(): Result? {
+        val container = applicationContext.container
+        val cached = attempt(TAG, "Couldn't check the cache") { container.db.items().any() }.getOrDefault(true)
+        if (cached || !container.accountChannels.fill()) return null
+        container.settings.update { it.copy(lastSyncError = "") }
+        Widgets.refresh(applicationContext)
+        return Result.retry()
     }
 
     /** Hands progress to the screens (WorkInfo.progress) and the notification, a few times a second at most. */

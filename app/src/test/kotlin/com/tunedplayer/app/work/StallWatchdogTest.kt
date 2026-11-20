@@ -25,7 +25,7 @@ class StallWatchdogTest {
             dog.watch(armed = { true }) {
                 // The server never answers: the download only repeats "waiting" (done 0).
                 while (true) {
-                    dog.saw(SyncProgress(SyncProgress.Step.Playlist))
+                    dog.saw(SyncProgress(SyncProgress.Step.DownloadPlaylist))
                     delay(CHECK)
                 }
             }
@@ -44,7 +44,7 @@ class StallWatchdogTest {
             dog.watch(armed = { true }) {
                 for (bytes in 1L..30L) {
                     delay(LIMIT / 10)
-                    dog.saw(SyncProgress(SyncProgress.Step.Playlist, bytes * 1_000))
+                    dog.saw(SyncProgress(SyncProgress.Step.DownloadPlaylist, bytes * 1_000))
                 }
                 "done"
             }
