@@ -206,9 +206,6 @@ fun ProfilesScreen(
     var ask by remember { mutableStateOf<PinAsk?>(null) }
     var editing by remember { mutableStateOf<ProfileEntity?>(null) }
     val scope = rememberCoroutineScope()
-    // On a TV the remote starts on the first profile, so OK alone picks it (Melvin, 2026-11-20). Remembered once the
-    // profiles have loaded, so the moment it may take focus starts when the tiles appear.
-    val startFocus = rememberStartFocus()
 
     val pick: (ProfileEntity) -> Unit = { p ->
         scope.launchSafely("Profiles") {
@@ -261,22 +258,7 @@ fun ProfilesScreen(
                     )
                     Spacer(Modifier.height(40.dp))
                 }
-                FlowRow(
-                    horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally),
-                    verticalArrangement = Arrangement.spacedBy(20.dp),
-                    modifier = Modifier.fillMaxWidth(),
-                ) {
-                    list.forEachIndexed { i, p ->
-                        key(p.id) {
-                            ProfileTile(
-                                p,
-                                selected = p.id == current?.id,
-                                managing = managing,
-                                onClick = { pick(p) },
-                                modifier = if (i == 0) Modifier.startFocus(startFocus) else Modifier,
-                            )
-                        }
-                    }
+                ProfileRow(list, current?.id, managing, onPick = pick) {
                     // Hidden at the cap, so the picker never crowds (docs/decisions/profiles.md).
                     if (!kidsNow && managing && ProfileRules.canAdd(list.size)) {
                         AddTile(onClick = {
@@ -347,6 +329,41 @@ fun ProfilesScreen(
             vm = vm,
             onClose = { editing = null },
         )
+    }
+}
+
+/**
+ * The profiles, in a row that wraps, with [trailing] (the add tile) after them. On a TV the remote starts on the first
+ * profile, so OK alone picks it (Melvin, 2026-11-20: "it should auto highlight the first entry so we only need to click ok
+ * on the remote"). The first, not the one in use, so the same press always picks the same profile.
+ */
+@Composable
+internal fun ProfileRow(
+    list: List<ProfileEntity>,
+    currentId: Long?,
+    managing: Boolean,
+    onPick: (ProfileEntity) -> Unit,
+    trailing: @Composable () -> Unit = {},
+) {
+    // Remembered once the profiles have loaded, so the moment it may take focus starts when the tiles appear.
+    val startFocus = rememberStartFocus()
+    FlowRow(
+        horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally),
+        verticalArrangement = Arrangement.spacedBy(20.dp),
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        list.forEachIndexed { i, p ->
+            key(p.id) {
+                ProfileTile(
+                    p,
+                    selected = p.id == currentId,
+                    managing = managing,
+                    onClick = { onPick(p) },
+                    modifier = if (i == 0) Modifier.startFocus(startFocus) else Modifier,
+                )
+            }
+        }
+        trailing()
     }
 }
 
