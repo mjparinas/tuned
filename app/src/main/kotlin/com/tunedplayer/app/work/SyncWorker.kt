@@ -33,15 +33,14 @@ class SyncWorker(
     /** Ends a first download that stops moving, so the screen shows an error and Retry instead of spinning on. */
     private val watchdog = StallWatchdog(StallWatchdog.FIRST_DOWNLOAD_LIMIT_MS, SystemClock::elapsedRealtime)
 
-    override suspend fun doWork(): Result =
-        logFailures(
-            TAG,
-            failed = {
-                // Not a network failure (an unreadable answer, a bug): still said on the screen, never a silent spinner.
-                saveError(applicationContext.getString(R.string.sync_stopped))
-                Result.failure()
-            },
-        ) { refresh() }
+    override suspend fun doWork(): Result = logFailures(
+        TAG,
+        failed = {
+            // Not a network failure (an unreadable answer, a bug): still said on the screen, never a silent spinner.
+            saveError(applicationContext.getString(R.string.sync_stopped))
+            Result.failure()
+        },
+    ) { refresh() }
 
     /** What the first-run screen shows with Retry. A failure the refresh already described keeps its own words. */
     private suspend fun saveError(message: String) {

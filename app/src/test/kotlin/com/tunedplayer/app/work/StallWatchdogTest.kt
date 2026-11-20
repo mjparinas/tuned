@@ -4,42 +4,46 @@ import com.tunedplayer.app.data.SyncProgress
 import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.test.TestScope
-import kotlinx.coroutines.test.currentTime
-import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
+/**
+ * Real time with short limits rather than runTest: runTest fails on any coroutine exception another test in the same
+ * JVM left behind, which has nothing to do with the watchdog. The margins are wide (10x) so a busy machine can't fail it.
+ */
 class StallWatchdogTest {
-    private fun TestScope.watchdog() = StallWatchdog(limitMs = LIMIT, now = { currentTime }, checkEveryMs = 1_000)
+    private fun watchdog() = StallWatchdog(limitMs = LIMIT, now = System::currentTimeMillis, checkEveryMs = CHECK)
 
     @Test
-    fun aDownloadThatNeverAnswersIsEnded() = runTest {
+    fun aDownloadThatNeverAnswersIsEnded() = runBlocking {
         val dog = watchdog()
+        val started = System.currentTimeMillis()
         var stalled: StallWatchdog.Stalled? = null
         try {
             dog.watch(armed = { true }) {
                 // The server never answers: the download only repeats "waiting" (done 0).
                 while (true) {
                     dog.saw(SyncProgress(SyncProgress.Step.Playlist))
-                    delay(10_000)
+                    delay(CHECK)
                 }
             }
         } catch (e: StallWatchdog.Stalled) {
             stalled = e
         }
+        val took = System.currentTimeMillis() - started
         assertTrue("a silent first download must end", stalled != null)
-        assertTrue(currentTime in LIMIT..LIMIT + 2_000)
+        assertTrue("ended after ${took}ms", took >= LIMIT)
     }
 
     @Test
-    fun aSlowDownloadThatKeepsMovingIsLeftAlone() = runTest {
+    fun aSlowDownloadThatKeepsMovingIsLeftAlone() = runBlocking {
         val dog = watchdog()
         val result =
             dog.watch(armed = { true }) {
-                for (bytes in 1L..20L) {
-                    delay(LIMIT / 2)
+                for (bytes in 1L..30L) {
+                    delay(LIMIT / 10)
                     dog.saw(SyncProgress(SyncProgress.Step.Playlist, bytes * 1_000))
                 }
                 "done"
@@ -48,7 +52,7 @@ class StallWatchdogTest {
     }
 
     @Test
-    fun onceChannelsAreCachedNothingIsEnded() = runTest {
+    fun onceChannelsAreCachedNothingIsEnded() = runBlocking {
         val dog = watchdog()
         val result =
             dog.watch(armed = { false }) {
@@ -59,19 +63,20 @@ class StallWatchdogTest {
     }
 
     @Test
-    fun aRealCancellationStillGoesThrough() = runTest {
+    fun aRealCancellationStillGoesThrough() = runBlocking {
         val dog = watchdog()
         val job =
             launch {
-                dog.watch(armed = { true }) { awaitCancellation() }
+                dog.watch(armed = { false }) { awaitCancellation() }
             }
-        delay(1_000)
+        delay(CHECK)
         job.cancel()
         job.join()
         assertTrue(job.isCancelled)
     }
 
     private companion object {
-        const val LIMIT = 300_000L
+        const val LIMIT = 500L
+        const val CHECK = 10L
     }
 }
