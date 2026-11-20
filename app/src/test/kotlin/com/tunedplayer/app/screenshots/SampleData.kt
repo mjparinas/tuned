@@ -12,6 +12,7 @@ import coil3.asImage
 import com.tunedplayer.app.core.ContentKind
 import com.tunedplayer.app.core.Episodes
 import com.tunedplayer.app.core.Search
+import com.tunedplayer.app.core.TitleSort
 import com.tunedplayer.app.data.db.CurrentProfileEntity
 import com.tunedplayer.app.data.db.DownloadEntity
 import com.tunedplayer.app.data.db.FavouriteEntity
@@ -72,6 +73,11 @@ object SampleData {
                 episode = episode,
                 sortOrder = items.size,
                 number = number,
+                // Made-up years and ratings, so the Movies and Shows sorts have something to order by.
+                year = if (kind == ContentKind.LIVE) null else 2000 + (id % 25).toInt(),
+                rating = if (kind == ContentKind.LIVE) null else 5.0 + (id * 7 % 45) / 10.0,
+                added = if (kind == ContentKind.LIVE) 0 else 1_700_000_000L + id * 3_600,
+                sortTitle = if (kind == ContentKind.LIVE) "" else TitleSort.title(show ?: name),
             ),
         )
 

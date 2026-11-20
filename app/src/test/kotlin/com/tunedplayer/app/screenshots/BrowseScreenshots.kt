@@ -12,6 +12,7 @@ import com.tunedplayer.app.R
 import com.tunedplayer.app.core.ContentKind
 import com.tunedplayer.app.core.Episodes
 import com.tunedplayer.app.core.PinnedGroups
+import com.tunedplayer.app.core.TitleSort
 import com.tunedplayer.app.data.StartTab
 import com.tunedplayer.app.data.db.CurrentProfileEntity
 import com.tunedplayer.app.data.db.ProfileEntity
@@ -75,6 +76,44 @@ class BrowseScreenshots : Screenshots() {
     @Test fun movies() = shot("browse-movies", HomeRoute, wait = "Glass Harbour", settings = DARK.copy(startTab = StartTab.MOVIES))
 
     @Test fun shows() = shot("browse-shows", HomeRoute, wait = "Snowline", settings = DARK.copy(startTab = StartTab.SHOWS))
+
+    /** Movies' sort, open: the order in use ticked (Melvin, 2026-11-20: "sort by newest first or sort by the rating"). */
+    @Test
+    fun moviesSortMenu() = shot(
+        "browse-movies-sort",
+        HomeRoute,
+        wait = "Glass Harbour",
+        settings = DARK.copy(startTab = StartTab.MOVIES),
+        then = { compose.onNode(hasText(text(R.string.sort_chip))).performClick() },
+    )
+
+    /** Movies sorted by rating, the chip naming the order. */
+    @Test
+    fun moviesTopRated() = shot(
+        "browse-movies-top-rated",
+        HomeRoute,
+        wait = "Glass Harbour",
+        settings = DARK.copy(startTab = StartTab.MOVIES, movieSort = TitleSort.Order.RATING),
+    )
+
+    /** Shows newest first, apart from the Movies sort. */
+    @Test
+    fun showsRecentlyAdded() = shot(
+        "browse-shows-recently-added",
+        HomeRoute,
+        wait = "Snowline",
+        settings = DARK.copy(startTab = StartTab.SHOWS, showSort = TitleSort.Order.ADDED),
+    )
+
+    @Test
+    @Config(qualifiers = TV)
+    fun moviesSortMenuOnTv() = shot(
+        "browse-movies-sort-tv",
+        HomeRoute,
+        wait = "Glass Harbour",
+        settings = DARK.copy(startTab = StartTab.MOVIES, movieSort = TitleSort.Order.YEAR),
+        then = { compose.onNode(hasText(text(R.string.sort_year))).performClick() },
+    )
 
     /** Films filed under "EN" still show with only Canada and the United States on (Melvin, 2026-11-20). */
     @Test

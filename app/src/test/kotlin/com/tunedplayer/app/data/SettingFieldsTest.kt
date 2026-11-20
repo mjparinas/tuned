@@ -4,6 +4,7 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.core.mutablePreferencesOf
 import androidx.datastore.preferences.core.stringPreferencesKey
+import com.tunedplayer.app.core.TitleSort
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -63,6 +64,8 @@ class SettingFieldsTest {
             autoSubtitles = false,
             showGuideInList = false,
             liveGrid = true,
+            movieSort = TitleSort.Order.ADDED,
+            showSort = TitleSort.Order.RATING,
             channelNumbers = false,
             startOnLastChannel = true,
             checkUpdates = false,
@@ -176,6 +179,8 @@ private val KNOWN_KEYS =
         "user_agent",
         "show_guide_in_list",
         "live_grid",
+        "movie_sort",
+        "show_sort",
         "channel_numbers",
         "always_show_scrollbar",
         "start_on_last_channel",

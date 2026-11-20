@@ -38,6 +38,7 @@ class PlaylistSession(
             db.items().deleteAll()
             db.shows().deleteShowGroups()
             db.shows().deleteCovers()
+            db.shows().deleteDetails()
             db.programmes().deleteAll()
             db.catchUp().deleteAll()
             db.channelScan().deleteAll()

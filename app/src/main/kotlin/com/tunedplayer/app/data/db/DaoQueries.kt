@@ -137,3 +137,58 @@ internal const val LIVE_QUICK =
         "OR i.id IN (SELECT docid FROM items_fts WHERE items_fts MATCH :topic)) " +
         "AND ('any' IN (:quick) OR i.region IN (:quick)) " +
         "AND ('adult' NOT IN (:quick) OR i.adult = 1)"
+
+/**
+ * Movies (or any one kind) with everything that narrows the tab: hidden countries and groups, the group chip,
+ * Favourites, one of the person's own lists and the search. Each sort adds its own ORDER BY ([ItemDao.items]).
+ */
+internal const val TITLE_FILTER = """
+        WHERE i.kind = :kind
+            AND COALESCE(i.region, 'none') NOT IN (:hidden) AND ('g:' || i.kind || ':' || i.groupName) NOT IN (:hidden)
+            AND NOT ('scan:dead' IN (:hidden) AND i.id IN (SELECT itemId FROM channel_scan WHERE hidden = 1))
+            AND NOT ('placeholder' IN (:hidden) AND i.kind = 0
+                AND ((' ' || i.searchName) GLOB '* no event*' OR (' ' || i.searchName) GLOB '* no live event*'))
+            AND NOT ('247' IN (:hidden)
+                AND ((' ' || lower(i.groupName || ' ' || i.name) || ' ') GLOB '*[^0-9]24[/ x-]7[^0-9]*'
+                    OR (' ' || lower(i.groupName || ' ' || i.name) || ' ') GLOB '*[^0-9]247[^0-9]*'
+                    OR (' ' || lower(i.groupName || ' ' || i.name) || ' ') GLOB '*[^0-9]24 / 7[^0-9]*'))
+            AND (:adult OR i.adult = 0)
+            $KIDS_ONLY_I
+            AND (:group IS NULL OR i.groupName = :group)
+            AND (:favouritesOnly = 0 OR i.id IN (SELECT itemId FROM favourites WHERE profileId = $ME))
+            AND (:listId = 0 OR i.id IN (SELECT itemId FROM list_items WHERE listId = :listId))
+            AND (:query = '' OR i.id IN (SELECT docid FROM items_fts WHERE items_fts MATCH :match))
+"""
+
+/** One row per show, from its episodes, with how many the profile hasn't seen of a show it has started. */
+internal const val SHOW_SUMMARY = """
+        SELECT showKey, MIN(showName) AS showName, MAX(logo) AS logo, MIN(groupName) AS groupName, COUNT(*) AS episodes,
+            SUM(CASE WHEN i.showKey IN (SELECT showKey FROM seen_episodes WHERE profileId = $ME)
+                AND i.id NOT IN (SELECT itemId FROM seen_episodes WHERE profileId = $ME)
+                THEN 1 ELSE 0 END) AS newEpisodes
+        FROM items i
+"""
+
+/** [TITLE_FILTER] for [SHOW_SUMMARY]: the shows with an episode left in, one row each. Each sort adds its ORDER BY. */
+internal const val SHOW_FILTER = """
+        WHERE i.kind = 2 AND i.showKey IS NOT NULL
+            AND COALESCE(i.region, 'none') NOT IN (:hidden) AND ('g:' || i.kind || ':' || i.groupName) NOT IN (:hidden)
+            AND NOT ('scan:dead' IN (:hidden) AND i.id IN (SELECT itemId FROM channel_scan WHERE hidden = 1))
+            AND NOT ('placeholder' IN (:hidden) AND i.kind = 0
+                AND ((' ' || i.searchName) GLOB '* no event*' OR (' ' || i.searchName) GLOB '* no live event*'))
+            AND NOT ('247' IN (:hidden)
+                AND ((' ' || lower(i.groupName || ' ' || i.name) || ' ') GLOB '*[^0-9]24[/ x-]7[^0-9]*'
+                    OR (' ' || lower(i.groupName || ' ' || i.name) || ' ') GLOB '*[^0-9]247[^0-9]*'
+                    OR (' ' || lower(i.groupName || ' ' || i.name) || ' ') GLOB '*[^0-9]24 / 7[^0-9]*'))
+            AND (:adult OR i.adult = 0)
+            $KIDS_ONLY_I
+            AND (:group IS NULL OR i.groupName = :group)
+            AND (:favouritesOnly = 0 OR i.id IN (SELECT itemId FROM favourites WHERE profileId = $ME))
+            AND (:query = '' OR i.id IN (SELECT docid FROM items_fts WHERE items_fts MATCH :match))
+        GROUP BY showKey
+"""
+
+/** A show's newest change, year and rating from [ShowGroupEntity], for sorting [SHOW_FILTER]'s rows. */
+internal const val SHOW_ADDED = "(SELECT MAX(g.added) FROM show_groups g WHERE g.showKey = i.showKey)"
+internal const val SHOW_YEAR = "(SELECT MAX(g.year) FROM show_groups g WHERE g.showKey = i.showKey)"
+internal const val SHOW_RATING = "(SELECT MAX(g.rating) FROM show_groups g WHERE g.showKey = i.showKey)"

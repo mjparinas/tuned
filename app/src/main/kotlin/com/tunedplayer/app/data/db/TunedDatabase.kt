@@ -31,8 +31,9 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         ListItemEntity::class,
         ChannelEditEntity::class,
         ShowCoverEntity::class,
+        ShowDetailsEntity::class,
     ],
-    version = 20,
+    version = 21,
     exportSchema = true,
 )
 abstract class TunedDatabase : RoomDatabase() {
@@ -96,6 +97,7 @@ abstract class TunedDatabase : RoomDatabase() {
                 MIGRATION_17_18,
                 MIGRATION_18_19,
                 MIGRATION_19_20,
+                MIGRATION_20_21,
             ).addCallback(FirstProfile)
             // Going back to an older release (installing an older APK) can't keep a newer database: start it afresh
             // rather than crash on every launch. Upgrades always migrate, above.
@@ -318,6 +320,36 @@ abstract class TunedDatabase : RoomDatabase() {
                 override fun migrate(db: SupportSQLiteDatabase) {
                     db.execSQL(
                         "CREATE TABLE IF NOT EXISTS `show_covers` (`showKey` TEXT NOT NULL, `cover` TEXT NOT NULL, PRIMARY KEY(`showKey`))",
+                    )
+                }
+            }
+
+        /**
+         * Adds what Movies and Shows sort on ([ItemEntity.added], year, rating and title) and the shows' own details
+         * ([ShowDetailsEntity]). Titles and years are filled in the background from the names ([SortFields]); times
+         * and ratings come with the next refresh, which a new version always reads in full.
+         */
+        val MIGRATION_20_21 =
+            object : Migration(20, 21) {
+                override fun migrate(db: SupportSQLiteDatabase) {
+                    for (table in listOf("items", "show_groups")) {
+                        db.execSQL("ALTER TABLE `$table` ADD COLUMN `added` INTEGER NOT NULL DEFAULT 0")
+                        db.execSQL("ALTER TABLE `$table` ADD COLUMN `year` INTEGER")
+                        db.execSQL("ALTER TABLE `$table` ADD COLUMN `rating` REAL")
+                        db.execSQL("ALTER TABLE `$table` ADD COLUMN `sortTitle` TEXT NOT NULL DEFAULT ''")
+                    }
+                    for (column in listOf("added", "year", "rating")) {
+                        db.execSQL(
+                            "CREATE INDEX IF NOT EXISTS `index_items_kind_${column}_sortOrder` " +
+                                "ON `items` (`kind` ASC, `$column` DESC, `sortOrder` ASC)",
+                        )
+                    }
+                    db.execSQL(
+                        "CREATE INDEX IF NOT EXISTS `index_items_kind_sortTitle_sortOrder` ON `items` (`kind`, `sortTitle`, `sortOrder`)",
+                    )
+                    db.execSQL(
+                        "CREATE TABLE IF NOT EXISTS `show_details` (`showKey` TEXT NOT NULL, `added` INTEGER NOT NULL, " +
+                            "`year` INTEGER, `rating` REAL, PRIMARY KEY(`showKey`))",
                     )
                 }
             }

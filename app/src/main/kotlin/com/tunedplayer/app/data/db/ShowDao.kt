@@ -15,25 +15,40 @@ interface ShowDao {
      * The Shows tab when nothing narrows it: grouped from [ShowGroupEntity], a few rows per show, instead of from
      * every episode. New episodes are counted only for the shows on screen.
      */
-    @Query(
-        """
-        SELECT s.showKey, MIN(s.showName) AS showName, MAX(s.logo) AS logo, MIN(s.groupName) AS groupName,
-            SUM(s.episodes) AS episodes,
-            CASE WHEN s.showKey IN (SELECT showKey FROM seen_episodes WHERE profileId = $ME) THEN (
-                SELECT COUNT(*) FROM items e
-                WHERE e.kind = 2 AND e.showKey = s.showKey AND e.id NOT IN (SELECT itemId FROM seen_episodes WHERE profileId = $ME)
-            ) ELSE 0 END AS newEpisodes
-        FROM show_groups s
-        WHERE COALESCE(s.region, 'none') NOT IN (:hidden) AND ('g:2:' || s.groupName) NOT IN (:hidden)
-            AND (:adult OR s.adult = 0)
-            $KIDS_ONLY_S
-            $ROUND_THE_CLOCK_S
-            AND (:group IS NULL OR s.groupName = :group)
-        GROUP BY s.showKey
-        ORDER BY MIN(s.sortOrder)
-        """,
-    )
+    @Query("$SHOWS_TAB ORDER BY MIN(s.sortOrder)")
     fun showsTab(
+        hidden: List<String>,
+        adult: Boolean,
+        group: String?,
+    ): PagingSource<Int, ShowSummary>
+
+    /** [showsTab], newest first: the newest episode or the provider's last change. */
+    @Query("$SHOWS_TAB ORDER BY MAX(s.added) DESC, MIN(s.sortOrder)")
+    fun showsTabByAdded(
+        hidden: List<String>,
+        adult: Boolean,
+        group: String?,
+    ): PagingSource<Int, ShowSummary>
+
+    /** [showsTab], newest release year first, shows without one last. */
+    @Query("$SHOWS_TAB ORDER BY MAX(s.year) DESC, MIN(s.sortOrder)")
+    fun showsTabByYear(
+        hidden: List<String>,
+        adult: Boolean,
+        group: String?,
+    ): PagingSource<Int, ShowSummary>
+
+    /** [showsTab], highest rated first, shows without a rating last. */
+    @Query("$SHOWS_TAB ORDER BY MAX(s.rating) DESC, MIN(s.sortOrder)")
+    fun showsTabByRating(
+        hidden: List<String>,
+        adult: Boolean,
+        group: String?,
+    ): PagingSource<Int, ShowSummary>
+
+    /** [showsTab], A to Z by title without tags. */
+    @Query("$SHOWS_TAB ORDER BY MIN(NULLIF(s.sortTitle, '')), MIN(s.sortOrder)")
+    fun showsTabByTitle(
         hidden: List<String>,
         adult: Boolean,
         group: String?,
@@ -48,6 +63,19 @@ interface ShowDao {
 
     @Query("DELETE FROM show_covers")
     suspend fun deleteCovers()
+
+    /** The shows' year, rating and last change from the Xtream API ([ShowDetailsEntity]), all at once. */
+    @Transaction
+    suspend fun replaceDetails(details: List<ShowDetailsEntity>) {
+        deleteDetails()
+        details.chunked(DETAILS_BATCH).forEach { insertDetails(it) }
+    }
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertDetails(details: List<ShowDetailsEntity>)
+
+    @Query("DELETE FROM show_details")
+    suspend fun deleteDetails()
 
     /** [ItemDao.groups] for Shows, from the per-show table: the same counts without reading every episode. */
     @Query(
@@ -87,3 +115,25 @@ interface ShowDao {
     @Query("DELETE FROM items WHERE id = :id")
     suspend fun deleteItem(id: Long)
 }
+
+private const val DETAILS_BATCH = 500
+
+/**
+ * The Shows tab when nothing narrows it: grouped from [ShowGroupEntity], a few rows per show, instead of from every
+ * episode. New episodes are counted only for the shows on screen. Each sort adds its own ORDER BY ([ShowDao.showsTab]).
+ */
+private const val SHOWS_TAB = """
+        SELECT s.showKey, MIN(s.showName) AS showName, MAX(s.logo) AS logo, MIN(s.groupName) AS groupName,
+            SUM(s.episodes) AS episodes,
+            CASE WHEN s.showKey IN (SELECT showKey FROM seen_episodes WHERE profileId = $ME) THEN (
+                SELECT COUNT(*) FROM items e
+                WHERE e.kind = 2 AND e.showKey = s.showKey AND e.id NOT IN (SELECT itemId FROM seen_episodes WHERE profileId = $ME)
+            ) ELSE 0 END AS newEpisodes
+        FROM show_groups s
+        WHERE COALESCE(s.region, 'none') NOT IN (:hidden) AND ('g:2:' || s.groupName) NOT IN (:hidden)
+            AND (:adult OR s.adult = 0)
+            $KIDS_ONLY_S
+            $ROUND_THE_CLOCK_S
+            AND (:group IS NULL OR s.groupName = :group)
+        GROUP BY s.showKey
+"""

@@ -148,10 +148,31 @@ class PlaylistWriter(
         }
         // The person's renamed channels and logos go over the provider's, before the cache takes them.
         ChannelEdits.applyTo(sql, if (direct) "items" else NEXT)
-        if (!direct) apply()
+        if (!direct) {
+            keepSortDetails()
+            apply()
+        }
         ShowGroups.rebuild(db)
         Upkeep.optimize(db)
         return seen.size
+    }
+
+    /**
+     * Streams the new playlist lists without a time or rating keep the ones already known: those the Xtream API gave
+     * ([com.tunedplayer.app.data.XtreamDetails]), or the time Tuned first saw them. A stream that is new to the cache
+     * and has no time of its own is stamped now, so newest first works on a plain M3U too from its second refresh.
+     */
+    private fun keepSortDetails() {
+        val now = System.currentTimeMillis() / MILLIS
+        sql.execSQL(
+            "UPDATE $NEXT SET added = COALESCE((SELECT i.added FROM items i WHERE i.id = $NEXT.id), $now) WHERE added = 0 AND kind != 0",
+        )
+        sql.execSQL(
+            "UPDATE $NEXT SET rating = (SELECT i.rating FROM items i WHERE i.id = $NEXT.id) WHERE rating IS NULL AND kind != 0",
+        )
+        sql.execSQL(
+            "UPDATE $NEXT SET year = (SELECT i.year FROM items i WHERE i.id = $NEXT.id) WHERE year IS NULL AND kind != 0",
+        )
     }
 
     /** Changes only the streams that differ, a chunk per transaction. */
@@ -200,6 +221,11 @@ class PlaylistWriter(
         bindNumber(14, item.episode)
         bindLong(15, item.sortOrder.toLong())
         bindLong(16, item.number.toLong())
+        bindLong(17, item.added)
+        bindNumber(18, item.year)
+        val rating = item.rating
+        if (rating == null) bindNull(19) else bindDouble(19, rating)
+        bindString(20, item.sortTitle)
     }
 
     private fun SupportSQLiteStatement.bindText(
@@ -215,6 +241,7 @@ class PlaylistWriter(
     private companion object {
         const val NEXT = "items_next"
         const val CHANGED = "items_changed"
+        const val MILLIS = 1_000L
 
         /** Small enough that a search waiting behind one is never kept long. */
         const val APPLY_CHUNK = 2_000
@@ -241,13 +268,18 @@ class PlaylistWriter(
                 "episode",
                 "sortOrder",
                 "number",
+                "added",
+                "year",
+                "rating",
+                "sortTitle",
             )
         val COLUMNS = COLUMN_LIST.joinToString()
         const val SCHEMA =
             "id INTEGER NOT NULL PRIMARY KEY, kind INTEGER NOT NULL, name TEXT NOT NULL, searchName TEXT NOT NULL, " +
                 "groupName TEXT NOT NULL, region TEXT, adult INTEGER NOT NULL, logo TEXT, url TEXT NOT NULL, tvgId TEXT, " +
                 "showKey TEXT, showName TEXT, season INTEGER, episode INTEGER, sortOrder INTEGER NOT NULL, " +
-                "number INTEGER NOT NULL DEFAULT 0"
+                "number INTEGER NOT NULL DEFAULT 0, added INTEGER NOT NULL DEFAULT 0, year INTEGER, rating REAL, " +
+                "sortTitle TEXT NOT NULL DEFAULT ''"
 
         /** A stream that came back exactly as it was. */
         val SAME = COLUMN_LIST.drop(1).joinToString(" AND ") { "i.$it IS n.$it" }
@@ -259,10 +291,16 @@ class PlaylistWriter(
  * cover when one is kept ([ShowCoverEntity]), ahead of its episodes' pictures, which can be their screenshots.
  */
 object ShowGroups {
-    const val COLUMNS = "showKey, groupName, region, adult, showName, logo, episodes, sortOrder"
+    const val COLUMNS = "showKey, groupName, region, adult, showName, logo, episodes, sortOrder, added, year, rating, sortTitle"
+
+    /** The provider's details for a show ([ShowDetailsEntity]) go ahead of what its episodes carry. */
     const val SELECT =
         "SELECT showKey, groupName, region, adult, COALESCE(MIN(showName), showKey), " +
-            "COALESCE((SELECT c.cover FROM show_covers c WHERE c.showKey = items.showKey), MAX(logo)), COUNT(*), MIN(sortOrder) " +
+            "COALESCE((SELECT c.cover FROM show_covers c WHERE c.showKey = items.showKey), MAX(logo)), COUNT(*), MIN(sortOrder), " +
+            "MAX(COALESCE((SELECT d.added FROM show_details d WHERE d.showKey = items.showKey), 0), MAX(added)), " +
+            "COALESCE((SELECT d.year FROM show_details d WHERE d.showKey = items.showKey), MIN(year)), " +
+            "COALESCE((SELECT d.rating FROM show_details d WHERE d.showKey = items.showKey), MAX(rating)), " +
+            "COALESCE(MIN(NULLIF(sortTitle, '')), '') " +
             "FROM items WHERE kind = 2 AND showKey IS NOT NULL GROUP BY showKey, groupName, region, adult"
 
     /** Worked out beside the live table, then swapped in with one quick copy, so the Shows tab never waits long. */
