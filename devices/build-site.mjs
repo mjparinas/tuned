@@ -1,5 +1,5 @@
 // Builds the public website from devices/site/ into devices/public/ (docs/decisions/website.md): the landing page, the
-// blog, sitemap.xml, the RSS feed and features.json. Run after changing anything in devices/site/, and commit the
+// blog, the privacy policy (from docs/privacy.md), sitemap.xml, the RSS feed and features.json. Run after changing anything in devices/site/, and commit the
 // output: node devices/build-site.mjs
 // With --check it writes nothing and fails when a generated file is out of date (the test runs the same check).
 import { mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
@@ -26,7 +26,8 @@ export function expected() {
         .sort()
         .map((f) => ({ path: relative(postsDir, f).split("\\").join("/"), text: readFileSync(f, "utf8") }));
     const template = readFileSync(join(root, "site", "home.html"), "utf8");
-    return buildSite(SITE, { template, groups: FEATURE_GROUPS, posts });
+    const privacy = readFileSync(join(root, "..", "docs", "privacy.md"), "utf8");
+    return buildSite(SITE, { template, groups: FEATURE_GROUPS, posts, privacy });
 }
 
 /** Generated pages under public/blog that no source makes any more (images in blog/img are left alone). */

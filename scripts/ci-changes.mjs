@@ -4,6 +4,8 @@
 
 /** What a changed file belongs to: "docs" (needs nothing), "web" (devices/), "mobile" (the Gradle build) or "both". */
 export function area(file) {
+    // The website is built from Markdown too: its posts, and the privacy policy behind /privacy/.
+    if (file.startsWith("devices/site/") || file === "docs/privacy.md") return "web";
     if (file.endsWith(".md") || file.startsWith("docs/")) return "docs";
     if (file.startsWith("devices/")) return "web";
     if (/^(app|core|smoketest|fakeprovider|baselineprofile|gradle|config)\//.test(file)) return "mobile";

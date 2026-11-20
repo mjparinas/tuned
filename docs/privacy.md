@@ -20,7 +20,7 @@ Tuned connects to these services only to do what you ask:
 - **OpenSubtitles**, only when you search for subtitles, and with your OpenSubtitles account only if you sign in to one.
 - **Trakt**, only if you sign in to Trakt, to record what you watch to your Trakt account.
 - **YouTube**, only when you open a trailer.
-- **GitHub**, in the version downloaded from GitHub, to check for and download updates.
+- **GitHub**, which hosts the download on www.tunedplayer.com, to check for and download updates in that version.
 - **Google Play**, in the version from Google Play, for purchases. Google handles payment, and Tuned never sees your payment details.
 
 ## Signing in on a TV with your phone
@@ -65,4 +65,4 @@ Tuned isn't directed at children under 13 and doesn't knowingly collect their in
 
 ## Changes and contact
 
-If this policy changes, the new version will be posted here with a new date. Questions can be raised on [GitHub](https://github.com/mjparinas/tuned/issues).
+If this policy changes, the new version will be posted at www.tunedplayer.com/privacy with a new date. Questions can be sent from **Settings › Updates and advanced › Report a problem** in the app.
