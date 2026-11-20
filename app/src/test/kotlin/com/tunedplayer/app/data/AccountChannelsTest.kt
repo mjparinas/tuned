@@ -37,7 +37,9 @@ class AccountChannelsTest {
 
     @Test
     fun aDamagedRowIsSkippedNotFatal() {
-        val text = """{"v":1,"playlist":"0123456789abcdef","savedAt":0,"channels":[["Only a name"],["Good","G","","",1,"http://x/1.ts"]],"guide":{}}"""
+        val text =
+            """{"v":1,"playlist":"0123456789abcdef","savedAt":0,""" +
+                """"channels":[["Only a name"],["Good","G","","",1,"http://x/1.ts"]],"guide":{}}"""
 
         val copy = AccountChannels.read(text, "sam", "s3cret")
 

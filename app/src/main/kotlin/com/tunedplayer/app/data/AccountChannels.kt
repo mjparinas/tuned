@@ -84,15 +84,20 @@ class AccountChannels(
                 }
             val guide = ArrayList<Programme>()
             (root["guide"] as? JsonObject)?.forEach { (channelId, shows) ->
-                for (show in shows as? JsonArray ?: return@forEach) {
-                    val row = show as? JsonArray ?: continue
-                    val start = (row.getOrNull(0) as? JsonPrimitive)?.longOrNull ?: continue
-                    val stop = (row.getOrNull(1) as? JsonPrimitive)?.longOrNull ?: continue
-                    val title = row.text(2) ?: continue
-                    guide += Programme(channelId, start * MS, stop * MS, title, null)
-                }
+                (shows as? JsonArray).orEmpty().mapNotNullTo(guide) { show -> programme(channelId, show as? JsonArray) }
             }
             return Copy(channels, guide)
+        }
+
+        /** One `[start, stop, title]` row, in epoch seconds; null when it isn't one. */
+        private fun programme(
+            channelId: String,
+            row: JsonArray?,
+        ): Programme? {
+            val start = (row?.getOrNull(0) as? JsonPrimitive)?.longOrNull
+            val stop = (row?.getOrNull(1) as? JsonPrimitive)?.longOrNull
+            val title = row?.text(2)
+            return if (start == null || stop == null || title == null) null else Programme(channelId, start * MS, stop * MS, title, null)
         }
 
         private fun JsonArray.text(index: Int): String? = (getOrNull(index) as? JsonPrimitive)?.takeIf { it.isString }?.contentOrNull
