@@ -446,11 +446,10 @@ ${g.items.map((f) => `<li><span class="tick">${icon("check", 18)}</span><span><b
         )
         .join("\n");
     const count = groups.reduce((n, g) => n + g.items.length, 0);
-    const latest = [...posts].sort(byDate).slice(0, 3).map(postCard).join("\n");
+    const latest = homePosts(site, posts).map(postCard).join("\n");
     const body = template
         .replaceAll("<!-- @features -->", features)
         .replaceAll("<!-- @feature-count -->", String(count))
-        .replaceAll("<!-- @badges-hero -->", storeBadges(site, "hero"))
         .replaceAll("<!-- @badges-soon -->", storeBadges(site, "soon"))
         .replaceAll("<!-- @download-hero -->", downloadButton(site, "hero"))
         .replaceAll("<!-- @latest-posts -->", latest)
@@ -484,8 +483,34 @@ ${g.items.map((f) => `<li><span class="tick">${icon("check", 18)}</span><span><b
                 logo: `${site.url}/apple-touch-icon.png`,
             },
             { "@context": "https://schema.org", "@type": "WebSite", name: site.name, url: site.url },
+            ...faqJsonLd(template),
         ],
     });
+}
+
+/**
+ * The three posts in "From the blog" on the landing page: the ones named in site.homePosts, for someone new to Tuned,
+ * then the newest posts that aren't release notes to fill any gap (Melvin, 2026-11-20).
+ */
+export function homePosts(site, posts) {
+    const picked = (site.homePosts ?? []).map((path) => posts.find((p) => p.path === path)).filter(Boolean);
+    const rest = [...posts].sort(byDate).filter((p) => p.kind !== "release" && !picked.includes(p));
+    return [...picked, ...rest].slice(0, 3);
+}
+
+/** FAQPage structured data from the landing page's questions (each <details> with a <summary>), so search can show them. */
+export function faqJsonLd(template) {
+    const text = (html) =>
+        html
+            .replace(/<[^>]+>/g, "")
+            .replace(/\s+/g, " ")
+            .trim();
+    const questions = [...template.matchAll(/<details>\s*<summary>([\s\S]*?)<\/summary>([\s\S]*?)<\/details>/g)].map(([, q, a]) => ({
+        "@type": "Question",
+        name: text(q),
+        acceptedAnswer: { "@type": "Answer", text: text(a) },
+    }));
+    return questions.length ? [{ "@context": "https://schema.org", "@type": "FAQPage", mainEntity: questions }] : [];
 }
 
 /** sitemap.xml: the landing page, the blog's indexes and every post. */
