@@ -41,7 +41,7 @@ class SharedChannels(
         withContext(Dispatchers.IO) {
             val id = ChannelShare.playlistId(c.server, c.username, c.playlistUrl)
             val channels =
-                db.items().liveForSharing().map {
+                db.channelShare().liveChannels().map {
                     ChannelShare.Channel(
                         name = it.name,
                         group = it.groupName,
@@ -54,7 +54,11 @@ class SharedChannels(
             if (channels.isEmpty()) return@withContext
             val fingerprint = ChannelShare.fingerprint(id, channels)
             val sentAt = prefs.getLong(KEY_AT, 0)
-            if (prefs.getString(KEY_FINGERPRINT, null) == fingerprint && now - sentAt in 0L until ChannelShare.REFRESH_MS) return@withContext
+            if (prefs.getString(KEY_FINGERPRINT, null) == fingerprint &&
+                now - sentAt in 0L until ChannelShare.REFRESH_MS
+            ) {
+                return@withContext
+            }
             var gzipped = write(id, channels, now, withGuide = true)
             // Too big with the guide (a huge playlist): the channels alone still open in VLC.
             if (gzipped.size > ChannelShare.MAX_GZIPPED_BYTES) gzipped = write(id, channels, now, withGuide = false)
@@ -80,20 +84,26 @@ class SharedChannels(
         val bytes = ByteArrayOutputStream()
         GZIPOutputStream(bytes).bufferedWriter(Charsets.UTF_8).use { out ->
             ChannelShare.begin(out, id, channels, now)
-            if (withGuide) {
-                var first = true
-                val from = now - ChannelShare.GUIDE_BEFORE_MS
-                val to = now + ChannelShare.GUIDE_AFTER_MS
-                for (ids in ChannelShare.guideIds(channels).chunked(GUIDE_CHUNK)) {
-                    val shows = db.programmes().window(ids, from, to).map { ChannelShare.Show(it.channelId, it.start, it.stop, it.title) }
-                    for ((channel, list) in shows.groupBy { it.channelId }) {
-                        if (ChannelShare.guideEntry(out, first, channel, list, now)) first = false
-                    }
-                }
-            }
+            if (withGuide) writeGuide(out, channels, now)
             ChannelShare.end(out)
         }
         return bytes.toByteArray()
+    }
+
+    private suspend fun writeGuide(
+        out: Appendable,
+        channels: List<ChannelShare.Channel>,
+        now: Long,
+    ) {
+        var first = true
+        val from = now - ChannelShare.GUIDE_BEFORE_MS
+        val to = now + ChannelShare.GUIDE_AFTER_MS
+        for (ids in ChannelShare.guideIds(channels).chunked(GUIDE_CHUNK)) {
+            val shows = db.channelShare().guideWindow(ids, from, to).map { ChannelShare.Show(it.channelId, it.start, it.stop, it.title) }
+            for ((channel, list) in shows.groupBy { it.channelId }) {
+                if (ChannelShare.guideEntry(out, first, channel, list, now)) first = false
+            }
+        }
     }
 
     private companion object {

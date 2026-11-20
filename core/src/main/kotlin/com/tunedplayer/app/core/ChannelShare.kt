@@ -74,13 +74,19 @@ object ChannelShare {
     fun fingerprint(
         playlistId: String,
         channels: List<Channel>,
-    ): String =
-        sha256(
-            buildString {
-                append(playlistId)
-                for (c in channels) append('\n').append(c.name).append('\t').append(c.group).append('\t').append(c.url)
-            },
-        )
+    ): String = sha256(
+        buildString {
+            append(playlistId)
+            for (c in channels) {
+                append('\n')
+                    .append(c.name)
+                    .append('\t')
+                    .append(c.group)
+                    .append('\t')
+                    .append(c.url)
+            }
+        },
+    )
 
     /** The copy as JSON, the guide limited to [channels]' guide ids from [now] less an hour to [GUIDE_AFTER_MS] ahead. */
     fun payload(
@@ -121,9 +127,22 @@ object ChannelShare {
         out.append(",\"channels\":[")
         channels.forEachIndexed { i, c ->
             if (i > 0) out.append(',')
-            out.append('[').append(str(c.name)).append(',').append(str(c.group)).append(',')
-            out.append(str(c.logo.orEmpty())).append(',').append(str(c.epgId.orEmpty())).append(',')
-            out.append(c.number.toString()).append(',').append(str(c.url)).append(']')
+            out
+                .append('[')
+                .append(str(c.name))
+                .append(',')
+                .append(str(c.group))
+                .append(',')
+            out
+                .append(str(c.logo.orEmpty()))
+                .append(',')
+                .append(str(c.epgId.orEmpty()))
+                .append(',')
+            out
+                .append(c.number.toString())
+                .append(',')
+                .append(str(c.url))
+                .append(']')
         }
         out.append("],\"guide\":{")
     }
@@ -147,7 +166,12 @@ object ChannelShare {
         out.append(str(id)).append(":[")
         list.forEachIndexed { j, s ->
             if (j > 0) out.append(',')
-            out.append('[').append((s.start / MS).toString()).append(',').append((s.stop / MS).toString()).append(',')
+            out
+                .append('[')
+                .append((s.start / MS).toString())
+                .append(',')
+                .append((s.stop / MS).toString())
+                .append(',')
             out.append(str(s.title)).append(']')
         }
         out.append(']')
@@ -166,28 +190,26 @@ object ChannelShare {
     private fun forms(value: String) = setOf(value, URLEncoder.encode(value, Charsets.UTF_8))
 
     /** A JSON string, with the characters JSON needs escaped. */
-    internal fun str(value: String): String =
-        buildString(value.length + 2) {
-            append('"')
-            for (ch in value) {
-                when {
-                    ch == '"' -> append("\\\"")
-                    ch == '\\' -> append("\\\\")
-                    ch == '\n' -> append("\\n")
-                    ch == '\r' -> append("\\r")
-                    ch == '\t' -> append("\\t")
-                    ch < ' ' -> append("\\u").append(ch.code.toString(HEX_RADIX).padStart(UNICODE_DIGITS, '0'))
-                    else -> append(ch)
-                }
+    internal fun str(value: String): String = buildString(value.length + 2) {
+        append('"')
+        for (ch in value) {
+            when {
+                ch == '"' -> append("\\\"")
+                ch == '\\' -> append("\\\\")
+                ch == '\n' -> append("\\n")
+                ch == '\r' -> append("\\r")
+                ch == '\t' -> append("\\t")
+                ch < ' ' -> append("\\u").append(ch.code.toString(HEX_RADIX).padStart(UNICODE_DIGITS, '0'))
+                else -> append(ch)
             }
-            append('"')
         }
+        append('"')
+    }
 
-    private fun sha256(text: String): String =
-        MessageDigest
-            .getInstance("SHA-256")
-            .digest(text.toByteArray(Charsets.UTF_8))
-            .joinToString("") { "%02x".format(it) }
+    private fun sha256(text: String): String = MessageDigest
+        .getInstance("SHA-256")
+        .digest(text.toByteArray(Charsets.UTF_8))
+        .joinToString("") { "%02x".format(it) }
 
     private const val ID_LENGTH = 16
     private const val MS = 1000

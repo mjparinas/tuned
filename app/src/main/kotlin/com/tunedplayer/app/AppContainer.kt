@@ -98,6 +98,7 @@ class AppContainer(
             onRefresh = { scheduler.refreshNow() },
         )
     }
+
     /** The live channels and guide the website's Channels and guide page reads (docs/decisions/web.md). */
     val sharedChannels by lazy { SharedChannels(context, db, credentials::load, tunedAccount) }
     val reminders by lazy { Reminders(context) }
