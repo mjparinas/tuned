@@ -217,7 +217,10 @@ class BrowseScreenshots : Screenshots() {
 
     @Test fun profiles() = shot("browse-profiles", ProfilesRoute(atStart = true), wait = text(R.string.profiles_title))
 
-    /** "Who's watching?" on a TV: the glow fills the screen to its edges, with the profiles inside the overscan margin. */
+    /**
+     * "Who's watching?" on a TV: the glow fills the screen to its edges, the profiles sit inside the overscan margin,
+     * and the remote starts on the first one.
+     */
     @Test
     @Config(qualifiers = TV)
     fun profilesOnTv() = shot("browse-profiles-tv", ProfilesRoute(atStart = true), wait = text(R.string.profiles_title))

@@ -90,6 +90,8 @@ import com.tunedplayer.app.ui.common.LocalTvMargin
 import com.tunedplayer.app.ui.common.TunedDialog
 import com.tunedplayer.app.ui.common.bleedIntoTvMargin
 import com.tunedplayer.app.ui.common.focusRing
+import com.tunedplayer.app.ui.common.rememberStartFocus
+import com.tunedplayer.app.ui.common.startFocus
 import com.tunedplayer.app.ui.theme.swatch
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -204,6 +206,9 @@ fun ProfilesScreen(
     var ask by remember { mutableStateOf<PinAsk?>(null) }
     var editing by remember { mutableStateOf<ProfileEntity?>(null) }
     val scope = rememberCoroutineScope()
+    // On a TV the remote starts on the first profile, so OK alone picks it (Melvin, 2026-11-20). Remembered once the
+    // profiles have loaded, so the moment it may take focus starts when the tiles appear.
+    val startFocus = rememberStartFocus()
 
     val pick: (ProfileEntity) -> Unit = { p ->
         scope.launchSafely("Profiles") {
@@ -261,8 +266,16 @@ fun ProfilesScreen(
                     verticalArrangement = Arrangement.spacedBy(20.dp),
                     modifier = Modifier.fillMaxWidth(),
                 ) {
-                    list.forEach { p ->
-                        key(p.id) { ProfileTile(p, selected = p.id == current?.id, managing = managing, onClick = { pick(p) }) }
+                    list.forEachIndexed { i, p ->
+                        key(p.id) {
+                            ProfileTile(
+                                p,
+                                selected = p.id == current?.id,
+                                managing = managing,
+                                onClick = { pick(p) },
+                                modifier = if (i == 0) Modifier.startFocus(startFocus) else Modifier,
+                            )
+                        }
                     }
                     // Hidden at the cap, so the picker never crowds (docs/decisions/profiles.md).
                     if (!kidsNow && managing && ProfileRules.canAdd(list.size)) {
@@ -407,6 +420,7 @@ internal fun ProfileTile(
     selected: Boolean,
     managing: Boolean,
     onClick: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     val shape = RoundedCornerShape(20.dp)
     val avatarShape = RoundedCornerShape(TILE_AVATAR * 0.28f)
@@ -427,7 +441,7 @@ internal fun ProfileTile(
     val edit = stringResource(R.string.a11y_edit)
     val ring = MaterialTheme.colorScheme.primary
     Column(
-        Modifier
+        modifier
             .width(TILE_WIDTH)
             .focusRing(shape, MaterialTheme.colorScheme.primary)
             .clip(shape)
