@@ -30,7 +30,25 @@ class SyncWorker(
     private var lastStep: SyncProgress.Step? = null
     private var foreground = false
 
-    override suspend fun doWork(): Result = logFailures(TAG, failed = { Result.failure() }) { refresh() }
+    /** Ends a first download that stops moving, so the screen shows an error and Retry instead of spinning on. */
+    private val watchdog = StallWatchdog(StallWatchdog.FIRST_DOWNLOAD_LIMIT_MS, SystemClock::elapsedRealtime)
+
+    override suspend fun doWork(): Result =
+        logFailures(
+            TAG,
+            failed = {
+                // Not a network failure (an unreadable answer, a bug): still said on the screen, never a silent spinner.
+                saveError(applicationContext.getString(R.string.sync_stopped))
+                Result.failure()
+            },
+        ) { refresh() }
+
+    /** What the first-run screen shows with Retry. A failure the refresh already described keeps its own words. */
+    private suspend fun saveError(message: String) {
+        attempt(TAG, "Couldn't save the refresh error") {
+            applicationContext.container.settings.update { it.copy(lastSyncError = it.lastSyncError.ifBlank { message }) }
+        }
+    }
 
     private suspend fun refresh(): Result {
         val container = applicationContext.container
@@ -47,10 +65,13 @@ class SyncWorker(
                 false
             }
         return try {
-            if (inputData.getString(KEY_MODE) == MODE_GUIDE) {
-                container.sync.refreshGuide(::report)
-            } else {
-                container.sync.refreshAll(::report)
+            // Watched only while nothing is cached: once channels are in, a slow guide or details step is no hang.
+            watchdog.watch(armed = { !container.db.items().any() }) {
+                if (inputData.getString(KEY_MODE) == MODE_GUIDE) {
+                    container.sync.refreshGuide(::report)
+                } else {
+                    container.sync.refreshAll(::report)
+                }
             }
             // New guide data: alerts for followed teams' next games, and the widgets' "on now" lines move on too.
             attempt(TAG, "Couldn't set event alerts") { container.events.scheduleAlerts() }
@@ -58,6 +79,10 @@ class SyncWorker(
             // A copy left running for days still hears about a new release.
             UpdateNotice.checkInBackground(applicationContext)
             Result.success()
+        } catch (e: StallWatchdog.Stalled) {
+            AppLog.w(TAG, "The first download stopped moving; ending it so Retry shows", e)
+            container.settings.update { it.copy(lastSyncError = applicationContext.getString(R.string.sync_stalled)) }
+            Result.failure()
         } catch (e: IOException) {
             AppLog.w(TAG, "Refresh failed (attempt ${runAttemptCount + 1})", e)
             // The download already retried with backoff; the first sign-in reports at once instead of waiting for more.
@@ -67,6 +92,7 @@ class SyncWorker(
 
     /** Hands progress to the screens (WorkInfo.progress) and the notification, a few times a second at most. */
     private fun report(progress: SyncProgress) {
+        watchdog.saw(progress)
         val now = SystemClock.elapsedRealtime()
         if (progress.step == lastStep && now - lastReport < REPORT_EVERY_MS) return
         lastStep = progress.step

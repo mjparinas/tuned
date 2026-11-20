@@ -37,6 +37,8 @@
     <string name="favourite_remove">Remove from favourites</string>
     <string name="first_run_loading">Getting your channels ready…</string>
     <string name="first_run_failed">Couldn\'t load your channels</string>
+    <string name="sync_stalled">Your provider hasn\'t sent anything for 5 minutes, so the download was stopped. Check your internet and the server, then try again.</string>
+    <string name="sync_stopped">The download stopped before your channels were saved. Try again.</string>
 
     <string name="guide_open">Guide</string>
     <string name="guide_empty">No guide for this channel yet. It downloads in the background.</string>

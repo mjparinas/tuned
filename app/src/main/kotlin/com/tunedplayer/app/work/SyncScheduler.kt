@@ -85,6 +85,17 @@ class SyncScheduler(
         work.enqueueUniqueWork(NOW, if (first) ExistingWorkPolicy.REPLACE else ExistingWorkPolicy.KEEP, request)
     }
 
+    /**
+     * True while a refresh the person started is queued or running. When it has ended and the cache is still empty with
+     * no error saved, the first-run screen says so with Retry rather than waiting on a download that isn't coming.
+     */
+    val requestedPending: Flow<Boolean> by lazy {
+        work.getWorkInfosFlow(WorkQuery.fromUniqueWorkNames(NOW)).map { infos -> infos.any { !it.state.isFinished } }
+    }
+
+    /** Retry on the first-run screen: replaces a refresh that is stuck queued or running, which [refreshNow] would keep. */
+    fun retryFirst() = refreshNow(first = true)
+
     /** True while any refresh runs, for the progress bar on the lists. */
     val refreshing: Flow<Boolean> by lazy {
         work.getWorkInfosFlow(WorkQuery.fromUniqueWorkNames(NOW, PLAYLIST, GUIDE)).map { infos ->

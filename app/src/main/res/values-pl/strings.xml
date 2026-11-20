@@ -33,6 +33,8 @@
     <string name="favourite_remove">Usuń z ulubionych</string>
     <string name="first_run_loading">Przygotowujemy Twoje kanały…</string>
     <string name="first_run_failed">Nie udało się wczytać kanałów</string>
+    <string name="sync_stalled">Dostawca nic nie wysłał od 5 minut, więc pobieranie zostało zatrzymane. Sprawdź internet i serwer, a potem spróbuj ponownie.</string>
+    <string name="sync_stopped">Pobieranie zatrzymało się, zanim kanały zostały zapisane. Spróbuj ponownie.</string>
     <string name="guide_open">Program</string>
     <string name="guide_empty">Ten kanał nie ma jeszcze programu. Pobiera się w tle.</string>
     <string name="guide_on_now">Teraz: %1$s</string>

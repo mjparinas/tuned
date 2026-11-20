@@ -33,6 +33,8 @@
     <string name="favourite_remove">Retirer des favoris</string>
     <string name="first_run_loading">Préparation de vos chaînes…</string>
     <string name="first_run_failed">Impossible de charger vos chaînes</string>
+    <string name="sync_stalled">Votre fournisseur n\'a rien envoyé depuis 5 minutes, le téléchargement a donc été arrêté. Vérifiez votre connexion et le serveur, puis réessayez.</string>
+    <string name="sync_stopped">Le téléchargement s\'est arrêté avant que vos chaînes soient enregistrées. Réessayez.</string>
     <string name="guide_open">Guide</string>
     <string name="guide_empty">Pas encore de guide pour cette chaîne. Il se télécharge en arrière-plan.</string>
     <string name="guide_on_now">En ce moment : %1$s</string>
