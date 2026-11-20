@@ -128,7 +128,7 @@ jobs:
         run: cat app/build/reports/lint-results-githubDebug.txt build/reports/detekt/detekt.txt 2>/dev/null || true
       - name: Keep the Android test runtime for next time
         if: ${{ !cancelled() && steps.robolectric.outputs.cache-hit != 'true' }}
-        uses: actions/cache/save@v5
+        uses: actions/cache/save@v6
         with:
           path: ${{ steps.robolectric.outputs.path }}
           key: ${{ steps.robolectric.outputs.key }}
@@ -181,7 +181,7 @@ jobs:
       # The emulator and its image are cached together: with only the image restored, the managed device's setup
       # skips installing the emulator and fails with "Cannot query the value of this property".
       - name: Keep the emulator and its image between runs
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: |
             /usr/local/lib/android/sdk/emulator
