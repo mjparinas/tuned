@@ -244,8 +244,9 @@ object SampleData {
     /** Drawn posters and logos, by the address the sample playlist gives them: a gradient with the title on it. */
     val art: Map<String, Image> by lazy {
         val posters = (movies.map { it.first } + shows.map { it.first }).mapIndexed { i, t -> poster(t) to tile(t, i, 300, 450, 34f) }
-        // Wrapped to the middle third, so the words survive a tall card cropping the wide still (Continue watching).
-        val stills = shows.mapIndexed { i, s -> still(s.first) to tile("${s.first} episode still", i + 4, 480, 270, 30f, wrapTo = 160f) }
+        // Wrapped to the middle third and drawn small, so a tall card cropping (and zooming) the wide still shows its words whole
+        // and no bigger than a poster's (Continue watching).
+        val stills = shows.mapIndexed { i, s -> still(s.first) to tile("${s.first} episode still", i + 4, 480, 270, 20f, wrapTo = 160f) }
         val logos = channels.mapIndexed { i, c -> logo(c.first) to tile(initials(c.first), i, 160, 160, 56f) }
         (posters + stills + logos).associate { (key, bitmap) -> key to bitmap.asImage() }
     }
