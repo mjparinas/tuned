@@ -110,7 +110,8 @@ class BrowseScreenshots : Screenshots() {
     fun moviesSortMenuOnTv() = shot(
         "browse-movies-sort-tv",
         HomeRoute,
-        wait = "Glass Harbour",
+        // On a TV the grid starts below Continue watching, so its first film is the one on screen.
+        wait = "Northern Lights",
         settings = DARK.copy(startTab = StartTab.MOVIES, movieSort = TitleSort.Order.YEAR),
         then = { compose.onNode(hasText(text(R.string.sort_year))).performClick() },
     )
