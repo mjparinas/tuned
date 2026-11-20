@@ -19,6 +19,7 @@ import com.tunedplayer.app.core.PinHash
 import com.tunedplayer.app.core.Placeholders
 import com.tunedplayer.app.core.RegionLanguages
 import com.tunedplayer.app.core.RoundTheClock
+import com.tunedplayer.app.core.TitleSort
 import com.tunedplayer.app.diagnostics.AppLog
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -169,6 +170,10 @@ data class AppSettings(
     val showGuideInList: Boolean = true,
     /** Live TV as a grid guide (channels down the side, time across the top) instead of a list. */
     val liveGrid: Boolean = false,
+    /** The order Movies are listed in, chosen on the tab (Melvin, 2026-11-20: "sort by newest first or ... rating"). */
+    val movieSort: TitleSort.Order = TitleSort.Order.PROVIDER,
+    /** The order Shows are listed in, chosen on the tab, apart from Movies'. */
+    val showSort: TitleSort.Order = TitleSort.Order.PROVIDER,
     /** Numbers beside live channels, for typing one on the remote (Settings › Lists). */
     val channelNumbers: Boolean = true,
     /** Keep the scroll bar on Live TV, Movies and Shows on screen, instead of only while the list moves (Settings › Lists). */

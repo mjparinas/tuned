@@ -375,6 +375,13 @@
     <string name="player_reconnecting">Neue Verbindung…</string>
     <string name="player_reconnecting_try">Neue Verbindung… (%1$d von %2$d)</string>
     <string name="filter_recent">Zuletzt</string>
+    <string name="sort_chip">Sortieren</string>
+    <string name="sort_chip_a11y">Sortieren: %1$s</string>
+    <string name="sort_provider">Playlist-Reihenfolge</string>
+    <string name="sort_added">Zuletzt hinzugefügt</string>
+    <string name="sort_year">Neueste</string>
+    <string name="sort_rating">Bestbewertet</string>
+    <string name="sort_title">A bis Z</string>
     <string name="live_filters">Filter</string>
     <string name="live_filters_title">Sender filtern</string>
     <string name="live_filters_type">Art</string>

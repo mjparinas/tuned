@@ -14,6 +14,7 @@ import com.tunedplayer.app.core.Search
 import com.tunedplayer.app.core.StableId
 import com.tunedplayer.app.core.Stalker
 import com.tunedplayer.app.core.Streams
+import com.tunedplayer.app.core.TitleSort
 import com.tunedplayer.app.core.XtreamAccount
 import com.tunedplayer.app.core.XtreamApi
 import com.tunedplayer.app.core.XtreamUrls
@@ -23,6 +24,7 @@ import com.tunedplayer.app.data.db.GuideWriter
 import com.tunedplayer.app.data.db.ItemEntity
 import com.tunedplayer.app.data.db.PlaylistWriter
 import com.tunedplayer.app.data.db.ShowCoverEntity
+import com.tunedplayer.app.data.db.ShowDetailsEntity
 import com.tunedplayer.app.data.db.ShowGroups
 import com.tunedplayer.app.data.db.TunedDatabase
 import com.tunedplayer.app.diagnostics.AppLog
@@ -87,6 +89,10 @@ class SyncRepository(
     private val downloader = Downloader(http)
     private val memo = PlaylistMemo(File(dir, "playlist.fingerprint"), BuildConfig.VERSION_CODE.toString())
 
+    /** Set by a refresh that read an Xtream server's M3U, which lacks what the sorts need ([XtreamDetails]). */
+    private var filmDetailsDue = false
+    private var showDetailsDue = false
+
     data class Result(
         val items: Int,
         val programmes: Int,
@@ -121,6 +127,12 @@ class SyncRepository(
         settings.update { it.copy(lastPlaylistSync = System.currentTimeMillis(), lastSyncError = "") }
         // Catch-up is a bonus: a server that doesn't answer leaves the last known channels as they were.
         if (login.playlistUrl.isBlank()) attempt("Sync", "Catch-up refresh failed") { refreshCatchUp(login) }
+        // Times added, years and ratings for the Movies and Shows sorts, which an Xtream M3U leaves out. A bonus too.
+        if (filmDetailsDue || showDetailsDue) {
+            val details = XtreamDetails(db, XtreamImport(http, login, userAgent()))
+            if (filmDetailsDue) attempt(TAG_SYNC, "Film details failed") { details.films() }
+            if (showDetailsDue) attempt(TAG_SYNC, "Show details failed") { details.shows() }
+        }
         return count
     }
 
@@ -133,6 +145,8 @@ class SyncRepository(
         login: Credentials,
         progress: (SyncProgress) -> Unit,
     ): Int {
+        filmDetailsDue = false
+        showDetailsDue = false
         if (login.kind == Credentials.Kind.Stalker) return importPortal(login, progress)
         val xtream = login.playlistUrl.isBlank()
         val url = login.playlistUrl.ifBlank { XtreamUrls.playlist(login.server, login.username, login.password) }
@@ -172,6 +186,7 @@ class SyncRepository(
                             fromOneFile = false
                             attempt(TAG_SYNC, "No shows from the API either") { addApiShows(api, order, add) }
                         }
+                        markDetailsDue(xtream, shows)
                     }.also { if (fromOneFile) memo.remember(print) }
                 }
             }
@@ -197,6 +212,15 @@ class SyncRepository(
             }
         fromApi.exceptionOrNull()?.let { failure.addSuppressed(it) }
         return fromApi.getOrElse { throw failure }
+    }
+
+    /** After an Xtream M3U was read, its films' (and any shows') times, years and ratings come from the API ([XtreamDetails]). */
+    private fun markDetailsDue(
+        xtream: Boolean,
+        shows: Int,
+    ) {
+        filmDetailsDue = xtream
+        showDetailsDue = xtream && shows > 0
     }
 
     /** A Stalker portal's live channels, read from its API in one answer (`core/Stalker`). */
@@ -545,8 +569,10 @@ class SyncRepository(
     ) {
         val fetched = db.shows().fetchedEpisodes().groupBy { it.showKey }
         val covers = mutableListOf<ShowCoverEntity>()
+        val details = ArrayList<ShowDetailsEntity>()
         api.shows(first) { show, order ->
             val key = Episodes.showKey(show.name)
+            details += ShowDetailsEntity(key, show.added, show.year, show.rating)
             val kept = fetched[key]
             if (kept.isNullOrEmpty()) {
                 add(XtreamApi.seriesStandIn(show, order))
@@ -557,6 +583,8 @@ class SyncRepository(
             }
         }
         if (covers.isNotEmpty()) db.shows().saveCovers(covers)
+        // What the Shows tab sorts on (newest, year, rating), before the shows are grouped.
+        db.shows().replaceDetails(details)
     }
 
     /**
@@ -631,6 +659,9 @@ class SyncRepository(
         adult = adult,
         episode = EpisodeInfo(showName ?: name, season ?: 1, episode ?: 1),
         order = sortOrder,
+        added = added,
+        year = year,
+        rating = rating,
     )
 
     private fun PlaylistEntry.toRow(): ItemEntity {
@@ -651,6 +682,11 @@ class SyncRepository(
             season = ep?.season,
             episode = ep?.episode,
             sortOrder = order,
+            added = added,
+            // What Movies and Shows sort on; live channels don't need it, and a big playlist is mostly live.
+            year = if (kind == ContentKind.LIVE) null else year ?: TitleSort.yearInName(ep?.showName ?: name),
+            rating = rating,
+            sortTitle = if (kind == ContentKind.LIVE) "" else TitleSort.title(ep?.showName ?: name),
         )
     }
 

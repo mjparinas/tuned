@@ -391,6 +391,13 @@
     <string name="player_reconnecting">Reconnexion…</string>
     <string name="player_reconnecting_try">Reconnexion… (%1$d sur %2$d)</string>
     <string name="filter_recent">Récents</string>
+    <string name="sort_chip">Trier</string>
+    <string name="sort_chip_a11y">Trier : %1$s</string>
+    <string name="sort_provider">Ordre de la playlist</string>
+    <string name="sort_added">Ajouts récents</string>
+    <string name="sort_year">Plus récents</string>
+    <string name="sort_rating">Mieux notés</string>
+    <string name="sort_title">A à Z</string>
     <string name="live_filters">Filtres</string>
     <string name="live_filters_title">Filtrer les chaînes</string>
     <string name="live_filters_type">Type</string>

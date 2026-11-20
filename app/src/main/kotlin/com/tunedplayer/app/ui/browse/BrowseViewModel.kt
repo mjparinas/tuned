@@ -14,6 +14,7 @@ import com.tunedplayer.app.core.HiddenGroups
 import com.tunedplayer.app.core.PinnedGroups
 import com.tunedplayer.app.core.ProgrammeGenre
 import com.tunedplayer.app.core.Search
+import com.tunedplayer.app.core.TitleSort
 import com.tunedplayer.app.data.AppSettings
 import com.tunedplayer.app.data.SyncProgress
 import com.tunedplayer.app.data.db.ChannelNumbers
@@ -26,6 +27,10 @@ import com.tunedplayer.app.data.db.ListEntity
 import com.tunedplayer.app.data.db.ProfileEntity
 import com.tunedplayer.app.data.db.RegionCount
 import com.tunedplayer.app.data.db.ShowSummary
+import com.tunedplayer.app.data.db.SortFields
+import com.tunedplayer.app.data.db.sortedItems
+import com.tunedplayer.app.data.db.sortedShows
+import com.tunedplayer.app.data.db.sortedShowsTab
 import com.tunedplayer.app.data.hiddenKeys
 import com.tunedplayer.app.diagnostics.attempt
 import com.tunedplayer.app.diagnostics.launchSafely
@@ -92,6 +97,8 @@ class BrowseViewModel(
         viewModelScope.launchSafely("BrowseViewModel") { container.channelScan.releaseEventChannels() }
         // A cache from before channel numbers: number it once, in the background.
         viewModelScope.launchSafely("BrowseViewModel") { ChannelNumbers.fillIfMissing(container.db) }
+        // A cache from before the Movies and Shows sorts: work out its titles and years once, in the background.
+        viewModelScope.launchSafely("BrowseViewModel") { SortFields.fillIfMissing(container.db) }
         // A guide cached before whole-guide search: index its titles once, in the background.
         viewModelScope.launchSafely("BrowseViewModel") { GuideSearchIndex.fillIfMissing(container.db) }
         // The Android TV home screen rows (Continue watching, favourites); nothing on phones.
@@ -247,11 +254,42 @@ class BrowseViewModel(
                 }.flow
             }.cachedIn(viewModelScope)
 
+    /** The order each tab's titles are listed in (Movies and Shows; Live TV keeps the playlist's), remembered in Settings. */
+    fun sort(kind: ContentKind): StateFlow<TitleSort.Order> = sortFlows.getOrPut(kind) {
+        settings
+            .map { s ->
+                when (kind) {
+                    ContentKind.MOVIE -> s?.movieSort
+                    ContentKind.SERIES -> s?.showSort
+                    ContentKind.LIVE -> null
+                } ?: TitleSort.Order.PROVIDER
+            }.distinctUntilChanged()
+            .stateIn(viewModelScope, SharingStarted.Eagerly, TitleSort.Order.PROVIDER)
+    }
+
+    private val sortFlows = mutableMapOf<ContentKind, StateFlow<TitleSort.Order>>()
+
+    fun setSort(
+        kind: ContentKind,
+        order: TitleSort.Order,
+    ) {
+        viewModelScope.launchSafely("BrowseViewModel") {
+            container.settings.update {
+                when (kind) {
+                    ContentKind.MOVIE -> it.copy(movieSort = order)
+                    ContentKind.SERIES -> it.copy(showSort = order)
+                    ContentKind.LIVE -> it
+                }
+            }
+        }
+    }
+
     val movies: Flow<PagingData<ItemEntity>> =
-        query(ContentKind.MOVIE)
-            .flatMapLatest { q ->
+        combine(query(ContentKind.MOVIE), sort(ContentKind.MOVIE)) { q, order -> q to order }
+            .flatMapLatest { (q, order) ->
                 Pager(config) {
-                    items.items(
+                    container.db.sortedItems(
+                        order,
                         ContentKind.MOVIE.code,
                         q.hidden,
                         q.adult,
@@ -265,15 +303,23 @@ class BrowseViewModel(
             }.cachedIn(viewModelScope)
 
     val shows: Flow<PagingData<ShowSummary>> =
-        query(ContentKind.SERIES)
-            .flatMapLatest { q ->
+        combine(query(ContentKind.SERIES), sort(ContentKind.SERIES)) { q, order -> q to order }
+            .flatMapLatest { (q, order) ->
                 Pager(config) {
                     val group = (q.filter as? Filter.Group)?.name
                     // Browsing reads the per-show table; a search or Favourites narrows the episodes themselves.
                     if (q.search.isEmpty() && q.filter != Filter.Favourites) {
-                        container.db.shows().showsTab(q.hidden, q.adult, group)
+                        container.db.sortedShowsTab(order, q.hidden, q.adult, group)
                     } else {
-                        items.shows(q.hidden, q.adult, group, q.filter == Filter.Favourites, q.search, Search.match(q.search))
+                        container.db.sortedShows(
+                            order,
+                            q.hidden,
+                            q.adult,
+                            group,
+                            q.filter == Filter.Favourites,
+                            q.search,
+                            Search.match(q.search),
+                        )
                     }
                 }.flow
             }.cachedIn(viewModelScope)

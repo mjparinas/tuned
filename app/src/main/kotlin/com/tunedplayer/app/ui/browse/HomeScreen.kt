@@ -511,6 +511,8 @@ private fun CategoryChips(
         }
         // Live TV's quick filters (Sports, PPV, a country or a language) narrow whichever chip is chosen.
         if (kind == ContentKind.LIVE) item(key = "quick") { LiveQuickChip(vm) }
+        // Movies and Shows put their sort first; it orders whichever chip is chosen.
+        if (kind != ContentKind.LIVE) item(key = "sort") { SortChip(vm, kind) }
         item(key = "all") {
             FilterChip(selected = filter == Filter.All, onClick = {
                 filterFlow.value = Filter.All

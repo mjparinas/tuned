@@ -359,6 +359,13 @@
     <string name="player_reconnecting">正在重新连接…</string>
     <string name="player_reconnecting_try">正在重新连接…（%1$d / %2$d）</string>
     <string name="filter_recent">最近</string>
+    <string name="sort_chip">排序</string>
+    <string name="sort_chip_a11y">排序：%1$s</string>
+    <string name="sort_provider">播放列表顺序</string>
+    <string name="sort_added">最近添加</string>
+    <string name="sort_year">最新</string>
+    <string name="sort_rating">评分最高</string>
+    <string name="sort_title">A 到 Z</string>
     <string name="live_filters">筛选</string>
     <string name="live_filters_title">筛选频道</string>
     <string name="live_filters_type">类型</string>

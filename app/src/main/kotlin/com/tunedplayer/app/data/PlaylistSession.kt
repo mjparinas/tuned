@@ -88,6 +88,7 @@ class PlaylistSession(
         db.items().deleteAll()
         db.shows().deleteShowGroups()
         db.shows().deleteCovers()
+        db.shows().deleteDetails()
         db.programmes().deleteAll()
         GuideSearchIndex.lock.withLock { GuideSearchIndex.reset(db.openHelper.writableDatabase) }
         db.catchUp().deleteAll()

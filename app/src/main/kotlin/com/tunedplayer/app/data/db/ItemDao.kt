@@ -140,27 +140,7 @@ interface ItemDao {
         adult: Boolean,
     ): Flow<List<ContinueRow>>
 
-    @Query(
-        """
-        SELECT * FROM items i
-        WHERE i.kind = :kind
-            AND COALESCE(i.region, 'none') NOT IN (:hidden) AND ('g:' || i.kind || ':' || i.groupName) NOT IN (:hidden)
-            AND NOT ('scan:dead' IN (:hidden) AND i.id IN (SELECT itemId FROM channel_scan WHERE hidden = 1))
-            AND NOT ('placeholder' IN (:hidden) AND i.kind = 0
-                AND ((' ' || i.searchName) GLOB '* no event*' OR (' ' || i.searchName) GLOB '* no live event*'))
-            AND NOT ('247' IN (:hidden)
-                AND ((' ' || lower(i.groupName || ' ' || i.name) || ' ') GLOB '*[^0-9]24[/ x-]7[^0-9]*'
-                    OR (' ' || lower(i.groupName || ' ' || i.name) || ' ') GLOB '*[^0-9]247[^0-9]*'
-                    OR (' ' || lower(i.groupName || ' ' || i.name) || ' ') GLOB '*[^0-9]24 / 7[^0-9]*'))
-            AND (:adult OR i.adult = 0)
-            $KIDS_ONLY_I
-            AND (:group IS NULL OR i.groupName = :group)
-            AND (:favouritesOnly = 0 OR i.id IN (SELECT itemId FROM favourites WHERE profileId = $ME))
-            AND (:listId = 0 OR i.id IN (SELECT itemId FROM list_items WHERE listId = :listId))
-            AND (:query = '' OR i.id IN (SELECT docid FROM items_fts WHERE items_fts MATCH :match))
-        ORDER BY i.sortOrder
-        """,
-    )
+    @Query("SELECT * FROM items i $TITLE_FILTER ORDER BY i.sortOrder")
     @Suppress("LongParameterList") // Every filter is a parameter of the one query, so the list stays one read.
     fun items(
         kind: Int,
@@ -174,31 +154,7 @@ interface ItemDao {
         listId: Long,
     ): PagingSource<Int, ItemEntity>
 
-    @Query(
-        """
-        SELECT showKey, MIN(showName) AS showName, MAX(logo) AS logo, MIN(groupName) AS groupName, COUNT(*) AS episodes,
-            SUM(CASE WHEN i.showKey IN (SELECT showKey FROM seen_episodes WHERE profileId = $ME)
-                AND i.id NOT IN (SELECT itemId FROM seen_episodes WHERE profileId = $ME)
-                THEN 1 ELSE 0 END) AS newEpisodes
-        FROM items i
-        WHERE i.kind = 2 AND i.showKey IS NOT NULL
-            AND COALESCE(i.region, 'none') NOT IN (:hidden) AND ('g:' || i.kind || ':' || i.groupName) NOT IN (:hidden)
-            AND NOT ('scan:dead' IN (:hidden) AND i.id IN (SELECT itemId FROM channel_scan WHERE hidden = 1))
-            AND NOT ('placeholder' IN (:hidden) AND i.kind = 0
-                AND ((' ' || i.searchName) GLOB '* no event*' OR (' ' || i.searchName) GLOB '* no live event*'))
-            AND NOT ('247' IN (:hidden)
-                AND ((' ' || lower(i.groupName || ' ' || i.name) || ' ') GLOB '*[^0-9]24[/ x-]7[^0-9]*'
-                    OR (' ' || lower(i.groupName || ' ' || i.name) || ' ') GLOB '*[^0-9]247[^0-9]*'
-                    OR (' ' || lower(i.groupName || ' ' || i.name) || ' ') GLOB '*[^0-9]24 / 7[^0-9]*'))
-            AND (:adult OR i.adult = 0)
-            $KIDS_ONLY_I
-            AND (:group IS NULL OR i.groupName = :group)
-            AND (:favouritesOnly = 0 OR i.id IN (SELECT itemId FROM favourites WHERE profileId = $ME))
-            AND (:query = '' OR i.id IN (SELECT docid FROM items_fts WHERE items_fts MATCH :match))
-        GROUP BY showKey
-        ORDER BY MIN(sortOrder)
-        """,
-    )
+    @Query("$SHOW_SUMMARY $SHOW_FILTER ORDER BY MIN(sortOrder)")
     fun shows(
         hidden: List<String>,
         adult: Boolean,

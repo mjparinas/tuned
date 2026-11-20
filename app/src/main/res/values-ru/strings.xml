@@ -407,6 +407,13 @@
     <string name="player_reconnecting">Переподключение…</string>
     <string name="player_reconnecting_try">Переподключение… (%1$d из %2$d)</string>
     <string name="filter_recent">Недавние</string>
+    <string name="sort_chip">Сортировка</string>
+    <string name="sort_chip_a11y">Сортировка: %1$s</string>
+    <string name="sort_provider">Порядок плейлиста</string>
+    <string name="sort_added">Недавно добавленные</string>
+    <string name="sort_year">Новые</string>
+    <string name="sort_rating">Лучшие по рейтингу</string>
+    <string name="sort_title">От А до Я</string>
     <string name="live_filters">Фильтры</string>
     <string name="live_filters_title">Фильтр каналов</string>
     <string name="live_filters_type">Тип</string>

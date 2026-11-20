@@ -375,6 +375,13 @@
     <string name="player_reconnecting">Yeniden bağlanıyor…</string>
     <string name="player_reconnecting_try">Yeniden bağlanıyor… (%1$d / %2$d)</string>
     <string name="filter_recent">Son izlenenler</string>
+    <string name="sort_chip">Sırala</string>
+    <string name="sort_chip_a11y">Sırala: %1$s</string>
+    <string name="sort_provider">Oynatma listesi sırası</string>
+    <string name="sort_added">Son eklenenler</string>
+    <string name="sort_year">En yeni</string>
+    <string name="sort_rating">En yüksek puanlı</string>
+    <string name="sort_title">A\'dan Z\'ye</string>
     <string name="live_filters">Filtreler</string>
     <string name="live_filters_title">Kanalları filtrele</string>
     <string name="live_filters_type">Tür</string>
