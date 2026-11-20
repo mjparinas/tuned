@@ -143,12 +143,7 @@ class PlayerScreenshots {
                 player = ViewPlayer(exo, { tv }, {}, { false })
             }
         tintScrubber(playerView, playerAccent(activity, Accent.VIOLET, dynamicColour = false))
-        val search = toolButton(activity, R.drawable.ic_player_subtitle_search, R.string.subtitle_search)
-        val timing = toolButton(activity, R.drawable.ic_player_subtitle_timing, R.string.subtitle_timing).apply {
-                // Greyed out while casting (the TV draws the captions) or while subtitles are off.
-                usable(note == null && captionsOn)
-            }
-        placeBesideCaptions(playerView, listOf(search, timing))
+        placeBesideCaptions(playerView, captionButtons(activity, timingUsable = note == null && captionsOn))
         val density = activity.resources.displayMetrics.density
         val titles =
             LinearLayout(activity).apply {
@@ -198,6 +193,15 @@ class PlayerScreenshots {
         root.captureRoboImage("$name.png")
         exo.release()
     }
+
+    /** Subtitle search and timing; timing is greyed out while casting (the TV draws the captions) or while subtitles are off. */
+    private fun captionButtons(
+        activity: ComponentActivity,
+        timingUsable: Boolean,
+    ) = listOf(
+        toolButton(activity, R.drawable.ic_player_subtitle_search, R.string.subtitle_search),
+        toolButton(activity, R.drawable.ic_player_subtitle_timing, R.string.subtitle_timing).apply { usable(timingUsable) },
+    )
 
     private fun toolButton(
         activity: ComponentActivity,
