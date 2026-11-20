@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_playlist_copies">Anında oynatma listesi geçişi</string>
+    <string name="settings_playlist_copies_summary">Son 3 oynatma listesini bu cihazda tut, geri dönünce hemen görünsün</string>
+    <string name="playlists_switching">Oynatma listesi değiştiriliyor…</string>
+</resources>

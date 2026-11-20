@@ -1,6 +1,7 @@
 // The account page (docs/decisions/accounts.md): devices and seats, buying Premium and seats through Stripe, the
 // backup, pairing a TV, signing out and deleting the account. Everything goes through /api with the session cookie.
 import { normalizeCode } from "/tv/seal.js";
+import { drawNav, showLinkedSection } from "/account/nav.js";
 
 const $ = (id) => document.getElementById(id);
 const status = $("status");
@@ -55,12 +56,16 @@ async function call(method, path, body) {
 }
 
 const when = (ms) => new Date(ms).toLocaleDateString("en-CA", { year: "numeric", month: "long", day: "numeric" });
+const shortWhen = (ms) => new Date(ms).toLocaleDateString("en-CA", { month: "short", day: "numeric" });
+const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
 const kinds = { phone: "Phone", tablet: "Tablet", tv: "TV" };
 const seatName = { seat_once: "one-time", seat_yearly: "yearly" };
 
 function render() {
     $("signed-out").hidden = Boolean(me);
     $("signed-in").hidden = !me;
+    $("account-nav").hidden = !me;
+    document.querySelector("main").classList.toggle("signed-in", Boolean(me));
     const tv = params.get("tv");
     $("tv").hidden = !(me && tv);
     $("tv-code").textContent = tv ?? "";
@@ -69,6 +74,7 @@ function render() {
         return;
     }
     $("who").textContent = me.name || me.email;
+    $("avatar").textContent = (me.name || me.email || "?").trim().charAt(0).toUpperCase();
     $("plan").textContent = me.premium
         ? `Tuned Premium, ${me.premium === "lifetime" ? "for life" : "yearly"}. Signed in as ${me.email}.`
         : `Free. Signed in as ${me.email}.`;
@@ -76,13 +82,17 @@ function render() {
     $("seats").textContent = me.premium
         ? `${me.seats.used} of ${me.seats.limit} Premium seats in use. A device unused for 60 days gives its seat back.`
         : "Premium isn't on this account, so devices don't use seats.";
-    const list = $("devices");
+    const list = $("device-list");
     list.replaceChildren(
         ...me.devices.map((d) => {
-            const row = document.createElement("div");
-            row.className = "row";
+            const row = document.createElement("li");
+            row.className = "device";
+            const icon = document.createElement("span");
+            icon.className = `device-icon ${d.kind in kinds ? d.kind : "phone"}`;
+            icon.setAttribute("aria-hidden", "true");
             const text = document.createElement("div");
             const name = document.createElement("div");
+            name.className = "device-name";
             name.textContent = d.name;
             const line = document.createElement("p");
             line.className = "small";
@@ -101,11 +111,28 @@ function render() {
                     tell("devices-message", `${d.name} was removed and signed out.`, "ok");
                 } else tell("devices-message", refusals[answer.status] ?? refusals.unavailable);
             };
-            row.append(text, remove);
+            row.append(icon, text, remove);
             return row;
         }),
     );
-    if (!me.devices.length) list.textContent = "No devices are signed in yet.";
+    if (!me.devices.length) {
+        const empty = document.createElement("li");
+        empty.className = "empty";
+        empty.textContent = "No devices are signed in yet. Sign in in Tuned, under Settings › Account and backup.";
+        list.append(empty);
+    }
+    $("seat-bar").hidden = !me.premium;
+    $("seat-bar").firstElementChild.style.width = me.premium
+        ? `${Math.min(100, (100 * me.seats.used) / Math.max(1, me.seats.limit))}%`
+        : "0";
+
+    // At a glance: the plan, seats, playlists and backup, each a link to its card.
+    $("glance-plan-value").textContent = me.premium ? "Premium" : "Free";
+    $("glance-plan-line").textContent = me.premium ? (me.premium === "lifetime" ? "For life" : "Yearly") : "Get Premium";
+    $("glance-devices-value").textContent = me.premium ? `${me.seats.used} of ${me.seats.limit}` : String(me.devices.length);
+    $("glance-devices-line").textContent = me.premium ? "seats in use" : me.devices.length === 1 ? "device signed in" : "devices signed in";
+    $("glance-backup-value").textContent = me.backup ? shortWhen(me.backup.savedAt) : "None yet";
+    $("glance-backup-line").textContent = me.backup ? `from ${me.backup.device}` : "Sign in on a device";
 
     $("buy-premium").hidden = Boolean(me.premium);
     $("buy-seats").hidden = !(me.premium && me.seats.canBuy > 0);
@@ -126,7 +153,7 @@ function render() {
     );
     $("billing").hidden = !me.purchases.some((p) => p.source === "stripe");
 
-    $("backup").textContent = me.backup
+    $("backup-line").textContent = me.backup
         ? `Saved ${when(me.backup.savedAt)} from ${me.backup.device}. Your devices keep it up to date and restore from it.`
         : "No backup yet. Sign in on a device in Tuned, under Settings › Account and backup.";
     $("delete-backup").hidden = !me.backup;
@@ -138,7 +165,23 @@ async function load() {
     else if (answer.status === "signed out") me = null;
     else say(refusals.unavailable);
     render();
-    showFeatures();
+    if (me && !navDrawn) {
+        navDrawn = true;
+        drawNav($("account-nav"), "account");
+        countPlaylists();
+    }
+    await showFeatures();
+    showLinkedSection();
+}
+let navDrawn = false;
+
+/** How many playlists the account keeps, for the Playlists tile. If it can't be read, the tile just says Manage. */
+async function countPlaylists() {
+    const answer = await call("GET", "/api/account/library");
+    if (answer.status !== "ok" || !Array.isArray(answer.playlists)) return;
+    const n = answer.playlists.length;
+    $("glance-playlists-value").textContent = n ? plural(n, "playlist", "playlists") : "None yet";
+    $("glance-playlists-line").textContent = n ? "and your settings" : "Add one";
 }
 
 async function checkout(product, quantity = 1) {
@@ -168,7 +211,8 @@ const codeAnswers = {
     "too many seats": "An account can have at most ten seats.",
     "too many": "Too many tries. Try again in an hour.",
 };
-$("redeem").onclick = async () => {
+$("code-form").onsubmit = async (event) => {
+    event.preventDefault();
     const code = $("code").value;
     if (!code.trim()) return tell("code-message", "Type the code first.", "error", "code");
     if (!codeLooksRight(code)) {
@@ -195,7 +239,10 @@ async function pair(code, where, field = null) {
     );
     return ok;
 }
-$("pair").onclick = () => pair($("pair-code").value, "pair-message", "pair-code");
+$("pair-form").onsubmit = (event) => {
+    event.preventDefault();
+    pair($("pair-code").value, "pair-message", "pair-code");
+};
 $("tv-yes").onclick = async () => {
     if (await pair(params.get("tv"), "tv-message")) {
         $("tv").hidden = true;
@@ -204,29 +251,58 @@ $("tv-yes").onclick = async () => {
 };
 $("tv-no").onclick = () => ($("tv").hidden = true);
 
-$("delete-backup").onclick = async () => {
-    const answer = await call("DELETE", "/api/backup", {});
-    if (answer.status === "ok") {
-        await load();
-        tell("backup-message", "Your backup was deleted. A signed-in device will save a new one next time it opens.", "ok");
-    } else tell("backup-message", refusals.unavailable);
-};
 $("sign-out").onclick = async () => {
     await call("POST", "/api/auth/signout", {});
     me = null;
     render();
     say("Signed out.");
+    $("sign-in").focus();
 };
-// Deleting the account asks in a pop-up that only goes ahead once "delete" is typed (Melvin, 2026-11-19).
+// Deleting the account or the backup asks in a pop-up that only goes ahead once "delete" is typed (Melvin, 2026-11-19
+// for the account, 2026-11-20 for the backup: "it should also have a pop up that makes you type delete first").
 const dialog = $("delete-dialog");
 const typedDelete = () => $("delete-word").value.trim().toLowerCase() === "delete";
-$("delete-account").onclick = () => {
+const deletions = {
+    account: {
+        title: "Delete your account?",
+        text: "This deletes your account, devices and backup, and cancels a yearly plan bought here. A plan bought in Google Play is cancelled in Play. It can't be undone.",
+        button: "Delete account",
+        async run() {
+            const answer = await call("POST", "/api/account/delete", {});
+            if (answer.status !== "ok") return false;
+            me = null;
+            render();
+            say("Your account was deleted.");
+            return true;
+        },
+    },
+    backup: {
+        title: "Delete your backup?",
+        text: "This deletes the copy of your playlists, logins, settings and lists saved in your account. Your devices keep theirs, and a signed-in device saves a new one next time it opens. It can't be undone.",
+        button: "Delete backup",
+        async run() {
+            const answer = await call("DELETE", "/api/backup", {});
+            if (answer.status !== "ok") return false;
+            await load();
+            tell("backup-message", "Your backup was deleted. A signed-in device will save a new one next time it opens.", "ok");
+            return true;
+        },
+    },
+};
+let deleting = deletions.account;
+function askToDelete(what) {
+    deleting = deletions[what];
+    $("delete-title").textContent = deleting.title;
+    $("delete-text").textContent = deleting.text;
+    $("delete-confirm").textContent = deleting.button;
     $("delete-word").value = "";
     $("delete-confirm").disabled = true;
     clear("delete-message");
     dialog.showModal();
     $("delete-word").focus();
-};
+}
+$("delete-account").onclick = () => askToDelete("account");
+$("delete-backup").onclick = () => askToDelete("backup");
 $("delete-word").oninput = () => ($("delete-confirm").disabled = !typedDelete());
 $("delete-cancel").onclick = () => dialog.close();
 dialog.onclick = (event) => {
@@ -236,13 +312,14 @@ $("delete-form").onsubmit = async (event) => {
     event.preventDefault();
     if (!typedDelete()) return;
     $("delete-confirm").disabled = true;
-    const answer = await call("POST", "/api/account/delete", {});
-    if (answer.status === "ok") {
-        dialog.close();
-        me = null;
-        render();
-        say("Your account was deleted.");
-    } else {
+    let done = false;
+    try {
+        done = await deleting.run();
+    } catch {
+        done = false;
+    }
+    if (done) dialog.close();
+    else {
         $("delete-confirm").disabled = false;
         tell("delete-message", refusals.unavailable);
     }

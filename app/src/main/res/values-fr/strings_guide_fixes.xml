@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="guide_fix_title">Corriger le guide de cette chaîne</string>
+    <string name="guide_fix_summary">Pour une chaîne dont les horaires sont décalés, ou dont le guide montre une autre chaîne. La correction reste quand la playlist s\'actualise.</string>
+    <string name="guide_fix_remove">Annuler la correction</string>
+    <string name="guide_fix_offset">Décaler les horaires</string>
+    <string name="guide_fix_earlier">Plus tôt</string>
+    <string name="guide_fix_later">Plus tard</string>
+    <string name="guide_fix_no_offset">Aucun changement</string>
+    <string name="guide_fix_entry">Entrée du guide</string>
+    <string name="guide_fix_entry_playlist">Celle de la playlist</string>
+    <string name="guide_fix_choose">En choisir une autre</string>
+    <string name="guide_fix_entry_reset">Utiliser celle de la playlist</string>
+    <string name="guide_fix_search">Rechercher les chaînes du guide</string>
+    <string name="guide_fix_no_results">Aucune chaîne du guide ne correspond. Si le guide n\'a pas fini de se télécharger, réessayez plus tard.</string>
+    <string name="settings_guide_offset">Décalage horaire du guide</string>
+    <string name="settings_extra_guides">Liens de guide supplémentaires</string>
+    <string name="settings_extra_guides_none">Aucun</string>
+    <plurals name="settings_extra_guides_count">
+        <item quantity="one">%d lien</item>
+        <item quantity="many">%d liens</item>
+        <item quantity="other">%d liens</item>
+    </plurals>
+    <string name="settings_extra_guides_summary">Liens XMLTV lus après le guide du fournisseur, pour compléter les chaînes qu\'il laisse vides. Enregistrer relit le guide.</string>
+    <string name="settings_extra_guides_remove">Retirer le lien</string>
+    <string name="settings_extra_guides_add">Ajouter un lien (https://…)</string>
+</resources>

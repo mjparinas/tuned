@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="details_trailer">Trailer</string>
+    <string name="details_play">Abspielen</string>
+    <string name="details_resume">Fortsetzen</string>
+    <string name="details_cast">Besetzung</string>
+    <string name="play_now">Jetzt abspielen</string>
+    <string name="details_source">Details von The Movie Database (TMDB)</string>
+    <string name="details_no_key">Dieser Build hat keinen TMDB-Schlüssel, daher sind Bewertungen, Zusammenfassungen und Trailer aus.</string>
+</resources>

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="skip_intro">Pular abertura</string>
+    <string name="settings_skip_intro">Botão Pular abertura</string>
+    <string name="settings_skip_intro_off">Desativado</string>
+</resources>

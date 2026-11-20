@@ -38,6 +38,11 @@ object XtreamApi {
         val epgId: String? = null,
         val adult: Boolean = false,
         val extension: String? = null,
+        /** Epoch seconds the provider added it ([TitleSort.added]); 0 when unknown. */
+        val added: Long = 0,
+        val year: Int? = null,
+        /** Out of 10 ([TitleSort.rating]). */
+        val rating: Double? = null,
     )
 
     class Links(
@@ -118,6 +123,9 @@ object XtreamApi {
         adult = s.adult || Classifier.isAdult(s.category, s.name),
         episode = episode,
         order = order,
+        added = s.added,
+        year = s.year,
+        rating = s.rating,
     )
 
     private fun pad(n: Int) = n.toString().padStart(2, '0')

@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_tunneled_playback">Reproducción tunelizada</string>
+    <string name="settings_tunneled_playback_summary">Deja que el hardware de vídeo de la TV mantenga juntos imagen y sonido, lo que puede suavizar el 4K y los deportes. Pruébalo si la reproducción da tirones. El retraso del sonido no se aplica mientras está activado.</string>
+</resources>

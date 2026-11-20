@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="guide_fix_title">Исправить телегид этого канала</string>
+    <string name="guide_fix_summary">Для канала со сдвинутым временем или с телегидом другого канала. Исправление сохраняется при обновлении плейлиста.</string>
+    <string name="guide_fix_remove">Отменить исправление</string>
+    <string name="guide_fix_offset">Сдвинуть время</string>
+    <string name="guide_fix_earlier">Раньше</string>
+    <string name="guide_fix_later">Позже</string>
+    <string name="guide_fix_no_offset">Без изменений</string>
+    <string name="guide_fix_entry">Запись телегида</string>
+    <string name="guide_fix_entry_playlist">Из плейлиста</string>
+    <string name="guide_fix_choose">Выбрать другую</string>
+    <string name="guide_fix_entry_reset">Использовать из плейлиста</string>
+    <string name="guide_fix_search">Поиск каналов телегида</string>
+    <string name="guide_fix_no_results">Подходящих каналов в телегиде нет. Если телегид ещё не загрузился, попробуйте позже.</string>
+    <string name="settings_guide_offset">Сдвиг времени телегида</string>
+    <string name="settings_extra_guides">Дополнительные ссылки на телегид</string>
+    <string name="settings_extra_guides_none">Нет</string>
+    <plurals name="settings_extra_guides_count">
+        <item quantity="one">%d ссылка</item>
+        <item quantity="few">%d ссылки</item>
+        <item quantity="many">%d ссылок</item>
+        <item quantity="other">%d ссылки</item>
+    </plurals>
+    <string name="settings_extra_guides_summary">Ссылки XMLTV, которые читаются после телегида провайдера, чтобы заполнить пустые каналы. При сохранении телегид читается заново.</string>
+    <string name="settings_extra_guides_remove">Удалить ссылку</string>
+    <string name="settings_extra_guides_add">Добавить ссылку (https://…)</string>
+</resources>

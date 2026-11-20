@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="widget_favourites">पसंदीदा चैनल</string>
+    <string name="widget_favourites_description">आपके पसंदीदा चैनलों के लोगो और अभी क्या चल रहा है। देखने के लिए किसी एक पर टैप करें।</string>
+    <string name="widget_empty_title">अभी कोई पसंदीदा नहीं</string>
+    <string name="widget_empty">किसी चैनल पर दिल टैप करें और वह यहां दिखेगा।</string>
+    <string name="widget_add_favourites">पसंदीदा जोड़ें</string>
+    <string name="widget_signed_out">Tuned में साइन इन करें</string>
+    <string name="widget_signed_out_body">प्लेलिस्ट जुड़ने के बाद आपके पसंदीदा चैनल यहां दिखते हैं।</string>
+    <string name="widget_open_tuned">Tuned खोलें</string>
+    <string name="widget_watch">%1$s देखें</string>
+    <string name="widget_watch_on_now">%1$s देखें। अभी चल रहा है: %2$s</string>
+    <string name="widget_continue">देखना जारी रखें</string>
+    <string name="widget_continue_description">फ़िल्में और एपिसोड जो आपने शुरू किए, बचे समय के साथ। जहां छोड़ा था वहीं से शुरू करने के लिए किसी एक पर टैप करें।</string>
+    <string name="widget_continue_empty_title">कुछ भी अधूरा नहीं</string>
+    <string name="widget_continue_empty">आप जो फ़िल्में और एपिसोड शुरू करते हैं वे यहां दिखते हैं।</string>
+    <string name="widget_continue_signed_out_body">प्लेलिस्ट जुड़ने के बाद आपकी शुरू की गई फ़िल्में और एपिसोड यहां दिखते हैं।</string>
+    <string name="widget_episode_number">S%1$d E%2$d</string>
+    <string name="widget_resume">%1$s जारी रखें। %2$s</string>
+    <plurals name="widget_minutes_left">
+        <item quantity="one">%d मिनट बाकी</item>
+        <item quantity="other">%d मिनट बाकी</item>
+    </plurals>
+    <string name="tile_last_channel">पिछला चैनल</string>
+</resources>

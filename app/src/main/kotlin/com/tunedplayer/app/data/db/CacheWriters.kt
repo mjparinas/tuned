@@ -2,6 +2,8 @@ package com.tunedplayer.app.data.db
 
 import androidx.room.withTransaction
 import androidx.sqlite.db.SupportSQLiteStatement
+import com.tunedplayer.app.core.Search
+import kotlinx.coroutines.sync.withLock
 
 /**
  * Writes a downloaded guide without holding the database while it does. A guide runs to hundreds of thousands of
@@ -21,24 +23,34 @@ class GuideWriter(
         sql.execSQL("DROP TABLE IF EXISTS $NEXT")
         sql.execSQL(
             "CREATE TABLE $NEXT (channelId TEXT NOT NULL, start INTEGER NOT NULL, stop INTEGER NOT NULL, " +
-                "title TEXT NOT NULL, description TEXT)",
+                "title TEXT NOT NULL, description TEXT, genre INTEGER NOT NULL DEFAULT 0)",
         )
+        GuideSearchIndex.beginNext(sql)
         count = 0
     }
 
     suspend fun add(batch: List<ProgrammeEntity>) {
         if (batch.isEmpty()) return
         db.withTransaction {
-            sql.compileStatement("INSERT INTO $NEXT (channelId, start, stop, title, description) VALUES (?, ?, ?, ?, ?)").use { insert ->
-                for (p in batch) {
-                    insert.bindString(1, p.channelId)
-                    insert.bindLong(2, p.start)
-                    insert.bindLong(3, p.stop)
-                    insert.bindString(4, p.title)
-                    val description = p.description
-                    if (description == null) insert.bindNull(5) else insert.bindString(5, description)
-                    insert.executeInsert()
-                    insert.clearBindings()
+            val index = sql.compileStatement(GuideSearchIndex.INSERT_NEXT)
+            sql.compileStatement(INSERT).use { insert ->
+                index.use {
+                    for (p in batch) {
+                        insert.bindString(1, p.channelId)
+                        insert.bindLong(2, p.start)
+                        insert.bindLong(3, p.stop)
+                        insert.bindString(4, p.title)
+                        val description = p.description
+                        if (description == null) insert.bindNull(5) else insert.bindString(5, description)
+                        insert.bindLong(6, p.genre.toLong())
+                        val rowId = insert.executeInsert()
+                        insert.clearBindings()
+                        // The title goes in the side index under the same row id, which the swap keeps.
+                        index.bindLong(1, rowId)
+                        index.bindString(2, Search.normalize(p.title))
+                        index.executeInsert()
+                        index.clearBindings()
+                    }
                 }
             }
         }
@@ -51,12 +63,16 @@ class GuideWriter(
      */
     suspend fun commit(): Int {
         if (count == 0) return 0
-        db.withTransaction {
-            sql.execSQL("DELETE FROM programmes")
-            sql.execSQL(
-                "INSERT INTO programmes (channelId, start, stop, title, description) " +
-                    "SELECT channelId, start, stop, title, description FROM $NEXT",
-            )
+        GuideSearchIndex.lock.withLock {
+            db.withTransaction {
+                sql.execSQL("DELETE FROM programmes")
+                // Row ids are carried over so the side search index, keyed by them, still points at the right titles.
+                sql.execSQL(
+                    "INSERT INTO programmes (rowId, channelId, start, stop, title, description, genre) " +
+                        "SELECT rowid, channelId, start, stop, title, description, genre FROM $NEXT",
+                )
+                GuideSearchIndex.swapIn(sql)
+            }
         }
         discard()
         Upkeep.optimize(db)
@@ -66,10 +82,12 @@ class GuideWriter(
     /** Throws the half-written guide away; the old one stays. */
     fun discard() {
         sql.execSQL("DROP TABLE IF EXISTS $NEXT")
+        GuideSearchIndex.dropNext(sql)
     }
 
     private companion object {
         const val NEXT = "programmes_next"
+        const val INSERT = "INSERT INTO $NEXT (channelId, start, stop, title, description, genre) VALUES (?, ?, ?, ?, ?, ?)"
     }
 }
 
@@ -83,6 +101,11 @@ class GuideWriter(
  */
 class PlaylistWriter(
     private val db: TunedDatabase,
+    /**
+     * Which cached streams this playlist replaces, as SQL on `items`; the rest are left alone. A portal's live channels
+     * and its films and shows are refreshed apart (`kind = 0`, `kind != 0`). Null: the whole cache.
+     */
+    private val scope: String? = null,
 ) {
     private val sql get() = db.openHelper.writableDatabase
     private val seen = HashSet<Long>()
@@ -132,10 +155,31 @@ class PlaylistWriter(
         }
         // The person's renamed channels and logos go over the provider's, before the cache takes them.
         ChannelEdits.applyTo(sql, if (direct) "items" else NEXT)
-        if (!direct) apply()
+        if (!direct) {
+            keepSortDetails()
+            apply()
+        }
         ShowGroups.rebuild(db)
         Upkeep.optimize(db)
         return seen.size
+    }
+
+    /**
+     * Streams the new playlist lists without a time or rating keep the ones already known: those the Xtream API gave
+     * ([com.tunedplayer.app.data.XtreamDetails]), or the time Tuned first saw them. A stream that is new to the cache
+     * and has no time of its own is stamped now, so newest first works on a plain M3U too from its second refresh.
+     */
+    private fun keepSortDetails() {
+        val now = System.currentTimeMillis() / MILLIS
+        sql.execSQL(
+            "UPDATE $NEXT SET added = COALESCE((SELECT i.added FROM items i WHERE i.id = $NEXT.id), $now) WHERE added = 0 AND kind != 0",
+        )
+        sql.execSQL(
+            "UPDATE $NEXT SET rating = (SELECT i.rating FROM items i WHERE i.id = $NEXT.id) WHERE rating IS NULL AND kind != 0",
+        )
+        sql.execSQL(
+            "UPDATE $NEXT SET year = (SELECT i.year FROM items i WHERE i.id = $NEXT.id) WHERE year IS NULL AND kind != 0",
+        )
     }
 
     /** Changes only the streams that differ, a chunk per transaction. */
@@ -143,7 +187,8 @@ class PlaylistWriter(
         // Which streams differ, worked out once, inside SQLite.
         sql.execSQL("DROP TABLE IF EXISTS temp.$CHANGED")
         sql.execSQL("CREATE TEMP TABLE $CHANGED (seq INTEGER PRIMARY KEY, id INTEGER NOT NULL)")
-        sql.execSQL("INSERT INTO $CHANGED (id) SELECT id FROM items WHERE id NOT IN (SELECT id FROM $NEXT)")
+        val inScope = scope?.let { " AND ($it)" }.orEmpty()
+        sql.execSQL("INSERT INTO $CHANGED (id) SELECT id FROM items WHERE id NOT IN (SELECT id FROM $NEXT)$inScope")
         sql.execSQL("INSERT INTO $CHANGED (id) SELECT n.id FROM $NEXT n JOIN items i ON i.id = n.id WHERE NOT ($SAME)")
         sql.execSQL("INSERT INTO $CHANGED (id) SELECT id FROM $NEXT WHERE id NOT IN (SELECT id FROM items)")
         val total = sql.query("SELECT COUNT(*) FROM $CHANGED").use { if (it.moveToFirst()) it.getLong(0) else 0L }
@@ -164,6 +209,7 @@ class PlaylistWriter(
     /** Throws a half-written playlist away; the cache stays as it was. */
     fun discard() {
         sql.execSQL("DROP TABLE IF EXISTS $NEXT")
+        GuideSearchIndex.dropNext(sql)
     }
 
     private fun SupportSQLiteStatement.bind(item: ItemEntity) {
@@ -183,6 +229,11 @@ class PlaylistWriter(
         bindNumber(14, item.episode)
         bindLong(15, item.sortOrder.toLong())
         bindLong(16, item.number.toLong())
+        bindLong(17, item.added)
+        bindNumber(18, item.year)
+        val rating = item.rating
+        if (rating == null) bindNull(19) else bindDouble(19, rating)
+        bindString(20, item.sortTitle)
     }
 
     private fun SupportSQLiteStatement.bindText(
@@ -198,6 +249,7 @@ class PlaylistWriter(
     private companion object {
         const val NEXT = "items_next"
         const val CHANGED = "items_changed"
+        const val MILLIS = 1_000L
 
         /** Small enough that a search waiting behind one is never kept long. */
         const val APPLY_CHUNK = 2_000
@@ -224,13 +276,18 @@ class PlaylistWriter(
                 "episode",
                 "sortOrder",
                 "number",
+                "added",
+                "year",
+                "rating",
+                "sortTitle",
             )
         val COLUMNS = COLUMN_LIST.joinToString()
         const val SCHEMA =
             "id INTEGER NOT NULL PRIMARY KEY, kind INTEGER NOT NULL, name TEXT NOT NULL, searchName TEXT NOT NULL, " +
                 "groupName TEXT NOT NULL, region TEXT, adult INTEGER NOT NULL, logo TEXT, url TEXT NOT NULL, tvgId TEXT, " +
                 "showKey TEXT, showName TEXT, season INTEGER, episode INTEGER, sortOrder INTEGER NOT NULL, " +
-                "number INTEGER NOT NULL DEFAULT 0"
+                "number INTEGER NOT NULL DEFAULT 0, added INTEGER NOT NULL DEFAULT 0, year INTEGER, rating REAL, " +
+                "sortTitle TEXT NOT NULL DEFAULT ''"
 
         /** A stream that came back exactly as it was. */
         val SAME = COLUMN_LIST.drop(1).joinToString(" AND ") { "i.$it IS n.$it" }
@@ -242,10 +299,16 @@ class PlaylistWriter(
  * cover when one is kept ([ShowCoverEntity]), ahead of its episodes' pictures, which can be their screenshots.
  */
 object ShowGroups {
-    const val COLUMNS = "showKey, groupName, region, adult, showName, logo, episodes, sortOrder"
+    const val COLUMNS = "showKey, groupName, region, adult, showName, logo, episodes, sortOrder, added, year, rating, sortTitle"
+
+    /** The provider's details for a show ([ShowDetailsEntity]) go ahead of what its episodes carry. */
     const val SELECT =
         "SELECT showKey, groupName, region, adult, COALESCE(MIN(showName), showKey), " +
-            "COALESCE((SELECT c.cover FROM show_covers c WHERE c.showKey = items.showKey), MAX(logo)), COUNT(*), MIN(sortOrder) " +
+            "COALESCE((SELECT c.cover FROM show_covers c WHERE c.showKey = items.showKey), MAX(logo)), COUNT(*), MIN(sortOrder), " +
+            "MAX(COALESCE((SELECT d.added FROM show_details d WHERE d.showKey = items.showKey), 0), MAX(added)), " +
+            "COALESCE((SELECT d.year FROM show_details d WHERE d.showKey = items.showKey), MIN(year)), " +
+            "COALESCE((SELECT d.rating FROM show_details d WHERE d.showKey = items.showKey), MAX(rating)), " +
+            "COALESCE(MIN(NULLIF(sortTitle, '')), '') " +
             "FROM items WHERE kind = 2 AND showKey IS NOT NULL GROUP BY showKey, groupName, region, adult"
 
     /** Worked out beside the live table, then swapped in with one quick copy, so the Shows tab never waits long. */

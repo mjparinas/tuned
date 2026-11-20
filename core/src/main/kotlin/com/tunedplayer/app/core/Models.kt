@@ -35,6 +35,12 @@ data class PlaylistEntry(
     val order: Int,
     /** A plain M3U channel's catch-up, when its playlist names one. */
     val catchUp: M3uCatchUp? = null,
+    /** When the provider added it, in epoch seconds; 0 when it doesn't say ([TitleSort]). */
+    val added: Long = 0,
+    /** The release year the provider gives; null when it gives none (the name's year is used then). */
+    val year: Int? = null,
+    /** The provider's rating out of 10; null when it gives none. */
+    val rating: Double? = null,
 )
 
 /** One programme from an XMLTV guide. Times are epoch milliseconds. */
@@ -44,4 +50,6 @@ data class Programme(
     val stop: Long,
     val title: String,
     val description: String?,
+    /** The guide's `<category>` tags ("Sports", "Movie"), for [ProgrammeGenre]. */
+    val categories: List<String> = emptyList(),
 )

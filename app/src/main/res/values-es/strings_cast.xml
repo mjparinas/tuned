@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="cast_connecting">Conectando con %1$s…</string>
+    <string name="cast_starting">Iniciando en %1$s…</string>
+    <string name="cast_connect_failed">No se pudo conectar con %1$s</string>
+    <string name="cast_playing_on">Reproduciendo en %1$s</string>
+    <string name="cast_failed">%1$s no pudo reproducir esto. Ajustes › Actualizaciones y avanzado › Registros tiene los detalles.</string>
+    <string name="cast_no_wifi">Conecta el móvil a la misma Wi-Fi que la TV para enviar una película o episodio guardado.</string>
+</resources>

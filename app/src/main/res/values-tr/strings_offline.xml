@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="downloads">İndirilenler</string>
+    <string name="downloads_running">İndiriliyor</string>
+    <string name="downloads_empty">Henüz kaydedilen bir şey yok. Çevrimdışı izlemek için bir filmin, bölümün veya tüm sezonun indirme düğmesine dokun.</string>
+    <string name="download">İndir</string>
+    <string name="download_remove">İndirmeyi kaldır</string>
+    <string name="download_remove_named">%1$s indirmesini kaldır</string>
+    <string name="download_retry">Tekrar dene</string>
+    <string name="download_failed">İndirilemedi</string>
+    <string name="download_waiting">Bekliyor (bir şey oynarken indirmeler duraklar)</string>
+    <string name="download_progress">%1$s / %2$s</string>
+    <string name="downloads_space">%1$s indirildi · bu cihazda %2$s boş</string>
+    <string name="downloads_space_used">%1$s indirildi</string>
+    <string name="downloads_other_episodes">Diğer bölümler</string>
+    <string name="download_paused">Duraklatıldı</string>
+    <string name="download_pause">İndirmeyi duraklat</string>
+    <string name="download_resume">İndirmeye devam et</string>
+    <string name="download_cancel">İndirmeyi iptal et</string>
+    <string name="download_season_done">Sezon kaydedildi</string>
+    <plurals name="downloads_coming">
+        <item quantity="one">%1$d indiriliyor</item>
+        <item quantity="other">%1$d indiriliyor</item>
+    </plurals>
+    <plurals name="download_season">
+        <item quantity="one">Sezonu indir (%d bölüm)</item>
+        <item quantity="other">Sezonu indir (%d bölüm)</item>
+    </plurals>
+    <plurals name="download_season_progress">
+        <item quantity="one">%1$d / %2$d bölüm kaydedildi</item>
+        <item quantity="other">%1$d / %2$d bölüm kaydedildi</item>
+    </plurals>
+</resources>

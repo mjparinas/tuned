@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="grid_show">Показать сетку телегида</string>
+    <string name="grid_hide">Показать список каналов</string>
+    <string name="grid_now">Сейчас</string>
+    <string name="grid_today">Сегодня</string>
+    <string name="grid_no_guide">Нет телегида</string>
+    <string name="settings_live_grid">Показывать ТВ в эфире сеткой телегида</string>
+    <string name="settings_live_grid_summary">Каналы сбоку, время сверху. Кнопка рядом с поиском тоже переключает вид.</string>
+</resources>

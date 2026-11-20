@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_backup_copies">बैकअप कॉपी पर जाएं</string>
+    <string name="settings_backup_copies_summary">जब कोई चैनल काम करना बंद करे, तो अपनी सूची से उसकी दूसरी कॉपी चलाएं, जैसे ESPN HD के लिए ESPN FHD</string>
+    <string name="player_trying_copy">काम नहीं कर रहा। बैकअप कॉपी आज़माई जा रही है (%2$d में से %1$d)…</string>
+    <string name="player_copy_playing">%1$s पर बदला गया</string>
+    <string name="player_no_copy_works">यह चैनल और इसकी बैकअप कॉपी अभी काम नहीं कर रहीं</string>
+    <string name="health_hide_failed_on_play">न चलने वाले चैनल छिपाएं</string>
+    <string name="health_hide_failed_on_play_summary">जब आपका इंटरनेट और सेवा काम कर रहे हों (दूसरा चैनल ठीक चलता है) और कोई चैनल लोड न हो, तो उसे तुरंत छिपा दें। स्कैन में काम करता मिलने पर, या नीचे फिर दिखाएं से, यह लौट आता है।</string>
+    <string name="health_reason_playback">नहीं चला</string>
+</resources>

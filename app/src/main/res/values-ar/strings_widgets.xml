@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="widget_favourites">القنوات المفضّلة</string>
+    <string name="widget_favourites_description">شعارات قنواتك المفضّلة وما يُعرض الآن. انقر إحداها للمشاهدة.</string>
+    <string name="widget_empty_title">لا توجد مفضّلة بعد</string>
+    <string name="widget_empty">انقر القلب على قناة وستظهر هنا.</string>
+    <string name="widget_add_favourites">إضافة مفضّلة</string>
+    <string name="widget_signed_out">تسجيل الدخول إلى Tuned</string>
+    <string name="widget_signed_out_body">تظهر قنواتك المفضّلة هنا بعد إضافة قائمة تشغيل.</string>
+    <string name="widget_open_tuned">فتح Tuned</string>
+    <string name="widget_watch">مشاهدة %1$s</string>
+    <string name="widget_watch_on_now">مشاهدة %1$s. يُعرض الآن: %2$s</string>
+    <string name="widget_continue">متابعة المشاهدة</string>
+    <string name="widget_continue_description">الأفلام والحلقات التي بدأتها، مع الوقت المتبقي. انقر أحدها للمتابعة من حيث توقفت.</string>
+    <string name="widget_continue_empty_title">لا شيء قيد المشاهدة</string>
+    <string name="widget_continue_empty">تظهر هنا الأفلام والحلقات التي تبدأها.</string>
+    <string name="widget_continue_signed_out_body">تظهر هنا الأفلام والحلقات التي بدأتها بعد إضافة قائمة تشغيل.</string>
+    <string name="widget_episode_number">م%1$d ح%2$d</string>
+    <string name="widget_resume">متابعة %1$s. %2$s</string>
+    <plurals name="widget_minutes_left">
+        <item quantity="zero">بقيت %d دقيقة</item>
+        <item quantity="one">بقيت %d دقيقة</item>
+        <item quantity="two">بقيت %d دقيقة</item>
+        <item quantity="few">بقيت %d دقائق</item>
+        <item quantity="many">بقيت %d دقيقة</item>
+        <item quantity="other">بقيت %d دقيقة</item>
+    </plurals>
+    <string name="tile_last_channel">آخر قناة</string>
+</resources>

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="region_africa">Afrika</string>
+    <string name="region_asia">Asya</string>
+    <string name="region_europe">Avrupa</string>
+    <string name="region_nordic">İskandinavya</string>
+    <string name="region_latino">Latin</string>
+    <string name="region_ex_yugoslavia">Eski Yugoslavya</string>
+</resources>

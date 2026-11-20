@@ -12,6 +12,7 @@ import com.tunedplayer.app.R
 import com.tunedplayer.app.core.ContentKind
 import com.tunedplayer.app.core.Episodes
 import com.tunedplayer.app.core.PinnedGroups
+import com.tunedplayer.app.core.TitleSort
 import com.tunedplayer.app.data.StartTab
 import com.tunedplayer.app.data.db.CurrentProfileEntity
 import com.tunedplayer.app.data.db.ProfileEntity
@@ -66,6 +67,46 @@ class BrowseScreenshots : Screenshots() {
         },
     )
 
+    /** Live TV's Filters sheet: Type, Quality, On now, Show only (guide, catch-up, watched) and the countries. */
+    @Test
+    fun liveTvFilters() = shot(
+        "browse-live-tv-filters",
+        HomeRoute,
+        wait = "Maple News 24",
+        then = { openFilters() },
+        // The sheet is a window of its own, so the picture takes in every window.
+        overlay = {},
+    )
+
+    /** Several filters chosen: the chip names the first two and how many more. */
+    @Test
+    fun liveTvFiltersChosen() = shot(
+        "browse-live-tv-filters-chosen",
+        HomeRoute,
+        wait = "Maple News 24",
+        then = {
+            openFilters()
+            for (chip in listOf(R.string.live_filter_uhd, R.string.live_filter_guide, R.string.live_filter_catch_up)) {
+                compose.onNode(filterSheet()).performScrollToNode(hasText(text(chip)))
+                compose.onNode(hasText(text(chip))).performClick()
+            }
+            compose.onNode(hasText(text(R.string.live_filters_done))).performClick()
+        },
+    )
+
+    /** The sheet's list: the one that scrolls and holds its title. */
+    private fun filterSheet() = hasScrollAction() and hasAnyDescendant(hasText(text(R.string.live_filters_title)))
+
+    /** Opens the Filters sheet and waits for what it offers, which it reads as it opens. */
+    private fun openFilters() {
+        compose.onNode(hasText(text(R.string.live_filters))).performClick()
+        compose.waitUntil(15_000L) { compose.onAllNodes(filterSheet()).fetchSemanticsNodes().isNotEmpty() }
+        compose.waitUntil(15_000L) {
+            runCatching { compose.onNode(filterSheet()).performScrollToNode(hasText(text(R.string.live_filter_uhd))) }.isSuccess
+        }
+        compose.onNode(filterSheet()).performScrollToNode(hasText(text(R.string.live_filters_type)))
+    }
+
     @Test
     @Config(qualifiers = TV)
     fun liveTvOnTv() = shot("browse-live-tv-tv", HomeRoute, wait = "Maple News 24")
@@ -75,6 +116,45 @@ class BrowseScreenshots : Screenshots() {
     @Test fun movies() = shot("browse-movies", HomeRoute, wait = "Glass Harbour", settings = DARK.copy(startTab = StartTab.MOVIES))
 
     @Test fun shows() = shot("browse-shows", HomeRoute, wait = "Snowline", settings = DARK.copy(startTab = StartTab.SHOWS))
+
+    /** Movies' sort, open: the order in use ticked (Melvin, 2026-11-20: "sort by newest first or sort by the rating"). */
+    @Test
+    fun moviesSortMenu() = shot(
+        "browse-movies-sort",
+        HomeRoute,
+        wait = "Glass Harbour",
+        settings = DARK.copy(startTab = StartTab.MOVIES),
+        then = { compose.onNode(hasText(text(R.string.sort_chip))).performClick() },
+    )
+
+    /** Movies sorted by rating, the chip naming the order. */
+    @Test
+    fun moviesTopRated() = shot(
+        "browse-movies-top-rated",
+        HomeRoute,
+        wait = "Glass Harbour",
+        settings = DARK.copy(startTab = StartTab.MOVIES, movieSort = TitleSort.Order.RATING),
+    )
+
+    /** Shows newest first, apart from the Movies sort. */
+    @Test
+    fun showsRecentlyAdded() = shot(
+        "browse-shows-recently-added",
+        HomeRoute,
+        wait = "Snowline",
+        settings = DARK.copy(startTab = StartTab.SHOWS, showSort = TitleSort.Order.ADDED),
+    )
+
+    @Test
+    @Config(qualifiers = TV)
+    fun moviesSortMenuOnTv() = shot(
+        "browse-movies-sort-tv",
+        HomeRoute,
+        // On a TV the grid starts below Continue watching, so its first film is the one on screen.
+        wait = "Northern Lights",
+        settings = DARK.copy(startTab = StartTab.MOVIES, movieSort = TitleSort.Order.YEAR),
+        then = { compose.onNode(hasText(text(R.string.sort_year))).performClick() },
+    )
 
     /** Films filed under "EN" still show with only Canada and the United States on (Melvin, 2026-11-20). */
     @Test
@@ -107,6 +187,9 @@ class BrowseScreenshots : Screenshots() {
     @Test fun guide() = shot("browse-guide", GuideRoute(1), wait = "Maple News 24")
 
     @Test fun search() = shot("browse-search", SearchRoute("hockey"), wait = "Hockey Night")
+
+    /** Whole-guide search: later programmes, with the day and time they start and their channel. */
+    @Test fun searchGuide() = shot("browse-search-guide", SearchRoute("planet wild"), wait = text(R.string.search_in_guide))
 
     @Test fun events() = shot("browse-events", EventsRoute, wait = text(R.string.events_title))
 

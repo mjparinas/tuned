@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="person_film">Película</string>
+    <string name="person_show">Serie</string>
+    <string name="person_upcoming">Próximamente</string>
+    <string name="person_as">como %1$s</string>
+    <string name="person_in_your_playlist">En tu lista</string>
+    <string name="person_unavailable">No se pudo cargar esta página. Revisa tu conexión y vuelve a intentarlo.</string>
+    <string name="person_no_credits">TMDB aún no tiene películas ni series de esta persona.</string>
+    <string name="person_none_in_playlist">Ninguna de estas está en tu lista.</string>
+    <string name="person_open">Abrir las películas y series de %1$s</string>
+    <plurals name="person_in_playlist">
+        <item quantity="one">%1$d en tu lista</item>
+        <item quantity="many">%1$d en tu lista</item>
+        <item quantity="other">%1$d en tu lista</item>
+    </plurals>
+    <plurals name="person_episodes">
+        <item quantity="one">%1$d episodio</item>
+        <item quantity="many">%1$d episodios</item>
+        <item quantity="other">%1$d episodios</item>
+    </plurals>
+</resources>

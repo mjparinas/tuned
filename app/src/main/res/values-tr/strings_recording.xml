@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="record_start">Kaydet</string>
+    <string name="record_stop">Kaydı durdur</string>
+    <string name="record_started">%1$s kaydediliyor</string>
+    <string name="record_saved">Kayıt İndirilenler\'e kaydedildi</string>
+    <string name="record_live_only">Bu kaydedilemez. Kayıt canlı TV kanallarında çalışır.</string>
+    <string name="record_not_casting">Yayınlarken kayıt kullanılamaz</string>
+    <string name="record_no_space">Kayıt için bu cihazda yeterli alan yok</string>
+    <string name="record_space_ran_out">Kayıt durdu: cihaz neredeyse dolu</string>
+    <string name="record_failed">Kayıt durdu: kaydedilemedi</string>
+    <string name="recordings_section_size">Kayıtlar · %1$s</string>
+    <string name="recording_remove">Kaydı sil</string>
+    <string name="recording_hours_minutes">%1$d sa %2$d dk</string>
+    <string name="recording_minutes">%1$d dk</string>
+</resources>

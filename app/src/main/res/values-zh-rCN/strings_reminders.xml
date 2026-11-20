@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="reminder_channel">节目提醒</string>
+    <string name="reminder_text">在 %1$s 播出</string>
+    <string name="remind_me">提醒我</string>
+    <string name="reminder_cancel">取消提醒</string>
+    <string name="settings_reminder_lead">节目开始前提醒我</string>
+    <string name="settings_notifications">通知</string>
+    <string name="settings_notifications_summary">提醒和通知会在应用图标上显示圆点。可在 Android 设置中关闭或更改提示音</string>
+    <string name="playback_channel">正在播放</string>
+    <string name="reminder_at_start">开始时</string>
+    <plurals name="minutes_before">
+        <item quantity="other">提前 %d 分钟</item>
+    </plurals>
+</resources>

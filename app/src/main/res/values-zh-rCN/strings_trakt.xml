@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="trakt_sign_in">连接 Trakt</string>
+    <string name="trakt_sign_in_summary">将你观看的电影和剧集添加到 Trakt 观看记录</string>
+    <string name="trakt_signed_in">已连接为 %1$s</string>
+    <string name="trakt_account_unnamed">你的 Trakt 账号</string>
+    <string name="trakt_sign_out">点按断开连接</string>
+    <string name="trakt_scrobble">同步观看内容</string>
+    <string name="trakt_scrobble_summary">在电影或剧集开始、暂停和结束时通知 Trakt。不会发送直播内容。</string>
+    <string name="trakt_asking">正在向 Trakt 获取代码…</string>
+    <string name="trakt_enter_code">在任意手机或电脑上前往 %1$s 并输入此代码：</string>
+    <string name="trakt_waiting">等待你输入代码…</string>
+    <string name="sign_in_code_copy">复制代码</string>
+    <string name="sign_in_code_copied">已复制代码</string>
+    <string name="trakt_open_site">打开 Trakt</string>
+    <string name="trakt_done">已连接。你现在观看的内容会记录到 Trakt。</string>
+    <string name="trakt_expired">代码在输入前已过期。</string>
+    <string name="trakt_denied">Trakt 拒绝了连接。</string>
+    <string name="trakt_failed">无法连接 Trakt。请检查网络连接后重试。</string>
+    <string name="trakt_try_again">重试</string>
+</resources>

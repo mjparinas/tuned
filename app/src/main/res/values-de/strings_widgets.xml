@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="widget_favourites">Lieblingssender</string>
+    <string name="widget_favourites_description">Die Logos deiner Lieblingssender und was gerade läuft. Tippe auf einen, um ihn anzusehen.</string>
+    <string name="widget_empty_title">Noch keine Favoriten</string>
+    <string name="widget_empty">Tippe auf das Herz eines Senders, dann erscheint er hier.</string>
+    <string name="widget_add_favourites">Favoriten hinzufügen</string>
+    <string name="widget_signed_out">Bei Tuned anmelden</string>
+    <string name="widget_signed_out_body">Deine Lieblingssender erscheinen hier, sobald eine Playlist hinzugefügt ist.</string>
+    <string name="widget_open_tuned">Tuned öffnen</string>
+    <string name="widget_watch">%1$s ansehen</string>
+    <string name="widget_watch_on_now">%1$s ansehen. Jetzt: %2$s</string>
+    <string name="widget_continue">Weiterschauen</string>
+    <string name="widget_continue_description">Begonnene Filme und Folgen mit der Restzeit. Tippe auf einen Eintrag, um dort weiterzumachen, wo du aufgehört hast.</string>
+    <string name="widget_continue_empty_title">Nichts begonnen</string>
+    <string name="widget_continue_empty">Filme und Folgen, die du beginnst, erscheinen hier.</string>
+    <string name="widget_continue_signed_out_body">Begonnene Filme und Folgen erscheinen hier, sobald eine Playlist hinzugefügt ist.</string>
+    <string name="widget_episode_number">S%1$d F%2$d</string>
+    <string name="widget_resume">%1$s fortsetzen. %2$s</string>
+    <plurals name="widget_minutes_left">
+        <item quantity="one">Noch %d Min.</item>
+        <item quantity="other">Noch %d Min.</item>
+    </plurals>
+    <string name="tile_last_channel">Letzter Sender</string>
+</resources>

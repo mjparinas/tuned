@@ -1,6 +1,6 @@
 ---
 title: "Tuned vs Kodi"
-description: "Kodi with the IPTV Simple Client and Tuned compared: setup, guide, catch-up and price."
+description: "Kodi with the IPTV Simple Client and Tuned compared: setup, guide, catch-up and price. A side-by-side IPTV player comparison, with sources."
 date: 2026-11-19
 kind: compare
 ---

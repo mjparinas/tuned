@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_match_frame_rate">匹配帧率</string>
+    <string name="settings_match_frame_rate_summary">将电视切换到视频的帧率（例如体育节目的 50 Hz），让画面运动不再抖动。切换时屏幕可能会短暂黑屏。</string>
+    <string name="player_no_sound">无声音：此设备无法播放该频道的 %1$s 音频</string>
+</resources>

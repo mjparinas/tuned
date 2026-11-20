@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kind_stalker">MAC 门户</string>
+    <string name="kind_stalker_summary">门户地址和服务商登记的 MAC 地址</string>
+    <string name="add_stalker_hint">输入门户地址和服务商为你设置的 MAC 地址。直播和节目单来自该门户。</string>
+    <string name="login_portal">门户地址</string>
+    <string name="add_portal_help">例如 http://portal.example.com/c/</string>
+    <string name="login_mac">MAC 地址</string>
+    <string name="add_mac_help">例如 00:1A:79:12:34:56</string>
+    <string name="add_bad_mac">这不是 MAC 地址。它由 12 个字母和数字组成，例如 00:1A:79:12:34:56。</string>
+    <string name="login_mac_refused">门户不接受该 MAC 地址。</string>
+</resources>

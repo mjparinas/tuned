@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <plurals name="player_pill_fps_spoken">
+        <item quantity="zero">%d إطار في الثانية</item>
+        <item quantity="one">%d إطار في الثانية</item>
+        <item quantity="two">%d إطار في الثانية</item>
+        <item quantity="few">%d إطارات في الثانية</item>
+        <item quantity="many">%d إطار في الثانية</item>
+        <item quantity="other">%d إطار في الثانية</item>
+    </plurals>
+    <string name="player_pill_mono">أحادي</string>
+    <string name="player_pill_stereo">ستيريو</string>
+    <string name="player_pill_channels">%1$d قناة</string>
+    <string name="player_pill_mono_spoken">أحادي</string>
+    <string name="player_pill_stereo_spoken">ستيريو</string>
+    <string name="player_pill_5_1_spoken">صوت محيطي 5.1</string>
+    <string name="player_pill_7_1_spoken">صوت محيطي 7.1</string>
+    <plurals name="player_pill_channels_spoken">
+        <item quantity="zero">%d قناة صوت</item>
+        <item quantity="one">%d قناة صوت</item>
+        <item quantity="two">%d قناة صوت</item>
+        <item quantity="few">%d قنوات صوت</item>
+        <item quantity="many">%d قناة صوت</item>
+        <item quantity="other">%d قناة صوت</item>
+    </plurals>
+</resources>

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_channel_numbers">Números de canal</string>
+    <string name="settings_channel_numbers_summary">Muestra un número junto a cada canal en directo. Escríbelo con el mando mientras ves para cambiar de canal, y pulsa el botón de último canal para volver.</string>
+    <string name="player_no_channel_number">No hay canal %1$d</string>
+    <string name="player_flip_back">Último canal</string>
+</resources>

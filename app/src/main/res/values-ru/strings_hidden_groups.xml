@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_hidden_groups">Скрытые группы</string>
+    <string name="settings_hidden_groups_none">Скрытых групп нет</string>
+    <plurals name="groups_hidden">
+        <item quantity="one">Скрыта %1$d группа</item>
+        <item quantity="few">Скрыто %1$d группы</item>
+        <item quantity="many">Скрыто %1$d групп</item>
+        <item quantity="other">Скрыто %1$d группы</item>
+    </plurals>
+    <string name="hidden_groups_help">Отключите группу, чтобы скрыть её из раздела, поиска и переключения каналов. Чтобы скрыть её с главного экрана, выберите её чип и нажмите на глаз.</string>
+    <string name="group_hide">Скрыть эту группу</string>
+    <string name="group_hidden">%1$s скрыта</string>
+    <string name="group_hidden_undo">Отменить</string>
+    <string name="group_pin">Закрепить в начале</string>
+    <string name="group_unpin">Открепить</string>
+    <string name="group_pinned">Закреплена</string>
+    <string name="settings_app_shortcuts">Ярлыки на значке приложения</string>
+    <string name="settings_app_shortcuts_summary">Нажмите и удерживайте значок Tuned для поиска, прямых трансляций и последнего канала</string>
+    <string name="shortcut_search">Поиск</string>
+    <string name="shortcut_last_channel">Смотреть %1$s</string>
+</resources>

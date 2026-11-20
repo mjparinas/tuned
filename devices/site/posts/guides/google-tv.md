@@ -1,5 +1,6 @@
 ---
 title: Tuned on Google TV and Chromecast with Google TV
+seoTitle: "Tuned IPTV on Google TV and Chromecast with Google TV"
 description: Set up Tuned on a Google TV, get your shows into Continue watching, and use voice and the remote.
 date: 2026-11-19
 kind: guide

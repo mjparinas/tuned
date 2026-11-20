@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="subtitle_search">查找字幕</string>
+    <string name="subtitle_search_searching">正在查找字幕…</string>
+    <string name="subtitle_search_downloading">正在下载字幕…</string>
+    <string name="subtitle_search_added">已从 OpenSubtitles 添加字幕</string>
+    <string name="subtitle_search_none">未找到此视频的字幕</string>
+    <string name="subtitle_search_no_key">此版本不支持字幕搜索</string>
+    <string name="subtitle_search_bad_key">OpenSubtitles 拒绝了此应用的密钥。请在下次更新后重试。</string>
+    <string name="subtitle_search_bad_account">OpenSubtitles 拒绝了登录。请在设置 › 播放 › 字幕中检查。</string>
+    <string name="subtitle_search_limit">今天的 OpenSubtitles 下载次数已用完。请明天再试。</string>
+    <string name="subtitle_search_offline">无法连接 OpenSubtitles。请稍后重试。</string>
+    <string name="subtitle_search_hearing_impaired">听障辅助</string>
+    <string name="subtitle_search_machine">机器翻译</string>
+    <plurals name="subtitle_search_downloads">
+        <item quantity="other">%,d 次下载</item>
+    </plurals>
+    <string name="settings_subtitles">字幕</string>
+    <string name="settings_auto_subtitles">自动查找字幕</string>
+    <string name="settings_auto_subtitles_summary">开启字幕时，没有字幕的电影或剧集会自动获取最佳匹配</string>
+    <string name="settings_opensubtitles_account">OpenSubtitles 账号</string>
+    <string name="settings_opensubtitles_account_summary">可选。登录后可提高每日下载上限。</string>
+    <string name="settings_opensubtitles_account_set">已登录为 %1$s</string>
+    <string name="settings_opensubtitles_username">用户名</string>
+    <string name="settings_opensubtitles_password">密码</string>
+    <string name="settings_opensubtitles_remove">移除</string>
+</resources>

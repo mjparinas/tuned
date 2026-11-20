@@ -27,6 +27,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -43,10 +44,13 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.paging.LoadState
 import androidx.paging.compose.LazyPagingItems
 import com.tunedplayer.app.R
+import com.tunedplayer.app.core.ChannelQuality
 import com.tunedplayer.app.core.ContentKind
 import com.tunedplayer.app.core.LiveTopic
+import com.tunedplayer.app.core.ProgrammeGenre
 import com.tunedplayer.app.core.RegionLanguages
 import com.tunedplayer.app.core.Regions
+import com.tunedplayer.app.ui.common.regionName
 import com.tunedplayer.app.ui.settings.PinDialog
 import com.tunedplayer.app.ui.settings.PinMode
 import com.tunedplayer.app.ui.settings.languageName
@@ -73,33 +77,74 @@ sealed interface LivePlace {
  */
 enum class AdultGate { Hidden, Locked, NoPin, Unlocked }
 
-/** Live TV's quick filters: at most one kind of channel and one country or language, narrowing together. */
+/**
+ * Live TV's quick filters, narrowing together: at most one kind of channel, one picture quality, one kind of programme
+ * on now and one country or language, and any of Has guide, Catch-up and Recently watched.
+ */
 data class LiveQuick(
     val topic: LiveTopic? = null,
     val place: LivePlace? = null,
+    val quality: ChannelQuality? = null,
+    val onNow: ProgrammeGenre? = null,
+    val withGuide: Boolean = false,
+    val catchUp: Boolean = false,
+    val watched: Boolean = false,
 ) {
-    val isEmpty: Boolean get() = topic == null && place == null
+    val isEmpty: Boolean get() = this == LiveQuick()
 
     /** The full-text query [com.tunedplayer.app.data.db.LIVE_QUICK] reads for the topic, or '' for any channel. */
     val topicQuery: String get() = topic?.fullText.orEmpty()
 
+    /** The full-text query [com.tunedplayer.app.data.db.LIVE_QUICK] reads for the quality, or '' for any. */
+    val qualityQuery: String get() = quality?.fullText.orEmpty()
+
+    /** The kind of programme on now that [com.tunedplayer.app.data.db.LIVE_QUICK] keeps, or 0 for any. */
+    val genreCode: Int get() = onNow?.code ?: 0
+
     /**
      * The keys [com.tunedplayer.app.data.db.LIVE_QUICK] reads: the [groups] (Live TV's categories) that match the topic, then the
-     * country tags, or "any" for every country, then "adult" for the Adult filter. At most [MAX_GROUPS] categories, so
-     * the query stays under SQLite's limit of 999 values on older phones.
+     * country tags, or "any" for every country, then "adult" for the Adult filter and "guide", "catchup" and "watched"
+     * for those switches. At most [MAX_GROUPS] categories, so the query stays under SQLite's limit of 999 values on
+     * older phones.
      */
     fun keys(groups: List<String>): List<String> {
         val topicGroups = topic?.let { t -> groups.filter { t.matches(it) }.take(MAX_GROUPS).map { "g:$it" } }.orEmpty()
-        val adult = listOfNotNull(ADULT.takeIf { topic?.isAdult == true })
-        return topicGroups + (place?.tags ?: listOf(ANY)) + adult
+        val flags =
+            listOfNotNull(
+                ADULT.takeIf { topic?.isAdult == true },
+                GUIDE.takeIf { withGuide },
+                CATCH_UP.takeIf { catchUp },
+                WATCHED.takeIf { watched },
+            )
+        return topicGroups + (place?.tags ?: listOf(ANY)) + flags
     }
 
     companion object {
         const val ANY = "any"
         const val ADULT = "adult"
-        private const val MAX_GROUPS = 800
+        const val GUIDE = "guide"
+        const val CATCH_UP = "catchup"
+        const val WATCHED = "watched"
+        private const val MAX_GROUPS = 790
     }
 }
+
+/** What one Live TV list reads for its quick filters, so the list reloads only when one of them changes. */
+internal data class LiveQuickArgs(
+    val topic: String,
+    val keys: List<String>,
+    val quality: String,
+    val genre: Int,
+)
+
+/** Which of the newer filters would find anything, so the sheet offers only those (a chosen one always shows). */
+data class LiveOffers(
+    val qualities: Set<ChannelQuality> = emptySet(),
+    val onNow: Set<ProgrammeGenre> = emptySet(),
+    val guide: Boolean = false,
+    val catchUp: Boolean = false,
+    val watched: Boolean = false,
+)
 
 /**
  * The Filters chip in Live TV's row of categories. It names what is chosen ("Sports · Canada"), opens the sheet to
@@ -140,11 +185,37 @@ internal fun LiveQuickChip(vm: BrowseViewModel) {
     if (open) LiveFiltersSheet(vm, quick) { open = false }
 }
 
+/** What the Filters chip says: the first two filters chosen, then how many more ("Sports · 4K +2"). */
 @Composable
 private fun quickLabel(quick: LiveQuick): String? {
-    val topic = quick.topic?.let { stringResource(topicLabel(it)) }
-    val place = quick.place?.let { placeName(it) }
-    return listOfNotNull(topic, place).takeIf { it.isNotEmpty() }?.joinToString(" · ")
+    val parts =
+        listOfNotNull(
+            quick.topic?.let { stringResource(topicLabel(it)) },
+            quick.quality?.let { stringResource(qualityLabel(it)) },
+            quick.onNow?.let { stringResource(R.string.live_filter_on_now_label, stringResource(genreLabel(it))) },
+            if (quick.withGuide) stringResource(R.string.live_filter_guide) else null,
+            if (quick.catchUp) stringResource(R.string.live_filter_catch_up) else null,
+            if (quick.watched) stringResource(R.string.live_filter_watched) else null,
+            quick.place?.let { placeName(it) },
+        )
+    if (parts.isEmpty()) return null
+    val shown = parts.take(2).joinToString(" · ")
+    return if (parts.size > 2) stringResource(R.string.live_filters_more, shown, parts.size - 2) else shown
+}
+
+private fun qualityLabel(quality: ChannelQuality): Int = when (quality) {
+    ChannelQuality.UHD -> R.string.live_filter_uhd
+    ChannelQuality.FHD -> R.string.live_filter_fhd
+    ChannelQuality.HD -> R.string.live_filter_hd
+    ChannelQuality.SD -> R.string.live_filter_sd
+}
+
+private fun genreLabel(genre: ProgrammeGenre): Int = when (genre) {
+    ProgrammeGenre.SPORTS -> R.string.live_filter_on_now_sports
+    ProgrammeGenre.MOVIES -> R.string.live_filter_on_now_movies
+    ProgrammeGenre.NEWS -> R.string.live_filter_on_now_news
+    ProgrammeGenre.KIDS -> R.string.live_filter_on_now_kids
+    ProgrammeGenre.DOCUMENTARY -> R.string.live_filter_on_now_documentary
 }
 
 private fun topicLabel(topic: LiveTopic): Int = when (topic) {
@@ -160,7 +231,7 @@ private fun topicLabel(topic: LiveTopic): Int = when (topic) {
 
 @Composable
 private fun placeName(place: LivePlace): String = when (place) {
-    is LivePlace.Country -> Regions.displayName(place.tag)
+    is LivePlace.Country -> regionName(place.tag)
     is LivePlace.Language -> languageName(place.code)
 }
 
@@ -178,6 +249,8 @@ private fun LiveFiltersSheet(
     val languages = remember(regions) { RegionLanguages.group(regions.map { it.region }) }
     val countries = remember(regions) { Regions.sortedByName(regions) { it.region } }
     val set = { q: LiveQuick -> vm.liveQuick.value = q }
+    // Read once as the sheet opens; until then (a moment) only what is already chosen shows.
+    val offers by produceState(LiveOffers()) { value = vm.liveOffers() }
     ModalBottomSheet(onDismissRequest = onDismiss) {
         LazyColumn(
             contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 24.dp),
@@ -207,6 +280,66 @@ private fun LiveFiltersSheet(
                     AdultChip(vm, quick, set)
                 }
             }
+            val qualities = ChannelQuality.entries.filter { it in offers.qualities || it == quick.quality }
+            if (qualities.isNotEmpty()) {
+                item(key = "quality") {
+                    Section(stringResource(R.string.live_filters_quality)) {
+                        qualities.forEach { q ->
+                            val on = quick.quality == q
+                            FilterChip(
+                                selected = on,
+                                onClick = { set(quick.copy(quality = if (on) null else q)) },
+                                label = { Text(stringResource(qualityLabel(q))) },
+                            )
+                        }
+                    }
+                }
+            }
+            val genres = ProgrammeGenre.entries.filter { it in offers.onNow || it == quick.onNow }
+            if (genres.isNotEmpty()) {
+                item(key = "on-now") {
+                    Section(stringResource(R.string.live_filters_on_now)) {
+                        genres.forEach { g ->
+                            val on = quick.onNow == g
+                            FilterChip(
+                                selected = on,
+                                onClick = { set(quick.copy(onNow = if (on) null else g)) },
+                                label = { Text(stringResource(genreLabel(g))) },
+                            )
+                        }
+                    }
+                }
+            }
+            val guide = offers.guide || quick.withGuide
+            val catchUp = offers.catchUp || quick.catchUp
+            val watched = offers.watched || quick.watched
+            if (guide || catchUp || watched) {
+                item(key = "only") {
+                    Section(stringResource(R.string.live_filters_only)) {
+                        if (guide) {
+                            FilterChip(
+                                selected = quick.withGuide,
+                                onClick = { set(quick.copy(withGuide = !quick.withGuide)) },
+                                label = { Text(stringResource(R.string.live_filter_guide)) },
+                            )
+                        }
+                        if (catchUp) {
+                            FilterChip(
+                                selected = quick.catchUp,
+                                onClick = { set(quick.copy(catchUp = !quick.catchUp)) },
+                                label = { Text(stringResource(R.string.live_filter_catch_up)) },
+                            )
+                        }
+                        if (watched) {
+                            FilterChip(
+                                selected = quick.watched,
+                                onClick = { set(quick.copy(watched = !quick.watched)) },
+                                label = { Text(stringResource(R.string.live_filter_watched)) },
+                            )
+                        }
+                    }
+                }
+            }
             if (languages.size > 1) {
                 item(key = "languages") {
                     Section(stringResource(R.string.live_filters_language)) {
@@ -230,7 +363,7 @@ private fun LiveFiltersSheet(
                             FilterChip(
                                 selected = on,
                                 onClick = { set(quick.copy(place = if (on) null else place)) },
-                                label = { Text(Regions.displayName(r.region)) },
+                                label = { Text(regionName(r.region)) },
                             )
                         }
                     }

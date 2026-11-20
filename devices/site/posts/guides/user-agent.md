@@ -1,5 +1,6 @@
 ---
 title: How to change the user agent in Tuned
+seoTitle: "How to change the IPTV user agent in Tuned"
 description: When a server refuses to play or load your playlist, sending another player's user agent often fixes it. Here's how.
 date: 2026-11-19
 kind: guide

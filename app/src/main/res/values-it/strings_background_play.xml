@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_background_play">Continua la riproduzione in background</string>
+    <string name="settings_background_play_summary">L\'audio continua quando esci dall\'app o blocchi lo schermo, con i controlli nella notifica. Sempre una sola connessione.</string>
+</resources>

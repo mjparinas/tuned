@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="details_trailer">预告片</string>
+    <string name="details_play">播放</string>
+    <string name="details_resume">继续</string>
+    <string name="details_cast">演员</string>
+    <string name="play_now">立即播放</string>
+    <string name="details_source">详情来自 The Movie Database (TMDB)</string>
+    <string name="details_no_key">此版本没有 TMDB 密钥，因此评分、简介和预告片均不可用。</string>
+</resources>

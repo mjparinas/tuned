@@ -1,6 +1,6 @@
 ---
 title: "Tuned vs Sparkle TV"
-description: "Sparkle TV and Tuned compared: Android TV, sources, recording, timeshift and price."
+description: "Sparkle TV and Tuned compared: Android TV, sources, recording, timeshift and price. A side-by-side IPTV player comparison, with sources."
 date: 2026-11-19
 kind: compare
 ---

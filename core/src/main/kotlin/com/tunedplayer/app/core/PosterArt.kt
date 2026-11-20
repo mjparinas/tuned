@@ -5,6 +5,12 @@ package com.tunedplayer.app.core
  * still (which providers often send as the "poster" of a channel filed under films) is shown whole and no bigger than
  * the tile allows, because cropping a 300 px wide logo to a tall tile blows its middle up two or three times and
  * looks blurry (Melvin, 2026-11-18).
+ *
+ * A show is different: its card always shows the show's cover, filling the tile (Melvin, 2026-11-20: "TV Shows use
+ * an episode thumbnail but it should use the TV show cover"). TMDB's poster comes first, then the provider's cover,
+ * and a wide picture (an episode still or banner some providers send as the show's picture) is shown whole over a
+ * blurred copy of itself that fills the rest of the tile, rather than floating small in the middle of it or being
+ * cropped, which zoomed it two or three times and cut off any title written on it (2026-11-20).
  */
 object PosterArt {
     /** Pictures this tall or taller (width ÷ height up to 0.8) are posters; 2:3 is 0.67. */
@@ -17,4 +23,32 @@ object PosterArt {
         width: Float,
         height: Float,
     ): Boolean = width > 0f && height > 0f && width / height <= POSTER_MAX_RATIO
+
+    /** How a picture sits in its tile. */
+    enum class Fit {
+        /** A real poster, cropped to fill the tile. */
+        CROP,
+
+        /** A show's wide or square picture: whole, across the tile, over a blurred copy of itself that fills the rest. */
+        WHOLE_ON_BACKDROP,
+
+        /** A channel logo filed under films: whole, centred, with a little room around it. */
+        LOGO,
+    }
+
+    fun fit(
+        width: Float,
+        height: Float,
+        show: Boolean,
+    ): Fit = when {
+        isPoster(width, height) -> Fit.CROP
+        show -> Fit.WHOLE_ON_BACKDROP
+        else -> Fit.LOGO
+    }
+
+    /** A show card's picture: TMDB's poster when the device knows one, otherwise the provider's cover. */
+    fun showCover(
+        tmdbPoster: String?,
+        providerCover: String?,
+    ): String? = tmdbPoster?.takeIf { it.isNotBlank() } ?: providerCover?.takeIf { it.isNotBlank() }
 }

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="details_trailer">Fragman</string>
+    <string name="details_play">Oynat</string>
+    <string name="details_resume">Devam et</string>
+    <string name="details_cast">Oyuncular</string>
+    <string name="play_now">Şimdi oynat</string>
+    <string name="details_source">The Movie Database (TMDB) ayrıntıları</string>
+    <string name="details_no_key">Bu derlemede TMDB anahtarı yok, bu yüzden puanlar, özetler ve fragmanlar kapalı.</string>
+</resources>

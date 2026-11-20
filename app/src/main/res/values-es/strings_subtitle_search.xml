@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="subtitle_search">Buscar subtítulos</string>
+    <string name="subtitle_search_searching">Buscando subtítulos…</string>
+    <string name="subtitle_search_downloading">Descargando subtítulos…</string>
+    <string name="subtitle_search_added">Subtítulos añadidos desde OpenSubtitles</string>
+    <string name="subtitle_search_none">No se encontraron subtítulos para este vídeo</string>
+    <string name="subtitle_search_no_key">La búsqueda de subtítulos no está disponible en esta versión</string>
+    <string name="subtitle_search_bad_key">OpenSubtitles rechazó la clave de esta app. Vuelve a intentarlo tras la próxima actualización.</string>
+    <string name="subtitle_search_bad_account">OpenSubtitles rechazó el inicio de sesión. Revísalo en Ajustes › Reproducción › Subtítulos.</string>
+    <string name="subtitle_search_limit">Se agotó el límite diario de descargas de OpenSubtitles. Vuelve a intentarlo mañana.</string>
+    <string name="subtitle_search_offline">No se pudo conectar con OpenSubtitles. Vuelve a intentarlo en un momento.</string>
+    <string name="subtitle_search_hearing_impaired">Para personas con discapacidad auditiva</string>
+    <string name="subtitle_search_machine">Traducción automática</string>
+    <plurals name="subtitle_search_downloads">
+        <item quantity="one">%,d descarga</item>
+        <item quantity="many">%,d descargas</item>
+        <item quantity="other">%,d descargas</item>
+    </plurals>
+    <string name="settings_subtitles">Subtítulos</string>
+    <string name="settings_auto_subtitles">Buscar subtítulos automáticamente</string>
+    <string name="settings_auto_subtitles_summary">Con los subtítulos activados, una película o episodio sin subtítulos recibe la mejor coincidencia por sí solo</string>
+    <string name="settings_opensubtitles_account">Cuenta de OpenSubtitles</string>
+    <string name="settings_opensubtitles_account_summary">Opcional. Iniciar sesión aumenta el límite diario de descargas.</string>
+    <string name="settings_opensubtitles_account_set">Sesión iniciada como %1$s</string>
+    <string name="settings_opensubtitles_username">Usuario</string>
+    <string name="settings_opensubtitles_password">Contraseña</string>
+    <string name="settings_opensubtitles_remove">Quitar</string>
+</resources>

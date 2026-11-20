@@ -4,6 +4,7 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.core.mutablePreferencesOf
 import androidx.datastore.preferences.core.stringPreferencesKey
+import com.tunedplayer.app.core.TitleSort
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -32,6 +33,8 @@ class SettingFieldsTest {
             guideDays = 7,
             guideOffsetMinutes = -60,
             unmeteredOnly = true,
+            refreshRequestedAt = 7,
+            keepPlaylistCopies = false,
             buffer = BufferMode.SMOOTH,
             audioLanguage = "fr",
             resumePlayback = false,
@@ -44,6 +47,7 @@ class SettingFieldsTest {
             audioDelayMs = -150,
             tunneledPlayback = true,
             liveRewindMinutes = 60,
+            recordPaddingMinutes = 5,
             hidePlaceholders = false,
             hide247 = true,
             pictureInPicture = false,
@@ -63,6 +67,8 @@ class SettingFieldsTest {
             autoSubtitles = false,
             showGuideInList = false,
             liveGrid = true,
+            movieSort = TitleSort.Order.ADDED,
+            showSort = TitleSort.Order.RATING,
             channelNumbers = false,
             startOnLastChannel = true,
             checkUpdates = false,
@@ -146,6 +152,8 @@ private val KNOWN_KEYS =
         "guide_days",
         "guide_offset_minutes",
         "unmetered_only",
+        "refresh_requested_at",
+        "keep_playlist_copies",
         "buffer",
         "audio_language",
         "resume_playback",
@@ -158,6 +166,7 @@ private val KNOWN_KEYS =
         "audio_delay_ms",
         "tunneled_playback",
         "live_rewind_minutes",
+        "record_padding_minutes",
         "hide_placeholders",
         "hide_247",
         "picture_in_picture",
@@ -176,6 +185,8 @@ private val KNOWN_KEYS =
         "user_agent",
         "show_guide_in_list",
         "live_grid",
+        "movie_sort",
+        "show_sort",
         "channel_numbers",
         "always_show_scrollbar",
         "start_on_last_channel",

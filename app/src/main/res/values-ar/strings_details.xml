@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="details_trailer">الإعلان</string>
+    <string name="details_play">تشغيل</string>
+    <string name="details_resume">متابعة</string>
+    <string name="details_cast">طاقم التمثيل</string>
+    <string name="play_now">تشغيل الآن</string>
+    <string name="details_source">التفاصيل من The Movie Database (TMDB)</string>
+    <string name="details_no_key">هذا الإصدار بلا مفتاح TMDB، لذا التقييمات والملخصات والإعلانات متوقفة.</string>
+</resources>

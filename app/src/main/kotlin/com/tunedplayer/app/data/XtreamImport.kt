@@ -1,6 +1,7 @@
 package com.tunedplayer.app.data
 
 import com.tunedplayer.app.core.PlaylistEntry
+import com.tunedplayer.app.core.TitleSort
 import com.tunedplayer.app.core.XtreamApi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -47,8 +48,26 @@ class XtreamImport(
         each("get_series") { o ->
             val id = o.text("series_id") ?: return@each
             val name = o.text("name")?.takeIf { it.isNotBlank() } ?: return@each
-            add(XtreamApi.Stream(id, name, o.text("cover"), categories[o.text("category_id")].orEmpty()), order++)
+            val show =
+                XtreamApi.Stream(
+                    id,
+                    name,
+                    o.text("cover"),
+                    categories[o.text("category_id")].orEmpty(),
+                    added = TitleSort.added(o.text("last_modified")),
+                    year = TitleSort.year(o.text("year"), o.text("releaseDate"), o.text("release_date")),
+                    rating = TitleSort.rating(o.text("rating"), o.text("rating_5based")),
+                )
+            add(show, order++)
         }
+    }
+
+    /**
+     * Every film's time added, year and rating by stream id, for servers whose M3U leaves them out
+     * ([XtreamDetails]). Read one film at a time, like the lists above.
+     */
+    suspend fun filmDetails(read: suspend (XtreamApi.Stream) -> Unit) {
+        each("get_vod_streams") { o -> o.stream(emptyMap())?.let { read(it) } }
     }
 
     /** One show's episodes (`get_series_info`), filed under [show] so they join its stand-in row. */
@@ -80,19 +99,25 @@ class XtreamImport(
                 val id = o.text("id") ?: return@mapNotNull null
                 val season = o.text("season")?.toIntOrNull() ?: 1
                 val number = o.text("episode_num")?.toIntOrNull() ?: 1
-                val still = (o["info"] as? JsonObject)?.text("movie_image")
-                XtreamApi.episode(
-                    links,
-                    show,
-                    category,
-                    still ?: cover,
-                    id,
-                    o.text("title"),
-                    season,
-                    number,
-                    o.text("container_extension"),
-                    order++,
-                )
+                val info = o["info"] as? JsonObject
+                val still = info?.text("movie_image")
+                XtreamApi
+                    .episode(
+                        links,
+                        show,
+                        category,
+                        still ?: cover,
+                        id,
+                        o.text("title"),
+                        season,
+                        number,
+                        o.text("container_extension"),
+                        order++,
+                    ).copy(
+                        added = TitleSort.added(o.text("added")),
+                        year = TitleSort.year(info?.text("release_date"), info?.text("releasedate")),
+                        rating = TitleSort.rating(info?.text("rating")),
+                    )
             }.sortedWith(compareBy({ it.episode?.season }, { it.episode?.episode }))
     }
 
@@ -128,6 +153,9 @@ class XtreamImport(
             epgId = text("epg_channel_id"),
             adult = text("is_adult") == "1",
             extension = text("container_extension"),
+            added = TitleSort.added(text("added")),
+            year = TitleSort.year(text("year"), text("releaseDate"), text("release_date")),
+            rating = TitleSort.rating(text("rating"), text("rating_5based")),
         )
     }
 

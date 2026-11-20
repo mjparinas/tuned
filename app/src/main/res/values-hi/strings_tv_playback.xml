@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_match_frame_rate">फ़्रेम रेट मिलाएं</string>
+    <string name="settings_match_frame_rate_summary">टीवी को वीडियो के फ़्रेम रेट पर बदलें, जैसे खेल के लिए 50 Hz, ताकि हलचल झटके न खाए। बदलते समय स्क्रीन एक पल के लिए काली हो सकती है।</string>
+    <string name="player_no_sound">आवाज़ नहीं: यह डिवाइस इस चैनल का %1$s ऑडियो नहीं चला सकता</string>
+</resources>

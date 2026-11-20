@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="tv_signin_card">Telefonunla giriş yap</string>
+    <string name="tv_signin_card_summary">Bu TV\'deki bir kodu tara ve kumanda yerine telefonunla doldur</string>
+    <string name="tv_signin_title">Telefonunla giriş yap</string>
+    <string name="tv_signin_scan">Telefonunun kamerasını koda tut. Listeni orada doldur ya da her şeyi telefonundaki Tuned\'dan gönder.</string>
+    <string name="tv_signin_or_go">Ya da %1$s adresine git ve şunu gir</string>
+    <string name="tv_signin_check">Kontrol numarası %1$s</string>
+    <string name="tv_signin_qr">Telefonla giriş için QR kodu</string>
+    <string name="tv_signin_type_instead">Bunun yerine TV\'de yaz</string>
+    <string name="tv_signin_waiting">Kod alınıyor…</string>
+    <string name="tv_signin_offline">Tuned giriş hizmetine ulaşılamadı. Bu TV\'nin internet bağlantısını kontrol et ya da listeyi elle yaz.</string>
+    <string name="tv_signin_no_backup">Bu TV Tuned hesabına giriş yaptı ama hesabın henüz liste içeren bir yedeği yok. Bunun yerine bir liste yaz ya da önce telefonundan yedekle.</string>
+    <string name="tv_signin_retry">Tekrar dene</string>
+    <string name="tv_signin_arrived">Telefonundan</string>
+    <string name="tv_signin_also">Ayrıca: %1$s</string>
+    <string name="tv_signin_settings">ayarlar</string>
+    <plurals name="tv_signin_favourites">
+        <item quantity="one">%d favori</item>
+        <item quantity="other">%d favori</item>
+    </plurals>
+    <plurals name="tv_signin_lists">
+        <item quantity="one">%d liste</item>
+        <item quantity="other">%d liste</item>
+    </plurals>
+    <plurals name="tv_signin_watch_later">
+        <item quantity="one">Sonra izle\'de %d tane</item>
+        <item quantity="other">Sonra izle\'de %d tane</item>
+    </plurals>
+    <string name="tv_signin_only_playlists">Bu TV kendi ayarlarını ve favorilerini korur; yalnızca listeler eklenir.</string>
+    <string name="tv_signin_only_first">Premium olmadan bu TV ilk listeyi tutar.</string>
+    <string name="tv_signin_use">Kullan</string>
+    <string name="tv_signin_not_mine">Benim değil</string>
+    <string name="tv_signin_saving">Kuruluyor…</string>
+    <string name="send_tv_row">TV\'ye gönder</string>
+    <string name="send_tv_row_summary">Bu telefonun listeleri ve ayarlarıyla bir TV\'de giriş yap</string>
+    <string name="send_tv_title">TV\'ye gönder</string>
+    <string name="send_tv_enter">TV\'de Tuned\'ı aç ve Telefonunla giriş yap\'ı seç. Ardından gösterdiği kodu gir ya da kamerayla tara.</string>
+    <string name="send_tv_code">TV\'deki kod</string>
+    <string name="send_tv_next">İleri</string>
+    <string name="send_tv_bad_code">Bu TV\'deki koda benzemiyor. Sekiz harf ve rakamdan oluşur.</string>
+    <string name="send_tv_not_found">Hiçbir TV bu kodu göstermiyor. Kontrol et ya da TV\'nin yeni bir kod göstermesini bekle.</string>
+    <string name="send_tv_confirm_digits">TV\'nin bu numarayı gösterdiğini kontrol et:</string>
+    <string name="send_tv_matches">Eşleşiyor</string>
+    <string name="send_tv_what">Bu, cihazlar arası eşitlemede olduğu gibi bu telefonun listelerini, ayarlarını, profillerini, favorilerini ve listelerini gönderir. Yalnızca o TV okuyabilsin diye kilitlidir.</string>
+    <plurals name="send_tv_playlists">
+        <item quantity="one">%d liste</item>
+        <item quantity="other">%d liste</item>
+    </plurals>
+    <string name="send_tv_send">TV\'ye gönder</string>
+    <string name="send_tv_sending">Gönderiliyor…</string>
+    <string name="send_tv_sent">Gönderildi. TV\'de Kullan\'a bas.</string>
+    <string name="send_tv_gone">Bu kodun süresi doldu. TV\'deki yeni kodu tara.</string>
+    <string name="send_tv_already">O TV\'ye zaten bir şey gönderildi. Tekrar göndermek için TV\'deki yeni kodu tara.</string>
+    <string name="send_tv_too_many">Çok fazla deneme. Bir saat sonra tekrar dene.</string>
+    <string name="send_tv_unreachable">Tuned giriş hizmetine ulaşılamadı. Bağlantını kontrol edip tekrar dene.</string>
+    <string name="send_tv_too_big">Gönderilecek çok fazla şey var. Bazı favorileri veya Sonra izle öğelerini kaldırıp tekrar dene.</string>
+    <string name="send_tv_nothing">Önce bu telefona bir liste ekle, sonra TV\'ye gönder.</string>
+</resources>

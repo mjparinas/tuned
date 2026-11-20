@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="skip_intro">Salta intro</string>
+    <string name="settings_skip_intro">Pulsante Salta intro</string>
+    <string name="settings_skip_intro_off">Disattivato</string>
+</resources>

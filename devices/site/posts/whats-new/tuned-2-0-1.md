@@ -1,6 +1,6 @@
 ---
 title: What's new in Tuned 2.0.1
-description: "Tuned 2.0.1 is out: 9 fixed."
+description: "Tuned 2.0.1 for Android and Android TV fixes subtitle timing, the splash screen in light mode, the welcome screen on a TV and a crash in Settings on a TV."
 date: 2026-11-19
 kind: release
 version: 2.0.1

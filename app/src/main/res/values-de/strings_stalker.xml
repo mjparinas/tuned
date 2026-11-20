@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kind_stalker">MAC-Portal</string>
+    <string name="kind_stalker_summary">Eine Portaladresse und die MAC-Adresse, die dein Anbieter registriert hat</string>
+    <string name="add_stalker_hint">Gib die Portaladresse und die MAC-Adresse ein, die dein Anbieter für dich eingerichtet hat. Live-TV und Programm kommen vom Portal.</string>
+    <string name="login_portal">Portaladresse</string>
+    <string name="add_portal_help">Etwa http://portal.example.com/c/</string>
+    <string name="login_mac">MAC-Adresse</string>
+    <string name="add_mac_help">Etwa 00:1A:79:12:34:56</string>
+    <string name="add_bad_mac">Das ist keine MAC-Adresse. Sie hat 12 Buchstaben und Ziffern, etwa 00:1A:79:12:34:56.</string>
+    <string name="login_mac_refused">Das Portal hat diese MAC-Adresse nicht akzeptiert.</string>
+</resources>

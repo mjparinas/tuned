@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="playlists">播放列表</string>
+    <plurals name="playlists_saved">
+        <item quantity="other">已保存 %d 个播放列表</item>
+    </plurals>
+    <plurals name="playlists_in_use">
+        <item quantity="other">%1$s · 已保存 %2$d 个</item>
+    </plurals>
+    <string name="playlists_add">添加播放列表</string>
+    <string name="playlists_help">点按播放列表即可观看。Tuned 每次只保留一个播放列表的频道，因此切换时会下载另一个。</string>
+    <string name="playlists_active">使用中</string>
+    <string name="playlists_rename">重命名</string>
+    <string name="playlists_edit">编辑</string>
+    <string name="playlists_remove">移除</string>
+    <string name="playlists_remove_title">移除 %1$s？</string>
+    <string name="playlists_remove_body">其登录信息将从此设备删除。你以后可以再次添加。</string>
+    <string name="playlists_remove_last">这是你唯一的播放列表，因此这会让你退出登录，并清除已保存的频道和节目单。</string>
+    <string name="welcome_title">欢迎使用 Tuned</string>
+    <string name="welcome_body">从你的电视服务商添加一个播放列表即可开始观看。之后可以在设置中随意添加更多。</string>
+    <string name="welcome_pick">你的服务商提供了什么？</string>
+    <string name="kind_xtream">Xtream Codes 登录</string>
+    <string name="kind_xtream_summary">服务器地址、用户名和密码</string>
+    <string name="kind_link">播放列表链接</string>
+    <string name="kind_link_summary">M3U 或 M3U8 网页链接，如有节目单链接也可一并填写</string>
+    <string name="kind_file">播放列表文件</string>
+    <string name="kind_file_summary">保存在此设备上的 .m3u 文件</string>
+    <string name="add_xtream_hint">输入服务商发给你的信息。你也可以把完整的 Xtream 链接粘贴到服务器框中。</string>
+    <string name="add_server_help">例如 http://example.com:8080</string>
+    <string name="add_link_hint">粘贴服务商发给你的播放列表链接。</string>
+    <string name="add_link_is_xtream">这是 Xtream 登录链接，Tuned 会用它登录，回看功能也可使用。</string>
+    <string name="add_file_hint">选择一个播放列表文件。Tuned 会保留自己的副本，即使你移动或删除原文件也能继续使用。</string>
+    <string name="add_file_choose">选择文件</string>
+    <string name="add_file_replace">保留当前文件，或选择新文件</string>
+    <string name="add_name">名称（可选）</string>
+    <string name="add_name_help">显示名称，例如“体育”或“客厅”</string>
+    <string name="add_guide">节目单 (XMLTV) 链接（可选）</string>
+    <string name="add_guide_help">留空则使用播放列表指定的节目单</string>
+    <string name="add_submit">添加播放列表</string>
+    <string name="add_save">保存</string>
+    <string name="add_bad_link">这看起来不像网页链接。请检查后重试。</string>
+    <string name="add_bad_file">该文件看起来不是 M3U 播放列表。</string>
+    <string name="add_pick_file">请先选择一个播放列表文件。</string>
+</resources>

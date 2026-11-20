@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="grid_show">Mostrar la parrilla de la guía</string>
+    <string name="grid_hide">Mostrar la lista de canales</string>
+    <string name="grid_now">Ahora</string>
+    <string name="grid_today">Hoy</string>
+    <string name="grid_no_guide">Sin guía</string>
+    <string name="settings_live_grid">Mostrar la TV en directo como parrilla</string>
+    <string name="settings_live_grid_summary">Canales en el lateral y horas arriba. El botón junto a la búsqueda también cambia la vista.</string>
+</resources>

@@ -1,6 +1,6 @@
 ---
 title: "Tuned vs iMPlayer"
-description: "iMPlayer and Tuned compared: Android and Apple TV, guide, multi-view, Trakt and price."
+description: "iMPlayer and Tuned compared: Android and Apple TV, guide, multi-view, Trakt and price. A side-by-side IPTV player comparison, with sources."
 date: 2026-11-19
 kind: compare
 ---

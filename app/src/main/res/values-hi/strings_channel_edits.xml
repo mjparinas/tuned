@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="channel_rename">चैनल का नाम बदलें</string>
+    <string name="channel_name">चैनल का नाम</string>
+    <string name="channel_original_name">प्रदाता इसे “%s” कहता है। खोज दोनों में से किसी भी नाम से मिलती है।</string>
+    <string name="channel_use_original_name">मूल नाम इस्तेमाल करें</string>
+    <string name="channel_change_logo">लोगो बदलें</string>
+    <string name="channel_logo_from_copies">इस चैनल की दूसरी कॉपी से</string>
+    <string name="channel_logo_choice">लोगो %d</string>
+    <string name="channel_logo_link">तस्वीर का लिंक</string>
+    <string name="channel_use_original_logo">मूल लोगो इस्तेमाल करें</string>
+</resources>

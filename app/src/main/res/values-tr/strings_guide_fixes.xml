@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="guide_fix_title">Bu kanalın rehberini düzelt</string>
+    <string name="guide_fix_summary">Saatleri kaymış veya rehberi yanlış kanalı gösteren bir kanal için. Düzeltme, liste yenilendiğinde de kalır.</string>
+    <string name="guide_fix_remove">Düzeltmeyi geri al</string>
+    <string name="guide_fix_offset">Saatleri kaydır</string>
+    <string name="guide_fix_earlier">Daha erken</string>
+    <string name="guide_fix_later">Daha geç</string>
+    <string name="guide_fix_no_offset">Değişiklik yok</string>
+    <string name="guide_fix_entry">Rehber kaydı</string>
+    <string name="guide_fix_entry_playlist">Listenin kendi kaydı</string>
+    <string name="guide_fix_choose">Başkasını seç</string>
+    <string name="guide_fix_entry_reset">Listenin kaydını kullan</string>
+    <string name="guide_fix_search">Rehberdeki kanallarda ara</string>
+    <string name="guide_fix_no_results">Eşleşen rehber kanalı yok. Rehber henüz inmediyse daha sonra tekrar dene.</string>
+    <string name="settings_guide_offset">Rehber saat farkı</string>
+    <string name="settings_extra_guides">Ek rehber bağlantıları</string>
+    <string name="settings_extra_guides_none">Yok</string>
+    <plurals name="settings_extra_guides_count">
+        <item quantity="one">%d bağlantı</item>
+        <item quantity="other">%d bağlantı</item>
+    </plurals>
+    <string name="settings_extra_guides_summary">Sağlayıcının rehberinden sonra okunan XMLTV bağlantıları; boş bıraktığı kanalları doldurur. Kaydetmek rehberi yeniden okur.</string>
+    <string name="settings_extra_guides_remove">Bağlantıyı kaldır</string>
+    <string name="settings_extra_guides_add">Bağlantı ekle (https://…)</string>
+</resources>

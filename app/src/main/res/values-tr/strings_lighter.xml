@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_lighter">Hafif mod</string>
+    <string name="lighter_auto">Otomatik</string>
+    <string name="lighter_auto_on">Otomatik: bu cihazda açık</string>
+    <string name="lighter_on">Açık: geçiş ve animasyon yok, daha hafif resimler</string>
+    <string name="lighter_off">Kapalı</string>
+</resources>

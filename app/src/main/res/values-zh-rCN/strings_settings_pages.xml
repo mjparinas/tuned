@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_page_playlists">播放列表和账号</string>
+    <string name="settings_page_playlists_summary">你的播放列表、备份和退出登录</string>
+    <string name="settings_page_profiles">个人资料和家长控制</string>
+    <string name="settings_page_profiles_summary">谁在观看、成人分类和 PIN</string>
+    <string name="settings_page_channels">频道和列表</string>
+    <string name="settings_page_channels_summary">启动页面、节目单视图、频道号，以及隐藏的国家和分组</string>
+    <string name="settings_page_guide">节目单和刷新</string>
+    <string name="settings_page_guide_summary">播放列表和节目单的下载时间、节目单天数和提醒</string>
+    <string name="settings_page_playback_summary">音频、继续播放、跳过片头、回看和播放器控件</string>
+    <string name="settings_page_reliability">频道失败时</string>
+    <string name="settings_page_reliability_summary">重新连接、备用源、自动调台和频道状态</string>
+    <string name="settings_page_appearance_summary">主题、颜色和纯黑</string>
+    <string name="settings_page_about">更新和高级</string>
+    <string name="settings_page_about_summary">更新、用户代理和日志</string>
+    <string name="settings_header_hidden">已隐藏的内容</string>
+    <string name="settings_header_guide">节目单</string>
+    <string name="settings_header_screen">屏幕和控件</string>
+</resources>

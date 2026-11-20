@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="subtitle_timing">توقيت الترجمة</string>
+    <string name="subtitle_timing_none">شغّل الترجمة أولًا</string>
+    <string name="subtitle_timing_not_casting">توقيت الترجمة غير متاح أثناء البث إلى جهاز آخر</string>
+    <string name="subtitle_timing_later">الترجمة متأخرة %1$s ث</string>
+    <string name="subtitle_timing_earlier">الترجمة أبكر %1$s ث</string>
+    <string name="subtitle_timing_in_sync">بلا تغيير</string>
+    <string name="subtitle_timing_back_big">−1 ث</string>
+    <string name="subtitle_timing_back_small">−0.1 ث</string>
+    <string name="subtitle_timing_on_small">+0.1 ث</string>
+    <string name="subtitle_timing_on_big">+1 ث</string>
+    <string name="subtitle_timing_reset">إعادة تعيين</string>
+    <string name="subtitle_timing_done">تم</string>
+</resources>

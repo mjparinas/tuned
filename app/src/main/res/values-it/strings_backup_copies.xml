@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_backup_copies">Passa a una copia di riserva</string>
+    <string name="settings_backup_copies_summary">Quando un canale smette di funzionare, riproduci un\'altra sua copia dal tuo elenco, come ESPN FHD al posto di ESPN HD</string>
+    <string name="player_trying_copy">Non funziona. Provo una copia di riserva (%1$d di %2$d)…</string>
+    <string name="player_copy_playing">Passato a %1$s</string>
+    <string name="player_no_copy_works">Questo canale e le sue copie di riserva non funzionano in questo momento</string>
+    <string name="health_hide_failed_on_play">Nascondi i canali che non si riproducono</string>
+    <string name="health_hide_failed_on_play_summary">Quando un canale non si carica mentre internet e il servizio funzionano (un altro canale va bene), viene nascosto subito. Torna quando una scansione lo trova funzionante, o con Mostra di nuovo qui sotto.</string>
+    <string name="health_reason_playback">non si è riprodotto</string>
+</resources>

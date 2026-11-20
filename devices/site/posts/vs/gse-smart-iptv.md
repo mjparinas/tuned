@@ -1,6 +1,6 @@
 ---
 title: "Tuned vs GSE Smart IPTV"
-description: "GSE Smart IPTV and Tuned compared: Android and Apple, guide, casting, recording and price."
+description: "GSE Smart IPTV and Tuned compared: Android and Apple, guide, casting, recording and price. A side-by-side IPTV player comparison, with sources."
 date: 2026-11-19
 kind: compare
 ---

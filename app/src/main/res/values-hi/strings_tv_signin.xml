@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="tv_signin_card">अपने फ़ोन से साइन इन करें</string>
+    <string name="tv_signin_card_summary">इस टीवी पर एक कोड स्कैन करें और रिमोट के बजाय अपने फ़ोन पर भरें</string>
+    <string name="tv_signin_title">अपने फ़ोन से साइन इन करें</string>
+    <string name="tv_signin_scan">अपने फ़ोन का कैमरा कोड की ओर करें। अपनी प्लेलिस्ट वहां भरें, या अपने फ़ोन के Tuned से सब कुछ भेजें।</string>
+    <string name="tv_signin_or_go">या %1$s पर जाएं और डालें</string>
+    <string name="tv_signin_check">जांच नंबर %1$s</string>
+    <string name="tv_signin_qr">अपने फ़ोन से साइन इन करने का QR कोड</string>
+    <string name="tv_signin_type_instead">इसके बजाय टीवी पर टाइप करें</string>
+    <string name="tv_signin_waiting">कोड लिया जा रहा है…</string>
+    <string name="tv_signin_offline">Tuned की साइन-इन सेवा तक नहीं पहुंच सके। इस टीवी का इंटरनेट कनेक्शन जांचें, या इसके बजाय प्लेलिस्ट टाइप करें।</string>
+    <string name="tv_signin_no_backup">यह टीवी आपके Tuned खाते में साइन इन है, पर खाते में अभी प्लेलिस्ट वाला कोई बैकअप नहीं है। इसके बजाय एक प्लेलिस्ट टाइप करें, या पहले अपने फ़ोन से बैकअप लें।</string>
+    <string name="tv_signin_retry">फिर से कोशिश करें</string>
+    <string name="tv_signin_arrived">आपके फ़ोन से</string>
+    <string name="tv_signin_also">साथ में: %1$s</string>
+    <string name="tv_signin_settings">सेटिंग</string>
+    <plurals name="tv_signin_favourites">
+        <item quantity="one">%d पसंदीदा</item>
+        <item quantity="other">%d पसंदीदा</item>
+    </plurals>
+    <plurals name="tv_signin_lists">
+        <item quantity="one">%d सूची</item>
+        <item quantity="other">%d सूचियां</item>
+    </plurals>
+    <plurals name="tv_signin_watch_later">
+        <item quantity="one">%d बाद में देखें में</item>
+        <item quantity="other">%d बाद में देखें में</item>
+    </plurals>
+    <string name="tv_signin_only_playlists">यह टीवी अपनी सेटिंग और पसंदीदा रखता है; केवल प्लेलिस्ट जोड़ी जाती हैं।</string>
+    <string name="tv_signin_only_first">Premium के बिना, यह टीवी पहली प्लेलिस्ट रखता है।</string>
+    <string name="tv_signin_use">इस्तेमाल करें</string>
+    <string name="tv_signin_not_mine">मेरा नहीं</string>
+    <string name="tv_signin_saving">सेट अप हो रहा है…</string>
+    <string name="send_tv_row">टीवी पर भेजें</string>
+    <string name="send_tv_row_summary">इस फ़ोन की प्लेलिस्ट और सेटिंग के साथ किसी टीवी पर साइन इन करें</string>
+    <string name="send_tv_title">टीवी पर भेजें</string>
+    <string name="send_tv_enter">टीवी पर Tuned खोलें और अपने फ़ोन से साइन इन करें चुनें। फिर वह जो कोड दिखाए उसे डालें, या अपने कैमरे से स्कैन करें।</string>
+    <string name="send_tv_code">टीवी पर कोड</string>
+    <string name="send_tv_next">आगे</string>
+    <string name="send_tv_bad_code">यह टीवी पर दिखने वाला कोड नहीं लगता। इसमें आठ अक्षर और अंक होते हैं।</string>
+    <string name="send_tv_not_found">कोई टीवी यह कोड नहीं दिखा रहा। इसे जांचें, या टीवी के नया कोड दिखाने का इंतज़ार करें।</string>
+    <string name="send_tv_confirm_digits">जांचें कि टीवी यह नंबर दिखा रहा है:</string>
+    <string name="send_tv_matches">यह मेल खाता है</string>
+    <string name="send_tv_what">यह इस फ़ोन से प्लेलिस्ट, सेटिंग, प्रोफ़ाइल, पसंदीदा और सूचियां भेजता है, जैसे डिवाइसों के बीच सिंक करता है। यह लॉक है ताकि केवल वही टीवी इसे पढ़ सके।</string>
+    <plurals name="send_tv_playlists">
+        <item quantity="one">%d प्लेलिस्ट</item>
+        <item quantity="other">%d प्लेलिस्ट</item>
+    </plurals>
+    <string name="send_tv_send">टीवी पर भेजें</string>
+    <string name="send_tv_sending">भेजा जा रहा है…</string>
+    <string name="send_tv_sent">भेज दिया। टीवी पर इस्तेमाल करें दबाएं।</string>
+    <string name="send_tv_gone">उस कोड की अवधि खत्म हो गई। टीवी पर नया कोड स्कैन करें।</string>
+    <string name="send_tv_already">उस टीवी पर पहले ही कुछ भेजा जा चुका है। फिर से भेजने के लिए टीवी पर नया कोड स्कैन करें।</string>
+    <string name="send_tv_too_many">बहुत ज़्यादा कोशिशें। एक घंटे में फिर कोशिश करें।</string>
+    <string name="send_tv_unreachable">Tuned की साइन-इन सेवा तक नहीं पहुंच सके। अपना कनेक्शन जांचें और फिर से कोशिश करें।</string>
+    <string name="send_tv_too_big">भेजने के लिए बहुत ज़्यादा है। कुछ पसंदीदा या बाद में देखें हटाएं और फिर से कोशिश करें।</string>
+    <string name="send_tv_nothing">पहले इस फ़ोन पर एक प्लेलिस्ट जोड़ें, फिर उसे टीवी पर भेजें।</string>
+</resources>

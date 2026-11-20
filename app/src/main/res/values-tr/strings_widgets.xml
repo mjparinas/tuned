@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="widget_favourites">Favori kanallar</string>
+    <string name="widget_favourites_description">Favori kanallarının logoları ve şu an yayında olanlar. İzlemek için birine dokun.</string>
+    <string name="widget_empty_title">Henüz favori yok</string>
+    <string name="widget_empty">Bir kanalın kalbine dokun, burada görünsün.</string>
+    <string name="widget_add_favourites">Favori ekle</string>
+    <string name="widget_signed_out">Tuned\'a giriş yap</string>
+    <string name="widget_signed_out_body">Bir liste eklendiğinde favori kanalların burada görünür.</string>
+    <string name="widget_open_tuned">Tuned\'ı aç</string>
+    <string name="widget_watch">%1$s izle</string>
+    <string name="widget_watch_on_now">%1$s izle. Şimdi: %2$s</string>
+    <string name="widget_continue">İzlemeye devam et</string>
+    <string name="widget_continue_description">Başladığın filmler ve bölümler, kalan süreyle. Kaldığın yerden devam etmek için birine dokun.</string>
+    <string name="widget_continue_empty_title">Devam eden bir şey yok</string>
+    <string name="widget_continue_empty">Başladığın filmler ve bölümler burada görünür.</string>
+    <string name="widget_continue_signed_out_body">Bir liste eklendiğinde başladığın filmler ve bölümler burada görünür.</string>
+    <string name="widget_episode_number">S%1$d B%2$d</string>
+    <string name="widget_resume">%1$s devam et. %2$s</string>
+    <plurals name="widget_minutes_left">
+        <item quantity="one">%d dk kaldı</item>
+        <item quantity="other">%d dk kaldı</item>
+    </plurals>
+    <string name="tile_last_channel">Son kanal</string>
+</resources>

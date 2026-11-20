@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="skip_intro">Intro überspringen</string>
+    <string name="settings_skip_intro">Taste „Intro überspringen“</string>
+    <string name="settings_skip_intro_off">Aus</string>
+</resources>

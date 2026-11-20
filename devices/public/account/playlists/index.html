@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="en-CA">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>Playlists and settings · Tuned</title>
+        <meta name="robots" content="noindex" />
+        <meta name="theme-color" content="#fcfaff" media="(prefers-color-scheme: light)" />
+        <meta name="theme-color" content="#121018" media="(prefers-color-scheme: dark)" />
+        <link rel="icon" href="/favicon.ico" sizes="48x48" />
+        <link rel="icon" href="/icon.svg" type="image/svg+xml" />
+        <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+        <link rel="stylesheet" href="/site.css" />
+        <link rel="stylesheet" href="/web.css" />
+        <link rel="stylesheet" href="/account/account.css" />
+        <link rel="stylesheet" href="/account/playlists/playlists.css" />
+    </head>
+    <body>
+        <script src="/chrome.js" data-part="header"></script>
+        <main class="wide account">
+            <div class="account-head">
+                <p class="back"><a href="/account">‹ Your Tuned account</a></p>
+                <h1>Playlists and settings</h1>
+                <p class="small">
+                    Changes here reach your phone and TV through your Tuned account, when Tuned opens and every hour while it's on. Changes
+                    made in the app show up here too.
+                </p>
+                <p id="status" role="status" aria-live="polite"></p>
+            </div>
+            <nav class="account-nav" id="account-nav" aria-label="Your account" hidden></nav>
+
+            <div class="account-body">
+                <section id="signed-out" class="card" hidden>
+                    <h2>Sign in first</h2>
+                    <p>Sign in to your Tuned account to manage your playlists and settings.</p>
+                    <div class="actions"><a class="button" href="/account">Go to your account</a></div>
+                </section>
+
+                <div id="signed-in" hidden>
+                    <section class="card span" id="playlists" aria-labelledby="playlists-title">
+                        <div class="card-head">
+                            <h2 id="playlists-title">Playlists</h2>
+                            <button type="button" id="add">Add a playlist</button>
+                        </div>
+                        <p class="small" id="playlists-line"></p>
+                        <div id="playlist-list"></div>
+                        <p class="message" id="playlists-message" role="status" aria-live="polite"></p>
+                        <div class="actions">
+                            <button type="button" class="quiet" id="refresh">Refresh on my devices</button>
+                        </div>
+                    </section>
+
+                    <section class="card" id="editor" hidden aria-labelledby="editor-title">
+                        <h2 id="editor-title">Add a playlist</h2>
+                        <form id="editor-form" novalidate>
+                            <fieldset class="kinds" id="kinds">
+                                <legend>Kind</legend>
+                                <label><input type="radio" name="kind" value="xtream" checked />Xtream login</label>
+                                <label><input type="radio" name="kind" value="link" />M3U link</label>
+                                <label><input type="radio" name="kind" value="stalker" />MAC portal</label>
+                            </fieldset>
+                            <p class="small" id="kind-line"></p>
+
+                            <div data-kind="xtream stalker">
+                                <label for="server" id="server-label">Server</label>
+                                <input
+                                    id="server"
+                                    name="server"
+                                    inputmode="url"
+                                    autocomplete="off"
+                                    autocapitalize="none"
+                                    spellcheck="false"
+                                    placeholder="http://provider.example:8080"
+                                />
+                            </div>
+                            <div data-kind="xtream">
+                                <label for="username">Username</label>
+                                <input id="username" name="username" autocomplete="off" autocapitalize="none" spellcheck="false" />
+                                <label for="password">Password</label>
+                                <input
+                                    id="password"
+                                    name="password"
+                                    type="password"
+                                    autocomplete="new-password"
+                                    aria-describedby="password-hint"
+                                />
+                                <p class="small hint" id="password-hint" hidden>Leave blank to keep the saved password.</p>
+                            </div>
+                            <div data-kind="link">
+                                <label for="link">Playlist link</label>
+                                <input
+                                    id="link"
+                                    name="link"
+                                    inputmode="url"
+                                    autocomplete="off"
+                                    autocapitalize="none"
+                                    spellcheck="false"
+                                    placeholder="https://provider.example/playlist.m3u"
+                                    aria-describedby="link-hint"
+                                />
+                                <p class="small hint" id="link-hint">
+                                    An Xtream get.php link is saved as its login, so catch-up works too.
+                                </p>
+                            </div>
+                            <div data-kind="stalker">
+                                <label for="mac">MAC address</label>
+                                <input
+                                    id="mac"
+                                    name="mac"
+                                    autocomplete="off"
+                                    autocapitalize="characters"
+                                    spellcheck="false"
+                                    placeholder="00:1A:79:00:00:00"
+                                />
+                            </div>
+
+                            <label for="guide">TV guide link (optional)</label>
+                            <input
+                                id="guide"
+                                name="guide"
+                                inputmode="url"
+                                autocomplete="off"
+                                autocapitalize="none"
+                                spellcheck="false"
+                                placeholder="https://provider.example/epg.xml"
+                                aria-describedby="guide-hint"
+                            />
+                            <p class="small hint" id="guide-hint">Left blank, Tuned uses the guide the playlist names.</p>
+                            <label class="check" id="clear-guide-row" hidden
+                                ><input type="checkbox" id="clear-guide" />Remove the saved guide link</label
+                            >
+
+                            <label for="name">Name (optional)</label>
+                            <input id="name" name="name" autocomplete="off" maxlength="80" placeholder="Living room" />
+
+                            <p class="message" id="editor-message" role="status" aria-live="polite"></p>
+                            <div class="actions end">
+                                <button type="button" class="quiet" id="cancel">Cancel</button>
+                                <button type="submit" id="save">Save</button>
+                            </div>
+                        </form>
+                    </section>
+
+                    <div id="settings"></div>
+                </div>
+            </div>
+
+            <dialog id="remove-dialog" aria-labelledby="remove-title">
+                <form method="dialog">
+                    <h2 id="remove-title">Remove this playlist?</h2>
+                    <p id="remove-line"></p>
+                    <p class="message" id="remove-message" role="status" aria-live="polite"></p>
+                    <div class="actions end">
+                        <button type="button" class="quiet" id="remove-cancel">Cancel</button>
+                        <button type="button" class="danger" id="remove-confirm">Remove</button>
+                    </div>
+                </form>
+            </dialog>
+        </main>
+        <script type="module" src="/account/playlists/playlists.js"></script>
+        <script src="/beacon.js" defer></script>
+        <script src="/chrome.js" data-part="footer"></script>
+    </body>
+</html>

@@ -1,6 +1,6 @@
 ---
 title: "Tuned vs Purple Playlist Player"
-description: "Purple Playlist Player and Tuned compared: Apple devices, profiles, cloud recording and price."
+description: "Purple Playlist Player and Tuned compared: Apple devices, profiles, cloud recording and price. A side-by-side IPTV player comparison, with sources."
 date: 2026-11-19
 kind: compare
 ---

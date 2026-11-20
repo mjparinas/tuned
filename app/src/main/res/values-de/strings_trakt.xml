@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="trakt_sign_in">Trakt verbinden</string>
+    <string name="trakt_sign_in_summary">Die Filme und Folgen, die du schaust, deinem Trakt-Verlauf hinzufügen</string>
+    <string name="trakt_signed_in">Verbunden als %1$s</string>
+    <string name="trakt_account_unnamed">dein Trakt-Konto</string>
+    <string name="trakt_sign_out">Zum Trennen tippen</string>
+    <string name="trakt_scrobble">Gesehenes scrobbeln</string>
+    <string name="trakt_scrobble_summary">Trakt mitteilen, wann ein Film oder eine Folge startet, pausiert und endet. Live-TV wird nicht gesendet.</string>
+    <string name="trakt_asking">Code wird bei Trakt angefragt…</string>
+    <string name="trakt_enter_code">Geh auf einem beliebigen Handy oder Computer zu %1$s und gib diesen Code ein:</string>
+    <string name="trakt_waiting">Warte auf die Eingabe des Codes…</string>
+    <string name="sign_in_code_copy">Code kopieren</string>
+    <string name="sign_in_code_copied">Code kopiert</string>
+    <string name="trakt_open_site">Trakt öffnen</string>
+    <string name="trakt_done">Verbunden. Was du jetzt schaust, landet in deinem Trakt-Verlauf.</string>
+    <string name="trakt_expired">Der Code ist abgelaufen, bevor er eingegeben wurde.</string>
+    <string name="trakt_denied">Trakt hat die Verbindung abgelehnt.</string>
+    <string name="trakt_failed">Trakt ist nicht erreichbar. Prüfe die Verbindung und versuche es erneut.</string>
+    <string name="trakt_try_again">Erneut versuchen</string>
+</resources>

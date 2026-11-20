@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="list_add">إضافة إلى قائمة</string>
+    <string name="list_add_title">إضافة إلى قائمة</string>
+    <string name="list_new">قائمة جديدة</string>
+    <string name="list_name">الاسم</string>
+    <string name="list_save">حفظ</string>
+    <string name="list_done">تم</string>
+    <string name="list_rename">إعادة تسمية القائمة</string>
+    <string name="list_delete">حذف القائمة</string>
+    <string name="list_delete_title">حذف “%s”؟</string>
+    <string name="list_delete_body">تُحذف القائمة، لكن القنوات والأفلام التي فيها تبقى في مكانها.</string>
+</resources>

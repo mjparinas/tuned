@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="cast_connecting">جارٍ الاتصال بـ %1$s…</string>
+    <string name="cast_starting">جارٍ البدء على %1$s…</string>
+    <string name="cast_connect_failed">تعذّر الاتصال بـ %1$s</string>
+    <string name="cast_playing_on">يُعرض على %1$s</string>
+    <string name="cast_failed">تعذّر على %1$s تشغيل هذا. التفاصيل في الإعدادات › التحديثات والخيارات المتقدمة › السجلات.</string>
+    <string name="cast_no_wifi">وصّل الهاتف بشبكة Wi-Fi نفسها التي يتصل بها التلفزيون لبث فيلم أو حلقة محفوظة.</string>
+</resources>

@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="tuned_account">Tuned-Konto</string>
+    <string name="tuned_account_sign_in">Bei deinem Tuned-Konto anmelden</string>
+    <string name="tuned_account_sign_in_summary">Playlists, Einstellungen und Profile sichern und Handy und Fernseher gleich halten</string>
+    <string name="tuned_account_asking">Code wird abgerufen…</string>
+    <string name="tuned_account_enter_code">Scanne den Code, oder geh auf einem beliebigen Handy oder Computer zu %1$s, melde dich mit Google an und gib diesen Code unter Fernseher koppeln ein:</string>
+    <string name="tuned_account_open_or_enter">Tippe auf Website öffnen und melde dich mit Google an. Oder geh am Computer zu %1$s, melde dich an und gib diesen Code unter Fernseher koppeln ein:</string>
+    <string name="tuned_account_waiting">Warte auf deine Anmeldung…</string>
+    <string name="tuned_account_open_site">Website öffnen</string>
+    <string name="tuned_account_failed">Der Tuned-Server ist nicht erreichbar. Prüfe die Verbindung und versuche es erneut.</string>
+    <string name="tuned_account_try_again">Erneut versuchen</string>
+    <string name="tuned_account_signed_in">Angemeldet als %1$s.</string>
+    <string name="tuned_account_backup_now">Jetzt sichern</string>
+    <string name="tuned_account_never">Noch nicht gesichert</string>
+    <string name="tuned_account_last">Zuletzt gesichert %1$s</string>
+    <string name="tuned_account_offline">Deine Sicherung ist nicht erreichbar. Es wird erneut versucht.</string>
+    <string name="tuned_account_sign_out">Vom Tuned-Konto abmelden</string>
+    <string name="tuned_account_sign_out_summary">Meldet dieses Gerät ab. Deine Sicherung und die Daten auf diesem Gerät bleiben.</string>
+    <string name="restore_account">Aus deinem Tuned-Konto wiederherstellen</string>
+    <string name="restore_account_summary">Playlists, Profile und Einstellungen von einem anderen Gerät zurückholen</string>
+    <string name="restore_account_working">Playlists, Profile und Einstellungen werden wiederhergestellt…</string>
+    <string name="restore_account_nothing">Dieses Konto hat noch keine Sicherung. Füge stattdessen eine Playlist hinzu; sobald sie gesichert ist, können deine anderen Geräte sie wiederherstellen.</string>
+    <string name="restore_account_no_playlist">Deine Einstellungen und Profile sind zurück, aber die Sicherung enthält keine Playlist, die dieses Gerät öffnen kann. Playlist-Dateien bleiben auf dem Gerät, auf dem sie hinzugefügt wurden. Füge stattdessen eine Playlist hinzu.</string>
+    <string name="restore_account_offline">Deine Sicherung ist nicht erreichbar. Prüfe die Verbindung und versuche es erneut.</string>
+</resources>

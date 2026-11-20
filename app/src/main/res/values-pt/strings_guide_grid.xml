@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="grid_show">Mostrar a grade do guia de TV</string>
+    <string name="grid_hide">Mostrar a lista de canais</string>
+    <string name="grid_now">Agora</string>
+    <string name="grid_today">Hoje</string>
+    <string name="grid_no_guide">Sem guia</string>
+    <string name="settings_live_grid">Mostrar a TV ao vivo como grade do guia</string>
+    <string name="settings_live_grid_summary">Canais na lateral e horários no topo. O botão ao lado da busca também alterna.</string>
+</resources>

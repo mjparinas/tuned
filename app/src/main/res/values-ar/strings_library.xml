@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="watch_later">المشاهدة لاحقًا</string>
+    <string name="watch_later_add">إضافة إلى المشاهدة لاحقًا</string>
+    <string name="watch_later_remove">إزالة من المشاهدة لاحقًا</string>
+    <string name="watched">تمت المشاهدة</string>
+    <string name="mark_watched">وضع علامة كمُشاهَد</string>
+    <string name="mark_unwatched">وضع علامة كغير مُشاهَد</string>
+    <string name="mark_season_watched">وضع علامة على الموسم كمُشاهَد</string>
+    <string name="mark_season_unwatched">وضع علامة على الموسم كغير مُشاهَد</string>
+</resources>

@@ -1,6 +1,6 @@
 ---
 title: "Tuned vs TiviMate"
-description: "TiviMate and Tuned compared: platforms, guide, recording, multi-view, downloads and price."
+description: "TiviMate and Tuned compared: platforms, guide, recording, multi-view, downloads and price. A side-by-side IPTV player comparison, with sources."
 date: 2026-11-19
 kind: compare
 ---

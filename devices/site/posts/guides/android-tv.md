@@ -1,5 +1,6 @@
 ---
 title: Tuned on Android TV: set-up and remote tips
+seoTitle: "Tuned IPTV player on Android TV: set-up and remote tips"
 description: Install Tuned on an Android TV, sign in with your phone, and get the most out of the remote, from channel numbers to flip back.
 date: 2026-11-19
 kind: guide
@@ -9,7 +10,13 @@ Tuned is one app for phones, tablets and TVs. On an Android TV it shows its own 
 
 ## Install it
 
-Use the download button on this page. If you install the APK rather than from a store, you'll need a file downloader app on the TV and to allow it to install apps (Android asks the first time). Tuned then keeps itself up to date.
+Most TVs have no web browser, so use the free **Downloader** app:
+
+1. On the TV, open the Google Play Store, search for **Downloader** and install it.
+2. Open Downloader and type **tunedplayer.com/download** into its address box.
+3. When Android asks, allow Downloader to install apps, then choose **Install**.
+
+Tuned then keeps itself up to date.
 
 ## Sign in without typing
 

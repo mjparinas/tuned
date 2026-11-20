@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="downloads">Загрузки</string>
+    <string name="downloads_running">Загружается</string>
+    <string name="downloads_empty">Пока ничего не сохранено. Нажмите кнопку загрузки у фильма, серии или целого сезона, чтобы смотреть без интернета.</string>
+    <string name="download">Загрузить</string>
+    <string name="download_remove">Удалить загрузку</string>
+    <string name="download_remove_named">Удалить загрузку «%1$s»</string>
+    <string name="download_retry">Повторить</string>
+    <string name="download_failed">Не удалось загрузить</string>
+    <string name="download_waiting">Ожидание (загрузки останавливаются, пока что-то воспроизводится)</string>
+    <string name="download_progress">%1$s из %2$s</string>
+    <string name="downloads_space">Загружено %1$s · свободно %2$s на этом устройстве</string>
+    <string name="downloads_space_used">Загружено %1$s</string>
+    <string name="downloads_other_episodes">Другие серии</string>
+    <string name="download_paused">Приостановлено</string>
+    <string name="download_pause">Приостановить загрузку</string>
+    <string name="download_resume">Продолжить загрузку</string>
+    <string name="download_cancel">Отменить загрузку</string>
+    <string name="download_season_done">Сезон сохранён</string>
+    <plurals name="downloads_coming">
+        <item quantity="one">Загружается %1$d</item>
+        <item quantity="few">Загружается %1$d</item>
+        <item quantity="many">Загружается %1$d</item>
+        <item quantity="other">Загружается %1$d</item>
+    </plurals>
+    <plurals name="download_season">
+        <item quantity="one">Загрузить сезон (%d серия)</item>
+        <item quantity="few">Загрузить сезон (%d серии)</item>
+        <item quantity="many">Загрузить сезон (%d серий)</item>
+        <item quantity="other">Загрузить сезон (%d серии)</item>
+    </plurals>
+    <plurals name="download_season_progress">
+        <item quantity="one">Сохранено %1$d из %2$d серии</item>
+        <item quantity="few">Сохранено %1$d из %2$d серий</item>
+        <item quantity="many">Сохранено %1$d из %2$d серий</item>
+        <item quantity="other">Сохранено %1$d из %2$d серий</item>
+    </plurals>
+</resources>

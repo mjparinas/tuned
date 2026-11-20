@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="subtitle_timing">Sincronia das legendas</string>
+    <string name="subtitle_timing_none">Ative as legendas primeiro</string>
+    <string name="subtitle_timing_not_casting">A sincronia das legendas não está disponível durante a transmissão para outro aparelho</string>
+    <string name="subtitle_timing_later">Legendas %1$s s depois</string>
+    <string name="subtitle_timing_earlier">Legendas %1$s s antes</string>
+    <string name="subtitle_timing_in_sync">Sem mudança</string>
+    <string name="subtitle_timing_back_big">−1 s</string>
+    <string name="subtitle_timing_back_small">−0,1 s</string>
+    <string name="subtitle_timing_on_small">+0,1 s</string>
+    <string name="subtitle_timing_on_big">+1 s</string>
+    <string name="subtitle_timing_reset">Redefinir</string>
+    <string name="subtitle_timing_done">Concluído</string>
+</resources>

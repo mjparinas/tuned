@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_live_rewind">लाइव टीवी रोकें और पीछे ले जाएं</string>
+    <string name="settings_live_rewind_off">बंद</string>
+    <plurals name="settings_live_rewind_minutes">
+        <item quantity="one">पिछला %1$d मिनट रखें</item>
+        <item quantity="other">पिछले %1$d मिनट रखें</item>
+    </plurals>
+</resources>

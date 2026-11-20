@@ -1,15 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- The small pills over the player's title: frame rate, then the sound's speakers. -->
-    <string name="player_pill_fps">%1$d FPS</string>
+    <string name="player_pill_fps" translatable="false">%1$d FPS</string>
     <plurals name="player_pill_fps_spoken">
         <item quantity="one">%d frame per second</item>
         <item quantity="other">%d frames per second</item>
     </plurals>
     <string name="player_pill_mono">MONO</string>
     <string name="player_pill_stereo">STEREO</string>
-    <string name="player_pill_5_1">5.1</string>
-    <string name="player_pill_7_1">7.1</string>
+    <string name="player_pill_5_1" translatable="false">5.1</string>
+    <string name="player_pill_7_1" translatable="false">7.1</string>
     <string name="player_pill_channels">%1$d CH</string>
     <string name="player_pill_mono_spoken">Mono</string>
     <string name="player_pill_stereo_spoken">Stereo</string>

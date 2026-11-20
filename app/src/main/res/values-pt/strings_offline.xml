@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="downloads">Downloads</string>
+    <string name="downloads_running">Baixando</string>
+    <string name="downloads_empty">Nada salvo ainda. Toque no botão de download de um filme, episódio ou temporada inteira para assistir offline.</string>
+    <string name="download">Baixar</string>
+    <string name="download_remove">Remover download</string>
+    <string name="download_remove_named">Remover o download de %1$s</string>
+    <string name="download_retry">Tentar de novo</string>
+    <string name="download_failed">Não foi possível baixar</string>
+    <string name="download_waiting">Aguardando (downloads pausam enquanto algo é reproduzido)</string>
+    <string name="download_progress">%1$s de %2$s</string>
+    <string name="downloads_space">%1$s baixado · %2$s livre neste dispositivo</string>
+    <string name="downloads_space_used">%1$s baixado</string>
+    <string name="downloads_other_episodes">Outros episódios</string>
+    <string name="download_paused">Pausado</string>
+    <string name="download_pause">Pausar download</string>
+    <string name="download_resume">Retomar download</string>
+    <string name="download_cancel">Cancelar download</string>
+    <string name="download_season_done">Temporada salva</string>
+    <plurals name="downloads_coming">
+        <item quantity="one">%1$d baixando</item>
+        <item quantity="many">%1$d baixando</item>
+        <item quantity="other">%1$d baixando</item>
+    </plurals>
+    <plurals name="download_season">
+        <item quantity="one">Baixar temporada (%d episódio)</item>
+        <item quantity="many">Baixar temporada (%d episódios)</item>
+        <item quantity="other">Baixar temporada (%d episódios)</item>
+    </plurals>
+    <plurals name="download_season_progress">
+        <item quantity="one">%1$d de %2$d episódio salvo</item>
+        <item quantity="many">%1$d de %2$d episódios salvos</item>
+        <item quantity="other">%1$d de %2$d episódios salvos</item>
+    </plurals>
+</resources>

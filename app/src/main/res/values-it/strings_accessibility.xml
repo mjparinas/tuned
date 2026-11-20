@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="a11y_favourite">Preferito</string>
+    <string name="a11y_playing">In riproduzione</string>
+    <string name="a11y_on_now">In onda</string>
+    <string name="a11y_current_profile">Profilo attuale</string>
+    <string name="a11y_play">Riproduci</string>
+    <string name="a11y_details">Dettagli</string>
+    <string name="a11y_more_options">Altre opzioni</string>
+    <string name="a11y_edit">Modifica</string>
+    <string name="a11y_guide_for">Guida di %1$s</string>
+    <string name="colour_white">Bianco</string>
+    <string name="colour_yellow">Giallo</string>
+    <string name="colour_cyan">Ciano</string>
+    <string name="colour_green">Verde</string>
+    <string name="colour_magenta">Magenta</string>
+    <string name="colour_red">Rosso</string>
+    <string name="colour_blue">Blu</string>
+    <string name="colour_black">Nero</string>
+    <string name="colour_custom">Colore %1$s</string>
+</resources>

@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="record_start">Записать</string>
+    <string name="record_stop">Остановить запись</string>
+    <string name="record_started">Идёт запись: %1$s</string>
+    <string name="record_saved">Запись сохранена в «Загрузки»</string>
+    <string name="record_live_only">Это нельзя записать. Запись работает на каналах ТВ в эфире.</string>
+    <string name="record_not_casting">Запись недоступна во время трансляции на другое устройство</string>
+    <string name="record_no_space">Недостаточно места на устройстве для записи</string>
+    <string name="record_space_ran_out">Запись остановлена: на устройстве почти нет места</string>
+    <string name="record_failed">Запись остановлена: не удалось её сохранить</string>
+    <string name="recordings_section_size">Записи · %1$s</string>
+    <string name="recording_remove">Удалить запись</string>
+    <string name="recording_hours_minutes">%1$d ч %2$d мин</string>
+    <string name="recording_minutes">%1$d мин</string>
+</resources>

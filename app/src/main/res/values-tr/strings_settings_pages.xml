@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_page_playlists">Listeler ve hesap</string>
+    <string name="settings_page_playlists_summary">Listelerin, yedek ve oturumu kapatma</string>
+    <string name="settings_page_profiles">Profiller ve ebeveyn denetimi</string>
+    <string name="settings_page_profiles_summary">Kim izliyor, yetişkin kategorileri ve PIN</string>
+    <string name="settings_page_channels">Kanallar ve listeler</string>
+    <string name="settings_page_channels_summary">Açılış ekranı, rehber görünümü, numaralar, gizli ülkeler ve gruplar</string>
+    <string name="settings_page_guide">Rehber ve yenileme</string>
+    <string name="settings_page_guide_summary">Liste ve rehberin ne zaman indirileceği, rehber günleri ve hatırlatıcılar</string>
+    <string name="settings_page_playback_summary">Ses, devam etme, giriş atlama, geri sarma ve oynatıcı kontrolleri</string>
+    <string name="settings_page_reliability">Bir kanal çalışmadığında</string>
+    <string name="settings_page_reliability_summary">Yeniden bağlanma, yedek kopyalar, otomatik ayar ve kanal sağlığı</string>
+    <string name="settings_page_appearance_summary">Tema, renkler ve saf siyah</string>
+    <string name="settings_page_about">Güncellemeler ve gelişmiş</string>
+    <string name="settings_page_about_summary">Güncellemeler, kullanıcı aracısı ve günlükler</string>
+    <string name="settings_header_hidden">Gizlenenler</string>
+    <string name="settings_header_guide">Rehber</string>
+    <string name="settings_header_screen">Ekran ve kontroller</string>
+</resources>

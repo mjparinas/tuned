@@ -9,7 +9,7 @@
     <string name="health_while_scanning">The scan pauses while you watch something, so only one stream is ever open.</string>
     <string name="health_last_scan">Last scan %1$s</string>
     <!-- %1$s, %2$s, %3$s: "120 working", "8 failed", "2 not judged". -->
-    <string name="health_counts">%1$s · %2$s · %3$s</string>
+    <string name="health_counts" translatable="false">%1$s · %2$s · %3$s</string>
     <plurals name="health_working">
         <item quantity="one">%1$d working</item>
         <item quantity="other">%1$d working</item>
@@ -38,7 +38,7 @@
         <item quantity="other">%1$d channels failed but are still shown</item>
     </plurals>
     <!-- %1$s: the group; %2$s: why it failed; %3$s: when, such as "2 hours ago". -->
-    <string name="health_row">%1$s · %2$s · %3$s</string>
+    <string name="health_row" translatable="false">%1$s · %2$s · %3$s</string>
     <string name="health_show_again">Show again</string>
     <string name="health_reason_http">the server said it\'s not available</string>
     <string name="health_reason_no_data">no picture arrived</string>

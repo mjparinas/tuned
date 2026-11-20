@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="player_fit">Adatta</string>
+    <string name="player_fit_now">Adatta: %1$s</string>
+    <string name="player_fit_fit">Adatta allo schermo</string>
+    <string name="player_fit_zoom">Zoom per riempire</string>
+    <string name="player_fit_stretch">Allunga</string>
+    <string name="player_lock">Blocca schermo</string>
+    <string name="player_unlock">Sblocca schermo</string>
+    <string name="player_locked">Schermo bloccato. Tocca il lucchetto per sbloccare.</string>
+    <string name="player_quality">Qualità</string>
+    <string name="player_quality_auto">Automatica</string>
+    <string name="player_quality_only_one">Questo stream ha una sola qualità</string>
+    <string name="player_quality_untagged">Standard</string>
+    <string name="player_guide">Canali</string>
+    <string name="player_guide_close">Chiudi canali</string>
+</resources>

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="cast_connecting">Connessione a %1$s…</string>
+    <string name="cast_starting">Avvio su %1$s…</string>
+    <string name="cast_connect_failed">Impossibile connettersi a %1$s</string>
+    <string name="cast_playing_on">In riproduzione su %1$s</string>
+    <string name="cast_failed">%1$s non è riuscito a riprodurlo. I dettagli sono in Impostazioni › Aggiornamenti e avanzate › Log.</string>
+    <string name="cast_no_wifi">Connetti il telefono alla stessa rete Wi-Fi della TV per trasmettere un film o un episodio salvato.</string>
+</resources>

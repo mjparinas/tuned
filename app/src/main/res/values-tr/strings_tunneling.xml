@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_tunneled_playback">Tünelli oynatma</string>
+    <string name="settings_tunneled_playback_summary">TV\'nin kendi video donanımının görüntüyle sesi birlikte tutmasını sağlar; bu, 4K ve sporu daha akıcı yapabilir. Oynatma takılıyorsa dene. Açıkken ses gecikmesi uygulanmaz.</string>
+</resources>

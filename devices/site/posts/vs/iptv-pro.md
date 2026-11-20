@@ -1,6 +1,6 @@
 ---
 title: "Tuned vs IPTV Pro"
-description: "IPTV Pro and Tuned compared: playlists, guide, multicast, parental control and price."
+description: "IPTV Pro and Tuned compared: playlists, guide, multicast, parental control and price. A side-by-side IPTV player comparison, with sources."
 date: 2026-11-19
 kind: compare
 ---

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="subtitle_timing">字幕时间</string>
+    <string name="subtitle_timing_none">请先开启字幕</string>
+    <string name="subtitle_timing_not_casting">投放时无法调整字幕时间</string>
+    <string name="subtitle_timing_later">字幕延后 %1$s 秒</string>
+    <string name="subtitle_timing_earlier">字幕提前 %1$s 秒</string>
+    <string name="subtitle_timing_in_sync">不变</string>
+    <string name="subtitle_timing_back_big">−1 秒</string>
+    <string name="subtitle_timing_back_small">−0.1 秒</string>
+    <string name="subtitle_timing_on_small">+0.1 秒</string>
+    <string name="subtitle_timing_on_big">+1 秒</string>
+    <string name="subtitle_timing_reset">重置</string>
+    <string name="subtitle_timing_done">完成</string>
+</resources>

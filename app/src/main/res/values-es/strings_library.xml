@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="watch_later">Ver más tarde</string>
+    <string name="watch_later_add">Añadir a Ver más tarde</string>
+    <string name="watch_later_remove">Quitar de Ver más tarde</string>
+    <string name="watched">Visto</string>
+    <string name="mark_watched">Marcar como visto</string>
+    <string name="mark_unwatched">Marcar como no visto</string>
+    <string name="mark_season_watched">Marcar temporada como vista</string>
+    <string name="mark_season_unwatched">Marcar temporada como no vista</string>
+</resources>

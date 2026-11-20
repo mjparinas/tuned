@@ -6,6 +6,7 @@ import androidx.media3.common.util.UnstableApi
 import androidx.media3.datasource.DataSource
 import androidx.media3.datasource.DataSpec
 import androidx.media3.datasource.TransferListener
+import com.tunedplayer.app.core.HlsPlaylist
 import com.tunedplayer.app.core.LocalHls
 import com.tunedplayer.app.core.Stalker
 import com.tunedplayer.app.core.TsSegmenter
@@ -57,6 +58,38 @@ internal class LiveBuffer(
     var source: Uri? = null
         private set
 
+    /**
+     * The channel on screen, as the player last said ([LiveTimeshift.onChannelChanged]). An HLS channel's playlists
+     * are all `.m3u8` links, so this is how a new channel is told from the same channel's next playlist.
+     */
+    @Volatile
+    var channel: Uri? = null
+
+    /** What an HLS channel's playlists said, or null for an MPEG-TS channel ([HlsPlaylist]). */
+    private var hls: HlsState? = null
+
+    private class HlsState {
+        /** Until a playlist says otherwise; encrypted, fMP4 and split-audio channels aren't kept. */
+        var keepable = true
+        var sawMedia = false
+
+        /** The last media playlist, by its real address, for the recorder to carry on from. */
+        var media: String? = null
+
+        /** Pieces in the last two media playlists, each with the playlist that listed it. */
+        val listed = LinkedHashMap<String, String>()
+        val fed = LinkedHashSet<String>()
+        var lastMedia: String? = null
+    }
+
+    val isHls: Boolean get() = synchronized(lock) { hls != null }
+
+    /** Whether this channel is being kept: always for MPEG-TS, for HLS once its playlists show plain pieces. */
+    val keeping: Boolean get() = synchronized(lock) { hls?.let { it.keepable && it.sawMedia } ?: (source != null) }
+
+    /** The HLS channel's media playlist to fetch next, by its real address. */
+    val hlsMedia: String? get() = synchronized(lock) { hls?.media }
+
     val gate = Semaphore(1)
 
     val playlist: File get() = File(dir, PLAYLIST)
@@ -68,7 +101,11 @@ internal class LiveBuffer(
     val pendingSeconds: Double get() = synchronized(lock) { segmenter.pending }
 
     /** Starts afresh for another channel: everything kept so far is deleted. */
-    fun reset(uri: Uri) = synchronized(lock) {
+    fun reset(
+        uri: Uri,
+        isHls: Boolean = false,
+    ) = synchronized(lock) {
+        hls = if (isHls) HlsState() else null
         stopRecording()
         closePiece()
         dir.listFiles()?.forEach { it.delete() }
@@ -97,6 +134,63 @@ internal class LiveBuffer(
         recording?.write(data, offset, length)
         // Pause and rewind off: the stream still passes through, for recording, but nothing is kept.
         if (keepMs > 0) segmenter.feed(data, offset, length)
+    }
+
+    /**
+     * An HLS playlist of this channel, as read from [base] (its real address). A master's qualities aren't needed: any
+     * media playlist the player opens for this channel is one of them. A master that turns up for another link is
+     * another channel: the player changed channel before it said so.
+     */
+    fun sawPlaylist(
+        link: Uri,
+        base: String,
+        text: String,
+    ) = synchronized(lock) {
+        val state = hls ?: return@synchronized
+        when (val parsed = HlsPlaylist.parse(text, base)) {
+            is HlsPlaylist.Master -> {
+                if (link != source) {
+                    reset(link, isHls = true)
+                    hls?.keepable = parsed.keepable
+                } else if (!parsed.keepable) {
+                    state.keepable = false
+                }
+            }
+
+            is HlsPlaylist.Media -> {
+                // A subtitle rendition's playlist lists text, not pieces of the picture.
+                if (parsed.subtitles) return@synchronized
+                if (!parsed.keepable) state.keepable = false
+                state.sawMedia = true
+                state.media = base
+                parsed.segments.forEach { state.listed[it.uri] = base }
+                while (state.listed.size > MAX_LISTED) state.listed.remove(state.listed.keys.first())
+            }
+
+            null -> {}
+        }
+    }
+
+    /** Whether [uri] is listed in this HLS channel's playlists. */
+    fun isPiece(uri: String): Boolean = synchronized(lock) { hls?.listed?.containsKey(uri) == true }
+
+    /**
+     * Whether a request for [uri] is one of this HLS channel's pieces not kept yet; it then counts as kept. A piece
+     * from another quality than the last one marks a jump, as a reconnect does.
+     */
+    fun takePiece(uri: String): Boolean = synchronized(lock) {
+        val state = hls ?: return@synchronized false
+        if (!state.keepable) return@synchronized false
+        val media = state.listed[uri] ?: return@synchronized false
+        if (!state.fed.add(uri)) return@synchronized false
+        while (state.fed.size > MAX_LISTED) state.fed.remove(state.fed.first())
+        if (state.lastMedia != null && state.lastMedia != media) {
+            closePiece()
+            segmenter = newSegmenter()
+            nextDiscontinuity = pieces.isNotEmpty()
+        }
+        state.lastMedia = media
+        true
     }
 
     /** Sends the channel's bytes to [r] from now on, until [stopRecording] or the channel changes. */
@@ -177,12 +271,33 @@ internal class LiveBuffer(
         private var holding = false
         private var keeping = false
 
+        /** An HLS channel's playlist being read, kept to learn its pieces ([sawPlaylist]); null otherwise. */
+        private var playlistText: java.io.ByteArrayOutputStream? = null
+        private var playlistLink: Uri? = null
+
         override fun open(dataSpec: DataSpec): Long {
             beforeOpen()
             holding = gate.tryAcquire(GATE_WAIT_S, TimeUnit.SECONDS)
-            keeping = isLiveTs(dataSpec.uri)
-            if (keeping) {
-                if (dataSpec.uri == source) reconnected() else reset(dataSpec.uri)
+            val uri = dataSpec.uri
+            playlistText = null
+            keeping = false
+            when {
+                // A piece of the HLS channel (its links end in .ts too): the whole of it, never part of one.
+                isPiece(uri.toString()) -> {
+                    keeping = dataSpec.position == 0L && takePiece(uri.toString())
+                }
+
+                isLiveTs(uri) -> {
+                    keeping = true
+                    if (uri == source) reconnected() else reset(uri)
+                }
+
+                isLiveHls(uri) -> {
+                    // The channel's own link (a new channel, or the first), or another playlist of the same channel.
+                    if (!isHls || (uri == channel && uri != source)) reset(uri, isHls = true)
+                    playlistText = java.io.ByteArrayOutputStream()
+                    playlistLink = uri
+                }
             }
             return upstream.open(dataSpec)
         }
@@ -193,12 +308,21 @@ internal class LiveBuffer(
             length: Int,
         ): Int {
             val n = upstream.read(buffer, offset, length)
-            if (keeping && n > 0) feed(buffer, offset, n)
+            if (n > 0) {
+                if (keeping) feed(buffer, offset, n)
+                playlistText?.let { if (it.size() < MAX_PLAYLIST_BYTES) it.write(buffer, offset, n) }
+            }
             return n
         }
 
         override fun close() {
             try {
+                val text = playlistText
+                val link = playlistLink
+                playlistText = null
+                if (text != null && link != null) {
+                    sawPlaylist(link, (upstream.uri ?: link).toString(), text.toString(Charsets.UTF_8.name()))
+                }
                 upstream.close()
             } finally {
                 if (holding) gate.release()
@@ -216,6 +340,20 @@ internal class LiveBuffer(
     companion object {
         const val PLAYLIST = "live.m3u8"
         const val GATE_WAIT_S = 5L
+        private const val MAX_LISTED = 64
+        private const val MAX_PLAYLIST_BYTES = 1024 * 1024
+
+        /**
+         * A live HLS link (`.m3u8`), or a portal's live channel whose command names HLS: kept piece by piece when its
+         * playlists show plain MPEG-TS pieces ([HlsPlaylist]).
+         */
+        fun isLiveHls(uri: Uri): Boolean {
+            val scheme = uri.scheme ?: return false
+            if (scheme == "stalker") return Stalker.parse(uri.toString())?.let { it.type == Stalker.LIVE && Stalker.isHls(it.cmd) } == true
+            if (scheme != "http" && scheme != "https") return false
+            if ("/timeshift/" in uri.path.orEmpty().lowercase()) return false
+            return HlsPlaylist.isPlaylist(uri.toString())
+        }
 
         /** A live MPEG-TS link (Xtream's `/live/…/id.ts`, or any `.ts`); HLS and files are left alone. */
         fun isLiveTs(uri: Uri): Boolean {

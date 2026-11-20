@@ -16,6 +16,12 @@ import androidx.room.PrimaryKey
         Index(value = ["tvgId"]),
         Index(value = ["region"]),
         Index(value = ["kind", "number"]),
+        // Movies sorted by newest, year, rating or title read straight down one of these, a page at a time, ties in
+        // the provider's order ([com.tunedplayer.app.core.TitleSort]).
+        Index(value = ["kind", "added", "sortOrder"], orders = [Index.Order.ASC, Index.Order.DESC, Index.Order.ASC]),
+        Index(value = ["kind", "year", "sortOrder"], orders = [Index.Order.ASC, Index.Order.DESC, Index.Order.ASC]),
+        Index(value = ["kind", "rating", "sortOrder"], orders = [Index.Order.ASC, Index.Order.DESC, Index.Order.ASC]),
+        Index(value = ["kind", "sortTitle", "sortOrder"]),
     ],
 )
 data class ItemEntity(
@@ -36,6 +42,17 @@ data class ItemEntity(
     val sortOrder: Int,
     /** Live channels' numbers, 1 up in playlist order, for typing a number on the remote (0 for films and episodes). */
     @ColumnInfo(defaultValue = "0") val number: Int = 0,
+    /**
+     * When the provider added it, in epoch seconds, or when Tuned first saw it when the provider doesn't say; 0 for
+     * the very first download of a playlist without times. Newest first sorts on it.
+     */
+    @ColumnInfo(defaultValue = "0") val added: Long = 0,
+    /** Release year: the provider's, else the one in the name. Films and episodes only. */
+    val year: Int? = null,
+    /** The provider's rating out of 10. Films and episodes only. */
+    val rating: Double? = null,
+    /** What A to Z sorts on ([com.tunedplayer.app.core.TitleSort.title]); an episode's is its show's. Empty for live channels. */
+    @ColumnInfo(defaultValue = "''") val sortTitle: String = "",
 )
 
 /**
@@ -101,6 +118,23 @@ data class ShowGroupEntity(
     val logo: String?,
     val episodes: Int,
     val sortOrder: Int,
+    /** The newest of the show's episodes, or the provider's "last modified" ([ShowDetailsEntity]); for newest first. */
+    @ColumnInfo(defaultValue = "0") val added: Long = 0,
+    val year: Int? = null,
+    val rating: Double? = null,
+    @ColumnInfo(defaultValue = "''") val sortTitle: String = "",
+)
+
+/**
+ * A show's year, rating and last change, as the Xtream API lists them (`get_series`). Its episodes in the M3U don't
+ * carry them, so the Shows tab's sorts read them from here ([ShowGroups]). Replaced after each refresh that reads them.
+ */
+@Entity(tableName = "show_details")
+data class ShowDetailsEntity(
+    @PrimaryKey val showKey: String,
+    val added: Long,
+    val year: Int?,
+    val rating: Double?,
 )
 
 /**

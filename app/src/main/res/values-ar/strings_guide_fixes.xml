@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="guide_fix_title">إصلاح دليل هذه القناة</string>
+    <string name="guide_fix_summary">لقناة أوقاتها غير دقيقة، أو يعرض دليلها القناة الخطأ. يبقى الإصلاح عند تحديث قائمة التشغيل.</string>
+    <string name="guide_fix_remove">التراجع عن الإصلاح</string>
+    <string name="guide_fix_offset">إزاحة الأوقات</string>
+    <string name="guide_fix_earlier">أبكر</string>
+    <string name="guide_fix_later">لاحقًا</string>
+    <string name="guide_fix_no_offset">بلا تغيير</string>
+    <string name="guide_fix_entry">إدخال الدليل</string>
+    <string name="guide_fix_entry_playlist">الخاص بقائمة التشغيل</string>
+    <string name="guide_fix_choose">اختيار آخر</string>
+    <string name="guide_fix_entry_reset">استخدام إدخال قائمة التشغيل</string>
+    <string name="guide_fix_search">البحث في قنوات الدليل</string>
+    <string name="guide_fix_no_results">لا توجد قناة دليل مطابقة. إذا لم يكتمل تنزيل الدليل بعد، حاول لاحقًا.</string>
+    <string name="settings_guide_offset">إزاحة وقت الدليل</string>
+    <string name="settings_extra_guides">روابط أدلة إضافية</string>
+    <string name="settings_extra_guides_none">لا شيء</string>
+    <plurals name="settings_extra_guides_count">
+        <item quantity="zero">%d رابط</item>
+        <item quantity="one">%d رابط</item>
+        <item quantity="two">%d رابط</item>
+        <item quantity="few">%d روابط</item>
+        <item quantity="many">%d رابط</item>
+        <item quantity="other">%d رابط</item>
+    </plurals>
+    <string name="settings_extra_guides_summary">روابط XMLTV تُقرأ بعد دليل المزوّد، لملء القنوات التي يتركها فارغة. الحفظ يعيد قراءة الدليل.</string>
+    <string name="settings_extra_guides_remove">إزالة الرابط</string>
+    <string name="settings_extra_guides_add">إضافة رابط (https://…)</string>
+</resources>

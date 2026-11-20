@@ -5,6 +5,7 @@ import com.tunedplayer.app.core.CatchUp
 import com.tunedplayer.app.core.GuideFixes
 import com.tunedplayer.app.core.GuideShift
 import com.tunedplayer.app.core.Programme
+import com.tunedplayer.app.core.ProgrammeGenre
 import com.tunedplayer.app.core.XmltvParser
 import com.tunedplayer.app.data.db.GuideChannelEntity
 import com.tunedplayer.app.data.db.GuideWriter
@@ -155,6 +156,7 @@ class GuideImport(
                 stop = p.stop + by,
                 title = p.title,
                 description = p.description,
+                genre = ProgrammeGenre.of(p.categories, p.title)?.code ?: 0,
             )
         count++
     }

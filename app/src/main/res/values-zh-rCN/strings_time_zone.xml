@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_time_zone">时区</string>
+    <string name="settings_time_zone_device">与此设备相同 (%1$s)</string>
+    <string name="events_zone">时间为 %1$s</string>
+</resources>

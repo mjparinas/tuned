@@ -14,6 +14,7 @@ Tuned is a native Android IPTV player. It signs in to an Xtream Codes-style serv
 ./gradlew :smoketest:pixel6Api34GithubDebugAndroidTest  # device smoke test on an emulator (CI runs it on every pull request)
 ./gradlew :app:testGithubDebugUnitTest -Pscreenshots  # every screen drawn on the JVM with sample data, PNGs in app/build/outputs/roborazzi
 npm ci && npm run format              # Prettier for YAML, JSON and Markdown; CI runs format:check
+node devices/a11y-check.mjs            # the website against WCAG 2.2 AA (axe, light and dark, 320px, focus); CI runs it
 ```
 
 ## Stack (Melvin, 2026-11-17: "use all modern libraries as much as possible")
@@ -28,7 +29,7 @@ Kotlin, Jetpack Compose with Material 3, Navigation Compose (type-safe routes), 
 - `:app` folders: `data/` (Room, DataStore settings, encrypted login, the Tuned account and its backup), `work/` (background refresh), `player/` (PlayerActivity), `ui/` (Compose screens, one screen and its ViewModel per file).
 - `:smoketest`: the github debug app on an emulator: sign in, play, change channel, back, and never two stream connections at once ([diagnostics](docs/decisions/diagnostics.md)).
 - `:fakeprovider`: plain Kotlin, the stand-in provider on the loopback that both device test modules use, with a generated clip and no login.
-- `devices/`: not Gradle. Tuned's server and website on Vercel: accounts with Google sign-in, device seats, Stripe, backups (Postgres on Neon, `devices/schema.sql`), the admin at `/admin` (`devices/lib/admin/`, `devices/schema-admin.sql`, tests in `devices/lib/admin/*.test.mjs`; [admin](docs/decisions/admin.md)), the Premium device list (`/devices`), the relay and page for signing in on a TV with a phone, and the public landing page and blog built from `devices/site/` by `node devices/build-site.mjs` ([website](docs/decisions/website.md)), all styled like the app from `public/site.css` ([branding](docs/decisions/branding.md#the-website-melvin-2026-11-19)); plain Node 26 (`engines` in `devices/package.json`, matching the Vercel project and CI) whose one dependency is Neon's driver, tests in `devices/lib/*.test.mjs` ([accounts](docs/decisions/accounts.md), [premium](docs/decisions/premium.md), [onboarding](docs/decisions/onboarding.md)).
+- `devices/`: not Gradle. Tuned's server and website on Vercel: accounts with Google sign-in, device seats, Stripe, backups (Postgres on Neon, `devices/schema.sql`), the admin at `/admin` (`devices/lib/admin/`, `devices/schema-admin.sql`, tests in `devices/lib/admin/*.test.mjs`; [admin](docs/decisions/admin.md)), the Premium device list (`/devices`), the account at `/account` (a side menu and an overview on a desktop, chips on a phone; [website](docs/decisions/website.md#the-account-on-a-desktop-melvin-2026-11-20)), managing the account's playlists and settings at `/account/playlists` (it edits the backup, which the app joins with its own; [accounts](docs/decisions/accounts.md#playlists-and-settings-on-the-website)), the relay and page for signing in on a TV with a phone, and the public landing page and blog built from `devices/site/` by `node devices/build-site.mjs` ([website](docs/decisions/website.md)), all styled like the app from `public/site.css` ([branding](docs/decisions/branding.md#the-website-melvin-2026-11-19)); plain Node 26 (`engines` in `devices/package.json`, matching the Vercel project and CI) whose one dependency is Neon's driver, tests in `devices/lib/*.test.mjs` ([accounts](docs/decisions/accounts.md), [premium](docs/decisions/premium.md), [onboarding](docs/decisions/onboarding.md)).
 - `:baselineprofile`: drives the release app on an emulator to write its baseline profile and measure cold start ([speed](docs/decisions/speed.md)).
 
 ## Product rules
@@ -47,7 +48,7 @@ Kotlin, Jetpack Compose with Material 3, Navigation Compose (type-safe routes), 
 
 - Formatting is ktlint's (`.editorconfig`, width 140) through Spotless, and Prettier's for YAML, JSON and Markdown. Don't hand-format.
 - detekt (`config/detekt/detekt.yml`) and Android Lint (`warningsAsErrors`) fail CI on any finding. Fix the cause; suppress only with a comment saying why.
-- Every string a person reads is in `res/values/strings.xml`; numbers that change a word use `<plurals>`.
+- Every string a person reads is in `res/values/strings.xml`; numbers that change a word use `<plurals>`. **The app is translated into 11 languages** ([languages](docs/decisions/languages.md); Melvin, 2026-11-20): a new or changed string gets its translation in every `values-xx` folder in the same pull request (Lint's `MissingTranslation` fails otherwise), "Tuned" is never translated, and the device's language picks the app's, with no picker in the app.
 - **Pop-ups are `TunedDialog`** (`ui/common/TunedDialog.kt`), never Material's `AlertDialog` directly (detekt enforces it), so every dialog keeps 24 dp off the screen's edges, stops at 560 dp and sits in the centre (Melvin, 2026-11-19: "these pop ups shouldn't take the full width"; [branding](docs/decisions/branding.md)).
 - **TV-safe** ([TV](docs/decisions/tv.md)): on a TV every screen sits inside the overscan margin (`TvSafeArea`, 48 dp sides, 27 dp top and bottom); a screen taller than 540 dp less that margin must scroll or change layout so nothing is cut off.
 - **Accessible by default** ([accessibility](docs/decisions/accessibility.md)): an icon-only button has a label, a state shown by colour is also given in words, switches are `toggleable`, tap targets are 48dp, and text containers use a minimum height, never a fixed one.
@@ -93,13 +94,14 @@ One file per topic in `docs/decisions/`, A to Z. Add a line when you add a topic
 - [Branding](docs/decisions/branding.md): name, the channel stack icon, colours, themes.
 - [Channel scan](docs/decisions/channel-scan.md): finding dead channels without blaming them for the internet or the server.
 - [Diagnostics](docs/decisions/diagnostics.md): crash reports, `launchSafely` and `attempt`, the log in Settings, keeping logins out of it.
+- [Languages](docs/decisions/languages.md): the 11 translations, the device's language picks one, what stays untranslated, right to left.
 - [Large screens](docs/decisions/large-screens.md): navigation rail, list and detail panes, the guide beside the player on tablets.
 - [Lists](docs/decisions/lists.md): Favourites and your own lists beside it, like a music app's playlists; renaming channels and changing logos.
 - [Live events](docs/decisions/events.md): today's games and fights from the guide, Tune, following and alerts.
 - [Offline downloads](docs/decisions/offline.md): saving films and episodes, one connection at a time.
 - [Onboarding and playlists](docs/decisions/onboarding.md): the welcome screen, one form per playlist kind (Xtream, link, file, MAC portal), Settings › Playlists.
 - [People](docs/decisions/people.md): actor filmography pages, oldest first, with what is in the playlist marked.
-- [Playlist and guide](docs/decisions/playlist.md): Xtream URLs, how streams are sorted, countries and adult categories across providers, refresh.
+- [Playlist and guide](docs/decisions/playlist.md): Xtream URLs, how streams are sorted, sorting Movies and Shows (newest, year, rating, A to Z), countries and adult categories across providers, refresh.
 - [Player](docs/decisions/player.md): Media3 setup, controls, captions, audio, cast, backup copies, TMDB details.
 - [Premium](docs/decisions/premium.md): the free app, the Premium unlock, prices, the GitHub and store builds, store policy.
 - [Profiles](docs/decisions/profiles.md): who's watching, kids profiles, profile PINs.
@@ -113,4 +115,4 @@ One file per topic in `docs/decisions/`, A to Z. Add a line when you add a topic
 - [TV](docs/decisions/tv.md): Android TV launcher, focus outlines, remote keys in the player.
 - [Updates](docs/decisions/updates.md): GitHub Releases updater now, Play in-app updates later, semver tags, the application id and moving from `app.tuned`.
 - [Web player](docs/decisions/web.md): paused (2026-11-19). Premium playback in a browser with no relaying, and the provider check at `/check` behind a flag.
-- [Website](docs/decisions/website.md): the landing page on www.tunedplayer.com, the features list, store badges, the blog with a post per release, sitemap and robots.
+- [Website](docs/decisions/website.md): the landing page on www.tunedplayer.com, the features list, store badges, the blog with a post per release, sitemap and robots, WCAG 2.2 AA and its check in CI.

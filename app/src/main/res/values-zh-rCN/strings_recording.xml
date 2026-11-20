@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="record_start">录制</string>
+    <string name="record_stop">停止录制</string>
+    <string name="record_started">正在录制 %1$s</string>
+    <string name="record_saved">录制内容已保存到“下载”</string>
+    <string name="record_live_only">此内容无法录制。录制仅适用于直播频道。</string>
+    <string name="record_not_casting">投放时无法录制</string>
+    <string name="record_no_space">此设备空间不足，无法录制</string>
+    <string name="record_space_ran_out">录制已停止：设备空间即将用完</string>
+    <string name="record_failed">录制已停止：无法保存</string>
+    <string name="recordings_section_size">录制内容 · %1$s</string>
+    <string name="recording_remove">删除录制内容</string>
+    <string name="recording_hours_minutes">%1$d 小时 %2$d 分钟</string>
+    <string name="recording_minutes">%1$d 分钟</string>
+</resources>

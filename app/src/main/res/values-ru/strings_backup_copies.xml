@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_backup_copies">Переключаться на резервную копию</string>
+    <string name="settings_backup_copies_summary">Когда канал перестаёт работать, включать другую его копию из вашего списка, например ESPN FHD вместо ESPN HD</string>
+    <string name="player_trying_copy">Не работает. Пробуем резервную копию (%1$d из %2$d)…</string>
+    <string name="player_copy_playing">Переключено на %1$s</string>
+    <string name="player_no_copy_works">Этот канал и его резервные копии сейчас не работают</string>
+    <string name="health_hide_failed_on_play">Скрывать каналы, которые не воспроизводятся</string>
+    <string name="health_hide_failed_on_play_summary">Если канал не загружается, хотя интернет и сервис работают (другой канал идёт нормально), он сразу скрывается. Он вернётся, когда проверка найдёт его рабочим, или через «Показать снова» ниже.</string>
+    <string name="health_reason_playback">не воспроизвёлся</string>
+</resources>

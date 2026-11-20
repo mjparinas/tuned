@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_lighter">轻量模式</string>
+    <string name="lighter_auto">自动</string>
+    <string name="lighter_auto_on">自动：此设备已开启</string>
+    <string name="lighter_on">开启：无淡入淡出或动画，图片更轻量</string>
+    <string name="lighter_off">关闭</string>
+</resources>

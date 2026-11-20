@@ -173,6 +173,15 @@ ksp {
 dependencies {
     implementation(project(":core"))
 
+    // Media3's FFmpeg decoder for Dolby and DTS sound, which Google doesn't publish: CI builds it from the matching
+    // androidx/media tag (.github/actions/ffmpeg-decoder). Media3 finds it by name, so a build without it (a local
+    // one) still builds and plays as before, just without those decoders.
+    val ffmpeg = file("libs/media3-decoder-ffmpeg.aar")
+    if (ffmpeg.exists()) {
+        implementation(files(ffmpeg))
+        implementation(libs.androidx.media3.decoder)
+    }
+
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.okhttp)

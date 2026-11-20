@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="reminder_channel">कार्यक्रम रिमाइंडर</string>
+    <string name="reminder_text">%1$s पर</string>
+    <string name="remind_me">मुझे याद दिलाएं</string>
+    <string name="reminder_cancel">रिमाइंडर रद्द करें</string>
+    <string name="settings_reminder_lead">कार्यक्रम से पहले याद दिलाएं</string>
+    <string name="settings_notifications">सूचनाएं</string>
+    <string name="settings_notifications_summary">रिमाइंडर और अलर्ट ऐप आइकन पर एक बिंदु लगाते हैं। इसे बंद करें, या आवाज़ें बदलें, Android की सेटिंग में</string>
+    <string name="playback_channel">अभी चल रहा है</string>
+    <string name="reminder_at_start">शुरू होने पर</string>
+    <plurals name="minutes_before">
+        <item quantity="one">%d मिनट पहले</item>
+        <item quantity="other">%d मिनट पहले</item>
+    </plurals>
+</resources>

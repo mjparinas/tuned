@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="tuned_account">حساب Tuned</string>
+    <string name="tuned_account_sign_in">تسجيل الدخول إلى حسابك في Tuned</string>
+    <string name="tuned_account_sign_in_summary">انسخ قوائم التشغيل والإعدادات والملفات الشخصية احتياطيًا، وأبقِ هاتفك وتلفزيونك متطابقين</string>
+    <string name="tuned_account_asking">جارٍ الحصول على رمز…</string>
+    <string name="tuned_account_enter_code">امسح الرمز، أو على أي هاتف أو كمبيوتر اذهب إلى %1$s، وسجّل الدخول بحساب Google وأدخل هذا الرمز تحت Pair a TV:</string>
+    <string name="tuned_account_open_or_enter">انقر «فتح الموقع» وسجّل الدخول بحساب Google. أو على كمبيوتر اذهب إلى %1$s، وسجّل الدخول وأدخل هذا الرمز تحت Pair a TV:</string>
+    <string name="tuned_account_waiting">في انتظار تسجيل دخولك…</string>
+    <string name="tuned_account_open_site">فتح الموقع</string>
+    <string name="tuned_account_failed">تعذّر الوصول إلى خادم Tuned. تحقّق من الاتصال وحاول مرة أخرى.</string>
+    <string name="tuned_account_try_again">إعادة المحاولة</string>
+    <string name="tuned_account_signed_in">تم تسجيل الدخول باسم %1$s.</string>
+    <string name="tuned_account_backup_now">النسخ الاحتياطي الآن</string>
+    <string name="tuned_account_never">لم يُنسخ احتياطيًا بعد</string>
+    <string name="tuned_account_last">آخر نسخ احتياطي %1$s</string>
+    <string name="tuned_account_offline">تعذّر الوصول إلى نسختك الاحتياطية. ستُعاد المحاولة.</string>
+    <string name="tuned_account_sign_out">تسجيل الخروج من حسابك في Tuned</string>
+    <string name="tuned_account_sign_out_summary">يسجّل خروج هذا الجهاز. تبقى نسختك الاحتياطية وما على هذا الجهاز.</string>
+    <string name="restore_account">الاستعادة من حسابك في Tuned</string>
+    <string name="restore_account_summary">أعِد قوائم التشغيل والملفات الشخصية والإعدادات من جهاز آخر</string>
+    <string name="restore_account_working">جارٍ استعادة قوائم التشغيل والملفات الشخصية والإعدادات…</string>
+    <string name="restore_account_nothing">لا توجد نسخة احتياطية في هذا الحساب بعد. أضف قائمة تشغيل بدلًا من ذلك؛ وبعد نسخها احتياطيًا يمكن لأجهزتك الأخرى استعادتها.</string>
+    <string name="restore_account_no_playlist">عادت إعداداتك وملفاتك الشخصية، لكن النسخة الاحتياطية لا تحوي قائمة تشغيل يمكن لهذا الجهاز فتحها. ملفات قوائم التشغيل تبقى على الجهاز الذي أُضيفت عليه. أضف قائمة تشغيل بدلًا من ذلك.</string>
+    <string name="restore_account_offline">تعذّر الوصول إلى نسختك الاحتياطية. تحقّق من الاتصال وحاول مرة أخرى.</string>
+</resources>

@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="subtitle_search">Untertitel suchen</string>
+    <string name="subtitle_search_searching">Untertitel werden gesucht…</string>
+    <string name="subtitle_search_downloading">Untertitel werden heruntergeladen…</string>
+    <string name="subtitle_search_added">Untertitel von OpenSubtitles hinzugefügt</string>
+    <string name="subtitle_search_none">Keine Untertitel für dieses Video gefunden</string>
+    <string name="subtitle_search_no_key">Die Untertitelsuche ist in diesem Build nicht verfügbar</string>
+    <string name="subtitle_search_bad_key">OpenSubtitles hat den Schlüssel dieser App abgelehnt. Versuche es nach dem nächsten Update erneut.</string>
+    <string name="subtitle_search_bad_account">OpenSubtitles hat die Anmeldung abgelehnt. Prüfe sie unter Einstellungen › Wiedergabe › Untertitel.</string>
+    <string name="subtitle_search_limit">Das heutige Download-Limit von OpenSubtitles ist erreicht. Versuche es morgen erneut.</string>
+    <string name="subtitle_search_offline">OpenSubtitles ist nicht erreichbar. Versuche es gleich noch einmal.</string>
+    <string name="subtitle_search_hearing_impaired">Für Hörgeschädigte</string>
+    <string name="subtitle_search_machine">Maschinell übersetzt</string>
+    <plurals name="subtitle_search_downloads">
+        <item quantity="one">%,d Download</item>
+        <item quantity="other">%,d Downloads</item>
+    </plurals>
+    <string name="settings_subtitles">Untertitel</string>
+    <string name="settings_auto_subtitles">Untertitel automatisch suchen</string>
+    <string name="settings_auto_subtitles_summary">Bei aktivierten Untertiteln bekommt ein Film oder eine Folge ohne Untertitel automatisch den besten Treffer</string>
+    <string name="settings_opensubtitles_account">OpenSubtitles-Konto</string>
+    <string name="settings_opensubtitles_account_summary">Optional. Mit Anmeldung steigt das tägliche Download-Limit.</string>
+    <string name="settings_opensubtitles_account_set">Angemeldet als %1$s</string>
+    <string name="settings_opensubtitles_username">Benutzername</string>
+    <string name="settings_opensubtitles_password">Passwort</string>
+    <string name="settings_opensubtitles_remove">Entfernen</string>
+</resources>

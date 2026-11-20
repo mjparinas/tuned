@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="tv_signin_card">Se connecter avec son téléphone</string>
+    <string name="tv_signin_card_summary">Scannez un code sur cette TV et remplissez-le sur votre téléphone plutôt qu\'avec la télécommande</string>
+    <string name="tv_signin_title">Se connecter avec son téléphone</string>
+    <string name="tv_signin_scan">Pointez l\'appareil photo de votre téléphone vers le code. Remplissez votre playlist là-bas, ou envoyez tout depuis Tuned sur votre téléphone.</string>
+    <string name="tv_signin_or_go">Ou allez sur %1$s et saisissez</string>
+    <string name="tv_signin_check">Numéro de vérification %1$s</string>
+    <string name="tv_signin_qr">Code QR pour se connecter avec son téléphone</string>
+    <string name="tv_signin_type_instead">Le taper plutôt sur la TV</string>
+    <string name="tv_signin_waiting">Obtention d\'un code…</string>
+    <string name="tv_signin_offline">Impossible de joindre le service de connexion de Tuned. Vérifiez la connexion internet de cette TV, ou tapez plutôt la playlist.</string>
+    <string name="tv_signin_no_backup">Cette TV est connectée à votre compte Tuned, mais le compte n\'a pas encore de sauvegarde avec une playlist. Tapez plutôt une playlist, ou sauvegardez d\'abord depuis votre téléphone.</string>
+    <string name="tv_signin_retry">Réessayer</string>
+    <string name="tv_signin_arrived">Depuis votre téléphone</string>
+    <string name="tv_signin_also">Aussi : %1$s</string>
+    <string name="tv_signin_settings">paramètres</string>
+    <plurals name="tv_signin_favourites">
+        <item quantity="one">%d favori</item>
+        <item quantity="many">%d favoris</item>
+        <item quantity="other">%d favoris</item>
+    </plurals>
+    <plurals name="tv_signin_lists">
+        <item quantity="one">%d liste</item>
+        <item quantity="many">%d listes</item>
+        <item quantity="other">%d listes</item>
+    </plurals>
+    <plurals name="tv_signin_watch_later">
+        <item quantity="one">%d dans À regarder plus tard</item>
+        <item quantity="many">%d dans À regarder plus tard</item>
+        <item quantity="other">%d dans À regarder plus tard</item>
+    </plurals>
+    <string name="tv_signin_only_playlists">Cette TV garde ses propres paramètres et favoris ; seules les playlists sont ajoutées.</string>
+    <string name="tv_signin_only_first">Sans Premium, cette TV garde la première playlist.</string>
+    <string name="tv_signin_use">L\'utiliser</string>
+    <string name="tv_signin_not_mine">Ce n\'est pas à moi</string>
+    <string name="tv_signin_saving">Configuration…</string>
+    <string name="send_tv_row">Envoyer à une TV</string>
+    <string name="send_tv_row_summary">Connecter une TV avec les playlists et paramètres de ce téléphone</string>
+    <string name="send_tv_title">Envoyer à une TV</string>
+    <string name="send_tv_enter">Sur la TV, ouvrez Tuned et choisissez Se connecter avec son téléphone. Puis saisissez le code affiché, ou scannez-le avec l\'appareil photo.</string>
+    <string name="send_tv_code">Code affiché sur la TV</string>
+    <string name="send_tv_next">Suivant</string>
+    <string name="send_tv_bad_code">Cela ne ressemble pas au code de la TV. Il compte huit lettres et chiffres.</string>
+    <string name="send_tv_not_found">Aucune TV n\'affiche ce code. Vérifiez-le, ou attendez que la TV en affiche un nouveau.</string>
+    <string name="send_tv_confirm_digits">Vérifiez que la TV affiche ce numéro :</string>
+    <string name="send_tv_matches">Il correspond</string>
+    <string name="send_tv_what">Cela envoie les playlists, paramètres, profils, favoris et listes de ce téléphone, comme la synchronisation entre appareils. C\'est verrouillé pour que seule cette TV puisse le lire.</string>
+    <plurals name="send_tv_playlists">
+        <item quantity="one">%d playlist</item>
+        <item quantity="many">%d playlists</item>
+        <item quantity="other">%d playlists</item>
+    </plurals>
+    <string name="send_tv_send">Envoyer à la TV</string>
+    <string name="send_tv_sending">Envoi…</string>
+    <string name="send_tv_sent">Envoyé. Appuyez sur L\'utiliser sur la TV.</string>
+    <string name="send_tv_gone">Ce code a expiré. Scannez le nouveau sur la TV.</string>
+    <string name="send_tv_already">Quelque chose a déjà été envoyé à cette TV. Scannez le nouveau code sur la TV pour envoyer à nouveau.</string>
+    <string name="send_tv_too_many">Trop d\'essais. Réessayez dans une heure.</string>
+    <string name="send_tv_unreachable">Impossible de joindre le service de connexion de Tuned. Vérifiez votre connexion et réessayez.</string>
+    <string name="send_tv_too_big">Il y a trop à envoyer. Retirez quelques favoris ou éléments À regarder plus tard et réessayez.</string>
+    <string name="send_tv_nothing">Ajoutez d\'abord une playlist sur ce téléphone, puis envoyez-la à la TV.</string>
+</resources>

@@ -11,6 +11,7 @@ import androidx.work.ForegroundInfo
 import androidx.work.WorkerParameters
 import com.tunedplayer.app.R
 import com.tunedplayer.app.container
+import com.tunedplayer.app.core.Stalker
 import com.tunedplayer.app.core.StreamLink
 import com.tunedplayer.app.data.Downloader
 import com.tunedplayer.app.data.db.DownloadEntity
@@ -52,15 +53,18 @@ class OfflineWorker(
         while (true) {
             // Something started playing (the player, or a TV) between being queued and now: stop; the queue starts
             // again when it ends.
-            if (container.watching()) return Result.success()
+            if (container.watching() || container.recordingOpen.value) return Result.success()
             val row = dao.next() ?: return Result.success()
             // Its page first (details, poster, cast photos), so it looks the same offline; a few small requests.
             attempt(TAG, "Couldn't save the artwork for ${row.name}") { container.savedArtwork.keep(row.itemId) }
             try {
                 // A user agent the playlist asks for wins over the app's.
                 val link = StreamLink.split(row.url)
-                val agent = link.headers[StreamLink.USER_AGENT] ?: ua
-                downloader.download(link.url, File(row.path), agent, keepPart = true) { bytes, total -> report(row, bytes, total) }
+                // A portal's film or episode is asked for its stream first, as a box would, with the box's user agent.
+                val portal = Stalker.isLink(link.url)
+                val url = if (portal) container.stalker.resolve(link.url) else link.url
+                val agent = if (portal) Stalker.USER_AGENT else link.headers[StreamLink.USER_AGENT] ?: ua
+                downloader.download(url, File(row.path), agent, keepPart = true) { bytes, total -> report(row, bytes, total) }
                 val size = File(row.path).length()
                 dao.progress(row.itemId, size, size)
                 dao.state(row.itemId, DownloadEntity.DONE)
