@@ -17,11 +17,12 @@ class PosterArtTest {
     }
 
     @Test
-    fun `a show's card fills its tile even with a wide episode still`() {
-        assertTrue(PosterArt.fills(400f, 225f, show = true))
-        assertTrue(PosterArt.fills(300f, 300f, show = true))
-        assertFalse(PosterArt.fills(400f, 225f, show = false))
-        assertTrue(PosterArt.fills(500f, 750f, show = false))
+    fun `a show's wide picture is shown whole over a backdrop, never cropped`() {
+        assertEquals(PosterArt.Fit.WHOLE_ON_BACKDROP, PosterArt.fit(400f, 225f, show = true))
+        assertEquals(PosterArt.Fit.WHOLE_ON_BACKDROP, PosterArt.fit(300f, 300f, show = true))
+        assertEquals(PosterArt.Fit.CROP, PosterArt.fit(500f, 750f, show = true))
+        assertEquals(PosterArt.Fit.LOGO, PosterArt.fit(400f, 225f, show = false))
+        assertEquals(PosterArt.Fit.CROP, PosterArt.fit(500f, 750f, show = false))
     }
 
     @Test

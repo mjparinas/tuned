@@ -29,6 +29,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
@@ -48,8 +49,9 @@ import com.tunedplayer.app.ui.common.focusRing
 import com.tunedplayer.app.ui.common.skeleton
 
 /**
- * Crops a real poster to fill the tile, but shows a channel logo whole, centred and never blown up past the tile, so a
- * small square logo stays sharp instead of being cropped and enlarged ([PosterArt]). A show's card always fills.
+ * Crops a real poster to fill the tile. A channel logo is shown whole, centred and never blown up past the tile, so a
+ * small square logo stays sharp; a show's wide picture is shown whole across the tile, over its blurred backdrop
+ * ([PosterBackdrop]), so title text on it is never zoomed or cut off ([PosterArt.fit]).
  */
 private class PosterScale(
     private val show: Boolean,
@@ -57,16 +59,46 @@ private class PosterScale(
     override fun computeScaleFactor(
         srcSize: Size,
         dstSize: Size,
-    ): ScaleFactor = if (PosterArt.fills(srcSize.width, srcSize.height, show)) {
-        ContentScale.Crop.computeScaleFactor(srcSize, dstSize)
-    } else {
-        val fit = ContentScale.Fit.computeScaleFactor(srcSize, dstSize).scaleX * PosterArt.LOGO_FILL
-        ScaleFactor(fit, fit)
+    ): ScaleFactor = when (PosterArt.fit(srcSize.width, srcSize.height, show)) {
+        PosterArt.Fit.CROP -> {
+            ContentScale.Crop.computeScaleFactor(srcSize, dstSize)
+        }
+
+        PosterArt.Fit.WHOLE_ON_BACKDROP -> {
+            ContentScale.Fit.computeScaleFactor(srcSize, dstSize)
+        }
+
+        PosterArt.Fit.LOGO -> {
+            val fit = ContentScale.Fit.computeScaleFactor(srcSize, dstSize).scaleX * PosterArt.LOGO_FILL
+            ScaleFactor(fit, fit)
+        }
     }
 }
 
 private val FilmScale = PosterScale(show = false)
 private val ShowScale = PosterScale(show = true)
+
+/**
+ * A show's wide picture again, cropped to fill the tall tile behind the whole one, blurred and dimmed so it reads as
+ * a backdrop. The blur needs Android 12; older devices get the dimmed crop alone. Coil's memory cache serves it, so it
+ * costs no second download.
+ */
+@Composable
+private fun PosterBackdrop(
+    image: String?,
+    modifier: Modifier,
+) {
+    AsyncImage(
+        model = image,
+        contentDescription = null,
+        contentScale = ContentScale.Crop,
+        alpha = BACKDROP_ALPHA,
+        modifier = modifier.blur(BACKDROP_BLUR),
+    )
+}
+
+private const val BACKDROP_ALPHA = 0.45f
+private val BACKDROP_BLUR = 16.dp
 
 /** A show card's picture and rating, from one TMDB lookup ([rememberShowArt]). */
 @Immutable
@@ -114,7 +146,7 @@ fun Poster(
     watched: Boolean = false,
     /** More long-press menu entries: label and action. */
     extraMenu: List<Pair<String, () -> Unit>> = emptyList(),
-    /** A show's card: its picture always fills the tile, even a wide episode still ([PosterArt.fills]). */
+    /** A show's card: a wide picture shows whole over its blurred backdrop, never cropped ([PosterArt.fit]). */
     show: Boolean = false,
 ) {
     var menu by remember { mutableStateOf(false) }
@@ -130,17 +162,26 @@ fun Poster(
             ),
     ) {
         Box {
-            AsyncImage(
-                model = image,
-                contentDescription = null,
-                contentScale = if (show) ShowScale else FilmScale,
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .aspectRatio(2f / 3f)
-                        .clip(RoundedCornerShape(10.dp))
-                        .background(MaterialTheme.colorScheme.surfaceContainerHigh),
-            )
+            val tile =
+                Modifier
+                    .fillMaxWidth()
+                    .aspectRatio(2f / 3f)
+                    .clip(RoundedCornerShape(10.dp))
+            // Known once the picture loads: a show's wide picture gets its backdrop behind it.
+            var backdrop by remember(image, show) { mutableStateOf(false) }
+            Box(tile.background(MaterialTheme.colorScheme.surfaceContainerHigh)) {
+                if (backdrop) PosterBackdrop(image, Modifier.matchParentSize())
+                AsyncImage(
+                    model = image,
+                    contentDescription = null,
+                    contentScale = if (show) ShowScale else FilmScale,
+                    onSuccess = { loaded ->
+                        val size = loaded.painter.intrinsicSize
+                        backdrop = PosterArt.fit(size.width, size.height, show) == PosterArt.Fit.WHOLE_ON_BACKDROP
+                    },
+                    modifier = Modifier.matchParentSize(),
+                )
+            }
             rating?.let { RatingBadge(it, Modifier.align(Alignment.BottomEnd).padding(6.dp)) }
             if (favourite) {
                 Icon(

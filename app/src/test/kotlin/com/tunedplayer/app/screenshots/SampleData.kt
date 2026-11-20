@@ -147,8 +147,9 @@ object SampleData {
                 DownloadEntity(item.id, item.name, item.url, "/offline/${item.id}.mp4", size, size, DownloadEntity.DONE, now - i),
             )
         }
-        // Every show has its poster, as a TMDB match gives one, so no sort puts a wide episode still on a tall card.
-        shows.map { it.first }.forEachIndexed { i, show ->
+        // Every show but one has its TMDB poster. Kitchen Rules has none, so its card shows the provider's wide still
+        // whole over a blurred backdrop ([PosterArt.fit]).
+        shows.map { it.first }.filter { it != NO_POSTER }.forEachIndexed { i, show ->
             db.metadata().upsert(
                 MetadataEntity(
                     cacheKey = "tv|$show",
@@ -172,6 +173,7 @@ object SampleData {
     }
 
     const val MOVIE_IDS = 1_000L
+    const val NO_POSTER = "Kitchen Rules"
     const val SHOW_IDS = 2_000L
 
     val channels =
