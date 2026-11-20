@@ -117,7 +117,6 @@ fun PlaylistsRow(
 ) {
     val saved by vm.saved.collectAsStateWithLifecycle()
     val current by vm.current.collectAsStateWithLifecycle()
-    val switching by vm.switching.collectAsStateWithLifecycle()
     LaunchedEffect(Unit) { vm.reload() }
     SettingRow(
         stringResource(R.string.playlists),
@@ -146,6 +145,7 @@ fun PlaylistsScreen(
 ) {
     val saved by vm.saved.collectAsStateWithLifecycle()
     val current by vm.current.collectAsStateWithLifecycle()
+    val switching by vm.switching.collectAsStateWithLifecycle()
     var renaming by remember { mutableStateOf<Credentials?>(null) }
     var removing by remember { mutableStateOf<Credentials?>(null) }
     LaunchedEffect(Unit) { vm.reload() }

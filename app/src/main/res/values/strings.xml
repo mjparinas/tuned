@@ -74,7 +74,6 @@
     <string name="settings_sign_out_delete">Delete</string>
     <string name="settings_sign_out_keep">Keep</string>
     <string name="settings_signing_out">Signing out…</string>
-    <string name="playlists_switching">Switching playlist…</string>
 
     <string name="settings_countries">Countries and languages</string>
     <string name="settings_countries_none_hidden">Showing every country</string>
@@ -169,8 +168,6 @@
     <string name="settings_guide_days">Guide days to keep</string>
     <string name="settings_unmetered">Wi-Fi only</string>
     <string name="settings_unmetered_summary">Refresh only on unmetered networks</string>
-    <string name="settings_playlist_copies">Instant playlist switching</string>
-    <string name="settings_playlist_copies_summary">Keep the last 3 playlists on this device so switching back shows them at once</string>
     <string name="refresh_off">Off</string>
 
     <string name="settings_playback">Playback</string>
