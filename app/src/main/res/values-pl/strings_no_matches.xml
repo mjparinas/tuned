@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="no_matches">Nic tutaj nie pasuje do „%1$s”</string>
+    <string name="no_matches_search_everything">Szukaj wszędzie</string>
+</resources>

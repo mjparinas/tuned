@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_time_zone">Saat dilimi</string>
+    <string name="settings_time_zone_device">Bu cihazla aynı (%1$s)</string>
+    <string name="events_zone">Saatler %1$s diliminde</string>
+</resources>

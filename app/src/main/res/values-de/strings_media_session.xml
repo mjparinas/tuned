@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_media_buttons">Medientasten</string>
+    <string name="settings_media_buttons_summary">Kopfhörer, Bluetooth, die Wiedergabetaste der TV-Fernbedienung und der Assistant können pausieren, abspielen und umschalten</string>
+</resources>

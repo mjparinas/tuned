@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="person_film">Film</string>
+    <string name="person_show">Dizi</string>
+    <string name="person_upcoming">Yakında</string>
+    <string name="person_as">%1$s rolünde</string>
+    <string name="person_in_your_playlist">Listende</string>
+    <string name="person_unavailable">Bu sayfa yüklenemedi. Bağlantını kontrol edip tekrar dene.</string>
+    <string name="person_no_credits">TMDB bu kişi için henüz film veya dizi listelemiyor.</string>
+    <string name="person_none_in_playlist">Bunların hiçbiri listende yok.</string>
+    <string name="person_open">%1$s filmlerini ve dizilerini aç</string>
+    <plurals name="person_in_playlist">
+        <item quantity="one">Listende %1$d tane</item>
+        <item quantity="other">Listende %1$d tane</item>
+    </plurals>
+    <plurals name="person_episodes">
+        <item quantity="one">%1$d bölüm</item>
+        <item quantity="other">%1$d bölüm</item>
+    </plurals>
+</resources>

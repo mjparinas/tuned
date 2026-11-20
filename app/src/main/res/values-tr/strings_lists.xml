@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="list_add">Listeye ekle</string>
+    <string name="list_add_title">Listeye ekle</string>
+    <string name="list_new">Yeni liste</string>
+    <string name="list_name">Ad</string>
+    <string name="list_save">Kaydet</string>
+    <string name="list_done">Bitti</string>
+    <string name="list_rename">Listeyi yeniden adlandır</string>
+    <string name="list_delete">Listeyi sil</string>
+    <string name="list_delete_title">“%s” silinsin mi?</string>
+    <string name="list_delete_body">Liste silinir ama içindeki kanallar ve filmler yerinde kalır.</string>
+</resources>

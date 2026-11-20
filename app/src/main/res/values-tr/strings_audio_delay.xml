@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_audio_delay">Ses gecikmesi</string>
+    <string name="settings_audio_delay_off">Görüntüyle senkron</string>
+    <string name="settings_audio_delay_earlier">Ses %d ms erken</string>
+    <string name="settings_audio_delay_later">Ses %d ms geç</string>
+</resources>

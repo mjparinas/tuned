@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_live_rewind">Pausar y rebobinar la TV en directo</string>
+    <string name="settings_live_rewind_off">Desactivado</string>
+    <plurals name="settings_live_rewind_minutes">
+        <item quantity="one">Guardar el último %1$d minuto</item>
+        <item quantity="many">Guardar los últimos %1$d minutos</item>
+        <item quantity="other">Guardar los últimos %1$d minutos</item>
+    </plurals>
+</resources>

@@ -49,6 +49,11 @@ internal fun GuidePage(
     ) { on ->
         vm.update { it.copy(unmeteredOnly = on) }
     }
+    SwitchRow(
+        stringResource(R.string.settings_playlist_copies),
+        settings.keepPlaylistCopies,
+        stringResource(R.string.settings_playlist_copies_summary),
+    ) { on -> vm.keepPlaylistCopies(on) }
     SectionHeader(stringResource(R.string.settings_header_guide))
     ChoiceRow(
         stringResource(R.string.settings_guide_days),

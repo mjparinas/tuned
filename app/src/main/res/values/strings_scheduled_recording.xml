@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- The guide's Record button beside the reminder bell. -->
+    <string name="recording_set">Record</string>
+    <string name="recording_cancel">Cancel recording</string>
+    <string name="recording_scheduled">Will record %1$s</string>
+    <string name="recording_clash">Another recording is set for then. Tuned records one at a time.</string>
+    <!-- The notification while a scheduled recording runs. -->
+    <string name="recording_running">Recording %1$s</string>
+    <string name="settings_record_padding">Start recordings early and end late</string>
+    <string name="settings_record_padding_off">On time</string>
+    <plurals name="settings_record_padding_minutes">
+        <item quantity="one">%1$d minute each side</item>
+        <item quantity="other">%1$d minutes each side</item>
+    </plurals>
+</resources>

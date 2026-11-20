@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="reminder_channel">Rappels de programmes</string>
+    <string name="reminder_text">Sur %1$s</string>
+    <string name="remind_me">Me le rappeler</string>
+    <string name="reminder_cancel">Annuler le rappel</string>
+    <string name="settings_reminder_lead">Me prévenir avant un programme</string>
+    <string name="settings_notifications">Notifications</string>
+    <string name="settings_notifications_summary">Les rappels et alertes ajoutent un point sur l\'icône de l\'appli. Désactivez-le, ou changez les sons, dans les paramètres d\'Android</string>
+    <string name="playback_channel">Lecture en cours</string>
+    <string name="reminder_at_start">Au début</string>
+    <plurals name="minutes_before">
+        <item quantity="one">%d minute avant</item>
+        <item quantity="many">%d minutes avant</item>
+        <item quantity="other">%d minutes avant</item>
+    </plurals>
+</resources>

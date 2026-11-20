@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="events_title">Eventos en directo</string>
+    <string name="events_follow_hint">Sigue a un equipo, liga o luchador</string>
+    <string name="events_follow">Seguir</string>
+    <string name="events_unfollow">Dejar de seguir a %1$s</string>
+    <string name="events_following">Siguiendo</string>
+    <string name="events_on_now">En emisión</string>
+    <string name="events_later">Más tarde hoy</string>
+    <string name="events_tomorrow">Mañana</string>
+    <string name="events_live">En directo</string>
+    <string name="events_empty">No hay partidos, combates ni pay-per-view en la guía para el próximo día y medio. Actualiza la guía en Ajustes si esto parece un error.</string>
+    <plurals name="events_channels">
+        <item quantity="one">En %d canal</item>
+        <item quantity="many">En %d canales</item>
+        <item quantity="other">En %d canales</item>
+    </plurals>
+    <string name="reminder_event_text">Empieza pronto. Toca para sintonizar.</string>
+</resources>

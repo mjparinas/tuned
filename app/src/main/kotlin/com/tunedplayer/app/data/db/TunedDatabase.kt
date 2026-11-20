@@ -31,9 +31,10 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         ListItemEntity::class,
         ChannelEditEntity::class,
         ShowCoverEntity::class,
+        CatchUpItemEntity::class,
         ShowDetailsEntity::class,
     ],
-    version = 21,
+    version = 22,
     exportSchema = true,
 )
 abstract class TunedDatabase : RoomDatabase() {
@@ -100,6 +101,7 @@ abstract class TunedDatabase : RoomDatabase() {
                 MIGRATION_18_19,
                 MIGRATION_19_20,
                 MIGRATION_20_21,
+                MIGRATION_21_22,
             ).addCallback(FirstProfile)
             // Going back to an older release (installing an older APK) can't keep a newer database: start it afresh
             // rather than crash on every launch. Upgrades always migrate, above.
@@ -333,12 +335,24 @@ abstract class TunedDatabase : RoomDatabase() {
             }
 
         /**
+         * Live TV's newer filters: what kind each programme is (On now), and the channels that keep recordings by item
+         * (Catch-up), filled by the next refresh.
+         */
+        val MIGRATION_20_21 =
+            object : Migration(20, 21) {
+                override fun migrate(db: SupportSQLiteDatabase) {
+                    db.execSQL("ALTER TABLE `programmes` ADD COLUMN `genre` INTEGER NOT NULL DEFAULT 0")
+                    db.execSQL("CREATE TABLE IF NOT EXISTS `catchup_items` (`itemId` INTEGER NOT NULL, PRIMARY KEY(`itemId`))")
+                }
+            }
+
+        /**
          * Adds what Movies and Shows sort on ([ItemEntity.added], year, rating and title) and the shows' own details
          * ([ShowDetailsEntity]). Titles and years are filled in the background from the names ([SortFields]); times
          * and ratings come with the next refresh, which a new version always reads in full.
          */
-        val MIGRATION_20_21 =
-            object : Migration(20, 21) {
+        val MIGRATION_21_22 =
+            object : Migration(21, 22) {
                 override fun migrate(db: SupportSQLiteDatabase) {
                     for (table in listOf("items", "show_groups")) {
                         db.execSQL("ALTER TABLE `$table` ADD COLUMN `added` INTEGER NOT NULL DEFAULT 0")

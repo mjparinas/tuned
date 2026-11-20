@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_hidden_groups">已隐藏的分组</string>
+    <string name="settings_hidden_groups_none">没有隐藏分组</string>
+    <plurals name="groups_hidden">
+        <item quantity="other">已隐藏 %1$d 个分组</item>
+    </plurals>
+    <string name="hidden_groups_help">关闭某个分组，即可在其所在栏目、搜索和换台中隐藏它。要从主屏幕隐藏，请选择它的标签并点按眼睛图标。</string>
+    <string name="group_hide">隐藏此分组</string>
+    <string name="group_hidden">已隐藏 %1$s</string>
+    <string name="group_hidden_undo">撤销</string>
+    <string name="group_pin">置顶</string>
+    <string name="group_unpin">取消置顶</string>
+    <string name="group_pinned">已置顶</string>
+    <string name="settings_app_shortcuts">应用图标快捷方式</string>
+    <string name="settings_app_shortcuts_summary">长按 Tuned 图标可快速进入搜索、直播赛事和上次观看的频道</string>
+    <string name="shortcut_search">搜索</string>
+    <string name="shortcut_last_channel">观看 %1$s</string>
+</resources>

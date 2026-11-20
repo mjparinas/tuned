@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_live_rewind">Live-TV pausieren und zurückspulen</string>
+    <string name="settings_live_rewind_off">Aus</string>
+    <plurals name="settings_live_rewind_minutes">
+        <item quantity="one">Die letzte %1$d Minute behalten</item>
+        <item quantity="other">Die letzten %1$d Minuten behalten</item>
+    </plurals>
+</resources>

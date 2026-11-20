@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_time_zone">Strefa czasowa</string>
+    <string name="settings_time_zone_device">Jak na tym urządzeniu (%1$s)</string>
+    <string name="events_zone">Godziny: %1$s</string>
+</resources>

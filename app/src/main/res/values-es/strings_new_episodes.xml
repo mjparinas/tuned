@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="episode_new">Nuevo</string>
+    <plurals name="new_episodes">
+        <item quantity="one">%1$d nuevo</item>
+        <item quantity="many">%1$d nuevos</item>
+        <item quantity="other">%1$d nuevos</item>
+    </plurals>
+</resources>

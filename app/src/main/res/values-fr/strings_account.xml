@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="account_status">Abonnement</string>
+    <string name="account_status_unknown">Connecté</string>
+    <string name="account_trial">Essai</string>
+    <string name="account_no_end">Sans date de fin</string>
+    <string name="account_expires_on">Se termine le %1$s</string>
+    <string name="account_expired_on">Terminé le %1$s</string>
+    <plurals name="account_expires_soon">
+        <item quantity="one">Se termine le %1$s, dans %2$d jour</item>
+        <item quantity="many">Se termine le %1$s, dans %2$d jours</item>
+        <item quantity="other">Se termine le %1$s, dans %2$d jours</item>
+    </plurals>
+    <string name="account_connections_title">Connexions utilisées</string>
+    <string name="account_connections">%1$d sur %2$d</string>
+    <string name="account_connections_full">%1$d sur %2$d : toutes utilisées, sans doute sur un autre appareil</string>
+    <string name="account_full_wait">Toutes vos connexions sont utilisées (%1$d sur %2$d), sans doute sur un autre appareil. En ouvrir une autre pourrait dépasser la limite de votre compte. Appuyez sur lecture pour démarrer quand même.</string>
+</resources>

@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="events_title">Canlı etkinlikler</string>
+    <string name="events_follow_hint">Bir takımı, ligi veya dövüşçüyü takip et</string>
+    <string name="events_follow">Takip et</string>
+    <string name="events_unfollow">%1$s takibini bırak</string>
+    <string name="events_following">Takip ediliyor</string>
+    <string name="events_on_now">Şimdi yayında</string>
+    <string name="events_later">Bugün daha sonra</string>
+    <string name="events_tomorrow">Yarın</string>
+    <string name="events_live">Canlı</string>
+    <string name="events_empty">Rehberde önümüzdeki bir buçuk gün için maç, dövüş veya pay-per-view yok. Bu yanlış görünüyorsa rehberi Ayarlar\'dan yenile.</string>
+    <plurals name="events_channels">
+        <item quantity="one">%d kanalda</item>
+        <item quantity="other">%d kanalda</item>
+    </plurals>
+    <string name="reminder_event_text">Birazdan başlıyor. İzlemek için dokun.</string>
+</resources>

@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_tunneled_playback">Lecture en tunnel</string>
+    <string name="settings_tunneled_playback_summary">Laisse le matériel vidéo de la TV garder l\'image et le son ensemble, ce qui peut rendre la 4K et le sport plus fluides. Essayez-la si la lecture saccade. Le décalage du son ne s\'applique pas quand elle est activée.</string>
+</resources>

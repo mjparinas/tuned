@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_section_account">Compte</string>
+    <string name="settings_section_watching">Visionnage</string>
+    <string name="settings_section_app">Appli</string>
+    <string name="settings_version_title">Version</string>
+    <string name="whats_new">Nouveautés</string>
+    <string name="whats_new_kicker">Tuned · Mise à jour</string>
+    <string name="whats_new_title">Nouveautés de la %1$s</string>
+    <plurals name="whats_new_count_new">
+        <item quantity="one">%d nouveauté</item>
+        <item quantity="many">%d nouveautés</item>
+        <item quantity="other">%d nouveautés</item>
+    </plurals>
+    <plurals name="whats_new_count_improved">
+        <item quantity="one">%d amélioration</item>
+        <item quantity="many">%d améliorations</item>
+        <item quantity="other">%d améliorations</item>
+    </plurals>
+    <plurals name="whats_new_count_fixed">
+        <item quantity="one">%d correction</item>
+        <item quantity="many">%d corrections</item>
+        <item quantity="other">%d corrections</item>
+    </plurals>
+    <string name="whats_new_kind_new">Nouveau</string>
+    <string name="whats_new_kind_improved">Amélioré</string>
+    <string name="whats_new_kind_fixed">Corrigé</string>
+    <string name="whats_new_loading">Chargement des changements de cette version…</string>
+    <string name="whats_new_failed">Impossible de charger les changements de cette version. Vérifiez la connexion et réessayez.</string>
+    <string name="whats_new_empty">Cette version n\'a aucun changement à lister.</string>
+    <string name="whats_new_retry">Réessayer</string>
+    <string name="whats_new_done">OK</string>
+</resources>

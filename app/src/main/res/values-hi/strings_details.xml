@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="details_trailer">ट्रेलर</string>
+    <string name="details_play">चलाएं</string>
+    <string name="details_resume">जारी रखें</string>
+    <string name="details_cast">कलाकार</string>
+    <string name="play_now">अभी चलाएं</string>
+    <string name="details_source">विवरण The Movie Database (TMDB) से</string>
+    <string name="details_no_key">इस बिल्ड में TMDB कुंजी नहीं है, इसलिए रेटिंग, सारांश और ट्रेलर बंद हैं।</string>
+</resources>

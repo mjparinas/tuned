@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_media_buttons">Boutons multimédias</string>
+    <string name="settings_media_buttons_summary">Les écouteurs, le Bluetooth, la touche lecture de la télécommande et l\'Assistant peuvent mettre en pause, lire et changer de chaîne</string>
+</resources>

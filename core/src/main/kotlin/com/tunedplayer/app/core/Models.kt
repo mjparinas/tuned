@@ -50,4 +50,6 @@ data class Programme(
     val stop: Long,
     val title: String,
     val description: String?,
+    /** The guide's `<category>` tags ("Sports", "Movie"), for [ProgrammeGenre]. */
+    val categories: List<String> = emptyList(),
 )

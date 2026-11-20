@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="offline_banner">你处于离线状态。已保存的电影和剧集仍可播放。</string>
+    <string name="offline_banner_downloads">下载</string>
+    <string name="offline_cant_play">你处于离线状态。只能播放已下载的电影和剧集。</string>
+</resources>

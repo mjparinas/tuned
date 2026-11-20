@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="widget_favourites">收藏频道</string>
+    <string name="widget_favourites_description">你收藏频道的台标和正在播出的节目。点按即可观看。</string>
+    <string name="widget_empty_title">还没有收藏</string>
+    <string name="widget_empty">点按频道上的爱心，它就会显示在这里。</string>
+    <string name="widget_add_favourites">添加收藏</string>
+    <string name="widget_signed_out">登录 Tuned</string>
+    <string name="widget_signed_out_body">添加播放列表后，你的收藏频道会显示在这里。</string>
+    <string name="widget_open_tuned">打开 Tuned</string>
+    <string name="widget_watch">观看 %1$s</string>
+    <string name="widget_watch_on_now">观看 %1$s。正在播出：%2$s</string>
+    <string name="widget_continue">继续观看</string>
+    <string name="widget_continue_description">你已开始观看的电影和剧集，以及剩余时间。点按即可从上次停止处继续。</string>
+    <string name="widget_continue_empty_title">没有观看中的内容</string>
+    <string name="widget_continue_empty">你开始观看的电影和剧集会显示在这里。</string>
+    <string name="widget_continue_signed_out_body">添加播放列表后，你开始观看的电影和剧集会显示在这里。</string>
+    <string name="widget_episode_number">S%1$d E%2$d</string>
+    <string name="widget_resume">继续观看 %1$s。%2$s</string>
+    <plurals name="widget_minutes_left">
+        <item quantity="other">剩余 %d 分钟</item>
+    </plurals>
+    <string name="tile_last_channel">上一频道</string>
+</resources>

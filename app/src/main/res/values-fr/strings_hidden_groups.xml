@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_hidden_groups">Groupes masqués</string>
+    <string name="settings_hidden_groups_none">Aucun groupe masqué</string>
+    <plurals name="groups_hidden">
+        <item quantity="one">%1$d groupe masqué</item>
+        <item quantity="many">%1$d groupes masqués</item>
+        <item quantity="other">%1$d groupes masqués</item>
+    </plurals>
+    <string name="hidden_groups_help">Désactivez un groupe pour le masquer de sa section, de la recherche et du zapping. Pour le masquer de l\'écran d\'accueil, choisissez sa puce et touchez l\'œil.</string>
+    <string name="group_hide">Masquer ce groupe</string>
+    <string name="group_hidden">%1$s masqué</string>
+    <string name="group_hidden_undo">Annuler</string>
+    <string name="group_pin">Épingler en tête</string>
+    <string name="group_unpin">Désépingler</string>
+    <string name="group_pinned">Épinglé</string>
+    <string name="settings_app_shortcuts">Raccourcis sur l\'icône</string>
+    <string name="settings_app_shortcuts_summary">Appuyez longuement sur l\'icône de Tuned pour Rechercher, Événements en direct et la dernière chaîne regardée</string>
+    <string name="shortcut_search">Rechercher</string>
+    <string name="shortcut_last_channel">Regarder %1$s</string>
+</resources>

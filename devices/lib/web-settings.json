@@ -1,0 +1,144 @@
+[
+  {
+    "group": "Look",
+    "settings": [
+      {
+        "key": "theme",
+        "type": "choice",
+        "label": "Theme",
+        "default": "SYSTEM",
+        "options": [
+          ["SYSTEM", "System default"],
+          ["LIGHT", "Light"],
+          ["DARK", "Dark"]
+        ]
+      },
+      {
+        "key": "accent",
+        "type": "choice",
+        "label": "Accent colour",
+        "default": "VIOLET",
+        "options": [
+          ["VIOLET", "Violet"],
+          ["BLUE", "Blue"],
+          ["TEAL", "Teal"],
+          ["GREEN", "Green"],
+          ["ORANGE", "Orange"],
+          ["PINK", "Pink"],
+          ["RED", "Red"]
+        ]
+      },
+      { "key": "pure_black", "type": "bool", "label": "Pure black in dark mode, for OLED screens", "default": false }
+    ]
+  },
+  {
+    "group": "Lists",
+    "settings": [
+      {
+        "key": "start_tab",
+        "type": "choice",
+        "label": "Open on",
+        "default": "LIVE",
+        "options": [
+          ["LIVE", "Live TV"],
+          ["MOVIES", "Movies"],
+          ["SHOWS", "Shows"],
+          ["LAST", "Where I left off"]
+        ]
+      },
+      { "key": "start_on_last_channel", "type": "bool", "label": "Start on the last channel", "default": false },
+      { "key": "show_guide_in_list", "type": "bool", "label": "Show what's on in the channel list", "default": true },
+      { "key": "live_grid", "type": "bool", "label": "Live TV as a grid guide", "default": false },
+      { "key": "channel_numbers", "type": "bool", "label": "Channel numbers", "default": true },
+      { "key": "hide_dead_channels", "type": "bool", "label": "Hide channels that failed two channel scans", "default": true },
+      { "key": "hide_placeholders", "type": "bool", "label": "Hide empty event slots", "default": true },
+      { "key": "hide_247", "type": "bool", "label": "Hide 24/7 channels", "default": false }
+    ]
+  },
+  {
+    "group": "Refresh",
+    "settings": [
+      {
+        "key": "playlist_refresh_hours",
+        "type": "int",
+        "label": "Refresh channels and movies",
+        "default": 12,
+        "options": [
+          [0, "Never"],
+          [3, "Every 3 hours"],
+          [6, "Every 6 hours"],
+          [12, "Every 12 hours"],
+          [24, "Every day"],
+          [48, "Every 2 days"]
+        ]
+      },
+      {
+        "key": "guide_refresh_hours",
+        "type": "int",
+        "label": "Refresh the TV guide",
+        "default": 6,
+        "options": [
+          [0, "Never"],
+          [3, "Every 3 hours"],
+          [6, "Every 6 hours"],
+          [12, "Every 12 hours"],
+          [24, "Every day"],
+          [48, "Every 2 days"]
+        ]
+      },
+      {
+        "key": "guide_days",
+        "type": "int",
+        "label": "Guide days to keep",
+        "default": 3,
+        "options": [
+          [1, "1 day"],
+          [2, "2 days"],
+          [3, "3 days"],
+          [5, "5 days"],
+          [7, "7 days"]
+        ]
+      },
+      { "key": "unmetered_only", "type": "bool", "label": "Refresh only on Wi-Fi", "default": false }
+    ]
+  },
+  {
+    "group": "Player",
+    "settings": [
+      {
+        "key": "buffer",
+        "type": "choice",
+        "label": "Buffering",
+        "default": "BALANCED",
+        "options": [
+          ["FAST_START", "Fast start"],
+          ["BALANCED", "Balanced"],
+          ["SMOOTH", "Smooth (fewer stalls)"]
+        ]
+      },
+      {
+        "key": "video_fit",
+        "type": "choice",
+        "label": "Picture",
+        "default": "FIT",
+        "options": [
+          ["FIT", "Fit the whole picture"],
+          ["ZOOM", "Zoom to fill"],
+          ["STRETCH", "Stretch"]
+        ]
+      },
+      { "key": "resume_playback", "type": "bool", "label": "Resume where I left off", "default": true },
+      { "key": "auto_play_next", "type": "bool", "label": "Play the next episode automatically", "default": true },
+      { "key": "backup_copies", "type": "bool", "label": "Switch to another copy when a channel dies", "default": true },
+      { "key": "auto_reconnect", "type": "bool", "label": "Reconnect when a stream drops", "default": true },
+      { "key": "picture_in_picture", "type": "bool", "label": "Picture-in-picture when you leave the app", "default": true },
+      { "key": "background_play", "type": "bool", "label": "Keep the sound playing in the background", "default": true },
+      { "key": "cc_enabled", "type": "bool", "label": "Captions", "default": false },
+      { "key": "auto_subtitles", "type": "bool", "label": "Find subtitles when a film has none", "default": true }
+    ]
+  },
+  {
+    "group": "Profiles",
+    "settings": [{ "key": "ask_profile_at_start", "type": "bool", "label": "Ask who's watching when Tuned opens", "default": true }]
+  }
+]

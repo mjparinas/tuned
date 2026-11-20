@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="skip_intro">इंट्रो छोड़ें</string>
+    <string name="settings_skip_intro">इंट्रो छोड़ें बटन</string>
+    <string name="settings_skip_intro_off">बंद</string>
+</resources>

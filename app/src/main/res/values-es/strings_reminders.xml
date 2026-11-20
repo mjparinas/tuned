@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="reminder_channel">Recordatorios de programas</string>
+    <string name="reminder_text">En %1$s</string>
+    <string name="remind_me">Recordármelo</string>
+    <string name="reminder_cancel">Cancelar recordatorio</string>
+    <string name="settings_reminder_lead">Avisarme antes de un programa</string>
+    <string name="settings_notifications">Notificaciones</string>
+    <string name="settings_notifications_summary">Los recordatorios y avisos ponen un punto en el icono de la app. Desactívalo o cambia los sonidos en los ajustes de Android</string>
+    <string name="playback_channel">Reproduciendo ahora</string>
+    <string name="reminder_at_start">Al empezar</string>
+    <plurals name="minutes_before">
+        <item quantity="one">%d minuto antes</item>
+        <item quantity="many">%d minutos antes</item>
+        <item quantity="other">%d minutos antes</item>
+    </plurals>
+</resources>

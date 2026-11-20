@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="list_add">Добавить в список</string>
+    <string name="list_add_title">Добавить в список</string>
+    <string name="list_new">Новый список</string>
+    <string name="list_name">Название</string>
+    <string name="list_save">Сохранить</string>
+    <string name="list_done">Готово</string>
+    <string name="list_rename">Переименовать список</string>
+    <string name="list_delete">Удалить список</string>
+    <string name="list_delete_title">Удалить «%s»?</string>
+    <string name="list_delete_body">Список удалится, но каналы и фильмы из него останутся на своих местах.</string>
+</resources>

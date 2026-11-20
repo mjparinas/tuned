@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_hidden_groups">Grupos ocultos</string>
+    <string name="settings_hidden_groups_none">Nenhum grupo oculto</string>
+    <plurals name="groups_hidden">
+        <item quantity="one">%1$d grupo oculto</item>
+        <item quantity="many">%1$d grupos ocultos</item>
+        <item quantity="other">%1$d grupos ocultos</item>
+    </plurals>
+    <string name="hidden_groups_help">Desative um grupo para ocultá-lo da seção, da busca e da troca de canais. Para ocultar da tela inicial, escolha o chip dele e toque no olho.</string>
+    <string name="group_hide">Ocultar este grupo</string>
+    <string name="group_hidden">%1$s oculto</string>
+    <string name="group_hidden_undo">Desfazer</string>
+    <string name="group_pin">Fixar na frente</string>
+    <string name="group_unpin">Desafixar</string>
+    <string name="group_pinned">Fixado</string>
+    <string name="settings_app_shortcuts">Atalhos no ícone do app</string>
+    <string name="settings_app_shortcuts_summary">Toque e segure o ícone do Tuned para Buscar, Eventos ao vivo e o último canal assistido</string>
+    <string name="shortcut_search">Buscar</string>
+    <string name="shortcut_last_channel">Assistir %1$s</string>
+</resources>

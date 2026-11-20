@@ -1,5 +1,6 @@
 package com.tunedplayer.app.data.db
 
+import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.Index
 import androidx.room.PrimaryKey
@@ -12,6 +13,17 @@ data class ProgrammeEntity(
     val stop: Long,
     val title: String,
     val description: String?,
+    /** What kind of programme it is ([com.tunedplayer.app.core.ProgrammeGenre.code]), 0 when the guide doesn't say. */
+    @ColumnInfo(defaultValue = "0") val genre: Int = 0,
+)
+
+/**
+ * The live channels that keep recordings, by item id, so Live TV's Catch-up filter reads them with one join. Rebuilt
+ * with [CatchUpEntity], which is keyed by stream id or link rather than item.
+ */
+@Entity(tableName = "catchup_items")
+data class CatchUpItemEntity(
+    @PrimaryKey val itemId: Long,
 )
 
 /**

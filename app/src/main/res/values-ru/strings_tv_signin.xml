@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="tv_signin_card">Войти с телефона</string>
+    <string name="tv_signin_card_summary">Отсканируйте код на этом ТВ и заполните всё на телефоне, а не пультом</string>
+    <string name="tv_signin_title">Войти с телефона</string>
+    <string name="tv_signin_scan">Наведите камеру телефона на код. Заполните плейлист там или отправьте всё из Tuned на телефоне.</string>
+    <string name="tv_signin_or_go">Или откройте %1$s и введите</string>
+    <string name="tv_signin_check">Проверочный номер %1$s</string>
+    <string name="tv_signin_qr">QR-код для входа с телефона</string>
+    <string name="tv_signin_type_instead">Ввести на ТВ</string>
+    <string name="tv_signin_waiting">Получаем код…</string>
+    <string name="tv_signin_offline">Не удалось связаться со службой входа Tuned. Проверьте подключение этого ТВ к интернету или введите плейлист вручную.</string>
+    <string name="tv_signin_no_backup">Этот ТВ вошёл в ваш аккаунт Tuned, но в аккаунте ещё нет копии с плейлистом. Введите плейлист вручную или сначала создайте копию с телефона.</string>
+    <string name="tv_signin_retry">Повторить</string>
+    <string name="tv_signin_arrived">С вашего телефона</string>
+    <string name="tv_signin_also">Также: %1$s</string>
+    <string name="tv_signin_settings">настройки</string>
+    <plurals name="tv_signin_favourites">
+        <item quantity="one">%d в избранном</item>
+        <item quantity="few">%d в избранном</item>
+        <item quantity="many">%d в избранном</item>
+        <item quantity="other">%d в избранном</item>
+    </plurals>
+    <plurals name="tv_signin_lists">
+        <item quantity="one">%d список</item>
+        <item quantity="few">%d списка</item>
+        <item quantity="many">%d списков</item>
+        <item quantity="other">%d списка</item>
+    </plurals>
+    <plurals name="tv_signin_watch_later">
+        <item quantity="one">%d в «Посмотреть позже»</item>
+        <item quantity="few">%d в «Посмотреть позже»</item>
+        <item quantity="many">%d в «Посмотреть позже»</item>
+        <item quantity="other">%d в «Посмотреть позже»</item>
+    </plurals>
+    <string name="tv_signin_only_playlists">Этот ТВ сохраняет свои настройки и избранное; добавляются только плейлисты.</string>
+    <string name="tv_signin_only_first">Без Premium на этом ТВ остаётся первый плейлист.</string>
+    <string name="tv_signin_use">Использовать</string>
+    <string name="tv_signin_not_mine">Это не моё</string>
+    <string name="tv_signin_saving">Настраиваем…</string>
+    <string name="send_tv_row">Отправить на ТВ</string>
+    <string name="send_tv_row_summary">Войти на ТВ с плейлистами и настройками этого телефона</string>
+    <string name="send_tv_title">Отправить на ТВ</string>
+    <string name="send_tv_enter">На ТВ откройте Tuned и выберите «Войти с телефона». Затем введите показанный код или отсканируйте его камерой.</string>
+    <string name="send_tv_code">Код на ТВ</string>
+    <string name="send_tv_next">Далее</string>
+    <string name="send_tv_bad_code">Это не похоже на код с ТВ. В нём восемь букв и цифр.</string>
+    <string name="send_tv_not_found">Ни один ТВ не показывает этот код. Проверьте его или дождитесь нового кода на ТВ.</string>
+    <string name="send_tv_confirm_digits">Убедитесь, что ТВ показывает этот номер:</string>
+    <string name="send_tv_matches">Совпадает</string>
+    <string name="send_tv_what">Будут отправлены плейлисты, настройки, профили, избранное и списки с этого телефона, как при синхронизации между устройствами. Данные защищены так, что прочитать их сможет только этот ТВ.</string>
+    <plurals name="send_tv_playlists">
+        <item quantity="one">%d плейлист</item>
+        <item quantity="few">%d плейлиста</item>
+        <item quantity="many">%d плейлистов</item>
+        <item quantity="other">%d плейлиста</item>
+    </plurals>
+    <string name="send_tv_send">Отправить на ТВ</string>
+    <string name="send_tv_sending">Отправка…</string>
+    <string name="send_tv_sent">Отправлено. Нажмите «Использовать» на ТВ.</string>
+    <string name="send_tv_gone">Срок действия кода истёк. Отсканируйте новый код на ТВ.</string>
+    <string name="send_tv_already">На этот ТВ уже что-то отправлено. Отсканируйте новый код на ТВ, чтобы отправить снова.</string>
+    <string name="send_tv_too_many">Слишком много попыток. Попробуйте через час.</string>
+    <string name="send_tv_unreachable">Не удалось связаться со службой входа Tuned. Проверьте подключение и попробуйте снова.</string>
+    <string name="send_tv_too_big">Слишком много данных для отправки. Удалите часть избранного или «Посмотреть позже» и попробуйте снова.</string>
+    <string name="send_tv_nothing">Сначала добавьте плейлист на этом телефоне, затем отправьте его на ТВ.</string>
+</resources>

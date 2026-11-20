@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="grid_show">显示电视节目单网格</string>
+    <string name="grid_hide">显示频道列表</string>
+    <string name="grid_now">现在</string>
+    <string name="grid_today">今天</string>
+    <string name="grid_no_guide">无节目单</string>
+    <string name="settings_live_grid">以节目单网格显示直播</string>
+    <string name="settings_live_grid_summary">频道在侧边，时间在顶部。搜索旁的按钮也可切换。</string>
+</resources>

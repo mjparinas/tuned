@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="guide_fix_title">Programm dieses Senders korrigieren</string>
+    <string name="guide_fix_summary">Für einen Sender mit verschobenen Zeiten oder einem Programm, das einen anderen Sender zeigt. Die Korrektur bleibt, wenn die Playlist aktualisiert wird.</string>
+    <string name="guide_fix_remove">Korrektur rückgängig machen</string>
+    <string name="guide_fix_offset">Zeiten verschieben</string>
+    <string name="guide_fix_earlier">Früher</string>
+    <string name="guide_fix_later">Später</string>
+    <string name="guide_fix_no_offset">Keine Änderung</string>
+    <string name="guide_fix_entry">Programmeintrag</string>
+    <string name="guide_fix_entry_playlist">Der aus der Playlist</string>
+    <string name="guide_fix_choose">Anderen wählen</string>
+    <string name="guide_fix_entry_reset">Den aus der Playlist verwenden</string>
+    <string name="guide_fix_search">Programmsender durchsuchen</string>
+    <string name="guide_fix_no_results">Kein Programmsender passt. Falls das Programm noch nicht fertig geladen ist, versuche es später erneut.</string>
+    <string name="settings_guide_offset">Zeitverschiebung des Programms</string>
+    <string name="settings_extra_guides">Zusätzliche Programm-Links</string>
+    <string name="settings_extra_guides_none">Keine</string>
+    <plurals name="settings_extra_guides_count">
+        <item quantity="one">%d Link</item>
+        <item quantity="other">%d Links</item>
+    </plurals>
+    <string name="settings_extra_guides_summary">XMLTV-Links, die nach dem Programm des Anbieters gelesen werden, um leere Sender zu füllen. Beim Speichern wird das Programm neu gelesen.</string>
+    <string name="settings_extra_guides_remove">Link entfernen</string>
+    <string name="settings_extra_guides_add">Link hinzufügen (https://…)</string>
+</resources>

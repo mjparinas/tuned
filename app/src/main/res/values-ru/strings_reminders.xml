@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="reminder_channel">Напоминания о передачах</string>
+    <string name="reminder_text">На канале %1$s</string>
+    <string name="remind_me">Напомнить</string>
+    <string name="reminder_cancel">Отменить напоминание</string>
+    <string name="settings_reminder_lead">Напоминать до начала передачи</string>
+    <string name="settings_notifications">Уведомления</string>
+    <string name="settings_notifications_summary">Напоминания и оповещения добавляют точку на значок приложения. Отключите её или измените звуки в настройках Android</string>
+    <string name="playback_channel">Сейчас играет</string>
+    <string name="reminder_at_start">В момент начала</string>
+    <plurals name="minutes_before">
+        <item quantity="one">За %d минуту</item>
+        <item quantity="few">За %d минуты</item>
+        <item quantity="many">За %d минут</item>
+        <item quantity="other">За %d минуты</item>
+    </plurals>
+</resources>

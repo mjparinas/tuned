@@ -17,6 +17,7 @@ import com.tunedplayer.app.data.OwnLists
 import com.tunedplayer.app.data.PeopleRepository
 import com.tunedplayer.app.data.PhoneSignIn
 import com.tunedplayer.app.data.Picks
+import com.tunedplayer.app.data.PlaylistCache
 import com.tunedplayer.app.data.PlaylistSession
 import com.tunedplayer.app.data.ProfileRepository
 import com.tunedplayer.app.data.Recordings
@@ -42,6 +43,7 @@ import com.tunedplayer.app.updates.GitHubUpdates
 import com.tunedplayer.app.work.OfflineWorker
 import com.tunedplayer.app.work.Reminders
 import com.tunedplayer.app.work.ScanWorker
+import com.tunedplayer.app.work.ScheduledRecordings
 import com.tunedplayer.app.work.SyncScheduler
 import com.tunedplayer.app.work.TvHome
 import kotlinx.coroutines.CoroutineScope
@@ -91,11 +93,13 @@ class AppContainer(
             onSignedIn = { scheduler.refreshNow(first = true) },
             onGuideChanged = { scheduler.refreshNow(guideOnly = true) },
             onUsage = { usage.track(it) },
+            onSwitch = { session.useLogin(it) },
+            onRefresh = { scheduler.refreshNow() },
         )
     }
     val reminders by lazy { Reminders(context) }
     val events by lazy { EventsRepository(db, settings, reminders) }
-    val offline by lazy { Offline(context, db, settings, ::watching) }
+    val offline by lazy { Offline(context, db, settings) { watching() || recordingOpen.value } }
     val recordings by lazy { Recordings(context) }
     val lists by lazy { OwnLists(db) }
     val channelEditor by lazy { ChannelEditor(db) }
@@ -119,6 +123,12 @@ class AppContainer(
     /** True while a download holds its connection; set by [OfflineWorker] until its connection is closed. */
     val downloadOpen = MutableStateFlow(false)
 
+    /** True while a scheduled recording holds its connection ([com.tunedplayer.app.work.RecordWorker]); downloads and scans wait for it. */
+    val recordingOpen = MutableStateFlow(false)
+
+    /** Programmes set to record from the guide. */
+    val scheduledRecordings by lazy { ScheduledRecordings(context) }
+
     /** A TV playing Tuned's stream, which carries on while the app is in the background; downloads and scans wait for it too. */
     val tvCasting by lazy { TvCasting(context) { appScope.launch { offline.start() } } }
 
@@ -126,7 +136,7 @@ class AppContainer(
     fun watching(): Boolean = playerOpen.value || tvCasting.active.value
 
     private val streamBusy: StateFlow<Boolean> by lazy {
-        combine(playerOpen, tvCasting.active, downloadOpen) { open, tv, down -> open || tv || down }
+        combine(playerOpen, tvCasting.active, downloadOpen, recordingOpen) { open, tv, down, rec -> open || tv || down || rec }
             .stateIn(appScope, SharingStarted.Eagerly, false)
     }
     val account by lazy { AccountRepository(http, credentials::load, settings, streamBusy) }
@@ -134,7 +144,28 @@ class AppContainer(
     val scanControl by lazy { ScanWorker.Control(context) }
 
     /** Adding, switching, removing and signing out of playlists. */
-    val session by lazy { PlaylistSession(context, credentials, settings, db, reminders, scheduler, account, scanControl) }
+    val session by lazy {
+        PlaylistSession(
+            context,
+            credentials,
+            settings,
+            db,
+            reminders,
+            scheduler,
+            account,
+            scanControl,
+            playlistCopies,
+        )
+    }
+
+    /** Recent playlists' channels and guide, kept so switching back is instant (docs/decisions/onboarding.md). */
+    val playlistCopies by lazy {
+        PlaylistCache(
+            db,
+            context.noBackupFilesDir.resolve(PlaylistCache.DIR),
+            context.noBackupFilesDir.resolve("sync/playlist.fingerprint"),
+        )
+    }
 
     /** Signing out: the app back as it was installed. */
     val reset by lazy { AppReset(context, this) }

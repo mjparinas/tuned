@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_check_now">अपडेट जांचें</string>
+    <string name="update_checking">GitHub जांचा जा रहा है…</string>
+    <string name="update_up_to_date">Tuned %1$s अप टू डेट है</string>
+    <string name="update_check_failed">GitHub तक नहीं पहुंच सके। थोड़ी देर में फिर कोशिश करें।</string>
+    <string name="update_channel">अपडेट</string>
+    <string name="update_notification_text">Tuned खोलें और इंस्टॉल करें पर टैप करें</string>
+</resources>

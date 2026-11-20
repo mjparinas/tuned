@@ -8,10 +8,13 @@ import androidx.media3.common.MimeTypes
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.datasource.DataSource
 import androidx.media3.exoplayer.ExoPlayer
+import com.tunedplayer.app.core.HlsPlaylist
+import com.tunedplayer.app.core.Stalker
 import com.tunedplayer.app.diagnostics.loggingHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -74,7 +77,7 @@ internal class LiveTimeshift(
         if (shifted != null) return false
         val current = player.currentMediaItem ?: return false
         val source = b.source ?: return false
-        if (current.localConfiguration?.uri != source) return false
+        if (current.localConfiguration?.uri != source || !b.keeping) return false
         val kept = b.seconds
         if (kept < MIN_SECONDS) return false
         // The player shows what arrived a little while ago: its buffer is ahead of the picture.
@@ -124,6 +127,8 @@ internal class LiveTimeshift(
 
     /** The player moved on: if it left the channel playing from the device, put its live link back. */
     fun onChannelChanged(player: ExoPlayer) {
+        // Played from the device, the channel's spot holds the local playlist: the channel is still the one it replaced.
+        buffer?.channel = shifted?.second?.localConfiguration?.uri ?: player.currentMediaItem?.localConfiguration?.uri
         val (index, original) = shifted ?: return
         if (player.currentMediaItemIndex == index && player.currentMediaItem?.mediaId == original.mediaId) return
         shifted = null
@@ -143,7 +148,8 @@ internal class LiveTimeshift(
                 try {
                     var failures = 0
                     while (isActive && failures < MAX_FAILURES) {
-                        if (receive(b, source)) failures = 0 else failures++
+                        val got = if (b.isHls) receiveHls(b, source) else receive(b, source)
+                        if (got) failures = 0 else failures++
                         if (isActive) delay(RETRY_MS * (failures + 1))
                     }
                 } finally {
@@ -184,6 +190,104 @@ internal class LiveTimeshift(
         return got
     }
 
+    /**
+     * An HLS channel while the player plays from the device: its media playlist, then each piece not kept yet, one
+     * request at a time, and again as the window moves. A playlist link that stops working (an expired token) is
+     * found again from the channel's own link. True if any piece arrived.
+     */
+    private suspend fun receiveHls(
+        b: LiveBuffer,
+        source: Uri,
+    ): Boolean {
+        var got = false
+        var media = b.hlsMedia
+        var refound = false
+        while (media != null && currentCoroutineContext().isActive) {
+            val text = fetchText(media, source)
+            if (text == null) {
+                // Tried once more from the channel's own link; a second miss gives up for now.
+                media = if (refound) null else refind(source, media)
+                refound = true
+                continue
+            }
+            refound = false
+            b.sawPlaylist(source, text.second, text.first)
+            val parsed = HlsPlaylist.parse(text.first, text.second) as? HlsPlaylist.Media ?: break
+            for (piece in parsed.segments) {
+                if (currentCoroutineContext().isActive && b.takePiece(piece.uri) && fetchPiece(piece.uri, source, b)) got = true
+            }
+            if (parsed.ended) break
+            delay((parsed.targetSeconds * HALF_SECOND_MS).toLong().coerceIn(MIN_POLL_MS, MAX_POLL_MS))
+        }
+        return got
+    }
+
+    /** The channel's own link again, and the quality the player was on (or the first one). */
+    private fun refind(
+        source: Uri,
+        before: String,
+    ): String? {
+        val (text, base) = fetchText(resolve(source.toString()), source) ?: return null
+        return when (val parsed = HlsPlaylist.parse(text, base)) {
+            is HlsPlaylist.Master -> {
+                val path = before.substringBefore('?')
+                (parsed.variants.firstOrNull { it.uri.substringBefore('?') == path } ?: parsed.variants.firstOrNull())?.uri
+            }
+
+            is HlsPlaylist.Media -> {
+                base
+            }
+
+            null -> {
+                null
+            }
+        }
+    }
+
+    /** A playlist's text and the address it came from (after any redirect), or null when it doesn't answer. */
+    private fun fetchText(
+        url: String,
+        source: Uri,
+    ): Pair<String, String>? = try {
+        val c = http.newCall(request(url, source)).also { call = it }
+        c.execute().use { r -> if (r.isSuccessful) r.body.string().take(MAX_PLAYLIST_CHARS) to r.request.url.toString() else null }
+    } catch (_: IOException) {
+        null
+    }
+
+    private fun fetchPiece(
+        url: String,
+        source: Uri,
+        b: LiveBuffer,
+    ): Boolean = try {
+        val c = http.newCall(request(url, source)).also { call = it }
+        c.execute().use { r ->
+            if (!r.isSuccessful) return@use false
+            val input = r.body.byteStream()
+            val chunk = ByteArray(CHUNK)
+            var any = false
+            while (true) {
+                val n = input.read(chunk)
+                if (n < 0) break
+                b.feed(chunk, 0, n)
+                any = true
+            }
+            any
+        }
+    } catch (_: IOException) {
+        false
+    }
+
+    private fun request(
+        url: String,
+        source: Uri,
+    ) = Request
+        .Builder()
+        .url(url)
+        // Portals' stream servers often serve only what says it is a MAG box, as the player's own requests do.
+        .header("User-Agent", if (source.scheme == "stalker") Stalker.USER_AGENT else userAgent())
+        .build()
+
     private fun stopRecorder() {
         recorder?.cancel()
         recorder = null
@@ -192,7 +296,10 @@ internal class LiveTimeshift(
     }
 
     /** The live channel's stream as it arrives, while the player is on it, live or paused; null for HLS, files or catch-up. */
-    fun stream(uri: Uri?): LiveBuffer? = buffer?.takeIf { uri != null && (it.source == uri || uri == Uri.fromFile(it.playlist)) }
+    fun stream(uri: Uri?): LiveBuffer? = buffer?.takeIf {
+        uri != null && it.keeping &&
+            (it.source == uri || uri == Uri.fromFile(it.playlist))
+    }
 
     fun release() {
         stopRecorder()
@@ -211,5 +318,9 @@ internal class LiveTimeshift(
         const val MAX_FAILURES = 5
         const val RETRY_MS = 1_500L
         const val CHUNK = 64 * 1024
+        const val HALF_SECOND_MS = 500.0
+        const val MIN_POLL_MS = 1_000L
+        const val MAX_POLL_MS = 10_000L
+        const val MAX_PLAYLIST_CHARS = 1024 * 1024
     }
 }

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="channel_rename">Переименовать канал</string>
+    <string name="channel_name">Название канала</string>
+    <string name="channel_original_name">Провайдер называет его «%s». Поиск находит оба названия.</string>
+    <string name="channel_use_original_name">Использовать исходное название</string>
+    <string name="channel_change_logo">Сменить логотип</string>
+    <string name="channel_logo_from_copies">Из других копий этого канала</string>
+    <string name="channel_logo_choice">Логотип %d</string>
+    <string name="channel_logo_link">Ссылка на изображение</string>
+    <string name="channel_use_original_logo">Использовать исходный логотип</string>
+</resources>

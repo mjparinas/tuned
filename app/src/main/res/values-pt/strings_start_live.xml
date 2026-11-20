@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_start_on_last_channel">Começar no último canal</string>
+    <string name="settings_start_on_last_channel_summary">Abrir o Tuned reproduz o último canal ao vivo que você assistiu, como um decodificador. Voltar mostra suas listas.</string>
+</resources>

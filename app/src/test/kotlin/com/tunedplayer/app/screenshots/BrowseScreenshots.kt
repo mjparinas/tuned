@@ -67,6 +67,46 @@ class BrowseScreenshots : Screenshots() {
         },
     )
 
+    /** Live TV's Filters sheet: Type, Quality, On now, Show only (guide, catch-up, watched) and the countries. */
+    @Test
+    fun liveTvFilters() = shot(
+        "browse-live-tv-filters",
+        HomeRoute,
+        wait = "Maple News 24",
+        then = { openFilters() },
+        // The sheet is a window of its own, so the picture takes in every window.
+        overlay = {},
+    )
+
+    /** Several filters chosen: the chip names the first two and how many more. */
+    @Test
+    fun liveTvFiltersChosen() = shot(
+        "browse-live-tv-filters-chosen",
+        HomeRoute,
+        wait = "Maple News 24",
+        then = {
+            openFilters()
+            for (chip in listOf(R.string.live_filter_uhd, R.string.live_filter_guide, R.string.live_filter_catch_up)) {
+                compose.onNode(filterSheet()).performScrollToNode(hasText(text(chip)))
+                compose.onNode(hasText(text(chip))).performClick()
+            }
+            compose.onNode(hasText(text(R.string.live_filters_done))).performClick()
+        },
+    )
+
+    /** The sheet's list: the one that scrolls and holds its title. */
+    private fun filterSheet() = hasScrollAction() and hasAnyDescendant(hasText(text(R.string.live_filters_title)))
+
+    /** Opens the Filters sheet and waits for what it offers, which it reads as it opens. */
+    private fun openFilters() {
+        compose.onNode(hasText(text(R.string.live_filters))).performClick()
+        compose.waitUntil(15_000L) { compose.onAllNodes(filterSheet()).fetchSemanticsNodes().isNotEmpty() }
+        compose.waitUntil(15_000L) {
+            runCatching { compose.onNode(filterSheet()).performScrollToNode(hasText(text(R.string.live_filter_uhd))) }.isSuccess
+        }
+        compose.onNode(filterSheet()).performScrollToNode(hasText(text(R.string.live_filters_type)))
+    }
+
     @Test
     @Config(qualifiers = TV)
     fun liveTvOnTv() = shot("browse-live-tv-tv", HomeRoute, wait = "Maple News 24")

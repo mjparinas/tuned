@@ -21,8 +21,10 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -32,31 +34,70 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.ScaleFactor
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import com.tunedplayer.app.R
+import com.tunedplayer.app.container
 import com.tunedplayer.app.core.PosterArt
+import com.tunedplayer.app.diagnostics.attempt
 import com.tunedplayer.app.ui.common.focusRing
 import com.tunedplayer.app.ui.common.skeleton
 
 /**
  * Crops a real poster to fill the tile, but shows a channel logo whole, centred and never blown up past the tile, so a
- * small square logo stays sharp instead of being cropped and enlarged ([PosterArt]).
+ * small square logo stays sharp instead of being cropped and enlarged ([PosterArt]). A show's card always fills.
  */
-private object PosterScale : ContentScale {
+private class PosterScale(
+    private val show: Boolean,
+) : ContentScale {
     override fun computeScaleFactor(
         srcSize: Size,
         dstSize: Size,
-    ): ScaleFactor = if (PosterArt.isPoster(srcSize.width, srcSize.height)) {
+    ): ScaleFactor = if (PosterArt.fills(srcSize.width, srcSize.height, show)) {
         ContentScale.Crop.computeScaleFactor(srcSize, dstSize)
     } else {
         val fit = ContentScale.Fit.computeScaleFactor(srcSize, dstSize).scaleX * PosterArt.LOGO_FILL
         ScaleFactor(fit, fit)
     }
 }
+
+private val FilmScale = PosterScale(show = false)
+private val ShowScale = PosterScale(show = true)
+
+/** A show card's picture and rating, from one TMDB lookup ([rememberShowArt]). */
+@Immutable
+data class ShowArt(
+    /** False until the device's cache has been read, so the card doesn't flash the provider's still first. */
+    val ready: Boolean,
+    val image: String?,
+    val rating: Double?,
+)
+
+/**
+ * The show's cover for its card: TMDB's poster from the device's cache at once, then from TMDB only when the device
+ * has none, falling back to the provider's cover ([PosterArt.showCover]). It never touches the provider, so it never
+ * takes the one stream connection.
+ */
+@Composable
+fun rememberShowArt(
+    name: String,
+    providerCover: String?,
+): ShowArt {
+    val metadata = LocalContext.current.container.metadata
+    val art by produceState(ShowArt(ready = false, image = null, rating = null), name, providerCover) {
+        val cached = attempt(TAG, "cached show art") { metadata.cached(name, tv = true) }.getOrNull()
+        value = ShowArt(ready = true, image = PosterArt.showCover(cached?.poster, providerCover), rating = cached?.rating)
+        val fresh = attempt(TAG, "show art") { metadata.summary(name, tv = true) }.getOrNull() ?: return@produceState
+        value = ShowArt(ready = true, image = PosterArt.showCover(fresh.poster ?: cached?.poster, providerCover), rating = fresh.rating)
+    }
+    return art
+}
+
+private const val TAG = "Posters"
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -73,6 +114,8 @@ fun Poster(
     watched: Boolean = false,
     /** More long-press menu entries: label and action. */
     extraMenu: List<Pair<String, () -> Unit>> = emptyList(),
+    /** A show's card: its picture always fills the tile, even a wide episode still ([PosterArt.fills]). */
+    show: Boolean = false,
 ) {
     var menu by remember { mutableStateOf(false) }
     val hasMenu = onToggleFavourite != null || onPlayNow != null || extraMenu.isNotEmpty()
@@ -90,7 +133,7 @@ fun Poster(
             AsyncImage(
                 model = image,
                 contentDescription = null,
-                contentScale = PosterScale,
+                contentScale = if (show) ShowScale else FilmScale,
                 modifier =
                     Modifier
                         .fillMaxWidth()

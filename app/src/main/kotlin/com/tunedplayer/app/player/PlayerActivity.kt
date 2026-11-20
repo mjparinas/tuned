@@ -47,6 +47,7 @@ import com.tunedplayer.app.widget.Widgets
 import com.tunedplayer.app.work.TvHome
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
@@ -550,7 +551,7 @@ class PlayerActivity : FragmentActivity() {
         } else {
             // A download stopped as the player opened hangs up first, so the provider never sees two connections. It
             // takes a moment at most, and only when a download was running.
-            withTimeoutOrNull(DOWNLOAD_STOP_MS) { container.downloadOpen.first { !it } }
+            awaitHangUp()
             exo.prepare()
             exo.playWhenReady = true
         }
@@ -849,6 +850,13 @@ class PlayerActivity : FragmentActivity() {
         container.playerOpen.value = false
         container.appScope.launch { container.offline.start() }
         super.onDestroy()
+    }
+
+    /** A download or scheduled recording stopped as the player opened hangs up first: never two connections. */
+    private suspend fun awaitHangUp() {
+        withTimeoutOrNull(DOWNLOAD_STOP_MS) {
+            combine(container.downloadOpen, container.recordingOpen) { down, rec -> down || rec }.first { !it }
+        }
     }
 
     companion object {

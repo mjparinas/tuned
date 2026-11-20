@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_media_buttons">Botones multimedia</string>
+    <string name="settings_media_buttons_summary">Los auriculares, el Bluetooth, el botón de reproducir del mando y el Asistente pueden pausar, reproducir y cambiar de canal</string>
+</resources>

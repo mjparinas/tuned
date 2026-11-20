@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="cast_connecting">%1$s cihazına bağlanılıyor…</string>
+    <string name="cast_starting">%1$s üzerinde başlatılıyor…</string>
+    <string name="cast_connect_failed">%1$s cihazına bağlanılamadı</string>
+    <string name="cast_playing_on">%1$s üzerinde oynatılıyor</string>
+    <string name="cast_failed">%1$s bunu oynatamadı. Ayrıntılar Ayarlar › Güncellemeler ve gelişmiş › Günlükler\'de.</string>
+    <string name="cast_no_wifi">Kaydedilmiş bir film veya bölümü yayınlamak için telefonu TV ile aynı Wi-Fi\'ye bağla.</string>
+</resources>

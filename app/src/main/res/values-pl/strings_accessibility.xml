@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="a11y_favourite">Ulubiony</string>
+    <string name="a11y_playing">Odtwarzanie</string>
+    <string name="a11y_on_now">Teraz w telewizji</string>
+    <string name="a11y_current_profile">Bieżący profil</string>
+    <string name="a11y_play">Odtwórz</string>
+    <string name="a11y_details">Szczegóły</string>
+    <string name="a11y_more_options">Więcej opcji</string>
+    <string name="a11y_edit">Edytuj</string>
+    <string name="a11y_guide_for">Program: %1$s</string>
+    <string name="colour_white">Biały</string>
+    <string name="colour_yellow">Żółty</string>
+    <string name="colour_cyan">Cyjan</string>
+    <string name="colour_green">Zielony</string>
+    <string name="colour_magenta">Magenta</string>
+    <string name="colour_red">Czerwony</string>
+    <string name="colour_blue">Niebieski</string>
+    <string name="colour_black">Czarny</string>
+    <string name="colour_custom">Kolor %1$s</string>
+</resources>

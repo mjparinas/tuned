@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_lighter">Облегчённый режим</string>
+    <string name="lighter_auto">Автоматически</string>
+    <string name="lighter_auto_on">Автоматически: включён на этом устройстве</string>
+    <string name="lighter_on">Вкл.: без переходов и анимаций, облегчённые изображения</string>
+    <string name="lighter_off">Выкл.</string>
+</resources>

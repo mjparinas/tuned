@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_background_play">后台继续播放</string>
+    <string name="settings_background_play_summary">离开应用或锁屏时声音继续播放，并在通知中提供控件。仍然只使用一个连接。</string>
+</resources>

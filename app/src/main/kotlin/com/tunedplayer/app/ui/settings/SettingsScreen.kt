@@ -69,10 +69,12 @@ import com.tunedplayer.app.ui.CaptionSettingsRoute
 import com.tunedplayer.app.ui.SettingsPageRoute
 import com.tunedplayer.app.ui.common.BackTopBar
 import com.tunedplayer.app.ui.common.windowWidthDp
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.withContext
 
 class SettingsViewModel(
     app: Application,
@@ -105,6 +107,12 @@ class SettingsViewModel(
     override fun matchesLogin(secret: String): Boolean = container.credentials.matches(secret)
 
     fun refreshNow() = container.scheduler.refreshNow()
+
+    /** Off also deletes the copies, so the space comes back at once. */
+    fun keepPlaylistCopies(on: Boolean) {
+        update { it.copy(keepPlaylistCopies = on) }
+        if (!on) viewModelScope.launchSafely("Settings") { withContext(Dispatchers.IO) { container.playlistCopies.clear() } }
+    }
 
     fun clearHistory() {
         viewModelScope.launchSafely("Settings") { container.db.library().clearHistory() }

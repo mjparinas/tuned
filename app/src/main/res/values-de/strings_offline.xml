@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="downloads">Downloads</string>
+    <string name="downloads_running">Wird heruntergeladen</string>
+    <string name="downloads_empty">Noch nichts gespeichert. Tippe bei einem Film, einer Folge oder einer ganzen Staffel auf die Download-Taste, um sie offline anzusehen.</string>
+    <string name="download">Herunterladen</string>
+    <string name="download_remove">Download entfernen</string>
+    <string name="download_remove_named">Download von %1$s entfernen</string>
+    <string name="download_retry">Erneut versuchen</string>
+    <string name="download_failed">Download fehlgeschlagen</string>
+    <string name="download_waiting">Wartet (Downloads pausieren während einer Wiedergabe)</string>
+    <string name="download_progress">%1$s von %2$s</string>
+    <string name="downloads_space">%1$s heruntergeladen · %2$s frei auf diesem Gerät</string>
+    <string name="downloads_space_used">%1$s heruntergeladen</string>
+    <string name="downloads_other_episodes">Weitere Folgen</string>
+    <string name="download_paused">Pausiert</string>
+    <string name="download_pause">Download pausieren</string>
+    <string name="download_resume">Download fortsetzen</string>
+    <string name="download_cancel">Download abbrechen</string>
+    <string name="download_season_done">Staffel gespeichert</string>
+    <plurals name="downloads_coming">
+        <item quantity="one">%1$d wird heruntergeladen</item>
+        <item quantity="other">%1$d werden heruntergeladen</item>
+    </plurals>
+    <plurals name="download_season">
+        <item quantity="one">Staffel herunterladen (%d Folge)</item>
+        <item quantity="other">Staffel herunterladen (%d Folgen)</item>
+    </plurals>
+    <plurals name="download_season_progress">
+        <item quantity="one">%1$d von %2$d Folge gespeichert</item>
+        <item quantity="other">%1$d von %2$d Folgen gespeichert</item>
+    </plurals>
+</resources>

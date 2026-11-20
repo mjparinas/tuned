@@ -60,6 +60,7 @@ import com.tunedplayer.app.data.hiddenKeys
 import com.tunedplayer.app.diagnostics.attempt
 import com.tunedplayer.app.ui.browse.FavouriteButton
 import com.tunedplayer.app.ui.browse.Logo
+import com.tunedplayer.app.ui.browse.rememberShowArt
 import com.tunedplayer.app.ui.common.TimeLabels
 import com.tunedplayer.app.ui.common.VoiceSearchButton
 import com.tunedplayer.app.ui.common.focusRing
@@ -233,7 +234,7 @@ fun SearchScreen(
             }
             section(R.string.tab_movies, r.movies) { m -> ResultRow(Titles.display(m.name), m.groupName, m.logo) { onOpenMovie(m.id) } }
             section(R.string.tab_shows, r.shows) { s ->
-                ResultRow(Titles.display(s.showName), s.groupName, s.logo) {
+                ResultRow(Titles.display(s.showName), s.groupName, rememberShowArt(s.showName, s.logo).image) {
                     onOpenShow(s.showKey, s.showName)
                 }
             }

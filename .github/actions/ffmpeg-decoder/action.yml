@@ -1,0 +1,43 @@
+name: FFmpeg sound decoder
+description: >
+  Media3's FFmpeg decoder (Dolby and DTS sound only), built from the androidx/media tag that matches the app's Media3
+  version and put at app/libs/media3-decoder-ffmpeg.aar. Google doesn't publish it. Built once per Media3 version and
+  kept in the Actions cache; the app picks it up when the file is there (docs/decisions/player.md).
+inputs:
+  required:
+    description: >
+      Fail when the decoder can't be built. CI says false: a build tool host that doesn't answer (the Gradle plugin
+      portal, say) leaves the app building without the decoder and a warning, instead of failing every check. Release
+      keeps the default, so a release never ships without it.
+    default: "true"
+runs:
+  using: composite
+  steps:
+    - id: version
+      shell: bash
+      run: |
+        media3=$(sed -n 's/^media3 = "\(.*\)"/\1/p' gradle/libs.versions.toml)
+        echo "media3=$media3" >> "$GITHUB_OUTPUT"
+    - id: cache
+      uses: actions/cache/restore@v6
+      with:
+        path: app/libs/media3-decoder-ffmpeg.aar
+        key: ffmpeg-decoder-${{ steps.version.outputs.media3 }}-${{ hashFiles('.github/actions/ffmpeg-decoder/**') }}
+    - name: Build the decoder
+      if: steps.cache.outputs.cache-hit != 'true'
+      shell: bash
+      env:
+        MEDIA3: ${{ steps.version.outputs.media3 }}
+        REQUIRED: ${{ inputs.required }}
+      run: |
+        out="$GITHUB_WORKSPACE/app/libs/media3-decoder-ffmpeg.aar"
+        if .github/actions/ffmpeg-decoder/build.sh "$MEDIA3" "$out"; then exit 0; fi
+        rm -f "$out"
+        if [ "$REQUIRED" = "true" ]; then exit 1; fi
+        echo "::warning::Building the app without the FFmpeg decoder this time."
+    # Only main and staging write the cache, like Gradle's, so pull requests read it without filling it with copies.
+    - if: steps.cache.outputs.cache-hit != 'true' && hashFiles('app/libs/media3-decoder-ffmpeg.aar') != '' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/staging')
+      uses: actions/cache/save@v6
+      with:
+        path: app/libs/media3-decoder-ffmpeg.aar
+        key: ${{ steps.cache.outputs.cache-primary-key }}

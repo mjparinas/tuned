@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="playlists">Playlist</string>
+    <plurals name="playlists_saved">
+        <item quantity="one">%d playlist salvata</item>
+        <item quantity="many">%d playlist salvate</item>
+        <item quantity="other">%d playlist salvate</item>
+    </plurals>
+    <plurals name="playlists_in_use">
+        <item quantity="one">%1$s · %2$d salvata</item>
+        <item quantity="many">%1$s · %2$d salvate</item>
+        <item quantity="other">%1$s · %2$d salvate</item>
+    </plurals>
+    <string name="playlists_add">Aggiungi una playlist</string>
+    <string name="playlists_help">Tocca una playlist per guardarla. Tuned conserva i canali di una playlist alla volta, quindi cambiando si scarica l\'altra.</string>
+    <string name="playlists_active">In uso</string>
+    <string name="playlists_rename">Rinomina</string>
+    <string name="playlists_edit">Modifica</string>
+    <string name="playlists_remove">Rimuovi</string>
+    <string name="playlists_remove_title">Rimuovere %1$s?</string>
+    <string name="playlists_remove_body">I suoi dati di accesso vengono eliminati da questo dispositivo. Puoi aggiungerla di nuovo più tardi.</string>
+    <string name="playlists_remove_last">È la tua unica playlist, quindi così esci e vengono cancellati i canali e la guida salvati.</string>
+    <string name="welcome_title">Benvenuto in Tuned</string>
+    <string name="welcome_body">Aggiungi una playlist del tuo provider TV per iniziare a guardare. Puoi aggiungerne quante vuoi in seguito nelle impostazioni.</string>
+    <string name="welcome_pick">Cosa ti ha dato il tuo provider?</string>
+    <string name="kind_xtream">Accesso Xtream Codes</string>
+    <string name="kind_xtream_summary">Un indirizzo del server, un nome utente e una password</string>
+    <string name="kind_link">Link della playlist</string>
+    <string name="kind_link_summary">Un link M3U o M3U8, con un link della guida se ce l\'hai</string>
+    <string name="kind_file">File della playlist</string>
+    <string name="kind_file_summary">Un file .m3u salvato su questo dispositivo</string>
+    <string name="add_xtream_hint">Inserisci i dati che ti ha inviato il provider. Puoi anche incollare un intero link Xtream nel campo del server.</string>
+    <string name="add_server_help">Per esempio http://example.com:8080</string>
+    <string name="add_link_hint">Incolla il link della playlist che ti ha inviato il provider.</string>
+    <string name="add_link_is_xtream">È un link di accesso Xtream, quindi Tuned accederà con quello e funzionerà anche il catch-up.</string>
+    <string name="add_file_hint">Scegli un file di playlist. Tuned ne conserva una copia, quindi funziona anche se sposti o elimini l\'originale.</string>
+    <string name="add_file_choose">Scegli un file</string>
+    <string name="add_file_replace">Mantieni il file attuale o scegline uno nuovo</string>
+    <string name="add_name">Nome (facoltativo)</string>
+    <string name="add_name_help">Come viene mostrata, ad esempio Sport o Soggiorno</string>
+    <string name="add_guide">Link della guida (XMLTV) (facoltativo)</string>
+    <string name="add_guide_help">Lascia vuoto per usare la guida indicata dalla playlist</string>
+    <string name="add_submit">Aggiungi playlist</string>
+    <string name="add_save">Salva</string>
+    <string name="add_bad_link">Non sembra un link web. Controllalo e riprova.</string>
+    <string name="add_bad_file">Questo file non sembra una playlist M3U.</string>
+    <string name="add_pick_file">Scegli prima un file di playlist.</string>
+</resources>

@@ -173,12 +173,14 @@ internal fun ShowGrid(
                 if (show == null) {
                     PosterPlaceholder()
                 } else {
-                    val rating by produceState<Double?>(null, show.showName) { value = vm.rating(show.showName, tv = true) }
+                    // The show's own cover, TMDB's poster first, rather than an episode's still.
+                    val art = rememberShowArt(show.showName, show.logo)
                     Poster(
                         modifier = Modifier.tvFocusItem(focus, show.showKey, first = index == 0),
                         title = Titles.display(show.showName),
-                        image = show.logo,
-                        rating = rating,
+                        image = art.image,
+                        rating = art.rating,
+                        show = true,
                         subtitle =
                             if (show.newEpisodes > 0) {
                                 stringResource(
@@ -200,7 +202,7 @@ internal fun ShowGrid(
                                     } else {
                                         R.string.watch_later_add
                                     },
-                                ) to { library.toggleLater(LibraryViewModel.show(show.showKey, show.showName, show.logo)) },
+                                ) to { library.toggleLater(LibraryViewModel.show(show.showKey, show.showName, art.image ?: show.logo)) },
                             ),
                     )
                 }

@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="person_film">फ़िल्म</string>
+    <string name="person_show">शो</string>
+    <string name="person_upcoming">आने वाला</string>
+    <string name="person_as">%1$s के रूप में</string>
+    <string name="person_in_your_playlist">आपकी प्लेलिस्ट में</string>
+    <string name="person_unavailable">यह पेज लोड नहीं हो सका। अपना कनेक्शन जांचें और फिर से कोशिश करें।</string>
+    <string name="person_no_credits">TMDB में अभी इस व्यक्ति की कोई फ़िल्म या शो नहीं है।</string>
+    <string name="person_none_in_playlist">इनमें से कोई भी आपकी प्लेलिस्ट में नहीं है।</string>
+    <string name="person_open">%1$s की फ़िल्में और शो खोलें</string>
+    <plurals name="person_in_playlist">
+        <item quantity="one">%1$d आपकी प्लेलिस्ट में</item>
+        <item quantity="other">%1$d आपकी प्लेलिस्ट में</item>
+    </plurals>
+    <plurals name="person_episodes">
+        <item quantity="one">%1$d एपिसोड</item>
+        <item quantity="other">%1$d एपिसोड</item>
+    </plurals>
+</resources>

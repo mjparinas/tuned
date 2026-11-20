@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="health_title">चैनल की स्थिति</string>
+    <string name="settings_channel_health_summary">हर चैनल स्कैन करें और बार-बार विफल होने वालों को छिपाएं</string>
+    <string name="health_help">स्कैन हर लाइव चैनल को एक-एक करके आज़माता है, जैसे पुराना टीवी स्टेशन खोजता था। अगर इंटरनेट टूटे या सर्वर जवाब देना बंद करे, तो स्कैन चैनलों को दोष देने के बजाय रुकता या थम जाता है। कोई चैनल तभी छिपता है जब वह कम से कम छह घंटे के अंतर पर दो स्कैन में विफल हो, और स्कैन में काम करता मिलते ही लौट आता है।</string>
+    <string name="health_scan_now">चैनल स्कैन करें</string>
+    <string name="health_stop">स्कैन रोकें</string>
+    <string name="health_starting">स्कैन शुरू हो रहा है…</string>
+    <string name="health_while_scanning">जब आप कुछ देखते हैं तो स्कैन रुक जाता है, ताकि हमेशा एक ही स्ट्रीम खुली रहे।</string>
+    <string name="health_last_scan">पिछला स्कैन %1$s</string>
+    <plurals name="health_working">
+        <item quantity="one">%1$d काम कर रहा</item>
+        <item quantity="other">%1$d काम कर रहे</item>
+    </plurals>
+    <plurals name="health_failed">
+        <item quantity="one">%1$d विफल</item>
+        <item quantity="other">%1$d विफल</item>
+    </plurals>
+    <plurals name="health_unsure">
+        <item quantity="one">%1$d का फ़ैसला नहीं हुआ</item>
+        <item quantity="other">%1$d का फ़ैसला नहीं हुआ</item>
+    </plurals>
+    <string name="health_stopped_internet">स्कैन रुक गया क्योंकि इंटरनेट बंद था। इसके लिए किसी चैनल को दोष नहीं दिया गया।</string>
+    <string name="health_stopped_server">स्कैन रुक गया क्योंकि सर्वर कोई स्ट्रीम नहीं भेज रहा था। इसके लिए किसी चैनल को दोष नहीं दिया गया।</string>
+    <string name="health_stopped_busy">स्कैन रुक गया क्योंकि आपका खाता अपने सभी कनेक्शन इस्तेमाल कर रहा था, शायद किसी दूसरे डिवाइस पर। बाद में फिर कोशिश करें।</string>
+    <string name="health_hide_dead">बार-बार विफल होने वाले चैनल छिपाएं</string>
+    <string name="health_hide_placeholders">खाली इवेंट चैनल छिपाएं</string>
+    <string name="health_hide_placeholders_summary">“No event streaming” जैसे नाम वाले स्लॉट तब तक हटाता है जब तक प्रदाता कोई असली इवेंट न बताए</string>
+    <string name="health_hide_dead_summary">हर चैनल दिखाने के लिए बंद करें, उनके साथ जो स्कैन ने छिपाए</string>
+    <plurals name="health_hidden">
+        <item quantity="one">%1$d छिपा चैनल</item>
+        <item quantity="other">%1$d छिपे चैनल</item>
+    </plurals>
+    <plurals name="health_once">
+        <item quantity="one">%1$d चैनल विफल हुआ पर अभी भी दिख रहा है</item>
+        <item quantity="other">%1$d चैनल विफल हुए पर अभी भी दिख रहे हैं</item>
+    </plurals>
+    <string name="health_show_again">फिर दिखाएं</string>
+    <string name="health_reason_http">सर्वर ने कहा कि यह उपलब्ध नहीं है</string>
+    <string name="health_reason_no_data">कोई तस्वीर नहीं आई</string>
+    <string name="health_reason_not_video">वीडियो के बजाय एक त्रुटि पेज</string>
+    <string name="health_reason_timeout">समय पर कोई जवाब नहीं</string>
+    <string name="health_reason_connection">कनेक्ट नहीं हो सका</string>
+    <string name="health_reason_account">खाते ने मना कर दिया</string>
+    <string name="scan_channel">चैनल स्कैन</string>
+    <string name="scan_running">चैनल स्कैन हो रहे हैं</string>
+    <plurals name="scan_progress">
+        <item quantity="one">%2$d में से %1$d चैनल</item>
+        <item quantity="other">%2$d में से %1$d चैनल</item>
+    </plurals>
+</resources>

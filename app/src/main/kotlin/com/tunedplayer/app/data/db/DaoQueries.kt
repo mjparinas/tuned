@@ -130,13 +130,21 @@ internal const val CHANNEL_FILTER =
  * match it come in `:quick` as `g:<category>`, since a category has no full-text index. `:quick` also holds the country
  * tags to keep, or `any`, and `adult` for the Adult filter, which keeps only channels marked adult (and those show only
  * while unlocked, through `:adult`). A channel with no country found has none to match, so a country or language
- * leaves it out.
+ * leaves it out. `:quality` is a picture quality's full-text query ([com.tunedplayer.app.core.ChannelQuality.fullText])
+ * or ''. `guide`, `catchup` and `watched` in `:quick` keep the channels with a guide from now on, those that keep
+ * recordings, and those this profile has watched. `:genre` keeps the channels whose programme on now ([NOW_JOIN]'s
+ * `p`) is of that kind ([com.tunedplayer.app.core.ProgrammeGenre.code]), or 0 for any.
  */
 internal const val LIVE_QUICK =
     "AND (:topic = '' OR ('g:' || i.groupName) IN (:quick) " +
         "OR i.id IN (SELECT docid FROM items_fts WHERE items_fts MATCH :topic)) " +
         "AND ('any' IN (:quick) OR i.region IN (:quick)) " +
-        "AND ('adult' NOT IN (:quick) OR i.adult = 1)"
+        "AND ('adult' NOT IN (:quick) OR i.adult = 1) " +
+        "AND (:quality = '' OR i.id IN (SELECT docid FROM items_fts WHERE items_fts MATCH :quality)) " +
+        "AND ('guide' NOT IN (:quick) OR EXISTS (SELECT 1 FROM programmes WHERE channelId = i.tvgId AND stop > :now)) " +
+        "AND ('catchup' NOT IN (:quick) OR i.id IN (SELECT itemId FROM catchup_items)) " +
+        "AND ('watched' NOT IN (:quick) OR i.id IN (SELECT itemId FROM history WHERE profileId = $ME)) " +
+        "AND (:genre = 0 OR p.genre = :genre)"
 
 /**
  * Movies (or any one kind) with everything that narrows the tab: hidden countries and groups, the group chip,

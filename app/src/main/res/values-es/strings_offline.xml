@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="downloads">Descargas</string>
+    <string name="downloads_running">Descargando</string>
+    <string name="downloads_empty">Aún no hay nada guardado. Toca el botón de descarga de una película, un episodio o una temporada entera para verlo sin conexión.</string>
+    <string name="download">Descargar</string>
+    <string name="download_remove">Quitar descarga</string>
+    <string name="download_remove_named">Quitar la descarga de %1$s</string>
+    <string name="download_retry">Reintentar</string>
+    <string name="download_failed">No se pudo descargar</string>
+    <string name="download_waiting">En espera (las descargas se pausan mientras se reproduce algo)</string>
+    <string name="download_progress">%1$s de %2$s</string>
+    <string name="downloads_space">%1$s descargado · %2$s libre en este dispositivo</string>
+    <string name="downloads_space_used">%1$s descargado</string>
+    <string name="downloads_other_episodes">Otros episodios</string>
+    <string name="download_paused">En pausa</string>
+    <string name="download_pause">Pausar descarga</string>
+    <string name="download_resume">Reanudar descarga</string>
+    <string name="download_cancel">Cancelar descarga</string>
+    <string name="download_season_done">Temporada guardada</string>
+    <plurals name="downloads_coming">
+        <item quantity="one">%1$d descargando</item>
+        <item quantity="many">%1$d descargando</item>
+        <item quantity="other">%1$d descargando</item>
+    </plurals>
+    <plurals name="download_season">
+        <item quantity="one">Descargar temporada (%d episodio)</item>
+        <item quantity="many">Descargar temporada (%d episodios)</item>
+        <item quantity="other">Descargar temporada (%d episodios)</item>
+    </plurals>
+    <plurals name="download_season_progress">
+        <item quantity="one">%1$d de %2$d episodio guardado</item>
+        <item quantity="many">%1$d de %2$d episodios guardados</item>
+        <item quantity="other">%1$d de %2$d episodios guardados</item>
+    </plurals>
+</resources>

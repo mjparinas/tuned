@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="tuned_account">Account Tuned</string>
+    <string name="tuned_account_sign_in">Accedi al tuo account Tuned</string>
+    <string name="tuned_account_sign_in_summary">Fai il backup di playlist, impostazioni e profili, e mantieni uguali telefono e TV</string>
+    <string name="tuned_account_asking">Recupero di un codice…</string>
+    <string name="tuned_account_enter_code">Scansiona il codice, oppure su qualsiasi telefono o computer vai su %1$s, accedi con Google e inserisci questo codice in Associa una TV:</string>
+    <string name="tuned_account_open_or_enter">Tocca Apri il sito e accedi con Google. Oppure su un computer vai su %1$s, accedi e inserisci questo codice in Associa una TV:</string>
+    <string name="tuned_account_waiting">In attesa del tuo accesso…</string>
+    <string name="tuned_account_open_site">Apri il sito</string>
+    <string name="tuned_account_failed">Impossibile raggiungere il server di Tuned. Controlla la connessione e riprova.</string>
+    <string name="tuned_account_try_again">Riprova</string>
+    <string name="tuned_account_signed_in">Accesso come %1$s.</string>
+    <string name="tuned_account_backup_now">Esegui backup ora</string>
+    <string name="tuned_account_never">Nessun backup ancora</string>
+    <string name="tuned_account_last">Ultimo backup %1$s</string>
+    <string name="tuned_account_offline">Impossibile raggiungere il backup. Verrà riprovato.</string>
+    <string name="tuned_account_sign_out">Esci dal tuo account Tuned</string>
+    <string name="tuned_account_sign_out_summary">Disconnette questo dispositivo. Il tuo backup e ciò che c\'è su questo dispositivo restano.</string>
+    <string name="restore_account">Ripristina dal tuo account Tuned</string>
+    <string name="restore_account_summary">Recupera playlist, profili e impostazioni da un altro dispositivo</string>
+    <string name="restore_account_working">Ripristino di playlist, profili e impostazioni…</string>
+    <string name="restore_account_nothing">Questo account non ha ancora un backup. Aggiungi invece una playlist; dopo il backup, gli altri tuoi dispositivi potranno ripristinarla.</string>
+    <string name="restore_account_no_playlist">Impostazioni e profili sono stati ripristinati, ma il backup non ha nessuna playlist che questo dispositivo possa aprire. I file di playlist restano sul dispositivo in cui sono stati aggiunti. Aggiungi invece una playlist.</string>
+    <string name="restore_account_offline">Impossibile raggiungere il backup. Controlla la connessione e riprova.</string>
+</resources>

@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_always_show_scrollbar">Mostrar siempre la barra de desplazamiento</string>
+    <string name="settings_always_show_scrollbar_summary">La deja visible en TV en directo, Películas y Series, no solo al desplazarte. Arrástrala para saltar por una lista larga.</string>
+</resources>

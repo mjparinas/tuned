@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_channel_numbers">Numeri dei canali</string>
+    <string name="settings_channel_numbers_summary">Mostra un numero accanto a ogni canale in diretta. Digitalo sul telecomando mentre guardi per cambiare canale, e premi il tasto dell\'ultimo canale per tornare indietro.</string>
+    <string name="player_no_channel_number">Nessun canale %1$d</string>
+    <string name="player_flip_back">Ultimo canale</string>
+</resources>

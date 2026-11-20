@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="health_title">حالة القنوات</string>
+    <string name="settings_channel_health_summary">افحص كل القنوات وأخفِ التي تفشل باستمرار</string>
+    <string name="health_help">يجرّب الفحص كل قناة مباشرة، واحدة تلو الأخرى، كما كان التلفزيون القديم يبحث عن المحطات. إذا انقطع الإنترنت أو توقف الخادم عن الاستجابة، ينتظر الفحص أو يتوقف بدلًا من لوم القنوات. لا تُخفى القناة إلا بعد فشلها في فحصين بينهما ست ساعات على الأقل، وتعود فور أن يجدها الفحص تعمل.</string>
+    <string name="health_scan_now">فحص القنوات</string>
+    <string name="health_stop">إيقاف الفحص</string>
+    <string name="health_starting">جارٍ بدء الفحص…</string>
+    <string name="health_while_scanning">يتوقف الفحص مؤقتًا أثناء مشاهدتك شيئًا، فلا يُفتح إلا بث واحد في كل مرة.</string>
+    <string name="health_last_scan">آخر فحص %1$s</string>
+    <plurals name="health_working">
+        <item quantity="zero">%1$d تعمل</item>
+        <item quantity="one">%1$d تعمل</item>
+        <item quantity="two">%1$d تعمل</item>
+        <item quantity="few">%1$d تعمل</item>
+        <item quantity="many">%1$d تعمل</item>
+        <item quantity="other">%1$d تعمل</item>
+    </plurals>
+    <plurals name="health_failed">
+        <item quantity="zero">%1$d فشلت</item>
+        <item quantity="one">%1$d فشلت</item>
+        <item quantity="two">%1$d فشلت</item>
+        <item quantity="few">%1$d فشلت</item>
+        <item quantity="many">%1$d فشلت</item>
+        <item quantity="other">%1$d فشلت</item>
+    </plurals>
+    <plurals name="health_unsure">
+        <item quantity="zero">%1$d لم يُحكم عليها</item>
+        <item quantity="one">%1$d لم يُحكم عليها</item>
+        <item quantity="two">%1$d لم يُحكم عليها</item>
+        <item quantity="few">%1$d لم يُحكم عليها</item>
+        <item quantity="many">%1$d لم يُحكم عليها</item>
+        <item quantity="other">%1$d لم يُحكم عليها</item>
+    </plurals>
+    <string name="health_stopped_internet">توقف الفحص لأن الإنترنت كان مقطوعًا. لم تُلَم أي قناة على ذلك.</string>
+    <string name="health_stopped_server">توقف الفحص لأن الخادم لم يكن يرسل أي بث. لم تُلَم أي قناة على ذلك.</string>
+    <string name="health_stopped_busy">توقف الفحص لأن حسابك كان يستخدم كل اتصالاته، على الأرجح على جهاز آخر. حاول مرة أخرى لاحقًا.</string>
+    <string name="health_hide_dead">إخفاء القنوات التي تفشل باستمرار</string>
+    <string name="health_hide_placeholders">إخفاء قنوات الأحداث الفارغة</string>
+    <string name="health_hide_placeholders_summary">يستبعد الخانات المسماة مثل “No event streaming” حتى يسمّي المزوّد حدثًا حقيقيًا</string>
+    <string name="health_hide_dead_summary">أوقفه لعرض كل القنوات، بما فيها التي أخفاها الفحص</string>
+    <plurals name="health_hidden">
+        <item quantity="zero">%1$d قناة مخفية</item>
+        <item quantity="one">%1$d قناة مخفية</item>
+        <item quantity="two">%1$d قناة مخفية</item>
+        <item quantity="few">%1$d قنوات مخفية</item>
+        <item quantity="many">%1$d قناة مخفية</item>
+        <item quantity="other">%1$d قناة مخفية</item>
+    </plurals>
+    <plurals name="health_once">
+        <item quantity="zero">%1$d قناة فشلت لكنها ما زالت ظاهرة</item>
+        <item quantity="one">%1$d قناة فشلت لكنها ما زالت ظاهرة</item>
+        <item quantity="two">%1$d قناة فشلت لكنها ما زالت ظاهرة</item>
+        <item quantity="few">%1$d قنوات فشلت لكنها ما زالت ظاهرة</item>
+        <item quantity="many">%1$d قناة فشلت لكنها ما زالت ظاهرة</item>
+        <item quantity="other">%1$d قناة فشلت لكنها ما زالت ظاهرة</item>
+    </plurals>
+    <string name="health_show_again">إظهار مجددًا</string>
+    <string name="health_reason_http">قال الخادم إنها غير متاحة</string>
+    <string name="health_reason_no_data">لم تصل أي صورة</string>
+    <string name="health_reason_not_video">صفحة خطأ بدلًا من الفيديو</string>
+    <string name="health_reason_timeout">لا إجابة في الوقت المحدد</string>
+    <string name="health_reason_connection">تعذّر الاتصال</string>
+    <string name="health_reason_account">رفضها الحساب</string>
+    <string name="scan_channel">فحص القنوات</string>
+    <string name="scan_running">جارٍ فحص القنوات</string>
+    <plurals name="scan_progress">
+        <item quantity="zero">%1$d من %2$d قناة</item>
+        <item quantity="one">%1$d من %2$d قناة</item>
+        <item quantity="two">%1$d من %2$d قناة</item>
+        <item quantity="few">%1$d من %2$d قنوات</item>
+        <item quantity="many">%1$d من %2$d قناة</item>
+        <item quantity="other">%1$d من %2$d قناة</item>
+    </plurals>
+</resources>

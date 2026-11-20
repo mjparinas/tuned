@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_page_playlists">Listas e conta</string>
+    <string name="settings_page_playlists_summary">Suas listas, backup e sair</string>
+    <string name="settings_page_profiles">Perfis e controle dos pais</string>
+    <string name="settings_page_profiles_summary">Quem está assistindo, categorias adultas e o PIN</string>
+    <string name="settings_page_channels">Canais e listas</string>
+    <string name="settings_page_channels_summary">Tela inicial, visualização do guia, números e países e grupos ocultos</string>
+    <string name="settings_page_guide">Guia e atualização</string>
+    <string name="settings_page_guide_summary">Quando a lista e o guia são baixados, dias de guia e lembretes</string>
+    <string name="settings_page_playback_summary">Áudio, continuar, pular abertura, voltar e os controles do player</string>
+    <string name="settings_page_reliability">Quando um canal falha</string>
+    <string name="settings_page_reliability_summary">Reconexão, cópias reserva, sintonia automática e saúde dos canais</string>
+    <string name="settings_page_appearance_summary">Tema, cores e preto puro</string>
+    <string name="settings_page_about">Atualizações e avançado</string>
+    <string name="settings_page_about_summary">Atualizações, user agent e registros</string>
+    <string name="settings_header_hidden">O que está oculto</string>
+    <string name="settings_header_guide">Guia</string>
+    <string name="settings_header_screen">Tela e controles</string>
+</resources>

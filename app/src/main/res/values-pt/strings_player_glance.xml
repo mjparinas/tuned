@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <plurals name="player_pill_fps_spoken">
+        <item quantity="one">%d quadro por segundo</item>
+        <item quantity="many">%d quadros por segundo</item>
+        <item quantity="other">%d quadros por segundo</item>
+    </plurals>
+    <string name="player_pill_mono">MONO</string>
+    <string name="player_pill_stereo">ESTÉREO</string>
+    <string name="player_pill_channels">%1$d CANAIS</string>
+    <string name="player_pill_mono_spoken">Mono</string>
+    <string name="player_pill_stereo_spoken">Estéreo</string>
+    <string name="player_pill_5_1_spoken">Surround 5.1</string>
+    <string name="player_pill_7_1_spoken">Surround 7.1</string>
+    <plurals name="player_pill_channels_spoken">
+        <item quantity="one">%d canal de som</item>
+        <item quantity="many">%d canais de som</item>
+        <item quantity="other">%d canais de som</item>
+    </plurals>
+</resources>

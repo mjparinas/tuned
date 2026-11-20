@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="a11y_favourite">В избранном</string>
+    <string name="a11y_playing">Воспроизводится</string>
+    <string name="a11y_on_now">Сейчас в эфире</string>
+    <string name="a11y_current_profile">Текущий профиль</string>
+    <string name="a11y_play">Воспроизвести</string>
+    <string name="a11y_details">Подробнее</string>
+    <string name="a11y_more_options">Другие параметры</string>
+    <string name="a11y_edit">Изменить</string>
+    <string name="a11y_guide_for">Телегид: %1$s</string>
+    <string name="colour_white">Белый</string>
+    <string name="colour_yellow">Жёлтый</string>
+    <string name="colour_cyan">Голубой</string>
+    <string name="colour_green">Зелёный</string>
+    <string name="colour_magenta">Пурпурный</string>
+    <string name="colour_red">Красный</string>
+    <string name="colour_blue">Синий</string>
+    <string name="colour_black">Чёрный</string>
+    <string name="colour_custom">Цвет %1$s</string>
+</resources>

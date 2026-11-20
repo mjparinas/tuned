@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="cast_connecting">Подключение к %1$s…</string>
+    <string name="cast_starting">Запуск на %1$s…</string>
+    <string name="cast_connect_failed">Не удалось подключиться к %1$s</string>
+    <string name="cast_playing_on">Воспроизводится на %1$s</string>
+    <string name="cast_failed">%1$s не смог это воспроизвести. Подробности в разделе «Настройки › Обновления и дополнительно › Журналы».</string>
+    <string name="cast_no_wifi">Подключите телефон к той же сети Wi-Fi, что и ТВ, чтобы транслировать сохранённый фильм или серию.</string>
+</resources>

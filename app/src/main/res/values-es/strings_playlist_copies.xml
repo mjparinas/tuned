@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_playlist_copies">Cambio instantáneo de lista</string>
+    <string name="settings_playlist_copies_summary">Guarda las últimas 3 listas en este dispositivo para que aparezcan al instante al volver a ellas</string>
+    <string name="playlists_switching">Cambiando de lista…</string>
+</resources>

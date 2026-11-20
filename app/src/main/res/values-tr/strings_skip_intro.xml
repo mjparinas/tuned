@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="skip_intro">Girişi atla</string>
+    <string name="settings_skip_intro">Girişi atla düğmesi</string>
+    <string name="settings_skip_intro_off">Kapalı</string>
+</resources>

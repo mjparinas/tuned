@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="subtitle_timing">Sincronizzazione sottotitoli</string>
+    <string name="subtitle_timing_none">Attiva prima i sottotitoli</string>
+    <string name="subtitle_timing_not_casting">La sincronizzazione dei sottotitoli non è disponibile durante la trasmissione su un altro dispositivo</string>
+    <string name="subtitle_timing_later">Sottotitoli %1$s s dopo</string>
+    <string name="subtitle_timing_earlier">Sottotitoli %1$s s prima</string>
+    <string name="subtitle_timing_in_sync">Nessuna modifica</string>
+    <string name="subtitle_timing_back_big">−1 s</string>
+    <string name="subtitle_timing_back_small">−0,1 s</string>
+    <string name="subtitle_timing_on_small">+0,1 s</string>
+    <string name="subtitle_timing_on_big">+1 s</string>
+    <string name="subtitle_timing_reset">Ripristina</string>
+    <string name="subtitle_timing_done">Fine</string>
+</resources>

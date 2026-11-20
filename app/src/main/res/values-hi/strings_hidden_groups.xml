@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_hidden_groups">छिपे समूह</string>
+    <string name="settings_hidden_groups_none">कोई समूह छिपा नहीं</string>
+    <plurals name="groups_hidden">
+        <item quantity="one">%1$d समूह छिपा है</item>
+        <item quantity="other">%1$d समूह छिपे हैं</item>
+    </plurals>
+    <string name="hidden_groups_help">किसी समूह को उसके सेक्शन, खोज और चैनल बदलने से छिपाने के लिए बंद करें। होम स्क्रीन से छिपाने के लिए, उसका चिप चुनें और आंख पर टैप करें।</string>
+    <string name="group_hide">यह समूह छिपाएं</string>
+    <string name="group_hidden">%1$s छिपाया गया</string>
+    <string name="group_hidden_undo">पहले जैसा करें</string>
+    <string name="group_pin">सबसे आगे पिन करें</string>
+    <string name="group_unpin">अनपिन करें</string>
+    <string name="group_pinned">पिन किया गया</string>
+    <string name="settings_app_shortcuts">ऐप आइकन पर शॉर्टकट</string>
+    <string name="settings_app_shortcuts_summary">खोज, लाइव इवेंट और पिछली बार देखे चैनल के लिए Tuned के आइकन को दबाकर रखें</string>
+    <string name="shortcut_search">खोजें</string>
+    <string name="shortcut_last_channel">%1$s देखें</string>
+</resources>

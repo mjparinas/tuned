@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="a11y_favourite">في المفضّلة</string>
+    <string name="a11y_playing">قيد التشغيل</string>
+    <string name="a11y_on_now">يُعرض الآن</string>
+    <string name="a11y_current_profile">الملف الشخصي الحالي</string>
+    <string name="a11y_play">تشغيل</string>
+    <string name="a11y_details">التفاصيل</string>
+    <string name="a11y_more_options">خيارات أخرى</string>
+    <string name="a11y_edit">تعديل</string>
+    <string name="a11y_guide_for">دليل %1$s</string>
+    <string name="colour_white">أبيض</string>
+    <string name="colour_yellow">أصفر</string>
+    <string name="colour_cyan">سماوي</string>
+    <string name="colour_green">أخضر</string>
+    <string name="colour_magenta">أرجواني</string>
+    <string name="colour_red">أحمر</string>
+    <string name="colour_blue">أزرق</string>
+    <string name="colour_black">أسود</string>
+    <string name="colour_custom">اللون %1$s</string>
+</resources>

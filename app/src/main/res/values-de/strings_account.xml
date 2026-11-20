@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="account_status">Abo</string>
+    <string name="account_status_unknown">Angemeldet</string>
+    <string name="account_trial">Testphase</string>
+    <string name="account_no_end">Kein Enddatum</string>
+    <string name="account_expires_on">Endet am %1$s</string>
+    <string name="account_expired_on">Endete am %1$s</string>
+    <plurals name="account_expires_soon">
+        <item quantity="one">Endet am %1$s, in %2$d Tag</item>
+        <item quantity="other">Endet am %1$s, in %2$d Tagen</item>
+    </plurals>
+    <string name="account_connections_title">Genutzte Verbindungen</string>
+    <string name="account_connections">%1$d von %2$d</string>
+    <string name="account_connections_full">%1$d von %2$d: alle belegt, wahrscheinlich auf einem anderen Gerät</string>
+    <string name="account_full_wait">Alle deine Verbindungen sind belegt (%1$d von %2$d), wahrscheinlich auf einem anderen Gerät. Eine weitere zu öffnen, könnte das Limit deines Kontos überschreiten. Drücke Abspielen, um trotzdem zu starten.</string>
+</resources>

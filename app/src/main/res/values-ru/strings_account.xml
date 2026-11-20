@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="account_status">Подписка</string>
+    <string name="account_status_unknown">Вход выполнен</string>
+    <string name="account_trial">Пробный период</string>
+    <string name="account_no_end">Без даты окончания</string>
+    <string name="account_expires_on">Заканчивается %1$s</string>
+    <string name="account_expired_on">Закончилась %1$s</string>
+    <plurals name="account_expires_soon">
+        <item quantity="one">Заканчивается %1$s, через %2$d день</item>
+        <item quantity="few">Заканчивается %1$s, через %2$d дня</item>
+        <item quantity="many">Заканчивается %1$s, через %2$d дней</item>
+        <item quantity="other">Заканчивается %1$s, через %2$d дня</item>
+    </plurals>
+    <string name="account_connections_title">Используемые подключения</string>
+    <string name="account_connections">%1$d из %2$d</string>
+    <string name="account_connections_full">%1$d из %2$d: все заняты, вероятно на другом устройстве</string>
+    <string name="account_full_wait">Все ваши подключения заняты (%1$d из %2$d), вероятно на другом устройстве. Новое подключение может превысить лимит аккаунта. Нажмите «Воспроизвести», чтобы всё равно начать.</string>
+</resources>

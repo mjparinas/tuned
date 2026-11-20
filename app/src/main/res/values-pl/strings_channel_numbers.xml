@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_channel_numbers">Numery kanałów</string>
+    <string name="settings_channel_numbers_summary">Pokazuj numer obok każdego kanału na żywo. Wpisz go na pilocie podczas oglądania, aby przełączyć kanał, i naciśnij przycisk poprzedniego kanału, aby wrócić.</string>
+    <string name="player_no_channel_number">Brak kanału %1$d</string>
+    <string name="player_flip_back">Poprzedni kanał</string>
+</resources>

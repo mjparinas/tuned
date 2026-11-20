@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_favourite_order">पसंदीदा का क्रम</string>
+    <string name="settings_favourite_order_summary">अपने पसंदीदा चैनलों का क्रम चुनें</string>
+    <string name="favourite_order_empty">अभी कोई पसंदीदा चैनल नहीं है। जोड़ने के लिए किसी चैनल पर दिल टैप करें।</string>
+    <string name="move_up">%1$s को ऊपर ले जाएं</string>
+    <string name="move_down">%1$s को नीचे ले जाएं</string>
+</resources>

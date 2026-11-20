@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="regions_languages">语言</string>
+    <string name="regions_countries">国家</string>
+    <string name="language_summary_partial">仅开启 %1$s · %2$s</string>
+</resources>

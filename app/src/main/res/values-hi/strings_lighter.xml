@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_lighter">हल्का मोड</string>
+    <string name="lighter_auto">अपने आप</string>
+    <string name="lighter_auto_on">अपने आप: इस डिवाइस के लिए चालू</string>
+    <string name="lighter_on">चालू: कोई फ़ेड या एनिमेशन नहीं, हल्की तस्वीरें</string>
+    <string name="lighter_off">बंद</string>
+</resources>

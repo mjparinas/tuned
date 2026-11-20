@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="subtitle_search">Buscar legendas</string>
+    <string name="subtitle_search_searching">Procurando legendas…</string>
+    <string name="subtitle_search_downloading">Baixando legendas…</string>
+    <string name="subtitle_search_added">Legendas adicionadas do OpenSubtitles</string>
+    <string name="subtitle_search_none">Nenhuma legenda encontrada para este vídeo</string>
+    <string name="subtitle_search_no_key">A busca de legendas não está disponível nesta versão</string>
+    <string name="subtitle_search_bad_key">O OpenSubtitles recusou a chave deste app. Tente de novo depois da próxima atualização.</string>
+    <string name="subtitle_search_bad_account">O OpenSubtitles recusou o login. Confira em Configurações › Reprodução › Legendas.</string>
+    <string name="subtitle_search_limit">O limite diário de downloads do OpenSubtitles acabou. Tente de novo amanhã.</string>
+    <string name="subtitle_search_offline">Não foi possível acessar o OpenSubtitles. Tente de novo em instantes.</string>
+    <string name="subtitle_search_hearing_impaired">Para deficientes auditivos</string>
+    <string name="subtitle_search_machine">Tradução automática</string>
+    <plurals name="subtitle_search_downloads">
+        <item quantity="one">%,d download</item>
+        <item quantity="many">%,d downloads</item>
+        <item quantity="other">%,d downloads</item>
+    </plurals>
+    <string name="settings_subtitles">Legendas</string>
+    <string name="settings_auto_subtitles">Buscar legendas automaticamente</string>
+    <string name="settings_auto_subtitles_summary">Com as legendas ativadas, um filme ou episódio sem legenda recebe a melhor opção sozinho</string>
+    <string name="settings_opensubtitles_account">Conta do OpenSubtitles</string>
+    <string name="settings_opensubtitles_account_summary">Opcional. Entrar aumenta o limite diário de downloads.</string>
+    <string name="settings_opensubtitles_account_set">Conectado como %1$s</string>
+    <string name="settings_opensubtitles_username">Usuário</string>
+    <string name="settings_opensubtitles_password">Senha</string>
+    <string name="settings_opensubtitles_remove">Remover</string>
+</resources>

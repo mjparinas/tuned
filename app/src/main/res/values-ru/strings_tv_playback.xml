@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_match_frame_rate">Подстраивать частоту кадров</string>
+    <string name="settings_match_frame_rate_summary">Переключать ТВ на частоту кадров видео, например 50 Гц для спорта, чтобы движение не дёргалось. При переключении экран может на мгновение погаснуть.</string>
+    <string name="player_no_sound">Нет звука: это устройство не может воспроизвести звук %1$s этого канала</string>
+</resources>

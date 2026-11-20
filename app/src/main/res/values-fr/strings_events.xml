@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="events_title">Événements en direct</string>
+    <string name="events_follow_hint">Suivre une équipe, une ligue ou un combattant</string>
+    <string name="events_follow">Suivre</string>
+    <string name="events_unfollow">Ne plus suivre %1$s</string>
+    <string name="events_following">Suivi</string>
+    <string name="events_on_now">En cours</string>
+    <string name="events_later">Plus tard aujourd\'hui</string>
+    <string name="events_tomorrow">Demain</string>
+    <string name="events_live">En direct</string>
+    <string name="events_empty">Aucun match, combat ou pay-per-view dans le guide pour le jour et demi à venir. Actualisez le guide dans les paramètres si cela semble faux.</string>
+    <plurals name="events_channels">
+        <item quantity="one">Sur %d chaîne</item>
+        <item quantity="many">Sur %d chaînes</item>
+        <item quantity="other">Sur %d chaînes</item>
+    </plurals>
+    <string name="reminder_event_text">Commence bientôt. Touchez pour regarder.</string>
+</resources>

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="list_add">Zu Liste hinzufügen</string>
+    <string name="list_add_title">Zu Liste hinzufügen</string>
+    <string name="list_new">Neue Liste</string>
+    <string name="list_name">Name</string>
+    <string name="list_save">Speichern</string>
+    <string name="list_done">Fertig</string>
+    <string name="list_rename">Liste umbenennen</string>
+    <string name="list_delete">Liste löschen</string>
+    <string name="list_delete_title">„%s“ löschen?</string>
+    <string name="list_delete_body">Die Liste wird gelöscht, aber ihre Sender und Filme bleiben, wo sie sind.</string>
+</resources>

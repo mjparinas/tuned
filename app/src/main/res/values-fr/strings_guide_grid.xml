@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="grid_show">Afficher la grille du guide TV</string>
+    <string name="grid_hide">Afficher la liste des chaînes</string>
+    <string name="grid_now">Maintenant</string>
+    <string name="grid_today">Aujourd\'hui</string>
+    <string name="grid_no_guide">Pas de guide</string>
+    <string name="settings_live_grid">Afficher la TV en direct en grille</string>
+    <string name="settings_live_grid_summary">Les chaînes sur le côté et l\'heure en haut. Le bouton à côté de la recherche bascule aussi.</string>
+</resources>

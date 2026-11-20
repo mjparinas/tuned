@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="recording_set">Kaydet</string>
+    <string name="recording_cancel">Kaydı iptal et</string>
+    <string name="recording_scheduled">%1$s kaydedilecek</string>
+    <string name="recording_clash">O saat için başka bir kayıt ayarlı. Tuned aynı anda tek kayıt yapar.</string>
+    <string name="recording_running">%1$s kaydediliyor</string>
+    <string name="settings_record_padding">Kayıtları erken başlat, geç bitir</string>
+    <string name="settings_record_padding_off">Tam zamanında</string>
+    <plurals name="settings_record_padding_minutes">
+        <item quantity="one">Her iki yanda %1$d dakika</item>
+        <item quantity="other">Her iki yanda %1$d dakika</item>
+    </plurals>
+</resources>

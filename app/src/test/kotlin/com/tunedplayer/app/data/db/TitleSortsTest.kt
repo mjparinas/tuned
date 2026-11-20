@@ -147,7 +147,7 @@ class TitleSortsTest {
                     ).build(),
             )
         val old = helper.writableDatabase
-        // The two tables as version 20 made them.
+        // The two tables as version 21 made them (unchanged since 20).
         old.execSQL(
             "CREATE TABLE `items` (`id` INTEGER NOT NULL, `kind` INTEGER NOT NULL, `name` TEXT NOT NULL, " +
                 "`searchName` TEXT NOT NULL, `groupName` TEXT NOT NULL, `region` TEXT, `adult` INTEGER NOT NULL, `logo` TEXT, " +
@@ -159,7 +159,7 @@ class TitleSortsTest {
                 "`groupName` TEXT NOT NULL, `region` TEXT, `adult` INTEGER NOT NULL, `showName` TEXT NOT NULL, `logo` TEXT, " +
                 "`episodes` INTEGER NOT NULL, `sortOrder` INTEGER NOT NULL)",
         )
-        TunedDatabase.MIGRATION_20_21.migrate(old)
+        TunedDatabase.MIGRATION_21_22.migrate(old)
         val fresh = db.openHelper.writableDatabase
         for (table in listOf("items", "show_groups", "show_details")) assertEquals(columns(fresh, table), columns(old, table), table)
         for (index in listOf("added", "year", "rating", "sortTitle")) {

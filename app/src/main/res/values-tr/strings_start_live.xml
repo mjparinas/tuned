@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_start_on_last_channel">Son kanalla başla</string>
+    <string name="settings_start_on_last_channel_summary">Tuned açıldığında, uydu alıcısı gibi en son izlediğin canlı kanalı oynatır. Geri, listelerini gösterir.</string>
+</resources>

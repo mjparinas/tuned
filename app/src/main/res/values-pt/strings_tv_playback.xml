@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_match_frame_rate">Igualar a taxa de quadros</string>
+    <string name="settings_match_frame_rate_summary">Muda a TV para a taxa de quadros do vídeo, como 50 Hz para esportes, para o movimento não tremer. A tela pode ficar escura por um instante ao mudar.</string>
+    <string name="player_no_sound">Sem som: este dispositivo não reproduz o áudio %1$s deste canal</string>
+</resources>

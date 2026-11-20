@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_backup_copies">التبديل إلى نسخة احتياطية</string>
+    <string name="settings_backup_copies_summary">عندما تتوقف قناة عن العمل، شغّل نسخة أخرى منها من قائمتك، مثل ESPN FHD بدلًا من ESPN HD</string>
+    <string name="player_trying_copy">لا يعمل. جارٍ تجربة نسخة احتياطية (%1$d من %2$d)…</string>
+    <string name="player_copy_playing">تم التبديل إلى %1$s</string>
+    <string name="player_no_copy_works">هذه القناة ونسخها الاحتياطية لا تعمل الآن</string>
+    <string name="health_hide_failed_on_play">إخفاء القنوات التي لا تعمل</string>
+    <string name="health_hide_failed_on_play_summary">عندما لا تُحمَّل قناة بينما يعمل الإنترنت والخدمة (وقناة أخرى تعمل جيدًا)، أخفِها فورًا. تعود عندما يجدها الفحص تعمل، أو عبر «إظهار مجددًا» أدناه.</string>
+    <string name="health_reason_playback">لم تعمل</string>
+</resources>

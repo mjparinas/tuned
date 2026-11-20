@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The languages Tuned is translated into, so Android 13 and later can offer a per-app language in
+     its own settings. Tuned itself follows the device's language (docs/decisions/languages.md).
+     LocalesConfigTest keeps this list and the values-xx folders the same. -->
+<locale-config xmlns:android="http://schemas.android.com/apk/res/android">
+    <locale android:name="en" />
+    <locale android:name="ar" />
+    <locale android:name="de" />
+    <locale android:name="es" />
+    <locale android:name="fr" />
+    <locale android:name="hi" />
+    <locale android:name="it" />
+    <locale android:name="pl" />
+    <locale android:name="pt" />
+    <locale android:name="ru" />
+    <locale android:name="tr" />
+    <locale android:name="zh-CN" />
+</locale-config>

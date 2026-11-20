@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="tv_signin_card">تسجيل الدخول بهاتفك</string>
+    <string name="tv_signin_card_summary">امسح رمزًا على هذا التلفزيون واملأ البيانات على هاتفك بدلًا من جهاز التحكم</string>
+    <string name="tv_signin_title">تسجيل الدخول بهاتفك</string>
+    <string name="tv_signin_scan">وجّه كاميرا هاتفك نحو الرمز. املأ قائمة التشغيل هناك، أو أرسل كل شيء من Tuned على هاتفك.</string>
+    <string name="tv_signin_or_go">أو اذهب إلى %1$s وأدخل</string>
+    <string name="tv_signin_check">رقم التحقق %1$s</string>
+    <string name="tv_signin_qr">رمز QR لتسجيل الدخول بهاتفك</string>
+    <string name="tv_signin_type_instead">الكتابة على التلفزيون بدلًا من ذلك</string>
+    <string name="tv_signin_waiting">جارٍ الحصول على رمز…</string>
+    <string name="tv_signin_offline">تعذّر الوصول إلى خدمة تسجيل الدخول في Tuned. تحقّق من اتصال هذا التلفزيون بالإنترنت، أو اكتب قائمة التشغيل بدلًا من ذلك.</string>
+    <string name="tv_signin_no_backup">هذا التلفزيون مسجّل الدخول إلى حسابك في Tuned، لكن الحساب لا يحوي نسخة احتياطية بقائمة تشغيل بعد. اكتب قائمة تشغيل بدلًا من ذلك، أو انسخ احتياطيًا من هاتفك أولًا.</string>
+    <string name="tv_signin_retry">إعادة المحاولة</string>
+    <string name="tv_signin_arrived">من هاتفك</string>
+    <string name="tv_signin_also">أيضًا: %1$s</string>
+    <string name="tv_signin_settings">الإعدادات</string>
+    <plurals name="tv_signin_favourites">
+        <item quantity="zero">%d مفضّلة</item>
+        <item quantity="one">%d مفضّلة</item>
+        <item quantity="two">%d مفضّلة</item>
+        <item quantity="few">%d مفضّلات</item>
+        <item quantity="many">%d مفضّلة</item>
+        <item quantity="other">%d مفضّلة</item>
+    </plurals>
+    <plurals name="tv_signin_lists">
+        <item quantity="zero">%d قائمة</item>
+        <item quantity="one">%d قائمة</item>
+        <item quantity="two">%d قائمة</item>
+        <item quantity="few">%d قوائم</item>
+        <item quantity="many">%d قائمة</item>
+        <item quantity="other">%d قائمة</item>
+    </plurals>
+    <plurals name="tv_signin_watch_later">
+        <item quantity="zero">%d في المشاهدة لاحقًا</item>
+        <item quantity="one">%d في المشاهدة لاحقًا</item>
+        <item quantity="two">%d في المشاهدة لاحقًا</item>
+        <item quantity="few">%d في المشاهدة لاحقًا</item>
+        <item quantity="many">%d في المشاهدة لاحقًا</item>
+        <item quantity="other">%d في المشاهدة لاحقًا</item>
+    </plurals>
+    <string name="tv_signin_only_playlists">يحتفظ هذا التلفزيون بإعداداته ومفضّلته؛ تُضاف قوائم التشغيل فقط.</string>
+    <string name="tv_signin_only_first">بدون Premium، يحتفظ هذا التلفزيون بأول قائمة تشغيل.</string>
+    <string name="tv_signin_use">استخدامها</string>
+    <string name="tv_signin_not_mine">ليست لي</string>
+    <string name="tv_signin_saving">جارٍ الإعداد…</string>
+    <string name="send_tv_row">الإرسال إلى تلفزيون</string>
+    <string name="send_tv_row_summary">سجّل الدخول على تلفزيون بقوائم التشغيل والإعدادات الموجودة على هذا الهاتف</string>
+    <string name="send_tv_title">الإرسال إلى تلفزيون</string>
+    <string name="send_tv_enter">على التلفزيون، افتح Tuned واختر «تسجيل الدخول بهاتفك». ثم أدخل الرمز الذي يظهر، أو امسحه بالكاميرا.</string>
+    <string name="send_tv_code">الرمز على التلفزيون</string>
+    <string name="send_tv_next">التالي</string>
+    <string name="send_tv_bad_code">لا يبدو هذا الرمز الظاهر على التلفزيون. يتكون من ثمانية أحرف وأرقام.</string>
+    <string name="send_tv_not_found">لا يوجد تلفزيون يعرض هذا الرمز. تحقّق منه، أو انتظر حتى يعرض التلفزيون رمزًا جديدًا.</string>
+    <string name="send_tv_confirm_digits">تأكّد أن التلفزيون يعرض هذا الرقم:</string>
+    <string name="send_tv_matches">إنه مطابق</string>
+    <string name="send_tv_what">يرسل هذا قوائم التشغيل والإعدادات والملفات الشخصية والمفضّلة والقوائم من هذا الهاتف، كما تفعل المزامنة بين الأجهزة. وهو مقفل فلا يقرؤه إلا ذلك التلفزيون.</string>
+    <plurals name="send_tv_playlists">
+        <item quantity="zero">%d قائمة تشغيل</item>
+        <item quantity="one">%d قائمة تشغيل</item>
+        <item quantity="two">%d قائمة تشغيل</item>
+        <item quantity="few">%d قوائم تشغيل</item>
+        <item quantity="many">%d قائمة تشغيل</item>
+        <item quantity="other">%d قائمة تشغيل</item>
+    </plurals>
+    <string name="send_tv_send">الإرسال إلى التلفزيون</string>
+    <string name="send_tv_sending">جارٍ الإرسال…</string>
+    <string name="send_tv_sent">تم الإرسال. اضغط «استخدامها» على التلفزيون.</string>
+    <string name="send_tv_gone">انتهت صلاحية هذا الرمز. امسح الرمز الجديد على التلفزيون.</string>
+    <string name="send_tv_already">أُرسل شيء بالفعل إلى ذلك التلفزيون. امسح الرمز الجديد على التلفزيون لإرسال مجددًا.</string>
+    <string name="send_tv_too_many">محاولات كثيرة جدًا. حاول مرة أخرى بعد ساعة.</string>
+    <string name="send_tv_unreachable">تعذّر الوصول إلى خدمة تسجيل الدخول في Tuned. تحقّق من اتصالك وحاول مرة أخرى.</string>
+    <string name="send_tv_too_big">البيانات كثيرة جدًا للإرسال. أزل بعض المفضّلة أو المشاهدة لاحقًا وحاول مرة أخرى.</string>
+    <string name="send_tv_nothing">أضف قائمة تشغيل على هذا الهاتف أولًا، ثم أرسلها إلى التلفزيون.</string>
+</resources>

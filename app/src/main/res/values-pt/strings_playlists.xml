@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="playlists">Listas</string>
+    <plurals name="playlists_saved">
+        <item quantity="one">%d lista salva</item>
+        <item quantity="many">%d listas salvas</item>
+        <item quantity="other">%d listas salvas</item>
+    </plurals>
+    <plurals name="playlists_in_use">
+        <item quantity="one">%1$s · %2$d salva</item>
+        <item quantity="many">%1$s · %2$d salvas</item>
+        <item quantity="other">%1$s · %2$d salvas</item>
+    </plurals>
+    <string name="playlists_add">Adicionar uma lista</string>
+    <string name="playlists_help">Toque numa lista para assistir. O Tuned guarda os canais de uma lista por vez, então trocar baixa a outra.</string>
+    <string name="playlists_active">Em uso</string>
+    <string name="playlists_rename">Renomear</string>
+    <string name="playlists_edit">Editar</string>
+    <string name="playlists_remove">Remover</string>
+    <string name="playlists_remove_title">Remover %1$s?</string>
+    <string name="playlists_remove_body">O login dela é apagado deste dispositivo. Você pode adicioná-la de novo depois.</string>
+    <string name="playlists_remove_last">É sua única lista, então isto faz você sair e apaga os canais e o guia salvos.</string>
+    <string name="welcome_title">Boas-vindas ao Tuned</string>
+    <string name="welcome_body">Adicione uma lista do seu provedor de TV para começar a assistir. Depois você pode adicionar quantas quiser em Configurações.</string>
+    <string name="welcome_pick">O que seu provedor te passou?</string>
+    <string name="kind_xtream">Login Xtream Codes</string>
+    <string name="kind_xtream_summary">Um endereço de servidor, usuário e senha</string>
+    <string name="kind_link">Link da lista</string>
+    <string name="kind_link_summary">Um link M3U ou M3U8, com um link de guia se você tiver</string>
+    <string name="kind_file">Arquivo de lista</string>
+    <string name="kind_file_summary">Um arquivo .m3u salvo neste dispositivo</string>
+    <string name="add_xtream_hint">Digite os dados que seu provedor enviou. Você também pode colar um link Xtream inteiro no campo do servidor.</string>
+    <string name="add_server_help">Por exemplo http://example.com:8080</string>
+    <string name="add_link_hint">Cole o link da lista que seu provedor enviou.</string>
+    <string name="add_link_is_xtream">Este é um link de login Xtream, então o Tuned vai entrar com ele e o catch-up também funciona.</string>
+    <string name="add_file_hint">Escolha um arquivo de lista. O Tuned guarda a própria cópia, então continua funcionando se você mover ou apagar o original.</string>
+    <string name="add_file_choose">Escolher um arquivo</string>
+    <string name="add_file_replace">Mantenha o arquivo atual ou escolha um novo</string>
+    <string name="add_name">Nome (opcional)</string>
+    <string name="add_name_help">Como aparece, como Esportes ou Sala</string>
+    <string name="add_guide">Link do guia (XMLTV) (opcional)</string>
+    <string name="add_guide_help">Deixe em branco para usar o guia que a lista indica</string>
+    <string name="add_submit">Adicionar lista</string>
+    <string name="add_save">Salvar</string>
+    <string name="add_bad_link">Isso não parece um link. Confira e tente de novo.</string>
+    <string name="add_bad_file">Esse arquivo não parece uma lista M3U.</string>
+    <string name="add_pick_file">Escolha um arquivo de lista primeiro.</string>
+</resources>

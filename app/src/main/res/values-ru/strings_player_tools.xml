@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="player_fit">Размер</string>
+    <string name="player_fit_now">Размер: %1$s</string>
+    <string name="player_fit_fit">Вписать в экран</string>
+    <string name="player_fit_zoom">Заполнить экран</string>
+    <string name="player_fit_stretch">Растянуть</string>
+    <string name="player_lock">Заблокировать экран</string>
+    <string name="player_unlock">Разблокировать экран</string>
+    <string name="player_locked">Экран заблокирован. Нажмите на замок, чтобы разблокировать.</string>
+    <string name="player_quality">Качество</string>
+    <string name="player_quality_auto">Авто</string>
+    <string name="player_quality_only_one">У этого потока одно качество</string>
+    <string name="player_quality_untagged">Стандартное</string>
+    <string name="player_guide">Каналы</string>
+    <string name="player_guide_close">Закрыть каналы</string>
+</resources>

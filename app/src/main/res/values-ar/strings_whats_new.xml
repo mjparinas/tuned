@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_section_account">الحساب</string>
+    <string name="settings_section_watching">المشاهدة</string>
+    <string name="settings_section_app">التطبيق</string>
+    <string name="settings_version_title">الإصدار</string>
+    <string name="whats_new">ما الجديد</string>
+    <string name="whats_new_kicker">Tuned · تحديث</string>
+    <string name="whats_new_title">ما الجديد في %1$s</string>
+    <plurals name="whats_new_count_new">
+        <item quantity="zero">%d جديد</item>
+        <item quantity="one">%d جديد</item>
+        <item quantity="two">%d جديد</item>
+        <item quantity="few">%d جديدة</item>
+        <item quantity="many">%d جديد</item>
+        <item quantity="other">%d جديد</item>
+    </plurals>
+    <plurals name="whats_new_count_improved">
+        <item quantity="zero">%d محسّن</item>
+        <item quantity="one">%d محسّن</item>
+        <item quantity="two">%d محسّن</item>
+        <item quantity="few">%d محسّنة</item>
+        <item quantity="many">%d محسّن</item>
+        <item quantity="other">%d محسّن</item>
+    </plurals>
+    <plurals name="whats_new_count_fixed">
+        <item quantity="zero">%d مُصلَح</item>
+        <item quantity="one">%d مُصلَح</item>
+        <item quantity="two">%d مُصلَح</item>
+        <item quantity="few">%d مُصلَحة</item>
+        <item quantity="many">%d مُصلَح</item>
+        <item quantity="other">%d مُصلَح</item>
+    </plurals>
+    <string name="whats_new_kind_new">جديد</string>
+    <string name="whats_new_kind_improved">محسّن</string>
+    <string name="whats_new_kind_fixed">مُصلَح</string>
+    <string name="whats_new_loading">جارٍ تحميل تغييرات هذا الإصدار…</string>
+    <string name="whats_new_failed">تعذّر تحميل تغييرات هذا الإصدار. تحقّق من الاتصال وحاول مرة أخرى.</string>
+    <string name="whats_new_empty">لا توجد تغييرات في هذا الإصدار.</string>
+    <string name="whats_new_retry">إعادة المحاولة</string>
+    <string name="whats_new_done">تم</string>
+</resources>

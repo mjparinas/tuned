@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="tv_signin_card">Zaloguj się telefonem</string>
+    <string name="tv_signin_card_summary">Zeskanuj kod na tym telewizorze i wypełnij wszystko na telefonie zamiast pilotem</string>
+    <string name="tv_signin_title">Zaloguj się telefonem</string>
+    <string name="tv_signin_scan">Skieruj aparat telefonu na kod. Wpisz tam swoją playlistę albo wyślij wszystko z Tuned na telefonie.</string>
+    <string name="tv_signin_or_go">Albo wejdź na %1$s i wpisz</string>
+    <string name="tv_signin_check">Numer kontrolny %1$s</string>
+    <string name="tv_signin_qr">Kod QR do logowania telefonem</string>
+    <string name="tv_signin_type_instead">Wpisz na telewizorze</string>
+    <string name="tv_signin_waiting">Pobieramy kod…</string>
+    <string name="tv_signin_offline">Nie udało się połączyć z usługą logowania Tuned. Sprawdź internet na tym telewizorze lub wpisz playlistę ręcznie.</string>
+    <string name="tv_signin_no_backup">Ten telewizor jest zalogowany na Twoje konto Tuned, ale konto nie ma jeszcze kopii z playlistą. Wpisz playlistę ręcznie lub najpierw utwórz kopię na telefonie.</string>
+    <string name="tv_signin_retry">Spróbuj ponownie</string>
+    <string name="tv_signin_arrived">Z Twojego telefonu</string>
+    <string name="tv_signin_also">Oprócz tego: %1$s</string>
+    <string name="tv_signin_settings">ustawienia</string>
+    <plurals name="tv_signin_favourites">
+        <item quantity="one">%d ulubiony</item>
+        <item quantity="few">%d ulubione</item>
+        <item quantity="many">%d ulubionych</item>
+        <item quantity="other">%d ulubione</item>
+    </plurals>
+    <plurals name="tv_signin_lists">
+        <item quantity="one">%d lista</item>
+        <item quantity="few">%d listy</item>
+        <item quantity="many">%d list</item>
+        <item quantity="other">%d listy</item>
+    </plurals>
+    <plurals name="tv_signin_watch_later">
+        <item quantity="one">%d w Do obejrzenia</item>
+        <item quantity="few">%d w Do obejrzenia</item>
+        <item quantity="many">%d w Do obejrzenia</item>
+        <item quantity="other">%d w Do obejrzenia</item>
+    </plurals>
+    <string name="tv_signin_only_playlists">Ten telewizor zachowuje swoje ustawienia i ulubione; dodawane są tylko playlisty.</string>
+    <string name="tv_signin_only_first">Bez Premium ten telewizor zachowuje pierwszą playlistę.</string>
+    <string name="tv_signin_use">Użyj</string>
+    <string name="tv_signin_not_mine">To nie moje</string>
+    <string name="tv_signin_saving">Konfigurowanie…</string>
+    <string name="send_tv_row">Wyślij na telewizor</string>
+    <string name="send_tv_row_summary">Zaloguj telewizor playlistami i ustawieniami z tego telefonu</string>
+    <string name="send_tv_title">Wyślij na telewizor</string>
+    <string name="send_tv_enter">Na telewizorze otwórz Tuned i wybierz Zaloguj się telefonem. Potem wpisz wyświetlony kod lub zeskanuj go aparatem.</string>
+    <string name="send_tv_code">Kod na telewizorze</string>
+    <string name="send_tv_next">Dalej</string>
+    <string name="send_tv_bad_code">To nie wygląda na kod z telewizora. Ma osiem liter i cyfr.</string>
+    <string name="send_tv_not_found">Żaden telewizor nie wyświetla tego kodu. Sprawdź go lub poczekaj, aż telewizor pokaże nowy.</string>
+    <string name="send_tv_confirm_digits">Sprawdź, czy telewizor pokazuje ten numer:</string>
+    <string name="send_tv_matches">Zgadza się</string>
+    <string name="send_tv_what">Wysyła playlisty, ustawienia, profile, ulubione i listy z tego telefonu, tak jak synchronizacja między urządzeniami. Dane są zabezpieczone tak, aby odczytał je tylko ten telewizor.</string>
+    <plurals name="send_tv_playlists">
+        <item quantity="one">%d playlista</item>
+        <item quantity="few">%d playlisty</item>
+        <item quantity="many">%d playlist</item>
+        <item quantity="other">%d playlisty</item>
+    </plurals>
+    <string name="send_tv_send">Wyślij na telewizor</string>
+    <string name="send_tv_sending">Wysyłanie…</string>
+    <string name="send_tv_sent">Wysłano. Naciśnij Użyj na telewizorze.</string>
+    <string name="send_tv_gone">Ten kod wygasł. Zeskanuj nowy na telewizorze.</string>
+    <string name="send_tv_already">Coś zostało już wysłane na ten telewizor. Zeskanuj nowy kod na telewizorze, aby wysłać ponownie.</string>
+    <string name="send_tv_too_many">Za dużo prób. Spróbuj za godzinę.</string>
+    <string name="send_tv_unreachable">Nie udało się połączyć z usługą logowania Tuned. Sprawdź połączenie i spróbuj ponownie.</string>
+    <string name="send_tv_too_big">Za dużo danych do wysłania. Usuń część ulubionych lub pozycji Do obejrzenia i spróbuj ponownie.</string>
+    <string name="send_tv_nothing">Najpierw dodaj playlistę na tym telefonie, a potem wyślij ją na telewizor.</string>
+</resources>

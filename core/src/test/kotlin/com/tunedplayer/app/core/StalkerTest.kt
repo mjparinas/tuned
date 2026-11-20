@@ -3,6 +3,7 @@ package com.tunedplayer.app.core
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertNotEquals
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
@@ -99,5 +100,51 @@ class StalkerTest {
     fun `guide times in seconds or milliseconds`() {
         assertEquals(1_700_000_000_000L, Stalker.millis(1_700_000_000L))
         assertEquals(1_700_000_000_000L, Stalker.millis(1_700_000_000_000L))
+    }
+
+    @Test
+    fun `an episode's link carries its number in the season and parses back`() {
+        val url = Stalker.link(Stalker.SERIES, "12:3.1.4", "eyJ0eXBlIjoic2VyaWVzIn0=", "4")
+        assertEquals(Stalker.Link(Stalker.SERIES, "12:3.1.4", "eyJ0eXBlIjoic2VyaWVzIn0=", "4"), Stalker.parse(url))
+        // Links stored before films and shows still read the same.
+        assertEquals(Stalker.Link("itv", "7", "ffmpeg http://x/ch/7"), Stalker.parse(Stalker.link("itv", "7", "ffmpeg http://x/ch/7")))
+    }
+
+    @Test
+    fun `a film is a movie with a stable id from its portal id`() {
+        val film = Stalker.VodItem("901", "EN - Top Gun", "/media/901.mpg", "http://x/p.jpg", isSeries = false)
+        val entry = Stalker.movie(film, "EN | ACTION", 3)
+        assertEquals(ContentKind.MOVIE, entry.kind)
+        assertEquals("EN | ACTION", entry.group)
+        assertEquals(Stalker.Link(Stalker.VOD, "901", "/media/901.mpg"), Stalker.parse(entry.url))
+        assertEquals(StableId.of(entry), StableId.of(Stalker.movie(film, "EN | ACTION", 99)))
+    }
+
+    @Test
+    fun `a show is a stand-in until it opens, keeping the episodes a vod show lists`() {
+        val show = Stalker.VodItem("55", "Harbour Town", "/media/55.mpg", null, isSeries = true, episodes = listOf(1, 2, 3))
+        val entry = Stalker.showStandIn(Stalker.VOD, show, "Drama", 0)
+        assertEquals(ContentKind.SERIES, entry.kind)
+        assertEquals(null, Stalker.parse(entry.url)) // never played as it is
+        assertEquals(Stalker.StandIn(Stalker.VOD, "55", "/media/55.mpg", listOf(1, 2, 3)), Stalker.standIn(entry.url))
+        val plain = Stalker.showStandIn(Stalker.SERIES, show.copy(episodes = emptyList()), "Drama", 0)
+        assertEquals(Stalker.StandIn(Stalker.SERIES, "55", null, emptyList()), Stalker.standIn(plain.url))
+    }
+
+    @Test
+    fun `episodes join their show and each has its own id`() {
+        val one = Stalker.episode(Stalker.SERIES, "55", "Harbour Town", "Drama", null, "cmd", season = 2, number = 1, order = 0)
+        val two = Stalker.episode(Stalker.SERIES, "55", "Harbour Town", "Drama", null, "cmd", season = 2, number = 2, order = 1)
+        assertEquals(EpisodeInfo("Harbour Town", 2, 1), one.episode)
+        assertEquals("2", Stalker.parse(two.url)?.series)
+        assertNotEquals(StableId.of(one), StableId.of(two))
+    }
+
+    @Test
+    fun `season numbers come from their names`() {
+        assertEquals(2, Stalker.seasonNumber("Season 2", 0))
+        assertEquals(3, Stalker.seasonNumber("S03", 0))
+        assertEquals(4, Stalker.seasonNumber("Сезон 4", 0))
+        assertEquals(2, Stalker.seasonNumber("Specials", 1))
     }
 }

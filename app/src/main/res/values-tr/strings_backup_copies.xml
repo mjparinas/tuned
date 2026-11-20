@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_backup_copies">Yedek kopyaya geç</string>
+    <string name="settings_backup_copies_summary">Bir kanal çalışmayı bıraktığında listendeki başka bir kopyasını oynat, örneğin ESPN HD yerine ESPN FHD</string>
+    <string name="player_trying_copy">Çalışmıyor. Yedek kopya deneniyor (%1$d / %2$d)…</string>
+    <string name="player_copy_playing">%1$s kanalına geçildi</string>
+    <string name="player_no_copy_works">Bu kanal ve yedek kopyaları şu an çalışmıyor</string>
+    <string name="health_hide_failed_on_play">Oynatılamayan kanalları gizle</string>
+    <string name="health_hide_failed_on_play_summary">İnternetin ve hizmet çalışırken (başka bir kanal sorunsuz oynuyor) bir kanal yüklenmezse hemen gizlenir. Bir tarama onu çalışır bulduğunda veya aşağıdaki Tekrar göster ile geri gelir.</string>
+    <string name="health_reason_playback">oynatılamadı</string>
+</resources>

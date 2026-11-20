@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="trakt_sign_in">ربط Trakt</string>
+    <string name="trakt_sign_in_summary">أضف الأفلام والحلقات التي تشاهدها إلى سجلك في Trakt</string>
+    <string name="trakt_signed_in">مرتبط باسم %1$s</string>
+    <string name="trakt_account_unnamed">حسابك في Trakt</string>
+    <string name="trakt_sign_out">انقر لإلغاء الربط</string>
+    <string name="trakt_scrobble">تسجيل ما تشاهده</string>
+    <string name="trakt_scrobble_summary">أخبر Trakt عندما يبدأ فيلم أو حلقة ويتوقف مؤقتًا وينتهي. لا يُرسَل البث المباشر.</string>
+    <string name="trakt_asking">جارٍ طلب رمز من Trakt…</string>
+    <string name="trakt_enter_code">على أي هاتف أو كمبيوتر، اذهب إلى %1$s وأدخل هذا الرمز:</string>
+    <string name="trakt_waiting">في انتظار إدخالك الرمز…</string>
+    <string name="sign_in_code_copy">نسخ الرمز</string>
+    <string name="sign_in_code_copied">نُسخ الرمز</string>
+    <string name="trakt_open_site">فتح Trakt</string>
+    <string name="trakt_done">تم الربط. ما تشاهده الآن يُضاف إلى سجلك في Trakt.</string>
+    <string name="trakt_expired">انتهت صلاحية الرمز قبل إدخاله.</string>
+    <string name="trakt_denied">رفض Trakt الربط.</string>
+    <string name="trakt_failed">تعذّر الوصول إلى Trakt. تحقّق من الاتصال وحاول مرة أخرى.</string>
+    <string name="trakt_try_again">إعادة المحاولة</string>
+</resources>

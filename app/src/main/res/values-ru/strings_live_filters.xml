@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="live_filters_quality">Качество</string>
+    <string name="live_filters_on_now">Сейчас в эфире</string>
+    <string name="live_filters_only">Показывать только</string>
+    <string name="live_filter_on_now_sports">Спорт</string>
+    <string name="live_filter_on_now_movies">Фильмы</string>
+    <string name="live_filter_on_now_news">Новости</string>
+    <string name="live_filter_on_now_kids">Детям</string>
+    <string name="live_filter_on_now_documentary">Документальные</string>
+    <string name="live_filter_on_now_label">%1$s сейчас в эфире</string>
+    <string name="live_filter_guide">С телепрограммой</string>
+    <string name="live_filter_catch_up">Архив</string>
+    <string name="live_filter_watched">Недавно смотрели</string>
+    <string name="live_filters_more">%1$s +%2$d</string>
+    <string name="live_filter_uhd">4K</string>
+    <string name="live_filter_fhd">FHD</string>
+    <string name="live_filter_hd">HD</string>
+    <string name="live_filter_sd">SD</string>
+</resources>

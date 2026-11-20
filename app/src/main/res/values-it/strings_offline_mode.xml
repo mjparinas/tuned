@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="offline_banner">Sei offline. I film e gli episodi salvati si riproducono comunque.</string>
+    <string name="offline_banner_downloads">Download</string>
+    <string name="offline_cant_play">Sei offline. Si possono riprodurre solo i film e gli episodi scaricati.</string>
+</resources>
