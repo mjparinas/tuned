@@ -9,24 +9,24 @@ OTT Navigator, from Scillarium Studio, is a deep, highly configurable player tha
 
 ## At a glance
 
-|                                | OTT Navigator                                                    | Tuned                                                                                                                                               |
-| ------------------------------ | ---------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Where it runs                  | Android phones, tablets, TVs and TV boxes                        | Android phones, tablets, Chromebooks, Android TV and Google TV                                                                                      |
-| Playlist types                 | Provider playlists (types not listed on the pages we read)       | Xtream Codes login, M3U link, M3U file, MAC portal (live TV and guide)                                                                              |
-| TV guide                       | Several guide sources, including your own; several guide layouts | XMLTV guide as a list or a full grid, with reminders                                                                                                |
-| Catch-up                       | Yes, with filters                                                | Yes, on Xtream servers that keep recordings                                                                                                         |
-| Recording                      | Not stated by the developer                                      | Yes, the channel you are watching (Premium)                                                                                                         |
-| Pause and rewind live TV       | Yes, when the provider keeps an archive                          | Yes, up to an hour kept on the device (Premium)                                                                                                     |
-| Several channels at once       | Yes, a multi-window "studio" mode                                | No, on purpose: one stream connection at a time                                                                                                     |
-| Casting to a TV                | Chromecast                                                       | Chromecast                                                                                                                                          |
-| Picture-in-picture             | Yes                                                              | Yes                                                                                                                                                 |
-| Offline downloads              | Not stated by the developer                                      | Films and episodes, whole seasons too (more than 3 at a time is Premium)                                                                            |
-| Profiles and parental controls | User profiles                                                    | Up to 6 profiles, kids profiles and PINs (Premium); adult categories locked behind a PIN                                                            |
-| Trakt                          | Not stated by the developer                                      | Yes, scrobbles films and episodes (Premium)                                                                                                         |
-| Film and show details          | Not stated by the developer                                      | TMDB ratings, trailers, cast and actor pages, saved on the device                                                                                   |
-| Subtitles                      | Not stated by the developer                                      | Full caption styling, timing fix, and subtitle search for films and episodes                                                                        |
-| Ads                            | Not stated by the developer                                      | None, ever                                                                                                                                          |
-| Price                          | Free, with some advanced features paid (no price stated)         | Free, everything unlocked in the download from this site; on Google Play (coming soon), Premium US$9.99 a year with a 7-day trial, or US$24.99 once |
+|                                | OTT Navigator                                                    | Tuned                                                                                    |
+| ------------------------------ | ---------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| Where it runs                  | Android phones, tablets, TVs and TV boxes                        | Android phones, tablets, Chromebooks, Android TV and Google TV                           |
+| Playlist types                 | Provider playlists (types not listed on the pages we read)       | Xtream Codes login, M3U link, M3U file, MAC portal (live TV and guide)                   |
+| TV guide                       | Several guide sources, including your own; several guide layouts | XMLTV guide as a list or a full grid, with reminders                                     |
+| Catch-up                       | Yes, with filters                                                | Yes, on Xtream servers that keep recordings                                              |
+| Recording                      | Not stated by the developer                                      | Yes, the channel you are watching (Premium)                                              |
+| Pause and rewind live TV       | Yes, when the provider keeps an archive                          | Yes, up to an hour kept on the device (Premium)                                          |
+| Several channels at once       | Yes, a multi-window "studio" mode                                | No, on purpose: one stream connection at a time                                          |
+| Casting to a TV                | Chromecast                                                       | Chromecast                                                                               |
+| Picture-in-picture             | Yes                                                              | Yes                                                                                      |
+| Offline downloads              | Not stated by the developer                                      | Films and episodes, whole seasons too (more than 3 at a time is Premium)                 |
+| Profiles and parental controls | User profiles                                                    | Up to 6 profiles, kids profiles and PINs (Premium); adult categories locked behind a PIN |
+| Trakt                          | Not stated by the developer                                      | Yes, scrobbles films and episodes (Premium)                                              |
+| Film and show details          | Not stated by the developer                                      | TMDB ratings, trailers, cast and actor pages, saved on the device                        |
+| Subtitles                      | Not stated by the developer                                      | Full caption styling, timing fix, and subtitle search for films and episodes             |
+| Ads                            | Not stated by the developer                                      | None, ever                                                                               |
+| Price                          | Free, with some advanced features paid (no price stated)         | Free; Premium US$9.99 a year with a 7-day trial, or US$24.99 once                        |
 
 "Not stated by the developer" means we couldn't find it on the developer's own pages or store listing. It may still be there, so check before you rule it out.
 
@@ -34,7 +34,7 @@ OTT Navigator, from Scillarium Studio, is a deep, highly configurable player tha
 
 OTT Navigator's core features are free and some advanced ones are paid; we couldn't find a price on the pages we read. Tuned is free, with Premium at US$9.99 a year with a 7-day trial or US$24.99 once.
 
-Right now Tuned downloads from this site, through GitHub Releases, and that version is free with every feature unlocked, Premium ones included. The Premium prices are for the Google Play version, which is coming soon; they are what Play charges in the United States, and Play shows them in your own currency. Premium on Play covers up to three devices, and a Tuned account can add more.
+Tuned's prices are what Google Play charges in the United States; Play shows them in your own currency. Premium covers up to three devices, and a Tuned account can add more.
 
 ## Where OTT Navigator is ahead
 

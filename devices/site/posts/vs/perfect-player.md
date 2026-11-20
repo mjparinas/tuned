@@ -9,24 +9,24 @@ Perfect Player, from Niklabs, is a light "set-top box style" player that has bee
 
 ## At a glance
 
-|                                | Perfect Player                                        | Tuned                                                                                                                                               |
-| ------------------------------ | ----------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Where it runs                  | Android TVs, tablets and phones                       | Android phones, tablets, Chromebooks, Android TV and Google TV                                                                                      |
-| Playlist types                 | M3U, XSPF                                             | Xtream Codes login, M3U link, M3U file, MAC portal (live TV and guide)                                                                              |
-| TV guide                       | XMLTV and JTV, with channel groups and logos          | XMLTV guide as a list or a full grid, with reminders                                                                                                |
-| Catch-up                       | Archive playback with seeking                         | Yes, on Xtream servers that keep recordings                                                                                                         |
-| Recording                      | Not stated by the developer                           | Yes, the channel you are watching (Premium)                                                                                                         |
-| Pause and rewind live TV       | Not stated by the developer                           | Yes, up to an hour kept on the device (Premium)                                                                                                     |
-| Several channels at once       | Not stated by the developer                           | No, on purpose: one stream connection at a time                                                                                                     |
-| Casting to a TV                | Works with the Perfect Cast remote app                | Chromecast                                                                                                                                          |
-| Picture-in-picture             | Not stated by the developer                           | Yes                                                                                                                                                 |
-| Offline downloads              | Not stated by the developer                           | Films and episodes, whole seasons too (more than 3 at a time is Premium)                                                                            |
-| Profiles and parental controls | Not stated by the developer                           | Up to 6 profiles, kids profiles and PINs (Premium); adult categories locked behind a PIN                                                            |
-| Trakt                          | Not stated by the developer                           | Yes, scrobbles films and episodes (Premium)                                                                                                         |
-| Film and show details          | Not stated by the developer                           | TMDB ratings, trailers, cast and actor pages, saved on the device                                                                                   |
-| Subtitles                      | TXT subtitles                                         | Full caption styling, timing fix, and subtitle search for films and episodes                                                                        |
-| Ads                            | Yes, removed by the full version                      | None, ever                                                                                                                                          |
-| Price                          | Free with ads; a paid full version (price not stated) | Free, everything unlocked in the download from this site; on Google Play (coming soon), Premium US$9.99 a year with a 7-day trial, or US$24.99 once |
+|                                | Perfect Player                                        | Tuned                                                                                    |
+| ------------------------------ | ----------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| Where it runs                  | Android TVs, tablets and phones                       | Android phones, tablets, Chromebooks, Android TV and Google TV                           |
+| Playlist types                 | M3U, XSPF                                             | Xtream Codes login, M3U link, M3U file, MAC portal (live TV and guide)                   |
+| TV guide                       | XMLTV and JTV, with channel groups and logos          | XMLTV guide as a list or a full grid, with reminders                                     |
+| Catch-up                       | Archive playback with seeking                         | Yes, on Xtream servers that keep recordings                                              |
+| Recording                      | Not stated by the developer                           | Yes, the channel you are watching (Premium)                                              |
+| Pause and rewind live TV       | Not stated by the developer                           | Yes, up to an hour kept on the device (Premium)                                          |
+| Several channels at once       | Not stated by the developer                           | No, on purpose: one stream connection at a time                                          |
+| Casting to a TV                | Works with the Perfect Cast remote app                | Chromecast                                                                               |
+| Picture-in-picture             | Not stated by the developer                           | Yes                                                                                      |
+| Offline downloads              | Not stated by the developer                           | Films and episodes, whole seasons too (more than 3 at a time is Premium)                 |
+| Profiles and parental controls | Not stated by the developer                           | Up to 6 profiles, kids profiles and PINs (Premium); adult categories locked behind a PIN |
+| Trakt                          | Not stated by the developer                           | Yes, scrobbles films and episodes (Premium)                                              |
+| Film and show details          | Not stated by the developer                           | TMDB ratings, trailers, cast and actor pages, saved on the device                        |
+| Subtitles                      | TXT subtitles                                         | Full caption styling, timing fix, and subtitle search for films and episodes             |
+| Ads                            | Yes, removed by the full version                      | None, ever                                                                               |
+| Price                          | Free with ads; a paid full version (price not stated) | Free; Premium US$9.99 a year with a 7-day trial, or US$24.99 once                        |
 
 "Not stated by the developer" means we couldn't find it on the developer's own pages or store listing. It may still be there, so check before you rule it out.
 
@@ -34,7 +34,7 @@ Perfect Player, from Niklabs, is a light "set-top box style" player that has bee
 
 Perfect Player is free with ads, and a full version removes them and adds features. We couldn't find its price on the pages we read. Tuned is free with no ads; Premium is US$9.99 a year with a 7-day trial or US$24.99 once.
 
-Right now Tuned downloads from this site, through GitHub Releases, and that version is free with every feature unlocked, Premium ones included. The Premium prices are for the Google Play version, which is coming soon; they are what Play charges in the United States, and Play shows them in your own currency. Premium on Play covers up to three devices, and a Tuned account can add more.
+Tuned's prices are what Google Play charges in the United States; Play shows them in your own currency. Premium covers up to three devices, and a Tuned account can add more.
 
 ## Where Perfect Player is ahead
 
