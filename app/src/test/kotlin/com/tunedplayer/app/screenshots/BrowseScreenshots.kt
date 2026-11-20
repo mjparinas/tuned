@@ -108,6 +108,9 @@ class BrowseScreenshots : Screenshots() {
 
     @Test fun search() = shot("browse-search", SearchRoute("hockey"), wait = "Hockey Night")
 
+    /** Whole-guide search: later programmes, with the day and time they start and their channel. */
+    @Test fun searchGuide() = shot("browse-search-guide", SearchRoute("planet wild"), wait = text(R.string.search_in_guide))
+
     @Test fun events() = shot("browse-events", EventsRoute, wait = text(R.string.events_title))
 
     @Test fun downloads() = shot("browse-downloads", DownloadsRoute, wait = text(R.string.downloads))
