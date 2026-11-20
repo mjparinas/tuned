@@ -19,6 +19,10 @@ The public website at **www.tunedplayer.com** (Melvin registered it 2026-11-19; 
 
 "Every page should have a header and footer, similar to the one on the home page." The header (the channel stack and name, Features, Blog, Account and Download) and the footer (links, the note that Tuned includes no channels, and the store trademarks) are written once, `siteHeader` and `siteFooter` in `lib/site-build.mjs`. The generated pages (landing page and blog) have them inline. The hand-written pages (`/account`, `/tv`, `/devices`, `/check`, `/app/signed-in`) load `site.css` and `web.css` and include `/chrome.js` twice, `<script src="/chrome.js" data-part="header"></script>` first in `<body>` and `data-part="footer"` last, which writes the same header and footer in place before the page draws. `chrome.js` is generated from the same functions, so a change to the header reaches every page. A new page does the same; a test checks the hand-written pages have both. The admin keeps its own look.
 
+## Account pages are wide on a desktop (Melvin, 2026-11-20)
+
+"The width of the account view on the website can be wider please, it's too narrow on desktop." From 960 px wide, a page whose `<main>` has `class="wide"` (`/account`, and any account page that opts in) lines up with the header at 1120 px, and the signed-in cards sit two to a row in page order (`site.css`); a card marked `span` (who is signed in, What Tuned does) takes the whole row. A sign-in card on its own stays at 640 px so it reads easily. Phones and small tablets keep the single 560 px column, unchanged. Cards stay in page order, never rearranged to fill gaps, so the reading and tab order match what you see.
+
 ## The blog (Melvin, 2026-11-19)
 
 "Can you add blog posts that talk about whats new for each release and the date", and "ensure that each blog post has a CTA action, link to the android app".
