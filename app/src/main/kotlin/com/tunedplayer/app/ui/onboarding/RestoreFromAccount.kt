@@ -105,13 +105,14 @@ class RestoreViewModel(
 @Composable
 fun RestoreFromAccount(
     onRestored: (askProfile: Boolean) -> Unit,
+    compact: Boolean = false,
     vm: RestoreViewModel = viewModel(),
 ) {
     val context = LocalContext.current
     val signIn by vm.signIn.collectAsStateWithLifecycle()
     val state by vm.state.collectAsStateWithLifecycle()
     // Backing up between devices is Premium (docs/decisions/premium.md); a Play purchase comes back on its own on a new device.
-    KindCard(Icons.Filled.CloudDownload, R.string.restore_account, R.string.restore_account_summary) {
+    KindCard(Icons.Filled.CloudDownload, R.string.restore_account, R.string.restore_account_summary, compact) {
         if (context.container.premium.allow(context)) vm.start()
     }
     signIn?.let { AccountSignInDialog(it, stringResource(R.string.restore_account), onRetry = vm::start, onClose = vm::closeSignIn) }

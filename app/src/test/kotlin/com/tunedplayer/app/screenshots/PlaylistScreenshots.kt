@@ -24,6 +24,11 @@ class PlaylistScreenshots : Screenshots() {
     @Config(qualifiers = TV)
     fun welcomeTv() = shot("playlist-welcome-tv", WelcomeRoute, wait = text(R.string.welcome_title))
 
+    /** Melvin's TV draws at 853 by 480 dp, shorter than a standard 1080p TV, so every kind must still fit there. */
+    @Test
+    @Config(qualifiers = "w853dp-h480dp-land-television-xhdpi")
+    fun welcomeSmallTv() = shot("playlist-welcome-tv-small", WelcomeRoute, wait = text(R.string.welcome_title))
+
     // No build fills in a server any more (Melvin, 2026-11-19), so the Xtream form can be drawn: it starts empty.
     @Test
     fun addXtream() = shot("playlist-add-xtream", AddPlaylistRoute(Credentials.Kind.Xtream.name), wait = text(R.string.add_server_help))
