@@ -46,8 +46,21 @@
     <string name="sync_channel">Обновление каналов</string>
     <string name="sync_running">Обновление каналов и телегида</string>
     <string name="sync_size_of">%1$s из %2$s</string>
-    <string name="sync_downloading_playlist">Загрузка каналов · %1$s</string>
-    <string name="sync_downloading_guide">Загрузка телегида · %1$s</string>
+    <string name="first_run_keeps_going">Большие плейлисты в первый раз могут загружаться несколько минут. Загрузка продолжится, если вы выйдете из приложения.</string>
+    <string name="sync_step_of">Шаг %1$d из %2$d</string>
+    <string name="sync_step_download_playlist">Загрузка каналов</string>
+    <string name="sync_step_read_playlist">Обработка каналов</string>
+    <string name="sync_step_save_playlist">Сохранение каналов</string>
+    <string name="sync_step_details">Получение архива и сведений о фильмах</string>
+    <string name="sync_step_download_guide">Загрузка телегида</string>
+    <string name="sync_step_read_guide">Обработка телегида</string>
+    <string name="sync_step_save_guide">Сохранение телегида</string>
+    <string name="sync_step_library">Получение фильмов и сериалов</string>
+    <string name="sync_waiting_server">Ожидание ответа сервера…</string>
+    <string name="sync_size_so_far">Пока %1$s</string>
+    <string name="sync_step_done">Готово</string>
+    <string name="sync_step_now">Выполняется</string>
+    <string name="sync_step_waiting">Не начато</string>
     <string name="settings_refresh_now">Обновить сейчас</string>
     <string name="settings_pull_to_refresh">Потяните вниз для обновления</string>
     <string name="settings_pull_to_refresh_summary">Если потянуть список вниз, плейлист и телегид загрузятся заново</string>
@@ -275,17 +288,17 @@
         <item quantity="many">%d профилей</item>
         <item quantity="other">%d профиля</item>
     </plurals>
-    <plurals name="sync_saving_playlist">
-        <item quantity="one">Сохранение каналов · %1$s элемент</item>
-        <item quantity="few">Сохранение каналов · %1$s элемента</item>
-        <item quantity="many">Сохранение каналов · %1$s элементов</item>
-        <item quantity="other">Сохранение каналов · %1$s элемента</item>
+    <plurals name="sync_items">
+        <item quantity="one">%1$s элемент</item>
+        <item quantity="few">%1$s элемента</item>
+        <item quantity="many">%1$s элементов</item>
+        <item quantity="other">%1$s элемента</item>
     </plurals>
-    <plurals name="sync_saving_guide">
-        <item quantity="one">Сохранение телегида · %1$s передача</item>
-        <item quantity="few">Сохранение телегида · %1$s передачи</item>
-        <item quantity="many">Сохранение телегида · %1$s передач</item>
-        <item quantity="other">Сохранение телегида · %1$s передачи</item>
+    <plurals name="sync_programmes">
+        <item quantity="one">%1$s передача</item>
+        <item quantity="few">%1$s передачи</item>
+        <item quantity="many">%1$s передач</item>
+        <item quantity="other">%1$s передачи</item>
     </plurals>
     <plurals name="episodes">
         <item quantity="one">%1$d серия</item>

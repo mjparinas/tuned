@@ -46,8 +46,21 @@
     <string name="sync_channel">Sender werden aktualisiert</string>
     <string name="sync_running">Sender und Programm werden aktualisiert</string>
     <string name="sync_size_of">%1$s von %2$s</string>
-    <string name="sync_downloading_playlist">Sender werden heruntergeladen · %1$s</string>
-    <string name="sync_downloading_guide">Programm wird heruntergeladen · %1$s</string>
+    <string name="first_run_keeps_going">Große Playlists können beim ersten Mal ein paar Minuten dauern. Es läuft weiter, wenn du die App verlässt.</string>
+    <string name="sync_step_of">Schritt %1$d von %2$d</string>
+    <string name="sync_step_download_playlist">Sender werden heruntergeladen</string>
+    <string name="sync_step_read_playlist">Sender werden verarbeitet</string>
+    <string name="sync_step_save_playlist">Sender werden gespeichert</string>
+    <string name="sync_step_details">Catch-up und Filmdetails werden geladen</string>
+    <string name="sync_step_download_guide">Programm wird heruntergeladen</string>
+    <string name="sync_step_read_guide">Programm wird verarbeitet</string>
+    <string name="sync_step_save_guide">Programm wird gespeichert</string>
+    <string name="sync_step_library">Filme und Serien werden geladen</string>
+    <string name="sync_waiting_server">Warte auf den Server…</string>
+    <string name="sync_size_so_far">%1$s bisher</string>
+    <string name="sync_step_done">Fertig</string>
+    <string name="sync_step_now">Läuft</string>
+    <string name="sync_step_waiting">Noch nicht gestartet</string>
     <string name="settings_refresh_now">Jetzt aktualisieren</string>
     <string name="settings_pull_to_refresh">Zum Aktualisieren nach unten ziehen</string>
     <string name="settings_pull_to_refresh_summary">Eine Liste nach unten zu ziehen lädt Playlist und Programm erneut herunter</string>
@@ -269,13 +282,13 @@
         <item quantity="one">%d Profil</item>
         <item quantity="other">%d Profile</item>
     </plurals>
-    <plurals name="sync_saving_playlist">
-        <item quantity="one">Sender werden gespeichert · %1$s Eintrag</item>
-        <item quantity="other">Sender werden gespeichert · %1$s Einträge</item>
+    <plurals name="sync_items">
+        <item quantity="one">%1$s Eintrag</item>
+        <item quantity="other">%1$s Einträge</item>
     </plurals>
-    <plurals name="sync_saving_guide">
-        <item quantity="one">Programm wird gespeichert · %1$s Sendung</item>
-        <item quantity="other">Programm wird gespeichert · %1$s Sendungen</item>
+    <plurals name="sync_programmes">
+        <item quantity="one">%1$s Sendung</item>
+        <item quantity="other">%1$s Sendungen</item>
     </plurals>
     <plurals name="episodes">
         <item quantity="one">%1$d Folge</item>

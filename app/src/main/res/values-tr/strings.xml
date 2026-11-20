@@ -46,8 +46,21 @@
     <string name="sync_channel">Kanallar yenileniyor</string>
     <string name="sync_running">Kanallar ve rehber yenileniyor</string>
     <string name="sync_size_of">%1$s / %2$s</string>
-    <string name="sync_downloading_playlist">Kanallar indiriliyor · %1$s</string>
-    <string name="sync_downloading_guide">Rehber indiriliyor · %1$s</string>
+    <string name="first_run_keeps_going">Büyük oynatma listeleri ilk seferde birkaç dakika sürebilir. Uygulamadan çıksanız da devam eder.</string>
+    <string name="sync_step_of">Adım %1$d / %2$d</string>
+    <string name="sync_step_download_playlist">Kanallar indiriliyor</string>
+    <string name="sync_step_read_playlist">Kanallar işleniyor</string>
+    <string name="sync_step_save_playlist">Kanallar kaydediliyor</string>
+    <string name="sync_step_details">Catch-up ve film ayrıntıları alınıyor</string>
+    <string name="sync_step_download_guide">Rehber indiriliyor</string>
+    <string name="sync_step_read_guide">Rehber işleniyor</string>
+    <string name="sync_step_save_guide">Rehber kaydediliyor</string>
+    <string name="sync_step_library">Filmler ve diziler alınıyor</string>
+    <string name="sync_waiting_server">Sunucu bekleniyor…</string>
+    <string name="sync_size_so_far">Şimdiye kadar %1$s</string>
+    <string name="sync_step_done">Tamamlandı</string>
+    <string name="sync_step_now">Devam ediyor</string>
+    <string name="sync_step_waiting">Başlamadı</string>
     <string name="settings_refresh_now">Şimdi yenile</string>
     <string name="settings_pull_to_refresh">Yenilemek için aşağı çek</string>
     <string name="settings_pull_to_refresh_summary">Bir listeyi aşağı çekmek listeyi ve rehberi yeniden indirir</string>
@@ -269,13 +282,13 @@
         <item quantity="one">%d profil</item>
         <item quantity="other">%d profil</item>
     </plurals>
-    <plurals name="sync_saving_playlist">
-        <item quantity="one">Kanallar kaydediliyor · %1$s öğe</item>
-        <item quantity="other">Kanallar kaydediliyor · %1$s öğe</item>
+    <plurals name="sync_items">
+        <item quantity="one">%1$s öğe</item>
+        <item quantity="other">%1$s öğe</item>
     </plurals>
-    <plurals name="sync_saving_guide">
-        <item quantity="one">Rehber kaydediliyor · %1$s program</item>
-        <item quantity="other">Rehber kaydediliyor · %1$s program</item>
+    <plurals name="sync_programmes">
+        <item quantity="one">%1$s program</item>
+        <item quantity="other">%1$s program</item>
     </plurals>
     <plurals name="episodes">
         <item quantity="one">%1$d bölüm</item>

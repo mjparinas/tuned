@@ -1,8 +1,11 @@
 package com.tunedplayer.app.screenshots
 
 import androidx.annotation.StringRes
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createComposeRule
@@ -112,6 +115,26 @@ abstract class Screenshots {
         compose.waitForIdle()
         if (overlay == null) compose.onRoot().captureRoboImage("$name.png") else captureScreenRoboImage("$name.png")
         shown.getOrThrow()
+    }
+
+    /**
+     * Draws one part of a screen on its own, for a state sample data can't reach (a refresh that is part way through),
+     * and saves it as `[name].png` once [wait] is on screen.
+     */
+    protected fun part(
+        name: String,
+        wait: String,
+        settings: AppSettings = DARK,
+        content: @Composable () -> Unit,
+    ) {
+        compose.setContent {
+            TunedTheme(mode = settings.theme, pureBlack = settings.pureBlack, accent = settings.accent) {
+                TvSafeArea { Surface(Modifier.fillMaxSize()) { content() } }
+            }
+        }
+        compose.waitUntil(WAIT_MS) { compose.onAllNodes(hasText(wait, substring = true)).fetchSemanticsNodes().isNotEmpty() }
+        compose.waitForIdle()
+        compose.onRoot().captureRoboImage("$name.png")
     }
 
     /** A string from the app's resources, for waiting on a screen's title. */

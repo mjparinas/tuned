@@ -46,8 +46,21 @@
     <string name="sync_channel">Atualizando canais</string>
     <string name="sync_running">Atualizando canais e guia</string>
     <string name="sync_size_of">%1$s de %2$s</string>
-    <string name="sync_downloading_playlist">Baixando canais · %1$s</string>
-    <string name="sync_downloading_guide">Baixando o guia · %1$s</string>
+    <string name="first_run_keeps_going">Playlists grandes podem levar alguns minutos na primeira vez. Continua mesmo se você sair do app.</string>
+    <string name="sync_step_of">Etapa %1$d de %2$d</string>
+    <string name="sync_step_download_playlist">Baixando canais</string>
+    <string name="sync_step_read_playlist">Processando canais</string>
+    <string name="sync_step_save_playlist">Salvando canais</string>
+    <string name="sync_step_details">Obtendo catch-up e detalhes dos filmes</string>
+    <string name="sync_step_download_guide">Baixando o guia</string>
+    <string name="sync_step_read_guide">Processando o guia</string>
+    <string name="sync_step_save_guide">Salvando o guia</string>
+    <string name="sync_step_library">Obtendo filmes e séries</string>
+    <string name="sync_waiting_server">Aguardando o servidor…</string>
+    <string name="sync_size_so_far">%1$s até agora</string>
+    <string name="sync_step_done">Concluído</string>
+    <string name="sync_step_now">Em andamento</string>
+    <string name="sync_step_waiting">Não iniciado</string>
     <string name="settings_refresh_now">Atualizar agora</string>
     <string name="settings_pull_to_refresh">Puxe para baixo para atualizar</string>
     <string name="settings_pull_to_refresh_summary">Puxar uma lista para baixo baixa a lista e o guia de novo</string>
@@ -272,15 +285,15 @@
         <item quantity="many">%d perfis</item>
         <item quantity="other">%d perfis</item>
     </plurals>
-    <plurals name="sync_saving_playlist">
-        <item quantity="one">Salvando canais · %1$s item</item>
-        <item quantity="many">Salvando canais · %1$s itens</item>
-        <item quantity="other">Salvando canais · %1$s itens</item>
+    <plurals name="sync_items">
+        <item quantity="one">%1$s item</item>
+        <item quantity="many">%1$s itens</item>
+        <item quantity="other">%1$s itens</item>
     </plurals>
-    <plurals name="sync_saving_guide">
-        <item quantity="one">Salvando o guia · %1$s programa</item>
-        <item quantity="many">Salvando o guia · %1$s programas</item>
-        <item quantity="other">Salvando o guia · %1$s programas</item>
+    <plurals name="sync_programmes">
+        <item quantity="one">%1$s programa</item>
+        <item quantity="many">%1$s programas</item>
+        <item quantity="other">%1$s programas</item>
     </plurals>
     <plurals name="episodes">
         <item quantity="one">%1$d episódio</item>

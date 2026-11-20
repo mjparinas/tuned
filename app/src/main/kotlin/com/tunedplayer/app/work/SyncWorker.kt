@@ -112,18 +112,30 @@ class SyncWorker(
         private const val KEY_STEP = "step"
         private const val KEY_DONE = "done"
         private const val KEY_TOTAL = "total"
+        private const val KEY_ROWS = "rows"
+        private const val KEY_STEPS = "steps"
         private const val CHANNEL = NotificationChannels.SYNC
         private const val NOTIFICATION_ID = 7
         private const val MAX_ATTEMPTS = 3
         private const val REPORT_EVERY_MS = 500L
         private const val PROGRESS_MAX = 1_000
 
-        private fun SyncProgress.toData(): Data = workDataOf(KEY_STEP to step.name, KEY_DONE to done, KEY_TOTAL to total)
+        internal fun SyncProgress.toData(): Data = workDataOf(
+            KEY_STEP to step.name,
+            KEY_DONE to done,
+            KEY_TOTAL to total,
+            KEY_ROWS to rows,
+            KEY_STEPS to steps.map { it.name }.toTypedArray(),
+        )
 
         /** The progress a running refresh last reported, or null before its first report. */
         fun progressOf(data: Data): SyncProgress? {
-            val step = data.getString(KEY_STEP)?.let { name -> SyncProgress.Step.entries.firstOrNull { it.name == name } } ?: return null
-            return SyncProgress(step, data.getLong(KEY_DONE, 0), data.getLong(KEY_TOTAL, -1))
+            val step = stepNamed(data.getString(KEY_STEP)) ?: return null
+            val steps = data.getNullableStringArray(KEY_STEPS)?.mapNotNull(::stepNamed)?.takeIf { it.isNotEmpty() } ?: listOf(step)
+            return SyncProgress(step, data.getLong(KEY_DONE, 0), data.getLong(KEY_TOTAL, -1), data.getLong(KEY_ROWS, -1), steps)
         }
+
+        /** A step from its name; null for one this version doesn't know. */
+        private fun stepNamed(name: String?): SyncProgress.Step? = SyncProgress.Step.entries.firstOrNull { it.name == name }
     }
 }
