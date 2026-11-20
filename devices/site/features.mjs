@@ -1,7 +1,7 @@
 // Every feature of Tuned, in the words of the website (docs/decisions/website.md). The one list the landing page's
 // "Everything in Tuned" section and /features.json are built from, so the account page and anything else can show the
 // same list. Built from AGENTS.md and docs/decisions/: when a feature is added or removed there, change it here too.
-// `premium: true` marks what Tuned Premium unlocks in the Google Play version; the APK from GitHub has everything.
+// `premium: true` marks what Tuned Premium unlocks.
 
 export const FEATURE_GROUPS = [
     {
@@ -113,7 +113,7 @@ export const FEATURE_GROUPS = [
             { title: "Watching comes first", body: "Downloads and scans wait while anything plays." },
             { title: "Tuned account", body: "Sign in with Google and every device keeps the same playlists and settings.", premium: true },
             { title: "No ads", body: "No ads, ever." },
-            { title: "Updates itself", body: "The GitHub version offers each new release and shows what's new." },
+            { title: "Updates itself", body: "Tuned offers each new version and shows what's new." },
             { title: "Accessible", body: "Works with TalkBack and large text." },
         ],
     },

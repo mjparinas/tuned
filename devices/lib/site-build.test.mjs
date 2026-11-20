@@ -74,6 +74,7 @@ test("every page carries the Android download, and the sitemap lists every post"
     ]) {
         assert.ok(files[page], page);
         assert.ok(files[page].includes(SITE.apk), `${page} links the APK`);
+        assert.ok(!/\bGitHub\b|unlocked/i.test(files[page].replace(/https:\/\/github\.com\/[^"]*/g, "")), `${page} names GitHub`);
         assert.ok(files[page].includes(`<link rel="canonical" href="${SITE.url}/`), `${page} has a canonical`);
     }
     for (const url of ["/", "/blog/", "/blog/guides/", "/blog/guides/start/", "/blog/whats-new/tuned-1-0-0/"])
@@ -88,5 +89,18 @@ test("every hand-written page has the shared header and footer", async () => {
         assert.match(html, /<body>\s*<script src="\/chrome.js" data-part="header"><\/script>/, page);
         assert.match(html, /<script src="\/chrome.js" data-part="footer"><\/script>\s*<\/body>/, page);
         assert.ok(html.includes('href="/web.css"'), `${page} loads web.css`);
+    }
+});
+
+test("no committed page outside /blog/vs/ names GitHub or says everything is unlocked (Melvin, 2026-11-20)", async () => {
+    const { readdir, readFile } = await import("node:fs/promises");
+    const root = new URL("../public/", import.meta.url);
+    const pages = (await readdir(root, { recursive: true })).filter(
+        (f) => /\.(html|js|json)$/.test(f) && !f.startsWith("blog/vs/") && !f.startsWith("admin/") && !f.startsWith("check/vendor/"),
+    );
+    for (const page of pages) {
+        const text = (await readFile(new URL(page, root), "utf8")).replace(/https:\/\/github\.com\/[^"'\s)]*/g, "");
+        assert.ok(!/\bGitHub\b/.test(text), `${page} names GitHub`);
+        assert.ok(!/everything unlocked|has everything|every feature unlocked/i.test(text), `${page} says everything is unlocked`);
     }
 });
