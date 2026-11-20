@@ -129,7 +129,7 @@ class AppContainer(
         combine(playerOpen, tvCasting.active, downloadOpen) { open, tv, down -> open || tv || down }
             .stateIn(appScope, SharingStarted.Eagerly, false)
     }
-    val account by lazy { AccountRepository(http, credentials, settings, streamBusy) }
+    val account by lazy { AccountRepository(http, credentials::load, settings, streamBusy) }
     val channelScan by lazy { ChannelScanner(context, db, http, credentials, settings, streamBusy, stalker::resolve) }
     val scanControl by lazy { ScanWorker.Control(context) }
 
