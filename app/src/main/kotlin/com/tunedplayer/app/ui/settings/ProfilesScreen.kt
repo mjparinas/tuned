@@ -86,7 +86,9 @@ import com.tunedplayer.app.data.Accent
 import com.tunedplayer.app.data.db.ProfileEntity
 import com.tunedplayer.app.diagnostics.launchSafely
 import com.tunedplayer.app.ui.common.BackTopBar
+import com.tunedplayer.app.ui.common.LocalTvMargin
 import com.tunedplayer.app.ui.common.TunedDialog
+import com.tunedplayer.app.ui.common.bleedIntoTvMargin
 import com.tunedplayer.app.ui.common.focusRing
 import com.tunedplayer.app.ui.theme.swatch
 import kotlinx.coroutines.flow.SharingStarted
@@ -346,11 +348,14 @@ internal fun WelcomeScaffold(
     content: @Composable (PaddingValues) -> Unit,
 ) {
     val primary = MaterialTheme.colorScheme.primary
-    Scaffold(
-        containerColor = Color.Transparent,
-        contentColor = MaterialTheme.colorScheme.onBackground,
-        modifier =
+    val tvMargin = LocalTvMargin.current
+    Box(Modifier.fillMaxSize()) {
+        // The backdrop is its own layer so that on a TV it fills the overscan margin too, edge to edge, while the
+        // profiles stay inside it; drawn on the Scaffold, the plain margin showed as a white frame (Melvin, 2026-11-20).
+        Box(
             Modifier
+                .matchParentSize()
+                .bleedIntoTvMargin(tvMargin)
                 .background(MaterialTheme.colorScheme.background)
                 .drawBehind {
                     drawRect(
@@ -361,9 +366,14 @@ internal fun WelcomeScaffold(
                         ),
                     )
                 },
-        topBar = topBar,
-        content = content,
-    )
+        )
+        Scaffold(
+            containerColor = Color.Transparent,
+            contentColor = MaterialTheme.colorScheme.onBackground,
+            topBar = topBar,
+            content = content,
+        )
+    }
 }
 
 /** The app's mark and name in the upper left of "Who's watching?" at start, so the first screen says whose it is. */
