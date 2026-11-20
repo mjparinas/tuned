@@ -9,6 +9,7 @@ import androidx.activity.ComponentActivity
 import androidx.annotation.OptIn
 import androidx.media3.common.C
 import androidx.media3.common.Format
+import androidx.media3.common.Tracks
 import androidx.media3.common.util.Consumer
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
@@ -38,7 +39,7 @@ class SubtitleTiming {
         player: ExoPlayer,
         say: (String) -> Unit,
     ) {
-        if (player.currentTracks.groups.none { it.type == C.TRACK_TYPE_TEXT && it.isSelected }) {
+        if (!showing(player.currentTracks)) {
             say(activity.getString(R.string.subtitle_timing_none))
             return
         }
@@ -141,8 +142,14 @@ class SubtitleTiming {
         }
     }
 
-    private companion object {
-        val STEPS =
+    companion object {
+        /**
+         * Subtitles are on: a text track is picked. The timing button is greyed out otherwise (Melvin, 2026-11-20:
+         * "Disable subtitle delay if subtitles are disabled"), since there are no captions to move.
+         */
+        fun showing(tracks: Tracks): Boolean = tracks.groups.any { it.type == C.TRACK_TYPE_TEXT && it.isSelected }
+
+        private val STEPS =
             listOf(
                 R.string.subtitle_timing_back_big to -SubtitleOffset.BIG_STEP_MS,
                 R.string.subtitle_timing_back_small to -SubtitleOffset.SMALL_STEP_MS,

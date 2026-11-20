@@ -454,8 +454,7 @@ ${g.items.map((f) => `<li><span class="tick">${icon("check", 18)}</span><span><b
         .replaceAll("<!-- @badges-soon -->", storeBadges(site, "soon"))
         .replaceAll("<!-- @download-hero -->", downloadButton(site, "hero"))
         .replaceAll("<!-- @latest-posts -->", latest)
-        .replaceAll("<!-- @cta -->", ctaCard(site, "home", latestVersion))
-        .replaceAll("<!-- @version -->", esc(latestVersion ?? ""));
+        .replaceAll("<!-- @cta -->", ctaCard(site, "home"));
     const description =
         "Tuned is a fast, quiet IPTV player for Android phones, tablets and Android TV. Xtream Codes, M3U and MAC portals, a full TV guide, catch-up, downloads and casting. No ads.";
     return layout(site, {
