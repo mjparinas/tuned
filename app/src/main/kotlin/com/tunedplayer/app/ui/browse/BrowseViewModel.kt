@@ -49,6 +49,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
@@ -98,7 +99,12 @@ class BrowseViewModel(
         // A cache from before channel numbers: number it once, in the background.
         viewModelScope.launchSafely("BrowseViewModel") { ChannelNumbers.fillIfMissing(container.db) }
         // A cache from before the Movies and Shows sorts: work out its titles and years once, in the background.
-        viewModelScope.launchSafely("BrowseViewModel") { SortFields.fillIfMissing(container.db) }
+        viewModelScope.launchSafely("BrowseViewModel") {
+            SortFields.fillIfMissing(container.db)
+            // A sort chosen before its times and ratings were read: read them now rather than at the next refresh.
+            val s = container.settings.settings.first()
+            if (s.movieSort != TitleSort.Order.PROVIDER || s.showSort != TitleSort.Order.PROVIDER) container.sync.fillSortDetailsIfMissing()
+        }
         // A guide cached before whole-guide search: index its titles once, in the background.
         viewModelScope.launchSafely("BrowseViewModel") { GuideSearchIndex.fillIfMissing(container.db) }
         // The Android TV home screen rows (Continue watching, favourites); nothing on phones.
@@ -281,6 +287,7 @@ class BrowseViewModel(
                     ContentKind.LIVE -> it
                 }
             }
+            if (order != TitleSort.Order.PROVIDER) container.sync.fillSortDetailsIfMissing()
         }
     }
 
