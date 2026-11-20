@@ -24,6 +24,8 @@ import java.util.concurrent.TimeUnit
  */
 class SyncScheduler(
     context: Context,
+    /** A refresh was asked for: it shouldn't wait out the quiet start ([QuietStart.openNow]). */
+    private val onAsked: () -> Unit = {},
 ) {
     // Looked up on first use, so WorkManager doesn't start before the first frame.
     private val work by lazy { WorkManager.getInstance(context) }
@@ -72,6 +74,7 @@ class SyncScheduler(
         guideOnly: Boolean = false,
         first: Boolean = false,
     ) {
+        onAsked()
         val request =
             OneTimeWorkRequestBuilder<SyncWorker>()
                 .setExpedited(OutOfQuotaPolicy.RUN_AS_NON_EXPEDITED_WORK_REQUEST)

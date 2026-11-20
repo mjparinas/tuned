@@ -43,6 +43,7 @@ import com.tunedplayer.app.premium.DeviceSeatsClient
 import com.tunedplayer.app.premium.Premium
 import com.tunedplayer.app.updates.GitHubUpdates
 import com.tunedplayer.app.work.OfflineWorker
+import com.tunedplayer.app.work.QuietStart
 import com.tunedplayer.app.work.Reminders
 import com.tunedplayer.app.work.ScanWorker
 import com.tunedplayer.app.work.ScheduledRecordings
@@ -82,7 +83,9 @@ class AppContainer(
     val stalker by lazy { StalkerLinks(http, credentials::load) }
     val sync by lazy { SyncRepository(db, http, credentials::load, settings, context.noBackupFilesDir.resolve("sync"), stalker) }
     val tune by lazy { TuneRepository(db, settings) }
-    val scheduler = SyncScheduler(context)
+    /** Holds background work until the first screen is up (docs/decisions/speed.md › Quiet start). */
+    val quietStart = QuietStart(appScope)
+    val scheduler = SyncScheduler(context) { quietStart.openNow() }
     val guideFixes by lazy { GuideFixRepository(db, sync, scheduler, credentials) }
     val updates by lazy { GitHubUpdates(context, http) }
     val syncCopy by lazy { SyncCopyRepository(credentials, settings, db, profiles, trakt, IntroStore(context)) }
@@ -147,7 +150,7 @@ class AppContainer(
     }
     val account by lazy { AccountRepository(http, credentials::load, settings, streamBusy) }
     val channelScan by lazy { ChannelScanner(context, db, http, credentials, settings, streamBusy, stalker::resolve) }
-    val scanControl by lazy { ScanWorker.Control(context) }
+    val scanControl by lazy { ScanWorker.Control(context) { quietStart.openNow() } }
 
     /** Adding, switching, removing and signing out of playlists. */
     val session by lazy {

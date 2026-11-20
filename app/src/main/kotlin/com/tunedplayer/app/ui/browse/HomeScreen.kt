@@ -174,6 +174,8 @@ fun HomeScreen(
     val panes = ScreenLayout.panes(widthDp)
     // On a wide screen a film, show or guide opens beside the list; on anything narrower it opens full screen.
     var detail by rememberSaveable(stateSaver = Detail.saver) { mutableStateOf<Detail?>(null) }
+    // Home is up: background work may start a moment later (docs/decisions/speed.md › Quiet start).
+    LaunchedEffect(Unit) { vm.homeShown() }
     LaunchedEffect(panes) {
         // Folded, rotated or put in split screen with a pane open: carry on with that page full screen.
         val open = detail

@@ -50,6 +50,7 @@ class AppUpdates(
             // the check short. The check never throws.
             val container = activity.container
             container.appScope.launch {
+                container.quietStart.await()
                 // A version older than the admin's `min_version_code` looks for an update even with the setting off.
                 val tooOld = ServerFlags.now.value.tooOld(BuildConfig.VERSION_CODE)
                 if (tooOld ||

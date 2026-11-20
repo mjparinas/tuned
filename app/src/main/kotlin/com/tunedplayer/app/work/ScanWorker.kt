@@ -36,6 +36,7 @@ class ScanWorker(
 
     override suspend fun doWork(): Result = logFailures("Scan", failed = { Result.failure() }) {
         val container = applicationContext.container
+        container.quietStart.await()
         if (container.credentials.load() == null) return@logFailures Result.success()
         // Android 12+ may refuse from the background; it runs anyway.
         attempt("Scan", "Couldn't run as a foreground service") { setForeground(foregroundInfo(0, 0)) }
@@ -89,12 +90,15 @@ class ScanWorker(
     /** Starting, stopping and following the scan. */
     class Control(
         context: Context,
+        /** A scan was asked for: it shouldn't wait out the quiet start ([QuietStart.openNow]). */
+        private val onAsked: () -> Unit = {},
     ) {
         private val work = WorkManager.getInstance(context)
 
         fun start() {
             // The admin's `channel_scan` switch (docs/decisions/admin.md).
             if (!ServerFlags.now.value.channelScan) return
+            onAsked()
             val request =
                 OneTimeWorkRequestBuilder<ScanWorker>()
                     .setConstraints(Constraints.Builder().setRequiredNetworkType(NetworkType.CONNECTED).build())

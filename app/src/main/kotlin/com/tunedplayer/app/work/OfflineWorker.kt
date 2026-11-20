@@ -30,7 +30,13 @@ class OfflineWorker(
 ) : CoroutineWorker(context, params) {
     private var lastReport = 0L
 
-    override suspend fun doWork(): Result = try {
+    override suspend fun doWork(): Result {
+        // Before the connection opens: a download resumed at start waits for the first screen.
+        applicationContext.container.quietStart.await()
+        return downloadOnce()
+    }
+
+    private suspend fun downloadOnce(): Result = try {
         applicationContext.container.downloadOpen.value = true
         logFailures(TAG, failed = { Result.failure() }) { download() }
     } finally {
