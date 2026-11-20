@@ -275,16 +275,16 @@ export async function redeem(code, accountId) {
     const allowed = checkoutAllowed(plan, product, quantity);
     if (allowed !== "ok") return { status: allowed };
     const expires = product === "seat_yearly" ? `now() + interval '1 year'` : "NULL";
-    const [, , updated] = await transaction([
-        [`INSERT INTO code_redemptions (code, account_id) VALUES ($1, $2)`, [code, accountId]],
-        [
-            `INSERT INTO entitlements (source, ref, account_id, product, quantity, status, expires_at)
-             VALUES ('grant', $1, $2, $3, $4, 'active', ${expires})`,
-            [`code:${code}:${accountId}`, accountId, product, quantity],
-        ],
-        [`UPDATE codes SET uses = uses + 1 WHERE code = $1 AND uses < max_uses RETURNING uses`, [code]],
-    ]);
-    return updated.length ? { status: "ok", product, quantity } : { status: "used up" };
+    // One statement: the use is counted first and the grant made only if a use was left, so two accounts redeeming
+    // the last use at once can't both get it (separate statements in a transaction would both commit).
+    const granted = await query(
+        `WITH used AS (UPDATE codes SET uses = uses + 1 WHERE code = $1 AND uses < max_uses AND NOT disabled RETURNING code),
+              redeemed AS (INSERT INTO code_redemptions (code, account_id) SELECT code, $2 FROM used RETURNING code)
+         INSERT INTO entitlements (source, ref, account_id, product, quantity, status, expires_at)
+         SELECT 'grant', $5, $2, $3, $4, 'active', ${expires} FROM redeemed RETURNING ref`,
+        [code, accountId, product, quantity, `code:${code}:${accountId}`],
+    );
+    return granted.length ? { status: "ok", product, quantity } : { status: "used up" };
 }
 
 // --- Users (accounts) ---

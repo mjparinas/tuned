@@ -34,3 +34,12 @@ Melvin asked for "a pin to filter out adult content". Adult categories (the clas
 **The backup in the Tuned account** (2026-11-19). It holds the saved playlists' logins as plain JSON on Tuned's server, not encrypted (Melvin, 2026-11-19: "i dont want to encrypt backups"), reachable only by devices signed in to the account. The device's account token is sealed with a Keystore key and stored only hashed on the server ([accounts](accounts.md)). Google Drive sync, which kept the same copy in a file in the person's Drive, was removed the same day.
 
 **OpenSubtitles account** (2026-11-17). The optional sign-in for subtitle search is encrypted with the same Keystore key as the login (`CredentialStore.subtitleAccount`), stays out of settings and sync, and is forgotten on sign-out. The API key is not a setting: it comes from the `OPENSUBTITLES_API_KEY` repository secret at release build time, like the TMDB key.
+
+## Security audit (2026-11-20)
+
+Melvin asked for an audit of the app, the website and the admin. What it changed on the server:
+
+- **Google sign-in is tied to the browser that started it.** Starting a sign-in sets a short `tuned_oauth` cookie (HttpOnly, Secure, SameSite=Lax, sent only to `/api/auth/callback`) holding the sign-in's state, and the callback takes Google's answer only when the same state comes back in it. Without it, someone could finish their own sign-in in another person's browser with a link (login CSRF) and have them pair a TV or buy seats on the wrong account.
+- **A Play subscription counts only as the product it was bought as.** Play's subscription check takes only the token, so the server now reads the line item for the product the app reported; before, a yearly seat's token could be reported as yearly Premium.
+- **A code's last use can't be redeemed twice.** Counting the use and making the grant are one statement, so two accounts redeeming at once can't both get Premium from a single-use code.
+- **The website's Content-Security-Policy refuses inline scripts** (`script-src 'self'`, plus `object-src 'none'`, `base-uri 'none'` and `frame-ancestors 'none'`). The one inline script, on `/devices`, moved to `devices/devices.js`. `/check` keeps its own policy.

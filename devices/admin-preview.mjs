@@ -18,7 +18,12 @@ const handle = adminApi({
     redis: { command: async () => 0 },
     env: { ADMIN_EMAILS: "melvin@example.com", SUPPORT_EMAILS: "help@example.com", RESEND_API_KEY: "x" },
     sessions: { read: async () => ({ token: "t", session }), create: async () => ({}), update: async () => {}, end: async () => "" },
-    auth: { webAccount: async () => null, account: async () => null, googleStart: async () => "/", signInReady: () => true },
+    auth: {
+        webAccount: async () => null,
+        account: async () => null,
+        googleRedirect: async () => Response.redirect("http://localhost/", 302),
+        signInReady: () => true,
+    },
     system: sampleSystem,
     mail: { send: async () => true },
 });
