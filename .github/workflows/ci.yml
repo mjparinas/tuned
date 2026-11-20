@@ -179,6 +179,8 @@ jobs:
       - uses: ./.github/actions/setup-android
       # The Dolby and DTS decoder, built once per Media3 version and cached, so R8 sees it here as in Release.
       - uses: ./.github/actions/ffmpeg-decoder
+        with:
+          required: "false"
       # Unsigned release builds of both the GitHub and the store build, so R8 fails here on a missing keep rule, not in
       # Release. No debug APK: Melvin
       # (2026-11-18) installs only production releases, and lint and the unit tests already compile the debug variant.
