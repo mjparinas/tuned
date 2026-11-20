@@ -72,6 +72,28 @@ export function playlistView(p) {
     };
 }
 
+/** A fetch from one of our own pages (never a link opened from elsewhere, another site, or a typed address). */
+export const fromOurPage = (headers) => headers.get("sec-fetch-site") === "same-origin";
+
+/**
+ * One saved playlist's login, for the provider check on the website (docs/decisions/web.md › Your saved playlists).
+ * Only the person's own signed-in browser asks for it, and only to hand it to the check, which talks to the provider
+ * from that browser; Tuned's server never contacts the provider. `{ kind, name, server, username, password }` for an
+ * Xtream login, `{ kind, name, link }` for an M3U link (both with `guide` and `extraGuides`, for the channel list
+ * beside it), or `{ error }`: "gone", or "app only" for a MAC portal or a file,
+ * which a browser can't use.
+ */
+export function checkLogin(stored, id) {
+    const p = (stored?.copy?.playlists ?? []).find((x) => playlistId(x) === id);
+    if (!p) return { error: "gone" };
+    const kind = kindOf(p);
+    const name = p.name || playlistView(p).detail;
+    const guides = { guide: p.guideUrl ?? "", extraGuides: Array.isArray(p.extraGuides) ? p.extraGuides : [] };
+    if (kind === "xtream") return { kind, name, server: p.server, username: p.username, password: p.password ?? "", ...guides };
+    if (kind === "link") return { kind, name, link: p.playlistUrl, ...guides };
+    return { error: "app only", kind };
+}
+
 /** The setting's value in the copy (`{ "b": true }` and so on), or its default. */
 function settingValue(settings, s) {
     const stored = settings?.[s.key];

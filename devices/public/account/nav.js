@@ -9,15 +9,14 @@ const SECTIONS = [
     ["devices", "Devices"],
     ["premium", "Premium"],
     ["playlists", "Playlists and settings"],
-    ["channels", "Channels and guide"],
+    // Entries with a flag show only while that admin flag is on (preview deployments and localhost always).
+    ["channels", "Channels and guide", { href: "/account/channels", flag: "web_player" }],
+    ["check", "Check my provider", { href: "/check", flag: "web_player" }],
     ["pair", "Pair a TV"],
     ["backup", "Backup"],
     ["features", "What Tuned does"],
     ["account", "Sign out or delete"],
 ];
-
-/** Entries that are pages of their own rather than sections of the account page. */
-const PAGES = new Set(["playlists", "channels"]);
 
 /**
  * Draws the menu into `nav`. `page` is "account", "playlists" or "channels"; on the playlists page its own entry is the page and
@@ -25,15 +24,22 @@ const PAGES = new Set(["playlists", "channels"]);
  */
 export function drawNav(nav, page, subsections = []) {
     const list = document.createElement("ul");
-    for (const [id, label] of SECTIONS) {
+    for (const [id, label, opts] of SECTIONS) {
         const item = document.createElement("li");
         const link = document.createElement("a");
         link.textContent = label;
-        if (PAGES.has(id)) {
-            link.href = `/account/${id}`;
+        if (opts?.href) {
+            link.href = opts.href;
             if (page === id) link.setAttribute("aria-current", "page");
+            if (opts.flag) {
+                item.hidden = true;
+                flagOn(opts.flag).then((on) => (item.hidden = !on));
+            }
+        } else if (id === "playlists") {
+            link.href = "/account/playlists";
+            if (page === "playlists") link.setAttribute("aria-current", "page");
         } else link.href = page === "account" ? `#${id}` : `/account#${id}`;
-        if (page === "account" && !PAGES.has(id)) link.dataset.section = id;
+        if (page === "account" && id !== "playlists" && !opts) link.dataset.section = id;
         item.append(link);
         if (id === "playlists" && page === "playlists" && subsections.length) {
             const sub = document.createElement("ul");
@@ -52,6 +58,19 @@ export function drawNav(nav, page, subsections = []) {
     }
     nav.replaceChildren(list);
     watch(nav);
+}
+
+const PREVIEW = /^(localhost|127\.0\.0\.1)$|-projects-[a-z0-9]+\.vercel\.app$/;
+let flags = null;
+
+/** Whether an admin flag is on for this browser (check/verdict.mjs isPreviewHost: previews always). Off when unsure. */
+export function flagOn(key) {
+    if (PREVIEW.test(location.hostname)) return Promise.resolve(true);
+    flags ??= fetch("/api/flags", { cache: "no-store" })
+        .then((r) => r.json())
+        .then((j) => j?.flags ?? {})
+        .catch(() => ({}));
+    return flags.then((f) => f[key] === true);
 }
 
 let observer = null;

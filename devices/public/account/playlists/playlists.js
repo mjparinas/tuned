@@ -2,7 +2,7 @@
 // changed through /api/account/library with the session cookie. Every device takes the change on its next sync.
 // Passwords and links never come back from the server; editing leaves a blank one as it was.
 
-import { drawNav, showLinkedSection } from "/account/nav.js";
+import { drawNav, flagOn, showLinkedSection } from "/account/nav.js";
 
 const $ = (id) => document.getElementById(id);
 let library = null;
@@ -80,6 +80,16 @@ function playlistRow(p) {
     text.append(name, line);
     const buttons = document.createElement("div");
     buttons.className = "row-actions";
+    // The provider check (docs/decisions/web.md): Xtream logins and M3U links, which a browser can try.
+    if (checkOn && (p.kind === "xtream" || p.kind === "link")) {
+        const check = document.createElement("a");
+        check.className = "button quiet";
+        check.href = `/check?playlist=${p.id}`;
+        check.textContent = "Check";
+        check.setAttribute("aria-label", `Check ${name.textContent} in this browser`);
+        check.dataset.track = "check-playlist";
+        buttons.append(check);
+    }
     if (p.kind !== "file") {
         const edit = document.createElement("button");
         edit.type = "button";
@@ -308,7 +318,10 @@ $("refresh").onclick = async () => {
     } else tell("playlists-message", refusals[answer.status] ?? refusals.unavailable);
 };
 
+let checkOn = false;
+
 async function load() {
+    checkOn = await flagOn("web_player");
     const answer = await call("GET");
     if (answer.status === "ok") library = answer;
     else if (answer.status === "signed out") library = null;

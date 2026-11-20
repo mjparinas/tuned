@@ -2,7 +2,9 @@
 // address and login stay in memory and are never sent to Tuned. One stream at a time, closed before the next opens.
 import {
     access,
+    anywayTries,
     apiUrl,
+    canTryAnyway,
     codecMime,
     codecName,
     containerMime,
@@ -38,6 +40,7 @@ let secrets = [];
 let facts = {};
 let report = [];
 let session = null; // { base, username, password } or { entries }
+let login = null; // the Xtream login being checked, kept for "Try playing anyway" when its lists can't be read
 let stopCurrent = () => {};
 
 // ---------- the flag ----------
@@ -110,10 +113,88 @@ function why(how) {
     }[how];
 }
 
+// ---------- your saved playlists ----------
+// Melvin, 2026-11-20: "if you're logged in, /check should just let you choose the playlist to try". The account's
+// playlists come from the backup (/api/account/library, never their logins); the one picked has its login fetched
+// from /api/account/check and kept in memory here, like a typed one. Tuned's server still never contacts the provider.
+
+const KIND_NAMES = { xtream: "Xtream login", link: "Playlist link", stalker: "MAC portal", file: "File" };
+
+/** Draws the account's playlists, or says how to sign in. True when there is one this browser can check. */
+async function loadSaved() {
+    let answer = null;
+    try {
+        const res = await fetch("/api/account/library", { cache: "no-store" });
+        answer = res.status === 401 ? { status: "signed out" } : await res.json();
+    } catch {
+        answer = null;
+    }
+    if (answer?.status === "signed out") $("sign-in-line").hidden = false;
+    const playlists = answer?.status === "ok" ? answer.playlists : [];
+    if (!playlists.length) return false;
+    const wanted = new URLSearchParams(location.search).get("playlist");
+    const usable = (p) => p.kind === "xtream" || p.kind === "link";
+    const first = playlists.find((p) => usable(p) && (!wanted || p.id === wanted)) ?? playlists.find(usable);
+    $("saved-list").replaceChildren(
+        ...playlists.map((p) => {
+            const label = document.createElement("label");
+            const input = Object.assign(document.createElement("input"), { type: "radio", name: "saved", value: p.id });
+            input.disabled = !usable(p);
+            input.checked = p === first;
+            const text = document.createElement("span");
+            const name = Object.assign(document.createElement("span"), { className: "name", textContent: p.name || p.detail });
+            const line = Object.assign(document.createElement("span"), { className: "small" });
+            const parts = [KIND_NAMES[p.kind] ?? p.kind];
+            if (p.name && p.detail) parts.push(p.detail);
+            if (!usable(p)) parts.push(p.kind === "stalker" ? "needs the Tuned app" : "only on the device it came from");
+            line.textContent = parts.join(" · ");
+            text.append(name, line);
+            label.append(input, text);
+            return label;
+        }),
+    );
+    $("saved-check").disabled = !first;
+    $("saved-card").hidden = false;
+    return Boolean(first) && wanted === first?.id;
+}
+
+async function checkSaved(id) {
+    let answer = null;
+    try {
+        const res = await fetch(`/api/account/check?id=${encodeURIComponent(id)}`, { cache: "no-store" });
+        answer = await res.json();
+    } catch {
+        answer = null;
+    }
+    if (answer?.status !== "ok") {
+        const why = {
+            "signed out": "You're signed out. Sign in again to check your playlists.",
+            gone: "That playlist isn't in your account any more. Reload the page.",
+            "app only": "A browser can't use this playlist. The Tuned app can.",
+            "too many": "Too many checks this hour. Try again later.",
+        };
+        $("saved-message").textContent = why[answer?.status] ?? "Couldn't get that playlist from your account. Try again.";
+        return;
+    }
+    $("saved-message").textContent = "";
+    run(async () => {
+        if (answer.kind === "xtream") {
+            const server = parseServer(answer.server);
+            if (!server) return step("steps", "bad", "The saved server address isn't one a browser can use.");
+            await checkXtream(server, answer.username, answer.password);
+        } else {
+            await checkLink(answer.link);
+            // A saved link usually carries its login: keep the whole link out of the summary.
+            if (answer.link.length >= 8) secrets.push(answer.link);
+        }
+    });
+}
+
 // ---------- the account and its lists ----------
 
 async function checkXtream(server, username, password) {
     secrets = password && password.length >= 4 ? [password] : [];
+    login = { base: server.base, username, password };
     const page = location.protocol;
     const candidates = [];
     if (server.protocol === "http") candidates.push(httpsVariant(server, null));
@@ -249,10 +330,12 @@ async function checkLink(text) {
 function stop() {
     stopCurrent();
     stopCurrent = () => {};
-    const video = $("video");
-    video.pause();
-    video.removeAttribute("src");
-    video.load();
+    for (const video of [$("video"), $("anyway-video")]) {
+        video.onerror = null;
+        video.pause();
+        video.removeAttribute("src");
+        video.load();
+    }
 }
 
 function liveLink(kind) {
@@ -426,6 +509,153 @@ async function playFilm() {
     video.play().catch(() => {});
 }
 
+// ---------- try playing anyway ----------
+// Melvin, 2026-11-20: "a playlist might fail a check, can we try a webstream anyways?" A <video> needs no CORS, so the
+// browser's own player can sometimes play a stream the check couldn't read. Still one stream at a time, straight from
+// the provider.
+
+const TRY_MS = 15_000;
+
+/** After a failed check whose lists couldn't be read: offer the card, and a button in the answer that goes to it. */
+function showAnyway(key, box) {
+    const card = $("anyway-card");
+    if (!canTryAnyway(key) || !$("play-card").hidden) {
+        if (!facts.anyway) card.hidden = true;
+        return;
+    }
+    const xtream = Boolean(login);
+    $("anyway-label").textContent = xtream ? "Channel number or stream link" : "Stream link";
+    $("anyway-input").inputMode = xtream ? "text" : "url";
+    $("anyway-hint").textContent = xtream
+        ? "A channel's number is the last part of its stream link, such as 1234 in …/live/name/password/1234.ts. Or paste a whole link."
+        : "Paste the link of one channel from your playlist, such as http://example.com/live/1234.ts.";
+    card.hidden = false;
+    if (facts.anyway === "ok") return;
+    const go = Object.assign(document.createElement("button"), { type: "button", textContent: "Try playing anyway" });
+    go.addEventListener("click", () => {
+        card.scrollIntoView({ block: "start", behavior: "smooth" });
+        $("anyway-input").focus({ preventScroll: true });
+    });
+    const row = Object.assign(document.createElement("div"), { className: "row" });
+    row.append(go);
+    box.append(row);
+}
+
+/** One way of playing one link, in the card's video. "playing", or why it didn't: "error", "timeout" or "skip". */
+function tryOne({ url, how }) {
+    const video = $("anyway-video");
+    return new Promise((resolve) => {
+        let settled = false;
+        let cleanup = () => {};
+        const finish = (result) => {
+            if (settled) return;
+            settled = true;
+            clearTimeout(timer);
+            video.removeEventListener("playing", onPlaying);
+            if (result !== "playing") {
+                cleanup();
+                cleanup = () => {};
+            }
+            resolve(result);
+        };
+        const onPlaying = () => finish("playing");
+        const timer = setTimeout(() => finish("timeout"), TRY_MS);
+        video.addEventListener("playing", onPlaying);
+        if (how === "native") {
+            video.onerror = () => finish("error");
+            video.src = url;
+            cleanup = () => {
+                video.onerror = null;
+                video.removeAttribute("src");
+                video.load();
+            };
+        } else if (how === "hls") {
+            const Hls = window.Hls;
+            if (!Hls?.isSupported()) return finish("skip");
+            const hls = new Hls({ enableWorker: true, startFragPrefetch: false, maxBufferLength: 10, backBufferLength: 0 });
+            hls.on(Hls.Events.ERROR, (_e, d) => d.fatal && finish("error"));
+            hls.loadSource(url);
+            hls.attachMedia(video);
+            cleanup = () => hls.destroy();
+        } else {
+            const mpegts = window.mpegts;
+            if (!mpegts?.isSupported()) return finish("skip");
+            const player = mpegts.createPlayer({ type: "mpegts", isLive: true, url }, { enableWorker: false, lazyLoad: false });
+            player.on(mpegts.Events.ERROR, () => finish("error"));
+            player.attachMediaElement(video);
+            player.load();
+            Promise.resolve(player.play()).catch(() => {});
+            cleanup = () => player.destroy();
+        }
+        video.play().catch(() => {});
+        stopCurrent = () => {
+            finish("stopped");
+            cleanup();
+        };
+    });
+}
+
+const HOW = { native: "the browser's own player", hls: "hls.js (.m3u8)", ts: "mpegts.js (.ts)" };
+
+async function playAnyway(event) {
+    event.preventDefault();
+    stop();
+    $("anyway-steps").replaceChildren();
+    const raw = $("anyway-input").value.trim();
+    if (raw.length >= 8 && !secrets.includes(raw) && /[?&](password|token|key)=/i.test(raw)) secrets.push(raw);
+    const tries = anywayTries(raw, login);
+    if (!tries.length)
+        return step(
+            "anyway-steps",
+            "bad",
+            login ? "Type a channel's number or paste a link that starts with http." : "Paste a link that starts with http.",
+        );
+    const button = $("anyway-play");
+    button.disabled = true;
+    try {
+        if (isMixed(tries[0].url, location.protocol) && !facts.insecureAllowed)
+            step("anyway-steps", "warn", `The stream is http and this page is https, so ${browser} may block it.`);
+        let last = null;
+        for (const t of tries) {
+            stop();
+            step("anyway-steps", "info", `Trying ${HOW[t.how]}…`);
+            const started = performance.now();
+            const result = await tryOne(t);
+            if (result === "stopped") return step("anyway-steps", "info", "Stopped.");
+            if (result === "playing") {
+                const secs = ((performance.now() - started) / 1000).toFixed(1);
+                step("anyway-steps", "ok", `It plays, with ${HOW[t.how]}: first picture after ${secs} s.`);
+                facts.anyway = "ok";
+                showAnswer();
+                return;
+            }
+            step(
+                "anyway-steps",
+                result === "skip" ? "info" : "bad",
+                result === "skip"
+                    ? `${browser} can't use ${HOW[t.how]}.`
+                    : result === "timeout"
+                      ? `No picture after ${TRY_MS / 1000} s.`
+                      : `${HOW[t.how][0].toUpperCase()}${HOW[t.how].slice(1)} couldn't play it.`,
+            );
+            last = t.url;
+        }
+        stop();
+        facts.anyway = "failed";
+        const { how } = await probeStream(last);
+        step(
+            "anyway-steps",
+            "bad",
+            how === "ok"
+                ? `It didn't play. The stream answers, but ${browser} can't play its format. The Tuned app can.`
+                : `It didn't play. ${why(how) ?? "The stream didn't answer."} The Tuned app plays it without these limits.`,
+        );
+        showAnswer();
+    } finally {
+        button.disabled = false;
+    }
+}
+
 // ---------- the answer ----------
 
 const ANSWERS = {
@@ -454,6 +684,10 @@ const ANSWERS = {
     portal: ["MAC portals need the Tuned app", "A browser can't sign in to a MAC portal, because it can't pose as a set-top box."],
     login: ["Wrong username or password", "The provider answered but didn't accept the login."],
     unreachable: ["No answer from the provider", "Check the address. If the Tuned app works with it, the provider may block browsers."],
+    "plays-anyway": [
+        "A channel plays, but the lists don't",
+        "The browser's own player played it, though this browser can't read your channel lists. A web player needs those lists, so watch in the Tuned app for now.",
+    ],
 };
 
 function insecureHowTo() {
@@ -484,6 +718,7 @@ function showAnswer() {
     box.replaceChildren(h, p);
     if ((key === "works-after-setting" && !facts.insecureAllowed) || key === "allow-insecure") box.append(insecureHowTo());
     box.hidden = false;
+    showAnyway(key, box);
     facts.answer = key;
     updateSummary();
 }
@@ -511,6 +746,10 @@ async function run(fn) {
     $("steps").replaceChildren();
     $("play-steps").replaceChildren();
     $("play-card").hidden = true;
+    $("anyway-card").hidden = true;
+    $("anyway-steps").replaceChildren();
+    $("anyway-input").value = "";
+    login = null;
     $("steps-card").hidden = false;
     for (const b of document.querySelectorAll("button.primary")) b.disabled = true;
     try {
@@ -567,8 +806,22 @@ async function start() {
         $("off").hidden = false;
         return;
     }
-    $("form-card").hidden = false;
     tabs();
+    const autoCheck = await loadSaved();
+    $("form-card").hidden = !$("saved-card").hidden;
+    $("type-instead").addEventListener("click", () => {
+        const open = $("form-card").hidden;
+        $("form-card").hidden = !open;
+        $("type-instead").setAttribute("aria-expanded", String(open));
+        if (open) $("server").focus();
+    });
+    $("saved").addEventListener("submit", (e) => {
+        e.preventDefault();
+        const id = $("saved").elements.saved?.value ?? document.querySelector('input[name="saved"]:checked')?.value;
+        if (id) checkSaved(id);
+    });
+    $("anyway").addEventListener("submit", playAnyway);
+    $("anyway-stop").addEventListener("click", stop);
     $("xtream").addEventListener("submit", (e) => {
         e.preventDefault();
         const raw = $("server").value;
@@ -603,6 +856,8 @@ async function start() {
     });
     $("copy").addEventListener("click", () => navigator.clipboard?.writeText($("summary").value));
     addEventListener("pagehide", stop);
+    // Opened from a playlist's Check button on the account's Playlists page.
+    if (autoCheck) checkSaved(new URLSearchParams(location.search).get("playlist"));
 }
 
 start();

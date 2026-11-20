@@ -3,7 +3,9 @@ import assert from "node:assert/strict";
 import {
     applyChange,
     buildPlaylist,
+    checkLogin,
     encodeSetting,
+    fromOurPage,
     libraryView,
     normalizeMac,
     normalizePortal,
@@ -205,4 +207,36 @@ test("every website setting is a synced app setting", async () => {
         assert.ok(!line.includes("notBackedUp"), `${s.key} stays on each device`);
     }
     assert.ok(fields.includes(`long("${REFRESH_KEY}",`));
+});
+
+test("the provider check gets one saved playlist's login, and nothing a browser can't use", () => {
+    const link = { server: "", username: "", password: "", playlistUrl: "http://b.example/list.m3u?key=k", name: "Mine" };
+    Object.assign(link, { guideUrl: "http://g.example/epg.xml", extraGuides: ["http://g2.example/epg.xml"] });
+    const portal = { server: "http://p.example", username: "00:1A:79:AB:CD:EF", password: "", playlistUrl: "stalker:" };
+    const copy = stored([xtream, link, portal]);
+    assert.deepEqual(checkLogin(copy, playlistId(xtream)), {
+        kind: "xtream",
+        name: "me @ a.example:8080",
+        server: "http://a.example:8080",
+        username: "me",
+        password: "secret",
+        guide: "",
+        extraGuides: [],
+    });
+    assert.deepEqual(checkLogin(copy, playlistId(link)), {
+        kind: "link",
+        name: "Mine",
+        link: "http://b.example/list.m3u?key=k",
+        guide: "http://g.example/epg.xml",
+        extraGuides: ["http://g2.example/epg.xml"],
+    });
+    assert.deepEqual(checkLogin(copy, playlistId(portal)), { error: "app only", kind: "stalker" });
+    assert.deepEqual(checkLogin(copy, "0000000000000000"), { error: "gone" });
+    assert.deepEqual(checkLogin(null, playlistId(xtream)), { error: "gone" });
+});
+
+test("a saved login is only handed to a fetch from our own page", () => {
+    assert.equal(fromOurPage(new Headers({ "sec-fetch-site": "same-origin" })), true);
+    for (const site of ["cross-site", "same-site", "none"]) assert.equal(fromOurPage(new Headers({ "sec-fetch-site": site })), false);
+    assert.equal(fromOurPage(new Headers()), false);
 });
