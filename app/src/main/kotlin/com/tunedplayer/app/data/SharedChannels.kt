@@ -67,7 +67,7 @@ class SharedChannels(
                 putString(KEY_FINGERPRINT, fingerprint)
                 putLong(KEY_AT, now)
             }
-            AppLog.i(TAG, "Shared ${channels.size} channels with the website (${gzipped.size / BYTES_PER_KB} KB)")
+            AppLog.i(TAG) { "Shared ${channels.size} channels with the website (${gzipped.size / BYTES_PER_KB} KB)" }
         }
     }
 
