@@ -12,7 +12,6 @@ import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -27,21 +26,23 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.tunedplayer.app.R
 import com.tunedplayer.app.diagnostics.attempt
+import com.tunedplayer.app.ui.common.OneLineCode
 
 /**
  * The short code a sign-in dialog shows (Trakt, the Tuned account), with a button that copies it, so it can be pasted on
  * the activation page when that's open on the same phone (Melvin, 2026-11-18). The icon turns into a tick once copied.
+ * The code always stays on one line ([OneLineCode]).
  */
 @Composable
 fun SignInCode(code: String) {
     val context = LocalContext.current
     var copied by remember(code) { mutableStateOf(false) }
     Row(verticalAlignment = Alignment.CenterVertically) {
-        Text(
+        // Never wraps (Melvin, 2026-11-20): it takes the room the copy button leaves and shrinks if that isn't enough.
+        OneLineCode(
             code,
-            style = MaterialTheme.typography.headlineMedium,
-            fontFamily = FontFamily.Monospace,
-            fontWeight = FontWeight.Bold,
+            MaterialTheme.typography.headlineMedium.copy(fontFamily = FontFamily.Monospace, fontWeight = FontWeight.Bold),
+            Modifier.weight(1f, fill = false),
         )
         Spacer(Modifier.width(8.dp))
         IconButton(onClick = { copied = copyCode(context, code) }) {

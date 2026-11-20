@@ -28,6 +28,7 @@ import com.tunedplayer.app.diagnostics.startActivitySafely
 import com.tunedplayer.app.premium.LockedRow
 import com.tunedplayer.app.premium.premiumUnlocked
 import com.tunedplayer.app.ui.common.TunedDialog
+import com.tunedplayer.app.ui.common.unbreakable
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -135,7 +136,7 @@ private fun SignInDialog(
 
                 is TraktViewModel.SignIn.Code -> {
                     Column {
-                        Text(stringResource(R.string.trakt_enter_code, state.code.verificationUrl.removePrefix("https://")))
+                        Text(stringResource(R.string.trakt_enter_code, unbreakable(state.code.verificationUrl.removePrefix("https://"))))
                         Spacer(Modifier.height(16.dp))
                         SignInCode(state.code.userCode)
                         Spacer(Modifier.height(16.dp))
