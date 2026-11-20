@@ -40,8 +40,6 @@ In the Google Play version, Premium is bought through Google Play:
 
 Google Play shows the price in your currency. Nothing nags you to upgrade: a locked feature shows a lock, and tapping it opens the one Premium screen.
 
-**The version from GitHub has every Premium feature unlocked**, with no purchase.
-
 ## Three devices per purchase
 
 Premium covers **three devices**, such as a phone, a TV and a tablet.

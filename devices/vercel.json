@@ -99,5 +99,12 @@
       "path": "/api/cron/admin",
       "schedule": "5 * * * *"
     }
+  ],
+  "redirects": [
+    {
+      "source": "/download",
+      "destination": "https://github.com/mjparinas/tuned/releases/latest/download/tuned.apk",
+      "permanent": false
+    }
   ]
 }

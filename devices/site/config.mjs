@@ -2,9 +2,9 @@
 export const SITE = {
     name: "Tuned",
     url: "https://www.tunedplayer.com",
-    // The newest GitHub release's APK. GitHub keeps this address pointing at the latest release, so it never goes stale.
-    apk: "https://github.com/mjparinas/tuned/releases/latest/download/tuned.apk",
-    releases: "https://github.com/mjparinas/tuned/releases",
+    // The Android download: /download on this site, which vercel.json redirects to the newest release's APK, so the
+    // pages never name where the file is hosted (Melvin, 2026-11-20: "dont mention the github app").
+    apk: "/download",
     // The store listings: empty until each exists, and then its badge becomes a link instead of "Coming soon".
     stores: {
         googlePlay: "",

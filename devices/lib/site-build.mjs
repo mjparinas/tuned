@@ -167,7 +167,7 @@ export const byDate = (a, b) =>
 const DROP_TYPES = new Set(["ci", "test", "docs", "chore", "build", "refactor", "style", "revert"]);
 // Work that only the developer or the server's admin sees.
 const BEHIND_THE_SCENES =
-    /\b(admin|vercel|ci|decision record|smoke test|lint|baseline profile|commit hash)\b|^promote |^bring main|^bump |first contribution/i;
+    /\b(admin|vercel|github|ci|decision record|smoke test|lint|baseline profile|commit hash)\b|^promote |^bring main|^bump |first contribution/i;
 
 /** One line of GitHub's generated notes ("* feat: x by @y in url") as { type, text }, or null. */
 export function noteLine(line) {
@@ -245,7 +245,7 @@ ${badge(site.stores.samsungTv, "Samsung TV", "COMING TO", "Samsung TV", TV_LOGO,
 </div>`;
 }
 
-/** The main download button: the APK from the newest GitHub release. */
+/** The main download button: /download, the newest Android release. */
 export const downloadButton = (site, place, label = "Download for Android") =>
     `<a class="button big" href="${site.apk}" data-cta="apk-${place}">${ANDROID_LOGO}<span>${label}</span></a>`;
 
@@ -257,7 +257,7 @@ export function ctaCard(site, place, version) {
 <h2 id="cta-${place}">Get Tuned for Android</h2>
 <p>A fast, quiet IPTV player for phones, tablets and Android TV. Free, with no ads.${version ? ` The latest version is ${esc(version)}.` : ""}</p>
 <div class="actions">${downloadButton(site, place)}<a class="button ghost" href="/#features" data-cta="features-${place}">See every feature</a></div>
-<p class="fine">The APK comes from <a href="${site.releases}" rel="noopener">GitHub Releases</a> and updates itself. Google Play, iPhone, iPad, Mac and Samsung TV are coming soon.</p>
+<p class="fine">For Android phones, tablets and TVs. Google Play, iPhone, iPad, Mac and Samsung TV are coming soon.</p>
 </div>
 </section>`;
 }
@@ -282,7 +282,7 @@ export const siteFooter = (site) => `<footer class="foot">
 <a class="logo" href="/"><img src="/icon.svg" alt="" width="32" height="32" /><span>${site.name}</span></a>
 <p>A fast, quiet IPTV player for Android. Tuned doesn't sell or include any channels: bring the playlist from your own TV provider.</p>
 </div>
-<nav aria-label="Tuned"><h2>Tuned</h2><a href="/#features">Features</a><a href="/blog/whats-new/">What's new</a><a href="${site.apk}">Download the APK</a><a href="${site.releases}" rel="noopener">All releases</a></nav>
+<nav aria-label="Tuned"><h2>Tuned</h2><a href="/#features">Features</a><a href="/blog/whats-new/">What's new</a><a href="${site.apk}">Download for Android</a></nav>
 <nav aria-label="Help"><h2>Help</h2><a href="/blog/">Blog</a><a href="/account">Your Tuned account</a><a href="/devices">Lost your devices?</a><a href="${site.privacy}" rel="noopener">Privacy</a></nav>
 </div>
 <p class="wrap copy">© 2026 ${site.name}. Android, Google Play and the Google Play logo are trademarks of Google LLC. Apple, the Apple logo, iPhone, iPad and Mac are trademarks of Apple Inc. Samsung is a trademark of Samsung Electronics.</p>
@@ -361,7 +361,7 @@ export function postPage(site, post, { latestVersion, related = [] }) {
     const body = `<article class="wrap post">
 <nav class="crumbs" aria-label="Breadcrumb">${crumbs.join(' <span aria-hidden="true">›</span> ')}</nav>
 <h1>${esc(post.title)}</h1>
-<p class="meta"><time datetime="${post.date}">${longDate(post.date)}</time>${post.version ? ` · <a href="${site.releases}/tag/v${esc(post.version)}" rel="noopener">Release notes on GitHub</a>` : ""}</p>
+<p class="meta"><time datetime="${post.date}">${longDate(post.date)}</time></p>
 <div class="prose">
 ${post.html}
 </div>
@@ -473,7 +473,7 @@ ${g.items.map((f) => `<li><span class="tick">${icon("check", 18)}</span><span><b
                 applicationCategory: "MultimediaApplication",
                 description,
                 url: site.url,
-                downloadUrl: site.apk,
+                downloadUrl: site.url + site.apk,
                 softwareVersion: latestVersion,
                 offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
             },

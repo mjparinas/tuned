@@ -42,7 +42,7 @@ Live channels sent as HLS (`.m3u8`), catch-up and casting can't be recorded; the
 
 ## Premium
 
-In the Google Play version, recording and more than three downloads at a time are part of [Premium](/blog/guides/premium/). The GitHub version has everything unlocked.
+Recording and more than three downloads at a time are part of [Premium](/blog/guides/premium/).
 
 ## Signing out
 

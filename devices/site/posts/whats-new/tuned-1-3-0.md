@@ -30,7 +30,7 @@ Tuned 1.3 is about speed and staying up: faster Live TV and Shows, backup copies
 ## Fixed
 
 - Fast search, search during refresh, instant favourites
-- Make the new-version prompt reliable, and test it against GitHub's real answer
+- Make the new-version prompt reliable
 - Play finished downloads from the device instead of failing
 - Never hide sports, PPV and event channels, and let auto-tune reach empty event slots
 - Read countries, languages, adult categories and sections the way other providers write them

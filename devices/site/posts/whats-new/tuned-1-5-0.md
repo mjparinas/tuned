@@ -10,7 +10,7 @@ Tuned 1.5 adds the Google Play build with Tuned Premium, the HQ button, Jump to 
 
 ## New
 
-- A Google Play version beside the GitHub one
+- A Google Play version, coming soon
 - Copy button beside the Trakt and Google sign-in codes
 - Tuned Premium with Play Billing in the store build, locks on Premium features, and one Premium screen
 - Hide 24/7 in Movies and Shows too

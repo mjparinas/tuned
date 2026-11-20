@@ -12,6 +12,6 @@ The first build of Tuned: a native IPTV player for Android, with a playlist and 
 
 - Tuned: a native IPTV player for Android
 - Auto-tune: find a working English stream for a live event
-- Updates from GitHub Releases, offered in the app
+- New versions offered in the app
 - A rounded look
 - Big playlist downloads that survive a dropped connection, with a progress bar

@@ -9,7 +9,7 @@ Tuned is one app for phones, tablets and TVs. On an Android TV it shows its own 
 
 ## Install it
 
-Use the download button on this page. If you install the APK rather than from a store, you'll need a file downloader app on the TV and to allow it to install apps (Android asks the first time). The version from GitHub then keeps itself up to date.
+Use the download button on this page. If you install the APK rather than from a store, you'll need a file downloader app on the TV and to allow it to install apps (Android asks the first time). Tuned then keeps itself up to date.
 
 ## Sign in without typing
 
