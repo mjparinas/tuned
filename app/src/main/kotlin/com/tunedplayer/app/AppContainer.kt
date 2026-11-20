@@ -83,6 +83,7 @@ class AppContainer(
     val stalker by lazy { StalkerLinks(http, credentials::load) }
     val sync by lazy { SyncRepository(db, http, credentials::load, settings, context.noBackupFilesDir.resolve("sync"), stalker) }
     val tune by lazy { TuneRepository(db, settings) }
+
     /** Holds background work until the first screen is up (docs/decisions/speed.md › Quiet start). */
     val quietStart = QuietStart(appScope)
     val scheduler = SyncScheduler(context) { quietStart.openNow() }
