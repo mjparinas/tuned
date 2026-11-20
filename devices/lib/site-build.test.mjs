@@ -4,6 +4,8 @@ import { check } from "../build-site.mjs";
 import { SITE } from "../site/config.mjs";
 import {
     buildSite,
+    faqJsonLd,
+    homePosts,
     inline,
     markdown,
     noteLine,
@@ -141,4 +143,42 @@ test("the privacy policy is a page on the site, linked from every footer", async
     assert.match(files["privacy/index.html"], /Last updated /);
     assert.ok(files["chrome.js"].includes('href=\\"/privacy/\\"'));
     assert.ok(files["sitemap.xml"].includes("/privacy/</loc>"));
+});
+
+test("the landing page's hero has the one download button and no Coming soon badges (Melvin, 2026-11-20)", async () => {
+    const { readFile } = await import("node:fs/promises");
+    const html = await readFile(new URL("../public/index.html", import.meta.url), "utf8");
+    const hero = html.slice(html.indexOf('class="wrap hero"'), html.indexOf('class="facts"'));
+    assert.ok(hero.includes('data-cta="apk-hero"'));
+    assert.ok(!hero.includes("store-badge"), "no store badges in the hero");
+    assert.equal(html.split('class="badges"').length - 1, 1, "the store badges appear once, in Coming soon");
+});
+
+test("From the blog shows the chosen posts, then the newest that aren't release notes", async () => {
+    const post = (path, kind, date = "2026-11-19") =>
+        readPost(path, `---\ntitle: ${path}\ndescription: D\ndate: ${date}\nkind: ${kind}\n---\nBody`);
+    const posts = [
+        post("whats-new/tuned-9-0-0.md", "release", "2026-12-01"),
+        post("guides/a.md", "guide"),
+        post("vs/b.md", "compare"),
+        post("guides/c.md", "guide"),
+    ];
+    const paths = (site) => homePosts(site, posts).map((p) => p.path);
+    assert.deepEqual(paths({ homePosts: ["guides/c.md", "gone.md"] }), ["guides/c.md", "guides/a.md", "vs/b.md"]);
+    assert.deepEqual(paths({}), ["guides/a.md", "guides/c.md", "vs/b.md"]);
+    const { existsSync } = await import("node:fs");
+    for (const path of SITE.homePosts) assert.ok(existsSync(new URL(`../site/posts/${path}`, import.meta.url)), `${path} exists`);
+});
+
+test("the landing page's questions become FAQPage structured data", () => {
+    const [ld] = faqJsonLd(
+        '<details>\n<summary>Is it free?</summary>\n<p class="muted">Yes. See <a href="/x/">the  guide</a>.</p>\n</details>',
+    );
+    assert.equal(ld["@type"], "FAQPage");
+    assert.deepEqual(ld.mainEntity[0], {
+        "@type": "Question",
+        name: "Is it free?",
+        acceptedAnswer: { "@type": "Answer", text: "Yes. See the guide." },
+    });
+    assert.deepEqual(faqJsonLd("<p>none</p>"), []);
 });

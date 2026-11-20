@@ -554,6 +554,37 @@ button.apple {
     padding-bottom: 12px;
 }
 
+/*
+ * Account pages on a desktop (Melvin, 2026-11-20: "it's too narrow on desktop"): `main.wide` lines up with the
+ * header at 1120 px and its cards sit two to a row, in page order; a `.span` card takes the whole row. A sign-in
+ * card on its own stays readable at 640 px. Phones and small tablets keep the one 560 px column.
+ */
+@media (min-width: 960px) {
+    main.wide {
+        max-width: 1120px;
+        padding-left: 24px;
+        padding-right: 24px;
+    }
+    main.wide > .card {
+        max-width: 640px;
+    }
+    main.wide #signed-in {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 16px;
+        margin-top: 16px;
+    }
+    main.wide #signed-in[hidden] {
+        display: none;
+    }
+    main.wide #signed-in > .card {
+        margin-top: 0;
+    }
+    main.wide #signed-in > .span {
+        grid-column: 1 / -1;
+    }
+}
+
 /* Someone who asked their device for less motion gets none: no fades, slides or smooth scrolling (WCAG 2.3.3, 2026-11-20). */
 @media (prefers-reduced-motion: reduce) {
     *,

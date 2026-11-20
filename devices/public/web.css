@@ -217,8 +217,22 @@ body.web {
 .tick svg {
     color: var(--teal);
 }
-.hero .badges {
-    margin-top: 28px;
+/* On a phone the app shows right under the buttons, before the ticks, so the first screen has a picture of Tuned. */
+@media (max-width: 959px) {
+    .hero {
+        gap: 0;
+    }
+    .hero > div:first-child {
+        display: contents;
+    }
+    .hero-shots {
+        order: 1;
+        margin-top: 36px;
+    }
+    .hero .checks {
+        order: 2;
+        margin-top: 36px;
+    }
 }
 .hero-shots {
     position: relative;
@@ -571,28 +585,6 @@ body.web {
         linear-gradient(var(--card), var(--card)) padding-box,
         linear-gradient(135deg, #8466ff, #5ff5da) border-box;
     box-shadow: var(--shadow);
-}
-.platforms {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 12px;
-}
-@media (min-width: 760px) {
-    .platforms {
-        grid-template-columns: repeat(4, 1fr);
-    }
-}
-.web .platforms li {
-    padding: 16px;
-    border-radius: 16px;
-    background: var(--card-2);
-}
-.platforms b {
-    display: block;
-}
-.platforms span {
-    color: var(--muted);
-    font-size: 0.9rem;
 }
 
 /* FAQ */

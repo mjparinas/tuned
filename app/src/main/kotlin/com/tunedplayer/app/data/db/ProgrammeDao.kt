@@ -3,6 +3,8 @@ package com.tunedplayer.app.data.db
 import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.Query
+import androidx.room.RawQuery
+import androidx.sqlite.db.SupportSQLiteQuery
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -46,4 +48,8 @@ interface ProgrammeDao {
 
     @Query("SELECT COUNT(*) FROM programmes")
     suspend fun count(): Int
+
+    /** Whole-guide search; the query is built by [GuideSearchIndex.search], since Room doesn't know its index. */
+    @RawQuery
+    suspend fun searchGuide(query: SupportSQLiteQuery): List<GuideHit>
 }
