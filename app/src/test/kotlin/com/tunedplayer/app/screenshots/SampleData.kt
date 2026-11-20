@@ -147,7 +147,8 @@ object SampleData {
                 DownloadEntity(item.id, item.name, item.url, "/offline/${item.id}.mp4", size, size, DownloadEntity.DONE, now - i),
             )
         }
-        listOf("Harbour Town", "Snowline").forEachIndexed { i, show ->
+        // Every show has its poster, as a TMDB match gives one, so no sort puts a wide episode still on a tall card.
+        shows.map { it.first }.forEachIndexed { i, show ->
             db.metadata().upsert(
                 MetadataEntity(
                     cacheKey = "tv|$show",
@@ -243,7 +244,9 @@ object SampleData {
     /** Drawn posters and logos, by the address the sample playlist gives them: a gradient with the title on it. */
     val art: Map<String, Image> by lazy {
         val posters = (movies.map { it.first } + shows.map { it.first }).mapIndexed { i, t -> poster(t) to tile(t, i, 300, 450, 34f) }
-        val stills = shows.mapIndexed { i, s -> still(s.first) to tile("${s.first} episode still", i + 4, 480, 270, 30f) }
+        // Wrapped to the middle third and drawn small, so a tall card cropping (and zooming) the wide still shows its words whole
+        // and no bigger than a poster's (Continue watching).
+        val stills = shows.mapIndexed { i, s -> still(s.first) to tile("${s.first} episode still", i + 4, 480, 270, 20f, wrapTo = 160f) }
         val logos = channels.mapIndexed { i, c -> logo(c.first) to tile(initials(c.first), i, 160, 160, 56f) }
         (posters + stills + logos).associate { (key, bitmap) -> key to bitmap.asImage() }
     }
@@ -261,6 +264,7 @@ object SampleData {
         w: Int,
         h: Int,
         size: Float,
+        wrapTo: Float = w * 0.85f,
     ): Bitmap {
         val bitmap = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(bitmap)
@@ -274,7 +278,7 @@ object SampleData {
                 typeface = Typeface.DEFAULT_BOLD
                 textAlign = Paint.Align.CENTER
             }
-        val lines = wrap(text, paint, w * 0.85f)
+        val lines = wrap(text, paint, wrapTo)
         val top = h / 2f - (lines.size - 1) * size * 0.6f
         lines.forEachIndexed { i, line -> canvas.drawText(line, w / 2f, top + i * size * 1.2f + size / 3, paint) }
         return bitmap
