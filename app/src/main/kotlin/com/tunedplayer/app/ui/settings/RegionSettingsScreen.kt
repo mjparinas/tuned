@@ -81,7 +81,12 @@ fun RegionSettingsScreen(
     val languages = remember(regions) { RegionLanguages.group(regions.map { it.region }) }
     val counts = remember(regions) { regions.associate { it.region to it.count } }
     // Streams with no country get their own switch, last, under the countries.
-    val byName = remember(regions) { Regions.sortedByName(regions.filter { it.region != Regions.NONE }) { it.region } }
+    // "EN" follows the English-speaking countries, so its language switch covers it and it has no row of its own.
+    val following = remember(regions) { RegionLanguages.following(regions.map { it.region }) }
+    val byName =
+        remember(regions) {
+            Regions.sortedByName(regions.filter { it.region != Regions.NONE && it.region !in following }) { it.region }
+        }
     val other = regions.firstOrNull { it.region == Regions.NONE }
     val otherName = stringResource(R.string.regions_other)
     // Filters as each letter is typed; the lists are small, so nothing waits on the database.
@@ -107,7 +112,7 @@ fun RegionSettingsScreen(
     ) { padding ->
         Column(Modifier.padding(padding).fillMaxSize()) {
             RegionSearchField(query) { query = it }
-            RegionList(query, shownLanguages, shownRegions, counts, hidden, vm::setHidden)
+            RegionList(query, shownLanguages, shownRegions, counts, hidden, following, vm::setHidden)
         }
     }
 }
@@ -141,6 +146,7 @@ private fun RegionList(
     regions: List<RegionCount>,
     counts: Map<String, Int>,
     hidden: Set<String>,
+    following: Set<String>,
     onSetHidden: (Set<String>) -> Unit,
 ) {
     LazyColumn(Modifier.fillMaxSize()) {
@@ -170,15 +176,17 @@ private fun RegionList(
                 val streams = tags.sumOf { counts[it] ?: 0 }
                 // On only when every country in it is on (Melvin, 2026-11-18: with only US and Canada on, English
                 // looked on). Some on shows which ones; turning it on shows them all, off hides them all.
-                val shown = tags.filter { it !in hidden }
-                val partial = shown.isNotEmpty() && shown.size < tags.size
+                // A tag that follows its countries ("EN") turns with the switch but doesn't count towards its state.
+                val countries = tags.filter { it !in following }
+                val shown = countries.filter { it !in hidden }
+                val partial = shown.isNotEmpty() && shown.size < countries.size
                 SwitchRow(
                     title = name,
-                    checked = shown.size == tags.size,
+                    checked = shown.size == countries.size,
                     summary =
                         stringResource(
                             if (partial) R.string.language_summary_partial else R.string.language_summary,
-                            (if (partial) shown else tags).joinToString(", "),
+                            (if (partial) shown else countries).joinToString(", "),
                             pluralStringResource(R.plurals.streams, streams, streams),
                         ),
                 ) { show -> onSetHidden(if (show) hidden - tags.toSet() else hidden + tags) }

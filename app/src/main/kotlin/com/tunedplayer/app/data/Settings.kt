@@ -17,6 +17,7 @@ import com.tunedplayer.app.core.ChannelScan
 import com.tunedplayer.app.core.KidsContent
 import com.tunedplayer.app.core.PinHash
 import com.tunedplayer.app.core.Placeholders
+import com.tunedplayer.app.core.RegionLanguages
 import com.tunedplayer.app.core.RoundTheClock
 import com.tunedplayer.app.diagnostics.AppLog
 import kotlinx.coroutines.Dispatchers
@@ -189,6 +190,12 @@ data class AppSettings(
     val profileCount: Int = 1,
 )
 
+/**
+ * The countries and tags hidden, with "EN" following the English-speaking countries ([RegionLanguages.effectiveHidden]):
+ * keeping only Canada and the United States on still shows the films and shows providers file under "EN".
+ */
+fun AppSettings.hiddenCountries(): Set<String> = RegionLanguages.effectiveHidden(hiddenRegions, seenRegions)
+
 /** Hidden countries, hidden groups and the channel filters together: the one list every query filters by. */
 fun AppSettings.hiddenKeys(): List<String> {
     val filters =
@@ -198,7 +205,7 @@ fun AppSettings.hiddenKeys(): List<String> {
             RoundTheClock.HIDDEN_KEY.takeIf { hide247 },
             KidsContent.HIDDEN_KEY.takeIf { kidsProfile },
         )
-    return (hiddenRegions + hiddenGroups + filters).sorted()
+    return (hiddenCountries() + hiddenGroups + filters).sorted()
 }
 
 /** A damaged settings file starts over from the defaults instead of crashing every launch. */
