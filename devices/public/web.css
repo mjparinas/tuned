@@ -125,6 +125,13 @@ body.web {
     .nav .links a {
         padding: 0 8px;
     }
+    /* With a wider fallback font (no Roboto on the device) the header was 4 px too wide at 320 px (WCAG 1.4.10). */
+    .nav {
+        gap: 4px;
+    }
+    .nav .button.small {
+        padding: 6px 14px;
+    }
 }
 .button.small {
     min-height: 40px;
@@ -669,6 +676,7 @@ body.web {
     letter-spacing: 0.12em;
     text-transform: uppercase;
 }
+.post-card h2,
 .post-card h3 {
     margin: 8px 0 6px;
     font-size: 1.15rem;
@@ -812,7 +820,11 @@ body.web {
     background: var(--card-2);
     font-weight: 700;
 }
-.prose tr:last-child td {
+.prose tbody th {
+    background: none;
+}
+.prose tr:last-child td,
+.prose tr:last-child th {
     border-bottom: 0;
 }
 

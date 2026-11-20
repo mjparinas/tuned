@@ -9,6 +9,8 @@
     "test": "node --test scripts/*.test.mjs devices/lib/*.test.mjs devices/lib/admin/*.test.mjs"
   },
   "devDependencies": {
+    "axe-core": "4.14.1",
+    "playwright": "1.63.0",
     "prettier": "3.10.1"
   }
 }
