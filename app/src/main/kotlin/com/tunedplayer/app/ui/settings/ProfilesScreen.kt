@@ -83,6 +83,7 @@ import com.tunedplayer.app.core.Avatars
 import com.tunedplayer.app.core.ProfileLock
 import com.tunedplayer.app.core.ProfileRules
 import com.tunedplayer.app.data.Accent
+import com.tunedplayer.app.data.ProfilesSeen
 import com.tunedplayer.app.data.db.ProfileEntity
 import com.tunedplayer.app.diagnostics.launchSafely
 import com.tunedplayer.app.ui.common.BackTopBar
@@ -95,6 +96,9 @@ import com.tunedplayer.app.ui.common.startFocus
 import com.tunedplayer.app.ui.theme.swatch
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.emitAll
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 
@@ -104,14 +108,30 @@ class ProfilesViewModel(
     private val container = app.container
     private val repo = container.profiles
 
-    val profiles: StateFlow<List<ProfileEntity>?> = repo.profiles.stateIn(viewModelScope, SharingStarted.Eagerly, null)
-    val current: StateFlow<ProfileEntity?> = repo.current.stateIn(viewModelScope, SharingStarted.Eagerly, null)
+    // The list "Who's watching?" last showed comes first, with the settings, so the picker draws at once on a cold start;
+    // the database's list replaces it as soon as it answers (docs/decisions/speed.md › Quiet start).
+    val profiles: StateFlow<List<ProfileEntity>?> =
+        flow {
+            saved().first.takeIf { it.isNotEmpty() }?.let { emit(it) }
+            emitAll(repo.profiles)
+        }.stateIn(viewModelScope, SharingStarted.Eagerly, null)
+    val current: StateFlow<ProfileEntity?> =
+        flow {
+            val (list, id) = saved()
+            list.firstOrNull { it.id == id }?.let { emit(it) }
+            emitAll(repo.current)
+        }.stateIn(viewModelScope, SharingStarted.Eagerly, null)
     val premiumUnlocked: StateFlow<Boolean> = container.premium.unlocked
     val hasParentalPin: StateFlow<Boolean> = container.settings.hasAdultPin.stateIn(viewModelScope, SharingStarted.Eagerly, false)
     val askAtStart: StateFlow<Boolean?> =
         container.settings.settings
             .map { it.askProfileAtStart }
             .stateIn(viewModelScope, SharingStarted.Eagerly, null)
+
+    private suspend fun saved(): Pair<List<ProfileEntity>, Long> {
+        val s = container.settings.settings.first()
+        return ProfilesSeen.decode(s.profilesSeen) to s.profileId
+    }
 
     suspend fun lockFor(profile: ProfileEntity): ProfileLock = repo.lockFor(profile)
 

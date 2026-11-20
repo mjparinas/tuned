@@ -60,6 +60,8 @@ class TunedApp :
             )
         }
         container = AppContainer(this)
+        // Background work waits until the first screen is up (docs/decisions/speed.md › Quiet start).
+        container.quietStart.begin()
         // A sign-out the app was closed in the middle of finishes now, before the first screen is chosen.
         container.reset.resumeIfPending()
         container.appScope.launchSafely("Freeze") {
@@ -75,7 +77,10 @@ class TunedApp :
         CloudSyncWorker.watch(this)
         container.appScope.launchSafely("Profiles") { container.profiles.sync() }
         // Remember the countries already there, so ones a refresh adds can follow the rest.
-        container.appScope.launchSafely("Regions") { settleNewRegions(container.db, container.settings) }
+        container.appScope.launchSafely("Regions") {
+            container.quietStart.await()
+            settleNewRegions(container.db, container.settings)
+        }
         // Re-plan background refreshes whenever their settings change (not on every launch).
         container.appScope.launch {
             container.settings.settings

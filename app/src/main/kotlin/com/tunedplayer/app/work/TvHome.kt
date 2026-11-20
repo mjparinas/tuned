@@ -195,6 +195,7 @@ class TvHomeWorker(
     params: WorkerParameters,
 ) : CoroutineWorker(context, params) {
     override suspend fun doWork(): Result = logFailures("TvHome", failed = { Result.failure() }) {
+        applicationContext.container.quietStart.await()
         if (applicationContext.container.credentials.load() != null) TvHome(applicationContext).update()
         Result.success()
     }

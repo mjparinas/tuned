@@ -57,6 +57,8 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         val splash = installSplashScreen()
         super.onCreate(savedInstanceState)
+        // A screen is coming: background work waits for it (docs/decisions/speed.md › Quiet start).
+        container.quietStart.screenStarting()
         updates = AppUpdates(this)
         enableEdgeToEdge()
         val settings = container.settings.settings.stateIn(lifecycleScope, SharingStarted.Eagerly, null)
@@ -232,7 +234,10 @@ class MainActivity : ComponentActivity() {
         updates.resume()
         UpdateNotice.clear(this)
         // The app icon's shortcuts follow the last channel watched and the setting.
-        lifecycleScope.launchSafely("Shortcuts") { withContext(Dispatchers.IO) { AppShortcuts.update(this@MainActivity) } }
+        lifecycleScope.launchSafely("Shortcuts") {
+            container.quietStart.await()
+            withContext(Dispatchers.IO) { AppShortcuts.update(this@MainActivity) }
+        }
     }
 
     override fun onStop() {
