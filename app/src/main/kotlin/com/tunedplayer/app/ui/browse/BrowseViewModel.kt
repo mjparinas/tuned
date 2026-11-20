@@ -412,6 +412,9 @@ class BrowseViewModel(
 
     fun refresh() = container.scheduler.refreshNow()
 
+    /** Home has drawn: the work held for a quiet start can begin ([com.tunedplayer.app.work.QuietStart]). */
+    fun homeShown() = container.quietStart.homeShown()
+
     /** A first download is queued or running; null until known, which counts as yes so the spinner shows first. */
     val requestedPending: StateFlow<Boolean?> =
         container.scheduler.requestedPending.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)

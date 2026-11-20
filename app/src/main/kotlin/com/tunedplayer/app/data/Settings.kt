@@ -199,6 +199,11 @@ data class AppSettings(
     val profileId: Long = 1,
     val kidsProfile: Boolean = false,
     val profileCount: Int = 1,
+    /**
+     * The profiles as "Who's watching?" last listed them ([ProfilesSeen]), so the picker draws with the first frame
+     * instead of waiting for the database, which a cold start keeps busy (docs/decisions/speed.md › Quiet start).
+     */
+    val profilesSeen: String = "",
 )
 
 /**
@@ -293,7 +298,8 @@ class SettingsRepository(
         id: Long,
         kids: Boolean,
         count: Int,
-    ) = update { it.copy(profileId = id, kidsProfile = kids, profileCount = count) }
+        seen: String,
+    ) = update { it.copy(profileId = id, kidsProfile = kids, profileCount = count, profilesSeen = seen) }
 
     /**
      * Every stored setting by its key, for sync. Sync times and the open tab are left out: they belong to this phone.

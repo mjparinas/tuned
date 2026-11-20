@@ -97,6 +97,7 @@ class SettingFieldsTest {
             profileId = 9,
             kidsProfile = true,
             profileCount = 3,
+            profilesSeen = "[]",
         )
 
     @Test
@@ -215,4 +216,5 @@ private val KNOWN_KEYS =
         "profile_id",
         "kids_profile",
         "profile_count",
+        "profiles_seen",
     )

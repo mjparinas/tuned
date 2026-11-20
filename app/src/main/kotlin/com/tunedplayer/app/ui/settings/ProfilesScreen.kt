@@ -83,6 +83,7 @@ import com.tunedplayer.app.core.Avatars
 import com.tunedplayer.app.core.ProfileLock
 import com.tunedplayer.app.core.ProfileRules
 import com.tunedplayer.app.data.Accent
+import com.tunedplayer.app.data.ProfilesSeen
 import com.tunedplayer.app.data.db.ProfileEntity
 import com.tunedplayer.app.diagnostics.launchSafely
 import com.tunedplayer.app.ui.common.BackTopBar
@@ -90,9 +91,14 @@ import com.tunedplayer.app.ui.common.LocalTvMargin
 import com.tunedplayer.app.ui.common.TunedDialog
 import com.tunedplayer.app.ui.common.bleedIntoTvMargin
 import com.tunedplayer.app.ui.common.focusRing
+import com.tunedplayer.app.ui.common.rememberStartFocus
+import com.tunedplayer.app.ui.common.startFocus
 import com.tunedplayer.app.ui.theme.swatch
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.emitAll
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 
@@ -102,14 +108,30 @@ class ProfilesViewModel(
     private val container = app.container
     private val repo = container.profiles
 
-    val profiles: StateFlow<List<ProfileEntity>?> = repo.profiles.stateIn(viewModelScope, SharingStarted.Eagerly, null)
-    val current: StateFlow<ProfileEntity?> = repo.current.stateIn(viewModelScope, SharingStarted.Eagerly, null)
+    // The list "Who's watching?" last showed comes first, with the settings, so the picker draws at once on a cold start;
+    // the database's list replaces it as soon as it answers (docs/decisions/speed.md › Quiet start).
+    val profiles: StateFlow<List<ProfileEntity>?> =
+        flow {
+            saved().first.takeIf { it.isNotEmpty() }?.let { emit(it) }
+            emitAll(repo.profiles)
+        }.stateIn(viewModelScope, SharingStarted.Eagerly, null)
+    val current: StateFlow<ProfileEntity?> =
+        flow {
+            val (list, id) = saved()
+            list.firstOrNull { it.id == id }?.let { emit(it) }
+            emitAll(repo.current)
+        }.stateIn(viewModelScope, SharingStarted.Eagerly, null)
     val premiumUnlocked: StateFlow<Boolean> = container.premium.unlocked
     val hasParentalPin: StateFlow<Boolean> = container.settings.hasAdultPin.stateIn(viewModelScope, SharingStarted.Eagerly, false)
     val askAtStart: StateFlow<Boolean?> =
         container.settings.settings
             .map { it.askProfileAtStart }
             .stateIn(viewModelScope, SharingStarted.Eagerly, null)
+
+    private suspend fun saved(): Pair<List<ProfileEntity>, Long> {
+        val s = container.settings.settings.first()
+        return ProfilesSeen.decode(s.profilesSeen) to s.profileId
+    }
 
     suspend fun lockFor(profile: ProfileEntity): ProfileLock = repo.lockFor(profile)
 
@@ -256,14 +278,7 @@ fun ProfilesScreen(
                     )
                     Spacer(Modifier.height(40.dp))
                 }
-                FlowRow(
-                    horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally),
-                    verticalArrangement = Arrangement.spacedBy(20.dp),
-                    modifier = Modifier.fillMaxWidth(),
-                ) {
-                    list.forEach { p ->
-                        key(p.id) { ProfileTile(p, selected = p.id == current?.id, managing = managing, onClick = { pick(p) }) }
-                    }
+                ProfileRow(list, current?.id, managing, onPick = pick) {
                     // Hidden at the cap, so the picker never crowds (docs/decisions/profiles.md).
                     if (!kidsNow && managing && ProfileRules.canAdd(list.size)) {
                         AddTile(onClick = {
@@ -338,6 +353,41 @@ fun ProfilesScreen(
 }
 
 /**
+ * The profiles, in a row that wraps, with [trailing] (the add tile) after them. On a TV the remote starts on the first
+ * profile, so OK alone picks it (Melvin, 2026-11-20: "it should auto highlight the first entry so we only need to click ok
+ * on the remote"). The first, not the one in use, so the same press always picks the same profile.
+ */
+@Composable
+internal fun ProfileRow(
+    list: List<ProfileEntity>,
+    currentId: Long?,
+    managing: Boolean,
+    onPick: (ProfileEntity) -> Unit,
+    trailing: @Composable () -> Unit = {},
+) {
+    // Remembered once the profiles have loaded, so the moment it may take focus starts when the tiles appear.
+    val startFocus = rememberStartFocus()
+    FlowRow(
+        horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally),
+        verticalArrangement = Arrangement.spacedBy(20.dp),
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        list.forEachIndexed { i, p ->
+            key(p.id) {
+                ProfileTile(
+                    p,
+                    selected = p.id == currentId,
+                    managing = managing,
+                    onClick = { onPick(p) },
+                    modifier = if (i == 0) Modifier.startFocus(startFocus) else Modifier,
+                )
+            }
+        }
+        trailing()
+    }
+}
+
+/**
  * The picker's backdrop: the theme's background with a soft glow of the accent behind the profiles, so the first
  * screen feels like a welcome, not a form. The container is see-through for the glow, so the text colour is set to
  * onBackground here; left to itself it falls back to black, which is unreadable on the dark theme.
@@ -407,6 +457,7 @@ internal fun ProfileTile(
     selected: Boolean,
     managing: Boolean,
     onClick: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     val shape = RoundedCornerShape(20.dp)
     val avatarShape = RoundedCornerShape(TILE_AVATAR * 0.28f)
@@ -427,7 +478,7 @@ internal fun ProfileTile(
     val edit = stringResource(R.string.a11y_edit)
     val ring = MaterialTheme.colorScheme.primary
     Column(
-        Modifier
+        modifier
             .width(TILE_WIDTH)
             .focusRing(shape, MaterialTheme.colorScheme.primary)
             .clip(shape)

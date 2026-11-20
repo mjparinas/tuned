@@ -29,6 +29,8 @@ class CloudSyncWorker(
     params: WorkerParameters,
 ) : CoroutineWorker(context, params) {
     override suspend fun doWork(): Result = logFailures(TAG, failed = { Result.failure() }) {
+        // After the first screen is up: a cold start spends the device on what the person is waiting for.
+        applicationContext.container.quietStart.await()
         val sync = applicationContext.container.cloudSync
         // The admin's `account_backup` switch pauses the hourly run too.
         if (!ServerFlags.now.value.accountBackup) return@logFailures Result.success()

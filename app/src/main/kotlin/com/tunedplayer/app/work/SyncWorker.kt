@@ -51,6 +51,8 @@ class SyncWorker(
 
     private suspend fun refresh(): Result {
         val container = applicationContext.container
+        // A refresh the person asked for opens this at once ([QuietStart.openNow]); a scheduled one waits for the first screen.
+        container.quietStart.await()
         if (container.credentials.load() == null) return Result.success()
         // A 400 MB playlist on a slow server can take many minutes. Running as a foreground service keeps the
         // download going when the screen turns off or another app comes forward (Android otherwise cuts the
