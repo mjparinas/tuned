@@ -256,7 +256,9 @@ private fun ChannelGrid(
     WidgetCard {
         WidgetHeader(context.getString(R.string.widget_favourites))
         tiles.take(columns * rows).chunked(columns).forEach { row ->
-            Row(GlanceModifier.fillMaxWidth().defaultWeight()) {
+            // Every row is the same height, whatever the widget's size: a taller widget shows more channels, not
+            // taller tiles (Melvin, 2026-11-20: "I like the size of the channels when the widget is smaller").
+            Row(GlanceModifier.fillMaxWidth().height(GRID_TILE_HEIGHT)) {
                 row.forEach { tile ->
                     Column(
                         GlanceModifier
@@ -268,7 +270,7 @@ private fun ChannelGrid(
                             .semantics { contentDescription = describe(context, tile) },
                         horizontalAlignment = Alignment.CenterHorizontally,
                     ) {
-                        LogoPlate(tile.logo, tile.name, GlanceModifier.fillMaxWidth().defaultWeight())
+                        LogoPlate(tile.logo, tile.name, GlanceModifier.fillMaxWidth().height(GRID_PLATE))
                         Spacer(GlanceModifier.height(5.dp))
                         TileName(tile.name)
                         Text(
@@ -326,5 +328,8 @@ private val STRIP_MARK = 48.dp
 private val STRIP_TILE = 72.dp
 private val GRID_HEADER = 56.dp
 private val GRID_TILE_WIDTH = 96.dp
-private val GRID_TILE_HEIGHT = 110.dp
+private val GRID_TILE_HEIGHT = 116.dp
+
+/** The logo plate's height in the grid, as on a 4 by 2 widget, the size Melvin liked. */
+private val GRID_PLATE = 64.dp
 private const val MAX_COLUMNS = 5

@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en-CA">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>Channels and guide · Tuned</title>
+        <meta name="robots" content="noindex, nofollow" />
+        <meta name="referrer" content="no-referrer" />
+        <meta name="theme-color" content="#fcfaff" media="(prefers-color-scheme: light)" />
+        <meta name="theme-color" content="#121018" media="(prefers-color-scheme: dark)" />
+        <link rel="icon" href="/favicon.ico" sizes="48x48" />
+        <link rel="icon" href="/icon.svg" type="image/svg+xml" />
+        <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+        <link rel="stylesheet" href="/site.css" />
+        <link rel="stylesheet" href="/web.css" />
+        <link rel="stylesheet" href="/account/account.css" />
+        <link rel="stylesheet" href="/account/playlists/playlists.css" />
+        <link rel="stylesheet" href="/account/channels/channels.css" />
+    </head>
+    <body>
+        <script src="/chrome.js" data-part="header"></script>
+        <main class="wide account">
+            <div class="account-head">
+                <p class="back"><a href="/account">‹ Your Tuned account</a></p>
+                <h1>Channels and guide</h1>
+                <p class="small">
+                    Open any channel in VLC or another player on this device. The list and guide come straight from your provider to this
+                    browser, and the player connects to your provider itself. Nothing passes through Tuned.
+                </p>
+                <p id="status" role="status" aria-live="polite"></p>
+            </div>
+            <nav class="account-nav" id="account-nav" aria-label="Your account" hidden></nav>
+
+            <div class="account-body">
+                <section id="signed-out" class="card" hidden>
+                    <h2>Sign in first</h2>
+                    <p>Sign in to your Tuned account to see your saved playlists' channels.</p>
+                    <div class="actions"><a class="button" href="/account">Go to your account</a></div>
+                </section>
+
+                <section id="off" class="card" hidden>
+                    <h2>Not available yet</h2>
+                    <p>The channel list on the website isn't switched on yet. Your channels are in the Tuned app.</p>
+                </section>
+
+                <div id="signed-in" hidden>
+                    <section class="card span" id="pick" aria-labelledby="pick-title">
+                        <h2 id="pick-title" class="visually-hidden">Playlist</h2>
+                        <div class="pick-row">
+                            <div class="field">
+                                <label for="playlist">Playlist</label>
+                                <select id="playlist"></select>
+                            </div>
+                            <div class="whole" role="group" aria-label="The whole playlist">
+                                <a class="button quiet" id="whole-vlc" hidden>Open the whole playlist in VLC</a>
+                                <button type="button" class="quiet" id="whole-file">Playlist file for VLC</button>
+                                <button type="button" class="quiet" id="whole-copy">Copy playlist link</button>
+                            </div>
+                        </div>
+                        <p class="message" id="pick-message" role="status" aria-live="polite"></p>
+                    </section>
+
+                    <section class="card span" id="blocked" hidden aria-labelledby="blocked-title">
+                        <h2 id="blocked-title">Your provider doesn't let web pages read its channel list</h2>
+                        <p id="blocked-why"></p>
+                        <p>
+                            VLC isn't a web page, so it can still open the whole playlist with its own guide-free list: use the buttons
+                            above. In the Tuned app you get every channel and the full guide.
+                        </p>
+                        <p id="blocked-setting" hidden>
+                            Your provider's address is http and this page is https. In Chrome or Edge, open the padlock › Site settings ›
+                            Insecure content › Allow, then reload. Firefox: the padlock › Turn off protection for now. Safari has no such
+                            setting.
+                        </p>
+                        <div class="actions"><a class="button quiet" href="/check">Check my provider</a></div>
+                    </section>
+
+                    <section class="card span" id="channels" hidden aria-labelledby="channels-title">
+                        <div class="card-head">
+                            <h2 id="channels-title">Live TV</h2>
+                            <fieldset class="kinds views" id="views">
+                                <legend class="visually-hidden">View</legend>
+                                <label><input type="radio" name="view" value="list" checked />Now and next</label>
+                                <label><input type="radio" name="view" value="grid" />Guide</label>
+                            </fieldset>
+                        </div>
+                        <div class="filters">
+                            <div class="field grow">
+                                <label for="search">Search channels and what's on</label>
+                                <input id="search" type="search" autocomplete="off" spellcheck="false" placeholder="Hockey, CBC, news…" />
+                            </div>
+                            <div class="field">
+                                <label for="group">Group</label>
+                                <select id="group"></select>
+                            </div>
+                        </div>
+                        <p class="small" id="count" aria-live="polite"></p>
+                        <p class="small" id="guide-line" aria-live="polite"></p>
+                        <ul class="channel-list" id="list"></ul>
+                        <div class="grid-wrap" id="grid" hidden></div>
+                        <div class="actions"><button type="button" class="quiet" id="more" hidden>Show more</button></div>
+                    </section>
+                </div>
+            </div>
+        </main>
+        <script type="module" src="/account/channels/channels.js"></script>
+        <script src="/beacon.js" defer></script>
+        <script src="/chrome.js" data-part="footer"></script>
+    </body>
+</html>
