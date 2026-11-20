@@ -14,6 +14,14 @@
 .row-actions button {
     padding: 8px 16px;
 }
+/* On a narrow phone, Edit and Remove drop under the playlist's name rather than pushing the page sideways. */
+#playlist-list .row {
+    flex-wrap: wrap;
+}
+#playlist-list .row > div:first-child {
+    flex: 1 1 10rem;
+    min-width: 0;
+}
 .row .small {
     margin: 2px 0 0;
     overflow-wrap: anywhere;
