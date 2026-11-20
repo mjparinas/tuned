@@ -26,3 +26,15 @@ test("a code stops at its limit, its date, and one use per account", () => {
     assert.equal(redeemProblem({ ...row, disabled: true }, false, now), "not found");
     assert.equal(redeemProblem(null, false, now), "not found");
 });
+
+test("redeeming casts the account for both tables, text for the redemption and uuid for the grant", async () => {
+    // Without the casts Postgres types $2 as text and the grant into entitlements (uuid) fails, so no code redeems.
+    const { redeemSql } = await import("./data.mjs");
+    for (const yearly of [false, true]) {
+        const sql = redeemSql(yearly);
+        assert.match(sql, /INSERT INTO code_redemptions \(code, account_id\) SELECT code, \$2::text /);
+        assert.match(sql, /SELECT 'grant', \$5, \$2::uuid, /);
+    }
+    assert.match(redeemSql(true), /interval '1 year'/);
+    assert.match(redeemSql(false), /'active', NULL FROM/);
+});
