@@ -15,7 +15,7 @@
     </head>
     <body>
         <script src="/chrome.js" data-part="header"></script>
-        <main>
+        <main class="wide">
             <h1>Your Tuned account</h1>
             <p id="status" role="status" aria-live="polite"></p>
 
@@ -50,25 +50,9 @@
             </section>
 
             <div id="signed-in" hidden>
-                <section class="card">
+                <section class="card span">
                     <h2 id="who"></h2>
                     <p class="small" id="plan"></p>
-                </section>
-
-                <section class="card">
-                    <h2>Devices</h2>
-                    <p class="small" id="seats"></p>
-                    <div id="devices"></div>
-                    <p class="message" id="devices-message" role="status" aria-live="polite"></p>
-                </section>
-
-                <section class="card">
-                    <h2>Playlists and settings</h2>
-                    <p class="small" id="library-line">
-                        Add an M3U link, an Xtream login or a MAC portal, and change your settings. Your phone and TV pick it up from your
-                        account.
-                    </p>
-                    <div class="actions"><a class="button" href="/account/playlists" data-track="open-playlists">Manage playlists</a></div>
                 </section>
 
                 <section class="card feature" id="buy">
@@ -89,36 +73,20 @@
                     <p class="message" id="buy-message" role="status" aria-live="polite"></p>
                 </section>
 
-                <section class="card" id="features">
-                    <h2>What Tuned does</h2>
-                    <p class="small">Everything in the app on your phone, tablet and TV. Tap a group to see what's in it.</p>
-                    <div id="feature-groups"></div>
+                <section class="card">
+                    <h2>Devices</h2>
+                    <p class="small" id="seats"></p>
+                    <div id="devices"></div>
+                    <p class="message" id="devices-message" role="status" aria-live="polite"></p>
                 </section>
 
                 <section class="card">
-                    <h2>Have a code?</h2>
-                    <p class="small">A code from Tuned gives Premium or extra seats to this account.</p>
-                    <label for="code">Code</label>
-                    <input
-                        id="code"
-                        autocomplete="off"
-                        autocapitalize="characters"
-                        spellcheck="false"
-                        maxlength="24"
-                        placeholder="TUNED-XXXX-XXXX"
-                        aria-describedby="code-message"
-                    />
-                    <p class="message" id="code-message" role="status" aria-live="polite"></p>
-                    <div class="actions"><button type="button" id="redeem" data-track="redeem-code">Use code</button></div>
-                </section>
-
-                <section class="card">
-                    <h2>Backup</h2>
-                    <p class="small" id="backup"></p>
-                    <div class="actions">
-                        <button type="button" class="plain" id="delete-backup" hidden>Delete backup</button>
-                    </div>
-                    <p class="message" id="backup-message" role="status" aria-live="polite"></p>
+                    <h2>Playlists and settings</h2>
+                    <p class="small" id="library-line">
+                        Add an M3U link, an Xtream login or a MAC portal, and change your settings. Your phone and TV pick it up from your
+                        account.
+                    </p>
+                    <div class="actions"><a class="button" href="/account/playlists" data-track="open-playlists">Manage playlists</a></div>
                 </section>
 
                 <section class="card">
@@ -138,6 +106,38 @@
                 </section>
 
                 <section class="card">
+                    <h2>Have a code?</h2>
+                    <p class="small">A code from Tuned gives Premium or extra seats to this account.</p>
+                    <label for="code">Code</label>
+                    <input
+                        id="code"
+                        autocomplete="off"
+                        autocapitalize="characters"
+                        spellcheck="false"
+                        maxlength="24"
+                        placeholder="TUNED-XXXX-XXXX"
+                        aria-describedby="code-message"
+                    />
+                    <p class="message" id="code-message" role="status" aria-live="polite"></p>
+                    <div class="actions"><button type="button" id="redeem" data-track="redeem-code">Use code</button></div>
+                </section>
+
+                <section class="card span" id="features">
+                    <h2>What Tuned does</h2>
+                    <p class="small">Everything in the app on your phone, tablet and TV. Tap a group to see what's in it.</p>
+                    <div id="feature-groups"></div>
+                </section>
+
+                <section class="card">
+                    <h2>Backup</h2>
+                    <p class="small" id="backup"></p>
+                    <div class="actions">
+                        <button type="button" class="plain" id="delete-backup" hidden>Delete backup</button>
+                    </div>
+                    <p class="message" id="backup-message" role="status" aria-live="polite"></p>
+                </section>
+
+                <section class="card">
                     <div class="actions">
                         <button type="button" class="plain" id="sign-out">Sign out</button>
                         <button type="button" class="plain" id="delete-account">Delete account</button>
@@ -148,17 +148,14 @@
 
             <dialog id="delete-dialog" aria-labelledby="delete-title">
                 <form method="dialog" id="delete-form">
-                    <h2 id="delete-title">Delete your account?</h2>
-                    <p>
-                        This deletes your account, devices and backup, and cancels a yearly plan bought here. A plan bought in Google Play
-                        is cancelled in Play. It can't be undone.
-                    </p>
+                    <h2 id="delete-title"></h2>
+                    <p id="delete-text"></p>
                     <label for="delete-word">Type <strong>delete</strong> to confirm</label>
                     <input id="delete-word" autocomplete="off" autocapitalize="none" spellcheck="false" />
                     <p class="message" id="delete-message" role="status" aria-live="polite"></p>
                     <div class="actions end">
                         <button type="button" class="quiet" id="delete-cancel">Cancel</button>
-                        <button type="submit" class="danger" id="delete-confirm" disabled>Delete account</button>
+                        <button type="submit" class="danger" id="delete-confirm" disabled></button>
                     </div>
                 </form>
             </dialog>

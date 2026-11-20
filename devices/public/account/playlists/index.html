@@ -16,7 +16,7 @@
     </head>
     <body>
         <script src="/chrome.js" data-part="header"></script>
-        <main>
+        <main class="wide">
             <p class="back"><a href="/account">‹ Your Tuned account</a></p>
             <h1>Playlists and settings</h1>
             <p class="small">
@@ -32,7 +32,7 @@
             </section>
 
             <div id="signed-in" hidden>
-                <section class="card" aria-labelledby="playlists-title">
+                <section class="card span" aria-labelledby="playlists-title">
                     <h2 id="playlists-title">Playlists</h2>
                     <p class="small" id="playlists-line"></p>
                     <div id="playlists"></div>
@@ -43,7 +43,7 @@
                     </div>
                 </section>
 
-                <section class="card" id="editor" hidden aria-labelledby="editor-title">
+                <section class="card span" id="editor" hidden aria-labelledby="editor-title">
                     <h2 id="editor-title">Add a playlist</h2>
                     <form id="editor-form" novalidate>
                         <fieldset class="kinds" id="kinds">

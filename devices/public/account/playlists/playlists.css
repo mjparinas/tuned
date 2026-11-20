@@ -132,3 +132,13 @@ input.switch:checked::before {
 input.switch:disabled {
     opacity: 0.5;
 }
+
+/* On a desktop the settings cards join the account page's two-column grid (site.css, main.wide). */
+@media (min-width: 960px) {
+    main.wide #settings {
+        display: contents;
+    }
+    main.wide #settings > .card {
+        margin-top: 0;
+    }
+}

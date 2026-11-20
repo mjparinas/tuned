@@ -1,6 +1,7 @@
 <!--
     The landing page's content (docs/decisions/website.md). devices/build-site.mjs puts it inside the shared page and
-    fills in the markers: @features (site/features.mjs), @badges-hero and @badges-soon (the store badges),
+    fills in the markers: @features (site/features.mjs), @badges-soon (the store badges, kept out of the hero so the
+    one button that works stands alone),
     @download-hero, @latest-posts (the three newest posts), @cta and @feature-count.
     Screenshots are the app's own screens drawn with sample data (docs/decisions/screenshots.md), in public/img/.
 -->
@@ -63,7 +64,6 @@
                 >Opens straight to your channels
             </li>
         </ul>
-        <!-- @badges-hero -->
     </div>
     <div class="hero-shots">
         <div class="phone">
@@ -89,7 +89,7 @@
             <dd><!-- @feature-count --></dd>
         </div>
         <div>
-            <dt>stream connection at a time</dt>
+            <dt>stream at a time, so your provider's limit is safe</dt>
             <dd>1</dd>
         </div>
         <div>
@@ -470,12 +470,6 @@
             Tuned is on Android phones, tablets and Android TV today. Apps for Samsung TVs, iPhone and iPad, and the Mac are on the way.
         </p>
         <div class="soon-card">
-            <ul class="platforms">
-                <li><b>Google Play</b><span>Coming soon</span></li>
-                <li><b>Samsung TV</b><span>Coming soon</span></li>
-                <li><b>iPhone and iPad</b><span>Coming soon</span></li>
-                <li><b>Mac</b><span>Coming soon</span></li>
-            </ul>
             <!-- @badges-soon -->
         </div>
     </div>
@@ -509,8 +503,10 @@
             <details>
                 <summary>How do I install it?</summary>
                 <p class="muted">
-                    Download it on your device, open it, and allow installs from your browser when Android asks. After that Tuned offers
-                    each new version itself.
+                    On a phone or tablet, tap Download for Android, open the file, and allow installs from your browser when Android asks.
+                    On Android TV or Google TV, install the free Downloader app from the TV's app store, type tunedplayer.com/download into
+                    it, and allow it to install apps. The <a href="/blog/guides/android-tv/">Android TV guide</a> has every step. After that
+                    Tuned offers each new version itself.
                 </p>
             </details>
             <details>

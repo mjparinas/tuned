@@ -204,29 +204,57 @@ $("tv-yes").onclick = async () => {
 };
 $("tv-no").onclick = () => ($("tv").hidden = true);
 
-$("delete-backup").onclick = async () => {
-    const answer = await call("DELETE", "/api/backup", {});
-    if (answer.status === "ok") {
-        await load();
-        tell("backup-message", "Your backup was deleted. A signed-in device will save a new one next time it opens.", "ok");
-    } else tell("backup-message", refusals.unavailable);
-};
 $("sign-out").onclick = async () => {
     await call("POST", "/api/auth/signout", {});
     me = null;
     render();
     say("Signed out.");
 };
-// Deleting the account asks in a pop-up that only goes ahead once "delete" is typed (Melvin, 2026-11-19).
+// Deleting the account or the backup asks in a pop-up that only goes ahead once "delete" is typed (Melvin, 2026-11-19
+// for the account, 2026-11-20 for the backup: "it should also have a pop up that makes you type delete first").
 const dialog = $("delete-dialog");
 const typedDelete = () => $("delete-word").value.trim().toLowerCase() === "delete";
-$("delete-account").onclick = () => {
+const deletions = {
+    account: {
+        title: "Delete your account?",
+        text: "This deletes your account, devices and backup, and cancels a yearly plan bought here. A plan bought in Google Play is cancelled in Play. It can't be undone.",
+        button: "Delete account",
+        async run() {
+            const answer = await call("POST", "/api/account/delete", {});
+            if (answer.status !== "ok") return false;
+            me = null;
+            render();
+            say("Your account was deleted.");
+            return true;
+        },
+    },
+    backup: {
+        title: "Delete your backup?",
+        text: "This deletes the copy of your playlists, logins, settings and lists saved in your account. Your devices keep theirs, and a signed-in device saves a new one next time it opens. It can't be undone.",
+        button: "Delete backup",
+        async run() {
+            const answer = await call("DELETE", "/api/backup", {});
+            if (answer.status !== "ok") return false;
+            await load();
+            tell("backup-message", "Your backup was deleted. A signed-in device will save a new one next time it opens.", "ok");
+            return true;
+        },
+    },
+};
+let deleting = deletions.account;
+function askToDelete(what) {
+    deleting = deletions[what];
+    $("delete-title").textContent = deleting.title;
+    $("delete-text").textContent = deleting.text;
+    $("delete-confirm").textContent = deleting.button;
     $("delete-word").value = "";
     $("delete-confirm").disabled = true;
     clear("delete-message");
     dialog.showModal();
     $("delete-word").focus();
-};
+}
+$("delete-account").onclick = () => askToDelete("account");
+$("delete-backup").onclick = () => askToDelete("backup");
 $("delete-word").oninput = () => ($("delete-confirm").disabled = !typedDelete());
 $("delete-cancel").onclick = () => dialog.close();
 dialog.onclick = (event) => {
@@ -236,13 +264,14 @@ $("delete-form").onsubmit = async (event) => {
     event.preventDefault();
     if (!typedDelete()) return;
     $("delete-confirm").disabled = true;
-    const answer = await call("POST", "/api/account/delete", {});
-    if (answer.status === "ok") {
-        dialog.close();
-        me = null;
-        render();
-        say("Your account was deleted.");
-    } else {
+    let done = false;
+    try {
+        done = await deleting.run();
+    } catch {
+        done = false;
+    }
+    if (done) dialog.close();
+    else {
         $("delete-confirm").disabled = false;
         tell("delete-message", refusals.unavailable);
     }
