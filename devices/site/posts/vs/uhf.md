@@ -9,24 +9,24 @@ UHF, from Short Wavelength Applications, is a polished player for iPhone, iPad a
 
 ## At a glance
 
-|                                | UHF                                                               | Tuned                                                                                                                                               |
-| ------------------------------ | ----------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Where it runs                  | iPhone, iPad, Apple TV, Mac and Vision Pro                        | Android phones, tablets, Chromebooks, Android TV and Google TV                                                                                      |
-| Playlist types                 | M3U8, Xtream Codes, and Jellyfin, Plex and Emby                   | Xtream Codes login, M3U link, M3U file, MAC portal (live TV and guide)                                                                              |
-| TV guide                       | A guide built for touch screens, with alerts                      | XMLTV guide as a list or a full grid, with reminders                                                                                                |
-| Catch-up                       | Yes                                                               | Yes, on Xtream servers that keep recordings                                                                                                         |
-| Recording                      | Yes, through its free UHF Server on a computer                    | Yes, the channel you are watching (Premium)                                                                                                         |
-| Pause and rewind live TV       | Yes, through the live buffer                                      | Yes, up to an hour kept on the device (Premium)                                                                                                     |
-| Several channels at once       | Yes                                                               | No, on purpose: one stream connection at a time                                                                                                     |
-| Casting to a TV                | AirPlay and Chromecast                                            | Chromecast                                                                                                                                          |
-| Picture-in-picture             | Yes                                                               | Yes                                                                                                                                                 |
-| Offline downloads              | Yes                                                               | Films and episodes, whole seasons too (more than 3 at a time is Premium)                                                                            |
-| Profiles and parental controls | PIN locks on folders                                              | Up to 6 profiles, kids profiles and PINs (Premium); adult categories locked behind a PIN                                                            |
-| Trakt                          | Yes                                                               | Yes, scrobbles films and episodes (Premium)                                                                                                         |
-| Film and show details          | Not stated by the developer                                       | TMDB ratings, trailers, cast and actor pages, saved on the device                                                                                   |
-| Subtitles                      | OpenSubtitles search                                              | Full caption styling, timing fix, and subtitle search for films and episodes                                                                        |
-| Ads                            | None in the free version                                          | None, ever                                                                                                                                          |
-| Price                          | Free; PRO about US$1.99 a month, US$17.99 a year or US$49.99 once | Free, everything unlocked in the download from this site; on Google Play (coming soon), Premium US$9.99 a year with a 7-day trial, or US$24.99 once |
+|                                | UHF                                                               | Tuned                                                                                    |
+| ------------------------------ | ----------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| Where it runs                  | iPhone, iPad, Apple TV, Mac and Vision Pro                        | Android phones, tablets, Chromebooks, Android TV and Google TV                           |
+| Playlist types                 | M3U8, Xtream Codes, and Jellyfin, Plex and Emby                   | Xtream Codes login, M3U link, M3U file, MAC portal (live TV and guide)                   |
+| TV guide                       | A guide built for touch screens, with alerts                      | XMLTV guide as a list or a full grid, with reminders                                     |
+| Catch-up                       | Yes                                                               | Yes, on Xtream servers that keep recordings                                              |
+| Recording                      | Yes, through its free UHF Server on a computer                    | Yes, the channel you are watching (Premium)                                              |
+| Pause and rewind live TV       | Yes, through the live buffer                                      | Yes, up to an hour kept on the device (Premium)                                          |
+| Several channels at once       | Yes                                                               | No, on purpose: one stream connection at a time                                          |
+| Casting to a TV                | AirPlay and Chromecast                                            | Chromecast                                                                               |
+| Picture-in-picture             | Yes                                                               | Yes                                                                                      |
+| Offline downloads              | Yes                                                               | Films and episodes, whole seasons too (more than 3 at a time is Premium)                 |
+| Profiles and parental controls | PIN locks on folders                                              | Up to 6 profiles, kids profiles and PINs (Premium); adult categories locked behind a PIN |
+| Trakt                          | Yes                                                               | Yes, scrobbles films and episodes (Premium)                                              |
+| Film and show details          | Not stated by the developer                                       | TMDB ratings, trailers, cast and actor pages, saved on the device                        |
+| Subtitles                      | OpenSubtitles search                                              | Full caption styling, timing fix, and subtitle search for films and episodes             |
+| Ads                            | None in the free version                                          | None, ever                                                                               |
+| Price                          | Free; PRO about US$1.99 a month, US$17.99 a year or US$49.99 once | Free; Premium US$9.99 a year with a 7-day trial, or US$24.99 once                        |
 
 "Not stated by the developer" means we couldn't find it on the developer's own pages or store listing. It may still be there, so check before you rule it out.
 
@@ -34,7 +34,7 @@ UHF, from Short Wavelength Applications, is a polished player for iPhone, iPad a
 
 UHF is free with no ads. UHF PRO adds sync between devices, removes watermarks and lifts the limits on the guide and alerts, at about US$1.99 a month, US$17.99 a year or US$49.99 once on the US App Store. Tuned is free with no ads; Premium is US$9.99 a year with a 7-day trial or US$24.99 once.
 
-Right now Tuned downloads from this site, through GitHub Releases, and that version is free with every feature unlocked, Premium ones included. The Premium prices are for the Google Play version, which is coming soon; they are what Play charges in the United States, and Play shows them in your own currency. Premium on Play covers up to three devices, and a Tuned account can add more.
+Tuned's prices are what Google Play charges in the United States; Play shows them in your own currency. Premium covers up to three devices, and a Tuned account can add more.
 
 ## Where UHF is ahead
 

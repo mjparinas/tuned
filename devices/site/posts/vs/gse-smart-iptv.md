@@ -9,24 +9,24 @@ GSE Smart IPTV, from droidvision, has been around for years on both Apple device
 
 ## At a glance
 
-|                                | GSE Smart IPTV                                                | Tuned                                                                                                                                               |
-| ------------------------------ | ------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Where it runs                  | iPhone, iPad, Apple TV, Mac and Android                       | Android phones, tablets, Chromebooks, Android TV and Google TV                                                                                      |
-| Playlist types                 | M3U, Xtream Codes, JSON playlists                             | Xtream Codes login, M3U link, M3U file, MAC portal (live TV and guide)                                                                              |
-| TV guide                       | XMLTV (local or remote, zipped or not), timeline guide on iOS | XMLTV guide as a list or a full grid, with reminders                                                                                                |
-| Catch-up                       | Not stated by the developer                                   | Yes, on Xtream servers that keep recordings                                                                                                         |
-| Recording                      | Record live TV (iOS)                                          | Yes, the channel you are watching (Premium)                                                                                                         |
-| Pause and rewind live TV       | Not stated by the developer                                   | Yes, up to an hour kept on the device (Premium)                                                                                                     |
-| Several channels at once       | Not stated by the developer                                   | No, on purpose: one stream connection at a time                                                                                                     |
-| Casting to a TV                | Chromecast and AirPlay                                        | Chromecast                                                                                                                                          |
-| Picture-in-picture             | Not stated by the developer                                   | Yes                                                                                                                                                 |
-| Offline downloads              | Not stated by the developer                                   | Films and episodes, whole seasons too (more than 3 at a time is Premium)                                                                            |
-| Profiles and parental controls | Parental control                                              | Up to 6 profiles, kids profiles and PINs (Premium); adult categories locked behind a PIN                                                            |
-| Trakt                          | Not stated by the developer                                   | Yes, scrobbles films and episodes (Premium)                                                                                                         |
-| Film and show details          | Film info from Xtream servers                                 | TMDB ratings, trailers, cast and actor pages, saved on the device                                                                                   |
-| Subtitles                      | Embedded and external SRT                                     | Full caption styling, timing fix, and subtitle search for films and episodes                                                                        |
-| Ads                            | Yes, on the free Android version                              | None, ever                                                                                                                                          |
-| Price                          | iOS Pro US$2.99; Android free with ads                        | Free, everything unlocked in the download from this site; on Google Play (coming soon), Premium US$9.99 a year with a 7-day trial, or US$24.99 once |
+|                                | GSE Smart IPTV                                                | Tuned                                                                                    |
+| ------------------------------ | ------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| Where it runs                  | iPhone, iPad, Apple TV, Mac and Android                       | Android phones, tablets, Chromebooks, Android TV and Google TV                           |
+| Playlist types                 | M3U, Xtream Codes, JSON playlists                             | Xtream Codes login, M3U link, M3U file, MAC portal (live TV and guide)                   |
+| TV guide                       | XMLTV (local or remote, zipped or not), timeline guide on iOS | XMLTV guide as a list or a full grid, with reminders                                     |
+| Catch-up                       | Not stated by the developer                                   | Yes, on Xtream servers that keep recordings                                              |
+| Recording                      | Record live TV (iOS)                                          | Yes, the channel you are watching (Premium)                                              |
+| Pause and rewind live TV       | Not stated by the developer                                   | Yes, up to an hour kept on the device (Premium)                                          |
+| Several channels at once       | Not stated by the developer                                   | No, on purpose: one stream connection at a time                                          |
+| Casting to a TV                | Chromecast and AirPlay                                        | Chromecast                                                                               |
+| Picture-in-picture             | Not stated by the developer                                   | Yes                                                                                      |
+| Offline downloads              | Not stated by the developer                                   | Films and episodes, whole seasons too (more than 3 at a time is Premium)                 |
+| Profiles and parental controls | Parental control                                              | Up to 6 profiles, kids profiles and PINs (Premium); adult categories locked behind a PIN |
+| Trakt                          | Not stated by the developer                                   | Yes, scrobbles films and episodes (Premium)                                              |
+| Film and show details          | Film info from Xtream servers                                 | TMDB ratings, trailers, cast and actor pages, saved on the device                        |
+| Subtitles                      | Embedded and external SRT                                     | Full caption styling, timing fix, and subtitle search for films and episodes             |
+| Ads                            | Yes, on the free Android version                              | None, ever                                                                               |
+| Price                          | iOS Pro US$2.99; Android free with ads                        | Free; Premium US$9.99 a year with a 7-day trial, or US$24.99 once                        |
 
 "Not stated by the developer" means we couldn't find it on the developer's own pages or store listing. It may still be there, so check before you rule it out.
 
@@ -34,7 +34,7 @@ GSE Smart IPTV, from droidvision, has been around for years on both Apple device
 
 On Apple devices GSE Smart IPTV Pro is a US$2.99 purchase. On Android there is a free version with ads. Tuned is free with no ads; Premium is US$9.99 a year with a 7-day trial or US$24.99 once.
 
-Right now Tuned downloads from this site, through GitHub Releases, and that version is free with every feature unlocked, Premium ones included. The Premium prices are for the Google Play version, which is coming soon; they are what Play charges in the United States, and Play shows them in your own currency. Premium on Play covers up to three devices, and a Tuned account can add more.
+Tuned's prices are what Google Play charges in the United States; Play shows them in your own currency. Premium covers up to three devices, and a Tuned account can add more.
 
 ## Where GSE Smart IPTV is ahead
 
