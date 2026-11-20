@@ -25,6 +25,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
+import org.robolectric.annotation.GraphicsMode
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
@@ -33,6 +34,7 @@ import kotlin.test.assertTrue
  * doesn't do anything").
  */
 @RunWith(RobolectricTestRunner::class)
+@GraphicsMode(GraphicsMode.Mode.NATIVE) // text measured as on a device, as the screenshots are, so the grid lays out
 @Config(sdk = [35], qualifiers = "w411dp-h891dp-xxhdpi")
 class MovieSortTest {
     @get:Rule val compose = createComposeRule()
@@ -50,6 +52,8 @@ class MovieSortTest {
             // Sixty films ahead of the sample's, in the playlist's order Film 60 to Film 01: enough to scroll.
             val films = (1..FILMS).map { film(FIRST_ID + it, "Film %02d".format(FILMS + 1 - it), it - FILMS - 1) }
             db.items().insertAll(films)
+            // As the screenshots do: Home reads some of its settings from the store as well as its parameter.
+            app.container.settings.update { AppSettings(startTab = StartTab.MOVIES) }
         }
     }
 
