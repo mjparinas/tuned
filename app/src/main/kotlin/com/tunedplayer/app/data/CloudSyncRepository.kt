@@ -219,11 +219,18 @@ class CloudSyncRepository(
         val agreed =
             when {
                 // Never synced, or a copy the website made from nothing: whatever is on either side counts as added.
-                synced == null || partial -> JsonObject(emptyMap())
+                synced == null || partial -> {
+                    JsonObject(emptyMap())
+                }
+
                 // Nothing changed here since the last sync, so this device's copy is the one both agreed on.
-                !localChanged -> localJson
-                else -> base.load()?.let { attempt(TAG, "Couldn't read the last synced copy") { json.parseToJsonElement(it).jsonObject }.getOrNull() }
-                    ?: JsonObject(emptyMap())
+                !localChanged -> {
+                    localJson
+                }
+
+                else -> {
+                    lastAgreed() ?: JsonObject(emptyMap())
+                }
             }
         val remoteWins = synced == null || !localChanged || remote.changedAt > localChangedAt
         val merged = CopyMerge.merge(agreed, localJson, remoteJson, remoteWins)
@@ -251,6 +258,11 @@ class CloudSyncRepository(
         if (applied.signedIn) onSignedIn()
         applied.switchTo?.let { onSwitch(it) }
         if (applied.refresh && applied.switchTo == null && !applied.signedIn) onRefresh()
+    }
+
+    private fun lastAgreed(): JsonObject? {
+        val text = base.load() ?: return null
+        return attempt(TAG, "Couldn't read the last synced copy") { json.parseToJsonElement(text).jsonObject }.getOrNull()
     }
 
     /** A damaged copy: this device's replaces it rather than leaving the backup stuck. */

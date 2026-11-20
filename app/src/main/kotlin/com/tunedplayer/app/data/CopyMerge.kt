@@ -71,10 +71,14 @@ object CopyMerge {
         conflict: (JsonElement?, JsonElement?, JsonElement?) -> JsonElement?,
     ): JsonElement? = when {
         l == r -> l
+
         l == b -> r
+
         r == b -> l
+
         // One side removed a part the other changed: the newer change stands.
         l == null || r == null -> if (remoteWins) r else l
+
         else -> conflict(b, l, r)
     }
 

@@ -23,7 +23,11 @@ class WebSettingsTest {
     private val groups = Json.parseToJsonElement(File("../devices/lib/web-settings.json").readText()).jsonArray
     private val settings = groups.flatMap { it.jsonObject["settings"]!!.jsonArray }.map { it.jsonObject }
     private val fields = SETTING_FIELDS.associateBy { it.key.name }
-    private val defaults = mutablePreferencesOf().also { p -> SETTING_FIELDS.forEach { it.write(p, AppSettings()) } }.asMap().mapKeys { it.key.name }
+    private val defaults =
+        mutablePreferencesOf()
+            .also { p -> SETTING_FIELDS.forEach { it.write(p, AppSettings()) } }
+            .asMap()
+            .mapKeys { it.key.name }
 
     @Test
     fun `every website setting is a synced app setting with the app's default`() {

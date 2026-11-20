@@ -16,7 +16,10 @@ open class LastSynced(
     private val box by lazy { KeystoreBox(ALIAS) }
 
     /** Null before the first sync, or when it can't be read: the join then counts both sides' parts as added. */
-    open fun load(): String? = if (!file.exists()) null else attempt(TAG, "Couldn't read the last synced copy") { box.open(file.readText()) }.getOrNull()
+    open fun load(): String? {
+        if (!file.exists()) return null
+        return attempt(TAG, "Couldn't read the last synced copy") { box.open(file.readText()) }.getOrNull()
+    }
 
     open fun save(copy: ByteArray) {
         attempt(TAG, "Couldn't keep the last synced copy") {

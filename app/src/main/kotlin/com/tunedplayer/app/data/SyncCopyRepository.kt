@@ -311,7 +311,10 @@ class SyncCopyRepository(
 
                     match != inUse -> {
                         credentials.save(match)
-                        val reload = match.password != inUse.password || match.guideUrl != inUse.guideUrl || match.extraGuides != inUse.extraGuides
+                        val reload =
+                            match.password != inUse.password ||
+                                match.guideUrl != inUse.guideUrl ||
+                                match.extraGuides != inUse.extraGuides
                         Applied(signedIn = false, guideChanged = false, refresh = reload)
                     }
 
