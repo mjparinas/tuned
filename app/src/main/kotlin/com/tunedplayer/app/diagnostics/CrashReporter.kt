@@ -69,7 +69,11 @@ object CrashReporter {
                     onScreenThread = thread === Looper.getMainLooper().thread,
                     fromCoroutine = CoroutineFailureMark.isMarked(error),
                     // A plain read of the state, safe from any thread.
-                    onScreen = ProcessLifecycleOwner.get().lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED),
+                    onScreen =
+                        ProcessLifecycleOwner
+                            .get()
+                            .lifecycle.currentState
+                            .isAtLeast(Lifecycle.State.STARTED),
                     lastRestartMs = lastRestart(dir),
                     nowMs = now,
                 )
