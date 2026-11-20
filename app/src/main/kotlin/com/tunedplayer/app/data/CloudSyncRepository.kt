@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.core.content.edit
 import com.tunedplayer.app.core.CloudSync
 import com.tunedplayer.app.diagnostics.AppLog
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -79,6 +80,7 @@ class CloudSyncRepository(
      * One run: takes the other device's copy, sends this one's, or does nothing. Returns false when it should be tried
      * again later (offline, the server didn't answer, or another device saved at the same moment).
      */
+    @Suppress("TooGenericExceptionCaught") // logged and reported as a failed run: nothing is hidden
     suspend fun run(): Boolean = lock.withLock {
         if (!account.signedIn.value) return@withLock true
         try {
@@ -91,6 +93,13 @@ class CloudSyncRepository(
             AppLog.w(TAG, "Couldn't reach the backup", e)
             statusFlow.value = statusFlow.value.copy(problem = Problem.OFFLINE)
             false
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            // An answer it couldn't read, or a bug: logged, and tried again later like being offline, never a crash.
+            AppLog.e(TAG, "Backup run failed", e)
+            statusFlow.value = statusFlow.value.copy(problem = Problem.OFFLINE)
+            false
         }
     }
 
@@ -98,6 +107,7 @@ class CloudSyncRepository(
      * The welcome screen's "Restore from your Tuned account": takes the backup as it is, never sending this fresh
      * device's empty copy over it. The device stays signed in afterwards, so it keeps in step from then on.
      */
+    @Suppress("TooGenericExceptionCaught") // logged, and the welcome screen says the restore didn't work
     suspend fun restore(): Restore = lock.withLock {
         if (!account.signedIn.value) return@withLock Restore.NOTHING_SAVED
         try {
@@ -123,6 +133,11 @@ class CloudSyncRepository(
             }
         } catch (e: IOException) {
             AppLog.w(TAG, "Couldn't restore the backup", e)
+            Restore.OFFLINE
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            AppLog.e(TAG, "Restoring the backup failed", e)
             Restore.OFFLINE
         }
     }
