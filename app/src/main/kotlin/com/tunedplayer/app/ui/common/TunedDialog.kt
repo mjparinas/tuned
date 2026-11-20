@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.requiredWidth
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.material3.AlertDialog
@@ -18,8 +19,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.min
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 
@@ -94,6 +98,14 @@ private fun WideDialog(
     properties: DialogProperties,
     maxWidth: Dp,
 ) {
+    // A set width from the app's own window, rather than filling the dialog's window: how wide that window is differs
+    // between devices (and the JVM screenshots), and the card is centred in it either way.
+    val screen =
+        with(LocalDensity.current) {
+            LocalWindowInfo.current.containerSize.width
+                .toDp()
+        }
+    val width = if (screen <= 0.dp) maxWidth else min(maxWidth, screen - DialogEdgeMargin * 2).coerceAtLeast(0.dp)
     Dialog(
         onDismissRequest = onDismissRequest,
         // The platform's own width would cap the window before the card could use the room.
@@ -107,12 +119,7 @@ private fun WideDialog(
             ),
     ) {
         Surface(
-            modifier =
-                modifier
-                    .fillMaxWidth()
-                    .wrapContentWidth()
-                    .padding(horizontal = DialogEdgeMargin)
-                    .widthIn(min = WideDialogMinWidth, max = maxWidth),
+            modifier = modifier.requiredWidth(width),
             shape = AlertDialogDefaults.shape,
             color = AlertDialogDefaults.containerColor,
             tonalElevation = AlertDialogDefaults.TonalElevation,
@@ -150,5 +157,4 @@ private fun WideDialog(
     }
 }
 
-private val WideDialogMinWidth = 280.dp
 private val WideDialogPadding = 24.dp
