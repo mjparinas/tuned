@@ -1,4 +1,4 @@
-# Pictures of every screen for a branch, drawn on the JVM with made-up sample data (app/src/test/kotlin/app/tuned/screenshots),
+# Pictures of every screen for a branch, drawn on the JVM with made-up sample data (app/src/test/kotlin/com/tunedplayer/app/screenshots),
 # in a few minutes and without an emulator or an APK (docs/decisions/screenshots.md). Not part of CI and not a required
 # check (Melvin, 2026-11-17: screenshots out of the pipeline): it runs only when asked, from the Actions tab or by a
 # thread with "Run workflow" on its branch, or when a pull request gets the "screenshots" label.

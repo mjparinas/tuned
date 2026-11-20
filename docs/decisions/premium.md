@@ -6,7 +6,7 @@ Tuned is free with no ads, and a Premium unlock covers the power features. Melvi
 
 - **`github`** is what GitHub Releases ship (`release.yml` builds `assembleGithubRelease`). It updates itself from GitHub ([updates](updates.md)), and has every Premium feature unlocked, so Melvin's copies and everyone already on the GitHub releases lose nothing.
 - **`play`** is for Google Play and later other stores (`release.yml` builds `bundlePlayRelease` for the internal track). It drops `REQUEST_INSTALL_PACKAGES` and the GitHub updater, because stores update the app themselves and Play doesn't allow the permission. Neither build fills in a server (Melvin, 2026-11-19), so the two forms are the same.
-- Both share the application id `app.tuned` and the upload key, so one can replace the other.
+- Both share the application id `com.tunedplayer.app` and the upload key, so one can replace the other.
 - **Release › Run workflow › Signed store bundle only** builds the signed `play` bundle as the `tuned-release-aab` artifact without a GitHub release, so a build can go to a Play testing track without a production release. Play only lets you create in-app products once it has seen a build with Play Billing, and the first upload is by hand (2026-11-18).
 - `BuildConfig.GITHUB_UPDATES`, `PREMIUM_ALWAYS` and `DEVICES_URL` are the only differences in code; anything new that differs gets its own `BuildConfig` field in `app/build.gradle.kts`.
 
@@ -30,7 +30,7 @@ How the locks work (`premium/`):
 - A locked setting (live rewind, Tuned account sign-in, Trakt sign-in) shows "Premium" and a lock (`LockedRow`). A locked action (adding a second playlist or profile, a fourth download, following an event, turning an alert on, recording, a non-default accent, a Premium profile picture, Add to list, Rename channel, Change logo) opens the Premium screen instead (`Premium.allow`). Turning things off, browsing and Tune always work.
 - Pause and rewind live TV is off in the player while locked, whatever the setting says.
 - `PremiumActivity` is the one Premium screen: what's included, the two prices as Play writes them, the trial, Restore purchase. It opens only from a locked feature or Settings › About › Tuned Premium (store build only). No pop-ups, banners, nags or countdowns.
-- Billing lives only in the `play` build (`app/src/play/kotlin/app/tuned/premium/StoreFor.kt`, Play Billing 7); the `github` build has no billing library at all. Purchases are acknowledged when Play reports them, since Play refunds unacknowledged ones after three days.
+- Billing lives only in the `play` build (`app/src/play/kotlin/com/tunedplayer/app/premium/StoreFor.kt`, Play Billing 7); the `github` build has no billing library at all. Purchases are acknowledged when Play reports them, since Play refunds unacknowledged ones after three days.
 
 ## Three devices per purchase
 
