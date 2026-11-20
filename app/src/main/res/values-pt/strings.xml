@@ -33,6 +33,8 @@
     <string name="favourite_remove">Remover dos favoritos</string>
     <string name="first_run_loading">Preparando seus canais…</string>
     <string name="first_run_failed">Não foi possível carregar seus canais</string>
+    <string name="sync_stalled">Seu provedor não enviou nada em 5 minutos, então o download foi interrompido. Verifique sua internet e o servidor e tente de novo.</string>
+    <string name="sync_stopped">O download parou antes de seus canais serem salvos. Tente de novo.</string>
     <string name="guide_open">Guia</string>
     <string name="guide_empty">Ainda não há guia para este canal. Ele é baixado em segundo plano.</string>
     <string name="guide_on_now">Agora: %1$s</string>

@@ -33,6 +33,8 @@
     <string name="favourite_remove">Убрать из избранного</string>
     <string name="first_run_loading">Готовим ваши каналы…</string>
     <string name="first_run_failed">Не удалось загрузить каналы</string>
+    <string name="sync_stalled">Провайдер ничего не присылал 5 минут, поэтому загрузка остановлена. Проверьте интернет и сервер, затем повторите попытку.</string>
+    <string name="sync_stopped">Загрузка остановилась до того, как каналы были сохранены. Повторите попытку.</string>
     <string name="guide_open">Телегид</string>
     <string name="guide_empty">Для этого канала пока нет телегида. Он загружается в фоне.</string>
     <string name="guide_on_now">Сейчас: %1$s</string>

@@ -33,6 +33,8 @@
     <string name="favourite_remove">Favorilerden çıkar</string>
     <string name="first_run_loading">Kanalların hazırlanıyor…</string>
     <string name="first_run_failed">Kanalların yüklenemedi</string>
+    <string name="sync_stalled">Sağlayıcın 5 dakikadır hiçbir şey göndermedi, bu yüzden indirme durduruldu. İnternetini ve sunucuyu kontrol edip tekrar dene.</string>
+    <string name="sync_stopped">İndirme, kanalların kaydedilmeden önce durdu. Tekrar dene.</string>
     <string name="guide_open">Rehber</string>
     <string name="guide_empty">Bu kanal için henüz rehber yok. Arka planda indiriliyor.</string>
     <string name="guide_on_now">Şimdi: %1$s</string>

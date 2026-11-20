@@ -164,6 +164,7 @@ fun HomeScreen(
     val progress by vm.progress.collectAsStateWithLifecycle()
     val requestedProgress by vm.requestedProgress.collectAsStateWithLifecycle()
     val requestedRefreshing by vm.requestedRefreshing.collectAsStateWithLifecycle()
+    val requestedPending by vm.requestedPending.collectAsStateWithLifecycle()
     val liveSearch by vm.search(ContentKind.LIVE).collectAsStateWithLifecycle()
     val profile by vm.profile.collectAsStateWithLifecycle()
     val widthDp = windowWidthDp()
@@ -310,11 +311,14 @@ fun HomeScreen(
             }
             Column(Modifier.padding(padding).fillMaxSize()) {
                 if (empty == true) {
+                    // No download queued or running and no error saved: it ended without saying why, so say so with
+                    // Retry rather than spin on forever (Melvin, 2026-11-20).
+                    val ended = !refreshing && requestedPending == false
                     FirstRun(
                         refreshing = refreshing,
                         progress = progress,
-                        error = lastError,
-                        onRetry = vm::refresh,
+                        error = lastError.ifBlank { if (ended) stringResource(R.string.sync_stopped) else "" },
+                        onRetry = vm::retryFirst,
                         onChangeLogin = onOpenPlaylists,
                     )
                     return@Column

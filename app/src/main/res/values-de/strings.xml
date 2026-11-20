@@ -33,6 +33,8 @@
     <string name="favourite_remove">Aus Favoriten entfernen</string>
     <string name="first_run_loading">Deine Sender werden vorbereitet…</string>
     <string name="first_run_failed">Deine Sender konnten nicht geladen werden</string>
+    <string name="sync_stalled">Dein Anbieter hat seit 5 Minuten nichts gesendet, daher wurde der Download beendet. Prüfe Internet und Server und versuche es erneut.</string>
+    <string name="sync_stopped">Der Download wurde beendet, bevor deine Sender gespeichert waren. Versuche es erneut.</string>
     <string name="guide_open">Programm</string>
     <string name="guide_empty">Für diesen Sender gibt es noch kein Programm. Es wird im Hintergrund heruntergeladen.</string>
     <string name="guide_on_now">Jetzt: %1$s</string>
