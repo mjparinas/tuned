@@ -303,7 +303,12 @@ object Regions {
         }
         val iso = if (region == "UK") "GB" else region
         if (region !in languageTagCodes && iso in isoCodes) {
-            val name = Locale.Builder().setRegion(iso).build().getDisplayCountry(locale)
+            val name =
+                Locale
+                    .Builder()
+                    .setRegion(iso)
+                    .build()
+                    .getDisplayCountry(locale)
             if (name.isNotBlank() && name != iso) return name
         }
         return displayName(region)

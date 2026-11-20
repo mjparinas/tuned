@@ -2,7 +2,7 @@
 <resources>
     <string name="health_title">Kanal sağlığı</string>
     <string name="settings_channel_health_summary">Tüm kanalları tara ve sürekli başarısız olanları gizle</string>
-    <string name="health_help">Bir tarama, eski televizyonların istasyon araması gibi, her canlı kanalı tek tek dener. İnternet kesilirse veya sunucu yanıt vermeyi bırakırsa tarama kanalları suçlamak yerine bekler ya da durur. Bir kanal yalnızca en az altı saat arayla yapılan iki taramada başarısız olursa gizlenir ve bir tarama onu çalışır bulur bulmaz geri gelir.</string>
+    <string name="health_help">Bir tarama, eski televizyonların istasyon araması gibi, her canlı kanalı sırayla dener. İnternet kesilirse veya sunucu yanıt vermeyi bırakırsa tarama kanalları suçlamak yerine bekler ya da durur. Bir kanal yalnızca en az altı saat arayla yapılan iki taramada başarısız olursa gizlenir ve bir tarama onu çalışır bulur bulmaz geri gelir.</string>
     <string name="health_scan_now">Kanalları tara</string>
     <string name="health_stop">Taramayı durdur</string>
     <string name="health_starting">Tarama başlatılıyor…</string>
