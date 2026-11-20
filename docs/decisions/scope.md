@@ -15,9 +15,11 @@ This file keeps the decisions that don't belong to one area yet: what Tuned will
 
 Each line names Melvin's words and date. Move it into the topic's file when it merges.
 
-- **The web player** (Melvin, 2026-11-19: "ok lets do it"). The provider check is built ([web](web.md)); still to build: `:core` as Kotlin Multiplatform, the player at `/watch` for Premium accounts, and the rest of [web](web.md#what-was-decided).
-
 Everything else that was listed has merged and is recorded in its topic: the app's side of the admin, with usage stats, flags and Send to Tuned ([admin](admin.md)); seats per account and extra seats in Play ([accounts](accounts.md)); never hiding sports and event channels ([channel scan](channel-scan.md)); Downloads by show with space left, offline mode and cache first ([offline](offline.md)); real episode names everywhere ([player](player.md)); actor pages ([people](people.md)); Live Events ([events](events.md)); the full grid guide ([playlist](playlist.md)); profiles with a PIN ([profiles](profiles.md)); phone and TV sync ([sync](sync.md)); Trakt ([Trakt](trakt.md)).
+
+## Paused
+
+- **The web player** (Melvin, 2026-11-19: "ok lets do it", then after running the provider check on his own provider the same evening: "provider blocks web players"). Phase 0 was the go or no-go, so the player at `/watch` and `:core` as Kotlin Multiplatform are not being built. The provider check stays at `/check` behind the `web_player` flag ([web](web.md)). The way forward, when Melvin wants it, is a helper on the person's own computer, which he called a future feature.
 
 ## Offered, not decided
 
