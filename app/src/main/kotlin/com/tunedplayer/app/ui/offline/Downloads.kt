@@ -354,7 +354,13 @@ private fun DownloadGrid(
             item(key = "shows", span = full) { SectionTitle(stringResource(R.string.tab_shows), inset = GRID_INSET) }
             items(library.shows, key = { "show:${it.showKey}" }) { s ->
                 Column {
-                    Poster(title = s.name, image = s.poster, subtitle = groupSummary(s.rows), onClick = { onOpenShow(s.showKey) }, show = true)
+                    Poster(
+                        title = s.name,
+                        image = s.poster,
+                        subtitle = groupSummary(s.rows),
+                        onClick = { onOpenShow(s.showKey) },
+                        show = true,
+                    )
                     if (s.rows.any { it.download.state != DownloadEntity.DONE }) {
                         LinearProgressIndicator(
                             progress = { s.savedFraction },
