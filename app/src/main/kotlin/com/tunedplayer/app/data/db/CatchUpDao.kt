@@ -4,12 +4,26 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Transaction
 import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface CatchUpDao {
     @Query("DELETE FROM catchup")
-    suspend fun deleteAll()
+    suspend fun deleteRows()
+
+    @Query("DELETE FROM catchup_items")
+    suspend fun deleteItems()
+
+    /** Forgets every channel's catch-up, and which items have it. */
+    @Transaction
+    suspend fun deleteAll() {
+        deleteRows()
+        deleteItems()
+    }
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertItems(rows: List<CatchUpItemEntity>)
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertAll(rows: List<CatchUpEntity>)

@@ -67,8 +67,8 @@ interface GuideFixDao {
     suspend fun deleteProgrammes(channelId: String)
 
     @Query(
-        "INSERT INTO programmes (channelId, start, stop, title, description) " +
-            "SELECT :to, start + :shiftMs, stop + :shiftMs, title, description FROM programmes WHERE channelId = :from",
+        "INSERT INTO programmes (channelId, start, stop, title, description, genre) " +
+            "SELECT :to, start + :shiftMs, stop + :shiftMs, title, description, genre FROM programmes WHERE channelId = :from",
     )
     suspend fun insertShifted(
         from: String,

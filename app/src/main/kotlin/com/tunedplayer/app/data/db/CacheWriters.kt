@@ -23,7 +23,7 @@ class GuideWriter(
         sql.execSQL("DROP TABLE IF EXISTS $NEXT")
         sql.execSQL(
             "CREATE TABLE $NEXT (channelId TEXT NOT NULL, start INTEGER NOT NULL, stop INTEGER NOT NULL, " +
-                "title TEXT NOT NULL, description TEXT)",
+                "title TEXT NOT NULL, description TEXT, genre INTEGER NOT NULL DEFAULT 0)",
         )
         GuideSearchIndex.beginNext(sql)
         count = 0
@@ -33,7 +33,7 @@ class GuideWriter(
         if (batch.isEmpty()) return
         db.withTransaction {
             val index = sql.compileStatement(GuideSearchIndex.INSERT_NEXT)
-            sql.compileStatement("INSERT INTO $NEXT (channelId, start, stop, title, description) VALUES (?, ?, ?, ?, ?)").use { insert ->
+            sql.compileStatement(INSERT).use { insert ->
                 index.use {
                     for (p in batch) {
                         insert.bindString(1, p.channelId)
@@ -42,6 +42,7 @@ class GuideWriter(
                         insert.bindString(4, p.title)
                         val description = p.description
                         if (description == null) insert.bindNull(5) else insert.bindString(5, description)
+                        insert.bindLong(6, p.genre.toLong())
                         val rowId = insert.executeInsert()
                         insert.clearBindings()
                         // The title goes in the side index under the same row id, which the swap keeps.
@@ -67,8 +68,8 @@ class GuideWriter(
                 sql.execSQL("DELETE FROM programmes")
                 // Row ids are carried over so the side search index, keyed by them, still points at the right titles.
                 sql.execSQL(
-                    "INSERT INTO programmes (rowId, channelId, start, stop, title, description) " +
-                        "SELECT rowid, channelId, start, stop, title, description FROM $NEXT",
+                    "INSERT INTO programmes (rowId, channelId, start, stop, title, description, genre) " +
+                        "SELECT rowid, channelId, start, stop, title, description, genre FROM $NEXT",
                 )
                 GuideSearchIndex.swapIn(sql)
             }
@@ -86,6 +87,7 @@ class GuideWriter(
 
     private companion object {
         const val NEXT = "programmes_next"
+        const val INSERT = "INSERT INTO $NEXT (channelId, start, stop, title, description, genre) VALUES (?, ?, ?, ?, ?, ?)"
     }
 }
 

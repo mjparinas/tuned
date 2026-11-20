@@ -35,6 +35,8 @@ interface ListDao {
         match: String,
         topic: String,
         quick: List<String>,
+        quality: String,
+        genre: Int,
     ): PagingSource<Int, ChannelWithNow>
 
     /** The lists with a channel (kind 0) or film (kind 1) in them, for that tab's row of chips. */

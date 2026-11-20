@@ -11,7 +11,9 @@ import coil3.Image
 import coil3.asImage
 import com.tunedplayer.app.core.ContentKind
 import com.tunedplayer.app.core.Episodes
+import com.tunedplayer.app.core.ProgrammeGenre
 import com.tunedplayer.app.core.Search
+import com.tunedplayer.app.data.db.CatchUpItemEntity
 import com.tunedplayer.app.data.db.CurrentProfileEntity
 import com.tunedplayer.app.data.db.DownloadEntity
 import com.tunedplayer.app.data.db.FavouriteEntity
@@ -101,11 +103,15 @@ object SampleData {
                         stop = start + (slot + 1) * HOUR,
                         title = title,
                         description = description,
+                        genre = scheduleGenres[(slot + i) % schedule.size]?.code ?: 0,
                     )
                 }
             },
         )
         GuideSearchIndex.fillIfMissing(db)
+        // Two channels keep recordings and one was watched, so Live TV's filters have Catch-up and Recently watched.
+        db.catchUp().insertItems(listOf(CatchUpItemEntity(1), CatchUpItemEntity(8)))
+        db.library().saveProgress(HistoryEntity(4, positionMs = 0, durationMs = 0, watchedAt = now - 3))
         db.library().addFavourite(FavouriteEntity(1, now))
         db.library().addFavourite(FavouriteEntity(4, now))
         db.library().saveProgress(HistoryEntity(SHOW_IDS, positionMs = 2_400_000, durationMs = 2_700_000, watchedAt = now))
@@ -166,10 +172,10 @@ object SampleData {
             Triple("Northern One", "CA | General", "CA"),
             Triple("Lakeshore TV", "CA | General", "CA"),
             Triple("Rink Sports 1", "CA | Sports", "CA"),
-            Triple("Rink Sports 2", "CA | Sports", "CA"),
+            Triple("Rink Sports 2 4K", "CA | Sports", "CA"),
             Triple("Télé Fleuve", "QC | Général", "QC"),
             Triple("Thames One", "UK | General", "UK"),
-            Triple("Harbour News", "UK | News", "UK"),
+            Triple("Harbour News HD", "UK | News", "UK"),
             Triple("Prairie Public", "US | General", "US"),
             Triple("Wild Planet", "US | Documentary", "US"),
             Triple("Rheinwelle", "DE | Allgemein", "DE"),
@@ -214,6 +220,10 @@ object SampleData {
             "Late Edition" to "Interviews and a look at tomorrow's headlines.",
             "Weekend Kitchen" to "Three dishes from one pantry, in under an hour.",
         )
+
+    /** What kind each [schedule] slot is, for Live TV's On now filter. */
+    private val scheduleGenres =
+        listOf(ProgrammeGenre.NEWS, ProgrammeGenre.NEWS, ProgrammeGenre.SPORTS, ProgrammeGenre.DOCUMENTARY, ProgrammeGenre.NEWS, null)
 
     private fun logo(name: String) = "https://art.example.invalid/logo/${Search.normalize(name).replace(' ', '-')}.png"
 

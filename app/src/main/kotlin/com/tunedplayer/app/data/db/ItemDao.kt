@@ -70,6 +70,8 @@ interface ItemDao {
         match: String,
         topic: String,
         quick: List<String>,
+        quality: String,
+        genre: Int,
     ): PagingSource<Int, ChannelWithNow>
 
     /** Favourite channels, in their own order (Settings › Order favourites). */
@@ -87,6 +89,8 @@ interface ItemDao {
         match: String,
         topic: String,
         quick: List<String>,
+        quality: String,
+        genre: Int,
     ): PagingSource<Int, ChannelWithNow>
 
     /** Channels watched lately, latest first. */
@@ -104,6 +108,8 @@ interface ItemDao {
         match: String,
         topic: String,
         quick: List<String>,
+        quality: String,
+        genre: Int,
     ): PagingSource<Int, ChannelWithNow>
 
     /** Movies or episodes started and not finished, last watched first, for the Continue Watching row. */

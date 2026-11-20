@@ -9,6 +9,9 @@ import java.util.TimeZone
  * only those that pass [keep] (a channel the playlist has, inside the days the user keeps) cost anything.
  */
 object XmltvParser {
+    /** Guides list a programme's kind first; a few tags are plenty to tell it, and a long list costs memory. */
+    private const val MAX_CATEGORIES = 4
+
     fun parse(
         parser: XmlPullParser,
         keep: (channelId: String, start: Long, stop: Long) -> Boolean,
@@ -40,8 +43,8 @@ object XmltvParser {
                 val start = parser.getAttributeValue(null, "start")?.let(::parseTime)
                 val stop = parser.getAttributeValue(null, "stop")?.let(::parseTime)
                 if (channel != null && start != null && stop != null && stop > start && keep(channel, start, stop)) {
-                    val (title, desc) = readProgramme(parser)
-                    yield(Programme(channel, start, stop, title.ifBlank { "Untitled" }, desc?.ifBlank { null }))
+                    val read = readProgramme(parser)
+                    yield(Programme(channel, start, stop, read.title.ifBlank { "Untitled" }, read.desc?.ifBlank { null }, read.categories))
                 } else {
                     skip(parser)
                 }
@@ -50,10 +53,20 @@ object XmltvParser {
         }
     }
 
-    /** Reads `<title>` and `<desc>` (the first of each, whatever the language) and stops at `</programme>`. */
-    private fun readProgramme(parser: XmlPullParser): Pair<String, String?> {
+    private class Read(
+        val title: String,
+        val desc: String?,
+        val categories: List<String>,
+    )
+
+    /**
+     * Reads `<title>` and `<desc>` (the first of each, whatever the language) and every `<category>`, and stops at
+     * `</programme>`.
+     */
+    private fun readProgramme(parser: XmlPullParser): Read {
         var title: String? = null
         var desc: String? = null
+        val categories = ArrayList<String>(2)
         var depth = 1
         while (depth > 0) {
             when (parser.next()) {
@@ -62,6 +75,7 @@ object XmltvParser {
                     when (parser.name) {
                         "title" -> if (title == null) title = readText(parser).also { depth-- }
                         "desc" -> if (desc == null) desc = readText(parser).also { depth-- }
+                        "category" -> if (categories.size < MAX_CATEGORIES) categories += readText(parser).trim().also { depth-- }
                     }
                 }
 
@@ -74,7 +88,7 @@ object XmltvParser {
                 }
             }
         }
-        return (title?.trim() ?: "") to desc?.trim()
+        return Read(title?.trim() ?: "", desc?.trim(), categories.filter { it.isNotEmpty() })
     }
 
     /** The text of the first [tag] inside the current element; stops at its end tag. */
