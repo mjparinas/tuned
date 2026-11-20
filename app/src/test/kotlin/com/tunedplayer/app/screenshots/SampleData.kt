@@ -85,7 +85,8 @@ object SampleData {
         shows.forEach { (show, group, seasons) ->
             for (s in 1..seasons) {
                 for (e in 1..EPISODES) {
-                    item(id++, ContentKind.SERIES, "$show S0${s}E0$e", group, "EN", poster(show), show = show, season = s, episode = e)
+                    // Like many providers, each episode's picture is a wide still, not the show's cover.
+                    item(id++, ContentKind.SERIES, "$show S0${s}E0$e", group, "EN", still(show), show = show, season = s, episode = e)
                 }
             }
         }
@@ -229,13 +230,16 @@ object SampleData {
 
     private fun poster(name: String) = "https://art.example.invalid/poster/${Search.normalize(name).replace(' ', '-')}.png"
 
+    private fun still(name: String) = "https://art.example.invalid/still/${Search.normalize(name).replace(' ', '-')}.png"
+
     private val palette = listOf(0xFF6D4AFF, 0xFF1FB8A0, 0xFFE0546B, 0xFFF0A23B, 0xFF3B7BE0, 0xFF8A5A3C, 0xFF2E9E5B, 0xFFB04FD0)
 
     /** Drawn posters and logos, by the address the sample playlist gives them: a gradient with the title on it. */
     val art: Map<String, Image> by lazy {
         val posters = (movies.map { it.first } + shows.map { it.first }).mapIndexed { i, t -> poster(t) to tile(t, i, 300, 450, 34f) }
+        val stills = shows.mapIndexed { i, s -> still(s.first) to tile("${s.first} episode still", i + 4, 480, 270, 30f) }
         val logos = channels.mapIndexed { i, c -> logo(c.first) to tile(initials(c.first), i, 160, 160, 56f) }
-        (posters + logos).associate { (key, bitmap) -> key to bitmap.asImage() }
+        (posters + stills + logos).associate { (key, bitmap) -> key to bitmap.asImage() }
     }
 
     private fun initials(name: String) = name
