@@ -131,7 +131,7 @@ class SyncWorker(
         /** The progress a running refresh last reported, or null before its first report. */
         fun progressOf(data: Data): SyncProgress? {
             val step = stepNamed(data.getString(KEY_STEP)) ?: return null
-            val steps = data.getStringArray(KEY_STEPS)?.mapNotNull(::stepNamed)?.takeIf { it.isNotEmpty() } ?: listOf(step)
+            val steps = data.getNullableStringArray(KEY_STEPS)?.mapNotNull(::stepNamed)?.takeIf { it.isNotEmpty() } ?: listOf(step)
             return SyncProgress(step, data.getLong(KEY_DONE, 0), data.getLong(KEY_TOTAL, -1), data.getLong(KEY_ROWS, -1), steps)
         }
 

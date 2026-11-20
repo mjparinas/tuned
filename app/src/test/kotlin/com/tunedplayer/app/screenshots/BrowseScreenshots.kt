@@ -1,5 +1,12 @@
 package com.tunedplayer.app.screenshots
 
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.hasAnyDescendant
@@ -8,23 +15,14 @@ import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isSelectable
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToNode
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.tunedplayer.app.R
-import com.tunedplayer.app.data.SyncProgress
-import com.tunedplayer.app.ui.browse.FirstDownload
-import com.tunedplayer.app.ui.browse.RefreshBar
 import com.tunedplayer.app.core.ContentKind
 import com.tunedplayer.app.core.Episodes
 import com.tunedplayer.app.core.PinnedGroups
 import com.tunedplayer.app.core.TitleSort
 import com.tunedplayer.app.data.StartTab
+import com.tunedplayer.app.data.SyncProgress
 import com.tunedplayer.app.data.db.CurrentProfileEntity
 import com.tunedplayer.app.data.db.ProfileEntity
 import com.tunedplayer.app.ui.DownloadsRoute
@@ -35,6 +33,8 @@ import com.tunedplayer.app.ui.MovieRoute
 import com.tunedplayer.app.ui.ProfilesRoute
 import com.tunedplayer.app.ui.SearchRoute
 import com.tunedplayer.app.ui.ShowRoute
+import com.tunedplayer.app.ui.browse.FirstDownload
+import com.tunedplayer.app.ui.browse.RefreshBar
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import org.junit.Test
