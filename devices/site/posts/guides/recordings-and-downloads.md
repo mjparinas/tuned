@@ -1,5 +1,6 @@
 ---
 title: How to record live TV and download films and episodes in Tuned
+seoTitle: "How to record live TV and download films in Tuned"
 description: Save films, episodes and whole seasons to watch offline, and record the live channel you're watching, all on one connection.
 date: 2026-11-19
 kind: guide

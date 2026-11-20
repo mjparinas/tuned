@@ -12,6 +12,8 @@ import {
     parseFrontmatter,
     postCard,
     readPost,
+    relatedPosts,
+    releaseDescription,
     releasePost,
     releasePostPath,
     sitemap,
@@ -188,4 +190,67 @@ test("the landing page's questions become FAQPage structured data", () => {
         acceptedAnswer: { "@type": "Answer", text: "Yes. See the guide." },
     });
     assert.deepEqual(faqJsonLd("<p>none</p>"), []);
+});
+
+// Search (docs/decisions/website.md › Search): every public page has one h1, its own title and description, a canonical
+// address, social cards and breadcrumbs, and every picture has words and a size.
+test("every generated page is ready for search", async () => {
+    const { expected } = await import("../build-site.mjs");
+    const pages = Object.entries(expected()).filter(([path]) => path.endsWith(".html"));
+    const titles = new Map();
+    for (const [path, html] of pages) {
+        assert.equal(html.match(/<h1[\s>]/g)?.length, 1, `${path}: one h1`);
+        const title = /<title>([^<]+)<\/title>/.exec(html)?.[1];
+        assert.ok(title, `${path}: title`);
+        assert.ok(!titles.has(title), `${path}: same title as ${titles.get(title)}`);
+        titles.set(title, path);
+        const description = /<meta name="description" content="([^"]+)"/.exec(html)?.[1] ?? "";
+        assert.ok(description.length >= 50 && description.length <= 200, `${path}: description is ${description.length} characters`);
+        for (const tag of [
+            'property="og:title"',
+            'property="og:image"',
+            'property="og:image:alt"',
+            'name="twitter:card"',
+            'name="twitter:title"',
+        ])
+            assert.ok(html.includes(tag), `${path}: ${tag}`);
+        if (path === "404.html") assert.match(html, /<meta name="robots" content="noindex" \/>/);
+        else assert.ok(html.includes('<link rel="canonical" href="https://www.tunedplayer.com/'), `${path}: canonical`);
+        if (path.startsWith("blog/")) assert.ok(html.includes('"@type":"BreadcrumbList"'), `${path}: breadcrumbs`);
+        for (const img of html.match(/<img\b[^>]*>/g) ?? []) {
+            assert.match(img, /\salt="/, `${path}: ${img} needs alt`);
+            assert.match(img, /\swidth="\d+"[^>]*\sheight="\d+"|\sheight="\d+"[^>]*\swidth="\d+"/, `${path}: ${img} needs a size`);
+        }
+        for (const [, json] of html.matchAll(/<script type="application\/ld\+json">([^<]+)<\/script>/g)) JSON.parse(json);
+    }
+});
+
+test("comparisons get a searchable title, and the name isn't added twice", async () => {
+    const { expected } = await import("../build-site.mjs");
+    const files = expected();
+    assert.match(files["blog/vs/tivimate/index.html"], /<title>Tuned vs TiviMate: features and price compared<\/title>/);
+    assert.match(files["blog/guides/buffering/index.html"], /<title>How to fix IPTV buffering in Tuned<\/title>/);
+    assert.match(files["blog/guides/buffering/index.html"], /<h1>How to fix buffering in Tuned<\/h1>/);
+    assert.match(files["404.html"], /<title>Page not found · Tuned<\/title>/);
+});
+
+test("More from the blog links to posts on the same subject, not the same newest three", () => {
+    const post = (path, title, kind, extra = {}) => ({ path, title, description: "", kind, date: "2026-11-19", ...extra });
+    const xtream = post("guides/xtream.md", "Add an Xtream Codes playlist", "guide");
+    const m3u = post("guides/m3u.md", "Add an M3U playlist", "guide");
+    const subs = post("guides/subs.md", "Subtitles", "guide");
+    const tivimate = post("vs/tivimate.md", "Tuned vs TiviMate", "compare");
+    const smarters = post("vs/smarters.md", "Tuned vs IPTV Smarters, Xtream Codes player", "compare");
+    const r1 = post("whats-new/1.md", "What's new in 1.0", "release", { version: "1.0.0" });
+    const r2 = post("whats-new/2.md", "What's new in 1.1", "release", { version: "1.1.0" });
+    const r3 = post("whats-new/3.md", "What's new in 1.2", "release", { version: "1.2.0" });
+    const all = [xtream, m3u, subs, tivimate, smarters, r1, r2, r3];
+    assert.deepEqual(relatedPosts(xtream, all), [m3u, subs, smarters]);
+    assert.deepEqual(relatedPosts(r2, all).slice(0, 2), [r3, r1]);
+    assert.ok(!relatedPosts(tivimate, all).some((p) => p.kind === "release"));
+});
+
+test("a release's search description names what changed", () => {
+    const d = releaseDescription("2.0.1", "Tuned 2.0.1 is out: 2 fixed.", [{ text: "Subtitle timing" }, { text: "The splash screen." }]);
+    assert.equal(d, "Tuned 2.0.1, the IPTV player for Android and Android TV, is out. Subtitle timing. The splash screen.");
 });

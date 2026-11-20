@@ -1,5 +1,6 @@
 ---
 title: The TV guide is empty or wrong: how to fix it
+seoTitle: "IPTV TV guide empty or wrong? How to fix it in Tuned"
 description: Why channels show no programmes or the wrong times, and how to fix it with guide links, time zones and per-channel fixes.
 date: 2026-11-19
 kind: guide

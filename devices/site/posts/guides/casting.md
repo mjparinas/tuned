@@ -1,5 +1,6 @@
 ---
 title: How to cast from Tuned to a Chromecast or smart TV
+seoTitle: "How to cast IPTV from Tuned to a Chromecast or smart TV"
 description: Send live TV, films and episodes to a Chromecast, a TV with Chromecast built in, or a DLNA TV, including what you downloaded.
 date: 2026-11-19
 kind: guide

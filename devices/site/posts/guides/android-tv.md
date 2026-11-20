@@ -1,5 +1,6 @@
 ---
 title: Tuned on Android TV: set-up and remote tips
+seoTitle: "Tuned IPTV player on Android TV: set-up and remote tips"
 description: Install Tuned on an Android TV, sign in with your phone, and get the most out of the remote, from channel numbers to flip back.
 date: 2026-11-19
 kind: guide

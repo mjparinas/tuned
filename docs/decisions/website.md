@@ -38,7 +38,19 @@ The public website at **www.tunedplayer.com** (Melvin registered it 2026-11-19; 
 
 No framework and no build step on Vercel, like the rest of `devices/`. The site and server run on Node 26 (Melvin, 2026-11-20, from 22, to match the Vercel project's 26.x setting): `engines` in `devices/package.json` and CI's Node jobs say 26, so Vercel, CI and the tests run the same version. `node devices/build-site.mjs` turns `devices/site/` (`config.mjs`, `features.mjs`, `home.html`, `posts/`) into `devices/public/index.html`, `public/blog/**`, `sitemap.xml`, `blog/feed.xml` and `features.json`, with the shared header, footer, canonical address, Open Graph tags and structured data (`lib/site-build.mjs`). The output is committed; the test `devices/lib/site-build.test.mjs` (CI's Node tests) fails when it is out of date, and Prettier skips the generated pages.
 
-- **`sitemap.xml`** lists the landing page, the blog, each folder's index and every post, on `https://www.tunedplayer.com`. **`robots.txt`** allows everything but `/admin`, `/api/`, `/account`, `/app/`, `/tv` and `/devices`, and names the sitemap.
+- **`sitemap.xml`** lists the landing page, the blog, each folder's index and every post (with `updated` as its date when a post has one), on `https://www.tunedplayer.com`. **`robots.txt`** keeps crawlers out of `/admin` and `/api/` only and names the sitemap. The account, TV sign-in, device and `/app/` pages may be crawled so search engines read their `X-Robots-Tag: noindex` header (`vercel.json`) and leave them out of results; blocking them in `robots.txt` would hide that header and let their addresses be listed anyway.
+
+## Search (Melvin, 2026-11-20)
+
+"Go through the website and improve seo." What every generated page carries, from `lib/site-build.mjs`, so a new post gets it without doing anything:
+
+- **Its own title and description.** The tab title is the post's heading, with " · Tuned" added only when the heading doesn't already say Tuned. A post whose heading isn't what people search for sets `seoTitle` in its frontmatter (the guides add "IPTV" this way, as in "How to fix IPTV buffering in Tuned"), and every comparison is titled "Tuned vs X: features and price compared". The blog and each section have their own search title and description (`KINDS` in `site-build.mjs`). A release post's description is its first sentence and then its first changes, never just "9 fixed" (`releaseDescription`). The test fails a page without one h1, with a title another page has, or with a description under 50 or over 200 characters.
+- **A canonical address, Open Graph and X cards** (title, description, `og:locale` en_CA, `img/og.png` at 1200 by 630 with its alt text) and, on posts, `article:published_time` and `modified_time`.
+- **Structured data:** `SoftwareApplication` (free, Android 8.0 or later, its screenshots and feature list), `Organization`, `WebSite` and `FAQPage` on the landing page; `BlogPosting` and `BreadcrumbList` (Home › Blog › section › post) on posts; `Blog` or `CollectionPage` with breadcrumbs on the blog's pages. No ratings or reviews are marked up, because there are none to cite.
+- **Links between posts.** "More from the blog" under each post picks posts on the same subject (`relatedPosts`): a guide, comparison or roundup links to the two closest posts of its kind, by shared words and then the next in order so every post gets linked, and the closest post of another kind; a release links to the releases before and after it and a guide. The footer links to the guides and the comparisons, so both are one click from every page.
+- **Pictures** have alt text and a width and height (the test checks every `<img>`). A post can set `updated: YYYY-MM-DD` when it is rechecked; it shows under the date and goes into the sitemap and structured data.
+- **`/404.html`** is a page with the header and footer, links back to the home page, guides and comparisons, and `noindex`.
+- **No hreflang**: the site is in one language (`en-CA`). Add it only when a translated site exists.
 
 ## Privacy page (Melvin, 2026-11-20)
 

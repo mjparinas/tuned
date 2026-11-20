@@ -1,12 +1,9 @@
-# Tuned's website (docs/decisions/website.md). The public pages are open to search engines; accounts, sign-in pages,
-# the admin and the API are not.
+# Tuned's website (docs/decisions/website.md). The public pages are open to search engines. The account, sign-in and
+# device pages may be crawled so search engines see their noindex header (vercel.json) and drop them; the admin and the
+# API are not crawled at all.
 User-agent: *
 Allow: /
 Disallow: /admin
 Disallow: /api/
-Disallow: /account
-Disallow: /app/
-Disallow: /tv
-Disallow: /devices
 
 Sitemap: https://www.tunedplayer.com/sitemap.xml

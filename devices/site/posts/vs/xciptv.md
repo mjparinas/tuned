@@ -1,6 +1,6 @@
 ---
 title: "Tuned vs XCIPTV"
-description: "XCIPTV Player and Tuned compared: Xtream support, recording, multi-screen, ads and price."
+description: "XCIPTV Player and Tuned compared: Xtream support, recording, multi-screen, ads and price. A side-by-side IPTV player comparison, with sources."
 date: 2026-11-19
 kind: compare
 ---

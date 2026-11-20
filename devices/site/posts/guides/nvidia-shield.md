@@ -1,5 +1,6 @@
 ---
 title: Tuned on Nvidia Shield TV: the best settings
+seoTitle: "Tuned IPTV on Nvidia Shield TV: the best settings"
 description: Get smooth 4K and sport on a Shield with frame rate matching, tunnelled playback and the right buffering, plus casting tips.
 date: 2026-11-19
 kind: guide

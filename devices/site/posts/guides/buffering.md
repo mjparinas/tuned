@@ -1,5 +1,6 @@
 ---
 title: How to fix buffering in Tuned
+seoTitle: "How to fix IPTV buffering in Tuned"
 description: Why IPTV streams stall, and the settings and checks that fix most buffering, from buffering modes to backup copies.
 date: 2026-11-19
 kind: guide

@@ -1,6 +1,6 @@
 ---
 title: "Tuned vs Flix IPTV"
-description: "Flix IPTV and Tuned compared: devices, activation and price."
+description: "Flix IPTV and Tuned compared: devices, activation and price. A side-by-side IPTV player comparison, with sources."
 date: 2026-11-19
 kind: compare
 ---
