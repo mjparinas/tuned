@@ -15,6 +15,7 @@
 
 - Live TV, Movies and Shows open with the remote on the item last focused there, or the first one, so the first press of an arrow moves from something visible rather than from nothing. Closing a film, show or guide pane beside the list (or coming back from its page) puts focus back on the item that opened it.
 - A film's page opens with the remote on Play (or Resume), and a show's page on the season showing (or its first episode, when there is only one season), so OK does the likely thing at once.
+- "Who's watching?" opens with the remote on the first profile, so OK alone picks it (Melvin, 2026-11-20: "when you're choosing a profile and there are multiple, it should auto highlight the first entry so we only need to click ok on the remote"). It is the first in the row, not the one last used, so the same press always picks the same profile (`ProfilesTvFocusTest`).
 - Page up and down, and channel up and down, jump a screenful through a list or grid rather than one row, which matters with thousands of channels. Channel up goes up the list, as on a cable box.
 - Back while scrolled down goes to the top of the list first, as other TV apps do; the next Back leaves as before. A pane or dialog beside the list still closes first.
 - Focus is only put back within a moment of a page opening, so an item that scrolls into view later never pulls focus away from where the person is.
