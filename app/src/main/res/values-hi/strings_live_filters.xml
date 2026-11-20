@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="live_filters_quality">क्वालिटी</string>
+    <string name="live_filters_on_now">अभी चल रहा</string>
+    <string name="live_filters_only">सिर्फ़ दिखाएँ</string>
+    <string name="live_filter_on_now_sports">खेल</string>
+    <string name="live_filter_on_now_movies">फ़िल्में</string>
+    <string name="live_filter_on_now_news">समाचार</string>
+    <string name="live_filter_on_now_kids">बच्चे</string>
+    <string name="live_filter_on_now_documentary">डॉक्यूमेंट्री</string>
+    <string name="live_filter_on_now_label">अभी %1$s</string>
+    <string name="live_filter_guide">गाइड वाले</string>
+    <string name="live_filter_catch_up">कैच-अप</string>
+    <string name="live_filter_watched">हाल में देखे</string>
+    <string name="live_filters_more">%1$s +%2$d</string>
+    <string name="live_filter_uhd">4K</string>
+    <string name="live_filter_fhd">FHD</string>
+    <string name="live_filter_hd">HD</string>
+    <string name="live_filter_sd">SD</string>
+</resources>
