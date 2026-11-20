@@ -48,6 +48,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
@@ -188,6 +189,7 @@ fun GuideScreen(
     val favourite by vm.favourite.collectAsStateWithLifecycle()
     val catchUpDays by vm.catchUpDays.collectAsStateWithLifecycle()
     val context = LocalContext.current
+    val resources = LocalResources.current
     val times = rememberTimeLabels()
     val now = System.currentTimeMillis()
     val scheduled by vm.scheduled.collectAsStateWithLifecycle()
@@ -200,12 +202,9 @@ fun GuideScreen(
             vm.toggleRecording(p) { set ->
                 val message =
                     if (set) {
-                        context.getString(
-                            R.string.recording_scheduled,
-                            p.title,
-                        )
+                        resources.getString(R.string.recording_scheduled, p.title)
                     } else {
-                        context.getString(R.string.recording_clash)
+                        resources.getString(R.string.recording_clash)
                     }
                 Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
             }

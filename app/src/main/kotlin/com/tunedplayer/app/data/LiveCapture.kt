@@ -165,14 +165,16 @@ class LiveCapture(
             }
         }
 
-        private fun piece(url: String) = open(url).use { r ->
-            if (!r.isSuccessful) return
-            val input = r.body.byteStream()
-            val chunk = ByteArray(CHUNK)
-            while (!cancelled) {
-                val n = input.read(chunk)
-                if (n < 0) break
-                write(chunk, n)
+        private fun piece(url: String) {
+            open(url).use { r ->
+                if (!r.isSuccessful) return
+                val input = r.body.byteStream()
+                val chunk = ByteArray(CHUNK)
+                while (!cancelled) {
+                    val n = input.read(chunk)
+                    if (n < 0) break
+                    write(chunk, n)
+                }
             }
         }
 
