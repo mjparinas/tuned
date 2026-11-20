@@ -33,3 +33,7 @@ The public website at **www.tunedplayer.com** (Melvin registered it 2026-11-19; 
 No framework and no build step on Vercel, like the rest of `devices/`. The site and server run on Node 26 (Melvin, 2026-11-20, from 22, to match the Vercel project's 26.x setting): `engines` in `devices/package.json` and CI's Node jobs say 26, so Vercel, CI and the tests run the same version. `node devices/build-site.mjs` turns `devices/site/` (`config.mjs`, `features.mjs`, `home.html`, `posts/`) into `devices/public/index.html`, `public/blog/**`, `sitemap.xml`, `blog/feed.xml` and `features.json`, with the shared header, footer, canonical address, Open Graph tags and structured data (`lib/site-build.mjs`). The output is committed; the test `devices/lib/site-build.test.mjs` (CI's Node tests) fails when it is out of date, and Prettier skips the generated pages.
 
 - **`sitemap.xml`** lists the landing page, the blog, each folder's index and every post, on `https://www.tunedplayer.com`. **`robots.txt`** allows everything but `/admin`, `/api/`, `/account`, `/app/`, `/tv` and `/devices`, and names the sitemap.
+
+## Privacy page (Melvin, 2026-11-20)
+
+"Fix the privacy page": the footer's Privacy link opens `/privacy/`, built from `docs/privacy.md` (still the one policy) with the shared header and footer. A change to `docs/privacy.md` runs the website's tests in CI (`scripts/ci-changes.mjs`), so the page can't fall behind the file. The policy doesn't name GitHub either (Melvin, 2026-11-20: "Drop it"): the update check is described as going to the host of Tuned's download.

@@ -12,5 +12,6 @@ export const SITE = {
         macAppStore: "",
         samsungTv: "",
     },
-    privacy: "https://github.com/mjparinas/tuned/blob/main/docs/privacy.md",
+    // Built from docs/privacy.md by devices/build-site.mjs.
+    privacy: "/privacy/",
 };

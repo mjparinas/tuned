@@ -35,3 +35,9 @@ test("both, or anything shared, runs both", () => {
 test("blank lines are ignored", () => {
     assert.deepEqual(needs(["", "devices/lib/auth.mjs", ""]), { mobile: false, web: true });
 });
+
+test("the website's Markdown sources (posts and the privacy policy) run the website's tests", () => {
+    assert.equal(area("devices/site/posts/guides/privacy.md"), "web");
+    assert.equal(area("docs/privacy.md"), "web");
+    assert.equal(area("docs/decisions/website.md"), "docs");
+});
