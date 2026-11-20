@@ -1,6 +1,7 @@
 package app.tuned.data
 
 import android.content.Context
+import app.tuned.container
 import app.tuned.data.db.TunedDatabase
 import app.tuned.diagnostics.attempt
 import app.tuned.work.Reminders
@@ -28,6 +29,7 @@ class PlaylistSession(
      */
     suspend fun useLogin(login: Credentials) {
         val previous = credentials.load()
+        val added = credentials.saved().none { it.samePlaylist(login) }
         credentials.save(login)
         credentials.remember(login)
         if (previous != null && !previous.samePlaylist(login)) {
@@ -43,6 +45,7 @@ class PlaylistSession(
         }
         settings.update { it.copy(lastSyncError = "") }
         account.clear()
+        if (added) context.container.usage.track("playlist_added", "kind" to usageKind(login.kind))
         scheduler.refreshNow(first = true)
         val s = settings.settings.first()
         scheduler.schedule(s.playlistRefreshHours, s.guideRefreshHours, s.unmeteredOnly)
@@ -84,4 +87,12 @@ class PlaylistSession(
         settings.update { it.copy(lastPlaylistSync = 0, lastGuideSync = 0, lastSyncError = "") }
         settings.lockAdult() // the PIN stays: it guards the device, not one login
     }
+}
+
+/** The playlist's kind in the usage stats' words (docs/decisions/admin.md); never its address. */
+private fun usageKind(kind: Credentials.Kind) = when (kind) {
+    Credentials.Kind.Xtream -> "xtream"
+    Credentials.Kind.Link -> "link"
+    Credentials.Kind.File -> "file"
+    Credentials.Kind.Stalker -> "portal"
 }

@@ -93,6 +93,8 @@ class TvRelay(
         path: String,
         ask: Ask,
     ): Reply? = withContext(Dispatchers.IO) {
+        // The admin's `tv_sign_in` switch: off, the relay reads as out of reach, and the screens say so.
+        if (!ServerFlags.now.value.tvSignIn) return@withContext null
         attempt(TAG, "Couldn't reach the TV sign-in relay") {
             val request =
                 Request

@@ -8,12 +8,19 @@ import android.os.Build
 import app.tuned.BuildConfig
 import app.tuned.R
 import app.tuned.work.TvHome
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.Json
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import okhttp3.RequestBody.Companion.toRequestBody
 
 /**
  * Report a problem (Melvin, 2026-11-19, from the Horizon Maps review): one tap gathers what a fix needs, the version
  * and build, the device, the latest crash or freeze report and the recent log, and hands it to the share sheet (email,
  * chat, a note). Every line in it has already been through [AppLog.scrub] (log lines as they're written, reports as
- * they're saved), so it carries no login. Nothing is sent anywhere unless the person picks where it goes.
+ * they're saved), so it carries no login. Nothing is sent anywhere unless the person picks where it goes: the share
+ * sheet, or Tuned itself ([sendToTuned]).
  */
 object ProblemReport {
     private const val TAG = "Report"
@@ -68,6 +75,70 @@ object ProblemReport {
             }.isSuccess
         return if (copied) Outcome.COPIED else Outcome.FAILED
     }
+
+    /**
+     * Send to Tuned (docs/decisions/admin.md): [what] the person wrote, an email for a reply if they gave one, the
+     * latest crash or freeze, the recent log and the device, to `POST /api/report`, where it shows in the admin's
+     * Reports. The log and reports were scrubbed of logins as they were written. Returns whether it arrived. Call it
+     * off the main thread.
+     */
+    fun sendToTuned(
+        context: Context,
+        http: OkHttpClient,
+        base: String,
+        what: String,
+        contact: String,
+        install: String?,
+    ): Boolean {
+        val site = base.trim().trimEnd('/')
+        if (site.isEmpty()) return false
+        val body =
+            Json.encodeToString(
+                Sent(
+                    install = install,
+                    device = UsageStats.device(context),
+                    what = what.trim().take(WHAT_CHARS),
+                    crash =
+                        CrashReporter
+                            .reports(context)
+                            .firstOrNull()
+                            ?.text
+                            ?.take(REPORT_CHARS)
+                            .orEmpty(),
+                    log =
+                        AppLog
+                            .snapshot()
+                            .takeLast(LOG_LINES)
+                            .joinToString("\n") { it.format() }
+                            .takeLast(SENT_LOG_CHARS),
+                    contact = contact.trim().take(CONTACT_CHARS),
+                ),
+            )
+        return attempt(TAG, "Couldn't send the report to Tuned") {
+            val request =
+                Request
+                    .Builder()
+                    .url("$site/api/report")
+                    .post(body.toRequestBody(JSON))
+                    .build()
+            http.newCall(request).execute().use { it.isSuccessful }
+        }.getOrDefault(false)
+    }
+
+    @Serializable
+    private data class Sent(
+        val install: String?,
+        val device: UsageStats.Device,
+        val what: String,
+        val crash: String,
+        val log: String,
+        val contact: String,
+    )
+
+    private const val WHAT_CHARS = 4_000
+    private const val SENT_LOG_CHARS = 60_000
+    private const val CONTACT_CHARS = 200
+    private val JSON = "application/json".toMediaType()
 
     enum class Outcome { SHARED, COPIED, FAILED }
 }

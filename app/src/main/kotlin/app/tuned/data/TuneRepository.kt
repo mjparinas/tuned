@@ -18,7 +18,8 @@ class TuneRepository(
     /** Channel ids, best first, for a search such as "UFC". Matches names and anything on now or within the hour. */
     suspend fun candidates(query: String): List<Long> {
         val words = Tuner.words(Search.normalize(query))
-        if (words.isEmpty()) return emptyList()
+        // The admin's `auto_tune` switch: off, Tune finds nothing to try.
+        if (words.isEmpty() || !ServerFlags.now.value.autoTune) return emptyList()
         val s = settings.settings.first()
         val now = System.currentTimeMillis()
         val rows =

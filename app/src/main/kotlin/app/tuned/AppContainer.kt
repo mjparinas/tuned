@@ -21,6 +21,7 @@ import app.tuned.data.PlaylistSession
 import app.tuned.data.ProfileRepository
 import app.tuned.data.Recordings
 import app.tuned.data.SavedArtwork
+import app.tuned.data.ServerFlags
 import app.tuned.data.SettingsRepository
 import app.tuned.data.StalkerLinks
 import app.tuned.data.SubtitleRepository
@@ -32,6 +33,7 @@ import app.tuned.data.TunedAccount
 import app.tuned.data.TvRelay
 import app.tuned.data.db.TunedDatabase
 import app.tuned.diagnostics.DeviceClock
+import app.tuned.diagnostics.UsageStats
 import app.tuned.diagnostics.loggingHandler
 import app.tuned.player.TvCasting
 import app.tuned.premium.DeviceSeatsClient
@@ -88,6 +90,7 @@ class AppContainer(
             syncCopy,
             onSignedIn = { scheduler.refreshNow(first = true) },
             onGuideChanged = { scheduler.refreshNow(guideOnly = true) },
+            onUsage = { usage.track(it) },
         )
     }
     val reminders by lazy { Reminders(context) }
@@ -98,10 +101,14 @@ class AppContainer(
     val channelEditor by lazy { ChannelEditor(db) }
     val picks by lazy { Picks(db, appScope) { TvHome.schedule(context) } }
     val connectivity by lazy { Connectivity(context, appScope) }
-    val metadata by lazy { MetadataRepository(http, BuildConfig.TMDB_API_KEY, db.metadata(), appScope, connectivity::onlineNow) }
+
+    /** TMDB is asked only while online and while the admin's `tmdb` switch is on; the device's cache answers either way. */
+    private fun tmdbReachable() = connectivity.onlineNow() && ServerFlags.now.value.tmdb
+
+    val metadata by lazy { MetadataRepository(http, BuildConfig.TMDB_API_KEY, db.metadata(), appScope, ::tmdbReachable) }
     val savedArtwork by lazy { SavedArtwork(context, db, metadata) }
     val trakt by lazy { TraktAccount(context, http) }
-    val people by lazy { PeopleRepository(http, BuildConfig.TMDB_API_KEY, db.metadata(), connectivity::onlineNow) }
+    val people by lazy { PeopleRepository(http, BuildConfig.TMDB_API_KEY, db.metadata(), ::tmdbReachable) }
     val profiles by lazy { ProfileRepository(db, settings) }
     val premium by lazy { Premium(context, appScope, DeviceSeatsClient.create(context, http)) { tunedAccount } }
     val subtitles by lazy { SubtitleRepository(http, settings, credentials, metadata, context.filesDir.resolve("subtitles")) }
@@ -137,5 +144,8 @@ class AppContainer(
 
     /** Where [tvRelay] lives; tests point it at a stand-in before first use. */
     var tvSignInUrl: String = BuildConfig.TV_SIGNIN_URL
+
+    /** Anonymous usage stats for the admin (docs/decisions/admin.md), sent to the same site as [tvRelay]. */
+    val usage by lazy { UsageStats(context, { http }, settings, appScope, { tvSignInUrl }) { ServerFlags.now.value.usageBatchMinutes } }
     val phoneSignIn by lazy { PhoneSignIn(credentials, syncCopy, session) { premium.unlocked.value } }
 }
