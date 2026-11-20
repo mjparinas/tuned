@@ -17,7 +17,14 @@ export async function GET(request) {
             return redirect(`${url.origin}/app/signed-in?code=${encodeURIComponent(link)}`);
         }
         // An admin sign-in (lib/admin/api.mjs) comes back to the admin, which then asks for its second step.
-        const page = done.after.to === "admin" ? "/admin" : done.after.tv ? `/account?tv=${done.after.tv}` : "/account";
+        const page =
+            done.after.to === "admin"
+                ? "/admin"
+                : done.after.tv
+                  ? `/account?tv=${done.after.tv}`
+                  : done.after.then === "check"
+                    ? "/check"
+                    : "/account";
         return redirect(`${url.origin}${page}`, await newSession(done.account));
     } catch (error) {
         console.error(error);
