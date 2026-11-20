@@ -2,6 +2,8 @@ package com.tunedplayer.app.ui.browse
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -21,7 +23,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.LazyRow
@@ -57,7 +58,6 @@ import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -108,7 +108,6 @@ import com.tunedplayer.app.data.SyncProgress
 import com.tunedplayer.app.data.db.ChannelWithNow
 import com.tunedplayer.app.data.db.ProfileEntity
 import com.tunedplayer.app.diagnostics.DeviceClock
-import com.tunedplayer.app.ui.SyncText
 import com.tunedplayer.app.ui.common.UpdateBanner
 import com.tunedplayer.app.ui.common.VoiceSearchButton
 import com.tunedplayer.app.ui.common.focusRing
@@ -630,22 +629,26 @@ private fun FirstRun(
     onRetry: () -> Unit,
     onChangeLogin: () -> Unit,
 ) {
+    // Centred, and scrolls when the steps run taller than a TV's screen inside its margin.
+    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        FirstRunBody(refreshing, progress, error, onRetry, onChangeLogin)
+    }
+}
+
+@Composable
+private fun FirstRunBody(
+    refreshing: Boolean,
+    progress: SyncProgress?,
+    error: String,
+    onRetry: () -> Unit,
+    onChangeLogin: () -> Unit,
+) {
     Column(
-        Modifier.fillMaxSize().padding(32.dp),
-        verticalArrangement = Arrangement.Center,
+        Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(32.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         if (refreshing || error.isBlank()) {
-            Text(stringResource(R.string.first_run_loading), style = MaterialTheme.typography.titleMedium)
-            Spacer(Modifier.height(16.dp))
-            SyncProgressBar(progress, Modifier.fillMaxWidth().widthIn(max = 420.dp))
-            Spacer(Modifier.height(12.dp))
-            Text(
-                progress?.let { SyncText.describe(LocalContext.current, it) } ?: stringResource(R.string.login_downloading),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                textAlign = TextAlign.Center,
-            )
+            FirstDownload(progress)
         } else {
             Text(stringResource(R.string.first_run_failed), style = MaterialTheme.typography.titleMedium)
             Spacer(Modifier.height(8.dp))
@@ -659,35 +662,6 @@ private fun FirstRun(
             Button(onClick = onRetry) { Text(stringResource(R.string.retry)) }
             TextButton(onClick = onChangeLogin) { Text(stringResource(R.string.first_run_change_login)) }
         }
-    }
-}
-
-/** Determinate while the size is known, otherwise the moving bar. */
-@Composable
-private fun SyncProgressBar(
-    progress: SyncProgress?,
-    modifier: Modifier = Modifier,
-) {
-    val fraction = progress?.fraction
-    val shaped = modifier.height(6.dp).clip(RoundedCornerShape(3.dp))
-    if (fraction != null) {
-        LinearProgressIndicator(progress = { fraction }, modifier = shaped, drawStopIndicator = {})
-    } else {
-        LinearProgressIndicator(modifier = shaped)
-    }
-}
-
-/** A thin bar and one line above the lists while a refresh downloads, so a slow server is never a mystery. */
-@Composable
-private fun RefreshBar(progress: SyncProgress) {
-    Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp)) {
-        Text(
-            SyncText.describe(LocalContext.current, progress),
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        Spacer(Modifier.height(4.dp))
-        SyncProgressBar(progress, Modifier.fillMaxWidth())
     }
 }
 

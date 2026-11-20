@@ -53,8 +53,21 @@
     <string name="sync_channel">Refreshing channels</string>
     <string name="sync_running">Refreshing channels and guide</string>
     <string name="sync_size_of">%1$s of %2$s</string>
-    <string name="sync_downloading_playlist">Downloading channels · %1$s</string>
-    <string name="sync_downloading_guide">Downloading the guide · %1$s</string>
+    <string name="first_run_keeps_going">Big playlists can take a few minutes the first time. It keeps going if you leave the app.</string>
+    <string name="sync_step_of">Step %1$d of %2$d</string>
+    <string name="sync_step_download_playlist">Downloading channels</string>
+    <string name="sync_step_read_playlist">Processing channels</string>
+    <string name="sync_step_save_playlist">Saving channels</string>
+    <string name="sync_step_details">Getting catch-up and film details</string>
+    <string name="sync_step_download_guide">Downloading the guide</string>
+    <string name="sync_step_read_guide">Processing the guide</string>
+    <string name="sync_step_save_guide">Saving the guide</string>
+    <string name="sync_step_library">Getting films and shows</string>
+    <string name="sync_waiting_server">Waiting for the server…</string>
+    <string name="sync_size_so_far">%1$s so far</string>
+    <string name="sync_step_done">Done</string>
+    <string name="sync_step_now">In progress</string>
+    <string name="sync_step_waiting">Not started</string>
 
     <string name="settings_refresh_now">Refresh now</string>
     <string name="settings_pull_to_refresh">Pull down to refresh</string>
@@ -284,13 +297,13 @@
         <item quantity="one">%d profile</item>
         <item quantity="other">%d profiles</item>
     </plurals>
-    <plurals name="sync_saving_playlist">
-        <item quantity="one">Saving channels · %1$s item</item>
-        <item quantity="other">Saving channels · %1$s items</item>
+    <plurals name="sync_items">
+        <item quantity="one">%1$s item</item>
+        <item quantity="other">%1$s items</item>
     </plurals>
-    <plurals name="sync_saving_guide">
-        <item quantity="one">Saving the guide · %1$s programme</item>
-        <item quantity="other">Saving the guide · %1$s programmes</item>
+    <plurals name="sync_programmes">
+        <item quantity="one">%1$s programme</item>
+        <item quantity="other">%1$s programmes</item>
     </plurals>
     <plurals name="episodes">
         <item quantity="one">%1$d episode</item>

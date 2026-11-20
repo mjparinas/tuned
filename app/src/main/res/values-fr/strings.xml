@@ -46,8 +46,21 @@
     <string name="sync_channel">Actualisation des chaînes</string>
     <string name="sync_running">Actualisation des chaînes et du guide</string>
     <string name="sync_size_of">%1$s sur %2$s</string>
-    <string name="sync_downloading_playlist">Téléchargement des chaînes · %1$s</string>
-    <string name="sync_downloading_guide">Téléchargement du guide · %1$s</string>
+    <string name="first_run_keeps_going">Les grandes playlists peuvent prendre quelques minutes la première fois. Cela continue si vous quittez l\'appli.</string>
+    <string name="sync_step_of">Étape %1$d sur %2$d</string>
+    <string name="sync_step_download_playlist">Téléchargement des chaînes</string>
+    <string name="sync_step_read_playlist">Traitement des chaînes</string>
+    <string name="sync_step_save_playlist">Enregistrement des chaînes</string>
+    <string name="sync_step_details">Récupération du replay et des détails des films</string>
+    <string name="sync_step_download_guide">Téléchargement du guide</string>
+    <string name="sync_step_read_guide">Traitement du guide</string>
+    <string name="sync_step_save_guide">Enregistrement du guide</string>
+    <string name="sync_step_library">Récupération des films et séries</string>
+    <string name="sync_waiting_server">En attente du serveur…</string>
+    <string name="sync_size_so_far">%1$s jusqu\'ici</string>
+    <string name="sync_step_done">Terminé</string>
+    <string name="sync_step_now">En cours</string>
+    <string name="sync_step_waiting">Pas commencé</string>
     <string name="settings_refresh_now">Actualiser maintenant</string>
     <string name="settings_pull_to_refresh">Tirer vers le bas pour actualiser</string>
     <string name="settings_pull_to_refresh_summary">Tirer une liste vers le bas télécharge à nouveau la playlist et le guide</string>
@@ -272,15 +285,15 @@
         <item quantity="many">%d profils</item>
         <item quantity="other">%d profils</item>
     </plurals>
-    <plurals name="sync_saving_playlist">
-        <item quantity="one">Enregistrement des chaînes · %1$s élément</item>
-        <item quantity="many">Enregistrement des chaînes · %1$s éléments</item>
-        <item quantity="other">Enregistrement des chaînes · %1$s éléments</item>
+    <plurals name="sync_items">
+        <item quantity="one">%1$s élément</item>
+        <item quantity="many">%1$s éléments</item>
+        <item quantity="other">%1$s éléments</item>
     </plurals>
-    <plurals name="sync_saving_guide">
-        <item quantity="one">Enregistrement du guide · %1$s programme</item>
-        <item quantity="many">Enregistrement du guide · %1$s programmes</item>
-        <item quantity="other">Enregistrement du guide · %1$s programmes</item>
+    <plurals name="sync_programmes">
+        <item quantity="one">%1$s programme</item>
+        <item quantity="many">%1$s programmes</item>
+        <item quantity="other">%1$s programmes</item>
     </plurals>
     <plurals name="episodes">
         <item quantity="one">%1$d épisode</item>
