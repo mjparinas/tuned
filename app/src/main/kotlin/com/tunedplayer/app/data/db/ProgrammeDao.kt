@@ -46,6 +46,14 @@ interface ProgrammeDao {
         now: Long,
     ): List<ProgrammeEntity>
 
+    /** [channelIds]' programmes on at any point from [from] to [to], for the website's copy of the guide. */
+    @Query("SELECT channelId, start, stop, title FROM programmes WHERE channelId IN (:channelIds) AND stop > :from AND start < :to")
+    suspend fun window(
+        channelIds: List<String>,
+        from: Long,
+        to: Long,
+    ): List<ProgrammeSlot>
+
     @Query("SELECT COUNT(*) FROM programmes")
     suspend fun count(): Int
 

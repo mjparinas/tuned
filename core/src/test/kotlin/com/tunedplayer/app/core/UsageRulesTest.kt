@@ -61,6 +61,7 @@ class UsageRulesTest {
                     "tmdb" to false,
                     "trakt" to "false",
                     "cast" to false,
+                    "web_player" to true,
                     "usage_batch_minutes" to 30,
                     "min_version_code" to 1_013_000.0,
                     "unknown" to true,
@@ -69,6 +70,8 @@ class UsageRulesTest {
         assertFalse(f.tmdb)
         assertTrue(f.trakt)
         assertFalse(f.cast)
+        assertTrue(f.webPlayer)
+        assertFalse(RemoteFlags().webPlayer)
         assertEquals(30, f.usageBatchMinutes)
         assertEquals(1_013_000, f.minVersionCode)
         assertEquals(60, RemoteFlags.from(mapOf("usage_batch_minutes" to 5)).usageBatchMinutes)

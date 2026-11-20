@@ -16,6 +16,7 @@ import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import com.tunedplayer.app.container
 import com.tunedplayer.app.data.ServerFlags
+import com.tunedplayer.app.diagnostics.attempt
 import com.tunedplayer.app.diagnostics.logFailures
 import java.util.concurrent.TimeUnit
 
@@ -31,7 +32,12 @@ class CloudSyncWorker(
         val sync = applicationContext.container.cloudSync
         // The admin's `account_backup` switch pauses the hourly run too.
         if (!ServerFlags.now.value.accountBackup) return@logFailures Result.success()
-        if (sync.run()) Result.success() else Result.retry()
+        if (!sync.run()) return@logFailures Result.retry()
+        // The website's Channels and guide page reads the app's copy only while the admin's `web_player` flag is on.
+        if (ServerFlags.now.value.webPlayer) {
+            attempt(TAG, "Couldn't share the channel list with the website") { applicationContext.container.sharedChannels.run() }
+        }
+        Result.success()
     }
 
     companion object {

@@ -56,6 +56,10 @@ interface ItemDao {
     @Query("SELECT tvgId, url FROM items WHERE kind = 0 AND tvgId IS NOT NULL")
     suspend fun liveLinks(): List<LiveLink>
 
+    /** Every live channel in playlist order, for the copy the website's Channels and guide page reads. */
+    @Query("SELECT name, groupName, logo, tvgId, number, url FROM items WHERE kind = 0 ORDER BY sortOrder")
+    suspend fun liveForSharing(): List<SharedChannelRow>
+
     /** Live TV in playlist order. Paged, so it reads only the rows on screen, straight down the (kind, sortOrder) index. */
     @Suppress("LongParameterList") // Every Live TV filter is a parameter of the one query, so the list stays one read.
     @Query(

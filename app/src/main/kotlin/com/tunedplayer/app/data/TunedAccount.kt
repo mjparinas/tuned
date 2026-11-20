@@ -155,6 +155,16 @@ class TunedAccount(
     }
 
     /**
+     * Saves a playlist's channel list and guide ([com.tunedplayer.app.core.ChannelShare], gzipped JSON) in the
+     * account, for the website's Channels and guide page. Throws [IOException] when it wasn't saved.
+     */
+    suspend fun shareChannels(gzipped: ByteArray) {
+        val request = signedIn(Request.Builder().url(url("api/account/channels")).put(gzipped.toRequestBody(GZIP)))
+        val (status) = call(request)
+        if (status != HTTP_OK) throw IOException("The channel list answered $status")
+    }
+
+    /**
      * Asks the account for this device's Premium seat ([use] true) or gives it back ([use] false), reporting the
      * store's [purchases] so the account knows what was bought in Play. Null when signed out or the server can't be
      * reached, which never locks anyone out.
@@ -329,5 +339,6 @@ class TunedAccount(
         const val HTTP_NOT_FOUND = 404
         const val HTTP_CONFLICT = 409
         val JSON = "application/json".toMediaType()
+        val GZIP = "application/gzip".toMediaType()
     }
 }

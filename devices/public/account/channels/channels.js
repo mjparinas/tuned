@@ -24,6 +24,8 @@ import {
     xtreamChannels,
     xtreamGuideUrl,
     xtreamPlaylistUrl,
+    ago,
+    fromAppCopy,
 } from "/account/channels/core.mjs";
 
 const $ = (id) => document.getElementById(id);
@@ -33,6 +35,8 @@ const PAGE = 150;
 const GRID_PAGE = 40;
 const GUIDE_BEFORE_MS = 3_600_000;
 const GUIDE_AFTER_MS = 12 * 3_600_000;
+/** The app sends its copy at least every 6 hours while it's used; older than a day, the provider is asked first. */
+const COPY_FRESH_MS = 24 * 3_600_000;
 const platform = platformOf(navigator.userAgent, navigator.maxTouchPoints);
 
 const state = {
@@ -498,37 +502,43 @@ async function open(p) {
     url.searchParams.set("playlist", p.id);
     history.replaceState(null, "", url);
     drawWhole();
-    if (p.kind === "stalker" || p.kind === "file") {
-        tell(
-            "status",
-            p.kind === "stalker"
-                ? "A MAC portal only works in the Tuned app: a web page or VLC can't sign in to it as a set-top box does."
-                : "This playlist is a file on one of your devices, so only the Tuned app can open it.",
-            "error",
-        );
+    if (p.kind === "stalker") {
+        tell("status", "A MAC portal only works in the Tuned app: a web page or VLC can't sign in to it as a set-top box does.", "error");
         return;
     }
-    tell("status", "Getting this playlist's login from your account…", "ok");
-    const login = await getJson(`/api/account/check?id=${encodeURIComponent(p.id)}`);
+    tell("status", "Getting this playlist from your account…", "ok");
+    // The login and the app's copy at once: the copy is on our server, so it's usually there first.
+    const [login, copy] = await Promise.all([
+        p.kind === "file" ? Promise.resolve({ status: "app only" }) : getJson(`/api/account/check?id=${encodeURIComponent(p.id)}`),
+        appCopy(p.id),
+    ]);
     if (id !== state.loadId) return;
-    if (login.status !== "ok") {
+    const hasLogin = login.status === "ok";
+    if (hasLogin)
+        state.wholeUrl =
+            login.kind === "xtream"
+                ? xtreamPlaylistUrl(parseServer(login.server)?.base ?? login.server, login.username, login.password)
+                : login.link;
+    drawWhole();
+    const fromApp = copy ? fromAppCopy(copy.body, hasLogin ? login : null) : null;
+    const fresh = fromApp?.savedAt && Date.now() - fromApp.savedAt < COPY_FRESH_MS;
+    // A fresh copy from the app opens at once and needs nothing from the provider.
+    if (fromApp?.channels.length && (fresh || !hasLogin)) return showAppCopy(fromApp, copy.by);
+    if (!hasLogin) {
         const why = {
             "signed out": "You're signed out. Sign in again on your account page.",
             "too many": "Too many playlists opened this hour. Try again later.",
-            "app only": "This playlist only works in the Tuned app.",
+            "app only": "Open this playlist in the Tuned app once, signed in to your account, and its channels show up here.",
         };
         tell("status", why[login.status] ?? "This playlist couldn't be opened. Reload the page and try again.");
         return;
     }
-    state.wholeUrl =
-        login.kind === "xtream"
-            ? xtreamPlaylistUrl(parseServer(login.server)?.base ?? login.server, login.username, login.password)
-            : login.link;
-    drawWhole();
     tell("status", "Asking your provider for its channel list…", "ok");
     const read = login.kind === "xtream" ? await readXtream(login) : await readLink(login);
     if (id !== state.loadId || read.error === "stopped") return;
     if (read.error) {
+        // The provider doesn't let web pages read it: the app's copy, however old, is better than nothing.
+        if (fromApp?.channels.length) return showAppCopy(fromApp, copy.by);
         tell("status", "");
         $("blocked-why").textContent =
             read.error === "empty" ? "Your provider's playlist came back empty." : (reasons[read.error] ?? reasons.unreachable);
@@ -542,6 +552,33 @@ async function open(p) {
     $("channels").hidden = false;
     draw();
     loadGuide(read.guides, id);
+}
+
+/** The copy the Tuned app keeps in the account (docs/decisions/web.md › The app's copy), or null when there's none. */
+async function appCopy(playlistId) {
+    try {
+        const res = await fetch(`/api/account/channels?playlist=${encodeURIComponent(playlistId)}`, {
+            cache: "no-store",
+            credentials: "same-origin",
+        });
+        if (!res.ok) return null;
+        return { body: await res.json(), by: decodeURIComponent(res.headers.get("x-saved-by") ?? "") };
+    } catch {
+        return null;
+    }
+}
+
+function showAppCopy(copy, by) {
+    state.channels = copy.channels;
+    state.guide = copy.guide;
+    tell("status", "");
+    const from = by ? `your Tuned app on ${by}` : "your Tuned app";
+    const when = copy.savedAt ? `, ${ago(copy.savedAt)}` : "";
+    const guide = copy.guide.size ? ` Guide for ${copy.guide.size.toLocaleString("en-CA")} channels.` : " No guide came with it.";
+    tell("guide-line", `From ${from}${when}.${guide}`, "ok");
+    drawGroups();
+    $("channels").hidden = false;
+    draw();
 }
 
 async function loadGuide(guides, id) {

@@ -295,3 +295,65 @@ export const fileName = (name) =>
             .trim()
             .slice(0, 80) || "channel"
     }.m3u`;
+
+// ---------- the app's copy (docs/decisions/web.md › The app's copy) ----------
+
+/**
+ * A link from the app's copy with the playlist's login put back where the app left `{login}`, `{user}` or `{pass}`,
+ * encoded as the app builds Xtream links. Null when it needs a login the page doesn't have.
+ */
+export function fillLogin(link, login) {
+    const text = String(link ?? "");
+    if (!/\{(login|user|pass)\}/.test(text)) return text;
+    const user = login?.username ?? "";
+    const pass = login?.password ?? "";
+    if (!user || !pass) return null;
+    return text
+        .replaceAll("{login}", `${enc(user)}/${enc(pass)}`)
+        .replaceAll("{user}", enc(user))
+        .replaceAll("{pass}", enc(pass));
+}
+
+/**
+ * The app's copy (core ChannelShare's JSON) as the page's channels and guide: `{ channels, guide, savedAt }`, the
+ * channels whose links need a login the page doesn't have left out. Null when it isn't a copy.
+ */
+export function fromAppCopy(copy, login) {
+    if (copy?.v !== 1 || !Array.isArray(copy.channels)) return null;
+    const channels = [];
+    for (const c of copy.channels) {
+        if (!Array.isArray(c)) continue;
+        const [name, group, logo, epgId, number, link] = c;
+        const url = fillLogin(link, login);
+        if (!url) continue;
+        channels.push({
+            name: String(name ?? "").trim() || "Channel",
+            group: String(group ?? ""),
+            logo: String(logo ?? ""),
+            epgId: String(epgId ?? ""),
+            number: Number(number) > 0 ? String(number) : "",
+            url,
+        });
+    }
+    const guide = new Map();
+    for (const [id, list] of Object.entries(copy.guide ?? {})) {
+        if (!Array.isArray(list)) continue;
+        const shows = list
+            .filter((p) => Array.isArray(p) && Number.isFinite(p[0]) && Number.isFinite(p[1]))
+            .map(([start, stop, title]) => ({ start: start * 1000, stop: stop * 1000, title: String(title ?? ""), desc: "" }))
+            .sort((a, b) => a.start - b.start);
+        if (shows.length) guide.set(id, shows);
+    }
+    return { channels, guide, savedAt: Number(copy.savedAt) || null };
+}
+
+/** How long ago, in words: "just now", "5 minutes ago", "3 hours ago", "2 days ago". */
+export function ago(then, now = Date.now()) {
+    const minutes = Math.max(0, Math.round((now - then) / 60_000));
+    if (minutes < 1) return "just now";
+    if (minutes < 60) return `${minutes} ${minutes === 1 ? "minute" : "minutes"} ago`;
+    const hours = Math.round(minutes / 60);
+    if (hours < 48) return `${hours} ${hours === 1 ? "hour" : "hours"} ago`;
+    const days = Math.round(hours / 24);
+    return `${days} days ago`;
+}
