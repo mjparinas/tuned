@@ -43,6 +43,8 @@ class XmltvParserTest {
         assertEquals("Headlines & weather", list[0].description)
         assertEquals(XmltvParser.parseTime("20261117050000 +0000")!! + 3_600_000, list[0].stop)
         assertNull(list[1].description)
+        assertEquals(listOf("News"), list[0].categories)
+        assertEquals(emptyList(), list[1].categories)
         // 06:00 at -0500 is 11:00 UTC.
         assertEquals(XmltvParser.parseTime("20261117110000"), list[1].start)
     }

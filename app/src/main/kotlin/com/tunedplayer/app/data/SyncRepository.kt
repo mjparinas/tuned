@@ -18,6 +18,7 @@ import com.tunedplayer.app.core.XtreamAccount
 import com.tunedplayer.app.core.XtreamApi
 import com.tunedplayer.app.core.XtreamUrls
 import com.tunedplayer.app.data.db.CatchUpEntity
+import com.tunedplayer.app.data.db.CatchUpItemEntity
 import com.tunedplayer.app.data.db.GuideWriter
 import com.tunedplayer.app.data.db.ItemEntity
 import com.tunedplayer.app.data.db.PlaylistWriter
@@ -177,6 +178,8 @@ class SyncRepository(
         val failure =
             m3u.exceptionOrNull() ?: return m3u.getOrThrow().also {
                 if (!xtream && readCatchUp) replaceCatchUp(catchUp)
+                // An unchanged file keeps its catch-up; the filter's copy is made again in case it predates it.
+                if (!xtream && !readCatchUp) linkCatchUp()
             }
         if (!xtream) throw failure
         AppLog.w(TAG_SYNC, "M3U download failed; reading the Xtream API instead", failure)
@@ -310,9 +313,34 @@ class SyncRepository(
         markAdult(adult)
     }
 
-    private suspend fun replaceCatchUp(rows: List<CatchUpEntity>) = db.withTransaction {
-        db.catchUp().deleteAll()
-        rows.chunked(BATCH).forEach { db.catchUp().insertAll(it) }
+    private suspend fun replaceCatchUp(rows: List<CatchUpEntity>) {
+        db.withTransaction {
+            db.catchUp().deleteRows()
+            rows.chunked(BATCH).forEach { db.catchUp().insertAll(it) }
+        }
+        linkCatchUp()
+    }
+
+    /**
+     * Saves the channels that keep recordings as item ids too, for Live TV's Catch-up filter: the catch-up table is
+     * keyed by stream id or link, which a list can't join on. Item ids are stable across refreshes.
+     */
+    private suspend fun linkCatchUp() {
+        val keys = db.catchUp().all().mapTo(HashSet()) { it.streamId }
+        val items =
+            if (keys.isEmpty()) {
+                emptyList()
+            } else {
+                db
+                    .catchUp()
+                    .liveUrls()
+                    .filter { CatchUp.key(it.url) in keys }
+                    .map { CatchUpItemEntity(it.id) }
+            }
+        db.withTransaction {
+            db.catchUp().deleteItems()
+            items.chunked(BATCH).forEach { db.catchUp().insertItems(it) }
+        }
     }
 
     /**

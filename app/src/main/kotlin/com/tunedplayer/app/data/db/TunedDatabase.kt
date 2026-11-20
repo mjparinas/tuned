@@ -31,8 +31,9 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         ListItemEntity::class,
         ChannelEditEntity::class,
         ShowCoverEntity::class,
+        CatchUpItemEntity::class,
     ],
-    version = 20,
+    version = 21,
     exportSchema = true,
 )
 abstract class TunedDatabase : RoomDatabase() {
@@ -96,6 +97,7 @@ abstract class TunedDatabase : RoomDatabase() {
                 MIGRATION_17_18,
                 MIGRATION_18_19,
                 MIGRATION_19_20,
+                MIGRATION_20_21,
             ).addCallback(FirstProfile)
             // Going back to an older release (installing an older APK) can't keep a newer database: start it afresh
             // rather than crash on every launch. Upgrades always migrate, above.
@@ -319,6 +321,18 @@ abstract class TunedDatabase : RoomDatabase() {
                     db.execSQL(
                         "CREATE TABLE IF NOT EXISTS `show_covers` (`showKey` TEXT NOT NULL, `cover` TEXT NOT NULL, PRIMARY KEY(`showKey`))",
                     )
+                }
+            }
+
+        /**
+         * Live TV's newer filters: what kind each programme is (On now), and the channels that keep recordings by item
+         * (Catch-up), filled by the next refresh.
+         */
+        val MIGRATION_20_21 =
+            object : Migration(20, 21) {
+                override fun migrate(db: SupportSQLiteDatabase) {
+                    db.execSQL("ALTER TABLE `programmes` ADD COLUMN `genre` INTEGER NOT NULL DEFAULT 0")
+                    db.execSQL("CREATE TABLE IF NOT EXISTS `catchup_items` (`itemId` INTEGER NOT NULL, PRIMARY KEY(`itemId`))")
                 }
             }
 
