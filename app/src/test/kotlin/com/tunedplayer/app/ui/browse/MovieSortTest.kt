@@ -49,8 +49,8 @@ class MovieSortTest {
             SampleData.seed(db)
             // No Continue watching row, so the grid's first item is a film, as for anyone who hasn't started one.
             db.library().clearHistory()
-            // Sixty films ahead of the sample's, in the playlist's order Film 60 to Film 01: enough to scroll.
-            val films = (1..FILMS).map { film(FIRST_ID + it, "Film %02d".format(FILMS + 1 - it), it - FILMS - 1) }
+            // Five hundred films ahead of the sample's, in the playlist's order Film 500 to Film 001: pages of them.
+            val films = (1..FILMS).map { film(FIRST_ID + it, "Film %03d".format(FILMS + 1 - it), it - FILMS - 1) }
             db.items().insertAll(films)
             // As the screenshots do: Home reads some of its settings from the store as well as its parameter.
             app.container.settings.update { AppSettings(startTab = StartTab.MOVIES) }
@@ -58,7 +58,14 @@ class MovieSortTest {
     }
 
     @Test
-    fun choosingASortReordersTheGrid() {
+    fun choosingASortReordersTheGrid() = chooseAToZ()
+
+    /** On a TV (Melvin's Shield), where the grid sits beside the rail. */
+    @Test
+    @Config(qualifiers = "w960dp-h540dp-land-television-xhdpi")
+    fun choosingASortReordersTheGridOnATv() = chooseAToZ()
+
+    private fun chooseAToZ() {
         val settings = AppSettings(startTab = StartTab.MOVIES)
         compose.setContent {
             HomeScreen(
@@ -76,16 +83,16 @@ class MovieSortTest {
                 onOpenPlaylists = {},
             )
         }
-        compose.waitUntil(10_000) { compose.onAllNodesWithText("Film 60").fetchSemanticsNodes().isNotEmpty() }
+        compose.waitUntil(10_000) { compose.onAllNodesWithText("Film 500").fetchSemanticsNodes().isNotEmpty() }
         compose.onNode(hasText(app.getString(R.string.sort_chip))).performClick()
         compose.onNode(hasText(app.getString(R.string.sort_title))).performClick()
         // The list starts again at the top in the new order. Before, the grid kept the film that was first in view
         // (Compose keeps the first visible item by its key) and scrolled down to wherever it moved, so the screen
         // looked the same and the sort seemed to do nothing.
-        compose.waitUntil(10_000) { shown("Film 01") }
+        compose.waitUntil(10_000) { shown("Film 001") }
         compose.waitForIdle()
-        assertTrue(shown("Film 01") && shown("Film 02"), "the new order's first films are on screen")
-        assertFalse(shown("Film 60"), "the old first film is no longer kept at the top")
+        assertTrue(shown("Film 001") && shown("Film 002"), "the new order's first films are on screen")
+        assertFalse(shown("Film 500"), "the old first film is no longer kept at the top")
     }
 
     private fun shown(name: String) = compose.onAllNodesWithText(name).fetchSemanticsNodes().isNotEmpty()
@@ -117,7 +124,7 @@ class MovieSortTest {
     )
 
     private companion object {
-        const val FILMS = 60
+        const val FILMS = 500
         const val FIRST_ID = 50_000L
     }
 }
