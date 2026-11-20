@@ -9,6 +9,8 @@ const SECTIONS = [
     ["devices", "Devices"],
     ["premium", "Premium"],
     ["playlists", "Playlists and settings"],
+    // Entries with a flag show only while that admin flag is on (preview deployments and localhost always).
+    ["check", "Check my provider", { href: "/check", flag: "web_player" }],
     ["pair", "Pair a TV"],
     ["backup", "Backup"],
     ["features", "What Tuned does"],
@@ -21,15 +23,21 @@ const SECTIONS = [
  */
 export function drawNav(nav, page, subsections = []) {
     const list = document.createElement("ul");
-    for (const [id, label] of SECTIONS) {
+    for (const [id, label, opts] of SECTIONS) {
         const item = document.createElement("li");
         const link = document.createElement("a");
         link.textContent = label;
-        if (id === "playlists") {
+        if (opts?.href) {
+            link.href = opts.href;
+            if (opts.flag) {
+                item.hidden = true;
+                flagOn(opts.flag).then((on) => (item.hidden = !on));
+            }
+        } else if (id === "playlists") {
             link.href = "/account/playlists";
             if (page === "playlists") link.setAttribute("aria-current", "page");
         } else link.href = page === "account" ? `#${id}` : `/account#${id}`;
-        if (page === "account" && id !== "playlists") link.dataset.section = id;
+        if (page === "account" && id !== "playlists" && !opts) link.dataset.section = id;
         item.append(link);
         if (id === "playlists" && page === "playlists" && subsections.length) {
             const sub = document.createElement("ul");
@@ -48,6 +56,19 @@ export function drawNav(nav, page, subsections = []) {
     }
     nav.replaceChildren(list);
     watch(nav);
+}
+
+const PREVIEW = /^(localhost|127\.0\.0\.1)$|-projects-[a-z0-9]+\.vercel\.app$/;
+let flags = null;
+
+/** Whether an admin flag is on for this browser (check/verdict.mjs isPreviewHost: previews always). Off when unsure. */
+export function flagOn(key) {
+    if (PREVIEW.test(location.hostname)) return Promise.resolve(true);
+    flags ??= fetch("/api/flags", { cache: "no-store" })
+        .then((r) => r.json())
+        .then((j) => j?.flags ?? {})
+        .catch(() => ({}));
+    return flags.then((f) => f[key] === true);
 }
 
 let observer = null;

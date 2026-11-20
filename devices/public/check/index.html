@@ -31,7 +31,28 @@
                 <p>The provider check and the web player aren't open yet.</p>
             </section>
 
+            <section id="saved-card" class="card" hidden aria-labelledby="saved-title">
+                <h2 id="saved-title">Your playlists</h2>
+                <p class="small">Pick one from your Tuned account. Its login comes to this browser only for the check.</p>
+                <form id="saved" autocomplete="off">
+                    <fieldset>
+                        <legend class="visually-hidden">Playlist to check</legend>
+                        <div id="saved-list" class="saved-list"></div>
+                    </fieldset>
+                    <p class="message" id="saved-message" role="status" aria-live="polite"></p>
+                    <div class="row">
+                        <button type="submit" class="primary" id="saved-check">Check</button>
+                        <button type="button" class="quiet" id="type-instead" aria-expanded="false" aria-controls="form-card">
+                            Type an address instead
+                        </button>
+                    </div>
+                </form>
+            </section>
+
             <section id="form-card" class="card" hidden>
+                <p class="small" id="sign-in-line" hidden>
+                    Have a Tuned account? <a href="/api/auth/google?then=check">Sign in</a> to pick one of your saved playlists.
+                </p>
                 <div class="tabs" role="tablist" aria-label="Playlist kind">
                     <button type="button" role="tab" id="tab-xtream" aria-selected="true" aria-controls="xtream">Xtream login</button>
                     <button type="button" role="tab" id="tab-link" aria-selected="false" aria-controls="link">Playlist link</button>
@@ -63,6 +84,25 @@
                 <h2>What we found</h2>
                 <ol id="steps" class="steps"></ol>
                 <div id="answer" class="answer" hidden></div>
+            </section>
+
+            <section id="anyway-card" class="card" hidden aria-labelledby="anyway-title">
+                <h2 id="anyway-title">Try playing anyway</h2>
+                <p class="small">
+                    The check couldn't read your lists from this browser, but the browser's own player can sometimes still play a stream. It
+                    opens one stream at a time and closes it before the next, with nothing in between.
+                </p>
+                <form id="anyway" autocomplete="off">
+                    <label for="anyway-input" id="anyway-label">Stream link</label>
+                    <input id="anyway-input" type="text" inputmode="url" required spellcheck="false" aria-describedby="anyway-hint" />
+                    <p class="small" id="anyway-hint"></p>
+                    <div class="row">
+                        <button type="submit" class="primary" id="anyway-play">Try playing</button>
+                        <button type="button" id="anyway-stop">Stop</button>
+                    </div>
+                </form>
+                <video id="anyway-video" controls playsinline muted></video>
+                <ol id="anyway-steps" class="steps" aria-live="polite"></ol>
             </section>
 
             <section id="play-card" class="card" hidden>
