@@ -9,14 +9,18 @@ const SECTIONS = [
     ["devices", "Devices"],
     ["premium", "Premium"],
     ["playlists", "Playlists and settings"],
+    ["channels", "Channels and guide"],
     ["pair", "Pair a TV"],
     ["backup", "Backup"],
     ["features", "What Tuned does"],
     ["account", "Sign out or delete"],
 ];
 
+/** Entries that are pages of their own rather than sections of the account page. */
+const PAGES = new Set(["playlists", "channels"]);
+
 /**
- * Draws the menu into `nav`. `page` is "account" or "playlists"; on the playlists page its own entry is the page and
+ * Draws the menu into `nav`. `page` is "account", "playlists" or "channels"; on the playlists page its own entry is the page and
  * `subsections` ([id, label]) list what's on it.
  */
 export function drawNav(nav, page, subsections = []) {
@@ -25,11 +29,11 @@ export function drawNav(nav, page, subsections = []) {
         const item = document.createElement("li");
         const link = document.createElement("a");
         link.textContent = label;
-        if (id === "playlists") {
-            link.href = "/account/playlists";
-            if (page === "playlists") link.setAttribute("aria-current", "page");
+        if (PAGES.has(id)) {
+            link.href = `/account/${id}`;
+            if (page === id) link.setAttribute("aria-current", "page");
         } else link.href = page === "account" ? `#${id}` : `/account#${id}`;
-        if (page === "account" && id !== "playlists") link.dataset.section = id;
+        if (page === "account" && !PAGES.has(id)) link.dataset.section = id;
         item.append(link);
         if (id === "playlists" && page === "playlists" && subsections.length) {
             const sub = document.createElement("ul");
