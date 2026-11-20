@@ -10,6 +10,7 @@ const SECTIONS = [
     ["premium", "Premium"],
     ["playlists", "Playlists and settings"],
     // Entries with a flag show only while that admin flag is on (preview deployments and localhost always).
+    ["channels", "Channels and guide", { href: "/account/channels", flag: "web_player" }],
     ["check", "Check my provider", { href: "/check", flag: "web_player" }],
     ["pair", "Pair a TV"],
     ["backup", "Backup"],
@@ -18,7 +19,7 @@ const SECTIONS = [
 ];
 
 /**
- * Draws the menu into `nav`. `page` is "account" or "playlists"; on the playlists page its own entry is the page and
+ * Draws the menu into `nav`. `page` is "account", "playlists" or "channels"; on the playlists page its own entry is the page and
  * `subsections` ([id, label]) list what's on it.
  */
 export function drawNav(nav, page, subsections = []) {
@@ -29,6 +30,7 @@ export function drawNav(nav, page, subsections = []) {
         link.textContent = label;
         if (opts?.href) {
             link.href = opts.href;
+            if (page === id) link.setAttribute("aria-current", "page");
             if (opts.flag) {
                 item.hidden = true;
                 flagOn(opts.flag).then((on) => (item.hidden = !on));
