@@ -16,6 +16,7 @@ import com.tunedplayer.app.core.TitleSort
 import com.tunedplayer.app.data.AppSettings
 import com.tunedplayer.app.data.StartTab
 import com.tunedplayer.app.data.db.ItemEntity
+import com.tunedplayer.app.screenshots.SampleData
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import org.junit.Before
@@ -41,9 +42,14 @@ class MovieSortTest {
     @Before
     fun setUp() {
         WorkManagerTestInitHelper.initializeTestWorkManager(app, Configuration.Builder().setExecutor(SynchronousExecutor()).build())
-        val names = (1..60).map { "Film %02d".format(61 - it) } // playlist order Z..A: Film 60 first
         runBlocking(Dispatchers.IO) {
-            app.container.db.items().insertAll(names.mapIndexed { i, n -> film(i + 1L, n) })
+            val db = app.container.db
+            SampleData.seed(db)
+            // No Continue watching row, so the grid's first item is a film, as for anyone who hasn't started one.
+            db.library().clearHistory()
+            // Sixty films ahead of the sample's, in the playlist's order Film 60 to Film 01: enough to scroll.
+            val films = (1..FILMS).map { film(FIRST_ID + it, "Film %02d".format(FILMS + 1 - it), it - FILMS - 1) }
+            db.items().insertAll(films)
         }
     }
 
@@ -80,9 +86,34 @@ class MovieSortTest {
 
     private fun shown(name: String) = compose.onAllNodesWithText(name).fetchSemanticsNodes().isNotEmpty()
 
-    private fun film(id: Long, name: String) = ItemEntity(
-        id = id, kind = 1, name = name, searchName = Search.normalize(name), groupName = "Films", region = null, adult = false,
-        logo = null, url = "http://example.invalid/movie/u/p/$id.mp4", tvgId = null, showKey = null, showName = null,
-        season = null, episode = null, sortOrder = id.toInt(), added = 0, year = null, rating = null, sortTitle = TitleSort.title(name),
+    private fun film(
+        id: Long,
+        name: String,
+        order: Int,
+    ) = ItemEntity(
+        id = id,
+        kind = 1,
+        name = name,
+        searchName = Search.normalize(name),
+        groupName = "Drama",
+        region = "EN",
+        adult = false,
+        logo = null,
+        url = "http://example.invalid/movie/u/p/$id.mp4",
+        tvgId = null,
+        showKey = null,
+        showName = null,
+        season = null,
+        episode = null,
+        sortOrder = order,
+        added = 0,
+        year = null,
+        rating = null,
+        sortTitle = TitleSort.title(name),
     )
+
+    private companion object {
+        const val FILMS = 60
+        const val FIRST_ID = 50_000L
+    }
 }
