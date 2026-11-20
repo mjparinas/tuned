@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="playlists">Listeler</string>
+    <plurals name="playlists_saved">
+        <item quantity="one">%d liste kaydedildi</item>
+        <item quantity="other">%d liste kaydedildi</item>
+    </plurals>
+    <plurals name="playlists_in_use">
+        <item quantity="one">%1$s · %2$d kayıtlı</item>
+        <item quantity="other">%1$s · %2$d kayıtlı</item>
+    </plurals>
+    <string name="playlists_add">Liste ekle</string>
+    <string name="playlists_help">İzlemek için bir listeye dokun. Tuned aynı anda bir listenin kanallarını tutar, bu yüzden geçiş yapmak diğerini indirir.</string>
+    <string name="playlists_active">Kullanımda</string>
+    <string name="playlists_rename">Yeniden adlandır</string>
+    <string name="playlists_edit">Düzenle</string>
+    <string name="playlists_remove">Kaldır</string>
+    <string name="playlists_remove_title">%1$s kaldırılsın mı?</string>
+    <string name="playlists_remove_body">Giriş bilgileri bu cihazdan silinir. Daha sonra tekrar ekleyebilirsin.</string>
+    <string name="playlists_remove_last">Bu senin tek listen; bu yüzden oturumun kapanır ve kaydedilen kanallar ile rehber silinir.</string>
+    <string name="welcome_title">Tuned\'a hoş geldin</string>
+    <string name="welcome_body">İzlemeye başlamak için TV sağlayıcından bir liste ekle. Daha sonra Ayarlar\'dan istediğin kadar ekleyebilirsin.</string>
+    <string name="welcome_pick">Sağlayıcın sana ne verdi?</string>
+    <string name="kind_xtream">Xtream Codes girişi</string>
+    <string name="kind_xtream_summary">Bir sunucu adresi, kullanıcı adı ve şifre</string>
+    <string name="kind_link">Liste bağlantısı</string>
+    <string name="kind_link_summary">Bir M3U veya M3U8 bağlantısı, varsa rehber bağlantısıyla</string>
+    <string name="kind_file">Liste dosyası</string>
+    <string name="kind_file_summary">Bu cihazda kayıtlı bir .m3u dosyası</string>
+    <string name="add_xtream_hint">Sağlayıcının gönderdiği bilgileri gir. Sunucu kutusuna tam bir Xtream bağlantısı da yapıştırabilirsin.</string>
+    <string name="add_server_help">Örneğin http://example.com:8080</string>
+    <string name="add_link_hint">Sağlayıcının gönderdiği liste bağlantısını yapıştır.</string>
+    <string name="add_link_is_xtream">Bu bir Xtream giriş bağlantısı; Tuned bununla giriş yapacak ve geriye dönük izleme de çalışacak.</string>
+    <string name="add_file_hint">Bir liste dosyası seç. Tuned kendi kopyasını tutar, bu yüzden orijinali taşısan veya silsen de çalışır.</string>
+    <string name="add_file_choose">Dosya seç</string>
+    <string name="add_file_replace">Mevcut dosyayı tut veya yenisini seç</string>
+    <string name="add_name">Ad (isteğe bağlı)</string>
+    <string name="add_name_help">Nasıl listeleneceği, örneğin Spor veya Salon</string>
+    <string name="add_guide">Rehber (XMLTV) bağlantısı (isteğe bağlı)</string>
+    <string name="add_guide_help">Listenin belirttiği rehberi kullanmak için boş bırak</string>
+    <string name="add_submit">Liste ekle</string>
+    <string name="add_save">Kaydet</string>
+    <string name="add_bad_link">Bu bir web bağlantısına benzemiyor. Kontrol edip tekrar dene.</string>
+    <string name="add_bad_file">Bu dosya bir M3U listesine benzemiyor.</string>
+    <string name="add_pick_file">Önce bir liste dosyası seç.</string>
+</resources>

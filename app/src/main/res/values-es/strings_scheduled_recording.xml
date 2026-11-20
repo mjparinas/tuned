@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="recording_set">Grabar</string>
+    <string name="recording_cancel">Cancelar grabación</string>
+    <string name="recording_scheduled">Se grabará %1$s</string>
+    <string name="recording_clash">Ya hay otra grabación para esa hora. Tuned graba una a la vez.</string>
+    <string name="recording_running">Grabando %1$s</string>
+    <string name="settings_record_padding">Empezar las grabaciones antes y terminarlas después</string>
+    <string name="settings_record_padding_off">Puntual</string>
+    <plurals name="settings_record_padding_minutes">
+        <item quantity="one">%1$d minuto antes y después</item>
+        <item quantity="many">%1$d minutos antes y después</item>
+        <item quantity="other">%1$d minutos antes y después</item>
+    </plurals>
+</resources>

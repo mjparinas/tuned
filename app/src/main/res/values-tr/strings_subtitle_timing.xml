@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="subtitle_timing">Altyazı zamanlaması</string>
+    <string name="subtitle_timing_none">Önce altyazıları aç</string>
+    <string name="subtitle_timing_not_casting">Yayınlarken altyazı zamanlaması kullanılamaz</string>
+    <string name="subtitle_timing_later">Altyazılar %1$s sn geç</string>
+    <string name="subtitle_timing_earlier">Altyazılar %1$s sn erken</string>
+    <string name="subtitle_timing_in_sync">Değişiklik yok</string>
+    <string name="subtitle_timing_back_big">−1 sn</string>
+    <string name="subtitle_timing_back_small">−0,1 sn</string>
+    <string name="subtitle_timing_on_small">+0,1 sn</string>
+    <string name="subtitle_timing_on_big">+1 sn</string>
+    <string name="subtitle_timing_reset">Sıfırla</string>
+    <string name="subtitle_timing_done">Bitti</string>
+</resources>

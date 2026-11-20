@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="player_fit">Ajuste</string>
+    <string name="player_fit_now">Ajuste: %1$s</string>
+    <string name="player_fit_fit">Ajustar a la pantalla</string>
+    <string name="player_fit_zoom">Ampliar para llenar</string>
+    <string name="player_fit_stretch">Estirar</string>
+    <string name="player_lock">Bloquear pantalla</string>
+    <string name="player_unlock">Desbloquear pantalla</string>
+    <string name="player_locked">Pantalla bloqueada. Toca el candado para desbloquear.</string>
+    <string name="player_quality">Calidad</string>
+    <string name="player_quality_auto">Automática</string>
+    <string name="player_quality_only_one">Esta emisión tiene una sola calidad</string>
+    <string name="player_quality_untagged">Estándar</string>
+    <string name="player_guide">Canales</string>
+    <string name="player_guide_close">Cerrar canales</string>
+</resources>

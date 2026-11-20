@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_audio_delay">Décalage du son</string>
+    <string name="settings_audio_delay_off">Synchronisé avec l\'image</string>
+    <string name="settings_audio_delay_earlier">Son %d ms plus tôt</string>
+    <string name="settings_audio_delay_later">Son %d ms plus tard</string>
+</resources>

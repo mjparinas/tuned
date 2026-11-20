@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="downloads">التنزيلات</string>
+    <string name="downloads_running">جارٍ التنزيل</string>
+    <string name="downloads_empty">لم يُحفظ شيء بعد. انقر زر التنزيل على فيلم أو حلقة أو موسم كامل لمشاهدته دون اتصال.</string>
+    <string name="download">تنزيل</string>
+    <string name="download_remove">إزالة التنزيل</string>
+    <string name="download_remove_named">إزالة تنزيل %1$s</string>
+    <string name="download_retry">إعادة المحاولة</string>
+    <string name="download_failed">تعذّر التنزيل</string>
+    <string name="download_waiting">في الانتظار (تتوقف التنزيلات مؤقتًا أثناء التشغيل)</string>
+    <string name="download_progress">%1$s من %2$s</string>
+    <string name="downloads_space">%1$s منزّلة · %2$s متاحة على هذا الجهاز</string>
+    <string name="downloads_space_used">%1$s منزّلة</string>
+    <string name="downloads_other_episodes">حلقات أخرى</string>
+    <string name="download_paused">متوقف مؤقتًا</string>
+    <string name="download_pause">إيقاف التنزيل مؤقتًا</string>
+    <string name="download_resume">استئناف التنزيل</string>
+    <string name="download_cancel">إلغاء التنزيل</string>
+    <string name="download_season_done">حُفظ الموسم</string>
+    <plurals name="downloads_coming">
+        <item quantity="zero">%1$d قيد التنزيل</item>
+        <item quantity="one">%1$d قيد التنزيل</item>
+        <item quantity="two">%1$d قيد التنزيل</item>
+        <item quantity="few">%1$d قيد التنزيل</item>
+        <item quantity="many">%1$d قيد التنزيل</item>
+        <item quantity="other">%1$d قيد التنزيل</item>
+    </plurals>
+    <plurals name="download_season">
+        <item quantity="zero">تنزيل الموسم (%d حلقة)</item>
+        <item quantity="one">تنزيل الموسم (%d حلقة)</item>
+        <item quantity="two">تنزيل الموسم (%d حلقة)</item>
+        <item quantity="few">تنزيل الموسم (%d حلقات)</item>
+        <item quantity="many">تنزيل الموسم (%d حلقة)</item>
+        <item quantity="other">تنزيل الموسم (%d حلقة)</item>
+    </plurals>
+    <plurals name="download_season_progress">
+        <item quantity="zero">حُفظت %1$d من %2$d حلقة</item>
+        <item quantity="one">حُفظت %1$d من %2$d حلقة</item>
+        <item quantity="two">حُفظت %1$d من %2$d حلقة</item>
+        <item quantity="few">حُفظت %1$d من %2$d حلقات</item>
+        <item quantity="many">حُفظت %1$d من %2$d حلقة</item>
+        <item quantity="other">حُفظت %1$d من %2$d حلقة</item>
+    </plurals>
+</resources>

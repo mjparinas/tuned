@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="events_title">直播赛事</string>
+    <string name="events_follow_hint">关注球队、联赛或选手</string>
+    <string name="events_follow">关注</string>
+    <string name="events_unfollow">取消关注 %1$s</string>
+    <string name="events_following">已关注</string>
+    <string name="events_on_now">正在播出</string>
+    <string name="events_later">今天稍后</string>
+    <string name="events_tomorrow">明天</string>
+    <string name="events_live">直播</string>
+    <string name="events_empty">未来一天半的节目单中没有比赛、格斗或付费赛事。如果这看起来不对，请在设置中刷新节目单。</string>
+    <plurals name="events_channels">
+        <item quantity="other">在 %d 个频道播出</item>
+    </plurals>
+    <string name="reminder_event_text">即将开始。点按收看。</string>
+</resources>

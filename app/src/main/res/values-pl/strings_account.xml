@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="account_status">Subskrypcja</string>
+    <string name="account_status_unknown">Zalogowano</string>
+    <string name="account_trial">Okres próbny</string>
+    <string name="account_no_end">Bez daty końca</string>
+    <string name="account_expires_on">Kończy się %1$s</string>
+    <string name="account_expired_on">Skończyła się %1$s</string>
+    <plurals name="account_expires_soon">
+        <item quantity="one">Kończy się %1$s, za %2$d dzień</item>
+        <item quantity="few">Kończy się %1$s, za %2$d dni</item>
+        <item quantity="many">Kończy się %1$s, za %2$d dni</item>
+        <item quantity="other">Kończy się %1$s, za %2$d dni</item>
+    </plurals>
+    <string name="account_connections_title">Używane połączenia</string>
+    <string name="account_connections">%1$d z %2$d</string>
+    <string name="account_connections_full">%1$d z %2$d: wszystkie zajęte, prawdopodobnie na innym urządzeniu</string>
+    <string name="account_full_wait">Wszystkie połączenia są zajęte (%1$d z %2$d), prawdopodobnie na innym urządzeniu. Otwarcie kolejnego może przekroczyć limit konta. Naciśnij odtwarzanie, aby mimo to zacząć.</string>
+</resources>

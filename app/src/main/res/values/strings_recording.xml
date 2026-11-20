@@ -9,12 +9,12 @@
     <string name="record_no_space">Not enough space on this device to record</string>
     <string name="record_space_ran_out">Recording stopped: the device is almost full</string>
     <string name="record_failed">Recording stopped: it couldn\'t be saved</string>
-    <string name="record_indicator">REC</string>
+    <string name="record_indicator" translatable="false">REC</string>
     <!-- The Downloads page heading, with how much the recordings take, as in "Recordings · 1.2 GB" -->
     <string name="recordings_section_size">Recordings · %1$s</string>
     <string name="recording_remove">Delete recording</string>
     <!-- When it started and how long it is, as in "Tue 17 Nov, 8:00 p.m. · 1 h 12 min" -->
-    <string name="recording_when">%1$s · %2$s</string>
+    <string name="recording_when" translatable="false">%1$s · %2$s</string>
     <string name="recording_hours_minutes">%1$d h %2$d min</string>
     <string name="recording_minutes">%1$d min</string>
 </resources>

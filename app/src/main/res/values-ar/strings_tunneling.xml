@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_tunneled_playback">التشغيل النفقي</string>
+    <string name="settings_tunneled_playback_summary">يتيح لعتاد الفيديو في التلفزيون إبقاء الصورة والصوت متزامنين، ما قد يجعل 4K والرياضة أكثر سلاسة. جرّبه إذا كان التشغيل متقطعًا. لا يُطبَّق تأخير الصوت أثناء تفعيله.</string>
+</resources>

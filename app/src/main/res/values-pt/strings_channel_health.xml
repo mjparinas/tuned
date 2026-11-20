@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="health_title">Saúde dos canais</string>
+    <string name="settings_channel_health_summary">Varre todos os canais e oculta os que falham sempre</string>
+    <string name="health_help">Uma varredura testa cada canal ao vivo, um por vez, como as TVs antigas procuravam emissoras. Se a internet cair ou o servidor parar de responder, a varredura espera ou para em vez de culpar os canais. Um canal só é ocultado depois de falhar em duas varreduras com pelo menos seis horas de diferença, e volta assim que uma varredura o encontra funcionando.</string>
+    <string name="health_scan_now">Varrer canais</string>
+    <string name="health_stop">Parar varredura</string>
+    <string name="health_starting">Iniciando a varredura…</string>
+    <string name="health_while_scanning">A varredura pausa enquanto você assiste algo, então só uma transmissão fica aberta.</string>
+    <string name="health_last_scan">Última varredura %1$s</string>
+    <plurals name="health_working">
+        <item quantity="one">%1$d funcionando</item>
+        <item quantity="many">%1$d funcionando</item>
+        <item quantity="other">%1$d funcionando</item>
+    </plurals>
+    <plurals name="health_failed">
+        <item quantity="one">%1$d falhou</item>
+        <item quantity="many">%1$d falharam</item>
+        <item quantity="other">%1$d falharam</item>
+    </plurals>
+    <plurals name="health_unsure">
+        <item quantity="one">%1$d sem avaliação</item>
+        <item quantity="many">%1$d sem avaliação</item>
+        <item quantity="other">%1$d sem avaliação</item>
+    </plurals>
+    <string name="health_stopped_internet">A varredura parou porque a internet caiu. Nenhum canal foi culpado.</string>
+    <string name="health_stopped_server">A varredura parou porque o servidor não estava enviando transmissões. Nenhum canal foi culpado.</string>
+    <string name="health_stopped_busy">A varredura parou porque sua conta estava usando todas as conexões, provavelmente em outro dispositivo. Tente mais tarde.</string>
+    <string name="health_hide_dead">Ocultar canais que falham sempre</string>
+    <string name="health_hide_placeholders">Ocultar canais de eventos vazios</string>
+    <string name="health_hide_placeholders_summary">Remove espaços com nomes como “No event streaming” até o provedor colocar um evento real</string>
+    <string name="health_hide_dead_summary">Desative para mostrar todos os canais, inclusive os que as varreduras ocultaram</string>
+    <plurals name="health_hidden">
+        <item quantity="one">%1$d canal oculto</item>
+        <item quantity="many">%1$d canais ocultos</item>
+        <item quantity="other">%1$d canais ocultos</item>
+    </plurals>
+    <plurals name="health_once">
+        <item quantity="one">%1$d canal falhou, mas ainda aparece</item>
+        <item quantity="many">%1$d canais falharam, mas ainda aparecem</item>
+        <item quantity="other">%1$d canais falharam, mas ainda aparecem</item>
+    </plurals>
+    <string name="health_show_again">Mostrar de novo</string>
+    <string name="health_reason_http">o servidor disse que não está disponível</string>
+    <string name="health_reason_no_data">nenhuma imagem chegou</string>
+    <string name="health_reason_not_video">uma página de erro em vez de vídeo</string>
+    <string name="health_reason_timeout">sem resposta a tempo</string>
+    <string name="health_reason_connection">não conectou</string>
+    <string name="health_reason_account">recusado pela conta</string>
+    <string name="scan_channel">Varredura de canais</string>
+    <string name="scan_running">Varrendo canais</string>
+    <plurals name="scan_progress">
+        <item quantity="one">%1$d de %2$d canal</item>
+        <item quantity="many">%1$d de %2$d canais</item>
+        <item quantity="other">%1$d de %2$d canais</item>
+    </plurals>
+</resources>

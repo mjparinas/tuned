@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_always_show_scrollbar">Toujours afficher la barre de défilement</string>
+    <string name="settings_always_show_scrollbar_summary">La garder sur TV en direct, Films et Séries, pas seulement pendant le défilement. Faites-la glisser pour parcourir une longue liste.</string>
+</resources>

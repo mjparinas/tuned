@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="subtitle_search">Trouver des sous-titres</string>
+    <string name="subtitle_search_searching">Recherche de sous-titres…</string>
+    <string name="subtitle_search_downloading">Téléchargement des sous-titres…</string>
+    <string name="subtitle_search_added">Sous-titres ajoutés depuis OpenSubtitles</string>
+    <string name="subtitle_search_none">Aucun sous-titre trouvé pour cette vidéo</string>
+    <string name="subtitle_search_no_key">La recherche de sous-titres n\'est pas disponible dans cette version</string>
+    <string name="subtitle_search_bad_key">OpenSubtitles a refusé la clé de cette appli. Réessayez après la prochaine mise à jour.</string>
+    <string name="subtitle_search_bad_account">OpenSubtitles a refusé la connexion. Vérifiez-la dans Paramètres › Lecture › Sous-titres.</string>
+    <string name="subtitle_search_limit">La limite quotidienne de téléchargements d\'OpenSubtitles est atteinte. Réessayez demain.</string>
+    <string name="subtitle_search_offline">Impossible de joindre OpenSubtitles. Réessayez dans un instant.</string>
+    <string name="subtitle_search_hearing_impaired">Pour sourds et malentendants</string>
+    <string name="subtitle_search_machine">Traduction automatique</string>
+    <plurals name="subtitle_search_downloads">
+        <item quantity="one">%,d téléchargement</item>
+        <item quantity="many">%,d téléchargements</item>
+        <item quantity="other">%,d téléchargements</item>
+    </plurals>
+    <string name="settings_subtitles">Sous-titres</string>
+    <string name="settings_auto_subtitles">Trouver des sous-titres automatiquement</string>
+    <string name="settings_auto_subtitles_summary">Avec les sous-titres activés, un film ou un épisode sans sous-titres reçoit tout seul la meilleure correspondance</string>
+    <string name="settings_opensubtitles_account">Compte OpenSubtitles</string>
+    <string name="settings_opensubtitles_account_summary">Facultatif. Se connecter augmente la limite quotidienne de téléchargements.</string>
+    <string name="settings_opensubtitles_account_set">Connecté en tant que %1$s</string>
+    <string name="settings_opensubtitles_username">Nom d\'utilisateur</string>
+    <string name="settings_opensubtitles_password">Mot de passe</string>
+    <string name="settings_opensubtitles_remove">Retirer</string>
+</resources>

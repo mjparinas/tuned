@@ -8,9 +8,11 @@ import androidx.paging.PagingConfig
 import androidx.paging.PagingData
 import androidx.paging.cachedIn
 import com.tunedplayer.app.container
+import com.tunedplayer.app.core.ChannelQuality
 import com.tunedplayer.app.core.ContentKind
 import com.tunedplayer.app.core.HiddenGroups
 import com.tunedplayer.app.core.PinnedGroups
+import com.tunedplayer.app.core.ProgrammeGenre
 import com.tunedplayer.app.core.Search
 import com.tunedplayer.app.data.AppSettings
 import com.tunedplayer.app.data.SyncProgress
@@ -25,6 +27,7 @@ import com.tunedplayer.app.data.db.ProfileEntity
 import com.tunedplayer.app.data.db.RegionCount
 import com.tunedplayer.app.data.db.ShowSummary
 import com.tunedplayer.app.data.hiddenKeys
+import com.tunedplayer.app.diagnostics.attempt
 import com.tunedplayer.app.diagnostics.launchSafely
 import com.tunedplayer.app.ui.settings.PinActions
 import com.tunedplayer.app.ui.settings.PinResult
@@ -176,6 +179,22 @@ class BrowseViewModel(
             override fun matchesLogin(secret: String): Boolean = container.credentials.matches(secret)
         }
 
+    /**
+     * Which of the quick filters by quality, programme on now, guide, catch-up and watching would find anything. Read
+     * once each time the sheet opens, off the screen thread; a failure offers none of them rather than stopping the sheet.
+     */
+    suspend fun liveOffers(): LiveOffers = attempt("BrowseViewModel", "Couldn't read which filters apply") {
+        val dao = container.db.liveFilters()
+        val now = System.currentTimeMillis()
+        LiveOffers(
+            qualities = ChannelQuality.entries.filterTo(mutableSetOf()) { dao.hasNamed(it.fullText) },
+            onNow = dao.genresOnNow(now).mapNotNullTo(mutableSetOf()) { ProgrammeGenre.fromCode(it) },
+            guide = dao.hasGuide(now),
+            catchUp = dao.hasCatchUp(),
+            watched = dao.hasWatchedChannels(),
+        )
+    }.getOrNull() ?: LiveOffers()
+
     /** The countries the quick filters can offer: those among the live channels on show. Read only while the sheet is open. */
     val liveRegions: StateFlow<List<RegionCount>> =
         settings
@@ -189,16 +208,16 @@ class BrowseViewModel(
             query(ContentKind.LIVE),
             liveQuick,
             groups(ContentKind.LIVE).map { list -> list.map { it.groupName } }.distinctUntilChanged(),
-        ) { q, quick, groups -> Triple(q, quick.topicQuery, quick.keys(groups)) }
+        ) { q, quick, groups -> q to LiveQuickArgs(quick.topicQuery, quick.keys(groups), quick.qualityQuery, quick.genreCode) }
             // The categories only change the keys while Sports or PPV is chosen; otherwise the list isn't reloaded.
             .distinctUntilChanged()
-            .flatMapLatest { (q, topic, quick) ->
+            .flatMapLatest { (q, f) ->
                 Pager(config) {
                     val group = (q.filter as? Filter.Group)?.name
                     val match = Search.match(q.search)
                     when (q.filter) {
                         Filter.Favourites -> {
-                            items.favouriteChannels(q.now, q.hidden, q.adult, group, q.search, match, topic, quick)
+                            items.favouriteChannels(q.now, q.hidden, q.adult, group, q.search, match, f.topic, f.keys, f.quality, f.genre)
                         }
 
                         is Filter.OwnList -> {
@@ -210,17 +229,19 @@ class BrowseViewModel(
                                 group,
                                 q.search,
                                 match,
-                                topic,
-                                quick,
+                                f.topic,
+                                f.keys,
+                                f.quality,
+                                f.genre,
                             )
                         }
 
                         Filter.Recent -> {
-                            items.recentChannels(q.now, q.hidden, q.adult, group, q.search, match, topic, quick)
+                            items.recentChannels(q.now, q.hidden, q.adult, group, q.search, match, f.topic, f.keys, f.quality, f.genre)
                         }
 
                         else -> {
-                            items.channels(q.now, q.hidden, q.adult, group, q.search, match, topic, quick)
+                            items.channels(q.now, q.hidden, q.adult, group, q.search, match, f.topic, f.keys, f.quality, f.genre)
                         }
                     }
                 }.flow

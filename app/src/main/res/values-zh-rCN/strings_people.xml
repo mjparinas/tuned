@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="person_film">电影</string>
+    <string name="person_show">剧集</string>
+    <string name="person_upcoming">即将上映</string>
+    <string name="person_as">饰 %1$s</string>
+    <string name="person_in_your_playlist">在你的播放列表中</string>
+    <string name="person_unavailable">无法加载此页面。请检查网络连接后重试。</string>
+    <string name="person_no_credits">TMDB 尚未列出此人的电影或剧集。</string>
+    <string name="person_none_in_playlist">这些都不在你的播放列表中。</string>
+    <string name="person_open">打开 %1$s 的电影和剧集</string>
+    <plurals name="person_in_playlist">
+        <item quantity="other">%1$d 部在你的播放列表中</item>
+    </plurals>
+    <plurals name="person_episodes">
+        <item quantity="other">%1$d 集</item>
+    </plurals>
+</resources>

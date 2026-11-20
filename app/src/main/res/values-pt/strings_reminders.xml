@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="reminder_channel">Lembretes de programas</string>
+    <string name="reminder_text">Em %1$s</string>
+    <string name="remind_me">Lembrar-me</string>
+    <string name="reminder_cancel">Cancelar lembrete</string>
+    <string name="settings_reminder_lead">Lembrar antes de um programa</string>
+    <string name="settings_notifications">Notificações</string>
+    <string name="settings_notifications_summary">Lembretes e alertas colocam um ponto no ícone do app. Desative ou mude os sons nas configurações do Android</string>
+    <string name="playback_channel">Tocando agora</string>
+    <string name="reminder_at_start">Quando começar</string>
+    <plurals name="minutes_before">
+        <item quantity="one">%d minuto antes</item>
+        <item quantity="many">%d minutos antes</item>
+        <item quantity="other">%d minutos antes</item>
+    </plurals>
+</resources>

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_channel_numbers">Numéros de chaîne</string>
+    <string name="settings_channel_numbers_summary">Affiche un numéro à côté de chaque chaîne en direct. Tapez-le sur la télécommande pendant la lecture pour changer de chaîne, et appuyez sur le bouton de dernière chaîne pour revenir.</string>
+    <string name="player_no_channel_number">Pas de chaîne %1$d</string>
+    <string name="player_flip_back">Dernière chaîne</string>
+</resources>

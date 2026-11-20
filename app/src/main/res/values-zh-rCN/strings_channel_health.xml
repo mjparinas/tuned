@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="health_title">频道状态</string>
+    <string name="settings_channel_health_summary">扫描所有频道并隐藏持续失败的频道</string>
+    <string name="health_help">扫描会逐个尝试每个直播频道，就像老式电视搜台一样。如果网络中断或服务器停止响应，扫描会等待或停止，而不会归咎于频道。只有在相隔至少六小时的两次扫描中都失败，频道才会被隐藏；一旦扫描发现它恢复正常，就会立即回来。</string>
+    <string name="health_scan_now">扫描频道</string>
+    <string name="health_stop">停止扫描</string>
+    <string name="health_starting">正在开始扫描…</string>
+    <string name="health_while_scanning">你观看内容时扫描会暂停，因此始终只打开一个直播流。</string>
+    <string name="health_last_scan">上次扫描 %1$s</string>
+    <plurals name="health_working">
+        <item quantity="other">%1$d 个正常</item>
+    </plurals>
+    <plurals name="health_failed">
+        <item quantity="other">%1$d 个失败</item>
+    </plurals>
+    <plurals name="health_unsure">
+        <item quantity="other">%1$d 个未判定</item>
+    </plurals>
+    <string name="health_stopped_internet">由于网络中断，扫描已停止。没有频道因此被判定失败。</string>
+    <string name="health_stopped_server">由于服务器没有发送任何直播流，扫描已停止。没有频道因此被判定失败。</string>
+    <string name="health_stopped_busy">由于你的账号占用了所有连接（可能在另一台设备上），扫描已停止。请稍后重试。</string>
+    <string name="health_hide_dead">隐藏持续失败的频道</string>
+    <string name="health_hide_placeholders">隐藏空的赛事频道</string>
+    <string name="health_hide_placeholders_summary">排除名称类似“No event streaming”的占位频道，直到服务商给出真实赛事名称</string>
+    <string name="health_hide_dead_summary">关闭后显示所有频道，包括被扫描隐藏的频道</string>
+    <plurals name="health_hidden">
+        <item quantity="other">%1$d 个已隐藏频道</item>
+    </plurals>
+    <plurals name="health_once">
+        <item quantity="other">%1$d 个频道失败过但仍显示</item>
+    </plurals>
+    <string name="health_show_again">重新显示</string>
+    <string name="health_reason_http">服务器表示不可用</string>
+    <string name="health_reason_no_data">没有收到画面</string>
+    <string name="health_reason_not_video">返回了错误页面而不是视频</string>
+    <string name="health_reason_timeout">响应超时</string>
+    <string name="health_reason_connection">无法连接</string>
+    <string name="health_reason_account">被账号拒绝</string>
+    <string name="scan_channel">频道扫描</string>
+    <string name="scan_running">正在扫描频道</string>
+    <plurals name="scan_progress">
+        <item quantity="other">%1$d / %2$d 个频道</item>
+    </plurals>
+</resources>

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kind_stalker">بوابة MAC</string>
+    <string name="kind_stalker_summary">عنوان بوابة وعنوان MAC الذي سجّله مزوّدك</string>
+    <string name="add_stalker_hint">أدخل عنوان البوابة وعنوان MAC الذي أعدّه مزوّدك لك. يأتي البث المباشر والدليل من البوابة.</string>
+    <string name="login_portal">عنوان البوابة</string>
+    <string name="add_portal_help">مثل http://portal.example.com/c/</string>
+    <string name="login_mac">عنوان MAC</string>
+    <string name="add_mac_help">مثل 00:1A:79:12:34:56</string>
+    <string name="add_bad_mac">هذا ليس عنوان MAC. يتكون من 12 حرفًا ورقمًا، مثل 00:1A:79:12:34:56.</string>
+    <string name="login_mac_refused">لم تقبل البوابة عنوان MAC هذا.</string>
+</resources>

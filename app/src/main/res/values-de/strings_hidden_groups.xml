@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_hidden_groups">Ausgeblendete Gruppen</string>
+    <string name="settings_hidden_groups_none">Keine Gruppen ausgeblendet</string>
+    <plurals name="groups_hidden">
+        <item quantity="one">%1$d Gruppe ausgeblendet</item>
+        <item quantity="other">%1$d Gruppen ausgeblendet</item>
+    </plurals>
+    <string name="hidden_groups_help">Schalte eine Gruppe aus, um sie in ihrem Bereich, in der Suche und beim Umschalten auszublenden. Um eine auf dem Startbildschirm auszublenden, wähle ihren Chip und tippe auf das Auge.</string>
+    <string name="group_hide">Diese Gruppe ausblenden</string>
+    <string name="group_hidden">%1$s ausgeblendet</string>
+    <string name="group_hidden_undo">Rückgängig</string>
+    <string name="group_pin">Nach vorne anheften</string>
+    <string name="group_unpin">Lösen</string>
+    <string name="group_pinned">Angeheftet</string>
+    <string name="settings_app_shortcuts">Verknüpfungen am App-Symbol</string>
+    <string name="settings_app_shortcuts_summary">Halte das Tuned-Symbol gedrückt für Suche, Live-Events und den zuletzt gesehenen Sender</string>
+    <string name="shortcut_search">Suche</string>
+    <string name="shortcut_last_channel">%1$s ansehen</string>
+</resources>

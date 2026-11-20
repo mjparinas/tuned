@@ -55,7 +55,19 @@ class LiveQuickFilterTest {
     ): List<Long> {
         db.items().insertAll(channels)
         val groups = channels.map { it.groupName }.distinct()
-        val source = db.items().channels(0, emptyList(), adult, null, "", "", quick.topicQuery, quick.keys(groups))
+        val source =
+            db.items().channels(
+                0,
+                emptyList(),
+                adult,
+                null,
+                "",
+                "",
+                quick.topicQuery,
+                quick.keys(groups),
+                quick.qualityQuery,
+                quick.genreCode,
+            )
         val page = source.load(PagingSource.LoadParams.Refresh(null, 500, false)) as PagingSource.LoadResult.Page
         return page.data.map { it.id }
     }

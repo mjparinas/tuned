@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="skip_intro">跳过片头</string>
+    <string name="settings_skip_intro">跳过片头按钮</string>
+    <string name="settings_skip_intro_off">关闭</string>
+</resources>

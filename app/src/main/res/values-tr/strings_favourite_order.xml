@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_favourite_order">Favorileri sırala</string>
+    <string name="settings_favourite_order_summary">Favori kanallarının sırasını seç</string>
+    <string name="favourite_order_empty">Henüz favori kanal yok. Eklemek için bir kanalın kalbine dokun.</string>
+    <string name="move_up">%1$s yukarı taşı</string>
+    <string name="move_down">%1$s aşağı taşı</string>
+</resources>

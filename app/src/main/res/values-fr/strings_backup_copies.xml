@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_backup_copies">Passer à une copie de secours</string>
+    <string name="settings_backup_copies_summary">Quand une chaîne ne fonctionne plus, lire une autre copie de votre liste, comme ESPN FHD pour ESPN HD</string>
+    <string name="player_trying_copy">Ne fonctionne pas. Essai d\'une copie de secours (%1$d sur %2$d)…</string>
+    <string name="player_copy_playing">Passé à %1$s</string>
+    <string name="player_no_copy_works">Cette chaîne et ses copies de secours ne fonctionnent pas pour l\'instant</string>
+    <string name="health_hide_failed_on_play">Masquer les chaînes illisibles</string>
+    <string name="health_hide_failed_on_play_summary">Quand une chaîne ne se charge pas alors qu\'internet et le service fonctionnent (une autre chaîne passe bien), elle est masquée tout de suite. Elle revient quand une analyse la trouve fonctionnelle, ou avec Afficher à nouveau ci-dessous.</string>
+    <string name="health_reason_playback">ne s\'est pas lue</string>
+</resources>

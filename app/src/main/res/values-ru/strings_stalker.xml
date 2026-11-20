@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kind_stalker">MAC-портал</string>
+    <string name="kind_stalker_summary">Адрес портала и MAC-адрес, который зарегистрировал провайдер</string>
+    <string name="add_stalker_hint">Введите адрес портала и MAC-адрес, которые настроил для вас провайдер. ТВ в эфире и телегид берутся с портала.</string>
+    <string name="login_portal">Адрес портала</string>
+    <string name="add_portal_help">Например http://portal.example.com/c/</string>
+    <string name="login_mac">MAC-адрес</string>
+    <string name="add_mac_help">Например 00:1A:79:12:34:56</string>
+    <string name="add_bad_mac">Это не MAC-адрес. В нём 12 букв и цифр, например 00:1A:79:12:34:56.</string>
+    <string name="login_mac_refused">Портал не принял этот MAC-адрес.</string>
+</resources>

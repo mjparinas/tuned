@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="recording_set">录制</string>
+    <string name="recording_cancel">取消录制</string>
+    <string name="recording_scheduled">将录制 %1$s</string>
+    <string name="recording_clash">该时段已有其他录制。Tuned 一次只录制一个节目。</string>
+    <string name="recording_running">正在录制 %1$s</string>
+    <string name="settings_record_padding">录制提前开始、延后结束</string>
+    <string name="settings_record_padding_off">准时</string>
+    <plurals name="settings_record_padding_minutes">
+        <item quantity="other">前后各 %1$d 分钟</item>
+    </plurals>
+</resources>

@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="player_fit">Format</string>
+    <string name="player_fit_now">Format : %1$s</string>
+    <string name="player_fit_fit">Adapter à l\'écran</string>
+    <string name="player_fit_zoom">Zoomer pour remplir</string>
+    <string name="player_fit_stretch">Étirer</string>
+    <string name="player_lock">Verrouiller l\'écran</string>
+    <string name="player_unlock">Déverrouiller l\'écran</string>
+    <string name="player_locked">Écran verrouillé. Touchez le cadenas pour déverrouiller.</string>
+    <string name="player_quality">Qualité</string>
+    <string name="player_quality_auto">Auto</string>
+    <string name="player_quality_only_one">Ce flux n\'a qu\'une qualité</string>
+    <string name="player_quality_untagged">Standard</string>
+    <string name="player_guide">Chaînes</string>
+    <string name="player_guide_close">Fermer les chaînes</string>
+</resources>

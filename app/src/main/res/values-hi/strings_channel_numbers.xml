@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_channel_numbers">चैनल नंबर</string>
+    <string name="settings_channel_numbers_summary">हर लाइव चैनल के पास एक नंबर दिखाएं। चैनल बदलने के लिए देखते समय रिमोट पर उसे टाइप करें, और वापस जाने के लिए पिछले चैनल का बटन दबाएं।</string>
+    <string name="player_no_channel_number">चैनल %1$d नहीं है</string>
+    <string name="player_flip_back">पिछला चैनल</string>
+</resources>

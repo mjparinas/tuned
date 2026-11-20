@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="tv_live_on_now">Şimdi</string>
+    <string name="tv_live_next">Sonra</string>
+    <string name="tv_live_time_range">%1$s – %2$s</string>
+    <string name="tv_live_no_guide">Bu kanal için rehber yok.</string>
+    <string name="tv_live_pick">Ne oynadığını görmek için bir kanala git.</string>
+</resources>

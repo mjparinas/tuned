@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_channel_numbers">Kanal numaraları</string>
+    <string name="settings_channel_numbers_summary">Her canlı kanalın yanında bir numara göster. İzlerken kumandada yazarak kanal değiştir, geri dönmek için son kanal düğmesine bas.</string>
+    <string name="player_no_channel_number">%1$d numaralı kanal yok</string>
+    <string name="player_flip_back">Son kanal</string>
+</resources>

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_lighter">الوضع الخفيف</string>
+    <string name="lighter_auto">تلقائي</string>
+    <string name="lighter_auto_on">تلقائي: مفعّل لهذا الجهاز</string>
+    <string name="lighter_on">مفعّل: بلا تلاشٍ أو حركات، وصور أخف</string>
+    <string name="lighter_off">إيقاف</string>
+</resources>

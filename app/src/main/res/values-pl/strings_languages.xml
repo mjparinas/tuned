@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="regions_languages">Języki</string>
+    <string name="regions_countries">Kraje</string>
+    <string name="language_summary_partial">Włączone tylko %1$s · %2$s</string>
+</resources>

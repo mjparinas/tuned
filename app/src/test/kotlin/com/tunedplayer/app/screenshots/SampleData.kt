@@ -11,7 +11,9 @@ import coil3.Image
 import coil3.asImage
 import com.tunedplayer.app.core.ContentKind
 import com.tunedplayer.app.core.Episodes
+import com.tunedplayer.app.core.ProgrammeGenre
 import com.tunedplayer.app.core.Search
+import com.tunedplayer.app.data.db.CatchUpItemEntity
 import com.tunedplayer.app.data.db.CurrentProfileEntity
 import com.tunedplayer.app.data.db.DownloadEntity
 import com.tunedplayer.app.data.db.FavouriteEntity
@@ -83,7 +85,8 @@ object SampleData {
         shows.forEach { (show, group, seasons) ->
             for (s in 1..seasons) {
                 for (e in 1..EPISODES) {
-                    item(id++, ContentKind.SERIES, "$show S0${s}E0$e", group, "EN", poster(show), show = show, season = s, episode = e)
+                    // Like many providers, each episode's picture is a wide still, not the show's cover.
+                    item(id++, ContentKind.SERIES, "$show S0${s}E0$e", group, "EN", still(show), show = show, season = s, episode = e)
                 }
             }
         }
@@ -101,11 +104,15 @@ object SampleData {
                         stop = start + (slot + 1) * HOUR,
                         title = title,
                         description = description,
+                        genre = scheduleGenres[(slot + i) % schedule.size]?.code ?: 0,
                     )
                 }
             },
         )
         GuideSearchIndex.fillIfMissing(db)
+        // Two channels keep recordings and one was watched, so Live TV's filters have Catch-up and Recently watched.
+        db.catchUp().insertItems(listOf(CatchUpItemEntity(1), CatchUpItemEntity(8)))
+        db.library().saveProgress(HistoryEntity(4, positionMs = 0, durationMs = 0, watchedAt = now - 3))
         db.library().addFavourite(FavouriteEntity(1, now))
         db.library().addFavourite(FavouriteEntity(4, now))
         db.library().saveProgress(HistoryEntity(SHOW_IDS, positionMs = 2_400_000, durationMs = 2_700_000, watchedAt = now))
@@ -166,10 +173,10 @@ object SampleData {
             Triple("Northern One", "CA | General", "CA"),
             Triple("Lakeshore TV", "CA | General", "CA"),
             Triple("Rink Sports 1", "CA | Sports", "CA"),
-            Triple("Rink Sports 2", "CA | Sports", "CA"),
+            Triple("Rink Sports 2 4K", "CA | Sports", "CA"),
             Triple("Télé Fleuve", "QC | Général", "QC"),
             Triple("Thames One", "UK | General", "UK"),
-            Triple("Harbour News", "UK | News", "UK"),
+            Triple("Harbour News HD", "UK | News", "UK"),
             Triple("Prairie Public", "US | General", "US"),
             Triple("Wild Planet", "US | Documentary", "US"),
             Triple("Rheinwelle", "DE | Allgemein", "DE"),
@@ -215,17 +222,24 @@ object SampleData {
             "Weekend Kitchen" to "Three dishes from one pantry, in under an hour.",
         )
 
+    /** What kind each [schedule] slot is, for Live TV's On now filter. */
+    private val scheduleGenres =
+        listOf(ProgrammeGenre.NEWS, ProgrammeGenre.NEWS, ProgrammeGenre.SPORTS, ProgrammeGenre.DOCUMENTARY, ProgrammeGenre.NEWS, null)
+
     private fun logo(name: String) = "https://art.example.invalid/logo/${Search.normalize(name).replace(' ', '-')}.png"
 
     private fun poster(name: String) = "https://art.example.invalid/poster/${Search.normalize(name).replace(' ', '-')}.png"
+
+    private fun still(name: String) = "https://art.example.invalid/still/${Search.normalize(name).replace(' ', '-')}.png"
 
     private val palette = listOf(0xFF6D4AFF, 0xFF1FB8A0, 0xFFE0546B, 0xFFF0A23B, 0xFF3B7BE0, 0xFF8A5A3C, 0xFF2E9E5B, 0xFFB04FD0)
 
     /** Drawn posters and logos, by the address the sample playlist gives them: a gradient with the title on it. */
     val art: Map<String, Image> by lazy {
         val posters = (movies.map { it.first } + shows.map { it.first }).mapIndexed { i, t -> poster(t) to tile(t, i, 300, 450, 34f) }
+        val stills = shows.mapIndexed { i, s -> still(s.first) to tile("${s.first} episode still", i + 4, 480, 270, 30f) }
         val logos = channels.mapIndexed { i, c -> logo(c.first) to tile(initials(c.first), i, 160, 160, 56f) }
-        (posters + logos).associate { (key, bitmap) -> key to bitmap.asImage() }
+        (posters + stills + logos).associate { (key, bitmap) -> key to bitmap.asImage() }
     }
 
     private fun initials(name: String) = name

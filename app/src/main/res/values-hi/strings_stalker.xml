@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kind_stalker">MAC पोर्टल</string>
+    <string name="kind_stalker_summary">एक पोर्टल पता और वह MAC पता जो आपके प्रदाता ने रजिस्टर किया</string>
+    <string name="add_stalker_hint">पोर्टल पता और वह MAC पता डालें जो आपके प्रदाता ने आपके लिए सेट किया। लाइव टीवी और गाइड पोर्टल से आते हैं।</string>
+    <string name="login_portal">पोर्टल पता</string>
+    <string name="add_portal_help">जैसे http://portal.example.com/c/</string>
+    <string name="login_mac">MAC पता</string>
+    <string name="add_mac_help">जैसे 00:1A:79:12:34:56</string>
+    <string name="add_bad_mac">यह MAC पता नहीं है। इसमें 12 अक्षर और अंक होते हैं, जैसे 00:1A:79:12:34:56।</string>
+    <string name="login_mac_refused">पोर्टल ने यह MAC पता स्वीकार नहीं किया।</string>
+</resources>

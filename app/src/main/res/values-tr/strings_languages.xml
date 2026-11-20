@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="regions_languages">Diller</string>
+    <string name="regions_countries">Ülkeler</string>
+    <string name="language_summary_partial">Yalnızca %1$s açık · %2$s</string>
+</resources>

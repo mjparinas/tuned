@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="trakt_sign_in">Połącz z Trakt</string>
+    <string name="trakt_sign_in_summary">Dodawaj oglądane filmy i odcinki do historii Trakt</string>
+    <string name="trakt_signed_in">Połączono jako %1$s</string>
+    <string name="trakt_account_unnamed">Twoje konto Trakt</string>
+    <string name="trakt_sign_out">Stuknij, aby rozłączyć</string>
+    <string name="trakt_scrobble">Zapisuj oglądane (scrobble)</string>
+    <string name="trakt_scrobble_summary">Informuj Trakt, gdy film lub odcinek się zaczyna, pauzuje i kończy. TV na żywo nie jest wysyłana.</string>
+    <string name="trakt_asking">Prosimy Trakt o kod…</string>
+    <string name="trakt_enter_code">Na dowolnym telefonie lub komputerze wejdź na %1$s i wpisz ten kod:</string>
+    <string name="trakt_waiting">Czekamy, aż wpiszesz kod…</string>
+    <string name="sign_in_code_copy">Kopiuj kod</string>
+    <string name="sign_in_code_copied">Skopiowano kod</string>
+    <string name="trakt_open_site">Otwórz Trakt</string>
+    <string name="trakt_done">Połączono. To, co teraz oglądasz, trafia do historii Trakt.</string>
+    <string name="trakt_expired">Kod wygasł, zanim został wpisany.</string>
+    <string name="trakt_denied">Trakt odrzucił połączenie.</string>
+    <string name="trakt_failed">Nie udało się połączyć z Trakt. Sprawdź połączenie i spróbuj ponownie.</string>
+    <string name="trakt_try_again">Spróbuj ponownie</string>
+</resources>

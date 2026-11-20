@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="record_start">Aufnehmen</string>
+    <string name="record_stop">Aufnahme stoppen</string>
+    <string name="record_started">%1$s wird aufgenommen</string>
+    <string name="record_saved">Aufnahme in Downloads gespeichert</string>
+    <string name="record_live_only">Das kann nicht aufgenommen werden. Aufnahmen funktionieren bei Live-TV-Sendern.</string>
+    <string name="record_not_casting">Beim Streamen auf ein anderes Gerät ist keine Aufnahme möglich</string>
+    <string name="record_no_space">Nicht genug Speicher auf diesem Gerät für die Aufnahme</string>
+    <string name="record_space_ran_out">Aufnahme gestoppt: Das Gerät ist fast voll</string>
+    <string name="record_failed">Aufnahme gestoppt: Sie konnte nicht gespeichert werden</string>
+    <string name="recordings_section_size">Aufnahmen · %1$s</string>
+    <string name="recording_remove">Aufnahme löschen</string>
+    <string name="recording_hours_minutes">%1$d Std. %2$d Min.</string>
+    <string name="recording_minutes">%1$d Min.</string>
+</resources>

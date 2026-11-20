@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="account_status">सदस्यता</string>
+    <string name="account_status_unknown">साइन इन है</string>
+    <string name="account_trial">ट्रायल</string>
+    <string name="account_no_end">कोई समाप्ति तारीख नहीं</string>
+    <string name="account_expires_on">%1$s को खत्म होगी</string>
+    <string name="account_expired_on">%1$s को खत्म हुई</string>
+    <plurals name="account_expires_soon">
+        <item quantity="one">%1$s को खत्म होगी, %2$d दिन में</item>
+        <item quantity="other">%1$s को खत्म होगी, %2$d दिनों में</item>
+    </plurals>
+    <string name="account_connections_title">इस्तेमाल में कनेक्शन</string>
+    <string name="account_connections">%2$d में से %1$d</string>
+    <string name="account_connections_full">%2$d में से %1$d: सभी इस्तेमाल में, शायद किसी दूसरे डिवाइस पर</string>
+    <string name="account_full_wait">आपके सभी कनेक्शन इस्तेमाल में हैं (%2$d में से %1$d), शायद किसी दूसरे डिवाइस पर। एक और खोलने से आपके खाते की सीमा पार हो सकती है। फिर भी शुरू करने के लिए चलाएं दबाएं।</string>
+</resources>

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="grid_show">عرض شبكة دليل التلفزيون</string>
+    <string name="grid_hide">عرض قائمة القنوات</string>
+    <string name="grid_now">الآن</string>
+    <string name="grid_today">اليوم</string>
+    <string name="grid_no_guide">لا يوجد دليل</string>
+    <string name="settings_live_grid">عرض البث المباشر كشبكة دليل</string>
+    <string name="settings_live_grid_summary">القنوات على الجانب والوقت في الأعلى. الزر بجانب البحث يبدّل أيضًا.</string>
+</resources>

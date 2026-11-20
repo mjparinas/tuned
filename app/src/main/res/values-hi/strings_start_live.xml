@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_start_on_last_channel">पिछले चैनल पर शुरू करें</string>
+    <string name="settings_start_on_last_channel_summary">Tuned खोलने पर पिछली बार देखा लाइव चैनल चलता है, जैसे केबल बॉक्स करता है। वापस दबाने पर आपकी सूचियां दिखती हैं।</string>
+</resources>

@@ -65,10 +65,11 @@ interface ShowDao {
     ): Flow<List<GroupCount>>
 
     /**
-     * Episodes already fetched for shows read from the Xtream API (`core/XtreamApi`): every episode with a real link.
+     * Episodes already fetched for shows read from the Xtream API (`core/XtreamApi`) or a portal (`core/Stalker`):
+     * every episode with a real link.
      * A refresh keeps them in place of the show's stand-in row, so an opened show doesn't fold back to one row.
      */
-    @Query("SELECT * FROM items WHERE kind = 2 AND url NOT LIKE 'xtream-series:%'")
+    @Query("SELECT * FROM items WHERE kind = 2 AND url NOT LIKE 'xtream-series:%' AND url NOT LIKE 'stalker-show:%'")
     suspend fun fetchedEpisodes(): List<ItemEntity>
 
     /** Swaps a show's stand-in row for its episodes, in one go so the show page never sees neither. */

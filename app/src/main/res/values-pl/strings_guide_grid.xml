@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="grid_show">Pokaż siatkę programu TV</string>
+    <string name="grid_hide">Pokaż listę kanałów</string>
+    <string name="grid_now">Teraz</string>
+    <string name="grid_today">Dzisiaj</string>
+    <string name="grid_no_guide">Brak programu</string>
+    <string name="settings_live_grid">Pokazuj TV na żywo jako siatkę programu</string>
+    <string name="settings_live_grid_summary">Kanały z boku, godziny u góry. Przycisk obok wyszukiwania też przełącza widok.</string>
+</resources>

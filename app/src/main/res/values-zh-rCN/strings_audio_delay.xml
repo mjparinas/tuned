@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_audio_delay">声音延迟</string>
+    <string name="settings_audio_delay_off">与画面同步</string>
+    <string name="settings_audio_delay_earlier">声音提前 %d 毫秒</string>
+    <string name="settings_audio_delay_later">声音延后 %d 毫秒</string>
+</resources>

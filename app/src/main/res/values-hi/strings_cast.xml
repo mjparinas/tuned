@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="cast_connecting">%1$s से कनेक्ट हो रहा है…</string>
+    <string name="cast_starting">%1$s पर शुरू हो रहा है…</string>
+    <string name="cast_connect_failed">%1$s से कनेक्ट नहीं हो सका</string>
+    <string name="cast_playing_on">%1$s पर चल रहा है</string>
+    <string name="cast_failed">%1$s इसे नहीं चला सका। सेटिंग › अपडेट और उन्नत › लॉग में विवरण है।</string>
+    <string name="cast_no_wifi">सहेजी गई फ़िल्म या एपिसोड कास्ट करने के लिए फ़ोन को टीवी वाले Wi-Fi से कनेक्ट करें।</string>
+</resources>

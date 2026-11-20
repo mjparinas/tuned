@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_match_frame_rate">Adapter la fréquence d\'images</string>
+    <string name="settings_match_frame_rate_summary">Passe la TV à la fréquence d\'images de la vidéo, comme 50 Hz pour le sport, pour que les mouvements ne saccadent pas. L\'écran peut devenir noir un instant pendant le changement.</string>
+    <string name="player_no_sound">Pas de son : cet appareil ne peut pas lire l\'audio %1$s de cette chaîne</string>
+</resources>

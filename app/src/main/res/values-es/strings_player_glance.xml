@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <plurals name="player_pill_fps_spoken">
+        <item quantity="one">%d fotograma por segundo</item>
+        <item quantity="many">%d fotogramas por segundo</item>
+        <item quantity="other">%d fotogramas por segundo</item>
+    </plurals>
+    <string name="player_pill_mono">MONO</string>
+    <string name="player_pill_stereo">ESTÉREO</string>
+    <string name="player_pill_channels">%1$d CANALES</string>
+    <string name="player_pill_mono_spoken">Mono</string>
+    <string name="player_pill_stereo_spoken">Estéreo</string>
+    <string name="player_pill_5_1_spoken">Envolvente 5.1</string>
+    <string name="player_pill_7_1_spoken">Envolvente 7.1</string>
+    <plurals name="player_pill_channels_spoken">
+        <item quantity="one">%d canal de sonido</item>
+        <item quantity="many">%d canales de sonido</item>
+        <item quantity="other">%d canales de sonido</item>
+    </plurals>
+</resources>

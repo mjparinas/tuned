@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="subtitle_search">सबटाइटल खोजें</string>
+    <string name="subtitle_search_searching">सबटाइटल खोजे जा रहे हैं…</string>
+    <string name="subtitle_search_downloading">सबटाइटल डाउनलोड हो रहे हैं…</string>
+    <string name="subtitle_search_added">OpenSubtitles से सबटाइटल जोड़े गए</string>
+    <string name="subtitle_search_none">इस वीडियो के लिए कोई सबटाइटल नहीं मिला</string>
+    <string name="subtitle_search_no_key">इस बिल्ड में सबटाइटल खोज उपलब्ध नहीं है</string>
+    <string name="subtitle_search_bad_key">OpenSubtitles ने इस ऐप की कुंजी अस्वीकार कर दी। अगले अपडेट के बाद फिर कोशिश करें।</string>
+    <string name="subtitle_search_bad_account">OpenSubtitles ने साइन-इन अस्वीकार कर दिया। इसे सेटिंग › प्लेबैक › सबटाइटल में जांचें।</string>
+    <string name="subtitle_search_limit">आज की OpenSubtitles डाउनलोड सीमा खत्म हो गई। कल फिर कोशिश करें।</string>
+    <string name="subtitle_search_offline">OpenSubtitles तक नहीं पहुंच सके। थोड़ी देर में फिर कोशिश करें।</string>
+    <string name="subtitle_search_hearing_impaired">श्रवण बाधित</string>
+    <string name="subtitle_search_machine">मशीन से अनुवादित</string>
+    <plurals name="subtitle_search_downloads">
+        <item quantity="one">%,d डाउनलोड</item>
+        <item quantity="other">%,d डाउनलोड</item>
+    </plurals>
+    <string name="settings_subtitles">सबटाइटल</string>
+    <string name="settings_auto_subtitles">सबटाइटल अपने आप खोजें</string>
+    <string name="settings_auto_subtitles_summary">कैप्शन चालू होने पर, बिना सबटाइटल वाली फ़िल्म या एपिसोड को अपने आप सबसे अच्छा मेल मिलता है</string>
+    <string name="settings_opensubtitles_account">OpenSubtitles खाता</string>
+    <string name="settings_opensubtitles_account_summary">वैकल्पिक। साइन इन करने से रोज़ की डाउनलोड सीमा बढ़ती है।</string>
+    <string name="settings_opensubtitles_account_set">%1$s के रूप में साइन इन है</string>
+    <string name="settings_opensubtitles_username">उपयोगकर्ता नाम</string>
+    <string name="settings_opensubtitles_password">पासवर्ड</string>
+    <string name="settings_opensubtitles_remove">हटाएं</string>
+</resources>

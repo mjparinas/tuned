@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="tv_live_on_now">Agora</string>
+    <string name="tv_live_next">A seguir</string>
+    <string name="tv_live_time_range">%1$s às %2$s</string>
+    <string name="tv_live_no_guide">Sem guia para este canal.</string>
+    <string name="tv_live_pick">Vá até um canal para ver o que está passando.</string>
+</resources>

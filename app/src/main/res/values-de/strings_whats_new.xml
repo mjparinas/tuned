@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_section_account">Konto</string>
+    <string name="settings_section_watching">Schauen</string>
+    <string name="settings_section_app">App</string>
+    <string name="settings_version_title">Version</string>
+    <string name="whats_new">Neuigkeiten</string>
+    <string name="whats_new_kicker">Tuned · Update</string>
+    <string name="whats_new_title">Neu in %1$s</string>
+    <plurals name="whats_new_count_new">
+        <item quantity="one">%d neu</item>
+        <item quantity="other">%d neu</item>
+    </plurals>
+    <plurals name="whats_new_count_improved">
+        <item quantity="one">%d verbessert</item>
+        <item quantity="other">%d verbessert</item>
+    </plurals>
+    <plurals name="whats_new_count_fixed">
+        <item quantity="one">%d behoben</item>
+        <item quantity="other">%d behoben</item>
+    </plurals>
+    <string name="whats_new_kind_new">Neu</string>
+    <string name="whats_new_kind_improved">Verbessert</string>
+    <string name="whats_new_kind_fixed">Behoben</string>
+    <string name="whats_new_loading">Änderungen dieser Version werden geladen…</string>
+    <string name="whats_new_failed">Die Änderungen dieser Version konnten nicht geladen werden. Prüfe die Verbindung und versuche es erneut.</string>
+    <string name="whats_new_empty">Diese Version hat keine Änderungen zum Auflisten.</string>
+    <string name="whats_new_retry">Erneut versuchen</string>
+    <string name="whats_new_done">Fertig</string>
+</resources>

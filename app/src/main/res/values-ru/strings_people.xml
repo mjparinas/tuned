@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="person_film">Фильм</string>
+    <string name="person_show">Сериал</string>
+    <string name="person_upcoming">Скоро</string>
+    <string name="person_as">в роли: %1$s</string>
+    <string name="person_in_your_playlist">В вашем плейлисте</string>
+    <string name="person_unavailable">Не удалось загрузить страницу. Проверьте подключение и попробуйте снова.</string>
+    <string name="person_no_credits">В TMDB пока нет фильмов или сериалов с этим человеком.</string>
+    <string name="person_none_in_playlist">Ничего из этого нет в вашем плейлисте.</string>
+    <string name="person_open">Открыть фильмы и сериалы: %1$s</string>
+    <plurals name="person_in_playlist">
+        <item quantity="one">%1$d в вашем плейлисте</item>
+        <item quantity="few">%1$d в вашем плейлисте</item>
+        <item quantity="many">%1$d в вашем плейлисте</item>
+        <item quantity="other">%1$d в вашем плейлисте</item>
+    </plurals>
+    <plurals name="person_episodes">
+        <item quantity="one">%1$d серия</item>
+        <item quantity="few">%1$d серии</item>
+        <item quantity="many">%1$d серий</item>
+        <item quantity="other">%1$d серии</item>
+    </plurals>
+</resources>

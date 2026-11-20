@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_media_buttons">媒体按键</string>
+    <string name="settings_media_buttons_summary">耳机、蓝牙、电视遥控器的播放键和语音助手可以暂停、播放和换台</string>
+</resources>

@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="live_filters_quality">Jakość</string>
+    <string name="live_filters_on_now">Teraz w TV</string>
+    <string name="live_filters_only">Pokaż tylko</string>
+    <string name="live_filter_on_now_sports">Sport</string>
+    <string name="live_filter_on_now_movies">Filmy</string>
+    <string name="live_filter_on_now_news">Wiadomości</string>
+    <string name="live_filter_on_now_kids">Dla dzieci</string>
+    <string name="live_filter_on_now_documentary">Dokumenty</string>
+    <string name="live_filter_on_now_label">%1$s teraz</string>
+    <string name="live_filter_guide">Z przewodnikiem</string>
+    <string name="live_filter_catch_up">Catch-up</string>
+    <string name="live_filter_watched">Ostatnio oglądane</string>
+    <string name="live_filters_more">%1$s +%2$d</string>
+    <string name="live_filter_uhd">4K</string>
+    <string name="live_filter_fhd">FHD</string>
+    <string name="live_filter_hd">HD</string>
+    <string name="live_filter_sd">SD</string>
+</resources>

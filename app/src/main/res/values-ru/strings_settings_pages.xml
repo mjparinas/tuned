@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_page_playlists">Плейлисты и аккаунт</string>
+    <string name="settings_page_playlists_summary">Ваши плейлисты, резервная копия и выход</string>
+    <string name="settings_page_profiles">Профили и родительский контроль</string>
+    <string name="settings_page_profiles_summary">Кто смотрит, категории для взрослых и PIN-код</string>
+    <string name="settings_page_channels">Каналы и списки</string>
+    <string name="settings_page_channels_summary">Стартовый экран, вид телегида, номера, скрытые страны и группы</string>
+    <string name="settings_page_guide">Телегид и обновление</string>
+    <string name="settings_page_guide_summary">Когда загружаются плейлист и телегид, дни телегида и напоминания</string>
+    <string name="settings_page_playback_summary">Аудио, продолжение, пропуск заставки, перемотка и управление плеером</string>
+    <string name="settings_page_reliability">Когда канал не работает</string>
+    <string name="settings_page_reliability_summary">Переподключение, резервные копии, автонастройка и состояние каналов</string>
+    <string name="settings_page_appearance_summary">Тема, цвета и чисто чёрный</string>
+    <string name="settings_page_about">Обновления и дополнительно</string>
+    <string name="settings_page_about_summary">Обновления, user agent и журналы</string>
+    <string name="settings_header_hidden">Что скрыто</string>
+    <string name="settings_header_guide">Телегид</string>
+    <string name="settings_header_screen">Экран и управление</string>
+</resources>

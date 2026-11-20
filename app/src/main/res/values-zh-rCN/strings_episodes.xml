@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="episode_label_runtime">第 %1$d 集 · %2$s</string>
+</resources>

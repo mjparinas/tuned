@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="details_trailer">Трейлер</string>
+    <string name="details_play">Смотреть</string>
+    <string name="details_resume">Продолжить</string>
+    <string name="details_cast">В ролях</string>
+    <string name="play_now">Смотреть сейчас</string>
+    <string name="details_source">Данные из The Movie Database (TMDB)</string>
+    <string name="details_no_key">В этой сборке нет ключа TMDB, поэтому рейтинги, описания и трейлеры отключены.</string>
+</resources>

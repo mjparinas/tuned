@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_lighter">Modo ligero</string>
+    <string name="lighter_auto">Automático</string>
+    <string name="lighter_auto_on">Automático: activado en este dispositivo</string>
+    <string name="lighter_on">Activado: sin fundidos ni animaciones, imágenes más ligeras</string>
+    <string name="lighter_off">Desactivado</string>
+</resources>

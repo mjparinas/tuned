@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_media_buttons">Botões de mídia</string>
+    <string name="settings_media_buttons_summary">Fones, Bluetooth, o botão de play do controle da TV e o Assistente podem pausar, reproduzir e trocar de canal</string>
+</resources>

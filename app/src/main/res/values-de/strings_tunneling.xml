@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_tunneled_playback">Getunnelte Wiedergabe</string>
+    <string name="settings_tunneled_playback_summary">Lässt die Videohardware des Fernsehers Bild und Ton zusammenhalten, was 4K und Sport flüssiger machen kann. Probier es, wenn die Wiedergabe ruckelt. Die Tonverzögerung gilt nicht, solange es an ist.</string>
+</resources>

@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="a11y_favourite">Favori</string>
+    <string name="a11y_playing">Oynatılıyor</string>
+    <string name="a11y_on_now">Şimdi yayında</string>
+    <string name="a11y_current_profile">Geçerli profil</string>
+    <string name="a11y_play">Oynat</string>
+    <string name="a11y_details">Ayrıntılar</string>
+    <string name="a11y_more_options">Diğer seçenekler</string>
+    <string name="a11y_edit">Düzenle</string>
+    <string name="a11y_guide_for">%1$s rehberi</string>
+    <string name="colour_white">Beyaz</string>
+    <string name="colour_yellow">Sarı</string>
+    <string name="colour_cyan">Camgöbeği</string>
+    <string name="colour_green">Yeşil</string>
+    <string name="colour_magenta">Eflatun</string>
+    <string name="colour_red">Kırmızı</string>
+    <string name="colour_blue">Mavi</string>
+    <string name="colour_black">Siyah</string>
+    <string name="colour_custom">Renk %1$s</string>
+</resources>

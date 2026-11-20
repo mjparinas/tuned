@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="list_add">添加到列表</string>
+    <string name="list_add_title">添加到列表</string>
+    <string name="list_new">新建列表</string>
+    <string name="list_name">名称</string>
+    <string name="list_save">保存</string>
+    <string name="list_done">完成</string>
+    <string name="list_rename">重命名列表</string>
+    <string name="list_delete">删除列表</string>
+    <string name="list_delete_title">删除“%s”？</string>
+    <string name="list_delete_body">列表会被删除，但其中的频道和电影仍保留在原处。</string>
+</resources>

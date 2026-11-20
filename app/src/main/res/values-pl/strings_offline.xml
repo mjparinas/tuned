@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="downloads">Pobrane</string>
+    <string name="downloads_running">Pobieranie</string>
+    <string name="downloads_empty">Nic jeszcze nie zapisano. Stuknij przycisk pobierania przy filmie, odcinku lub całym sezonie, aby oglądać offline.</string>
+    <string name="download">Pobierz</string>
+    <string name="download_remove">Usuń pobrany plik</string>
+    <string name="download_remove_named">Usuń pobrany plik: %1$s</string>
+    <string name="download_retry">Spróbuj ponownie</string>
+    <string name="download_failed">Nie udało się pobrać</string>
+    <string name="download_waiting">Czeka (pobieranie wstrzymuje się, gdy coś jest odtwarzane)</string>
+    <string name="download_progress">%1$s z %2$s</string>
+    <string name="downloads_space">Pobrano %1$s · wolne %2$s na tym urządzeniu</string>
+    <string name="downloads_space_used">Pobrano %1$s</string>
+    <string name="downloads_other_episodes">Inne odcinki</string>
+    <string name="download_paused">Wstrzymano</string>
+    <string name="download_pause">Wstrzymaj pobieranie</string>
+    <string name="download_resume">Wznów pobieranie</string>
+    <string name="download_cancel">Anuluj pobieranie</string>
+    <string name="download_season_done">Sezon zapisany</string>
+    <plurals name="downloads_coming">
+        <item quantity="one">Pobieranie: %1$d</item>
+        <item quantity="few">Pobieranie: %1$d</item>
+        <item quantity="many">Pobieranie: %1$d</item>
+        <item quantity="other">Pobieranie: %1$d</item>
+    </plurals>
+    <plurals name="download_season">
+        <item quantity="one">Pobierz sezon (%d odcinek)</item>
+        <item quantity="few">Pobierz sezon (%d odcinki)</item>
+        <item quantity="many">Pobierz sezon (%d odcinków)</item>
+        <item quantity="other">Pobierz sezon (%d odcinki)</item>
+    </plurals>
+    <plurals name="download_season_progress">
+        <item quantity="one">Zapisano %1$d z %2$d odcinka</item>
+        <item quantity="few">Zapisano %1$d z %2$d odcinków</item>
+        <item quantity="many">Zapisano %1$d z %2$d odcinków</item>
+        <item quantity="other">Zapisano %1$d z %2$d odcinków</item>
+    </plurals>
+</resources>

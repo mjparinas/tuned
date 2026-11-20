@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="grid_show">टीवी गाइड ग्रिड दिखाएं</string>
+    <string name="grid_hide">चैनल सूची दिखाएं</string>
+    <string name="grid_now">अभी</string>
+    <string name="grid_today">आज</string>
+    <string name="grid_no_guide">कोई गाइड नहीं</string>
+    <string name="settings_live_grid">लाइव टीवी को गाइड ग्रिड की तरह दिखाएं</string>
+    <string name="settings_live_grid_summary">किनारे पर चैनल और ऊपर समय। खोज के पास वाला बटन भी बदलता है।</string>
+</resources>

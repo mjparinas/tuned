@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_live_rewind">Pauzowanie i przewijanie TV na żywo</string>
+    <string name="settings_live_rewind_off">Wył.</string>
+    <plurals name="settings_live_rewind_minutes">
+        <item quantity="one">Zachowuj ostatnią %1$d minutę</item>
+        <item quantity="few">Zachowuj ostatnie %1$d minuty</item>
+        <item quantity="many">Zachowuj ostatnie %1$d minut</item>
+        <item quantity="other">Zachowuj ostatnie %1$d minuty</item>
+    </plurals>
+</resources>

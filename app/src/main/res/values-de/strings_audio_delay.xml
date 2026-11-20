@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_audio_delay">Tonverzögerung</string>
+    <string name="settings_audio_delay_off">Synchron zum Bild</string>
+    <string name="settings_audio_delay_earlier">Ton %d ms früher</string>
+    <string name="settings_audio_delay_later">Ton %d ms später</string>
+</resources>

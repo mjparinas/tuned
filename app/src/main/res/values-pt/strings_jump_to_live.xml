@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="jump_to_live">Ao vivo</string>
+    <string name="jump_to_live_description">Ir para o ao vivo</string>
+</resources>

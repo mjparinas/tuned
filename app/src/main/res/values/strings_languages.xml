@@ -3,6 +3,6 @@
     <string name="regions_languages">Languages</string>
     <string name="regions_countries">Countries</string>
     <!-- %1$s: the country tags, such as "UK, US"; %2$s: how many streams they have, such as "120 streams". -->
-    <string name="language_summary">%1$s · %2$s</string>
+    <string name="language_summary" translatable="false">%1$s · %2$s</string>
     <string name="language_summary_partial">Only %1$s on · %2$s</string>
 </resources>

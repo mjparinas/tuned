@@ -114,6 +114,10 @@ data class AppSettings(
     /** The zone guide and event times show in, as a zone id; blank follows the phone (Settings › Guide). */
     val timeZone: String = "",
     val unmeteredOnly: Boolean = false,
+    /** When "Refresh on my devices" was last pressed on the website; a newer time downloads the playlist again. */
+    val refreshRequestedAt: Long = 0,
+    /** Keep the last few playlists' channels and guide when switching, so switching back is instant (Settings › Guide and refresh). */
+    val keepPlaylistCopies: Boolean = true,
     val buffer: BufferMode = BufferMode.BALANCED,
     val audioLanguage: String = "",
     val resumePlayback: Boolean = true,
@@ -134,6 +138,8 @@ data class AppSettings(
     val tunneledPlayback: Boolean = false,
     /** Minutes of a live channel kept on the device to pause and rewind; 0 turns it off (Settings › Player). */
     val liveRewindMinutes: Int = 30,
+    /** Scheduled recordings start this many minutes early and end this many late, for guides that run off (Settings › Player). */
+    val recordPaddingMinutes: Int = 2,
     /** Leave out empty event slots ("NO EVENT STREAMING"); see [Placeholders]. Melvin, 2026-11-17: hide them. */
     val hidePlaceholders: Boolean = true,
     /** Leave out round-the-clock "24/7" channels, films and shows; see [RoundTheClock]. Melvin, 2026-11-17 and 11-18. Off by default. */

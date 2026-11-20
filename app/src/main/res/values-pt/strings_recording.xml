@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="record_start">Gravar</string>
+    <string name="record_stop">Parar gravação</string>
+    <string name="record_started">Gravando %1$s</string>
+    <string name="record_saved">Gravação salva em Downloads</string>
+    <string name="record_live_only">Isto não pode ser gravado. A gravação funciona em canais de TV ao vivo.</string>
+    <string name="record_not_casting">A gravação não está disponível durante a transmissão para outro aparelho</string>
+    <string name="record_no_space">Não há espaço suficiente neste dispositivo para gravar</string>
+    <string name="record_space_ran_out">Gravação parada: o dispositivo está quase cheio</string>
+    <string name="record_failed">Gravação parada: não foi possível salvar</string>
+    <string name="recordings_section_size">Gravações · %1$s</string>
+    <string name="recording_remove">Apagar gravação</string>
+    <string name="recording_hours_minutes">%1$d h %2$d min</string>
+    <string name="recording_minutes">%1$d min</string>
+</resources>

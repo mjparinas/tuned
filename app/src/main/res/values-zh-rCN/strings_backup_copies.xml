@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_backup_copies">切换到备用源</string>
+    <string name="settings_backup_copies_summary">频道无法播放时，从你的列表中播放它的另一个副本，例如用 ESPN FHD 代替 ESPN HD</string>
+    <string name="player_trying_copy">无法播放。正在尝试备用源（%1$d / %2$d）…</string>
+    <string name="player_copy_playing">已切换到 %1$s</string>
+    <string name="player_no_copy_works">此频道及其备用源目前都无法播放</string>
+    <string name="health_hide_failed_on_play">隐藏无法播放的频道</string>
+    <string name="health_hide_failed_on_play_summary">当你的网络和服务都正常（其他频道能正常播放）而某个频道无法加载时，立即隐藏它。扫描发现它恢复正常后，或通过下方的“重新显示”，它会回来。</string>
+    <string name="health_reason_playback">无法播放</string>
+</resources>

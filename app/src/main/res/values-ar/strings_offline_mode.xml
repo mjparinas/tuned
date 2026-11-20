@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="offline_banner">أنت غير متصل. ما زالت الأفلام والحلقات المحفوظة تعمل.</string>
+    <string name="offline_banner_downloads">التنزيلات</string>
+    <string name="offline_cant_play">أنت غير متصل. لا يمكن تشغيل إلا الأفلام والحلقات المنزّلة.</string>
+</resources>

@@ -47,6 +47,8 @@ class BrowseListsTest {
                     match = "",
                     topic = "",
                     quick = listOf("any"),
+                    quality = "",
+                    genre = 0,
                 ).all()
 
         assertEquals(listOf(1L, 2L), rows.map { it.id })
@@ -65,7 +67,7 @@ class BrowseListsTest {
             listOf(3L, 1L),
             db
                 .items()
-                .favouriteChannels(0, emptyList(), false, null, "", "", "", listOf("any"))
+                .favouriteChannels(0, emptyList(), false, null, "", "", "", listOf("any"), "", 0)
                 .all()
                 .map { it.id },
         )
@@ -73,7 +75,7 @@ class BrowseListsTest {
             listOf(3L, 2L),
             db
                 .items()
-                .recentChannels(0, emptyList(), false, null, "", "", "", listOf("any"))
+                .recentChannels(0, emptyList(), false, null, "", "", "", listOf("any"), "", 0)
                 .all()
                 .map { it.id },
         )

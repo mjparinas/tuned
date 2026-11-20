@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="recording_set">Записать</string>
+    <string name="recording_cancel">Отменить запись</string>
+    <string name="recording_scheduled">%1$s будет записан</string>
+    <string name="recording_clash">На это время уже запланирована другая запись. Tuned записывает по одной.</string>
+    <string name="recording_running">Идёт запись: %1$s</string>
+    <string name="settings_record_padding">Начинать записи раньше и заканчивать позже</string>
+    <string name="settings_record_padding_off">Точно по времени</string>
+    <plurals name="settings_record_padding_minutes">
+        <item quantity="one">%1$d минута с каждой стороны</item>
+        <item quantity="few">%1$d минуты с каждой стороны</item>
+        <item quantity="many">%1$d минут с каждой стороны</item>
+        <item quantity="other">%1$d минуты с каждой стороны</item>
+    </plurals>
+</resources>

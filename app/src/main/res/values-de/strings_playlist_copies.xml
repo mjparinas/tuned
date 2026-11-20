@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_playlist_copies">Sofortiger Playlist-Wechsel</string>
+    <string name="settings_playlist_copies_summary">Die letzten 3 Playlists auf diesem Gerät behalten, damit sie beim Zurückwechseln sofort da sind</string>
+    <string name="playlists_switching">Playlist wird gewechselt…</string>
+</resources>

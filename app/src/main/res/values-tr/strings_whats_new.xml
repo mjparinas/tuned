@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_section_account">Hesap</string>
+    <string name="settings_section_watching">İzleme</string>
+    <string name="settings_section_app">Uygulama</string>
+    <string name="settings_version_title">Sürüm</string>
+    <string name="whats_new">Yenilikler</string>
+    <string name="whats_new_kicker">Tuned · Güncelleme</string>
+    <string name="whats_new_title">%1$s sürümündeki yenilikler</string>
+    <plurals name="whats_new_count_new">
+        <item quantity="one">%d yeni</item>
+        <item quantity="other">%d yeni</item>
+    </plurals>
+    <plurals name="whats_new_count_improved">
+        <item quantity="one">%d iyileştirme</item>
+        <item quantity="other">%d iyileştirme</item>
+    </plurals>
+    <plurals name="whats_new_count_fixed">
+        <item quantity="one">%d düzeltme</item>
+        <item quantity="other">%d düzeltme</item>
+    </plurals>
+    <string name="whats_new_kind_new">Yeni</string>
+    <string name="whats_new_kind_improved">İyileştirildi</string>
+    <string name="whats_new_kind_fixed">Düzeltildi</string>
+    <string name="whats_new_loading">Bu sürümdeki değişiklikler yükleniyor…</string>
+    <string name="whats_new_failed">Bu sürümdeki değişiklikler yüklenemedi. Bağlantıyı kontrol edip tekrar dene.</string>
+    <string name="whats_new_empty">Bu sürümde listelenecek değişiklik yok.</string>
+    <string name="whats_new_retry">Tekrar dene</string>
+    <string name="whats_new_done">Bitti</string>
+</resources>

@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="widget_favourites">Ulubione kanały</string>
+    <string name="widget_favourites_description">Loga ulubionych kanałów i to, co teraz leci. Stuknij kanał, aby oglądać.</string>
+    <string name="widget_empty_title">Brak ulubionych</string>
+    <string name="widget_empty">Stuknij serce przy kanale, a pojawi się tutaj.</string>
+    <string name="widget_add_favourites">Dodaj ulubione</string>
+    <string name="widget_signed_out">Zaloguj się do Tuned</string>
+    <string name="widget_signed_out_body">Ulubione kanały pojawią się tutaj po dodaniu playlisty.</string>
+    <string name="widget_open_tuned">Otwórz Tuned</string>
+    <string name="widget_watch">Oglądaj %1$s</string>
+    <string name="widget_watch_on_now">Oglądaj %1$s. Teraz: %2$s</string>
+    <string name="widget_continue">Oglądaj dalej</string>
+    <string name="widget_continue_description">Rozpoczęte filmy i odcinki z pozostałym czasem. Stuknij, aby wznowić od miejsca, w którym skończyłeś.</string>
+    <string name="widget_continue_empty_title">Nic w trakcie</string>
+    <string name="widget_continue_empty">Filmy i odcinki, które zaczniesz, pojawią się tutaj.</string>
+    <string name="widget_continue_signed_out_body">Rozpoczęte filmy i odcinki pojawią się tutaj po dodaniu playlisty.</string>
+    <string name="widget_episode_number">S%1$d O%2$d</string>
+    <string name="widget_resume">Wznów %1$s. %2$s</string>
+    <plurals name="widget_minutes_left">
+        <item quantity="one">Została %d min</item>
+        <item quantity="few">Zostały %d min</item>
+        <item quantity="many">Zostało %d min</item>
+        <item quantity="other">Zostały %d min</item>
+    </plurals>
+    <string name="tile_last_channel">Poprzedni kanał</string>
+</resources>

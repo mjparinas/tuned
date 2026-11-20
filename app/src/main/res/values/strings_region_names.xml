@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Area and language tags providers put on categories; countries are named by Android in the device's language. -->
+    <string name="region_africa">Africa</string>
+    <string name="region_asia">Asia</string>
+    <string name="region_europe">Europe</string>
+    <string name="region_nordic">Nordic</string>
+    <string name="region_latino">Latino</string>
+    <string name="region_ex_yugoslavia">Ex-Yugoslavia</string>
+</resources>

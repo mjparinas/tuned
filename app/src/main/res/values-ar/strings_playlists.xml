@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="playlists">قوائم التشغيل</string>
+    <plurals name="playlists_saved">
+        <item quantity="zero">%d قائمة تشغيل محفوظة</item>
+        <item quantity="one">%d قائمة تشغيل محفوظة</item>
+        <item quantity="two">%d قائمة تشغيل محفوظة</item>
+        <item quantity="few">%d قوائم تشغيل محفوظة</item>
+        <item quantity="many">%d قائمة تشغيل محفوظة</item>
+        <item quantity="other">%d قائمة تشغيل محفوظة</item>
+    </plurals>
+    <plurals name="playlists_in_use">
+        <item quantity="zero">%1$s · %2$d محفوظة</item>
+        <item quantity="one">%1$s · %2$d محفوظة</item>
+        <item quantity="two">%1$s · %2$d محفوظة</item>
+        <item quantity="few">%1$s · %2$d محفوظة</item>
+        <item quantity="many">%1$s · %2$d محفوظة</item>
+        <item quantity="other">%1$s · %2$d محفوظة</item>
+    </plurals>
+    <string name="playlists_add">إضافة قائمة تشغيل</string>
+    <string name="playlists_help">انقر قائمة تشغيل لمشاهدتها. يحتفظ Tuned بقنوات قائمة تشغيل واحدة في كل مرة، لذا التبديل يُنزّل الأخرى.</string>
+    <string name="playlists_active">قيد الاستخدام</string>
+    <string name="playlists_rename">إعادة التسمية</string>
+    <string name="playlists_edit">تعديل</string>
+    <string name="playlists_remove">إزالة</string>
+    <string name="playlists_remove_title">إزالة %1$s؟</string>
+    <string name="playlists_remove_body">تُحذف بيانات دخولها من هذا الجهاز. يمكنك إضافتها مجددًا لاحقًا.</string>
+    <string name="playlists_remove_last">إنها قائمة التشغيل الوحيدة لديك، لذا يؤدي هذا إلى تسجيل خروجك ومسح القنوات والدليل المحفوظة.</string>
+    <string name="welcome_title">مرحبًا بك في Tuned</string>
+    <string name="welcome_body">أضف قائمة تشغيل من مزوّد خدمة التلفزيون لتبدأ المشاهدة. يمكنك إضافة ما تشاء لاحقًا في الإعدادات.</string>
+    <string name="welcome_pick">ماذا أعطاك مزوّدك؟</string>
+    <string name="kind_xtream">بيانات دخول Xtream Codes</string>
+    <string name="kind_xtream_summary">عنوان خادم واسم مستخدم وكلمة مرور</string>
+    <string name="kind_link">رابط قائمة تشغيل</string>
+    <string name="kind_link_summary">رابط M3U أو M3U8، مع رابط دليل إن وُجد</string>
+    <string name="kind_file">ملف قائمة تشغيل</string>
+    <string name="kind_file_summary">ملف .m3u محفوظ على هذا الجهاز</string>
+    <string name="add_xtream_hint">أدخل التفاصيل التي أرسلها مزوّدك. يمكنك أيضًا لصق رابط Xtream كامل في خانة الخادم.</string>
+    <string name="add_server_help">مثلًا http://example.com:8080</string>
+    <string name="add_link_hint">الصق رابط قائمة التشغيل الذي أرسله مزوّدك.</string>
+    <string name="add_link_is_xtream">هذا رابط دخول Xtream، لذا سيسجّل Tuned الدخول به ويعمل التشغيل الاستدراكي أيضًا.</string>
+    <string name="add_file_hint">اختر ملف قائمة تشغيل. يحتفظ Tuned بنسخته الخاصة، فيبقى يعمل إذا نقلت الأصل أو حذفته.</string>
+    <string name="add_file_choose">اختيار ملف</string>
+    <string name="add_file_replace">الاحتفاظ بالملف الحالي، أو اختيار ملف جديد</string>
+    <string name="add_name">الاسم (اختياري)</string>
+    <string name="add_name_help">كيف تظهر في القائمة، مثل الرياضة أو غرفة المعيشة</string>
+    <string name="add_guide">رابط الدليل (XMLTV) (اختياري)</string>
+    <string name="add_guide_help">اتركه فارغًا لاستخدام الدليل الذي تحدده قائمة التشغيل</string>
+    <string name="add_submit">إضافة قائمة التشغيل</string>
+    <string name="add_save">حفظ</string>
+    <string name="add_bad_link">لا يبدو هذا رابط ويب. تحقّق منه وحاول مرة أخرى.</string>
+    <string name="add_bad_file">لا يبدو هذا الملف قائمة تشغيل M3U.</string>
+    <string name="add_pick_file">اختر ملف قائمة تشغيل أولًا.</string>
+</resources>

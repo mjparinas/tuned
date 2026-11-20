@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_time_zone">Fuseau horaire</string>
+    <string name="settings_time_zone_device">Celui de cet appareil (%1$s)</string>
+    <string name="events_zone">Heures en %1$s</string>
+</resources>
