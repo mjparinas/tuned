@@ -36,4 +36,4 @@ No framework and no build step on Vercel, like the rest of `devices/`. The site 
 
 ## Privacy page (Melvin, 2026-11-20)
 
-"Fix the privacy page": the footer's Privacy link opens `/privacy/`, built from `docs/privacy.md` (still the one policy) with the shared header and footer. A change to `docs/privacy.md` runs the website's tests in CI (`scripts/ci-changes.mjs`), so the page can't fall behind the file. The policy itself still names GitHub, as the host the download and update check use, because a privacy policy has to name every service the app talks to; it is the one page outside `/blog/vs/` allowed to.
+"Fix the privacy page": the footer's Privacy link opens `/privacy/`, built from `docs/privacy.md` (still the one policy) with the shared header and footer. A change to `docs/privacy.md` runs the website's tests in CI (`scripts/ci-changes.mjs`), so the page can't fall behind the file. The policy doesn't name GitHub either (Melvin, 2026-11-20: "Drop it"): the update check is described as going to the host of Tuned's download.

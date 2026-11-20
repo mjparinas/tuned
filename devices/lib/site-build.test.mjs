@@ -96,12 +96,7 @@ test("no committed page outside /blog/vs/ names GitHub or says everything is unl
     const { readdir, readFile } = await import("node:fs/promises");
     const root = new URL("../public/", import.meta.url);
     const pages = (await readdir(root, { recursive: true })).filter(
-        (f) =>
-            /\.(html|js|json)$/.test(f) &&
-            !f.startsWith("blog/vs/") &&
-            !f.startsWith("privacy/") &&
-            !f.startsWith("admin/") &&
-            !f.startsWith("check/vendor/"),
+        (f) => /\.(html|js|json)$/.test(f) && !f.startsWith("blog/vs/") && !f.startsWith("admin/") && !f.startsWith("check/vendor/"),
     );
     for (const page of pages) {
         const text = (await readFile(new URL(page, root), "utf8")).replace(/https:\/\/github\.com\/[^"'\s)]*/g, "");

@@ -20,7 +20,7 @@ Tuned connects to these services only to do what you ask:
 - **OpenSubtitles**, only when you search for subtitles, and with your OpenSubtitles account only if you sign in to one.
 - **Trakt**, only if you sign in to Trakt, to record what you watch to your Trakt account.
 - **YouTube**, only when you open a trailer.
-- **GitHub**, which hosts the download on www.tunedplayer.com, to check for and download updates in that version.
+- **The host of Tuned's download**, in the version from www.tunedplayer.com, to check for and download updates.
 - **Google Play**, in the version from Google Play, for purchases. Google handles payment, and Tuned never sees your payment details.
 
 ## Signing in on a TV with your phone
