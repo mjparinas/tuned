@@ -146,15 +146,27 @@ async function loadSaved() {
             const line = Object.assign(document.createElement("span"), { className: "small" });
             const parts = [KIND_NAMES[p.kind] ?? p.kind];
             if (p.name && p.detail) parts.push(p.detail);
-            if (!usable(p)) parts.push(p.kind === "stalker" ? "needs the Tuned app" : "only on the device it came from");
             line.textContent = parts.join(" · ");
             text.append(name, line);
+            if (!usable(p)) {
+                // Melvin, 2026-11-20: "Mention that this doesn't work in the browser".
+                const note = Object.assign(document.createElement("span"), { className: "small not-here" });
+                note.textContent =
+                    p.kind === "stalker"
+                        ? "Doesn't work in a browser: a MAC portal only works in the Tuned app."
+                        : "Doesn't work in a browser: this file is only on the device it came from.";
+                text.append(note);
+            }
             label.append(input, text);
             return label;
         }),
     );
     $("saved-check").disabled = !first;
     $("saved-card").hidden = false;
+    // Melvin, 2026-11-20: the signed-out wording ("never sees your login") isn't true for a saved playlist.
+    $("privacy-line").textContent =
+        "It runs only in this browser. A saved playlist's login comes from your Tuned account to this browser for the check; " +
+        "an address you type never reaches Tuned. Tuned's server never contacts your provider, and nothing is saved.";
     return Boolean(first) && wanted === first?.id;
 }
 

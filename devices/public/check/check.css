@@ -225,7 +225,10 @@ fieldset {
 }
 .saved-list label:has(input:disabled) {
     cursor: default;
-    opacity: 0.7;
+}
+/* Only the radio is dimmed, so the note on why it can't be picked keeps its contrast. */
+.saved-list input:disabled {
+    opacity: 0.5;
 }
 .saved-list input {
     width: 20px;
@@ -258,4 +261,7 @@ fieldset {
 }
 .answer .row button {
     margin-top: 4px;
+}
+.saved-list .not-here {
+    color: var(--warn);
 }
