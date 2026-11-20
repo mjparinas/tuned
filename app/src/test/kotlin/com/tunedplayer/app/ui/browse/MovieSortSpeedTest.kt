@@ -30,8 +30,8 @@ import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 /**
- * Choosing a sort on a large Movies library reorders it without freezing the screen (Melvin, 2026-11-20: "sorting on the movies page or the tv page
- * doesn't do anything").
+ * Choosing a sort on a large Movies library reorders it without freezing the screen (Melvin, 2026-11-20: "sorting on
+ * the movies page or the tv page doesn't do anything", with the screen stopped for five seconds).
  */
 @RunWith(RobolectricTestRunner::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE) // text measured as on a device, as the screenshots are, so the grid lays out
