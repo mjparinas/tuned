@@ -255,29 +255,6 @@ class SyncRepository(
         return fromApi.getOrElse { throw failure }
     }
 
-    /**
-     * The films' and shows' times added and ratings now, for a cache from before the sorts that no refresh has read
-     * since (Melvin, 2026-11-20: "sorting on the movies page or the tv page doesn't do anything"). The update to 2.2.0
-     * left every title without a time or rating until the next scheduled refresh, up to a day away, so Recently added
-     * and Top rated kept the playlist's order. Lists through the Xtream API, not streams, like the details a refresh
-     * reads; nothing happens for other logins or once any title has a time or rating.
-     */
-    suspend fun fillSortDetailsIfMissing() {
-        val login = currentLogin()?.takeIf { it.kind == Credentials.Kind.Xtream } ?: return
-        lock.withLock {
-            val sql = db.openHelper.readableDatabase
-            val (films, known) =
-                withContext(Dispatchers.IO) {
-                    sql.query(SORT_DETAILS_KNOWN).use { c -> if (c.moveToFirst()) c.getLong(0) to c.getLong(1) else 0L to 0L }
-                }
-            if (films == 0L || known > 0L) return
-            AppLog.i(TAG_SYNC, "Reading times added and ratings for the Movies and Shows sorts")
-            val details = XtreamDetails(db, XtreamImport(http, login, userAgent()))
-            attempt(TAG_SYNC, "Film details failed") { details.films() }
-            attempt(TAG_SYNC, "Show details failed") { details.shows() }
-        }
-    }
-
     /** After an Xtream M3U was read, its films' (and any shows') times, years and ratings come from the API ([XtreamDetails]). */
     private fun markDetailsDue(
         xtream: Boolean,
@@ -781,7 +758,3 @@ class SyncRepository(
 }
 
 private const val TAG_SYNC = "Sync"
-
-/** How many films and episodes there are, and how many have a time added or a rating ([SyncRepository.fillSortDetailsIfMissing]). */
-private const val SORT_DETAILS_KNOWN =
-    "SELECT COUNT(*), COUNT(CASE WHEN added > 0 OR rating IS NOT NULL THEN 1 END) FROM items WHERE kind != 0"

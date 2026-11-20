@@ -103,7 +103,7 @@ class BrowseViewModel(
             SortFields.fillIfMissing(container.db)
             // A sort chosen before its times and ratings were read: read them now rather than at the next refresh.
             val s = container.settings.settings.first()
-            if (s.movieSort != TitleSort.Order.PROVIDER || s.showSort != TitleSort.Order.PROVIDER) container.sync.fillSortDetailsIfMissing()
+            if (s.movieSort != TitleSort.Order.PROVIDER || s.showSort != TitleSort.Order.PROVIDER) container.sortDetails.fillIfMissing()
         }
         // A guide cached before whole-guide search: index its titles once, in the background.
         viewModelScope.launchSafely("BrowseViewModel") { GuideSearchIndex.fillIfMissing(container.db) }
@@ -287,7 +287,7 @@ class BrowseViewModel(
                     ContentKind.LIVE -> it
                 }
             }
-            if (order != TitleSort.Order.PROVIDER) container.sync.fillSortDetailsIfMissing()
+            if (order != TitleSort.Order.PROVIDER) container.sortDetails.fillIfMissing()
         }
     }
 
