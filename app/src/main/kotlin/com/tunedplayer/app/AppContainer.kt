@@ -17,6 +17,7 @@ import com.tunedplayer.app.data.OwnLists
 import com.tunedplayer.app.data.PeopleRepository
 import com.tunedplayer.app.data.PhoneSignIn
 import com.tunedplayer.app.data.Picks
+import com.tunedplayer.app.data.PlaylistCache
 import com.tunedplayer.app.data.PlaylistSession
 import com.tunedplayer.app.data.ProfileRepository
 import com.tunedplayer.app.data.Recordings
@@ -136,7 +137,16 @@ class AppContainer(
     val scanControl by lazy { ScanWorker.Control(context) }
 
     /** Adding, switching, removing and signing out of playlists. */
-    val session by lazy { PlaylistSession(context, credentials, settings, db, reminders, scheduler, account, scanControl) }
+    val session by lazy { PlaylistSession(context, credentials, settings, db, reminders, scheduler, account, scanControl, playlistCopies) }
+
+    /** Recent playlists' channels and guide, kept so switching back is instant (docs/decisions/onboarding.md). */
+    val playlistCopies by lazy {
+        PlaylistCache(
+            db,
+            context.noBackupFilesDir.resolve(PlaylistCache.DIR),
+            context.noBackupFilesDir.resolve("sync/playlist.fingerprint"),
+        )
+    }
 
     /** Signing out: the app back as it was installed. */
     val reset by lazy { AppReset(context, this) }

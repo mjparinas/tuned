@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_playlist_copies">التبديل الفوري بين قوائم التشغيل</string>
+    <string name="settings_playlist_copies_summary">الاحتفاظ بآخر 3 قوائم تشغيل على هذا الجهاز لتظهر فورًا عند العودة إليها</string>
+    <string name="playlists_switching">جارٍ تبديل قائمة التشغيل…</string>
+</resources>

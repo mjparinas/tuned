@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_playlist_copies">即时切换播放列表</string>
+    <string name="settings_playlist_copies_summary">在此设备上保留最近 3 个播放列表，切换回来时立即显示</string>
+    <string name="playlists_switching">正在切换播放列表…</string>
+</resources>

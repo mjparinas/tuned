@@ -38,6 +38,12 @@ object GuideSearchIndex {
         sql.execSQL(create(NEXT))
     }
 
+    /** Hold [lock]: an empty index, for a guide that was just emptied (switching playlists) and is filled afresh. */
+    fun reset(sql: SupportSQLiteDatabase) {
+        sql.execSQL("DROP TABLE IF EXISTS `$TABLE`")
+        ensure(sql)
+    }
+
     fun dropNext(sql: SupportSQLiteDatabase) = sql.execSQL("DROP TABLE IF EXISTS `$NEXT`")
 
     /** Inside the swap's transaction: the side index becomes the index. */

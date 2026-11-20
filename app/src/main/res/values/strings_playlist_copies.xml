@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_playlist_copies">Instant playlist switching</string>
+    <string name="settings_playlist_copies_summary">Keep the last 3 playlists on this device so switching back shows them at once</string>
+    <string name="playlists_switching">Switching playlist…</string>
+</resources>

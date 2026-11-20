@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_playlist_copies">Natychmiastowa zmiana playlisty</string>
+    <string name="settings_playlist_copies_summary">Zachowaj ostatnie 3 playlisty na tym urządzeniu, aby po powrocie były od razu dostępne</string>
+    <string name="playlists_switching">Zmiana playlisty…</string>
+</resources>

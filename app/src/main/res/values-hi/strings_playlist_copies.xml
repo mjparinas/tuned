@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_playlist_copies">प्लेलिस्ट तुरंत बदलें</string>
+    <string name="settings_playlist_copies_summary">पिछली 3 प्लेलिस्ट इस डिवाइस पर रखें ताकि वापस जाने पर वे तुरंत दिखें</string>
+    <string name="playlists_switching">प्लेलिस्ट बदली जा रही है…</string>
+</resources>

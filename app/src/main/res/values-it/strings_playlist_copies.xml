@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_playlist_copies">Cambio playlist istantaneo</string>
+    <string name="settings_playlist_copies_summary">Conserva le ultime 3 playlist su questo dispositivo per ritrovarle subito quando torni</string>
+    <string name="playlists_switching">Cambio playlist…</string>
+</resources>

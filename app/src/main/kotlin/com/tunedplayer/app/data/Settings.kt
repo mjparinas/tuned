@@ -116,6 +116,8 @@ data class AppSettings(
     val unmeteredOnly: Boolean = false,
     /** When "Refresh on my devices" was last pressed on the website; a newer time downloads the playlist again. */
     val refreshRequestedAt: Long = 0,
+    /** Keep the last few playlists' channels and guide when switching, so switching back is instant (Settings › Guide and refresh). */
+    val keepPlaylistCopies: Boolean = true,
     val buffer: BufferMode = BufferMode.BALANCED,
     val audioLanguage: String = "",
     val resumePlayback: Boolean = true,

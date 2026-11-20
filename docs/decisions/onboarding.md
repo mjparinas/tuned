@@ -20,7 +20,16 @@
 
 **Settings › Playlists** is a full screen: every saved playlist with its name, kind and where it comes from (never the password), a check on the one in use, and Rename, Edit and Remove as buttons under it (a three-dot menu until 2026-11-19, Melvin: "avoid 3 dot drop downs"). Tapping another switches to it. "Add a playlist" opens the same four cards. Adding a playlist makes it the one in use. Editing the one in use reloads it; editing another only saves it. Removing the one in use switches to the next; removing the last one signs out (with a warning) and shows the welcome screen. The Settings row reads the playlist in use and how many are saved. The old Server and Username rows are gone, since they meant nothing for a link or a file; the server is edited from the playlist's Edit.
 
-**One playlist at a time.** The app still holds one playlist's channels and guide (switching clears them and downloads the other), so lists, search and favourites never mix providers and the database stays small. When the first download fails, "Change playlist" opens Settings › Playlists instead of signing out.
+**One playlist at a time.** The app still holds one playlist's channels and guide, so lists, search and favourites never mix providers and the database stays small. When the first download fails, "Change playlist" opens Settings › Playlists instead of signing out.
+
+**Instant switching back** (Melvin, 2026-11-20: "how to fix 8", then "do 4, 6, 7, 8"). Switching used to clear the cache and download the other playlist again, which took minutes for a big one. Now (`data/PlaylistCache`):
+
+- The playlist being left is copied to a file of its own (channels, films, shows, the guide from now on, catch-up and channel scan results, and its file fingerprint). The file is named by a hash of the playlist, never its address or login.
+- Switching to a playlist that has a copy fills the lists from it at once, a chunk at a time. The refresh then runs in the background rather than as a first download.
+- The newest 3 copies are kept. A copy from an app with another database version is thrown away, not read.
+- **Settings › Guide and refresh › Instant playlist switching** is on by default. Turning it off deletes the copies.
+- Removing a playlist deletes its copy, and signing out deletes them all.
+- "Switching playlist…" shows while the copy is made and read.
 
 **The backup in the Tuned account** carries every saved playlist except files ([accounts](accounts.md)). Backup files were removed (Melvin, 2026-11-18).
 
@@ -44,7 +53,7 @@ Melvin, 2026-11-19: "if i install this on an android tv, entering in the url to 
 **Signing out resets Tuned to how it was installed** (Melvin, 2026-11-19: "sign out should forget every playlist, downloaded channels, disconnects trakt, google drive, anything else that syncs, all settings", and "it should also remove who is using the account users, basically it should just reset the app to a preinstalled state"). Settings › Playlists › Sign out (`data/AppReset`) removes:
 
 - every saved playlist and login, the OpenSubtitles account, and copied playlist files;
-- the cached channels, guide and catch-up, and every table in the database (favourites, history, watch later, your own lists, channel edits, guide fixes, channel health), read from the database itself so a table added later is emptied too;
+- the cached channels, guide and catch-up, and every table in the database (favourites, history, watch later, your own lists, channel edits, guide fixes, channel health), read from the database itself so a table added later is emptied too, and the copies of recent playlists;
 - every "Who's watching" profile, its avatar and PIN, and the parental PIN; one empty profile is left in use, as on a fresh install;
 - every setting, the learned intros, the channel scan report, the TV home screen rows, subtitles, the picture cache and the app's cache;
 - Trakt and the Tuned account: forgotten on this device. Trakt isn't asked to revoke its token, because the backup shares the Trakt sign-in across the person's devices. All background work stops first, so the backup can never be replaced by the emptied app.

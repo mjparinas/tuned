@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_playlist_copies">Мгновенное переключение плейлистов</string>
+    <string name="settings_playlist_copies_summary">Хранить последние 3 плейлиста на этом устройстве, чтобы при возврате они открывались сразу</string>
+    <string name="playlists_switching">Переключение плейлиста…</string>
+</resources>
