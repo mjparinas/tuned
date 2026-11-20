@@ -12,7 +12,7 @@
 
 **Backup files: removed** (Melvin, 2026-11-18: "Remove the file back up feature"). Settings › Back up and Restore, and "Restore from a backup" on the welcome screen, are gone; moving to a new phone or a TV is the backup in the Tuned account ([accounts](accounts.md)). Files made with it no longer open. Its encryption, `core/PassphraseCrypto`, was removed with Google Drive sync (2026-11-19).
 
-**Privacy policy** (2026-11-18). `docs/privacy.md`, published on the website at www.tunedplayer.com/privacy (built from this file by `devices/build-site.mjs`, Melvin, 2026-11-20: "Fix the privacy page") and with `docs/index.md` through GitHub Pages, is the public policy Google's consent screen needs before sync's OAuth app can be published (and the Play listing will need). It says what stays on the device, which services Tuned talks to and why, and how the synced copy is locked. A change to what Tuned stores or sends updates it in the same pull request.
+**Privacy policy** (2026-11-18). `docs/privacy.md`, published on the website at www.tunedplayer.com/privacy (built from this file by `devices/build-site.mjs`, Melvin, 2026-11-20: "Fix the privacy page"), is the public policy Google's consent screen needs before sync's OAuth app can be published (and the Play listing will need). It says what stays on the device, which services Tuned talks to and why, and how the synced copy is locked. A change to what Tuned stores or sends updates it in the same pull request.
 
 **Cleartext HTTP is allowed** (`network_security_config.xml`), because IPTV servers serve playlists and streams over plain HTTP on whatever host a stream redirects to. Android Lint's `InsecureBaseConfiguration` check is disabled for that reason.
 
