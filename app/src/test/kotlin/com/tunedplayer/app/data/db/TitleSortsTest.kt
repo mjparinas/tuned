@@ -33,11 +33,7 @@ class TitleSortsTest {
     private suspend fun <T : Any> PagingSource<Int, T>.all(): List<T> =
         (load(PagingSource.LoadParams.Refresh(null, 500, false)) as PagingSource.LoadResult.Page).data
 
-    private suspend fun movies(order: Order) = db
-        .items()
-        .items(order, 1, emptyList(), false, null, false, "", "", 0)
-        .all()
-        .map { it.name }
+    private suspend fun movies(order: Order) = db.sortedItems(order, 1, emptyList(), false, null, false, "", "", 0).all().map { it.name }
 
     @Test
     fun moviesSortEachWayWithUnknownsLastAndTiesInPlaylistOrder() = runTest {
@@ -63,7 +59,7 @@ class TitleSortsTest {
         db.items().insertAll(
             listOf(film(1, "Dune", added = 1, rating = 7.0), film(2, "Dune Part Two", added = 2, rating = 8.0), film(3, "Heat")),
         )
-        val found = db.items().items(Order.RATING, 1, emptyList(), false, null, false, "dune", Search.match("dune"), 0).all()
+        val found = db.sortedItems(Order.RATING, 1, emptyList(), false, null, false, "dune", Search.match("dune"), 0).all()
         assertEquals(listOf("Dune Part Two", "Dune"), found.map { it.name })
     }
 
@@ -98,12 +94,12 @@ class TitleSortsTest {
         )
         ShowGroups.rebuild(db)
 
-        fun tab(order: Order) = db.shows().showsTab(order, emptyList(), false, null)
+        fun tab(order: Order) = db.sortedShowsTab(order, emptyList(), false, null)
         assertEquals(listOf("Snowline", "Harbour Town", "The Night Desk"), tab(Order.ADDED).all().map { it.showName })
         assertEquals(listOf("Snowline", "Harbour Town", "The Night Desk"), tab(Order.RATING).all().map { it.showName })
         assertEquals(listOf("Harbour Town", "Snowline", "The Night Desk"), tab(Order.TITLE).all().map { it.showName })
         // A search reads the episodes, and sorts by the same details.
-        val searched = db.items().shows(Order.RATING, emptyList(), false, null, false, "", "").all()
+        val searched = db.sortedShows(Order.RATING, emptyList(), false, null, false, "", "").all()
         assertEquals(listOf("Snowline", "Harbour Town", "The Night Desk"), searched.map { it.showName })
     }
 

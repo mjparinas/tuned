@@ -71,6 +71,8 @@ abstract class TunedDatabase : RoomDatabase() {
 
     abstract fun channelEdits(): ChannelEditDao
 
+    abstract fun titleSorts(): TitleSortDao
+
     companion object {
         fun create(context: Context): TunedDatabase = Room
             .databaseBuilder(context, TunedDatabase::class.java, "tuned.db")
@@ -233,7 +235,13 @@ abstract class TunedDatabase : RoomDatabase() {
                     )
                     db.execSQL("CREATE INDEX IF NOT EXISTS `index_show_groups_showKey` ON `show_groups` (`showKey`)")
                     db.execSQL("CREATE INDEX IF NOT EXISTS `index_show_groups_sortOrder` ON `show_groups` (`sortOrder`)")
-                    db.execSQL("INSERT INTO show_groups (${ShowGroups.COLUMNS}) ${ShowGroups.SELECT}")
+                    // The table as version 11 had it, from the items as version 10 had them: later columns and tables
+                    // ([ShowGroups]) don't exist yet at this step. Later migrations and the next refresh fill the rest.
+                    db.execSQL(
+                        "INSERT INTO show_groups (showKey, groupName, region, adult, showName, logo, episodes, sortOrder) " +
+                            "SELECT showKey, groupName, region, adult, COALESCE(MIN(showName), showKey), MAX(logo), COUNT(*), " +
+                            "MIN(sortOrder) FROM items WHERE kind = 2 AND showKey IS NOT NULL GROUP BY showKey, groupName, region, adult",
+                    )
                 }
             }
 

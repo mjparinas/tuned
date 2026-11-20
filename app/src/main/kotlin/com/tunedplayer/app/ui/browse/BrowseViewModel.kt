@@ -26,9 +26,9 @@ import com.tunedplayer.app.data.db.ProfileEntity
 import com.tunedplayer.app.data.db.RegionCount
 import com.tunedplayer.app.data.db.ShowSummary
 import com.tunedplayer.app.data.db.SortFields
-import com.tunedplayer.app.data.db.items
-import com.tunedplayer.app.data.db.shows
-import com.tunedplayer.app.data.db.showsTab
+import com.tunedplayer.app.data.db.sortedItems
+import com.tunedplayer.app.data.db.sortedShows
+import com.tunedplayer.app.data.db.sortedShowsTab
 import com.tunedplayer.app.data.hiddenKeys
 import com.tunedplayer.app.diagnostics.launchSafely
 import com.tunedplayer.app.ui.settings.PinActions
@@ -267,7 +267,7 @@ class BrowseViewModel(
         combine(query(ContentKind.MOVIE), sort(ContentKind.MOVIE)) { q, order -> q to order }
             .flatMapLatest { (q, order) ->
                 Pager(config) {
-                    items.items(
+                    container.db.sortedItems(
                         order,
                         ContentKind.MOVIE.code,
                         q.hidden,
@@ -288,9 +288,17 @@ class BrowseViewModel(
                     val group = (q.filter as? Filter.Group)?.name
                     // Browsing reads the per-show table; a search or Favourites narrows the episodes themselves.
                     if (q.search.isEmpty() && q.filter != Filter.Favourites) {
-                        container.db.shows().showsTab(order, q.hidden, q.adult, group)
+                        container.db.sortedShowsTab(order, q.hidden, q.adult, group)
                     } else {
-                        items.shows(order, q.hidden, q.adult, group, q.filter == Filter.Favourites, q.search, Search.match(q.search))
+                        container.db.sortedShows(
+                            order,
+                            q.hidden,
+                            q.adult,
+                            group,
+                            q.filter == Filter.Favourites,
+                            q.search,
+                            Search.match(q.search),
+                        )
                     }
                 }.flow
             }.cachedIn(viewModelScope)
