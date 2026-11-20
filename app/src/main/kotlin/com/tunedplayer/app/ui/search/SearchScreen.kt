@@ -52,14 +52,19 @@ import com.tunedplayer.app.container
 import com.tunedplayer.app.core.Search
 import com.tunedplayer.app.core.Titles
 import com.tunedplayer.app.data.db.ChannelWithNow
+import com.tunedplayer.app.data.db.GuideHit
+import com.tunedplayer.app.data.db.GuideSearchIndex
 import com.tunedplayer.app.data.db.ItemEntity
 import com.tunedplayer.app.data.db.ShowSummary
 import com.tunedplayer.app.data.hiddenKeys
+import com.tunedplayer.app.diagnostics.attempt
 import com.tunedplayer.app.ui.browse.FavouriteButton
 import com.tunedplayer.app.ui.browse.Logo
 import com.tunedplayer.app.ui.browse.rememberShowArt
+import com.tunedplayer.app.ui.common.TimeLabels
 import com.tunedplayer.app.ui.common.VoiceSearchButton
 import com.tunedplayer.app.ui.common.focusRing
+import com.tunedplayer.app.ui.common.rememberTimeLabels
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.async
@@ -84,8 +89,10 @@ class SearchViewModel(
         val channels: List<ChannelWithNow> = emptyList(),
         val movies: List<ItemEntity> = emptyList(),
         val shows: List<ShowSummary> = emptyList(),
+        val guide: List<GuideHit> = emptyList(),
+        val now: Long = 0,
     ) {
-        val empty get() = channels.isEmpty() && movies.isEmpty() && shows.isEmpty()
+        val empty get() = channels.isEmpty() && movies.isEmpty() && shows.isEmpty() && guide.isEmpty()
     }
 
     val results =
@@ -101,11 +108,19 @@ class SearchViewModel(
                     val items = container.db.items()
                     val match = Search.match(text)
                     // The three lists are separate reads, so they run side by side on the database's reader connections.
+                    val now = System.currentTimeMillis()
                     coroutineScope {
-                        val channels = async { items.searchChannels(text, match, System.currentTimeMillis(), hidden, adult, LIMIT) }
+                        val channels = async { items.searchChannels(text, match, now, hidden, adult, LIMIT) }
                         val movies = async { items.searchMovies(match, hidden, adult, LIMIT) }
                         val shows = async { items.searchShows(match, hidden, adult, LIMIT) }
-                        Results(channels.await(), movies.await(), shows.await())
+                        // The whole week's guide, not only what's on within the hour (Melvin, 2026-11-20).
+                        val guide =
+                            async {
+                                attempt("Search", "guide search") {
+                                    GuideSearchIndex.search(container.db, text, now, hidden, adult, GUIDE_LIMIT)
+                                }.getOrDefault(emptyList())
+                            }
+                        Results(channels.await(), movies.await(), shows.await(), guide.await(), now)
                     }
                 }
             }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
@@ -122,6 +137,7 @@ class SearchViewModel(
 
     private companion object {
         const val LIMIT = 25
+        const val GUIDE_LIMIT = 40
     }
 }
 
@@ -132,6 +148,7 @@ fun SearchScreen(
     onPlay: (Long) -> Unit,
     onOpenShow: (String, String) -> Unit,
     onOpenMovie: (Long) -> Unit,
+    onOpenGuide: (Long) -> Unit,
     onTune: (String) -> Unit,
     vm: SearchViewModel = viewModel(),
 ) {
@@ -139,6 +156,7 @@ fun SearchScreen(
     val text by vm.query.collectAsStateWithLifecycle()
     val results by vm.results.collectAsStateWithLifecycle()
     val favourites by vm.favourites.collectAsStateWithLifecycle()
+    val times = rememberTimeLabels()
     val focus = remember { FocusRequester() }
     LaunchedEffect(Unit) { if (initialQuery.isBlank()) runCatching { focus.requestFocus() } }
 
@@ -207,6 +225,13 @@ fun SearchScreen(
                     FavouriteButton(favourite) { vm.toggleFavourite(c.id, favourite) }
                 }) { onPlay(c.id) }
             }
+            // Programmes on now play their channel; later ones open the channel's guide, where a bell sets a reminder.
+            section(R.string.search_in_guide, r.guide) { p ->
+                val onNow = p.start <= r.now
+                ResultRow(Titles.display(p.title), guideWhen(p, onNow, times), p.logo) {
+                    if (onNow) onPlay(p.itemId) else onOpenGuide(p.itemId)
+                }
+            }
             section(R.string.tab_movies, r.movies) { m -> ResultRow(Titles.display(m.name), m.groupName, m.logo) { onOpenMovie(m.id) } }
             section(R.string.tab_shows, r.shows) { s ->
                 ResultRow(Titles.display(s.showName), s.groupName, rememberShowArt(s.showName, s.logo).image) {
@@ -215,6 +240,22 @@ fun SearchScreen(
             }
         }
     }
+}
+
+/** "On now · TSN 1", "9:00 p.m. · TSN 1" today, "Sat 9:00 p.m. · TSN 1" on another day. */
+@Composable
+private fun guideWhen(
+    p: GuideHit,
+    onNow: Boolean,
+    times: TimeLabels,
+): String {
+    val at =
+        when {
+            onNow -> stringResource(R.string.search_guide_on_now)
+            times.isToday(p.start) -> times.time(p.start)
+            else -> times.dayTime(p.start)
+        }
+    return stringResource(R.string.search_guide_when, at, p.channelName)
 }
 
 private fun <T> LazyListScope.section(

@@ -2,6 +2,8 @@ package com.tunedplayer.app.data.db
 
 import androidx.room.withTransaction
 import androidx.sqlite.db.SupportSQLiteStatement
+import com.tunedplayer.app.core.Search
+import kotlinx.coroutines.sync.withLock
 
 /**
  * Writes a downloaded guide without holding the database while it does. A guide runs to hundreds of thousands of
@@ -23,22 +25,31 @@ class GuideWriter(
             "CREATE TABLE $NEXT (channelId TEXT NOT NULL, start INTEGER NOT NULL, stop INTEGER NOT NULL, " +
                 "title TEXT NOT NULL, description TEXT)",
         )
+        GuideSearchIndex.beginNext(sql)
         count = 0
     }
 
     suspend fun add(batch: List<ProgrammeEntity>) {
         if (batch.isEmpty()) return
         db.withTransaction {
+            val index = sql.compileStatement(GuideSearchIndex.INSERT_NEXT)
             sql.compileStatement("INSERT INTO $NEXT (channelId, start, stop, title, description) VALUES (?, ?, ?, ?, ?)").use { insert ->
-                for (p in batch) {
-                    insert.bindString(1, p.channelId)
-                    insert.bindLong(2, p.start)
-                    insert.bindLong(3, p.stop)
-                    insert.bindString(4, p.title)
-                    val description = p.description
-                    if (description == null) insert.bindNull(5) else insert.bindString(5, description)
-                    insert.executeInsert()
-                    insert.clearBindings()
+                index.use {
+                    for (p in batch) {
+                        insert.bindString(1, p.channelId)
+                        insert.bindLong(2, p.start)
+                        insert.bindLong(3, p.stop)
+                        insert.bindString(4, p.title)
+                        val description = p.description
+                        if (description == null) insert.bindNull(5) else insert.bindString(5, description)
+                        val rowId = insert.executeInsert()
+                        insert.clearBindings()
+                        // The title goes in the side index under the same row id, which the swap keeps.
+                        index.bindLong(1, rowId)
+                        index.bindString(2, Search.normalize(p.title))
+                        index.executeInsert()
+                        index.clearBindings()
+                    }
                 }
             }
         }
@@ -51,12 +62,16 @@ class GuideWriter(
      */
     suspend fun commit(): Int {
         if (count == 0) return 0
-        db.withTransaction {
-            sql.execSQL("DELETE FROM programmes")
-            sql.execSQL(
-                "INSERT INTO programmes (channelId, start, stop, title, description) " +
-                    "SELECT channelId, start, stop, title, description FROM $NEXT",
-            )
+        GuideSearchIndex.lock.withLock {
+            db.withTransaction {
+                sql.execSQL("DELETE FROM programmes")
+                // Row ids are carried over so the side search index, keyed by them, still points at the right titles.
+                sql.execSQL(
+                    "INSERT INTO programmes (rowId, channelId, start, stop, title, description) " +
+                        "SELECT rowid, channelId, start, stop, title, description FROM $NEXT",
+                )
+                GuideSearchIndex.swapIn(sql)
+            }
         }
         discard()
         Upkeep.optimize(db)
@@ -66,6 +81,7 @@ class GuideWriter(
     /** Throws the half-written guide away; the old one stays. */
     fun discard() {
         sql.execSQL("DROP TABLE IF EXISTS $NEXT")
+        GuideSearchIndex.dropNext(sql)
     }
 
     private companion object {
@@ -83,6 +99,11 @@ class GuideWriter(
  */
 class PlaylistWriter(
     private val db: TunedDatabase,
+    /**
+     * Which cached streams this playlist replaces, as SQL on `items`; the rest are left alone. A portal's live channels
+     * and its films and shows are refreshed apart (`kind = 0`, `kind != 0`). Null: the whole cache.
+     */
+    private val scope: String? = null,
 ) {
     private val sql get() = db.openHelper.writableDatabase
     private val seen = HashSet<Long>()
@@ -143,7 +164,8 @@ class PlaylistWriter(
         // Which streams differ, worked out once, inside SQLite.
         sql.execSQL("DROP TABLE IF EXISTS temp.$CHANGED")
         sql.execSQL("CREATE TEMP TABLE $CHANGED (seq INTEGER PRIMARY KEY, id INTEGER NOT NULL)")
-        sql.execSQL("INSERT INTO $CHANGED (id) SELECT id FROM items WHERE id NOT IN (SELECT id FROM $NEXT)")
+        val inScope = scope?.let { " AND ($it)" }.orEmpty()
+        sql.execSQL("INSERT INTO $CHANGED (id) SELECT id FROM items WHERE id NOT IN (SELECT id FROM $NEXT)$inScope")
         sql.execSQL("INSERT INTO $CHANGED (id) SELECT n.id FROM $NEXT n JOIN items i ON i.id = n.id WHERE NOT ($SAME)")
         sql.execSQL("INSERT INTO $CHANGED (id) SELECT id FROM $NEXT WHERE id NOT IN (SELECT id FROM items)")
         val total = sql.query("SELECT COUNT(*) FROM $CHANGED").use { if (it.moveToFirst()) it.getLong(0) else 0L }
@@ -164,6 +186,7 @@ class PlaylistWriter(
     /** Throws a half-written playlist away; the cache stays as it was. */
     fun discard() {
         sql.execSQL("DROP TABLE IF EXISTS $NEXT")
+        GuideSearchIndex.dropNext(sql)
     }
 
     private fun SupportSQLiteStatement.bind(item: ItemEntity) {

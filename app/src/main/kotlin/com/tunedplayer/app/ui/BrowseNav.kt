@@ -89,6 +89,7 @@ fun NavGraphBuilder.browseScreens(app: AppNav) {
             onPlay = app.play,
             onOpenShow = { key, title -> app.nav.navigate(ShowRoute(key, title)) },
             onOpenMovie = { id -> app.nav.navigate(MovieRoute(id)) },
+            onOpenGuide = { id -> app.nav.navigate(GuideRoute(id)) },
             onTune = app.tune,
         )
     }

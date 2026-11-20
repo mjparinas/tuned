@@ -81,11 +81,15 @@ object Stalker {
         val adult: Boolean = false,
     )
 
-    /** A stored link: the portal's section (`itv` for live TV), the channel's id, and the command to ask a link for. */
+    /**
+     * A stored link: the portal's section (`itv` for live TV, `vod` for films, `series` for shows), the stream's id, the
+     * command to ask a link for, and for an episode its number in the season ([series], which `create_link` takes).
+     */
     data class Link(
         val type: String,
         val id: String,
         val cmd: String,
+        val series: String? = null,
     )
 
     /** `stalker://itv/<id>?cmd=<command>`: the id is the last part of the path, which keeps ids stable ([StableId]). */
@@ -93,17 +97,24 @@ object Stalker {
         type: String,
         id: String,
         cmd: String,
-    ): String = "$SCHEME$type/${enc(id)}?cmd=${enc(cmd)}"
+        series: String? = null,
+    ): String = "$SCHEME$type/${enc(id)}?cmd=${enc(cmd)}" + (series?.let { "&series=${enc(it)}" } ?: "")
 
     fun parse(url: String): Link? {
         if (!url.startsWith(SCHEME)) return null
         val rest = url.removePrefix(SCHEME)
         val type = rest.substringBefore('/')
         val id = dec(rest.substringAfter('/', "").substringBefore('?'))
-        val cmd = dec(rest.substringAfter("?cmd=", ""))
+        val query = rest.substringAfter('?', "")
+        val cmd = dec(param(query, "cmd").orEmpty())
         if (type.isEmpty() || cmd.isEmpty()) return null
-        return Link(type, id, cmd)
+        return Link(type, id, cmd, param(query, "series")?.let(::dec))
     }
+
+    private fun param(
+        query: String,
+        name: String,
+    ): String? = query.split('&').firstOrNull { it.startsWith("$name=") }?.substringAfter('=')
 
     fun isLink(url: String) = url.startsWith(SCHEME)
 
@@ -165,6 +176,129 @@ object Stalker {
         return if (p.startsWith("/")) origin(base) + p else "$base/$p"
     }
 
+    /**
+     * A film or show as the portal's library lists it (`get_ordered_list`, a page of about fourteen at a time). A show
+     * is either in the `series` section, or a `vod` item marked `is_series` that may list its episode numbers itself.
+     */
+    data class VodItem(
+        val id: String,
+        val name: String,
+        val cmd: String,
+        val logo: String?,
+        val isSeries: Boolean,
+        val episodes: List<Int> = emptyList(),
+        val adult: Boolean = false,
+    )
+
+    /** A season of a show (`get_ordered_list` with `movie_id`), with its command and episode numbers. */
+    data class Season(
+        val id: String,
+        val name: String,
+        val cmd: String,
+        val episodes: List<Int>,
+    )
+
+    /** A film from the library, sorted into a country and an adult flag like any other stream. */
+    fun movie(
+        v: VodItem,
+        category: String,
+        order: Int,
+    ): PlaylistEntry = PlaylistEntry(
+        name = v.name,
+        url = link(VOD, v.id, v.cmd),
+        kind = ContentKind.MOVIE,
+        group = category.ifBlank { "Uncategorized" },
+        tvgId = null,
+        logo = v.logo,
+        region = Regions.detect(category, null, v.name),
+        adult = v.adult || Classifier.isAdult(category, v.name),
+        episode = null,
+        order = order,
+    )
+
+    /**
+     * A show, stored as one stand-in row (`stalker-show:<section>/<id>`) until it is opened, like the Xtream API's
+     * shows: its seasons are a call each, so they are fetched then. A `vod` show that lists its episodes keeps them in
+     * the link, for portals that have no seasons to ask for.
+     */
+    fun showStandIn(
+        type: String,
+        v: VodItem,
+        category: String,
+        order: Int,
+    ): PlaylistEntry {
+        val own = if (v.episodes.isEmpty()) "" else "?cmd=${enc(v.cmd)}&series=${v.episodes.joinToString(",")}"
+        return PlaylistEntry(
+            name = v.name,
+            url = "$SHOW$type/${enc(v.id)}$own",
+            kind = ContentKind.SERIES,
+            group = category.ifBlank { "Uncategorized" },
+            tvgId = null,
+            logo = v.logo,
+            region = Regions.detect(category, null, v.name),
+            adult = v.adult || Classifier.isAdult(category, v.name),
+            episode = EpisodeInfo(v.name, 0, 0),
+            order = order,
+        )
+    }
+
+    /** A show's stand-in, read back: its section, id, and the episodes a `vod` show listed itself. */
+    data class StandIn(
+        val type: String,
+        val id: String,
+        val cmd: String?,
+        val episodes: List<Int>,
+    )
+
+    fun standIn(url: String): StandIn? {
+        if (!url.startsWith(SHOW)) return null
+        val rest = url.removePrefix(SHOW)
+        val type = rest.substringBefore('/')
+        val id = dec(rest.substringAfter('/', "").substringBefore('?'))
+        if (type.isEmpty() || id.isEmpty()) return null
+        val query = rest.substringAfter('?', "")
+        val episodes = param(query, "series")?.split(',')?.mapNotNull { it.trim().toIntOrNull() }.orEmpty()
+        return StandIn(type, id, param(query, "cmd")?.let(::dec), episodes)
+    }
+
+    /** One episode: the season's command with its number, filed under [show]'s name so it joins the stand-in's show. */
+    @Suppress("LongParameterList") // the fields of one episode
+    fun episode(
+        type: String,
+        showId: String,
+        show: String,
+        category: String,
+        cover: String?,
+        seasonCmd: String,
+        season: Int,
+        number: Int,
+        order: Int,
+    ): PlaylistEntry = PlaylistEntry(
+        name = "$show S${pad(season)}E${pad(number)}",
+        url = link(type, "$showId.$season.$number", seasonCmd, number.toString()),
+        kind = ContentKind.SERIES,
+        group = category,
+        tvgId = null,
+        logo = cover,
+        region = Regions.detect(category, null, show),
+        adult = Classifier.isAdult(category, show),
+        episode = EpisodeInfo(show, season, number),
+        order = order,
+    )
+
+    /** A season's number from its name ("Season 2", "S02", "Сезон 3"), or its place in the list. */
+    fun seasonNumber(
+        name: String,
+        index: Int,
+    ): Int = Regex("\\d+")
+        .findAll(name)
+        .lastOrNull()
+        ?.value
+        ?.toIntOrNull()
+        ?.takeIf { it in 1..MAX_SEASON } ?: (index + 1)
+
+    private fun pad(n: Int) = n.toString().padStart(2, '0')
+
     /** A guide time: portals send seconds, some milliseconds. */
     fun millis(value: Long): Long = if (value < MILLIS_FROM) value * 1000 else value
 
@@ -187,6 +321,10 @@ object Stalker {
     }
 
     const val LIVE = "itv"
+    const val VOD = "vod"
+    const val SERIES = "series"
+    const val SHOW = "stalker-show:"
+    private const val MAX_SEASON = 200
     private const val HEX = "0123456789abcdef"
     private const val MAC_HEX = 12
     private const val SERIAL_LENGTH = 13

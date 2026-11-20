@@ -15,6 +15,7 @@ import com.tunedplayer.app.core.Search
 import com.tunedplayer.app.data.db.CurrentProfileEntity
 import com.tunedplayer.app.data.db.DownloadEntity
 import com.tunedplayer.app.data.db.FavouriteEntity
+import com.tunedplayer.app.data.db.GuideSearchIndex
 import com.tunedplayer.app.data.db.HistoryEntity
 import com.tunedplayer.app.data.db.ItemEntity
 import com.tunedplayer.app.data.db.MetadataEntity
@@ -105,6 +106,7 @@ object SampleData {
                 }
             },
         )
+        GuideSearchIndex.fillIfMissing(db)
         db.library().addFavourite(FavouriteEntity(1, now))
         db.library().addFavourite(FavouriteEntity(4, now))
         db.library().saveProgress(HistoryEntity(SHOW_IDS, positionMs = 2_400_000, durationMs = 2_700_000, watchedAt = now))

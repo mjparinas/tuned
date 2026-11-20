@@ -83,6 +83,14 @@ class StalkerPortalTest {
                             )
                         }
 
+                        "get_categories" -> {
+                            json("""{"js":[{"id":"*","title":"All"},{"id":"5","title":"EN | ACTION"}]}""")
+                        }
+
+                        "get_ordered_list" -> {
+                            orderedList(request)
+                        }
+
                         else -> {
                             MockResponse.Builder().code(404).build()
                         }
@@ -93,6 +101,35 @@ class StalkerPortalTest {
     }
 
     @After fun stop() = server.close()
+
+    /** Films a page of two at a time (three in all), or a show's seasons when `movie_id` is asked for. */
+    private fun orderedList(request: RecordedRequest): MockResponse {
+        if (request.url.queryParameter("movie_id") == "77") {
+            return json(
+                """{"js":{"total_items":2,"max_page_items":14,"data":[
+                {"id":"77:1","name":"Season 1","cmd":"eyJzIjoxfQ==","series":[1,2]},
+                {"id":"77:2","name":"Season 2","cmd":"eyJzIjoyfQ==","series":["1"]}
+                ]}}""",
+            )
+        }
+        val page = request.url.queryParameter("p")
+        val data =
+            when (page) {
+                "1" -> {
+                    """{"id":"1","name":"Heat","cmd":"/media/1.mpg","screenshot_uri":"/s/1.jpg"},
+                    {"id":"2","name":"Harbour Town","cmd":"/media/2.mpg","is_series":"1","series":[1,2,3]}"""
+                }
+
+                "2" -> {
+                    """{"id":"3","name":"Ronin","cmd":"/media/3.mpg"}"""
+                }
+
+                else -> {
+                    ""
+                }
+            }
+        return json("""{"js":{"total_items":3,"max_page_items":2,"data":[$data]}}""")
+    }
 
     private fun json(body: String) = MockResponse
         .Builder()
@@ -155,5 +192,36 @@ class StalkerPortalTest {
         portal().guide(24) { got += it }
         assertEquals(listOf(Programme("10", 1_700_000_000_000L, 1_700_003_600_000L, "News", "Headlines")), got)
         assertEquals("24", seen.last().url.queryParameter("period"))
+    }
+
+    @Test
+    fun `a library category is read page by page until the last`() {
+        val p = portal()
+        assertEquals(listOf("5" to "EN | ACTION"), p.categories(Stalker.VOD))
+        val got = ArrayList<Stalker.VodItem>()
+        p.library(Stalker.VOD, "5", limit = 100) { got += it }
+        assertEquals(listOf("Heat", "Harbour Town", "Ronin"), got.map { it.name })
+        assertEquals(server.url("/s/1.jpg").toString(), got[0].logo)
+        assertTrue(got[1].isSeries)
+        assertEquals(listOf(1, 2, 3), got[1].episodes)
+        assertEquals(2, seen.count { it.url.queryParameter("action") == "get_ordered_list" })
+    }
+
+    @Test
+    fun `the library stops at its limit`() {
+        val got = ArrayList<Stalker.VodItem>()
+        portal().library(Stalker.VOD, "5", limit = 1) { got += it }
+        assertEquals(listOf("Heat"), got.map { it.name })
+    }
+
+    @Test
+    fun `a show's seasons come with their episode numbers, and an episode asks for its number`() {
+        val p = portal()
+        val seasons = p.seasons(Stalker.SERIES, "77")
+        assertEquals(listOf(listOf(1, 2), listOf(1)), seasons.map { it.episodes })
+        p.streamFor(Stalker.Link(Stalker.SERIES, "77.1.2", seasons[0].cmd, "2"))
+        val create = seen.last { it.url.queryParameter("action") == "create_link" }
+        assertEquals("2", create.url.queryParameter("series"))
+        assertEquals("series", create.url.queryParameter("type"))
     }
 }
