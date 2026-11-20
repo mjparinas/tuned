@@ -70,8 +70,8 @@ class TraktAccount(
     private val json = Json { ignoreUnknownKeys = true }
     private val refreshing = Mutex()
 
-    /** Whether this build can talk to Trakt at all. */
-    val available: Boolean get() = BuildConfig.TRAKT_CLIENT_ID.isNotBlank()
+    /** Whether Trakt can be used: the build has the key and the admin's `trakt` switch is on (docs/decisions/admin.md). */
+    val available: Boolean get() = BuildConfig.TRAKT_CLIENT_ID.isNotBlank() && ServerFlags.now.value.trakt
 
     private val sessionFlow = MutableStateFlow(load())
     val session: StateFlow<Session?> = sessionFlow.asStateFlow()

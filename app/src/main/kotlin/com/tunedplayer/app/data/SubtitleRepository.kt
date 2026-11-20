@@ -153,7 +153,8 @@ class SubtitleRepository(
         return Token(value, answer.baseUrl?.takeIf { it.isNotBlank() } ?: DEFAULT_HOST, account).also { token = it }
     }
 
-    private fun key() = BuildConfig.OPENSUBTITLES_API_KEY
+    /** Empty when the build has no key or the admin's `subtitle_search` switch is off: the search hides either way. */
+    private fun key() = if (ServerFlags.now.value.subtitleSearch) BuildConfig.OPENSUBTITLES_API_KEY else ""
 
     private fun userAgent() = OpenSubtitles.userAgent(BuildConfig.VERSION_NAME)
 

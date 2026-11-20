@@ -180,6 +180,8 @@ internal val SETTING_FIELDS: List<SettingField<*, *>> =
         // Ratings, network and updates
         string("user_agent", { userAgent }) { copy(userAgent = it) },
         bool("check_updates", { checkUpdates }) { copy(checkUpdates = it) },
+        // Whether this device sends usage stats is asked of each device (its region decides the default), so it stays on it.
+        choice("usage_stats", { usageStats }) { copy(usageStats = it) }.notBackedUp(),
         // Profiles: mirrored from the database, which sync doesn't carry
         bool("ask_profile_at_start", { askProfileAtStart }) { copy(askProfileAtStart = it) },
         long("profile_id", { profileId }) { copy(profileId = it) }.notBackedUp(),

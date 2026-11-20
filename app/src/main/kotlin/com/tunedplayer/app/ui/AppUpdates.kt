@@ -10,7 +10,9 @@ import com.google.android.play.core.install.InstallStateUpdatedListener
 import com.google.android.play.core.install.model.AppUpdateType
 import com.google.android.play.core.install.model.InstallStatus
 import com.google.android.play.core.install.model.UpdateAvailability
+import com.tunedplayer.app.BuildConfig
 import com.tunedplayer.app.container
+import com.tunedplayer.app.data.ServerFlags
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
@@ -48,7 +50,10 @@ class AppUpdates(
             // the check short. The check never throws.
             val container = activity.container
             container.appScope.launch {
-                if (container.settings.settings
+                // A version older than the admin's `min_version_code` looks for an update even with the setting off.
+                val tooOld = ServerFlags.now.value.tooOld(BuildConfig.VERSION_CODE)
+                if (tooOld ||
+                    container.settings.settings
                         .first()
                         .checkUpdates
                 ) {

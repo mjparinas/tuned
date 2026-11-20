@@ -7,6 +7,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -20,6 +21,7 @@ import com.tunedplayer.app.BuildConfig
 import com.tunedplayer.app.R
 import com.tunedplayer.app.container
 import com.tunedplayer.app.data.AppSettings
+import com.tunedplayer.app.data.ServerFlags
 import com.tunedplayer.app.data.SubtitleAccount
 import com.tunedplayer.app.ui.common.TunedDialog
 
@@ -33,7 +35,8 @@ fun SubtitleSettings(
     settings: AppSettings,
     update: ((AppSettings) -> AppSettings) -> Unit,
 ) {
-    if (BuildConfig.OPENSUBTITLES_API_KEY.isEmpty()) return
+    val flags by ServerFlags.now.collectAsState()
+    if (BuildConfig.OPENSUBTITLES_API_KEY.isEmpty() || !flags.subtitleSearch) return
     SectionHeader(stringResource(R.string.settings_subtitles))
     SwitchRow(
         stringResource(R.string.settings_auto_subtitles),

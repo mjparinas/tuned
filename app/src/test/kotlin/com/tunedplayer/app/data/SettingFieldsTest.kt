@@ -66,6 +66,7 @@ class SettingFieldsTest {
             channelNumbers = false,
             startOnLastChannel = true,
             checkUpdates = false,
+            usageStats = UsageChoice.OFF,
             captions =
                 CaptionStyle(
                     enabled = true,
@@ -179,6 +180,7 @@ private val KNOWN_KEYS =
         "always_show_scrollbar",
         "start_on_last_channel",
         "check_updates",
+        "usage_stats",
         "cc_enabled",
         "cc_language",
         "cc_scale",

@@ -51,6 +51,12 @@ enum class BufferMode(
     SMOOTH(30_000, 120_000, 3_000),
 }
 
+/**
+ * Anonymous usage stats (docs/decisions/admin.md): [AUTO] is on outside the EU, EEA, UK and Switzerland and off inside
+ * them ([com.tunedplayer.app.core.UsageRules.onByDefault]); [ON] and [OFF] are the person's own choice.
+ */
+enum class UsageChoice { AUTO, ON, OFF }
+
 /** Lighter mode for weak TV boxes: [AUTO] turns it on for a low-memory device or one that keeps freezing. */
 enum class LighterMode { AUTO, ON, OFF }
 
@@ -164,6 +170,8 @@ data class AppSettings(
     val startOnLastChannel: Boolean = false,
     /** Look for a newer release on GitHub at start (copies from Play update through Play either way). */
     val checkUpdates: Boolean = true,
+    /** Settings › Updates and advanced › Privacy › Send anonymous usage stats. */
+    val usageStats: UsageChoice = UsageChoice.AUTO,
     val captions: CaptionStyle = CaptionStyle(),
     val lastPlaylistSync: Long = 0,
     val lastGuideSync: Long = 0,

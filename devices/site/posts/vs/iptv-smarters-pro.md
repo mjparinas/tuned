@@ -9,24 +9,24 @@ IPTV Smarters Pro, from WHMCS Smarters, is on almost every platform: Android, Fi
 
 ## At a glance
 
-|                                | IPTV Smarters Pro                                                 | Tuned                                                                                                                                               |
-| ------------------------------ | ----------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Where it runs                  | Android phones and boxes, Fire TV, Samsung TVs, and more          | Android phones, tablets, Chromebooks, Android TV and Google TV                                                                                      |
-| Playlist types                 | Xtream Codes, M3U file and link                                   | Xtream Codes login, M3U link, M3U file, MAC portal (live TV and guide)                                                                              |
-| TV guide                       | EPG                                                               | XMLTV guide as a list or a full grid, with reminders                                                                                                |
-| Catch-up                       | Yes                                                               | Yes, on Xtream servers that keep recordings                                                                                                         |
-| Recording                      | Listed on the Android version                                     | Yes, the channel you are watching (Premium)                                                                                                         |
-| Pause and rewind live TV       | Not stated by the developer                                       | Yes, up to an hour kept on the device (Premium)                                                                                                     |
-| Several channels at once       | Multi-screen listed on the Android version                        | No, on purpose: one stream connection at a time                                                                                                     |
-| Casting to a TV                | Chromecast                                                        | Chromecast                                                                                                                                          |
-| Picture-in-picture             | Yes, on Android                                                   | Yes                                                                                                                                                 |
-| Offline downloads              | Not stated by the developer                                       | Films and episodes, whole seasons too (more than 3 at a time is Premium)                                                                            |
-| Profiles and parental controls | Parental control; several logins in one app                       | Up to 6 profiles, kids profiles and PINs (Premium); adult categories locked behind a PIN                                                            |
-| Trakt                          | Not stated by the developer                                       | Yes, scrobbles films and episodes (Premium)                                                                                                         |
-| Film and show details          | Film and cast info                                                | TMDB ratings, trailers, cast and actor pages, saved on the device                                                                                   |
-| Subtitles                      | Not stated by the developer                                       | Full caption styling, timing fix, and subtitle search for films and episodes                                                                        |
-| Ads                            | Not stated by the developer                                       | None, ever                                                                                                                                          |
-| Price                          | Free on the Samsung store; prices not stated on the pages we read | Free, everything unlocked in the download from this site; on Google Play (coming soon), Premium US$9.99 a year with a 7-day trial, or US$24.99 once |
+|                                | IPTV Smarters Pro                                                 | Tuned                                                                                    |
+| ------------------------------ | ----------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| Where it runs                  | Android phones and boxes, Fire TV, Samsung TVs, and more          | Android phones, tablets, Chromebooks, Android TV and Google TV                           |
+| Playlist types                 | Xtream Codes, M3U file and link                                   | Xtream Codes login, M3U link, M3U file, MAC portal (live TV and guide)                   |
+| TV guide                       | EPG                                                               | XMLTV guide as a list or a full grid, with reminders                                     |
+| Catch-up                       | Yes                                                               | Yes, on Xtream servers that keep recordings                                              |
+| Recording                      | Listed on the Android version                                     | Yes, the channel you are watching (Premium)                                              |
+| Pause and rewind live TV       | Not stated by the developer                                       | Yes, up to an hour kept on the device (Premium)                                          |
+| Several channels at once       | Multi-screen listed on the Android version                        | No, on purpose: one stream connection at a time                                          |
+| Casting to a TV                | Chromecast                                                        | Chromecast                                                                               |
+| Picture-in-picture             | Yes, on Android                                                   | Yes                                                                                      |
+| Offline downloads              | Not stated by the developer                                       | Films and episodes, whole seasons too (more than 3 at a time is Premium)                 |
+| Profiles and parental controls | Parental control; several logins in one app                       | Up to 6 profiles, kids profiles and PINs (Premium); adult categories locked behind a PIN |
+| Trakt                          | Not stated by the developer                                       | Yes, scrobbles films and episodes (Premium)                                              |
+| Film and show details          | Film and cast info                                                | TMDB ratings, trailers, cast and actor pages, saved on the device                        |
+| Subtitles                      | Not stated by the developer                                       | Full caption styling, timing fix, and subtitle search for films and episodes             |
+| Ads                            | Not stated by the developer                                       | None, ever                                                                               |
+| Price                          | Free on the Samsung store; prices not stated on the pages we read | Free; Premium US$9.99 a year with a 7-day trial, or US$24.99 once                        |
 
 "Not stated by the developer" means we couldn't find it on the developer's own pages or store listing. It may still be there, so check before you rule it out.
 
@@ -34,7 +34,7 @@ IPTV Smarters Pro, from WHMCS Smarters, is on almost every platform: Android, Fi
 
 The Samsung TV version is listed as free, and the pages we could read for the Android version don't state a price. Be careful with copies: the app stores have several unrelated apps with "Smarters" in the name, some with their own subscriptions. Tuned is free, with Premium at US$9.99 a year with a 7-day trial or US$24.99 once.
 
-Right now Tuned downloads from this site, through GitHub Releases, and that version is free with every feature unlocked, Premium ones included. The Premium prices are for the Google Play version, which is coming soon; they are what Play charges in the United States, and Play shows them in your own currency. Premium on Play covers up to three devices, and a Tuned account can add more.
+Tuned's prices are what Google Play charges in the United States; Play shows them in your own currency. Premium covers up to three devices, and a Tuned account can add more.
 
 ## Where IPTV Smarters Pro is ahead
 

@@ -51,6 +51,23 @@ object CrashReporter {
                 .toLongOrNull()
         }
 
+    /**
+     * Crashes and freezes saved after [sinceMs], as ("crash" or "freeze", when), from the file names, for the usage
+     * stats' count ([UsageStats]); never what was in them. Lists a folder: off the main thread.
+     */
+    fun savedSince(
+        context: Context,
+        sinceMs: Long,
+    ): List<Pair<String, Long>> = files(File(context.filesDir, DIR)).mapNotNull { file ->
+        val kind = file.name.substringBefore('-')
+        val time =
+            file.name
+                .substringAfter('-')
+                .removeSuffix(".txt")
+                .toLongOrNull()
+        if (time != null && time > sinceMs) kind to time else null
+    }
+
     fun clear(context: Context) {
         files(File(context.filesDir, DIR)).forEach { it.delete() }
     }

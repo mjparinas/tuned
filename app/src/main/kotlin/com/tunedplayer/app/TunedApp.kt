@@ -15,6 +15,7 @@ import coil3.memory.MemoryCache
 import coil3.network.okhttp.OkHttpNetworkFetcherFactory
 import coil3.request.allowRgb565
 import coil3.request.crossfade
+import com.tunedplayer.app.data.ServerFlags
 import com.tunedplayer.app.data.settleNewRegions
 import com.tunedplayer.app.diagnostics.CrashReporter
 import com.tunedplayer.app.diagnostics.FreezeWatch
@@ -70,6 +71,7 @@ class TunedApp :
                 .collect { mode -> withContext(Dispatchers.IO) { Lighter.refresh(this@TunedApp, mode) } }
         }
         lockAdultWhenAway()
+        followForAdmin()
         CloudSyncWorker.watch(this)
         container.appScope.launchSafely("Profiles") { container.profiles.sync() }
         // Remember the countries already there, so ones a refresh adds can follow the rest.
@@ -113,6 +115,36 @@ class TunedApp :
     }
 
     /**
+     * The admin's side (docs/decisions/admin.md): each time the app comes up, the usage stats note it and the flags are
+     * read a few seconds later, after the first frame; each time it leaves the screen, waiting stats go up if due.
+     */
+    private fun followForAdmin() {
+        container.usage.watch()
+        var cold = true
+        ProcessLifecycleOwner.get().lifecycle.addObserver(
+            LifecycleEventObserver { _, event ->
+                when (event) {
+                    Lifecycle.Event.ON_START -> {
+                        container.usage.opened(cold)
+                        cold = false
+                        container.appScope.launchSafely("Flags") {
+                            ServerFlags.loadSaved(this@TunedApp)
+                            delay(FLAGS_DELAY_MS)
+                            ServerFlags.refresh(this@TunedApp, container.http, container.tvSignInUrl, container.usage.idIfOn())
+                        }
+                    }
+
+                    Lifecycle.Event.ON_STOP -> {
+                        container.appScope.launchSafely("Usage") { container.usage.flush() }
+                    }
+
+                    else -> {}
+                }
+            },
+        )
+    }
+
+    /**
      * Logos, posters, backdrops and cast photos: memory plus a disk cache in app storage (not the cache folder, which
      * Android empties when space runs low), so artwork downloads once and then loads from the device, online or not.
      * Coil reads its disk cache before the network and ignores servers' cache headers, so a picture seen once is
@@ -140,6 +172,7 @@ class TunedApp :
 }
 
 private const val ADULT_RELOCK_MS = 5 * 60_000L
+private const val FLAGS_DELAY_MS = 3_000L
 private const val MEMORY_SHARE = 0.2
 private const val LIGHTER_MEMORY_SHARE = 0.1
 private const val IMAGE_CACHE_SHARE = 0.05

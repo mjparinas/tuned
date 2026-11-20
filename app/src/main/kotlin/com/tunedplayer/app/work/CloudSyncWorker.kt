@@ -13,6 +13,7 @@ import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import com.tunedplayer.app.container
+import com.tunedplayer.app.data.ServerFlags
 import com.tunedplayer.app.diagnostics.logFailures
 import java.util.concurrent.TimeUnit
 
@@ -35,7 +36,8 @@ class CloudSyncWorker(
 
         fun schedule(context: Context) {
             val sync = context.container.cloudSync
-            if (!sync.signedIn.value) return
+            // The admin's `account_backup` switch pauses backups for everyone; they carry on when it's back on.
+            if (!sync.signedIn.value || !ServerFlags.now.value.accountBackup) return
             val request =
                 OneTimeWorkRequestBuilder<CloudSyncWorker>()
                     .setConstraints(Constraints.Builder().setRequiredNetworkType(NetworkType.CONNECTED).build())
