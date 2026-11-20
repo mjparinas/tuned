@@ -53,7 +53,7 @@ class OfflineWorker(
         while (true) {
             // Something started playing (the player, or a TV) between being queued and now: stop; the queue starts
             // again when it ends.
-            if (container.watching()) return Result.success()
+            if (container.watching() || container.recordingOpen.value) return Result.success()
             val row = dao.next() ?: return Result.success()
             // Its page first (details, poster, cast photos), so it looks the same offline; a few small requests.
             attempt(TAG, "Couldn't save the artwork for ${row.name}") { container.savedArtwork.keep(row.itemId) }

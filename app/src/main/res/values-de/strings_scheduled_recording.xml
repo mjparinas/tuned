@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="recording_set">Aufnehmen</string>
+    <string name="recording_cancel">Aufnahme abbrechen</string>
+    <string name="recording_scheduled">%1$s wird aufgenommen</string>
+    <string name="recording_clash">Für diese Zeit ist schon eine Aufnahme geplant. Tuned nimmt immer nur eine auf.</string>
+    <string name="recording_running">%1$s wird aufgenommen</string>
+    <string name="settings_record_padding">Aufnahmen früher starten und später beenden</string>
+    <string name="settings_record_padding_off">Pünktlich</string>
+    <plurals name="settings_record_padding_minutes">
+        <item quantity="one">%1$d Minute auf jeder Seite</item>
+        <item quantity="other">%1$d Minuten auf jeder Seite</item>
+    </plurals>
+</resources>

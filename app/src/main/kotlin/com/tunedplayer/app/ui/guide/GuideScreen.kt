@@ -4,6 +4,7 @@ import android.Manifest
 import android.app.Application
 import android.content.pm.PackageManager
 import android.os.Build
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -24,9 +25,11 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.EditCalendar
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
+import androidx.compose.material.icons.filled.FiberManualRecord
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.NotificationsNone
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.RadioButtonUnchecked
 import androidx.compose.material.icons.filled.Replay
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
@@ -42,6 +45,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -58,10 +62,13 @@ import com.tunedplayer.app.data.db.ItemEntity
 import com.tunedplayer.app.data.db.ProgrammeEntity
 import com.tunedplayer.app.diagnostics.launchSafely
 import com.tunedplayer.app.player.PlayerActivity
+import com.tunedplayer.app.premium.Premium
+import com.tunedplayer.app.premium.premiumUnlocked
 import com.tunedplayer.app.ui.common.BackTopBar
 import com.tunedplayer.app.ui.common.focusRing
 import com.tunedplayer.app.ui.common.rememberTimeLabels
 import com.tunedplayer.app.work.Reminders
+import com.tunedplayer.app.work.ScheduledRecordings
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -132,6 +139,30 @@ class GuideViewModel(
         }
     }
 
+    private val recordings = app.container.scheduledRecordings
+
+    /** Keys ([ScheduledRecordings.key]) of the programmes set to record. */
+    val recording: StateFlow<Set<String>> =
+        recordings.scheduled
+            .map { slots -> slots.map { it.key }.toSet() }
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptySet())
+
+    /** Sets or cancels a recording; [onSet] hears whether it was set (false: another one holds the connection then). */
+    fun toggleRecording(
+        p: ProgrammeEntity,
+        onSet: (Boolean) -> Unit,
+    ) {
+        val c = channel.value ?: return
+        if (ScheduledRecordings.key(c.id, p.start) in recording.value) {
+            recordings.cancel(c.id, p.start)
+        } else {
+            viewModelScope.launchSafely("Guide") {
+                val padding = settings.settings.first().recordPaddingMinutes
+                onSet(recordings.set(c.id, p.title, p.start, p.stop, padding) == null)
+            }
+        }
+    }
+
     private companion object {
         const val LIMIT = 200
         const val LIMIT_WITH_PAST = 1_000
@@ -160,6 +191,26 @@ fun GuideScreen(
     val times = rememberTimeLabels()
     val now = System.currentTimeMillis()
     val scheduled by vm.scheduled.collectAsStateWithLifecycle()
+    val recording by vm.recording.collectAsStateWithLifecycle()
+    val premium = premiumUnlocked()
+    val toggleRecording: (ProgrammeEntity) -> Unit = { p ->
+        if (!premium) {
+            Premium.open(context)
+        } else {
+            vm.toggleRecording(p) { set ->
+                val message =
+                    if (set) {
+                        context.getString(
+                            R.string.recording_scheduled,
+                            p.title,
+                        )
+                    } else {
+                        context.getString(R.string.recording_clash)
+                    }
+                Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
     var pending by remember { mutableStateOf<ProgrammeEntity?>(null) }
     // Android 13+ asks once for notifications the first time a reminder is set; a "no" just leaves it unset.
     val askPermission =
@@ -295,6 +346,20 @@ fun GuideScreen(
                                 )
                             }
                         }
+                        // Recording is Premium, as the player's Record button is (docs/decisions/premium.md).
+                        if (p.stop > now) {
+                            val recorded = channel?.let { ScheduledRecordings.key(it.id, p.start) in recording } == true
+                            IconButton(onClick = { toggleRecording(p) }) {
+                                Icon(
+                                    if (recorded) Icons.Filled.FiberManualRecord else Icons.Filled.RadioButtonUnchecked,
+                                    contentDescription =
+                                        stringResource(
+                                            if (recorded) R.string.recording_cancel else R.string.recording_set,
+                                        ),
+                                    tint = if (recorded) RECORD_RED else MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
+                        }
                         if (p.start > now) {
                             val reminded = channel?.let { Reminders.key(it.id, p.start) in scheduled } == true
                             IconButton(onClick = { toggleReminder(p) }) {
@@ -311,3 +376,6 @@ fun GuideScreen(
         }
     }
 }
+
+/** The same red as the player's REC mark. */
+private val RECORD_RED = Color(0xFFE53935)

@@ -28,6 +28,9 @@ class PlaylistSession(
     private val scanControl: ScanWorker.Control,
     private val cache: PlaylistCache,
 ) {
+    /** Programmes set to record point at this playlist's channels, so they go with it, as reminders do. */
+    private val recordings get() = context.container.scheduledRecordings
+
     /**
      * Makes [login] the one in use and remembers it among the saved playlists. A different playlist's channels and
      * guide are cleared first, so the lists never mix two providers. The one left is copied aside, and one used lately
@@ -41,6 +44,7 @@ class PlaylistSession(
         var restored = false
         if (previous != null && !previous.samePlaylist(login)) {
             reminders.cancelAll()
+            recordings.cancelAll()
             if (TvHome.isTv(context)) attempt("TvHome", "Couldn't clear the home screen") { TvHome(context).clear() }
             val before = settings.settings.first()
             withContext(Dispatchers.IO) {
@@ -120,6 +124,7 @@ class PlaylistSession(
         scheduler.cancelAll()
         scanControl.stop()
         reminders.cancelAll()
+        recordings.cancelAll()
         if (TvHome.isTv(context)) attempt("TvHome", "Couldn't clear the home screen") { TvHome(context).clear() }
         credentials.clear()
         cache.clear()
