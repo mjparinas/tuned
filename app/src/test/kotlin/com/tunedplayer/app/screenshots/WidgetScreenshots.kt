@@ -51,6 +51,35 @@ class WidgetScreenshots : Screenshots() {
     /** Another accent, which the widgets follow as the app does. */
     @Test fun teal() = sheet("widgets-teal", WidgetLook(theme = ThemeMode.DARK, accent = Accent.TEAL))
 
+    /**
+     * Favourites at two heights (Melvin, 2026-11-20): the tiles keep the size they have on a 4 by 2 widget, and a taller
+     * widget shows more rows of channels instead of taller tiles.
+     */
+    @Test
+    fun favouritesSizes() {
+        val look = WidgetLook(theme = ThemeMode.DARK)
+        val tiles =
+            runBlocking(Dispatchers.IO) {
+                val db = app.container.db
+                val now = System.currentTimeMillis()
+                (1L..SampleData.channels.size).forEach { db.library().addFavourite(FavouriteEntity(it, now + it)) }
+                FavouritesWidget.tiles(
+                    app,
+                    app.container.settings.settings
+                        .first(),
+                )
+            }
+        val favourites = FavouritesData(look, signedIn = true, tiles = tiles)
+        draw(
+            "widgets-favourites-sizes",
+            listOf(
+                Placed(FULL, TWO_CELLS) { FavouritesContent(favourites) },
+                Placed(FULL, FOUR_CELLS) { FavouritesContent(favourites) },
+            ),
+            look,
+        )
+    }
+
     @Test
     fun empty() {
         val look = WidgetLook(theme = ThemeMode.DARK)
@@ -176,5 +205,7 @@ class WidgetScreenshots : Screenshots() {
         const val SHORT = 130f
         const val SQUARE = 130f
         const val STRIP = 110f
+        const val TWO_CELLS = 170f
+        const val FOUR_CELLS = 406f
     }
 }
