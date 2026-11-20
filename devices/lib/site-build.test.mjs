@@ -84,7 +84,14 @@ test("every page carries the Android download, and the sitemap lists every post"
 
 test("every hand-written page has the shared header and footer", async () => {
     const { readFileSync } = await import("node:fs");
-    for (const page of ["account/index.html", "tv/index.html", "devices/index.html", "app/signed-in.html", "check/index.html"]) {
+    for (const page of [
+        "account/index.html",
+        "account/playlists/index.html",
+        "tv/index.html",
+        "devices/index.html",
+        "app/signed-in.html",
+        "check/index.html",
+    ]) {
         const html = readFileSync(new URL(`../public/${page}`, import.meta.url), "utf8");
         assert.match(html, /<body>\s*<script src="\/chrome.js" data-part="header"><\/script>/, page);
         assert.match(html, /<script src="\/chrome.js" data-part="footer"><\/script>\s*<\/body>/, page);

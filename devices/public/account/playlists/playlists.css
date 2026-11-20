@@ -1,0 +1,134 @@
+/* The Playlists and settings page (docs/decisions/accounts.md), on top of site.css: the app's switches and choice chips. */
+.back {
+    margin: 0 0 4px;
+    font-size: 0.9rem;
+}
+.back a {
+    text-decoration: none;
+}
+.row-actions {
+    display: flex;
+    gap: 8px;
+    flex-shrink: 0;
+}
+.row-actions button {
+    padding: 8px 16px;
+}
+.row .small {
+    margin: 2px 0 0;
+    overflow-wrap: anywhere;
+}
+
+/* The kind of playlist, as the app's three cards: chips in a row that wrap on a phone. */
+.kinds {
+    border: 0;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+.kinds legend {
+    font-weight: 600;
+    font-size: 0.9rem;
+    margin-bottom: 6px;
+    padding: 0;
+}
+.kinds label {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+    min-height: 48px;
+    padding: 8px 18px;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    cursor: pointer;
+    font-weight: 600;
+}
+.kinds input {
+    width: auto;
+    min-height: 0;
+    margin: 0;
+    accent-color: var(--primary);
+}
+.kinds label:has(input:checked) {
+    background: var(--primary-soft);
+    color: var(--on-primary-soft);
+    border-color: transparent;
+}
+.kinds label:has(input:focus-visible) {
+    outline: 3px solid var(--focus);
+    outline-offset: 2px;
+}
+.hint {
+    margin: 6px 0 0;
+}
+label.check {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 400;
+    min-height: 48px;
+}
+label.check input {
+    width: 20px;
+    min-height: 20px;
+    accent-color: var(--primary);
+}
+#editor-form .actions button {
+    width: auto;
+    margin-top: 0;
+}
+
+/* Settings rows: the label beside its switch or choice, as in the app's Settings. */
+.setting label {
+    margin: 0;
+    font-weight: 400;
+    font-size: 1rem;
+    flex: 1;
+}
+.setting select {
+    max-width: 55%;
+}
+input.switch {
+    appearance: none;
+    flex-shrink: 0;
+    width: 52px;
+    min-height: 32px;
+    height: 32px;
+    padding: 0;
+    border-radius: 999px;
+    background: var(--card-2);
+    border: 2px solid var(--muted);
+    position: relative;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+input.switch::before {
+    content: "";
+    position: absolute;
+    top: 6px;
+    left: 6px;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: var(--muted);
+    transition:
+        transform 0.15s,
+        width 0.15s;
+}
+input.switch:checked {
+    background: var(--primary);
+    border-color: var(--primary);
+}
+input.switch:checked::before {
+    background: var(--on-primary);
+    top: 2px;
+    width: 24px;
+    height: 24px;
+    transform: translateX(18px);
+}
+input.switch:disabled {
+    opacity: 0.5;
+}

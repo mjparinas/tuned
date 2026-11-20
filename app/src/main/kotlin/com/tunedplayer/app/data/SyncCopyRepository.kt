@@ -43,6 +43,13 @@ class SyncCopyRepository(
         val signedIn: Boolean,
         /** Guide fixes changed: read the guide again so the fixed channels show theirs. */
         val guideChanged: Boolean,
+        /**
+         * The playlist in use was removed elsewhere (the website or another device): switch to this one, which clears
+         * the old provider's channels first. Null when it stays.
+         */
+        val switchTo: Credentials? = null,
+        /** The playlist in use got a new password or guide link elsewhere, or a refresh was asked for: download it again. */
+        val refresh: Boolean = false,
     )
 
     @Serializable
@@ -253,6 +260,7 @@ class SyncCopyRepository(
      */
     suspend fun applySyncCopy(plain: ByteArray): Applied = withContext(Dispatchers.IO) {
         val contents = decodeContents(plain)
+        val refreshBefore = settings.snapshot()[REFRESH_KEY]
         settings.restore(contents.settings.mapNotNull { (k, v) -> decode(v)?.let { k to it } }.toMap())
         if (contents.profiles.isNotEmpty()) {
             ProfileSync(db).replace(contents.profiles)
@@ -266,17 +274,60 @@ class SyncCopyRepository(
         contents.trakt?.let { trakt.adopt(it) }
         contents.traktScrobble?.let { trakt.setScrobble(it) }
         contents.subtitles?.let { credentials.saveSubtitleAccount(SubtitleAccount(it.username, it.password)) }
-        contents.playlists.forEach { credentials.remember(it.toCredentials()) }
-        val first = contents.playlists.firstOrNull()
-        val signedIn =
-            if (credentials.load() == null && first != null) {
-                credentials.save(first.toCredentials())
-                true
-            } else {
-                false
-            }
-        Applied(signedIn, guideChanged)
+        val refreshAsked = refreshAsked(before = refreshBefore, after = settings.snapshot()[REFRESH_KEY])
+        val playlists = applyPlaylists(contents.playlists.map { it.toCredentials() })
+        playlists.copy(guideChanged = guideChanged, refresh = playlists.refresh || refreshAsked)
     }
+
+    /**
+     * The copy's playlists in place of the saved ones, so a playlist removed or changed on the website or another
+     * device goes or changes here too. Playlists from a file stay, since they never leave the device. The one in use is
+     * kept up to date: a new password is saved, and one removed elsewhere switches to the next.
+     */
+    private fun applyPlaylists(incoming: List<Credentials>): Applied {
+        val files = credentials.saved().filter { it.kind == Credentials.Kind.File }
+        credentials.replaceSaved(incoming + files)
+        val inUse = credentials.load()
+        val first = incoming.firstOrNull()
+        return when {
+            inUse == null && first != null -> {
+                credentials.save(first)
+                Applied(signedIn = true, guideChanged = false)
+            }
+
+            inUse == null || inUse.kind == Credentials.Kind.File -> {
+                Applied(signedIn = false, guideChanged = false)
+            }
+
+            else -> {
+                val match = incoming.firstOrNull { it.samePlaylist(inUse) }
+                when {
+                    match == null -> {
+                        // Removed elsewhere: the next one takes over. With nothing else saved, this device keeps it.
+                        val next = (incoming + files).firstOrNull()
+                        if (next == null) credentials.remember(inUse)
+                        Applied(signedIn = false, guideChanged = false, switchTo = next)
+                    }
+
+                    match != inUse -> {
+                        credentials.save(match)
+                        val reload = match.password != inUse.password || match.guideUrl != inUse.guideUrl || match.extraGuides != inUse.extraGuides
+                        Applied(signedIn = false, guideChanged = false, refresh = reload)
+                    }
+
+                    else -> {
+                        Applied(signedIn = false, guideChanged = false)
+                    }
+                }
+            }
+        }
+    }
+
+    /** "Refresh on my devices" on the website sets a newer time in the copy's settings than this device last saw. */
+    private fun refreshAsked(
+        before: Any?,
+        after: Any?,
+    ): Boolean = (after as? Long ?: 0L) > (before as? Long ?: 0L)
 
     /** Returns whether the fixes changed. */
     private suspend fun applyGuideFixes(fixes: List<GuideFix>): Boolean {
@@ -318,6 +369,9 @@ class SyncCopyRepository(
     private companion object {
         /** 2 added the profiles, guide fixes, intros and accounts (2026-11-19). */
         const val VERSION = 2
+
+        /** When the website last asked every device to refresh its playlist ([AppSettings.refreshRequestedAt]). */
+        const val REFRESH_KEY = "refresh_requested_at"
         val json = Json { ignoreUnknownKeys = true }
 
         /** A setting with its type, since JSON alone can't tell an Int from a Long or a Float. */

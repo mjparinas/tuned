@@ -137,6 +137,9 @@ class CredentialStore(
 
     fun forget(credentials: Credentials) = write(saved().filterNot { it.samePlaylist(credentials) })
 
+    /** Puts [list] in place of the saved playlists, as a synced copy has them (one playlist per account, first kept). */
+    fun replaceSaved(list: List<Credentials>) = write(list.distinctBy { Triple(it.server, it.username, it.playlistUrl) })
+
     /**
      * The optional OpenSubtitles.com account (Settings › Playback › Subtitles), which raises the daily download limit. Kept
      * encrypted like the login, and forgotten on sign-out with it.

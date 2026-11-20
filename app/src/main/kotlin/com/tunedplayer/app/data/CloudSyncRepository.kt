@@ -4,12 +4,18 @@ import android.content.Context
 import androidx.core.content.edit
 import com.tunedplayer.app.core.CloudSync
 import com.tunedplayer.app.diagnostics.AppLog
+import com.tunedplayer.app.diagnostics.attempt
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.booleanOrNull
+import kotlinx.serialization.json.jsonObject
 import java.io.IOException
 
 /**
@@ -29,6 +35,12 @@ class CloudSyncRepository(
     private val onGuideChanged: () -> Unit = {},
     /** An event for the usage stats: "backup_saved" or "backup_restored" (docs/decisions/admin.md). */
     private val onUsage: (String) -> Unit = {},
+    /** The playlist in use was removed on the website or another device: switch to this one. */
+    private val onSwitch: suspend (Credentials) -> Unit = {},
+    /** The playlist in use changed elsewhere, or the website asked for a refresh: download it again. */
+    private val onRefresh: () -> Unit = {},
+    /** The copy both sides last agreed on, which [CopyMerge] joins against. */
+    private val base: LastSynced = LastSynced(context),
 ) {
     enum class Problem { NONE, OFFLINE }
 
@@ -73,6 +85,7 @@ class CloudSyncRepository(
 
     private fun forget() {
         prefs.edit(commit = true) { clear() }
+        base.clear()
         statusFlow.value = Status(0, Problem.NONE)
     }
 
@@ -120,6 +133,7 @@ class CloudSyncRepository(
                     return@withLock Restore.NOTHING_SAVED
                 }
             markSynced(found.fingerprint ?: CloudSync.fingerprint(found.copy), found.version)
+            base.save(found.copy)
             val now = System.currentTimeMillis()
             prefs.edit { putLong(KEY_LAST_SYNC, now) }
             statusFlow.value = Status(now, Problem.NONE)
@@ -159,32 +173,95 @@ class CloudSyncRepository(
         when (CloudSync.decide(local, synced, remoteFingerprint, remote?.changedAt ?: 0, localChangedAt)) {
             CloudSync.Step.NOTHING -> {
                 markSynced(local, remote?.version ?: 0)
+                base.save(plain)
             }
 
             CloudSync.Step.PUSH -> {
+                if (remote != null && remoteFingerprint != synced) {
+                    // Both sides changed: join them part by part rather than letting this device's copy replace the other.
+                    join(plain, local, synced, requireNotNull(remote), requireNotNull(remoteFingerprint), localChangedAt)
+                    return
+                }
                 // A Conflict (another device saved since find) is an IOException: the next run decides again.
                 account.upload(plain, local, System.currentTimeMillis(), remote?.version ?: 0)
                 markSynced(local, (remote?.version ?: 0) + 1)
+                base.save(plain)
                 onUsage("backup_saved")
             }
 
             CloudSync.Step.PULL -> {
-                val found = requireNotNull(remote)
-                val applied =
-                    try {
-                        syncCopy.applySyncCopy(found.copy)
-                    } catch (e: SyncCopyRepository.NotACopy) {
-                        // A damaged copy: this device's replaces it rather than leaving the backup stuck.
-                        AppLog.w(TAG, "Couldn't read the backup; sending this device's", e)
-                        account.upload(plain, local, System.currentTimeMillis(), found.version)
-                        markSynced(local, found.version + 1)
-                        return
-                    }
-                markSynced(requireNotNull(remoteFingerprint), found.version)
-                if (applied.guideChanged) onGuideChanged()
-                if (applied.signedIn) onSignedIn()
+                join(plain, local, synced, requireNotNull(remote), requireNotNull(remoteFingerprint), localChangedAt)
             }
         }
+    }
+
+    /**
+     * The backup changed since this device last synced (the website, or another device): takes it, joined with what
+     * changed here meanwhile ([CopyMerge]), and sends the joined copy back when it holds something the backup lacks.
+     */
+    private suspend fun join(
+        plain: ByteArray,
+        local: String,
+        synced: String?,
+        remote: TunedAccount.Remote,
+        remoteFingerprint: String,
+        localChangedAt: Long,
+    ) {
+        val localJson = json.parseToJsonElement(plain.decodeToString()).jsonObject
+        val remoteJson =
+            attempt(TAG, "Couldn't read the backup") { json.parseToJsonElement(remote.copy.decodeToString()).jsonObject }.getOrNull()
+        if (remoteJson == null) {
+            replaceDamaged(plain, local, remote.version)
+            return
+        }
+        val localChanged = local != synced
+        val partial = (remoteJson[CopyMerge.PARTIAL] as? JsonPrimitive)?.booleanOrNull == true
+        val agreed =
+            when {
+                // Never synced, or a copy the website made from nothing: whatever is on either side counts as added.
+                synced == null || partial -> JsonObject(emptyMap())
+                // Nothing changed here since the last sync, so this device's copy is the one both agreed on.
+                !localChanged -> localJson
+                else -> base.load()?.let { attempt(TAG, "Couldn't read the last synced copy") { json.parseToJsonElement(it).jsonObject }.getOrNull() }
+                    ?: JsonObject(emptyMap())
+            }
+        val remoteWins = synced == null || !localChanged || remote.changedAt > localChangedAt
+        val merged = CopyMerge.merge(agreed, localJson, remoteJson, remoteWins)
+        val applied =
+            try {
+                syncCopy.applySyncCopy(merged.toString().toByteArray())
+            } catch (e: SyncCopyRepository.NotACopy) {
+                AppLog.w(TAG, "Couldn't read the backup; sending this device's", e)
+                replaceDamaged(plain, local, remote.version)
+                return
+            }
+        if (CopyMerge.same(merged, remoteJson)) {
+            markSynced(remoteFingerprint, remote.version)
+            base.save(remote.copy)
+        } else {
+            // This device had changes the backup lacks: send the joined copy, as this device now reads it.
+            val joined = syncCopy.syncCopy()
+            val fingerprint = CloudSync.fingerprint(joined)
+            account.upload(joined, fingerprint, System.currentTimeMillis(), remote.version)
+            markSynced(fingerprint, remote.version + 1)
+            base.save(joined)
+            onUsage("backup_saved")
+        }
+        if (applied.guideChanged) onGuideChanged()
+        if (applied.signedIn) onSignedIn()
+        applied.switchTo?.let { onSwitch(it) }
+        if (applied.refresh && applied.switchTo == null && !applied.signedIn) onRefresh()
+    }
+
+    /** A damaged copy: this device's replaces it rather than leaving the backup stuck. */
+    private suspend fun replaceDamaged(
+        plain: ByteArray,
+        local: String,
+        version: Int,
+    ) {
+        account.upload(plain, local, System.currentTimeMillis(), version)
+        markSynced(local, version + 1)
+        base.save(plain)
     }
 
     private fun markSynced(
@@ -203,5 +280,6 @@ class CloudSyncRepository(
         const val KEY_CHANGED_AT = "changedAt"
         const val KEY_LAST_SYNC = "lastSync"
         const val KEY_VERSION = "version"
+        val json = Json { ignoreUnknownKeys = true }
     }
 }

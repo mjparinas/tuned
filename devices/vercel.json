@@ -16,6 +16,10 @@
       "destination": "/account/index.html"
     },
     {
+      "source": "/account/playlists",
+      "destination": "/account/playlists/index.html"
+    },
+    {
       "source": "/check",
       "destination": "/check/index.html"
     },
