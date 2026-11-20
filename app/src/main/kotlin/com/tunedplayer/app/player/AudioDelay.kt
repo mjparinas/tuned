@@ -41,6 +41,10 @@ internal class TunedRenderersFactory(
     init {
         // If a device's first decoder for a format fails to start, try its next one instead of giving up.
         setEnableDecoderFallback(true)
+        // Dolby and DTS sound the device can't decode itself goes to FFmpeg's decoder, after the device's own, when the
+        // build has it (CI builds it in; docs/decisions/player.md). A device that can play it, or pass it to a
+        // soundbar, still does.
+        setExtensionRendererMode(EXTENSION_RENDERER_MODE_ON)
     }
 
     override fun buildAudioSink(
