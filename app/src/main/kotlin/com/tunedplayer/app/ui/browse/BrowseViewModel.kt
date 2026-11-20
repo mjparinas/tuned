@@ -15,10 +15,10 @@ import com.tunedplayer.app.core.Search
 import com.tunedplayer.app.data.AppSettings
 import com.tunedplayer.app.data.SyncProgress
 import com.tunedplayer.app.data.db.ChannelNumbers
-import com.tunedplayer.app.data.db.GuideSearchIndex
 import com.tunedplayer.app.data.db.ChannelWithNow
 import com.tunedplayer.app.data.db.ContinueRow
 import com.tunedplayer.app.data.db.GroupCount
+import com.tunedplayer.app.data.db.GuideSearchIndex
 import com.tunedplayer.app.data.db.ItemEntity
 import com.tunedplayer.app.data.db.ListEntity
 import com.tunedplayer.app.data.db.ProfileEntity
