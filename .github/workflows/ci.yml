@@ -172,10 +172,13 @@ jobs:
     needs: changes
     if: needs.changes.outputs.mobile == 'true'
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    # 25 minutes, plus about 15 the first time a Media3 version's decoder is built.
+    timeout-minutes: 40
     steps:
       - uses: actions/checkout@v7
       - uses: ./.github/actions/setup-android
+      # The Dolby and DTS decoder, built once per Media3 version and cached, so R8 sees it here as in Release.
+      - uses: ./.github/actions/ffmpeg-decoder
       # Unsigned release builds of both the GitHub and the store build, so R8 fails here on a missing keep rule, not in
       # Release. No debug APK: Melvin
       # (2026-11-18) installs only production releases, and lint and the unit tests already compile the debug variant.

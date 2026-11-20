@@ -1,0 +1,30 @@
+name: FFmpeg sound decoder
+description: >
+  Media3's FFmpeg decoder (Dolby and DTS sound only), built from the androidx/media tag that matches the app's Media3
+  version and put at app/libs/media3-decoder-ffmpeg.aar. Google doesn't publish it. Built once per Media3 version and
+  kept in the Actions cache; the app picks it up when the file is there (docs/decisions/player.md).
+runs:
+  using: composite
+  steps:
+    - id: version
+      shell: bash
+      run: |
+        media3=$(sed -n 's/^media3 = "\(.*\)"/\1/p' gradle/libs.versions.toml)
+        echo "media3=$media3" >> "$GITHUB_OUTPUT"
+    - id: cache
+      uses: actions/cache/restore@v6
+      with:
+        path: app/libs/media3-decoder-ffmpeg.aar
+        key: ffmpeg-decoder-${{ steps.version.outputs.media3 }}-${{ hashFiles('.github/actions/ffmpeg-decoder/**') }}
+    - name: Build the decoder
+      if: steps.cache.outputs.cache-hit != 'true'
+      shell: bash
+      env:
+        MEDIA3: ${{ steps.version.outputs.media3 }}
+      run: .github/actions/ffmpeg-decoder/build.sh "$MEDIA3" "$GITHUB_WORKSPACE/app/libs/media3-decoder-ffmpeg.aar"
+    # Only main and staging write the cache, like Gradle's, so pull requests read it without filling it with copies.
+    - if: steps.cache.outputs.cache-hit != 'true' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/staging')
+      uses: actions/cache/save@v6
+      with:
+        path: app/libs/media3-decoder-ffmpeg.aar
+        key: ${{ steps.cache.outputs.cache-primary-key }}
