@@ -5,7 +5,12 @@ import androidx.compose.ui.test.assertIsNotFocused
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.onRoot
+import androidx.compose.ui.test.printToString
 import androidx.test.core.app.ApplicationProvider
+import androidx.work.Configuration
+import androidx.work.testing.SynchronousExecutor
+import androidx.work.testing.WorkManagerTestInitHelper
 import com.tunedplayer.app.TunedApp
 import com.tunedplayer.app.data.ThemeMode
 import com.tunedplayer.app.data.db.CurrentProfileEntity
@@ -35,6 +40,8 @@ class ProfilesTvFocusTest {
 
     @Before
     fun seed() {
+        // As for the screenshots: the app turns WorkManager's start-up initializer off, and its container asks for it.
+        WorkManagerTestInitHelper.initializeTestWorkManager(app, Configuration.Builder().setExecutor(SynchronousExecutor()).build())
         runBlocking(Dispatchers.IO) {
             val db = app.container.db
             db.clearAllTables()
@@ -50,7 +57,9 @@ class ProfilesTvFocusTest {
                 ProfilesScreen(atStart = true, onPicked = {}, onBack = {})
             }
         }
-        compose.waitUntil(15_000) { compose.onAllNodes(hasText("Sam")).fetchSemanticsNodes().isNotEmpty() }
+        val shown = runCatching { compose.waitUntil(15_000) { compose.onAllNodes(hasText("Sam")).fetchSemanticsNodes().isNotEmpty() } }
+        // On a timeout, the failure says what was on screen instead.
+        if (shown.isFailure) throw AssertionError("The profiles never showed:\n" + compose.onRoot().printToString(), shown.exceptionOrNull())
         compose.waitForIdle()
     }
 
