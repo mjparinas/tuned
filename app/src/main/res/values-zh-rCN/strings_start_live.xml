@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_start_on_last_channel">从上一频道开始</string>
+    <string name="settings_start_on_last_channel_summary">打开 Tuned 时播放你上次观看的直播频道，就像机顶盒一样。按返回可显示你的列表。</string>
+</resources>

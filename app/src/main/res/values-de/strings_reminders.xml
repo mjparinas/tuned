@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="reminder_channel">Sendungserinnerungen</string>
+    <string name="reminder_text">Auf %1$s</string>
+    <string name="remind_me">Erinnern</string>
+    <string name="reminder_cancel">Erinnerung abbrechen</string>
+    <string name="settings_reminder_lead">Vor einer Sendung erinnern</string>
+    <string name="settings_notifications">Benachrichtigungen</string>
+    <string name="settings_notifications_summary">Erinnerungen und Hinweise zeigen einen Punkt am App-Symbol. Schalte ihn aus oder ändere Töne in den Android-Einstellungen</string>
+    <string name="playback_channel">Läuft gerade</string>
+    <string name="reminder_at_start">Zu Beginn</string>
+    <plurals name="minutes_before">
+        <item quantity="one">%d Minute vorher</item>
+        <item quantity="other">%d Minuten vorher</item>
+    </plurals>
+</resources>

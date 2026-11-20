@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Canadian English, like Liftsmith (colour, favourite, behaviour; but -ize). -->
 <resources>
-    <string name="app_name">Tuned</string>
+    <string name="app_name" translatable="false">Tuned</string>
     <string name="back">Back</string>
     <string name="cancel">Cancel</string>
     <string name="save">Save</string>
@@ -335,7 +335,7 @@
     <string name="premium_feature_downloads">Unlimited downloads (free keeps 3)</string>
     <string name="premium_feature_events">Follow events and get alerts</string>
     <string name="premium_feature_sync">Sync between your phone and TV</string>
-    <string name="premium_feature_trakt">Trakt</string>
+    <string name="premium_feature_trakt" translatable="false">Trakt</string>
     <string name="premium_feature_colours">Every accent colour</string>
     <plurals name="premium_try_free">
         <item quantity="one">Try %1$d day free, then %2$s a year</item>

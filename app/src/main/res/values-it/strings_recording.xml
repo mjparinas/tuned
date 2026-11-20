@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="record_start">Registra</string>
+    <string name="record_stop">Interrompi registrazione</string>
+    <string name="record_started">Registrazione di %1$s</string>
+    <string name="record_saved">Registrazione salvata in Download</string>
+    <string name="record_live_only">Non si può registrare. La registrazione funziona sui canali TV in diretta.</string>
+    <string name="record_not_casting">La registrazione non è disponibile durante la trasmissione su un altro dispositivo</string>
+    <string name="record_no_space">Spazio insufficiente su questo dispositivo per registrare</string>
+    <string name="record_space_ran_out">Registrazione interrotta: il dispositivo è quasi pieno</string>
+    <string name="record_failed">Registrazione interrotta: non è stato possibile salvarla</string>
+    <string name="recordings_section_size">Registrazioni · %1$s</string>
+    <string name="recording_remove">Elimina registrazione</string>
+    <string name="recording_hours_minutes">%1$d h %2$d min</string>
+    <string name="recording_minutes">%1$d min</string>
+</resources>

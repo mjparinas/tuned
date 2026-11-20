@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="record_start">Enregistrer</string>
+    <string name="record_stop">Arrêter l\'enregistrement</string>
+    <string name="record_started">Enregistrement de %1$s</string>
+    <string name="record_saved">Enregistrement sauvegardé dans Téléchargements</string>
+    <string name="record_live_only">Impossible d\'enregistrer ceci. L\'enregistrement fonctionne sur les chaînes de TV en direct.</string>
+    <string name="record_not_casting">L\'enregistrement n\'est pas disponible pendant le cast</string>
+    <string name="record_no_space">Pas assez d\'espace sur cet appareil pour enregistrer</string>
+    <string name="record_space_ran_out">Enregistrement arrêté : l\'appareil est presque plein</string>
+    <string name="record_failed">Enregistrement arrêté : impossible de le sauvegarder</string>
+    <string name="recordings_section_size">Enregistrements · %1$s</string>
+    <string name="recording_remove">Supprimer l\'enregistrement</string>
+    <string name="recording_hours_minutes">%1$d h %2$d min</string>
+    <string name="recording_minutes">%1$d min</string>
+</resources>

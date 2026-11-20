@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_background_play">متابعة التشغيل في الخلفية</string>
+    <string name="settings_background_play_summary">يستمر الصوت عند مغادرة التطبيق أو قفل الشاشة، مع عناصر تحكم في الإشعار. يبقى اتصالًا واحدًا.</string>
+</resources>

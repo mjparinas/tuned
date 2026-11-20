@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_page_playlists">Playlists et compte</string>
+    <string name="settings_page_playlists_summary">Vos playlists, la sauvegarde et la déconnexion</string>
+    <string name="settings_page_profiles">Profils et contrôle parental</string>
+    <string name="settings_page_profiles_summary">Qui regarde, catégories pour adultes et le PIN</string>
+    <string name="settings_page_channels">Chaînes et listes</string>
+    <string name="settings_page_channels_summary">Écran de départ, vue du guide, numéros, et pays et groupes masqués</string>
+    <string name="settings_page_guide">Guide et actualisation</string>
+    <string name="settings_page_guide_summary">Quand la playlist et le guide se téléchargent, jours de guide et rappels</string>
+    <string name="settings_page_playback_summary">Audio, reprise, passer l\'intro, retour en arrière et les commandes du lecteur</string>
+    <string name="settings_page_reliability">Quand une chaîne échoue</string>
+    <string name="settings_page_reliability_summary">Reconnexion, copies de secours, syntonisation auto et état des chaînes</string>
+    <string name="settings_page_appearance_summary">Thème, couleurs et noir pur</string>
+    <string name="settings_page_about">Mises à jour et avancé</string>
+    <string name="settings_page_about_summary">Mises à jour, user-agent et journaux</string>
+    <string name="settings_header_hidden">Ce qui est masqué</string>
+    <string name="settings_header_guide">Guide</string>
+    <string name="settings_header_screen">Écran et commandes</string>
+</resources>

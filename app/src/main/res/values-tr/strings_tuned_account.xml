@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="tuned_account">Tuned hesabı</string>
+    <string name="tuned_account_sign_in">Tuned hesabına giriş yap</string>
+    <string name="tuned_account_sign_in_summary">Listelerini, ayarlarını ve profillerini yedekle; telefonunu ve TV\'ni aynı tut</string>
+    <string name="tuned_account_asking">Kod alınıyor…</string>
+    <string name="tuned_account_enter_code">Kodu tara ya da herhangi bir telefon veya bilgisayarda %1$s adresine git, Google ile giriş yap ve bu kodu TV eşleştir bölümüne gir:</string>
+    <string name="tuned_account_open_or_enter">Web sitesini aç\'a dokun ve Google ile giriş yap. Ya da bir bilgisayarda %1$s adresine git, giriş yap ve bu kodu TV eşleştir bölümüne gir:</string>
+    <string name="tuned_account_waiting">Giriş yapman bekleniyor…</string>
+    <string name="tuned_account_open_site">Web sitesini aç</string>
+    <string name="tuned_account_failed">Tuned sunucusuna ulaşılamadı. Bağlantıyı kontrol edip tekrar dene.</string>
+    <string name="tuned_account_try_again">Tekrar dene</string>
+    <string name="tuned_account_signed_in">%1$s olarak giriş yapıldı.</string>
+    <string name="tuned_account_backup_now">Şimdi yedekle</string>
+    <string name="tuned_account_never">Henüz yedeklenmedi</string>
+    <string name="tuned_account_last">Son yedek %1$s</string>
+    <string name="tuned_account_offline">Yedeğine ulaşılamadı. Tekrar denenecek.</string>
+    <string name="tuned_account_sign_out">Tuned hesabından çıkış yap</string>
+    <string name="tuned_account_sign_out_summary">Bu cihazın oturumunu kapatır. Yedeğin ve bu cihazdakiler kalır.</string>
+    <string name="restore_account">Tuned hesabından geri yükle</string>
+    <string name="restore_account_summary">Listelerini, profillerini ve ayarlarını başka bir cihazdan geri getir</string>
+    <string name="restore_account_working">Listelerin, profillerin ve ayarların geri yükleniyor…</string>
+    <string name="restore_account_nothing">Bu hesabın henüz yedeği yok. Bunun yerine bir liste ekle; yedeklendiğinde diğer cihazların onu geri yükleyebilir.</string>
+    <string name="restore_account_no_playlist">Ayarların ve profillerin geri geldi ama yedekte bu cihazın açabileceği bir liste yok. Liste dosyaları eklendikleri cihazda kalır. Bunun yerine bir liste ekle.</string>
+    <string name="restore_account_offline">Yedeğine ulaşılamadı. Bağlantıyı kontrol edip tekrar dene.</string>
+</resources>

@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="reminder_channel">Program hatırlatıcıları</string>
+    <string name="reminder_text">%1$s kanalında</string>
+    <string name="remind_me">Hatırlat</string>
+    <string name="reminder_cancel">Hatırlatıcıyı iptal et</string>
+    <string name="settings_reminder_lead">Programdan önce hatırlat</string>
+    <string name="settings_notifications">Bildirimler</string>
+    <string name="settings_notifications_summary">Hatırlatıcılar ve uyarılar uygulama simgesine bir nokta koyar. Kapatmak veya sesleri değiştirmek için Android ayarlarını kullan</string>
+    <string name="playback_channel">Şimdi oynatılıyor</string>
+    <string name="reminder_at_start">Başladığında</string>
+    <plurals name="minutes_before">
+        <item quantity="one">%d dakika önce</item>
+        <item quantity="other">%d dakika önce</item>
+    </plurals>
+</resources>

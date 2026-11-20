@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_lighter">Leichter Modus</string>
+    <string name="lighter_auto">Automatisch</string>
+    <string name="lighter_auto_on">Automatisch: auf diesem Gerät an</string>
+    <string name="lighter_on">An: keine Überblendungen oder Animationen, leichtere Bilder</string>
+    <string name="lighter_off">Aus</string>
+</resources>

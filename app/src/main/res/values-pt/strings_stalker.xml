@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kind_stalker">Portal MAC</string>
+    <string name="kind_stalker_summary">Um endereço de portal e o endereço MAC que seu provedor registrou</string>
+    <string name="add_stalker_hint">Digite o endereço do portal e o endereço MAC que seu provedor configurou. A TV ao vivo e o guia vêm do portal.</string>
+    <string name="login_portal">Endereço do portal</string>
+    <string name="add_portal_help">Como http://portal.example.com/c/</string>
+    <string name="login_mac">Endereço MAC</string>
+    <string name="add_mac_help">Como 00:1A:79:12:34:56</string>
+    <string name="add_bad_mac">Isso não é um endereço MAC. Ele tem 12 letras e números, como 00:1A:79:12:34:56.</string>
+    <string name="login_mac_refused">O portal não aceitou esse endereço MAC.</string>
+</resources>

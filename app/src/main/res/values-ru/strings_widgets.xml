@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="widget_favourites">Избранные каналы</string>
+    <string name="widget_favourites_description">Логотипы избранных каналов и то, что идёт сейчас. Нажмите на канал, чтобы смотреть.</string>
+    <string name="widget_empty_title">Пока нет избранного</string>
+    <string name="widget_empty">Нажмите на сердечко у канала, и он появится здесь.</string>
+    <string name="widget_add_favourites">Добавить в избранное</string>
+    <string name="widget_signed_out">Войдите в Tuned</string>
+    <string name="widget_signed_out_body">Избранные каналы появятся здесь, когда вы добавите плейлист.</string>
+    <string name="widget_open_tuned">Открыть Tuned</string>
+    <string name="widget_watch">Смотреть %1$s</string>
+    <string name="widget_watch_on_now">Смотреть %1$s. Сейчас: %2$s</string>
+    <string name="widget_continue">Продолжить просмотр</string>
+    <string name="widget_continue_description">Начатые фильмы и серии с оставшимся временем. Нажмите, чтобы продолжить с места остановки.</string>
+    <string name="widget_continue_empty_title">Ничего не начато</string>
+    <string name="widget_continue_empty">Здесь появятся фильмы и серии, которые вы начнёте смотреть.</string>
+    <string name="widget_continue_signed_out_body">Начатые фильмы и серии появятся здесь, когда вы добавите плейлист.</string>
+    <string name="widget_episode_number">С%1$d Е%2$d</string>
+    <string name="widget_resume">Продолжить %1$s. %2$s</string>
+    <plurals name="widget_minutes_left">
+        <item quantity="one">Осталась %d мин</item>
+        <item quantity="few">Осталось %d мин</item>
+        <item quantity="many">Осталось %d мин</item>
+        <item quantity="other">Осталось %d мин</item>
+    </plurals>
+    <string name="tile_last_channel">Предыдущий канал</string>
+</resources>

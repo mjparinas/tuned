@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_channel_numbers">Номера каналов</string>
+    <string name="settings_channel_numbers_summary">Показывать номер рядом с каждым каналом в эфире. Наберите его на пульте во время просмотра, чтобы переключить канал, и нажмите кнопку предыдущего канала, чтобы вернуться.</string>
+    <string name="player_no_channel_number">Нет канала %1$d</string>
+    <string name="player_flip_back">Предыдущий канал</string>
+</resources>

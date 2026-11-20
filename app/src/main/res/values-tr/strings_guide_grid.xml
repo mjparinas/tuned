@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="grid_show">TV rehberi tablosunu göster</string>
+    <string name="grid_hide">Kanal listesini göster</string>
+    <string name="grid_now">Şimdi</string>
+    <string name="grid_today">Bugün</string>
+    <string name="grid_no_guide">Rehber yok</string>
+    <string name="settings_live_grid">Canlı TV\'yi rehber tablosu olarak göster</string>
+    <string name="settings_live_grid_summary">Kanallar yanda, saat üstte. Aramanın yanındaki düğme de geçiş yapar.</string>
+</resources>

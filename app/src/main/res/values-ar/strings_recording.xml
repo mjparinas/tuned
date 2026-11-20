@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="record_start">تسجيل</string>
+    <string name="record_stop">إيقاف التسجيل</string>
+    <string name="record_started">جارٍ تسجيل %1$s</string>
+    <string name="record_saved">حُفظ التسجيل في التنزيلات</string>
+    <string name="record_live_only">لا يمكن تسجيل هذا. يعمل التسجيل على قنوات البث المباشر.</string>
+    <string name="record_not_casting">التسجيل غير متاح أثناء البث إلى جهاز آخر</string>
+    <string name="record_no_space">لا توجد مساحة كافية على هذا الجهاز للتسجيل</string>
+    <string name="record_space_ran_out">توقف التسجيل: الجهاز ممتلئ تقريبًا</string>
+    <string name="record_failed">توقف التسجيل: تعذّر حفظه</string>
+    <string name="recordings_section_size">التسجيلات · %1$s</string>
+    <string name="recording_remove">حذف التسجيل</string>
+    <string name="recording_hours_minutes">%1$d س %2$d د</string>
+    <string name="recording_minutes">%1$d د</string>
+</resources>

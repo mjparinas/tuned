@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="guide_fix_title">Corrigir o guia deste canal</string>
+    <string name="guide_fix_summary">Para um canal com horários errados, ou cujo guia mostra outro canal. A correção continua quando a lista é atualizada.</string>
+    <string name="guide_fix_remove">Desfazer correção</string>
+    <string name="guide_fix_offset">Mover os horários</string>
+    <string name="guide_fix_earlier">Antes</string>
+    <string name="guide_fix_later">Depois</string>
+    <string name="guide_fix_no_offset">Sem mudança</string>
+    <string name="guide_fix_entry">Entrada do guia</string>
+    <string name="guide_fix_entry_playlist">A da própria lista</string>
+    <string name="guide_fix_choose">Escolher outra</string>
+    <string name="guide_fix_entry_reset">Usar a da lista</string>
+    <string name="guide_fix_search">Buscar canais do guia</string>
+    <string name="guide_fix_no_results">Nenhum canal do guia corresponde. Se o guia ainda não terminou de baixar, tente mais tarde.</string>
+    <string name="settings_guide_offset">Ajuste de horário do guia</string>
+    <string name="settings_extra_guides">Links de guia extras</string>
+    <string name="settings_extra_guides_none">Nenhum</string>
+    <plurals name="settings_extra_guides_count">
+        <item quantity="one">%d link</item>
+        <item quantity="many">%d links</item>
+        <item quantity="other">%d links</item>
+    </plurals>
+    <string name="settings_extra_guides_summary">Links XMLTV lidos depois do guia do provedor, para preencher os canais que ele deixa vazios. Salvar lê o guia de novo.</string>
+    <string name="settings_extra_guides_remove">Remover link</string>
+    <string name="settings_extra_guides_add">Adicionar um link (https://…)</string>
+</resources>

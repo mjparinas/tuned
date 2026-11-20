@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_lighter">Modalità leggera</string>
+    <string name="lighter_auto">Automatica</string>
+    <string name="lighter_auto_on">Automatica: attiva su questo dispositivo</string>
+    <string name="lighter_on">Attiva: niente dissolvenze né animazioni, immagini più leggere</string>
+    <string name="lighter_off">Disattivata</string>
+</resources>

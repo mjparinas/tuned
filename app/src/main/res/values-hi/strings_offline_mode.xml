@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="offline_banner">आप ऑफ़लाइन हैं। सहेजी गई फ़िल्में और एपिसोड अभी भी चलते हैं।</string>
+    <string name="offline_banner_downloads">डाउनलोड</string>
+    <string name="offline_cant_play">आप ऑफ़लाइन हैं। केवल डाउनलोड की गई फ़िल्में और एपिसोड चल सकते हैं।</string>
+</resources>

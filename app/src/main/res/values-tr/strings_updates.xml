@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_check_now">Güncellemeleri kontrol et</string>
+    <string name="update_checking">GitHub kontrol ediliyor…</string>
+    <string name="update_up_to_date">Tuned %1$s güncel</string>
+    <string name="update_check_failed">GitHub\'a ulaşılamadı. Birazdan tekrar dene.</string>
+    <string name="update_channel">Güncellemeler</string>
+    <string name="update_notification_text">Tuned\'ı aç ve Yükle\'ye dokun</string>
+</resources>

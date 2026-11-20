@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="details_trailer">Zwiastun</string>
+    <string name="details_play">Odtwórz</string>
+    <string name="details_resume">Wznów</string>
+    <string name="details_cast">Obsada</string>
+    <string name="play_now">Odtwórz teraz</string>
+    <string name="details_source">Szczegóły z The Movie Database (TMDB)</string>
+    <string name="details_no_key">Ta kompilacja nie ma klucza TMDB, więc oceny, opisy i zwiastuny są wyłączone.</string>
+</resources>

@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_background_play">Im Hintergrund weiterspielen</string>
+    <string name="settings_background_play_summary">Der Ton läuft weiter, wenn du die App verlässt oder den Bildschirm sperrst, mit Steuerung in der Benachrichtigung. Weiterhin nur eine Verbindung.</string>
+</resources>

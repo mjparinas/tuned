@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_page_playlists">Playlists und Konto</string>
+    <string name="settings_page_playlists_summary">Deine Playlists, Sicherung und Abmelden</string>
+    <string name="settings_page_profiles">Profile und Jugendschutz</string>
+    <string name="settings_page_profiles_summary">Wer schaut, Erwachseneninhalte und die PIN</string>
+    <string name="settings_page_channels">Sender und Listen</string>
+    <string name="settings_page_channels_summary">Startbildschirm, Programmansicht, Nummern sowie ausgeblendete Länder und Gruppen</string>
+    <string name="settings_page_guide">Programm und Aktualisierung</string>
+    <string name="settings_page_guide_summary">Wann Playlist und Programm geladen werden, Programmtage und Erinnerungen</string>
+    <string name="settings_page_playback_summary">Audio, Fortsetzen, Intro überspringen, Zurückspulen und die Player-Steuerung</string>
+    <string name="settings_page_reliability">Wenn ein Sender ausfällt</string>
+    <string name="settings_page_reliability_summary">Neu verbinden, Ersatzkopien, Sendersuche und Senderzustand</string>
+    <string name="settings_page_appearance_summary">Design, Farben und reines Schwarz</string>
+    <string name="settings_page_about">Updates und Erweitert</string>
+    <string name="settings_page_about_summary">Updates, User-Agent und Protokolle</string>
+    <string name="settings_header_hidden">Was ausgeblendet ist</string>
+    <string name="settings_header_guide">Programm</string>
+    <string name="settings_header_screen">Bildschirm und Steuerung</string>
+</resources>

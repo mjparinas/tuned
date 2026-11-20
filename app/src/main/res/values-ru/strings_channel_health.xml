@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="health_title">Состояние каналов</string>
+    <string name="settings_channel_health_summary">Проверить все каналы и скрыть те, что постоянно не работают</string>
+    <string name="health_help">Проверка по очереди пробует каждый канал в эфире, как старые телевизоры искали станции. Если пропадает интернет или сервер перестаёт отвечать, проверка ждёт или останавливается, а не винит каналы. Канал скрывается, только если не сработал в двух проверках с разницей не меньше шести часов, и возвращается, как только проверка находит его рабочим.</string>
+    <string name="health_scan_now">Проверить каналы</string>
+    <string name="health_stop">Остановить проверку</string>
+    <string name="health_starting">Запуск проверки…</string>
+    <string name="health_while_scanning">Проверка приостанавливается, пока вы что-то смотрите, поэтому всегда открыт только один поток.</string>
+    <string name="health_last_scan">Последняя проверка %1$s</string>
+    <plurals name="health_working">
+        <item quantity="one">%1$d работает</item>
+        <item quantity="few">%1$d работают</item>
+        <item quantity="many">%1$d работают</item>
+        <item quantity="other">%1$d работают</item>
+    </plurals>
+    <plurals name="health_failed">
+        <item quantity="one">%1$d не работает</item>
+        <item quantity="few">%1$d не работают</item>
+        <item quantity="many">%1$d не работают</item>
+        <item quantity="other">%1$d не работают</item>
+    </plurals>
+    <plurals name="health_unsure">
+        <item quantity="one">%1$d без оценки</item>
+        <item quantity="few">%1$d без оценки</item>
+        <item quantity="many">%1$d без оценки</item>
+        <item quantity="other">%1$d без оценки</item>
+    </plurals>
+    <string name="health_stopped_internet">Проверка остановлена, потому что пропал интернет. Ни один канал не был признан нерабочим.</string>
+    <string name="health_stopped_server">Проверка остановлена, потому что сервер не отдавал потоки. Ни один канал не был признан нерабочим.</string>
+    <string name="health_stopped_busy">Проверка остановлена, потому что ваш аккаунт использовал все подключения, вероятно на другом устройстве. Попробуйте позже.</string>
+    <string name="health_hide_dead">Скрывать постоянно неработающие каналы</string>
+    <string name="health_hide_placeholders">Скрывать пустые каналы событий</string>
+    <string name="health_hide_placeholders_summary">Убирает слоты с названиями вроде «No event streaming», пока провайдер не укажет настоящее событие</string>
+    <string name="health_hide_dead_summary">Отключите, чтобы показывать все каналы, включая скрытые проверками</string>
+    <plurals name="health_hidden">
+        <item quantity="one">%1$d скрытый канал</item>
+        <item quantity="few">%1$d скрытых канала</item>
+        <item quantity="many">%1$d скрытых каналов</item>
+        <item quantity="other">%1$d скрытых канала</item>
+    </plurals>
+    <plurals name="health_once">
+        <item quantity="one">%1$d канал не сработал, но всё ещё показан</item>
+        <item quantity="few">%1$d канала не сработали, но всё ещё показаны</item>
+        <item quantity="many">%1$d каналов не сработали, но всё ещё показаны</item>
+        <item quantity="other">%1$d канала не сработали, но всё ещё показаны</item>
+    </plurals>
+    <string name="health_show_again">Показать снова</string>
+    <string name="health_reason_http">сервер сообщил, что он недоступен</string>
+    <string name="health_reason_no_data">изображение не пришло</string>
+    <string name="health_reason_not_video">страница ошибки вместо видео</string>
+    <string name="health_reason_timeout">нет ответа вовремя</string>
+    <string name="health_reason_connection">не удалось подключиться</string>
+    <string name="health_reason_account">отклонено аккаунтом</string>
+    <string name="scan_channel">Проверка каналов</string>
+    <string name="scan_running">Проверяем каналы</string>
+    <plurals name="scan_progress">
+        <item quantity="one">%1$d из %2$d канала</item>
+        <item quantity="few">%1$d из %2$d каналов</item>
+        <item quantity="many">%1$d из %2$d каналов</item>
+        <item quantity="other">%1$d из %2$d каналов</item>
+    </plurals>
+</resources>

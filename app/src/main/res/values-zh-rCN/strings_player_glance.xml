@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <plurals name="player_pill_fps_spoken">
+        <item quantity="other">每秒 %d 帧</item>
+    </plurals>
+    <string name="player_pill_mono">单声道</string>
+    <string name="player_pill_stereo">立体声</string>
+    <string name="player_pill_channels">%1$d 声道</string>
+    <string name="player_pill_mono_spoken">单声道</string>
+    <string name="player_pill_stereo_spoken">立体声</string>
+    <string name="player_pill_5_1_spoken">5.1 环绕声</string>
+    <string name="player_pill_7_1_spoken">7.1 环绕声</string>
+    <plurals name="player_pill_channels_spoken">
+        <item quantity="other">%d 个声道</item>
+    </plurals>
+</resources>

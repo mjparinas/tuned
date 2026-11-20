@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="tuned_account">Cuenta de Tuned</string>
+    <string name="tuned_account_sign_in">Inicia sesión en tu cuenta de Tuned</string>
+    <string name="tuned_account_sign_in_summary">Guarda una copia de tus listas, ajustes y perfiles, y mantén iguales tu móvil y tu TV</string>
+    <string name="tuned_account_asking">Obteniendo un código…</string>
+    <string name="tuned_account_enter_code">Escanea el código, o en cualquier móvil u ordenador ve a %1$s, inicia sesión con Google e introduce este código en Vincular una TV:</string>
+    <string name="tuned_account_open_or_enter">Toca Abrir la web e inicia sesión con Google. O en un ordenador ve a %1$s, inicia sesión e introduce este código en Vincular una TV:</string>
+    <string name="tuned_account_waiting">Esperando a que inicies sesión…</string>
+    <string name="tuned_account_open_site">Abrir la web</string>
+    <string name="tuned_account_failed">No se pudo conectar con el servidor de Tuned. Revisa la conexión y vuelve a intentarlo.</string>
+    <string name="tuned_account_try_again">Reintentar</string>
+    <string name="tuned_account_signed_in">Sesión iniciada como %1$s.</string>
+    <string name="tuned_account_backup_now">Hacer copia ahora</string>
+    <string name="tuned_account_never">Aún sin copia de seguridad</string>
+    <string name="tuned_account_last">Última copia %1$s</string>
+    <string name="tuned_account_offline">No se pudo conectar con tu copia de seguridad. Se volverá a intentar.</string>
+    <string name="tuned_account_sign_out">Cerrar sesión en tu cuenta de Tuned</string>
+    <string name="tuned_account_sign_out_summary">Cierra la sesión en este dispositivo. Tu copia de seguridad y lo que hay en el dispositivo se mantienen.</string>
+    <string name="restore_account">Restaurar desde tu cuenta de Tuned</string>
+    <string name="restore_account_summary">Recupera tus listas, perfiles y ajustes de otro dispositivo</string>
+    <string name="restore_account_working">Restaurando tus listas, perfiles y ajustes…</string>
+    <string name="restore_account_nothing">Esta cuenta aún no tiene copia de seguridad. Añade una lista; cuando tenga copia, tus otros dispositivos podrán restaurarla.</string>
+    <string name="restore_account_no_playlist">Tus ajustes y perfiles se recuperaron, pero la copia no tiene ninguna lista que este dispositivo pueda abrir. Los archivos de lista se quedan en el dispositivo donde se añadieron. Añade una lista.</string>
+    <string name="restore_account_offline">No se pudo conectar con tu copia de seguridad. Revisa la conexión y vuelve a intentarlo.</string>
+</resources>

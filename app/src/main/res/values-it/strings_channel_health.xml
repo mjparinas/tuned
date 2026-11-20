@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="health_title">Stato dei canali</string>
+    <string name="settings_channel_health_summary">Scansiona tutti i canali e nascondi quelli che falliscono di continuo</string>
+    <string name="health_help">Una scansione prova ogni canale in diretta, uno alla volta, come le vecchie TV cercavano le stazioni. Se internet cade o il server smette di rispondere, la scansione attende o si ferma invece di dare la colpa ai canali. Un canale viene nascosto solo dopo aver fallito in due scansioni a distanza di almeno sei ore, e torna non appena una scansione lo trova funzionante.</string>
+    <string name="health_scan_now">Scansiona canali</string>
+    <string name="health_stop">Interrompi scansione</string>
+    <string name="health_starting">Avvio della scansione…</string>
+    <string name="health_while_scanning">La scansione si mette in pausa mentre guardi qualcosa, così c\'è sempre un solo stream aperto.</string>
+    <string name="health_last_scan">Ultima scansione %1$s</string>
+    <plurals name="health_working">
+        <item quantity="one">%1$d funziona</item>
+        <item quantity="many">%1$d funzionano</item>
+        <item quantity="other">%1$d funzionano</item>
+    </plurals>
+    <plurals name="health_failed">
+        <item quantity="one">%1$d non riuscito</item>
+        <item quantity="many">%1$d non riusciti</item>
+        <item quantity="other">%1$d non riusciti</item>
+    </plurals>
+    <plurals name="health_unsure">
+        <item quantity="one">%1$d non valutato</item>
+        <item quantity="many">%1$d non valutati</item>
+        <item quantity="other">%1$d non valutati</item>
+    </plurals>
+    <string name="health_stopped_internet">La scansione si è fermata perché internet non funzionava. Nessun canale è stato incolpato.</string>
+    <string name="health_stopped_server">La scansione si è fermata perché il server non inviava stream. Nessun canale è stato incolpato.</string>
+    <string name="health_stopped_busy">La scansione si è fermata perché il tuo account usava tutte le connessioni, probabilmente su un altro dispositivo. Riprova più tardi.</string>
+    <string name="health_hide_dead">Nascondi i canali che falliscono di continuo</string>
+    <string name="health_hide_placeholders">Nascondi i canali evento vuoti</string>
+    <string name="health_hide_placeholders_summary">Esclude gli slot con nomi come “No event streaming” finché il provider non indica un evento reale</string>
+    <string name="health_hide_dead_summary">Disattiva per mostrare tutti i canali, inclusi quelli nascosti dalle scansioni</string>
+    <plurals name="health_hidden">
+        <item quantity="one">%1$d canale nascosto</item>
+        <item quantity="many">%1$d canali nascosti</item>
+        <item quantity="other">%1$d canali nascosti</item>
+    </plurals>
+    <plurals name="health_once">
+        <item quantity="one">%1$d canale non ha funzionato ma è ancora visibile</item>
+        <item quantity="many">%1$d canali non hanno funzionato ma sono ancora visibili</item>
+        <item quantity="other">%1$d canali non hanno funzionato ma sono ancora visibili</item>
+    </plurals>
+    <string name="health_show_again">Mostra di nuovo</string>
+    <string name="health_reason_http">il server ha detto che non è disponibile</string>
+    <string name="health_reason_no_data">nessuna immagine ricevuta</string>
+    <string name="health_reason_not_video">una pagina di errore invece del video</string>
+    <string name="health_reason_timeout">nessuna risposta in tempo</string>
+    <string name="health_reason_connection">connessione non riuscita</string>
+    <string name="health_reason_account">rifiutato dall\'account</string>
+    <string name="scan_channel">Scansione canali</string>
+    <string name="scan_running">Scansione dei canali</string>
+    <plurals name="scan_progress">
+        <item quantity="one">%1$d di %2$d canale</item>
+        <item quantity="many">%1$d di %2$d canali</item>
+        <item quantity="other">%1$d di %2$d canali</item>
+    </plurals>
+</resources>

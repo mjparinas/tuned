@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_media_buttons">Medya düğmeleri</string>
+    <string name="settings_media_buttons_summary">Kulaklık, Bluetooth, TV kumandasının oynat tuşu ve Asistan duraklatabilir, oynatabilir ve kanal değiştirebilir</string>
+</resources>

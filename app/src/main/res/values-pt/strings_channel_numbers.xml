@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_channel_numbers">Números dos canais</string>
+    <string name="settings_channel_numbers_summary">Mostra um número ao lado de cada canal ao vivo. Digite no controle enquanto assiste para trocar de canal, e aperte o botão de último canal para voltar.</string>
+    <string name="player_no_channel_number">Não há canal %1$d</string>
+    <string name="player_flip_back">Último canal</string>
+</resources>

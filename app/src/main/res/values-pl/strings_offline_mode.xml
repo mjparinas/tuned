@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="offline_banner">Jesteś offline. Zapisane filmy i odcinki nadal się odtwarzają.</string>
+    <string name="offline_banner_downloads">Pobrane</string>
+    <string name="offline_cant_play">Jesteś offline. Można odtwarzać tylko pobrane filmy i odcinki.</string>
+</resources>

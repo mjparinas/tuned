@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="skip_intro">Пропустить заставку</string>
+    <string name="settings_skip_intro">Кнопка «Пропустить заставку»</string>
+    <string name="settings_skip_intro_off">Выкл.</string>
+</resources>

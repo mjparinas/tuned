@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="tuned_account">Konto Tuned</string>
+    <string name="tuned_account_sign_in">Zaloguj się na konto Tuned</string>
+    <string name="tuned_account_sign_in_summary">Twórz kopię playlist, ustawień i profili i utrzymuj telefon i telewizor w zgodzie</string>
+    <string name="tuned_account_asking">Pobieramy kod…</string>
+    <string name="tuned_account_enter_code">Zeskanuj kod lub na dowolnym telefonie albo komputerze wejdź na %1$s, zaloguj się przez Google i wpisz ten kod w sekcji Połącz telewizor:</string>
+    <string name="tuned_account_open_or_enter">Stuknij Otwórz stronę i zaloguj się przez Google. Albo na komputerze wejdź na %1$s, zaloguj się i wpisz ten kod w sekcji Połącz telewizor:</string>
+    <string name="tuned_account_waiting">Czekamy na zalogowanie…</string>
+    <string name="tuned_account_open_site">Otwórz stronę</string>
+    <string name="tuned_account_failed">Nie udało się połączyć z serwerem Tuned. Sprawdź połączenie i spróbuj ponownie.</string>
+    <string name="tuned_account_try_again">Spróbuj ponownie</string>
+    <string name="tuned_account_signed_in">Zalogowano jako %1$s.</string>
+    <string name="tuned_account_backup_now">Utwórz kopię teraz</string>
+    <string name="tuned_account_never">Brak kopii zapasowej</string>
+    <string name="tuned_account_last">Ostatnia kopia %1$s</string>
+    <string name="tuned_account_offline">Nie udało się połączyć z kopią zapasową. Spróbujemy ponownie.</string>
+    <string name="tuned_account_sign_out">Wyloguj się z konta Tuned</string>
+    <string name="tuned_account_sign_out_summary">Wylogowuje to urządzenie. Kopia zapasowa i dane na tym urządzeniu zostają.</string>
+    <string name="restore_account">Przywróć z konta Tuned</string>
+    <string name="restore_account_summary">Przywróć playlisty, profile i ustawienia z innego urządzenia</string>
+    <string name="restore_account_working">Przywracamy playlisty, profile i ustawienia…</string>
+    <string name="restore_account_nothing">To konto nie ma jeszcze kopii zapasowej. Dodaj playlistę; gdy powstanie kopia, inne urządzenia będą mogły ją przywrócić.</string>
+    <string name="restore_account_no_playlist">Ustawienia i profile wróciły, ale w kopii nie ma playlisty, którą to urządzenie może otworzyć. Pliki playlist zostają na urządzeniu, na którym je dodano. Dodaj playlistę.</string>
+    <string name="restore_account_offline">Nie udało się połączyć z kopią zapasową. Sprawdź połączenie i spróbuj ponownie.</string>
+</resources>

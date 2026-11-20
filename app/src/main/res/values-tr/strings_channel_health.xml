@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="health_title">Kanal sağlığı</string>
+    <string name="settings_channel_health_summary">Tüm kanalları tara ve sürekli başarısız olanları gizle</string>
+    <string name="health_help">Bir tarama, eski televizyonların istasyon araması gibi, her canlı kanalı tek tek dener. İnternet kesilirse veya sunucu yanıt vermeyi bırakırsa tarama kanalları suçlamak yerine bekler ya da durur. Bir kanal yalnızca en az altı saat arayla yapılan iki taramada başarısız olursa gizlenir ve bir tarama onu çalışır bulur bulmaz geri gelir.</string>
+    <string name="health_scan_now">Kanalları tara</string>
+    <string name="health_stop">Taramayı durdur</string>
+    <string name="health_starting">Tarama başlatılıyor…</string>
+    <string name="health_while_scanning">Bir şey izlerken tarama duraklar, böylece her zaman yalnızca bir yayın açık olur.</string>
+    <string name="health_last_scan">Son tarama %1$s</string>
+    <plurals name="health_working">
+        <item quantity="one">%1$d çalışıyor</item>
+        <item quantity="other">%1$d çalışıyor</item>
+    </plurals>
+    <plurals name="health_failed">
+        <item quantity="one">%1$d başarısız</item>
+        <item quantity="other">%1$d başarısız</item>
+    </plurals>
+    <plurals name="health_unsure">
+        <item quantity="one">%1$d değerlendirilmedi</item>
+        <item quantity="other">%1$d değerlendirilmedi</item>
+    </plurals>
+    <string name="health_stopped_internet">İnternet kesildiği için tarama durdu. Bunun için hiçbir kanal suçlanmadı.</string>
+    <string name="health_stopped_server">Sunucu hiç yayın göndermediği için tarama durdu. Bunun için hiçbir kanal suçlanmadı.</string>
+    <string name="health_stopped_busy">Hesabın tüm bağlantılarını kullandığı için tarama durdu, büyük olasılıkla başka bir cihazda. Daha sonra tekrar dene.</string>
+    <string name="health_hide_dead">Sürekli başarısız olan kanalları gizle</string>
+    <string name="health_hide_placeholders">Boş etkinlik kanallarını gizle</string>
+    <string name="health_hide_placeholders_summary">Sağlayıcı gerçek bir etkinlik adı koyana kadar “No event streaming” gibi adlı yuvaları çıkarır</string>
+    <string name="health_hide_dead_summary">Taramaların gizledikleri dâhil tüm kanalları göstermek için kapat</string>
+    <plurals name="health_hidden">
+        <item quantity="one">%1$d gizli kanal</item>
+        <item quantity="other">%1$d gizli kanal</item>
+    </plurals>
+    <plurals name="health_once">
+        <item quantity="one">%1$d kanal başarısız oldu ama hâlâ gösteriliyor</item>
+        <item quantity="other">%1$d kanal başarısız oldu ama hâlâ gösteriliyor</item>
+    </plurals>
+    <string name="health_show_again">Tekrar göster</string>
+    <string name="health_reason_http">sunucu kullanılamadığını söyledi</string>
+    <string name="health_reason_no_data">görüntü gelmedi</string>
+    <string name="health_reason_not_video">video yerine bir hata sayfası</string>
+    <string name="health_reason_timeout">zamanında yanıt yok</string>
+    <string name="health_reason_connection">bağlanılamadı</string>
+    <string name="health_reason_account">hesap tarafından reddedildi</string>
+    <string name="scan_channel">Kanal taraması</string>
+    <string name="scan_running">Kanallar taranıyor</string>
+    <plurals name="scan_progress">
+        <item quantity="one">%1$d / %2$d kanal</item>
+        <item quantity="other">%1$d / %2$d kanal</item>
+    </plurals>
+</resources>

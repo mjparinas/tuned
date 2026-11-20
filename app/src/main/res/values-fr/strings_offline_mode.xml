@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="offline_banner">Vous êtes hors connexion. Les films et épisodes enregistrés restent lisibles.</string>
+    <string name="offline_banner_downloads">Téléchargements</string>
+    <string name="offline_cant_play">Vous êtes hors connexion. Seuls les films et épisodes téléchargés peuvent être lus.</string>
+</resources>

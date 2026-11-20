@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="events_title">Прямые трансляции</string>
+    <string name="events_follow_hint">Следите за командой, лигой или бойцом</string>
+    <string name="events_follow">Следить</string>
+    <string name="events_unfollow">Не следить за %1$s</string>
+    <string name="events_following">Вы следите</string>
+    <string name="events_on_now">Сейчас в эфире</string>
+    <string name="events_later">Позже сегодня</string>
+    <string name="events_tomorrow">Завтра</string>
+    <string name="events_live">В эфире</string>
+    <string name="events_empty">В телегиде нет матчей, боёв или pay-per-view на ближайшие полтора дня. Обновите телегид в настройках, если это похоже на ошибку.</string>
+    <plurals name="events_channels">
+        <item quantity="one">На %d канале</item>
+        <item quantity="few">На %d каналах</item>
+        <item quantity="many">На %d каналах</item>
+        <item quantity="other">На %d каналах</item>
+    </plurals>
+    <string name="reminder_event_text">Скоро начнётся. Нажмите, чтобы включить.</string>
+</resources>

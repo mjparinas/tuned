@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_tunneled_playback">Odtwarzanie tunelowe</string>
+    <string name="settings_tunneled_playback_summary">Pozwala sprzętowi wideo telewizora trzymać obraz i dźwięk razem, co może wygładzić 4K i sport. Wypróbuj, jeśli obraz się zacina. Opóźnienie dźwięku nie działa, gdy ta opcja jest włączona.</string>
+</resources>

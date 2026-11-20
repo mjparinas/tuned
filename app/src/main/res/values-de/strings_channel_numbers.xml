@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_channel_numbers">Sendernummern</string>
+    <string name="settings_channel_numbers_summary">Neben jedem Live-Sender eine Nummer anzeigen. Gib sie beim Schauen auf der Fernbedienung ein, um umzuschalten, und drücke die Taste für den letzten Sender, um zurückzuspringen.</string>
+    <string name="player_no_channel_number">Kein Sender %1$d</string>
+    <string name="player_flip_back">Letzter Sender</string>
+</resources>

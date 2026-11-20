@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="events_title">الأحداث المباشرة</string>
+    <string name="events_follow_hint">تابع فريقًا أو دوريًا أو مقاتلًا</string>
+    <string name="events_follow">متابعة</string>
+    <string name="events_unfollow">إيقاف متابعة %1$s</string>
+    <string name="events_following">المتابَعة</string>
+    <string name="events_on_now">يُعرض الآن</string>
+    <string name="events_later">لاحقًا اليوم</string>
+    <string name="events_tomorrow">غدًا</string>
+    <string name="events_live">مباشر</string>
+    <string name="events_empty">لا توجد مباريات أو نزالات أو عروض بالدفع في الدليل خلال اليوم ونصف القادمين. حدّث الدليل في الإعدادات إن بدا هذا خاطئًا.</string>
+    <plurals name="events_channels">
+        <item quantity="zero">على %d قناة</item>
+        <item quantity="one">على %d قناة</item>
+        <item quantity="two">على %d قناة</item>
+        <item quantity="few">على %d قنوات</item>
+        <item quantity="many">على %d قناة</item>
+        <item quantity="other">على %d قناة</item>
+    </plurals>
+    <string name="reminder_event_text">يبدأ قريبًا. انقر للمشاهدة.</string>
+</resources>

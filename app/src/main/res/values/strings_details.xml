@@ -5,7 +5,7 @@
     <string name="details_resume">Resume</string>
     <string name="details_cast">Cast</string>
     <string name="play_now">Play now</string>
-    <string name="details_rating">%1$s/10</string>
+    <string name="details_rating" translatable="false">%1$s/10</string>
     <string name="details_source">Details from The Movie Database (TMDB)</string>
     <string name="details_no_key">This build has no TMDB key, so ratings, summaries and trailers are off.</string>
 </resources>

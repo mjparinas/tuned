@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="health_title">Stan kanałów</string>
+    <string name="settings_channel_health_summary">Przeskanuj wszystkie kanały i ukryj te, które ciągle zawodzą</string>
+    <string name="health_help">Skanowanie sprawdza po kolei każdy kanał na żywo, tak jak dawne telewizory szukały stacji. Gdy zniknie internet lub serwer przestanie odpowiadać, skanowanie czeka lub się zatrzymuje, zamiast obwiniać kanały. Kanał jest ukrywany dopiero po niepowodzeniu w dwóch skanowaniach oddalonych o co najmniej sześć godzin i wraca, gdy tylko skanowanie uzna go za działający.</string>
+    <string name="health_scan_now">Skanuj kanały</string>
+    <string name="health_stop">Zatrzymaj skanowanie</string>
+    <string name="health_starting">Rozpoczynanie skanowania…</string>
+    <string name="health_while_scanning">Skanowanie wstrzymuje się, gdy coś oglądasz, więc zawsze otwarty jest tylko jeden strumień.</string>
+    <string name="health_last_scan">Ostatnie skanowanie %1$s</string>
+    <plurals name="health_working">
+        <item quantity="one">%1$d działa</item>
+        <item quantity="few">%1$d działają</item>
+        <item quantity="many">%1$d działa</item>
+        <item quantity="other">%1$d działają</item>
+    </plurals>
+    <plurals name="health_failed">
+        <item quantity="one">%1$d nie działa</item>
+        <item quantity="few">%1$d nie działają</item>
+        <item quantity="many">%1$d nie działa</item>
+        <item quantity="other">%1$d nie działają</item>
+    </plurals>
+    <plurals name="health_unsure">
+        <item quantity="one">%1$d bez oceny</item>
+        <item quantity="few">%1$d bez oceny</item>
+        <item quantity="many">%1$d bez oceny</item>
+        <item quantity="other">%1$d bez oceny</item>
+    </plurals>
+    <string name="health_stopped_internet">Skanowanie zatrzymało się, bo nie było internetu. Żaden kanał nie został za to obwiniony.</string>
+    <string name="health_stopped_server">Skanowanie zatrzymało się, bo serwer nie wysyłał strumieni. Żaden kanał nie został za to obwiniony.</string>
+    <string name="health_stopped_busy">Skanowanie zatrzymało się, bo konto używało wszystkich połączeń, prawdopodobnie na innym urządzeniu. Spróbuj później.</string>
+    <string name="health_hide_dead">Ukrywaj kanały, które ciągle zawodzą</string>
+    <string name="health_hide_placeholders">Ukrywaj puste kanały wydarzeń</string>
+    <string name="health_hide_placeholders_summary">Pomija sloty o nazwach typu „No event streaming”, dopóki dostawca nie poda prawdziwego wydarzenia</string>
+    <string name="health_hide_dead_summary">Wyłącz, aby pokazać wszystkie kanały, także te ukryte przez skanowanie</string>
+    <plurals name="health_hidden">
+        <item quantity="one">%1$d ukryty kanał</item>
+        <item quantity="few">%1$d ukryte kanały</item>
+        <item quantity="many">%1$d ukrytych kanałów</item>
+        <item quantity="other">%1$d ukryte kanały</item>
+    </plurals>
+    <plurals name="health_once">
+        <item quantity="one">%1$d kanał zawiódł, ale nadal jest widoczny</item>
+        <item quantity="few">%1$d kanały zawiodły, ale nadal są widoczne</item>
+        <item quantity="many">%1$d kanałów zawiodło, ale nadal są widoczne</item>
+        <item quantity="other">%1$d kanały zawiodły, ale nadal są widoczne</item>
+    </plurals>
+    <string name="health_show_again">Pokaż ponownie</string>
+    <string name="health_reason_http">serwer podał, że jest niedostępny</string>
+    <string name="health_reason_no_data">nie dotarł obraz</string>
+    <string name="health_reason_not_video">strona błędu zamiast wideo</string>
+    <string name="health_reason_timeout">brak odpowiedzi na czas</string>
+    <string name="health_reason_connection">nie udało się połączyć</string>
+    <string name="health_reason_account">odrzucony przez konto</string>
+    <string name="scan_channel">Skanowanie kanałów</string>
+    <string name="scan_running">Skanowanie kanałów</string>
+    <plurals name="scan_progress">
+        <item quantity="one">%1$d z %2$d kanału</item>
+        <item quantity="few">%1$d z %2$d kanałów</item>
+        <item quantity="many">%1$d z %2$d kanałów</item>
+        <item quantity="other">%1$d z %2$d kanałów</item>
+    </plurals>
+</resources>

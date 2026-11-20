@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="subtitle_timing">Синхронизация субтитров</string>
+    <string name="subtitle_timing_none">Сначала включите субтитры</string>
+    <string name="subtitle_timing_not_casting">Синхронизация субтитров недоступна во время трансляции на другое устройство</string>
+    <string name="subtitle_timing_later">Субтитры на %1$s с позже</string>
+    <string name="subtitle_timing_earlier">Субтитры на %1$s с раньше</string>
+    <string name="subtitle_timing_in_sync">Без изменений</string>
+    <string name="subtitle_timing_back_big">−1 с</string>
+    <string name="subtitle_timing_back_small">−0,1 с</string>
+    <string name="subtitle_timing_on_small">+0,1 с</string>
+    <string name="subtitle_timing_on_big">+1 с</string>
+    <string name="subtitle_timing_reset">Сбросить</string>
+    <string name="subtitle_timing_done">Готово</string>
+</resources>

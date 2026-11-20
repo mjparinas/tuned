@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_time_zone">المنطقة الزمنية</string>
+    <string name="settings_time_zone_device">مثل هذا الجهاز (%1$s)</string>
+    <string name="events_zone">الأوقات بتوقيت %1$s</string>
+</resources>

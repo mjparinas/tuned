@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="account_status">订阅</string>
+    <string name="account_status_unknown">已登录</string>
+    <string name="account_trial">试用</string>
+    <string name="account_no_end">无到期日</string>
+    <string name="account_expires_on">%1$s 到期</string>
+    <string name="account_expired_on">已于 %1$s 到期</string>
+    <plurals name="account_expires_soon">
+        <item quantity="other">%1$s 到期，还剩 %2$d 天</item>
+    </plurals>
+    <string name="account_connections_title">正在使用的连接</string>
+    <string name="account_connections">%1$d / %2$d</string>
+    <string name="account_connections_full">%1$d / %2$d：已全部占用，可能在另一台设备上</string>
+    <string name="account_full_wait">你的所有连接都在使用中（%1$d / %2$d），可能在另一台设备上。再打开一个可能会超出账号限制。仍要开始请按播放。</string>
+</resources>

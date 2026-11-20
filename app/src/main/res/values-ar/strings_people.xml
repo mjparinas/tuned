@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="person_film">فيلم</string>
+    <string name="person_show">مسلسل</string>
+    <string name="person_upcoming">قادم</string>
+    <string name="person_as">بدور %1$s</string>
+    <string name="person_in_your_playlist">في قائمة التشغيل</string>
+    <string name="person_unavailable">تعذّر تحميل هذه الصفحة. تحقّق من اتصالك وحاول مرة أخرى.</string>
+    <string name="person_no_credits">لا تسرد TMDB أي أفلام أو مسلسلات لهذا الشخص بعد.</string>
+    <string name="person_none_in_playlist">لا شيء من هذه في قائمة التشغيل.</string>
+    <string name="person_open">فتح أفلام ومسلسلات %1$s</string>
+    <plurals name="person_in_playlist">
+        <item quantity="zero">%1$d في قائمة التشغيل</item>
+        <item quantity="one">%1$d في قائمة التشغيل</item>
+        <item quantity="two">%1$d في قائمة التشغيل</item>
+        <item quantity="few">%1$d في قائمة التشغيل</item>
+        <item quantity="many">%1$d في قائمة التشغيل</item>
+        <item quantity="other">%1$d في قائمة التشغيل</item>
+    </plurals>
+    <plurals name="person_episodes">
+        <item quantity="zero">%1$d حلقة</item>
+        <item quantity="one">%1$d حلقة</item>
+        <item quantity="two">%1$d حلقة</item>
+        <item quantity="few">%1$d حلقات</item>
+        <item quantity="many">%1$d حلقة</item>
+        <item quantity="other">%1$d حلقة</item>
+    </plurals>
+</resources>

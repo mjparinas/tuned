@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="player_fit">الملاءمة</string>
+    <string name="player_fit_now">الملاءمة: %1$s</string>
+    <string name="player_fit_fit">ملاءمة الشاشة</string>
+    <string name="player_fit_zoom">تكبير للملء</string>
+    <string name="player_fit_stretch">تمديد</string>
+    <string name="player_lock">قفل الشاشة</string>
+    <string name="player_unlock">فتح قفل الشاشة</string>
+    <string name="player_locked">الشاشة مقفلة. انقر القفل لفتحها.</string>
+    <string name="player_quality">الجودة</string>
+    <string name="player_quality_auto">تلقائي</string>
+    <string name="player_quality_only_one">لهذا البث جودة واحدة</string>
+    <string name="player_quality_untagged">عادية</string>
+    <string name="player_guide">القنوات</string>
+    <string name="player_guide_close">إغلاق القنوات</string>
+</resources>

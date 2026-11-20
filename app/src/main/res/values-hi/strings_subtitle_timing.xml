@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="subtitle_timing">सबटाइटल टाइमिंग</string>
+    <string name="subtitle_timing_none">पहले सबटाइटल चालू करें</string>
+    <string name="subtitle_timing_not_casting">कास्ट करते समय सबटाइटल टाइमिंग उपलब्ध नहीं है</string>
+    <string name="subtitle_timing_later">सबटाइटल %1$s से. बाद में</string>
+    <string name="subtitle_timing_earlier">सबटाइटल %1$s से. पहले</string>
+    <string name="subtitle_timing_in_sync">कोई बदलाव नहीं</string>
+    <string name="subtitle_timing_back_big">−1 से.</string>
+    <string name="subtitle_timing_back_small">−0.1 से.</string>
+    <string name="subtitle_timing_on_small">+0.1 से.</string>
+    <string name="subtitle_timing_on_big">+1 से.</string>
+    <string name="subtitle_timing_reset">रीसेट करें</string>
+    <string name="subtitle_timing_done">हो गया</string>
+</resources>

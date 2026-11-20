@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="tv_live_on_now">يُعرض الآن</string>
+    <string name="tv_live_next">التالي</string>
+    <string name="tv_live_time_range">من %1$s إلى %2$s</string>
+    <string name="tv_live_no_guide">لا يوجد دليل لهذه القناة.</string>
+    <string name="tv_live_pick">انتقل إلى قناة لترى ما يُعرض.</string>
+</resources>

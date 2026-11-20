@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="cast_connecting">Łączenie z %1$s…</string>
+    <string name="cast_starting">Uruchamianie na %1$s…</string>
+    <string name="cast_connect_failed">Nie udało się połączyć z %1$s</string>
+    <string name="cast_playing_on">Odtwarzanie na %1$s</string>
+    <string name="cast_failed">%1$s nie może tego odtworzyć. Szczegóły w Ustawienia › Aktualizacje i zaawansowane › Dzienniki.</string>
+    <string name="cast_no_wifi">Połącz telefon z tą samą siecią Wi-Fi co telewizor, aby przesłać zapisany film lub odcinek.</string>
+</resources>

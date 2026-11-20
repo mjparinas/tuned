@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_match_frame_rate">مطابقة معدل الإطارات</string>
+    <string name="settings_match_frame_rate_summary">بدّل التلفزيون إلى معدل إطارات الفيديو، مثل 50 هرتز للرياضة، كي لا تهتز الحركة. قد تُظلم الشاشة لحظة عند التبديل.</string>
+    <string name="player_no_sound">لا صوت: لا يستطيع هذا الجهاز تشغيل صوت %1$s في هذه القناة</string>
+</resources>

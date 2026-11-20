@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="health_title">État des chaînes</string>
+    <string name="settings_channel_health_summary">Analyser toutes les chaînes et masquer celles qui échouent à répétition</string>
+    <string name="health_help">Une analyse essaie chaque chaîne en direct, une à la fois, comme les vieilles TV cherchaient les stations. Si internet coupe ou si le serveur ne répond plus, l\'analyse attend ou s\'arrête au lieu d\'accuser les chaînes. Une chaîne n\'est masquée qu\'après avoir échoué à deux analyses espacées d\'au moins six heures, et revient dès qu\'une analyse la trouve fonctionnelle.</string>
+    <string name="health_scan_now">Analyser les chaînes</string>
+    <string name="health_stop">Arrêter l\'analyse</string>
+    <string name="health_starting">Démarrage de l\'analyse…</string>
+    <string name="health_while_scanning">L\'analyse se met en pause pendant que vous regardez, pour qu\'un seul flux soit ouvert.</string>
+    <string name="health_last_scan">Dernière analyse %1$s</string>
+    <plurals name="health_working">
+        <item quantity="one">%1$d fonctionne</item>
+        <item quantity="many">%1$d fonctionnent</item>
+        <item quantity="other">%1$d fonctionnent</item>
+    </plurals>
+    <plurals name="health_failed">
+        <item quantity="one">%1$d en échec</item>
+        <item quantity="many">%1$d en échec</item>
+        <item quantity="other">%1$d en échec</item>
+    </plurals>
+    <plurals name="health_unsure">
+        <item quantity="one">%1$d non évaluée</item>
+        <item quantity="many">%1$d non évaluées</item>
+        <item quantity="other">%1$d non évaluées</item>
+    </plurals>
+    <string name="health_stopped_internet">L\'analyse s\'est arrêtée car internet était coupé. Aucune chaîne n\'a été mise en cause.</string>
+    <string name="health_stopped_server">L\'analyse s\'est arrêtée car le serveur n\'envoyait aucun flux. Aucune chaîne n\'a été mise en cause.</string>
+    <string name="health_stopped_busy">L\'analyse s\'est arrêtée car votre compte utilisait toutes ses connexions, sans doute sur un autre appareil. Réessayez plus tard.</string>
+    <string name="health_hide_dead">Masquer les chaînes qui échouent à répétition</string>
+    <string name="health_hide_placeholders">Masquer les chaînes d\'événements vides</string>
+    <string name="health_hide_placeholders_summary">Retire les créneaux nommés comme « No event streaming » jusqu\'à ce que le fournisseur y mette un vrai événement</string>
+    <string name="health_hide_dead_summary">Désactivez pour afficher toutes les chaînes, y compris celles masquées par les analyses</string>
+    <plurals name="health_hidden">
+        <item quantity="one">%1$d chaîne masquée</item>
+        <item quantity="many">%1$d chaînes masquées</item>
+        <item quantity="other">%1$d chaînes masquées</item>
+    </plurals>
+    <plurals name="health_once">
+        <item quantity="one">%1$d chaîne a échoué mais reste affichée</item>
+        <item quantity="many">%1$d chaînes ont échoué mais restent affichées</item>
+        <item quantity="other">%1$d chaînes ont échoué mais restent affichées</item>
+    </plurals>
+    <string name="health_show_again">Afficher à nouveau</string>
+    <string name="health_reason_http">le serveur l\'a dite indisponible</string>
+    <string name="health_reason_no_data">aucune image reçue</string>
+    <string name="health_reason_not_video">une page d\'erreur au lieu de la vidéo</string>
+    <string name="health_reason_timeout">pas de réponse à temps</string>
+    <string name="health_reason_connection">connexion impossible</string>
+    <string name="health_reason_account">refusée par le compte</string>
+    <string name="scan_channel">Analyse des chaînes</string>
+    <string name="scan_running">Analyse des chaînes en cours</string>
+    <plurals name="scan_progress">
+        <item quantity="one">%1$d chaîne sur %2$d</item>
+        <item quantity="many">%1$d chaînes sur %2$d</item>
+        <item quantity="other">%1$d chaînes sur %2$d</item>
+    </plurals>
+</resources>

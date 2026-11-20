@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="tv_signin_card">Mit dem Handy anmelden</string>
+    <string name="tv_signin_card_summary">Einen Code auf diesem Fernseher scannen und alles am Handy statt mit der Fernbedienung ausfüllen</string>
+    <string name="tv_signin_title">Mit dem Handy anmelden</string>
+    <string name="tv_signin_scan">Richte die Kamera deines Handys auf den Code. Gib dort deine Playlist ein, oder schick alles aus Tuned auf deinem Handy.</string>
+    <string name="tv_signin_or_go">Oder geh zu %1$s und gib ein</string>
+    <string name="tv_signin_check">Prüfnummer %1$s</string>
+    <string name="tv_signin_qr">QR-Code zum Anmelden mit dem Handy</string>
+    <string name="tv_signin_type_instead">Stattdessen am Fernseher eingeben</string>
+    <string name="tv_signin_waiting">Code wird abgerufen…</string>
+    <string name="tv_signin_offline">Der Anmeldedienst von Tuned ist nicht erreichbar. Prüfe die Internetverbindung dieses Fernsehers oder gib die Playlist stattdessen ein.</string>
+    <string name="tv_signin_no_backup">Dieser Fernseher ist bei deinem Tuned-Konto angemeldet, aber das Konto hat noch keine Sicherung mit einer Playlist. Gib stattdessen eine Playlist ein oder sichere zuerst vom Handy.</string>
+    <string name="tv_signin_retry">Erneut versuchen</string>
+    <string name="tv_signin_arrived">Von deinem Handy</string>
+    <string name="tv_signin_also">Außerdem: %1$s</string>
+    <string name="tv_signin_settings">Einstellungen</string>
+    <plurals name="tv_signin_favourites">
+        <item quantity="one">%d Favorit</item>
+        <item quantity="other">%d Favoriten</item>
+    </plurals>
+    <plurals name="tv_signin_lists">
+        <item quantity="one">%d Liste</item>
+        <item quantity="other">%d Listen</item>
+    </plurals>
+    <plurals name="tv_signin_watch_later">
+        <item quantity="one">%d auf der Merkliste</item>
+        <item quantity="other">%d auf der Merkliste</item>
+    </plurals>
+    <string name="tv_signin_only_playlists">Dieser Fernseher behält eigene Einstellungen und Favoriten; nur die Playlists werden hinzugefügt.</string>
+    <string name="tv_signin_only_first">Ohne Premium behält dieser Fernseher die erste Playlist.</string>
+    <string name="tv_signin_use">Verwenden</string>
+    <string name="tv_signin_not_mine">Nicht von mir</string>
+    <string name="tv_signin_saving">Wird eingerichtet…</string>
+    <string name="send_tv_row">An einen Fernseher senden</string>
+    <string name="send_tv_row_summary">Einen Fernseher mit den Playlists und Einstellungen dieses Handys anmelden</string>
+    <string name="send_tv_title">An einen Fernseher senden</string>
+    <string name="send_tv_enter">Öffne Tuned auf dem Fernseher und wähle Mit dem Handy anmelden. Gib dann den angezeigten Code ein oder scanne ihn mit der Kamera.</string>
+    <string name="send_tv_code">Code auf dem Fernseher</string>
+    <string name="send_tv_next">Weiter</string>
+    <string name="send_tv_bad_code">Das sieht nicht nach dem Code vom Fernseher aus. Er hat acht Buchstaben und Ziffern.</string>
+    <string name="send_tv_not_found">Kein Fernseher zeigt diesen Code. Prüfe ihn oder warte, bis der Fernseher einen neuen zeigt.</string>
+    <string name="send_tv_confirm_digits">Prüfe, ob der Fernseher diese Nummer zeigt:</string>
+    <string name="send_tv_matches">Stimmt überein</string>
+    <string name="send_tv_what">Das sendet die Playlists, Einstellungen, Profile, Favoriten und Listen dieses Handys, wie die Synchronisierung zwischen Geräten. Es ist so verschlüsselt, dass nur dieser Fernseher es lesen kann.</string>
+    <plurals name="send_tv_playlists">
+        <item quantity="one">%d Playlist</item>
+        <item quantity="other">%d Playlists</item>
+    </plurals>
+    <string name="send_tv_send">An den Fernseher senden</string>
+    <string name="send_tv_sending">Wird gesendet…</string>
+    <string name="send_tv_sent">Gesendet. Drücke auf dem Fernseher Verwenden.</string>
+    <string name="send_tv_gone">Dieser Code ist abgelaufen. Scanne den neuen auf dem Fernseher.</string>
+    <string name="send_tv_already">An diesen Fernseher wurde schon etwas gesendet. Scanne den neuen Code auf dem Fernseher, um erneut zu senden.</string>
+    <string name="send_tv_too_many">Zu viele Versuche. Versuche es in einer Stunde erneut.</string>
+    <string name="send_tv_unreachable">Der Anmeldedienst von Tuned ist nicht erreichbar. Prüfe deine Verbindung und versuche es erneut.</string>
+    <string name="send_tv_too_big">Es ist zu viel zum Senden. Entferne einige Favoriten oder Einträge der Merkliste und versuche es erneut.</string>
+    <string name="send_tv_nothing">Füge zuerst eine Playlist auf diesem Handy hinzu und sende sie dann an den Fernseher.</string>
+</resources>

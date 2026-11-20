@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="subtitle_search">Znajdź napisy</string>
+    <string name="subtitle_search_searching">Szukamy napisów…</string>
+    <string name="subtitle_search_downloading">Pobieramy napisy…</string>
+    <string name="subtitle_search_added">Dodano napisy z OpenSubtitles</string>
+    <string name="subtitle_search_none">Nie znaleziono napisów do tego filmu</string>
+    <string name="subtitle_search_no_key">Wyszukiwanie napisów jest niedostępne w tej kompilacji</string>
+    <string name="subtitle_search_bad_key">OpenSubtitles odrzucił klucz tej aplikacji. Spróbuj po następnej aktualizacji.</string>
+    <string name="subtitle_search_bad_account">OpenSubtitles odrzucił logowanie. Sprawdź je w Ustawienia › Odtwarzanie › Napisy.</string>
+    <string name="subtitle_search_limit">Dzienny limit pobrań OpenSubtitles został wykorzystany. Spróbuj jutro.</string>
+    <string name="subtitle_search_offline">Nie udało się połączyć z OpenSubtitles. Spróbuj za chwilę.</string>
+    <string name="subtitle_search_hearing_impaired">Dla niesłyszących</string>
+    <string name="subtitle_search_machine">Tłumaczenie maszynowe</string>
+    <plurals name="subtitle_search_downloads">
+        <item quantity="one">%,d pobranie</item>
+        <item quantity="few">%,d pobrania</item>
+        <item quantity="many">%,d pobrań</item>
+        <item quantity="other">%,d pobrania</item>
+    </plurals>
+    <string name="settings_subtitles">Napisy</string>
+    <string name="settings_auto_subtitles">Szukaj napisów automatycznie</string>
+    <string name="settings_auto_subtitles_summary">Przy włączonych napisach film lub odcinek bez napisów sam dostaje najlepsze dopasowanie</string>
+    <string name="settings_opensubtitles_account">Konto OpenSubtitles</string>
+    <string name="settings_opensubtitles_account_summary">Opcjonalne. Zalogowanie zwiększa dzienny limit pobrań.</string>
+    <string name="settings_opensubtitles_account_set">Zalogowano jako %1$s</string>
+    <string name="settings_opensubtitles_username">Nazwa użytkownika</string>
+    <string name="settings_opensubtitles_password">Hasło</string>
+    <string name="settings_opensubtitles_remove">Usuń</string>
+</resources>

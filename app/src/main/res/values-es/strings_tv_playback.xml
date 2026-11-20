@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_match_frame_rate">Ajustar la frecuencia de imagen</string>
+    <string name="settings_match_frame_rate_summary">Cambia la TV a la frecuencia del vídeo, como 50 Hz para deportes, para que el movimiento no dé saltos. La pantalla puede quedarse en negro un momento al cambiar.</string>
+    <string name="player_no_sound">Sin sonido: este dispositivo no puede reproducir el audio %1$s de este canal</string>
+</resources>

@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="tuned_account">Tuned खाता</string>
+    <string name="tuned_account_sign_in">अपने Tuned खाते में साइन इन करें</string>
+    <string name="tuned_account_sign_in_summary">अपनी प्लेलिस्ट, सेटिंग और प्रोफ़ाइल का बैकअप लें, और अपने फ़ोन और टीवी को एक जैसा रखें</string>
+    <string name="tuned_account_asking">कोड लिया जा रहा है…</string>
+    <string name="tuned_account_enter_code">कोड स्कैन करें, या किसी भी फ़ोन या कंप्यूटर पर %1$s पर जाएं, Google से साइन इन करें और Pair a TV के नीचे यह कोड डालें:</string>
+    <string name="tuned_account_open_or_enter">वेबसाइट खोलें पर टैप करें और Google से साइन इन करें। या किसी कंप्यूटर पर %1$s पर जाएं, साइन इन करें और Pair a TV के नीचे यह कोड डालें:</string>
+    <string name="tuned_account_waiting">आपके साइन इन का इंतज़ार…</string>
+    <string name="tuned_account_open_site">वेबसाइट खोलें</string>
+    <string name="tuned_account_failed">Tuned के सर्वर तक नहीं पहुंच सके। कनेक्शन जांचें और फिर से कोशिश करें।</string>
+    <string name="tuned_account_try_again">फिर से कोशिश करें</string>
+    <string name="tuned_account_signed_in">%1$s के रूप में साइन इन है।</string>
+    <string name="tuned_account_backup_now">अभी बैकअप लें</string>
+    <string name="tuned_account_never">अभी बैकअप नहीं हुआ</string>
+    <string name="tuned_account_last">पिछला बैकअप %1$s</string>
+    <string name="tuned_account_offline">आपके बैकअप तक नहीं पहुंच सके। यह फिर कोशिश करेगा।</string>
+    <string name="tuned_account_sign_out">अपने Tuned खाते से साइन आउट करें</string>
+    <string name="tuned_account_sign_out_summary">इस डिवाइस को साइन आउट करता है। आपका बैकअप और इस डिवाइस पर जो है वह रहता है।</string>
+    <string name="restore_account">अपने Tuned खाते से बहाल करें</string>
+    <string name="restore_account_summary">किसी दूसरे डिवाइस से अपनी प्लेलिस्ट, प्रोफ़ाइल और सेटिंग वापस लाएं</string>
+    <string name="restore_account_working">आपकी प्लेलिस्ट, प्रोफ़ाइल और सेटिंग बहाल हो रही हैं…</string>
+    <string name="restore_account_nothing">इस खाते में अभी कोई बैकअप नहीं है। इसके बजाय एक प्लेलिस्ट जोड़ें; बैकअप होने पर आपके दूसरे डिवाइस इसे बहाल कर सकते हैं।</string>
+    <string name="restore_account_no_playlist">आपकी सेटिंग और प्रोफ़ाइल वापस आ गईं, पर बैकअप में ऐसी कोई प्लेलिस्ट नहीं है जिसे यह डिवाइस खोल सके। प्लेलिस्ट फ़ाइलें उसी डिवाइस पर रहती हैं जिस पर जोड़ी गई थीं। इसके बजाय एक प्लेलिस्ट जोड़ें।</string>
+    <string name="restore_account_offline">आपके बैकअप तक नहीं पहुंच सके। कनेक्शन जांचें और फिर से कोशिश करें।</string>
+</resources>

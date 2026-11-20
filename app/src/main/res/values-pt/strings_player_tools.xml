@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="player_fit">Ajuste</string>
+    <string name="player_fit_now">Ajuste: %1$s</string>
+    <string name="player_fit_fit">Ajustar à tela</string>
+    <string name="player_fit_zoom">Zoom para preencher</string>
+    <string name="player_fit_stretch">Esticar</string>
+    <string name="player_lock">Bloquear tela</string>
+    <string name="player_unlock">Desbloquear tela</string>
+    <string name="player_locked">Tela bloqueada. Toque no cadeado para desbloquear.</string>
+    <string name="player_quality">Qualidade</string>
+    <string name="player_quality_auto">Automática</string>
+    <string name="player_quality_only_one">Esta transmissão tem uma só qualidade</string>
+    <string name="player_quality_untagged">Padrão</string>
+    <string name="player_guide">Canais</string>
+    <string name="player_guide_close">Fechar canais</string>
+</resources>

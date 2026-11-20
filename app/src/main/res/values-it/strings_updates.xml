@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_check_now">Cerca aggiornamenti</string>
+    <string name="update_checking">Controllo di GitHub…</string>
+    <string name="update_up_to_date">Tuned %1$s è aggiornato</string>
+    <string name="update_check_failed">Impossibile raggiungere GitHub. Riprova tra poco.</string>
+    <string name="update_channel">Aggiornamenti</string>
+    <string name="update_notification_text">Apri Tuned e tocca Installa</string>
+</resources>

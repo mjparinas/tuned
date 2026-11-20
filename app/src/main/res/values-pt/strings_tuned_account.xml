@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="tuned_account">Conta Tuned</string>
+    <string name="tuned_account_sign_in">Entre na sua conta Tuned</string>
+    <string name="tuned_account_sign_in_summary">Faça backup das suas listas, configurações e perfis, e mantenha celular e TV iguais</string>
+    <string name="tuned_account_asking">Pegando um código…</string>
+    <string name="tuned_account_enter_code">Escaneie o código, ou em qualquer celular ou computador acesse %1$s, entre com o Google e digite este código em Parear uma TV:</string>
+    <string name="tuned_account_open_or_enter">Toque em Abrir o site e entre com o Google. Ou num computador acesse %1$s, entre e digite este código em Parear uma TV:</string>
+    <string name="tuned_account_waiting">Esperando você entrar…</string>
+    <string name="tuned_account_open_site">Abrir o site</string>
+    <string name="tuned_account_failed">Não foi possível acessar o servidor do Tuned. Confira a conexão e tente de novo.</string>
+    <string name="tuned_account_try_again">Tentar de novo</string>
+    <string name="tuned_account_signed_in">Conectado como %1$s.</string>
+    <string name="tuned_account_backup_now">Fazer backup agora</string>
+    <string name="tuned_account_never">Ainda sem backup</string>
+    <string name="tuned_account_last">Último backup %1$s</string>
+    <string name="tuned_account_offline">Não foi possível acessar seu backup. Vai tentar de novo.</string>
+    <string name="tuned_account_sign_out">Sair da sua conta Tuned</string>
+    <string name="tuned_account_sign_out_summary">Desconecta este dispositivo. Seu backup e o que está neste dispositivo continuam.</string>
+    <string name="restore_account">Restaurar da sua conta Tuned</string>
+    <string name="restore_account_summary">Traga suas listas, perfis e configurações de outro dispositivo</string>
+    <string name="restore_account_working">Restaurando suas listas, perfis e configurações…</string>
+    <string name="restore_account_nothing">Esta conta ainda não tem backup. Adicione uma lista; depois do backup, seus outros dispositivos podem restaurá-la.</string>
+    <string name="restore_account_no_playlist">Suas configurações e perfis voltaram, mas o backup não tem nenhuma lista que este dispositivo consiga abrir. Arquivos de lista ficam no dispositivo onde foram adicionados. Adicione uma lista.</string>
+    <string name="restore_account_offline">Não foi possível acessar seu backup. Confira a conexão e tente de novo.</string>
+</resources>

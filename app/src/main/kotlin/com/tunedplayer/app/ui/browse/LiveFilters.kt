@@ -47,6 +47,7 @@ import com.tunedplayer.app.core.ContentKind
 import com.tunedplayer.app.core.LiveTopic
 import com.tunedplayer.app.core.RegionLanguages
 import com.tunedplayer.app.core.Regions
+import com.tunedplayer.app.ui.common.regionName
 import com.tunedplayer.app.ui.settings.PinDialog
 import com.tunedplayer.app.ui.settings.PinMode
 import com.tunedplayer.app.ui.settings.languageName
@@ -160,7 +161,7 @@ private fun topicLabel(topic: LiveTopic): Int = when (topic) {
 
 @Composable
 private fun placeName(place: LivePlace): String = when (place) {
-    is LivePlace.Country -> Regions.displayName(place.tag)
+    is LivePlace.Country -> regionName(place.tag)
     is LivePlace.Language -> languageName(place.code)
 }
 
@@ -230,7 +231,7 @@ private fun LiveFiltersSheet(
                             FilterChip(
                                 selected = on,
                                 onClick = { set(quick.copy(place = if (on) null else place)) },
-                                label = { Text(Regions.displayName(r.region)) },
+                                label = { Text(regionName(r.region)) },
                             )
                         }
                     }

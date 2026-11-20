@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="offline_banner">Estás sin conexión. Las películas y episodios guardados se siguen reproduciendo.</string>
+    <string name="offline_banner_downloads">Descargas</string>
+    <string name="offline_cant_play">Estás sin conexión. Solo se pueden reproducir películas y episodios descargados.</string>
+</resources>

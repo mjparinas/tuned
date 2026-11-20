@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_page_playlists">قوائم التشغيل والحساب</string>
+    <string name="settings_page_playlists_summary">قوائم التشغيل والنسخ الاحتياطي وتسجيل الخروج</string>
+    <string name="settings_page_profiles">الملفات الشخصية والرقابة الأبوية</string>
+    <string name="settings_page_profiles_summary">من يشاهد وفئات البالغين ورقم PIN</string>
+    <string name="settings_page_channels">القنوات والقوائم</string>
+    <string name="settings_page_channels_summary">شاشة البدء وعرض الدليل والأرقام والبلدان والمجموعات المخفية</string>
+    <string name="settings_page_guide">الدليل والتحديث</string>
+    <string name="settings_page_guide_summary">متى تُنزَّل قائمة التشغيل والدليل، وأيام الدليل والتذكيرات</string>
+    <string name="settings_page_playback_summary">الصوت والمتابعة وتخطي المقدمة والإرجاع وعناصر تحكم المشغّل</string>
+    <string name="settings_page_reliability">عند فشل قناة</string>
+    <string name="settings_page_reliability_summary">إعادة الاتصال والنسخ الاحتياطية والضبط التلقائي وحالة القنوات</string>
+    <string name="settings_page_appearance_summary">السمة والألوان والأسود الخالص</string>
+    <string name="settings_page_about">التحديثات والخيارات المتقدمة</string>
+    <string name="settings_page_about_summary">التحديثات ووكيل المستخدم والسجلات</string>
+    <string name="settings_header_hidden">ما هو مخفي</string>
+    <string name="settings_header_guide">الدليل</string>
+    <string name="settings_header_screen">الشاشة وعناصر التحكم</string>
+</resources>

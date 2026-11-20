@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="events_title">Wydarzenia na żywo</string>
+    <string name="events_follow_hint">Obserwuj drużynę, ligę lub zawodnika</string>
+    <string name="events_follow">Obserwuj</string>
+    <string name="events_unfollow">Przestań obserwować %1$s</string>
+    <string name="events_following">Obserwujesz</string>
+    <string name="events_on_now">Teraz w telewizji</string>
+    <string name="events_later">Później dzisiaj</string>
+    <string name="events_tomorrow">Jutro</string>
+    <string name="events_live">Na żywo</string>
+    <string name="events_empty">W programie nie ma meczów, walk ani pay-per-view na najbliższe półtora dnia. Odśwież program w Ustawieniach, jeśli to wygląda na błąd.</string>
+    <plurals name="events_channels">
+        <item quantity="one">Na %d kanale</item>
+        <item quantity="few">Na %d kanałach</item>
+        <item quantity="many">Na %d kanałach</item>
+        <item quantity="other">Na %d kanałach</item>
+    </plurals>
+    <string name="reminder_event_text">Wkrótce się zacznie. Stuknij, aby włączyć.</string>
+</resources>

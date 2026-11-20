@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_match_frame_rate">Adatta la frequenza dei fotogrammi</string>
+    <string name="settings_match_frame_rate_summary">Porta la TV alla frequenza dei fotogrammi del video, come 50 Hz per lo sport, così il movimento non scatta. Lo schermo può diventare nero per un attimo durante il cambio.</string>
+    <string name="player_no_sound">Nessun audio: questo dispositivo non riesce a riprodurre l\'audio %1$s di questo canale</string>
+</resources>

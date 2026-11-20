@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_match_frame_rate">Bildrate anpassen</string>
+    <string name="settings_match_frame_rate_summary">Schaltet den Fernseher auf die Bildrate des Videos, etwa 50 Hz für Sport, damit Bewegungen nicht ruckeln. Beim Umschalten kann der Bildschirm kurz schwarz werden.</string>
+    <string name="player_no_sound">Kein Ton: Dieses Gerät kann den %1$s-Ton dieses Senders nicht abspielen</string>
+</resources>

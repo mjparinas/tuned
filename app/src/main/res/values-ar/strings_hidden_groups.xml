@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_hidden_groups">المجموعات المخفية</string>
+    <string name="settings_hidden_groups_none">لا توجد مجموعات مخفية</string>
+    <plurals name="groups_hidden">
+        <item quantity="zero">%1$d مجموعة مخفية</item>
+        <item quantity="one">%1$d مجموعة مخفية</item>
+        <item quantity="two">%1$d مجموعة مخفية</item>
+        <item quantity="few">%1$d مجموعات مخفية</item>
+        <item quantity="many">%1$d مجموعة مخفية</item>
+        <item quantity="other">%1$d مجموعة مخفية</item>
+    </plurals>
+    <string name="hidden_groups_help">أوقف مجموعة لإخفائها من قسمها والبحث والتنقل بين القنوات. لإخفاء واحدة من الشاشة الرئيسية، اختر شريحتها وانقر العين.</string>
+    <string name="group_hide">إخفاء هذه المجموعة</string>
+    <string name="group_hidden">أُخفيت %1$s</string>
+    <string name="group_hidden_undo">تراجع</string>
+    <string name="group_pin">التثبيت في المقدمة</string>
+    <string name="group_unpin">إلغاء التثبيت</string>
+    <string name="group_pinned">مثبّتة</string>
+    <string name="settings_app_shortcuts">اختصارات على أيقونة التطبيق</string>
+    <string name="settings_app_shortcuts_summary">اضغط مطولًا على أيقونة Tuned للبحث والأحداث المباشرة وآخر قناة شاهدتها</string>
+    <string name="shortcut_search">بحث</string>
+    <string name="shortcut_last_channel">مشاهدة %1$s</string>
+</resources>

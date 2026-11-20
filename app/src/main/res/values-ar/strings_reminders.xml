@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="reminder_channel">تذكيرات البرامج</string>
+    <string name="reminder_text">على %1$s</string>
+    <string name="remind_me">ذكّرني</string>
+    <string name="reminder_cancel">إلغاء التذكير</string>
+    <string name="settings_reminder_lead">ذكّرني قبل البرنامج</string>
+    <string name="settings_notifications">الإشعارات</string>
+    <string name="settings_notifications_summary">تضع التذكيرات والتنبيهات نقطة على أيقونة التطبيق. أوقفها، أو غيّر الأصوات، من إعدادات Android</string>
+    <string name="playback_channel">قيد التشغيل الآن</string>
+    <string name="reminder_at_start">عند البدء</string>
+    <plurals name="minutes_before">
+        <item quantity="zero">قبل %d دقيقة</item>
+        <item quantity="one">قبل %d دقيقة</item>
+        <item quantity="two">قبل %d دقيقة</item>
+        <item quantity="few">قبل %d دقائق</item>
+        <item quantity="many">قبل %d دقيقة</item>
+        <item quantity="other">قبل %d دقيقة</item>
+    </plurals>
+</resources>

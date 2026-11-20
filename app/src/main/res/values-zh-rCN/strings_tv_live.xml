@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="tv_live_on_now">正在播出</string>
+    <string name="tv_live_next">接下来</string>
+    <string name="tv_live_time_range">%1$s 至 %2$s</string>
+    <string name="tv_live_no_guide">此频道没有节目单。</string>
+    <string name="tv_live_pick">移到某个频道即可查看正在播出的节目。</string>
+</resources>

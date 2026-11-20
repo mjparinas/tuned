@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="cast_connecting">Connexion à %1$s…</string>
+    <string name="cast_starting">Démarrage sur %1$s…</string>
+    <string name="cast_connect_failed">Impossible de se connecter à %1$s</string>
+    <string name="cast_playing_on">Lecture sur %1$s</string>
+    <string name="cast_failed">%1$s n\'a pas pu lire ceci. Paramètres › Mises à jour et avancé › Journaux contient les détails.</string>
+    <string name="cast_no_wifi">Connectez le téléphone au même Wi-Fi que la TV pour caster un film ou un épisode enregistré.</string>
+</resources>

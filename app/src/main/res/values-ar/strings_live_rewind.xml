@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_live_rewind">إيقاف البث المباشر مؤقتًا وإرجاعه</string>
+    <string name="settings_live_rewind_off">إيقاف</string>
+    <plurals name="settings_live_rewind_minutes">
+        <item quantity="zero">الاحتفاظ بآخر %1$d دقيقة</item>
+        <item quantity="one">الاحتفاظ بآخر %1$d دقيقة</item>
+        <item quantity="two">الاحتفاظ بآخر %1$d دقيقة</item>
+        <item quantity="few">الاحتفاظ بآخر %1$d دقائق</item>
+        <item quantity="many">الاحتفاظ بآخر %1$d دقيقة</item>
+        <item quantity="other">الاحتفاظ بآخر %1$d دقيقة</item>
+    </plurals>
+</resources>

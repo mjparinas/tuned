@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="grid_show">TV-Programmraster anzeigen</string>
+    <string name="grid_hide">Senderliste anzeigen</string>
+    <string name="grid_now">Jetzt</string>
+    <string name="grid_today">Heute</string>
+    <string name="grid_no_guide">Kein Programm</string>
+    <string name="settings_live_grid">Live-TV als Programmraster anzeigen</string>
+    <string name="settings_live_grid_summary">Sender an der Seite, Zeit oben. Die Taste neben der Suche schaltet ebenfalls um.</string>
+</resources>

@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="widget_favourites">Chaînes favorites</string>
+    <string name="widget_favourites_description">Les logos de vos chaînes favorites et ce qui passe en ce moment. Touchez-en une pour regarder.</string>
+    <string name="widget_empty_title">Pas encore de favoris</string>
+    <string name="widget_empty">Touchez le cœur d\'une chaîne et elle apparaîtra ici.</string>
+    <string name="widget_add_favourites">Ajouter des favoris</string>
+    <string name="widget_signed_out">Connectez-vous à Tuned</string>
+    <string name="widget_signed_out_body">Vos chaînes favorites apparaissent ici une fois une playlist ajoutée.</string>
+    <string name="widget_open_tuned">Ouvrir Tuned</string>
+    <string name="widget_watch">Regarder %1$s</string>
+    <string name="widget_watch_on_now">Regarder %1$s. En ce moment : %2$s</string>
+    <string name="widget_continue">Reprendre la lecture</string>
+    <string name="widget_continue_description">Les films et épisodes commencés, avec le temps restant. Touchez-en un pour reprendre là où vous en étiez.</string>
+    <string name="widget_continue_empty_title">Rien en cours</string>
+    <string name="widget_continue_empty">Les films et épisodes que vous commencez apparaissent ici.</string>
+    <string name="widget_continue_signed_out_body">Les films et épisodes commencés apparaissent ici une fois une playlist ajoutée.</string>
+    <string name="widget_episode_number">S%1$d É%2$d</string>
+    <string name="widget_resume">Reprendre %1$s. %2$s</string>
+    <plurals name="widget_minutes_left">
+        <item quantity="one">%d min restante</item>
+        <item quantity="many">%d min restantes</item>
+        <item quantity="other">%d min restantes</item>
+    </plurals>
+    <string name="tile_last_channel">Dernière chaîne</string>
+</resources>

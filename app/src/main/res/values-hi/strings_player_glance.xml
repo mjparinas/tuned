@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <plurals name="player_pill_fps_spoken">
+        <item quantity="one">%d फ़्रेम प्रति सेकंड</item>
+        <item quantity="other">%d फ़्रेम प्रति सेकंड</item>
+    </plurals>
+    <string name="player_pill_mono">MONO</string>
+    <string name="player_pill_stereo">STEREO</string>
+    <string name="player_pill_channels">%1$d CH</string>
+    <string name="player_pill_mono_spoken">मोनो</string>
+    <string name="player_pill_stereo_spoken">स्टीरियो</string>
+    <string name="player_pill_5_1_spoken">5.1 सराउंड</string>
+    <string name="player_pill_7_1_spoken">7.1 सराउंड</string>
+    <plurals name="player_pill_channels_spoken">
+        <item quantity="one">%d साउंड चैनल</item>
+        <item quantity="other">%d साउंड चैनल</item>
+    </plurals>
+</resources>

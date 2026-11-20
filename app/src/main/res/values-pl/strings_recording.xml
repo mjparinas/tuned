@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="record_start">Nagrywaj</string>
+    <string name="record_stop">Zatrzymaj nagrywanie</string>
+    <string name="record_started">Nagrywanie: %1$s</string>
+    <string name="record_saved">Nagranie zapisano w Pobranych</string>
+    <string name="record_live_only">Tego nie można nagrać. Nagrywanie działa na kanałach TV na żywo.</string>
+    <string name="record_not_casting">Nagrywanie jest niedostępne podczas przesyłania na inne urządzenie</string>
+    <string name="record_no_space">Za mało miejsca na tym urządzeniu, aby nagrywać</string>
+    <string name="record_space_ran_out">Nagrywanie zatrzymane: urządzenie jest prawie pełne</string>
+    <string name="record_failed">Nagrywanie zatrzymane: nie udało się go zapisać</string>
+    <string name="recordings_section_size">Nagrania · %1$s</string>
+    <string name="recording_remove">Usuń nagranie</string>
+    <string name="recording_hours_minutes">%1$d godz. %2$d min</string>
+    <string name="recording_minutes">%1$d min</string>
+</resources>
