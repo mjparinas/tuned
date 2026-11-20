@@ -29,7 +29,7 @@ Only what's needed to do what you asked:
 - **OpenSubtitles**, only when you search for subtitles.
 - **Trakt**, only if you connect it, to record what you watch to your own Trakt account.
 - **YouTube**, only when you open a trailer.
-- **GitHub**, in the GitHub version, to check for updates. **Google Play**, in the Play version, for purchases.
+- **Google Play**, in the Play version, for purchases.
 
 ## Signing in on a TV with your phone
 
