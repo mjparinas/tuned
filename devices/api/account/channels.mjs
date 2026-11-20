@@ -1,6 +1,7 @@
 // /api/account/channels (docs/decisions/web.md › The app's copy): the channel list and guide each playlist's app shares,
 // for the website's Channels and guide page, used where the provider doesn't let web pages read it.
-//   PUT            a signed-in device: a playlist's list (gzipped JSON from core ChannelShare), replacing its last one
+//   PUT            a signed-in device: a playlist's list (gzipped JSON from core ChannelShare), replacing its last one.
+//                  Always on (Melvin, 2026-11-20): every signed-in app keeps its list here, not only for the website.
 //   GET ?playlist  the person's own signed-in browser, from our own page, while web_player is on: that list, gzipped
 // Only the list reaches Tuned. A channel opens in VLC on the person's device, which connects to the provider itself.
 import { deviceCaller, guarded, json, webAccount } from "../../lib/auth.mjs";
@@ -29,7 +30,6 @@ export function PUT(request) {
     return guarded(async () => {
         const device = await deviceCaller(request);
         if (!device) return json({ status: "signed out" }, 401);
-        if (!(await on())) return json({ status: "off" }, 404);
         if (Number(request.headers.get("content-length") ?? 0) > MAX_GZIPPED_BYTES) return json({ status: "too large" }, 413);
         if (await limited(`rl:channels:${device.account}`, UPLOADS_PER_HOUR)) return json({ status: "too many" }, 429);
         const body = Buffer.from(await request.arrayBuffer());

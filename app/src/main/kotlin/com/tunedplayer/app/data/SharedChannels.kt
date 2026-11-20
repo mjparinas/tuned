@@ -15,8 +15,9 @@ import java.util.zip.GZIPOutputStream
 /**
  * Keeps a copy of the playlist in use's live channels and the next 12 hours of its guide in the Tuned account, for
  * the website's Channels and guide page (docs/decisions/web.md › The app's copy). Melvin, 2026-11-20, chose "the app
- * shares its list" so the page works with providers that don't let web pages read them. Only while the admin's
- * `web_player` flag is on and the device is signed in to an account; only the list goes to Tuned, never a stream.
+ * shares its list" so the page works with providers that don't let web pages read them, and then that every signed-in
+ * app keeps it there, whatever the `web_player` flag, so a new or reset device can fill Live TV from it when the
+ * provider download fails. Only while signed in to an account; only the list goes to Tuned, never a stream.
  *
  * Runs with the backup ([com.tunedplayer.app.work.CloudSyncWorker]): sent when the channel list changed, and every
  * [ChannelShare.REFRESH_MS] anyway so the website's guide stays ahead. The guide is read a few hundred channels at a

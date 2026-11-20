@@ -33,10 +33,9 @@ class CloudSyncWorker(
         // The admin's `account_backup` switch pauses the hourly run too.
         if (!ServerFlags.now.value.accountBackup) return@logFailures Result.success()
         if (!sync.run()) return@logFailures Result.retry()
-        // The website's Channels and guide page reads the app's copy only while the admin's `web_player` flag is on.
-        if (ServerFlags.now.value.webPlayer) {
-            attempt(TAG, "Couldn't share the channel list with the website") { applicationContext.container.sharedChannels.run() }
-        }
+        // Every signed-in app keeps its channel list in the account (Melvin, 2026-11-20), for the website's Channels and guide
+        // page and for a new or reset device whose provider download fails.
+        attempt(TAG, "Couldn't save the channel list to the account") { applicationContext.container.sharedChannels.run() }
         Result.success()
     }
 
