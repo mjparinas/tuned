@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_live_rewind">Canlı TV\'yi duraklat ve geri sar</string>
+    <string name="settings_live_rewind_off">Kapalı</string>
+    <plurals name="settings_live_rewind_minutes">
+        <item quantity="one">Son %1$d dakikayı tut</item>
+        <item quantity="other">Son %1$d dakikayı tut</item>
+    </plurals>
+</resources>

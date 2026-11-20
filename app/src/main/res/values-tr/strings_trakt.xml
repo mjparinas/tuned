@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="trakt_sign_in">Trakt\'ı bağla</string>
+    <string name="trakt_sign_in_summary">İzlediğin filmleri ve bölümleri Trakt geçmişine ekle</string>
+    <string name="trakt_signed_in">%1$s olarak bağlandı</string>
+    <string name="trakt_account_unnamed">Trakt hesabın</string>
+    <string name="trakt_sign_out">Bağlantıyı kesmek için dokun</string>
+    <string name="trakt_scrobble">İzlediklerini scrobble et</string>
+    <string name="trakt_scrobble_summary">Bir film veya bölüm başladığında, duraklatıldığında ve bittiğinde Trakt\'a bildir. Canlı TV gönderilmez.</string>
+    <string name="trakt_asking">Trakt\'tan kod isteniyor…</string>
+    <string name="trakt_enter_code">Herhangi bir telefon veya bilgisayarda %1$s adresine git ve bu kodu gir:</string>
+    <string name="trakt_waiting">Kodu girmen bekleniyor…</string>
+    <string name="sign_in_code_copy">Kodu kopyala</string>
+    <string name="sign_in_code_copied">Kod kopyalandı</string>
+    <string name="trakt_open_site">Trakt\'ı aç</string>
+    <string name="trakt_done">Bağlandı. Artık izlediklerin Trakt geçmişine gidiyor.</string>
+    <string name="trakt_expired">Kod girilmeden süresi doldu.</string>
+    <string name="trakt_denied">Trakt bağlantıyı reddetti.</string>
+    <string name="trakt_failed">Trakt\'a ulaşılamadı. Bağlantıyı kontrol edip tekrar dene.</string>
+    <string name="trakt_try_again">Tekrar dene</string>
+</resources>

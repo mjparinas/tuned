@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_tunneled_playback">टनल्ड प्लेबैक</string>
+    <string name="settings_tunneled_playback_summary">टीवी के अपने वीडियो हार्डवेयर को तस्वीर और आवाज़ साथ रखने देता है, जिससे 4K और खेल ज़्यादा सहज हो सकते हैं। प्लेबैक अटके तो इसे आज़माएं। इसके चालू रहने पर आवाज़ में देरी लागू नहीं होती।</string>
+</resources>

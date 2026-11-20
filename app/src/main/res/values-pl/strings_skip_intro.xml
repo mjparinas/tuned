@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="skip_intro">Pomiń czołówkę</string>
+    <string name="settings_skip_intro">Przycisk Pomiń czołówkę</string>
+    <string name="settings_skip_intro_off">Wył.</string>
+</resources>

@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_start_on_last_channel">Mit dem letzten Sender starten</string>
+    <string name="settings_start_on_last_channel_summary">Beim Öffnen spielt Tuned den zuletzt gesehenen Live-Sender, wie ein Receiver. Zurück zeigt deine Listen.</string>
+</resources>

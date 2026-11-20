@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="watch_later">Посмотреть позже</string>
+    <string name="watch_later_add">Добавить в «Посмотреть позже»</string>
+    <string name="watch_later_remove">Убрать из «Посмотреть позже»</string>
+    <string name="watched">Просмотрено</string>
+    <string name="mark_watched">Отметить как просмотренное</string>
+    <string name="mark_unwatched">Отметить как непросмотренное</string>
+    <string name="mark_season_watched">Отметить сезон как просмотренный</string>
+    <string name="mark_season_unwatched">Отметить сезон как непросмотренный</string>
+</resources>

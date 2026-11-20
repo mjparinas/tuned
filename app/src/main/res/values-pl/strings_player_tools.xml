@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="player_fit">Dopasowanie</string>
+    <string name="player_fit_now">Dopasowanie: %1$s</string>
+    <string name="player_fit_fit">Dopasuj do ekranu</string>
+    <string name="player_fit_zoom">Powiększ, aby wypełnić</string>
+    <string name="player_fit_stretch">Rozciągnij</string>
+    <string name="player_lock">Zablokuj ekran</string>
+    <string name="player_unlock">Odblokuj ekran</string>
+    <string name="player_locked">Ekran zablokowany. Stuknij kłódkę, aby odblokować.</string>
+    <string name="player_quality">Jakość</string>
+    <string name="player_quality_auto">Automatyczna</string>
+    <string name="player_quality_only_one">Ten strumień ma jedną jakość</string>
+    <string name="player_quality_untagged">Standardowa</string>
+    <string name="player_guide">Kanały</string>
+    <string name="player_guide_close">Zamknij kanały</string>
+</resources>

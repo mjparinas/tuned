@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <plurals name="player_pill_fps_spoken">
+        <item quantity="one">%d кадр в секунду</item>
+        <item quantity="few">%d кадра в секунду</item>
+        <item quantity="many">%d кадров в секунду</item>
+        <item quantity="other">%d кадра в секунду</item>
+    </plurals>
+    <string name="player_pill_mono">МОНО</string>
+    <string name="player_pill_stereo">СТЕРЕО</string>
+    <string name="player_pill_channels">%1$d КАН.</string>
+    <string name="player_pill_mono_spoken">Моно</string>
+    <string name="player_pill_stereo_spoken">Стерео</string>
+    <string name="player_pill_5_1_spoken">Объёмный звук 5.1</string>
+    <string name="player_pill_7_1_spoken">Объёмный звук 7.1</string>
+    <plurals name="player_pill_channels_spoken">
+        <item quantity="one">%d звуковой канал</item>
+        <item quantity="few">%d звуковых канала</item>
+        <item quantity="many">%d звуковых каналов</item>
+        <item quantity="other">%d звуковых канала</item>
+    </plurals>
+</resources>

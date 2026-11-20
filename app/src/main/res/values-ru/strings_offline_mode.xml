@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="offline_banner">Нет подключения к интернету. Сохранённые фильмы и серии по-прежнему воспроизводятся.</string>
+    <string name="offline_banner_downloads">Загрузки</string>
+    <string name="offline_cant_play">Нет подключения к интернету. Можно смотреть только загруженные фильмы и серии.</string>
+</resources>

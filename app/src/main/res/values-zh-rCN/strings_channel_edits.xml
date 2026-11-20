@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="channel_rename">重命名频道</string>
+    <string name="channel_name">频道名称</string>
+    <string name="channel_original_name">服务商称其为“%s”。搜索任一名称都能找到。</string>
+    <string name="channel_use_original_name">使用原名称</string>
+    <string name="channel_change_logo">更换台标</string>
+    <string name="channel_logo_from_copies">来自此频道的其他副本</string>
+    <string name="channel_logo_choice">台标 %d</string>
+    <string name="channel_logo_link">图片链接</string>
+    <string name="channel_use_original_logo">使用原台标</string>
+</resources>

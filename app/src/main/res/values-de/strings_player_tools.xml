@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="player_fit">Format</string>
+    <string name="player_fit_now">Format: %1$s</string>
+    <string name="player_fit_fit">An Bildschirm anpassen</string>
+    <string name="player_fit_zoom">Zoomen zum Füllen</string>
+    <string name="player_fit_stretch">Strecken</string>
+    <string name="player_lock">Bildschirm sperren</string>
+    <string name="player_unlock">Bildschirm entsperren</string>
+    <string name="player_locked">Bildschirm gesperrt. Tippe auf das Schloss zum Entsperren.</string>
+    <string name="player_quality">Qualität</string>
+    <string name="player_quality_auto">Automatisch</string>
+    <string name="player_quality_only_one">Dieser Stream hat nur eine Qualität</string>
+    <string name="player_quality_untagged">Standard</string>
+    <string name="player_guide">Sender</string>
+    <string name="player_guide_close">Sender schließen</string>
+</resources>

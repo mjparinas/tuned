@@ -287,6 +287,38 @@ object Regions {
     /** The name people read: Tuned's own short names first, then the JDK's English name for any other ISO code. */
     fun displayName(region: String): String = names[region] ?: isoNames[region] ?: region
 
+    /**
+     * [displayName] in the reader's language (the app follows the device's): the JDK names countries and the
+     * language tags in [locale]'s words, so a Spanish phone reads "Alemania" and "Árabe". Areas ("Europe") and
+     * tags only Tuned knows ("Latino", "Ex-Yugoslavia") keep their English name; English keeps Tuned's short names.
+     */
+    fun displayName(
+        region: String,
+        locale: Locale,
+    ): String {
+        if (locale.language == Locale.ENGLISH.language) return displayName(region)
+        languageTagCodes[region]?.let { code ->
+            val name = Locale.forLanguageTag(code).getDisplayLanguage(locale)
+            if (name.isNotBlank() && name != code) return name.replaceFirstChar { it.titlecase(locale) }
+        }
+        val iso = if (region == "UK") "GB" else region
+        if (region !in languageTagCodes && iso in isoCodes) {
+            val name =
+                Locale
+                    .Builder()
+                    .setRegion(iso)
+                    .build()
+                    .getDisplayCountry(locale)
+            if (name.isNotBlank() && name != iso) return name
+        }
+        return displayName(region)
+    }
+
+    /** The tags in [names] that are languages, not countries ("AR" is Arabic here, not Argentina). */
+    private val languageTagCodes = mapOf("AR" to "ar", "EN" to "en", "KU" to "ku")
+
+    private val isoCodes: Set<String> by lazy { Locale.getISOCountries().toSet() }
+
     private val isoNames: Map<String, String> by lazy {
         Locale.getISOCountries().associateWith {
             Locale

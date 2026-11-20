@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="tv_signin_card">Inicia sesión con tu móvil</string>
+    <string name="tv_signin_card_summary">Escanea un código en esta TV y rellénalo en tu móvil en lugar de con el mando</string>
+    <string name="tv_signin_title">Inicia sesión con tu móvil</string>
+    <string name="tv_signin_scan">Apunta la cámara del móvil al código. Rellena allí tu lista, o envíalo todo desde Tuned en tu móvil.</string>
+    <string name="tv_signin_or_go">O ve a %1$s e introduce</string>
+    <string name="tv_signin_check">Número de comprobación %1$s</string>
+    <string name="tv_signin_qr">Código QR para iniciar sesión con tu móvil</string>
+    <string name="tv_signin_type_instead">Escribirlo en la TV</string>
+    <string name="tv_signin_waiting">Obteniendo un código…</string>
+    <string name="tv_signin_offline">No se pudo conectar con el servicio de inicio de sesión de Tuned. Revisa la conexión a internet de esta TV o escribe la lista.</string>
+    <string name="tv_signin_no_backup">Esta TV ha iniciado sesión en tu cuenta de Tuned, pero la cuenta aún no tiene una copia con una lista. Escribe una lista o haz primero una copia desde tu móvil.</string>
+    <string name="tv_signin_retry">Reintentar</string>
+    <string name="tv_signin_arrived">Desde tu móvil</string>
+    <string name="tv_signin_also">Además: %1$s</string>
+    <string name="tv_signin_settings">ajustes</string>
+    <plurals name="tv_signin_favourites">
+        <item quantity="one">%d favorito</item>
+        <item quantity="many">%d favoritos</item>
+        <item quantity="other">%d favoritos</item>
+    </plurals>
+    <plurals name="tv_signin_lists">
+        <item quantity="one">%d lista</item>
+        <item quantity="many">%d listas</item>
+        <item quantity="other">%d listas</item>
+    </plurals>
+    <plurals name="tv_signin_watch_later">
+        <item quantity="one">%d en Ver más tarde</item>
+        <item quantity="many">%d en Ver más tarde</item>
+        <item quantity="other">%d en Ver más tarde</item>
+    </plurals>
+    <string name="tv_signin_only_playlists">Esta TV mantiene sus propios ajustes y favoritos; solo se añaden las listas.</string>
+    <string name="tv_signin_only_first">Sin Premium, esta TV se queda con la primera lista.</string>
+    <string name="tv_signin_use">Usarlo</string>
+    <string name="tv_signin_not_mine">No es mío</string>
+    <string name="tv_signin_saving">Configurando…</string>
+    <string name="send_tv_row">Enviar a una TV</string>
+    <string name="send_tv_row_summary">Inicia sesión en una TV con las listas y ajustes de este móvil</string>
+    <string name="send_tv_title">Enviar a una TV</string>
+    <string name="send_tv_enter">En la TV, abre Tuned y elige Inicia sesión con tu móvil. Luego introduce el código que muestra o escanéalo con la cámara.</string>
+    <string name="send_tv_code">Código de la TV</string>
+    <string name="send_tv_next">Siguiente</string>
+    <string name="send_tv_bad_code">Eso no parece el código de la TV. Son ocho letras y números.</string>
+    <string name="send_tv_not_found">Ninguna TV muestra ese código. Revísalo o espera a que la TV muestre uno nuevo.</string>
+    <string name="send_tv_confirm_digits">Comprueba que la TV muestra este número:</string>
+    <string name="send_tv_matches">Coincide</string>
+    <string name="send_tv_what">Esto envía las listas, ajustes, perfiles, favoritos y listas propias de este móvil, como la sincronización entre dispositivos. Va cifrado para que solo esa TV pueda leerlo.</string>
+    <plurals name="send_tv_playlists">
+        <item quantity="one">%d lista</item>
+        <item quantity="many">%d listas</item>
+        <item quantity="other">%d listas</item>
+    </plurals>
+    <string name="send_tv_send">Enviar a la TV</string>
+    <string name="send_tv_sending">Enviando…</string>
+    <string name="send_tv_sent">Enviado. Pulsa Usarlo en la TV.</string>
+    <string name="send_tv_gone">Ese código caducó. Escanea el nuevo en la TV.</string>
+    <string name="send_tv_already">Ya se envió algo a esa TV. Escanea el código nuevo en la TV para volver a enviar.</string>
+    <string name="send_tv_too_many">Demasiados intentos. Vuelve a intentarlo en una hora.</string>
+    <string name="send_tv_unreachable">No se pudo conectar con el servicio de inicio de sesión de Tuned. Revisa tu conexión y vuelve a intentarlo.</string>
+    <string name="send_tv_too_big">Hay demasiado que enviar. Quita algunos favoritos o elementos de Ver más tarde y vuelve a intentarlo.</string>
+    <string name="send_tv_nothing">Añade primero una lista en este móvil y luego envíala a la TV.</string>
+</resources>

@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="a11y_favourite">已收藏</string>
+    <string name="a11y_playing">正在播放</string>
+    <string name="a11y_on_now">正在播出</string>
+    <string name="a11y_current_profile">当前个人资料</string>
+    <string name="a11y_play">播放</string>
+    <string name="a11y_details">详情</string>
+    <string name="a11y_more_options">更多选项</string>
+    <string name="a11y_edit">编辑</string>
+    <string name="a11y_guide_for">%1$s 的节目单</string>
+    <string name="colour_white">白色</string>
+    <string name="colour_yellow">黄色</string>
+    <string name="colour_cyan">青色</string>
+    <string name="colour_green">绿色</string>
+    <string name="colour_magenta">品红</string>
+    <string name="colour_red">红色</string>
+    <string name="colour_blue">蓝色</string>
+    <string name="colour_black">黑色</string>
+    <string name="colour_custom">颜色 %1$s</string>
+</resources>

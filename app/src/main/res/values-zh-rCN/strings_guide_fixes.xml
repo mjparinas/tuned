@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="guide_fix_title">修正此频道的节目单</string>
+    <string name="guide_fix_summary">适用于时间不准或节目单显示错误频道的情况。播放列表刷新后修正依然保留。</string>
+    <string name="guide_fix_remove">撤销修正</string>
+    <string name="guide_fix_offset">调整时间</string>
+    <string name="guide_fix_earlier">提前</string>
+    <string name="guide_fix_later">延后</string>
+    <string name="guide_fix_no_offset">不变</string>
+    <string name="guide_fix_entry">节目单条目</string>
+    <string name="guide_fix_entry_playlist">播放列表自带</string>
+    <string name="guide_fix_choose">选择其他</string>
+    <string name="guide_fix_entry_reset">使用播放列表的</string>
+    <string name="guide_fix_search">搜索节目单频道</string>
+    <string name="guide_fix_no_results">没有匹配的节目单频道。如果节目单尚未下载完成，请稍后重试。</string>
+    <string name="settings_guide_offset">节目单时间偏移</string>
+    <string name="settings_extra_guides">额外节目单链接</string>
+    <string name="settings_extra_guides_none">无</string>
+    <plurals name="settings_extra_guides_count">
+        <item quantity="other">%d 个链接</item>
+    </plurals>
+    <string name="settings_extra_guides_summary">在服务商的节目单之后读取的 XMLTV 链接，用于补全其留空的频道。保存后会重新读取节目单。</string>
+    <string name="settings_extra_guides_remove">移除链接</string>
+    <string name="settings_extra_guides_add">添加链接 (https://…)</string>
+</resources>

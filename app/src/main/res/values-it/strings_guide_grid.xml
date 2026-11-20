@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="grid_show">Mostra la griglia della guida TV</string>
+    <string name="grid_hide">Mostra l\'elenco dei canali</string>
+    <string name="grid_now">Ora</string>
+    <string name="grid_today">Oggi</string>
+    <string name="grid_no_guide">Nessuna guida</string>
+    <string name="settings_live_grid">Mostra la TV in diretta come griglia</string>
+    <string name="settings_live_grid_summary">Canali sul lato e orari in alto. Anche il pulsante accanto alla ricerca cambia vista.</string>
+</resources>

@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="tuned_account">Compte Tuned</string>
+    <string name="tuned_account_sign_in">Connectez-vous à votre compte Tuned</string>
+    <string name="tuned_account_sign_in_summary">Sauvegardez vos playlists, paramètres et profils, et gardez téléphone et TV identiques</string>
+    <string name="tuned_account_asking">Obtention d\'un code…</string>
+    <string name="tuned_account_enter_code">Scannez le code, ou sur n\'importe quel téléphone ou ordinateur allez sur %1$s, connectez-vous avec Google et saisissez ce code dans Associer une TV :</string>
+    <string name="tuned_account_open_or_enter">Touchez Ouvrir le site et connectez-vous avec Google. Ou, sur un ordinateur, allez sur %1$s, connectez-vous et saisissez ce code dans Associer une TV :</string>
+    <string name="tuned_account_waiting">En attente de votre connexion…</string>
+    <string name="tuned_account_open_site">Ouvrir le site</string>
+    <string name="tuned_account_failed">Impossible de joindre le serveur de Tuned. Vérifiez la connexion et réessayez.</string>
+    <string name="tuned_account_try_again">Réessayer</string>
+    <string name="tuned_account_signed_in">Connecté en tant que %1$s.</string>
+    <string name="tuned_account_backup_now">Sauvegarder maintenant</string>
+    <string name="tuned_account_never">Pas encore sauvegardé</string>
+    <string name="tuned_account_last">Dernière sauvegarde %1$s</string>
+    <string name="tuned_account_offline">Impossible de joindre votre sauvegarde. Nouvel essai plus tard.</string>
+    <string name="tuned_account_sign_out">Se déconnecter du compte Tuned</string>
+    <string name="tuned_account_sign_out_summary">Déconnecte cet appareil. Votre sauvegarde et ce qui est sur cet appareil restent.</string>
+    <string name="restore_account">Restaurer depuis votre compte Tuned</string>
+    <string name="restore_account_summary">Récupérez vos playlists, profils et paramètres d\'un autre appareil</string>
+    <string name="restore_account_working">Restauration de vos playlists, profils et paramètres…</string>
+    <string name="restore_account_nothing">Ce compte n\'a pas encore de sauvegarde. Ajoutez plutôt une playlist ; une fois sauvegardée, vos autres appareils pourront la restaurer.</string>
+    <string name="restore_account_no_playlist">Vos paramètres et profils sont revenus, mais la sauvegarde ne contient aucune playlist que cet appareil peut ouvrir. Les fichiers de playlist restent sur l\'appareil où ils ont été ajoutés. Ajoutez plutôt une playlist.</string>
+    <string name="restore_account_offline">Impossible de joindre votre sauvegarde. Vérifiez la connexion et réessayez.</string>
+</resources>

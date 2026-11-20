@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="no_matches">这里没有与“%1$s”匹配的内容</string>
+    <string name="no_matches_search_everything">搜索全部</string>
+</resources>

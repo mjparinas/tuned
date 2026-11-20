@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kind_stalker">MAC portalı</string>
+    <string name="kind_stalker_summary">Bir portal adresi ve sağlayıcının kaydettiği MAC adresi</string>
+    <string name="add_stalker_hint">Portal adresini ve sağlayıcının senin için ayarladığı MAC adresini gir. Canlı TV ve rehber portaldan gelir.</string>
+    <string name="login_portal">Portal adresi</string>
+    <string name="add_portal_help">Örneğin http://portal.example.com/c/</string>
+    <string name="login_mac">MAC adresi</string>
+    <string name="add_mac_help">Örneğin 00:1A:79:12:34:56</string>
+    <string name="add_bad_mac">Bu bir MAC adresi değil. 00:1A:79:12:34:56 gibi 12 harf ve rakamdan oluşur.</string>
+    <string name="login_mac_refused">Portal bu MAC adresini kabul etmedi.</string>
+</resources>

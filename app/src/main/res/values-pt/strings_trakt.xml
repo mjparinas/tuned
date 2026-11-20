@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="trakt_sign_in">Conectar o Trakt</string>
+    <string name="trakt_sign_in_summary">Adicione os filmes e episódios que você assiste ao seu histórico do Trakt</string>
+    <string name="trakt_signed_in">Conectado como %1$s</string>
+    <string name="trakt_account_unnamed">sua conta do Trakt</string>
+    <string name="trakt_sign_out">Toque para desconectar</string>
+    <string name="trakt_scrobble">Registrar o que você assiste (scrobble)</string>
+    <string name="trakt_scrobble_summary">Avisa o Trakt quando um filme ou episódio começa, pausa e termina. A TV ao vivo não é enviada.</string>
+    <string name="trakt_asking">Pedindo um código ao Trakt…</string>
+    <string name="trakt_enter_code">Em qualquer celular ou computador, acesse %1$s e digite este código:</string>
+    <string name="trakt_waiting">Esperando você digitar o código…</string>
+    <string name="sign_in_code_copy">Copiar código</string>
+    <string name="sign_in_code_copied">Código copiado</string>
+    <string name="trakt_open_site">Abrir o Trakt</string>
+    <string name="trakt_done">Conectado. O que você assistir agora vai para o seu histórico do Trakt.</string>
+    <string name="trakt_expired">O código expirou antes de ser digitado.</string>
+    <string name="trakt_denied">O Trakt recusou a conexão.</string>
+    <string name="trakt_failed">Não foi possível acessar o Trakt. Confira a conexão e tente de novo.</string>
+    <string name="trakt_try_again">Tentar de novo</string>
+</resources>

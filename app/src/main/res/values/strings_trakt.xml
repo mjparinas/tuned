@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="trakt">Trakt</string>
+    <string name="trakt" translatable="false">Trakt</string>
     <string name="trakt_sign_in">Connect Trakt</string>
     <string name="trakt_sign_in_summary">Add the films and episodes you watch to your Trakt history</string>
     <string name="trakt_signed_in">Connected as %1$s</string>

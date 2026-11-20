@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="subtitle_search">Найти субтитры</string>
+    <string name="subtitle_search_searching">Ищем субтитры…</string>
+    <string name="subtitle_search_downloading">Загружаем субтитры…</string>
+    <string name="subtitle_search_added">Субтитры добавлены из OpenSubtitles</string>
+    <string name="subtitle_search_none">Для этого видео субтитры не найдены</string>
+    <string name="subtitle_search_no_key">Поиск субтитров недоступен в этой сборке</string>
+    <string name="subtitle_search_bad_key">OpenSubtitles отклонил ключ этого приложения. Попробуйте после следующего обновления.</string>
+    <string name="subtitle_search_bad_account">OpenSubtitles отклонил вход. Проверьте его в разделе «Настройки › Воспроизведение › Субтитры».</string>
+    <string name="subtitle_search_limit">Дневной лимит загрузок OpenSubtitles исчерпан. Попробуйте завтра.</string>
+    <string name="subtitle_search_offline">Не удалось связаться с OpenSubtitles. Попробуйте чуть позже.</string>
+    <string name="subtitle_search_hearing_impaired">Для слабослышащих</string>
+    <string name="subtitle_search_machine">Машинный перевод</string>
+    <plurals name="subtitle_search_downloads">
+        <item quantity="one">%,d загрузка</item>
+        <item quantity="few">%,d загрузки</item>
+        <item quantity="many">%,d загрузок</item>
+        <item quantity="other">%,d загрузки</item>
+    </plurals>
+    <string name="settings_subtitles">Субтитры</string>
+    <string name="settings_auto_subtitles">Искать субтитры автоматически</string>
+    <string name="settings_auto_subtitles_summary">Когда субтитры включены, фильм или серия без субтитров сами получают лучшее совпадение</string>
+    <string name="settings_opensubtitles_account">Аккаунт OpenSubtitles</string>
+    <string name="settings_opensubtitles_account_summary">Необязательно. Вход увеличивает дневной лимит загрузок.</string>
+    <string name="settings_opensubtitles_account_set">Вход выполнен как %1$s</string>
+    <string name="settings_opensubtitles_username">Имя пользователя</string>
+    <string name="settings_opensubtitles_password">Пароль</string>
+    <string name="settings_opensubtitles_remove">Удалить</string>
+</resources>

@@ -40,6 +40,7 @@ import com.tunedplayer.app.data.AppSettings
 import com.tunedplayer.app.data.db.RegionCount
 import com.tunedplayer.app.diagnostics.launchSafely
 import com.tunedplayer.app.ui.common.BackTopBar
+import com.tunedplayer.app.ui.common.regionName
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
@@ -197,7 +198,7 @@ private fun RegionList(
             val streams = pluralStringResource(R.plurals.streams, r.count, r.count)
             val none = r.region == Regions.NONE
             SwitchRow(
-                title = if (none) stringResource(R.string.regions_other) else "${Regions.displayName(r.region)} (${r.region})",
+                title = if (none) stringResource(R.string.regions_other) else "${regionName(r.region)} (${r.region})",
                 checked = r.region !in hidden,
                 summary = if (none) stringResource(R.string.regions_other_summary, streams) else streams,
             ) { show -> onSetHidden(if (show) hidden - r.region else hidden + r.region) }

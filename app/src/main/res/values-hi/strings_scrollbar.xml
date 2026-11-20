@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_always_show_scrollbar">स्क्रॉल बार हमेशा दिखाएं</string>
+    <string name="settings_always_show_scrollbar_summary">इसे केवल स्क्रॉल करते समय के बजाय लाइव टीवी, फ़िल्मों और शो पर बनाए रखें। लंबी सूची में जल्दी जाने के लिए इसे खींचें।</string>
+</resources>

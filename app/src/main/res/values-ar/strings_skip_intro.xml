@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="skip_intro">تخطي المقدمة</string>
+    <string name="settings_skip_intro">زر تخطي المقدمة</string>
+    <string name="settings_skip_intro_off">إيقاف</string>
+</resources>

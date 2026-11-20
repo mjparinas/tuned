@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_section_account">Konto</string>
+    <string name="settings_section_watching">Oglądanie</string>
+    <string name="settings_section_app">Aplikacja</string>
+    <string name="settings_version_title">Wersja</string>
+    <string name="whats_new">Co nowego</string>
+    <string name="whats_new_kicker">Tuned · Aktualizacja</string>
+    <string name="whats_new_title">Co nowego w %1$s</string>
+    <plurals name="whats_new_count_new">
+        <item quantity="one">%d nowość</item>
+        <item quantity="few">%d nowości</item>
+        <item quantity="many">%d nowości</item>
+        <item quantity="other">%d nowości</item>
+    </plurals>
+    <plurals name="whats_new_count_improved">
+        <item quantity="one">%d ulepszenie</item>
+        <item quantity="few">%d ulepszenia</item>
+        <item quantity="many">%d ulepszeń</item>
+        <item quantity="other">%d ulepszenia</item>
+    </plurals>
+    <plurals name="whats_new_count_fixed">
+        <item quantity="one">%d poprawka</item>
+        <item quantity="few">%d poprawki</item>
+        <item quantity="many">%d poprawek</item>
+        <item quantity="other">%d poprawki</item>
+    </plurals>
+    <string name="whats_new_kind_new">Nowość</string>
+    <string name="whats_new_kind_improved">Ulepszone</string>
+    <string name="whats_new_kind_fixed">Poprawione</string>
+    <string name="whats_new_loading">Wczytujemy zmiany w tej wersji…</string>
+    <string name="whats_new_failed">Nie udało się wczytać zmian w tej wersji. Sprawdź połączenie i spróbuj ponownie.</string>
+    <string name="whats_new_empty">Ta wersja nie ma zmian do pokazania.</string>
+    <string name="whats_new_retry">Spróbuj ponownie</string>
+    <string name="whats_new_done">Gotowe</string>
+</resources>

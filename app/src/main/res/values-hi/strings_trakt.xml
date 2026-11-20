@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="trakt_sign_in">Trakt कनेक्ट करें</string>
+    <string name="trakt_sign_in_summary">आप जो फ़िल्में और एपिसोड देखते हैं उन्हें अपने Trakt इतिहास में जोड़ें</string>
+    <string name="trakt_signed_in">%1$s के रूप में कनेक्ट है</string>
+    <string name="trakt_account_unnamed">आपका Trakt खाता</string>
+    <string name="trakt_sign_out">डिस्कनेक्ट करने के लिए टैप करें</string>
+    <string name="trakt_scrobble">जो देखते हैं उसे स्क्रॉबल करें</string>
+    <string name="trakt_scrobble_summary">कोई फ़िल्म या एपिसोड शुरू होने, रुकने और खत्म होने पर Trakt को बताएं। लाइव टीवी नहीं भेजा जाता।</string>
+    <string name="trakt_asking">Trakt से कोड मांगा जा रहा है…</string>
+    <string name="trakt_enter_code">किसी भी फ़ोन या कंप्यूटर पर %1$s पर जाएं और यह कोड डालें:</string>
+    <string name="trakt_waiting">आपके कोड डालने का इंतज़ार…</string>
+    <string name="sign_in_code_copy">कोड कॉपी करें</string>
+    <string name="sign_in_code_copied">कोड कॉपी हो गया</string>
+    <string name="trakt_open_site">Trakt खोलें</string>
+    <string name="trakt_done">कनेक्ट हो गया। अब आप जो देखते हैं वह आपके Trakt इतिहास में जाता है।</string>
+    <string name="trakt_expired">कोड डालने से पहले ही उसकी अवधि खत्म हो गई।</string>
+    <string name="trakt_denied">Trakt ने कनेक्शन से मना कर दिया।</string>
+    <string name="trakt_failed">Trakt तक नहीं पहुंच सके। कनेक्शन जांचें और फिर से कोशिश करें।</string>
+    <string name="trakt_try_again">फिर से कोशिश करें</string>
+</resources>

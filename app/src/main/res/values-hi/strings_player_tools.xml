@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="player_fit">फ़िट</string>
+    <string name="player_fit_now">फ़िट: %1$s</string>
+    <string name="player_fit_fit">स्क्रीन पर फ़िट करें</string>
+    <string name="player_fit_zoom">भरने के लिए ज़ूम करें</string>
+    <string name="player_fit_stretch">खींचें</string>
+    <string name="player_lock">स्क्रीन लॉक करें</string>
+    <string name="player_unlock">स्क्रीन अनलॉक करें</string>
+    <string name="player_locked">स्क्रीन लॉक है। अनलॉक करने के लिए लॉक पर टैप करें।</string>
+    <string name="player_quality">क्वालिटी</string>
+    <string name="player_quality_auto">अपने आप</string>
+    <string name="player_quality_only_one">इस स्ट्रीम की एक ही क्वालिटी है</string>
+    <string name="player_quality_untagged">सामान्य</string>
+    <string name="player_guide">चैनल</string>
+    <string name="player_guide_close">चैनल बंद करें</string>
+</resources>

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="channel_rename">Zmień nazwę kanału</string>
+    <string name="channel_name">Nazwa kanału</string>
+    <string name="channel_original_name">Dostawca nazywa go „%s”. Wyszukiwanie znajduje obie nazwy.</string>
+    <string name="channel_use_original_name">Użyj oryginalnej nazwy</string>
+    <string name="channel_change_logo">Zmień logo</string>
+    <string name="channel_logo_from_copies">Z innych kopii tego kanału</string>
+    <string name="channel_logo_choice">Logo %d</string>
+    <string name="channel_logo_link">Link do obrazu</string>
+    <string name="channel_use_original_logo">Użyj oryginalnego logo</string>
+</resources>

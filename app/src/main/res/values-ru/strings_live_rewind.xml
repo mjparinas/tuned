@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_live_rewind">Пауза и перемотка ТВ в эфире</string>
+    <string name="settings_live_rewind_off">Выкл.</string>
+    <plurals name="settings_live_rewind_minutes">
+        <item quantity="one">Хранить последнюю %1$d минуту</item>
+        <item quantity="few">Хранить последние %1$d минуты</item>
+        <item quantity="many">Хранить последние %1$d минут</item>
+        <item quantity="other">Хранить последние %1$d минуты</item>
+    </plurals>
+</resources>

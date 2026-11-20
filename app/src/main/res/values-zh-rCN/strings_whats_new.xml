@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_section_account">账号</string>
+    <string name="settings_section_watching">观看</string>
+    <string name="settings_section_app">应用</string>
+    <string name="settings_version_title">版本</string>
+    <string name="whats_new">新功能</string>
+    <string name="whats_new_kicker">Tuned · 更新</string>
+    <string name="whats_new_title">%1$s 新功能</string>
+    <plurals name="whats_new_count_new">
+        <item quantity="other">%d 项新增</item>
+    </plurals>
+    <plurals name="whats_new_count_improved">
+        <item quantity="other">%d 项改进</item>
+    </plurals>
+    <plurals name="whats_new_count_fixed">
+        <item quantity="other">%d 项修复</item>
+    </plurals>
+    <string name="whats_new_kind_new">新增</string>
+    <string name="whats_new_kind_improved">改进</string>
+    <string name="whats_new_kind_fixed">修复</string>
+    <string name="whats_new_loading">正在加载此版本的更新内容…</string>
+    <string name="whats_new_failed">无法加载此版本的更新内容。请检查网络连接后重试。</string>
+    <string name="whats_new_empty">此版本没有可列出的更新内容。</string>
+    <string name="whats_new_retry">重试</string>
+    <string name="whats_new_done">完成</string>
+</resources>

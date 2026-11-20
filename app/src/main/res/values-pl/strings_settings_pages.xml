@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_page_playlists">Playlisty i konto</string>
+    <string name="settings_page_playlists_summary">Twoje playlisty, kopia zapasowa i wylogowanie</string>
+    <string name="settings_page_profiles">Profile i kontrola rodzicielska</string>
+    <string name="settings_page_profiles_summary">Kto ogląda, kategorie dla dorosłych i PIN</string>
+    <string name="settings_page_channels">Kanały i listy</string>
+    <string name="settings_page_channels_summary">Ekran startowy, widok programu, numery oraz ukryte kraje i grupy</string>
+    <string name="settings_page_guide">Program i odświeżanie</string>
+    <string name="settings_page_guide_summary">Kiedy pobierają się playlista i program, dni programu i przypomnienia</string>
+    <string name="settings_page_playback_summary">Dźwięk, wznawianie, pomijanie czołówki, przewijanie i przyciski odtwarzacza</string>
+    <string name="settings_page_reliability">Gdy kanał zawodzi</string>
+    <string name="settings_page_reliability_summary">Ponowne łączenie, kopie zapasowe, auto-strojenie i stan kanałów</string>
+    <string name="settings_page_appearance_summary">Motyw, kolory i czysta czerń</string>
+    <string name="settings_page_about">Aktualizacje i zaawansowane</string>
+    <string name="settings_page_about_summary">Aktualizacje, user agent i dzienniki</string>
+    <string name="settings_header_hidden">Co jest ukryte</string>
+    <string name="settings_header_guide">Program</string>
+    <string name="settings_header_screen">Ekran i sterowanie</string>
+</resources>

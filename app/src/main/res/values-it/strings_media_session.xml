@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_media_buttons">Tasti multimediali</string>
+    <string name="settings_media_buttons_summary">Cuffie, Bluetooth, il tasto play del telecomando e l\'Assistente possono mettere in pausa, riprodurre e cambiare canale</string>
+</resources>

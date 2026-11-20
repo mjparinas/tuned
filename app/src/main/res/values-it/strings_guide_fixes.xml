@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="guide_fix_title">Correggi la guida di questo canale</string>
+    <string name="guide_fix_summary">Per un canale con orari sfasati, o la cui guida mostra un altro canale. La correzione resta quando la playlist si aggiorna.</string>
+    <string name="guide_fix_remove">Annulla correzione</string>
+    <string name="guide_fix_offset">Sposta gli orari</string>
+    <string name="guide_fix_earlier">Prima</string>
+    <string name="guide_fix_later">Dopo</string>
+    <string name="guide_fix_no_offset">Nessuna modifica</string>
+    <string name="guide_fix_entry">Voce della guida</string>
+    <string name="guide_fix_entry_playlist">Quella della playlist</string>
+    <string name="guide_fix_choose">Scegline un\'altra</string>
+    <string name="guide_fix_entry_reset">Usa quella della playlist</string>
+    <string name="guide_fix_search">Cerca nei canali della guida</string>
+    <string name="guide_fix_no_results">Nessun canale della guida corrisponde. Se la guida non ha ancora finito di scaricarsi, riprova più tardi.</string>
+    <string name="settings_guide_offset">Sfasamento orario della guida</string>
+    <string name="settings_extra_guides">Link di guide aggiuntivi</string>
+    <string name="settings_extra_guides_none">Nessuno</string>
+    <plurals name="settings_extra_guides_count">
+        <item quantity="one">%d link</item>
+        <item quantity="many">%d link</item>
+        <item quantity="other">%d link</item>
+    </plurals>
+    <string name="settings_extra_guides_summary">Link XMLTV letti dopo la guida del provider, per completare i canali che lascia vuoti. Salvando la guida viene riletta.</string>
+    <string name="settings_extra_guides_remove">Rimuovi link</string>
+    <string name="settings_extra_guides_add">Aggiungi un link (https://…)</string>
+</resources>

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="regions_languages">Langues</string>
+    <string name="regions_countries">Pays</string>
+    <string name="language_summary_partial">Seul %1$s est activé · %2$s</string>
+</resources>

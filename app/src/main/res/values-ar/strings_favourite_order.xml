@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_favourite_order">ترتيب المفضّلة</string>
+    <string name="settings_favourite_order_summary">اختر ترتيب قنواتك المفضّلة</string>
+    <string name="favourite_order_empty">لا توجد قنوات مفضّلة بعد. انقر القلب على قناة لإضافتها.</string>
+    <string name="move_up">نقل %1$s لأعلى</string>
+    <string name="move_down">نقل %1$s لأسفل</string>
+</resources>

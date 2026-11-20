@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="details_trailer">Trailer</string>
+    <string name="details_play">Reproduzir</string>
+    <string name="details_resume">Continuar</string>
+    <string name="details_cast">Elenco</string>
+    <string name="play_now">Reproduzir agora</string>
+    <string name="details_source">Detalhes do The Movie Database (TMDB)</string>
+    <string name="details_no_key">Esta versão não tem chave do TMDB, então notas, sinopses e trailers estão desativados.</string>
+</resources>

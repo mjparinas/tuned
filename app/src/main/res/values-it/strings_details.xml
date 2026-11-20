@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="details_trailer">Trailer</string>
+    <string name="details_play">Riproduci</string>
+    <string name="details_resume">Riprendi</string>
+    <string name="details_cast">Cast</string>
+    <string name="play_now">Riproduci ora</string>
+    <string name="details_source">Dettagli da The Movie Database (TMDB)</string>
+    <string name="details_no_key">Questa build non ha una chiave TMDB, quindi valutazioni, trame e trailer sono disattivati.</string>
+</resources>

@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_hidden_groups">Ukryte grupy</string>
+    <string name="settings_hidden_groups_none">Brak ukrytych grup</string>
+    <plurals name="groups_hidden">
+        <item quantity="one">Ukryto %1$d grupę</item>
+        <item quantity="few">Ukryto %1$d grupy</item>
+        <item quantity="many">Ukryto %1$d grup</item>
+        <item quantity="other">Ukryto %1$d grupy</item>
+    </plurals>
+    <string name="hidden_groups_help">Wyłącz grupę, aby ukryć ją w jej sekcji, w wyszukiwaniu i przy przełączaniu kanałów. Aby ukryć ją na ekranie głównym, wybierz jej etykietę i stuknij oko.</string>
+    <string name="group_hide">Ukryj tę grupę</string>
+    <string name="group_hidden">Ukryto: %1$s</string>
+    <string name="group_hidden_undo">Cofnij</string>
+    <string name="group_pin">Przypnij na początku</string>
+    <string name="group_unpin">Odepnij</string>
+    <string name="group_pinned">Przypięta</string>
+    <string name="settings_app_shortcuts">Skróty na ikonie aplikacji</string>
+    <string name="settings_app_shortcuts_summary">Przytrzymaj ikonę Tuned, aby szybko wyszukać, otworzyć Wydarzenia na żywo lub ostatnio oglądany kanał</string>
+    <string name="shortcut_search">Szukaj</string>
+    <string name="shortcut_last_channel">Oglądaj %1$s</string>
+</resources>

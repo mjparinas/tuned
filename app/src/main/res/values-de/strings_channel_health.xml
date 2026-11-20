@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="health_title">Senderzustand</string>
+    <string name="settings_channel_health_summary">Alle Sender scannen und die ausblenden, die immer wieder ausfallen</string>
+    <string name="health_help">Ein Scan probiert jeden Live-Sender nacheinander aus, so wie alte Fernseher nach Sendern suchten. Fällt das Internet aus oder antwortet der Server nicht mehr, wartet oder stoppt der Scan, statt die Sender zu beschuldigen. Ein Sender wird erst ausgeblendet, wenn er in zwei Scans mit mindestens sechs Stunden Abstand ausfällt, und kommt zurück, sobald ein Scan ihn funktionierend findet.</string>
+    <string name="health_scan_now">Sender scannen</string>
+    <string name="health_stop">Scan stoppen</string>
+    <string name="health_starting">Scan startet…</string>
+    <string name="health_while_scanning">Der Scan pausiert, während du etwas schaust, damit immer nur ein Stream offen ist.</string>
+    <string name="health_last_scan">Letzter Scan %1$s</string>
+    <plurals name="health_working">
+        <item quantity="one">%1$d funktioniert</item>
+        <item quantity="other">%1$d funktionieren</item>
+    </plurals>
+    <plurals name="health_failed">
+        <item quantity="one">%1$d fehlgeschlagen</item>
+        <item quantity="other">%1$d fehlgeschlagen</item>
+    </plurals>
+    <plurals name="health_unsure">
+        <item quantity="one">%1$d nicht bewertet</item>
+        <item quantity="other">%1$d nicht bewertet</item>
+    </plurals>
+    <string name="health_stopped_internet">Der Scan wurde gestoppt, weil das Internet weg war. Kein Sender wurde dafür verantwortlich gemacht.</string>
+    <string name="health_stopped_server">Der Scan wurde gestoppt, weil der Server keine Streams gesendet hat. Kein Sender wurde dafür verantwortlich gemacht.</string>
+    <string name="health_stopped_busy">Der Scan wurde gestoppt, weil dein Konto alle Verbindungen nutzte, wahrscheinlich auf einem anderen Gerät. Versuche es später erneut.</string>
+    <string name="health_hide_dead">Sender ausblenden, die immer wieder ausfallen</string>
+    <string name="health_hide_placeholders">Leere Event-Sender ausblenden</string>
+    <string name="health_hide_placeholders_summary">Lässt Plätze mit Namen wie „No event streaming“ weg, bis der Anbieter ein echtes Event einträgt</string>
+    <string name="health_hide_dead_summary">Ausschalten, um alle Sender zu zeigen, auch die von Scans ausgeblendeten</string>
+    <plurals name="health_hidden">
+        <item quantity="one">%1$d ausgeblendeter Sender</item>
+        <item quantity="other">%1$d ausgeblendete Sender</item>
+    </plurals>
+    <plurals name="health_once">
+        <item quantity="one">%1$d Sender ist ausgefallen, wird aber noch angezeigt</item>
+        <item quantity="other">%1$d Sender sind ausgefallen, werden aber noch angezeigt</item>
+    </plurals>
+    <string name="health_show_again">Wieder anzeigen</string>
+    <string name="health_reason_http">der Server meldete ihn als nicht verfügbar</string>
+    <string name="health_reason_no_data">kein Bild empfangen</string>
+    <string name="health_reason_not_video">eine Fehlerseite statt Video</string>
+    <string name="health_reason_timeout">keine Antwort rechtzeitig</string>
+    <string name="health_reason_connection">keine Verbindung</string>
+    <string name="health_reason_account">vom Konto abgelehnt</string>
+    <string name="scan_channel">Sender-Scan</string>
+    <string name="scan_running">Sender werden gescannt</string>
+    <plurals name="scan_progress">
+        <item quantity="one">%1$d von %2$d Sender</item>
+        <item quantity="other">%1$d von %2$d Sendern</item>
+    </plurals>
+</resources>

@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="subtitle_search">Altyazı bul</string>
+    <string name="subtitle_search_searching">Altyazı aranıyor…</string>
+    <string name="subtitle_search_downloading">Altyazı indiriliyor…</string>
+    <string name="subtitle_search_added">Altyazı OpenSubtitles\'tan eklendi</string>
+    <string name="subtitle_search_none">Bu video için altyazı bulunamadı</string>
+    <string name="subtitle_search_no_key">Altyazı arama bu derlemede kullanılamaz</string>
+    <string name="subtitle_search_bad_key">OpenSubtitles bu uygulamanın anahtarını reddetti. Bir sonraki güncellemeden sonra tekrar dene.</string>
+    <string name="subtitle_search_bad_account">OpenSubtitles girişi reddetti. Ayarlar › Oynatma › Altyazılar\'dan kontrol et.</string>
+    <string name="subtitle_search_limit">OpenSubtitles\'ın bugünkü indirme sınırı doldu. Yarın tekrar dene.</string>
+    <string name="subtitle_search_offline">OpenSubtitles\'a ulaşılamadı. Birazdan tekrar dene.</string>
+    <string name="subtitle_search_hearing_impaired">İşitme engelliler için</string>
+    <string name="subtitle_search_machine">Makine çevirisi</string>
+    <plurals name="subtitle_search_downloads">
+        <item quantity="one">%,d indirme</item>
+        <item quantity="other">%,d indirme</item>
+    </plurals>
+    <string name="settings_subtitles">Altyazılar</string>
+    <string name="settings_auto_subtitles">Altyazıları otomatik bul</string>
+    <string name="settings_auto_subtitles_summary">Altyazılar açıkken, altyazısı olmayan bir film veya bölüm en iyi eşleşmeyi kendiliğinden alır</string>
+    <string name="settings_opensubtitles_account">OpenSubtitles hesabı</string>
+    <string name="settings_opensubtitles_account_summary">İsteğe bağlı. Giriş yapmak günlük indirme sınırını artırır.</string>
+    <string name="settings_opensubtitles_account_set">%1$s olarak giriş yapıldı</string>
+    <string name="settings_opensubtitles_username">Kullanıcı adı</string>
+    <string name="settings_opensubtitles_password">Şifre</string>
+    <string name="settings_opensubtitles_remove">Kaldır</string>
+</resources>

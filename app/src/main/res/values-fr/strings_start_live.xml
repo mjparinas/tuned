@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_start_on_last_channel">Démarrer sur la dernière chaîne</string>
+    <string name="settings_start_on_last_channel_summary">Ouvrir Tuned lance la dernière chaîne en direct regardée, comme un décodeur. Retour affiche vos listes.</string>
+</resources>

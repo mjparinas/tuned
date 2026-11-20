@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_hidden_groups">Gizli gruplar</string>
+    <string name="settings_hidden_groups_none">Gizli grup yok</string>
+    <plurals name="groups_hidden">
+        <item quantity="one">%1$d grup gizlendi</item>
+        <item quantity="other">%1$d grup gizlendi</item>
+    </plurals>
+    <string name="hidden_groups_help">Bir grubu bölümünden, aramadan ve kanal geçişinden gizlemek için kapat. Ana ekrandan gizlemek için çipini seç ve göze dokun.</string>
+    <string name="group_hide">Bu grubu gizle</string>
+    <string name="group_hidden">%1$s gizlendi</string>
+    <string name="group_hidden_undo">Geri al</string>
+    <string name="group_pin">Öne sabitle</string>
+    <string name="group_unpin">Sabitlemeyi kaldır</string>
+    <string name="group_pinned">Sabitlendi</string>
+    <string name="settings_app_shortcuts">Uygulama simgesindeki kısayollar</string>
+    <string name="settings_app_shortcuts_summary">Ara, Canlı etkinlikler ve son izlediğin kanal için Tuned simgesine basılı tut</string>
+    <string name="shortcut_search">Ara</string>
+    <string name="shortcut_last_channel">%1$s izle</string>
+</resources>

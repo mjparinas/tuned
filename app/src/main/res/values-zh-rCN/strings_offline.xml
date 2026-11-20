@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="downloads">下载</string>
+    <string name="downloads_running">正在下载</string>
+    <string name="downloads_empty">还没有保存任何内容。在电影、剧集或整季上点按下载按钮即可离线观看。</string>
+    <string name="download">下载</string>
+    <string name="download_remove">移除下载</string>
+    <string name="download_remove_named">移除 %1$s 的下载</string>
+    <string name="download_retry">重试</string>
+    <string name="download_failed">下载失败</string>
+    <string name="download_waiting">等待中（播放时下载会暂停）</string>
+    <string name="download_progress">%1$s / %2$s</string>
+    <string name="downloads_space">已下载 %1$s · 此设备剩余 %2$s</string>
+    <string name="downloads_space_used">已下载 %1$s</string>
+    <string name="downloads_other_episodes">其他剧集</string>
+    <string name="download_paused">已暂停</string>
+    <string name="download_pause">暂停下载</string>
+    <string name="download_resume">继续下载</string>
+    <string name="download_cancel">取消下载</string>
+    <string name="download_season_done">本季已保存</string>
+    <plurals name="downloads_coming">
+        <item quantity="other">%1$d 个正在下载</item>
+    </plurals>
+    <plurals name="download_season">
+        <item quantity="other">下载本季（%d 集）</item>
+    </plurals>
+    <plurals name="download_season_progress">
+        <item quantity="other">已保存 %1$d / %2$d 集</item>
+    </plurals>
+</resources>

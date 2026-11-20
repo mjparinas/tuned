@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="tuned_account">Аккаунт Tuned</string>
+    <string name="tuned_account_sign_in">Войдите в аккаунт Tuned</string>
+    <string name="tuned_account_sign_in_summary">Сохраняйте копию плейлистов, настроек и профилей и держите телефон и ТВ одинаковыми</string>
+    <string name="tuned_account_asking">Получаем код…</string>
+    <string name="tuned_account_enter_code">Отсканируйте код или на любом телефоне или компьютере откройте %1$s, войдите через Google и введите этот код в разделе «Подключить ТВ»:</string>
+    <string name="tuned_account_open_or_enter">Нажмите «Открыть сайт» и войдите через Google. Или на компьютере откройте %1$s, войдите и введите этот код в разделе «Подключить ТВ»:</string>
+    <string name="tuned_account_waiting">Ждём, когда вы войдёте…</string>
+    <string name="tuned_account_open_site">Открыть сайт</string>
+    <string name="tuned_account_failed">Не удалось связаться с сервером Tuned. Проверьте подключение и попробуйте снова.</string>
+    <string name="tuned_account_try_again">Повторить</string>
+    <string name="tuned_account_signed_in">Вход выполнен как %1$s.</string>
+    <string name="tuned_account_backup_now">Создать копию сейчас</string>
+    <string name="tuned_account_never">Копии ещё нет</string>
+    <string name="tuned_account_last">Последняя копия %1$s</string>
+    <string name="tuned_account_offline">Не удалось связаться с резервной копией. Попробуем снова.</string>
+    <string name="tuned_account_sign_out">Выйти из аккаунта Tuned</string>
+    <string name="tuned_account_sign_out_summary">Выход на этом устройстве. Резервная копия и всё, что на устройстве, сохранятся.</string>
+    <string name="restore_account">Восстановить из аккаунта Tuned</string>
+    <string name="restore_account_summary">Перенесите плейлисты, профили и настройки с другого устройства</string>
+    <string name="restore_account_working">Восстанавливаем плейлисты, профили и настройки…</string>
+    <string name="restore_account_nothing">У этого аккаунта ещё нет резервной копии. Добавьте плейлист; когда появится копия, ваши другие устройства смогут её восстановить.</string>
+    <string name="restore_account_no_playlist">Настройки и профили восстановлены, но в копии нет плейлиста, который может открыть это устройство. Файлы плейлистов остаются на устройстве, где их добавили. Добавьте плейлист.</string>
+    <string name="restore_account_offline">Не удалось связаться с резервной копией. Проверьте подключение и попробуйте снова.</string>
+</resources>

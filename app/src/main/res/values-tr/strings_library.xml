@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="watch_later">Sonra izle</string>
+    <string name="watch_later_add">Sonra izle\'ye ekle</string>
+    <string name="watch_later_remove">Sonra izle\'den çıkar</string>
+    <string name="watched">İzlendi</string>
+    <string name="mark_watched">İzlendi olarak işaretle</string>
+    <string name="mark_unwatched">İzlenmedi olarak işaretle</string>
+    <string name="mark_season_watched">Sezonu izlendi olarak işaretle</string>
+    <string name="mark_season_unwatched">Sezonu izlenmedi olarak işaretle</string>
+</resources>

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="subtitle_timing">Synchronizacja napisów</string>
+    <string name="subtitle_timing_none">Najpierw włącz napisy</string>
+    <string name="subtitle_timing_not_casting">Synchronizacja napisów jest niedostępna podczas przesyłania na inne urządzenie</string>
+    <string name="subtitle_timing_later">Napisy %1$s s później</string>
+    <string name="subtitle_timing_earlier">Napisy %1$s s wcześniej</string>
+    <string name="subtitle_timing_in_sync">Bez zmian</string>
+    <string name="subtitle_timing_back_big">−1 s</string>
+    <string name="subtitle_timing_back_small">−0,1 s</string>
+    <string name="subtitle_timing_on_small">+0,1 s</string>
+    <string name="subtitle_timing_on_big">+1 s</string>
+    <string name="subtitle_timing_reset">Resetuj</string>
+    <string name="subtitle_timing_done">Gotowe</string>
+</resources>

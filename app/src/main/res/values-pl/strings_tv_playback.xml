@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_match_frame_rate">Dopasuj liczbę klatek</string>
+    <string name="settings_match_frame_rate_summary">Przełącza telewizor na liczbę klatek filmu, np. 50 Hz dla sportu, aby ruch nie szarpał. Ekran może na chwilę zgasnąć przy przełączaniu.</string>
+    <string name="player_no_sound">Brak dźwięku: to urządzenie nie odtwarza dźwięku %1$s tego kanału</string>
+</resources>

@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_section_account">Cuenta</string>
+    <string name="settings_section_watching">Visualización</string>
+    <string name="settings_section_app">App</string>
+    <string name="settings_version_title">Versión</string>
+    <string name="whats_new">Novedades</string>
+    <string name="whats_new_kicker">Tuned · Actualización</string>
+    <string name="whats_new_title">Novedades de %1$s</string>
+    <plurals name="whats_new_count_new">
+        <item quantity="one">%d nueva</item>
+        <item quantity="many">%d nuevas</item>
+        <item quantity="other">%d nuevas</item>
+    </plurals>
+    <plurals name="whats_new_count_improved">
+        <item quantity="one">%d mejorada</item>
+        <item quantity="many">%d mejoradas</item>
+        <item quantity="other">%d mejoradas</item>
+    </plurals>
+    <plurals name="whats_new_count_fixed">
+        <item quantity="one">%d corregida</item>
+        <item quantity="many">%d corregidas</item>
+        <item quantity="other">%d corregidas</item>
+    </plurals>
+    <string name="whats_new_kind_new">Nuevo</string>
+    <string name="whats_new_kind_improved">Mejorado</string>
+    <string name="whats_new_kind_fixed">Corregido</string>
+    <string name="whats_new_loading">Cargando los cambios de esta versión…</string>
+    <string name="whats_new_failed">No se pudieron cargar los cambios de esta versión. Revisa la conexión y vuelve a intentarlo.</string>
+    <string name="whats_new_empty">Esta versión no tiene cambios que mostrar.</string>
+    <string name="whats_new_retry">Reintentar</string>
+    <string name="whats_new_done">Listo</string>
+</resources>

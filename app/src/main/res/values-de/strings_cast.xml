@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="cast_connecting">Verbindung mit %1$s…</string>
+    <string name="cast_starting">Start auf %1$s…</string>
+    <string name="cast_connect_failed">Verbindung mit %1$s fehlgeschlagen</string>
+    <string name="cast_playing_on">Wiedergabe auf %1$s</string>
+    <string name="cast_failed">%1$s konnte das nicht abspielen. Details unter Einstellungen › Updates und Erweitert › Protokolle.</string>
+    <string name="cast_no_wifi">Verbinde das Handy mit demselben WLAN wie den Fernseher, um einen gespeicherten Film oder eine Folge zu streamen.</string>
+</resources>

@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="playlists">Плейлисты</string>
+    <plurals name="playlists_saved">
+        <item quantity="one">Сохранён %d плейлист</item>
+        <item quantity="few">Сохранено %d плейлиста</item>
+        <item quantity="many">Сохранено %d плейлистов</item>
+        <item quantity="other">Сохранено %d плейлиста</item>
+    </plurals>
+    <plurals name="playlists_in_use">
+        <item quantity="one">%1$s · сохранён %2$d</item>
+        <item quantity="few">%1$s · сохранено %2$d</item>
+        <item quantity="many">%1$s · сохранено %2$d</item>
+        <item quantity="other">%1$s · сохранено %2$d</item>
+    </plurals>
+    <string name="playlists_add">Добавить плейлист</string>
+    <string name="playlists_help">Нажмите на плейлист, чтобы смотреть его. Tuned хранит каналы только одного плейлиста, поэтому при переключении загружается другой.</string>
+    <string name="playlists_active">Используется</string>
+    <string name="playlists_rename">Переименовать</string>
+    <string name="playlists_edit">Изменить</string>
+    <string name="playlists_remove">Удалить</string>
+    <string name="playlists_remove_title">Удалить %1$s?</string>
+    <string name="playlists_remove_body">Данные для входа будут удалены с этого устройства. Позже его можно добавить снова.</string>
+    <string name="playlists_remove_last">Это ваш единственный плейлист, поэтому вы выйдете, а сохранённые каналы и телегид будут удалены.</string>
+    <string name="welcome_title">Добро пожаловать в Tuned</string>
+    <string name="welcome_body">Добавьте плейлист от вашего ТВ-провайдера, чтобы начать смотреть. Позже в настройках можно добавить сколько угодно.</string>
+    <string name="welcome_pick">Что вам дал провайдер?</string>
+    <string name="kind_xtream">Вход Xtream Codes</string>
+    <string name="kind_xtream_summary">Адрес сервера, имя пользователя и пароль</string>
+    <string name="kind_link">Ссылка на плейлист</string>
+    <string name="kind_link_summary">Ссылка M3U или M3U8, со ссылкой на телегид, если она есть</string>
+    <string name="kind_file">Файл плейлиста</string>
+    <string name="kind_file_summary">Файл .m3u, сохранённый на этом устройстве</string>
+    <string name="add_xtream_hint">Введите данные, которые прислал провайдер. В поле сервера можно вставить и полную ссылку Xtream.</string>
+    <string name="add_server_help">Например http://example.com:8080</string>
+    <string name="add_link_hint">Вставьте ссылку на плейлист, которую прислал провайдер.</string>
+    <string name="add_link_is_xtream">Это ссылка для входа Xtream, поэтому Tuned войдёт по ней, и архив передач тоже будет работать.</string>
+    <string name="add_file_hint">Выберите файл плейлиста. Tuned хранит свою копию, поэтому всё будет работать, даже если вы переместите или удалите оригинал.</string>
+    <string name="add_file_choose">Выбрать файл</string>
+    <string name="add_file_replace">Оставить текущий файл или выбрать новый</string>
+    <string name="add_name">Название (необязательно)</string>
+    <string name="add_name_help">Как он будет называться, например Спорт или Гостиная</string>
+    <string name="add_guide">Ссылка на телегид (XMLTV) (необязательно)</string>
+    <string name="add_guide_help">Оставьте пустым, чтобы использовать телегид из плейлиста</string>
+    <string name="add_submit">Добавить плейлист</string>
+    <string name="add_save">Сохранить</string>
+    <string name="add_bad_link">Это не похоже на веб-ссылку. Проверьте её и попробуйте снова.</string>
+    <string name="add_bad_file">Этот файл не похож на плейлист M3U.</string>
+    <string name="add_pick_file">Сначала выберите файл плейлиста.</string>
+</resources>

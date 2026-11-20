@@ -6,5 +6,5 @@
     <!-- %1$s: a time zone's short name, such as "PST". -->
     <string name="events_zone">Times in %1$s</string>
     <!-- The guide's corner: %1$s is "Today" or a weekday, %2$s the zone's short name, such as "PST". -->
-    <string name="grid_day_zone">%1$s · %2$s</string>
+    <string name="grid_day_zone" translatable="false">%1$s · %2$s</string>
 </resources>

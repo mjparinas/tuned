@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_match_frame_rate">Kare hızını eşleştir</string>
+    <string name="settings_match_frame_rate_summary">Hareketin titrememesi için TV\'yi videonun kare hızına geçir, örneğin spor için 50 Hz. Geçiş sırasında ekran bir an kararabilir.</string>
+    <string name="player_no_sound">Ses yok: bu cihaz bu kanalın %1$s sesini çalamıyor</string>
+</resources>

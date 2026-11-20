@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_channel_numbers">频道号</string>
+    <string name="settings_channel_numbers_summary">在每个直播频道旁显示编号。观看时在遥控器上输入编号即可换台，按“上一频道”键可切回。</string>
+    <string name="player_no_channel_number">没有 %1$d 号频道</string>
+    <string name="player_flip_back">上一频道</string>
+</resources>

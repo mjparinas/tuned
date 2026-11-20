@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="offline_banner">Çevrimdışısın. Kaydedilen filmler ve bölümler oynamaya devam eder.</string>
+    <string name="offline_banner_downloads">İndirilenler</string>
+    <string name="offline_cant_play">Çevrimdışısın. Yalnızca indirilen filmler ve bölümler oynatılabilir.</string>
+</resources>

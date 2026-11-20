@@ -1,5 +1,6 @@
 package com.tunedplayer.app.core
 
+import java.util.Locale
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -42,6 +43,18 @@ class RegionsTest {
         assertEquals("ZZ", Regions.displayName("ZZ"))
         // Codes Tuned has no short name for still read as a country, so they sort and search by name too.
         assertTrue(Regions.displayName("CI").startsWith("C") && Regions.displayName("CI") != "CI")
+    }
+
+    @Test
+    fun `names follow the reader's language, and Tuned's own tags stay as they are`() {
+        val spanish = Locale.forLanguageTag("es")
+        assertEquals("Alemania", Regions.displayName("DE", spanish))
+        assertEquals("Reino Unido", Regions.displayName("UK", spanish))
+        // "AR" is the Arabic tag, never Argentina.
+        assertEquals("Árabe", Regions.displayName("AR", spanish))
+        assertEquals("Latino", Regions.displayName("LAT", spanish))
+        assertEquals("ZZ", Regions.displayName("ZZ", spanish))
+        assertEquals("United Kingdom", Regions.displayName("UK", Locale.CANADA))
     }
 
     @Test

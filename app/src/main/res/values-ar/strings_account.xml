@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="account_status">الاشتراك</string>
+    <string name="account_status_unknown">تم تسجيل الدخول</string>
+    <string name="account_trial">فترة تجريبية</string>
+    <string name="account_no_end">بلا تاريخ انتهاء</string>
+    <string name="account_expires_on">ينتهي %1$s</string>
+    <string name="account_expired_on">انتهى %1$s</string>
+    <plurals name="account_expires_soon">
+        <item quantity="zero">ينتهي %1$s، بعد %2$d يوم</item>
+        <item quantity="one">ينتهي %1$s، بعد %2$d يوم</item>
+        <item quantity="two">ينتهي %1$s، بعد %2$d يوم</item>
+        <item quantity="few">ينتهي %1$s، بعد %2$d أيام</item>
+        <item quantity="many">ينتهي %1$s، بعد %2$d يوم</item>
+        <item quantity="other">ينتهي %1$s، بعد %2$d يومًا</item>
+    </plurals>
+    <string name="account_connections_title">الاتصالات المستخدمة</string>
+    <string name="account_connections">%1$d من %2$d</string>
+    <string name="account_connections_full">%1$d من %2$d: كلها مستخدمة، على الأرجح على جهاز آخر</string>
+    <string name="account_full_wait">كل اتصالاتك مستخدمة (%1$d من %2$d)، على الأرجح على جهاز آخر. فتح اتصال آخر قد يتجاوز حد حسابك. اضغط تشغيل للبدء على أي حال.</string>
+</resources>

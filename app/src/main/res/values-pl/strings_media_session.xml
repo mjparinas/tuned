@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_media_buttons">Przyciski multimedialne</string>
+    <string name="settings_media_buttons_summary">Słuchawki, Bluetooth, przycisk odtwarzania na pilocie i Asystent mogą pauzować, odtwarzać i zmieniać kanał</string>
+</resources>

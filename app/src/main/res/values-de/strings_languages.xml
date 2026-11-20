@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="regions_languages">Sprachen</string>
+    <string name="regions_countries">Länder</string>
+    <string name="language_summary_partial">Nur %1$s an · %2$s</string>
+</resources>

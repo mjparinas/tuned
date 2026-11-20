@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="events_title">Eventi in diretta</string>
+    <string name="events_follow_hint">Segui una squadra, un campionato o un lottatore</string>
+    <string name="events_follow">Segui</string>
+    <string name="events_unfollow">Non seguire più %1$s</string>
+    <string name="events_following">Segui già</string>
+    <string name="events_on_now">In onda</string>
+    <string name="events_later">Più tardi oggi</string>
+    <string name="events_tomorrow">Domani</string>
+    <string name="events_live">In diretta</string>
+    <string name="events_empty">Nessuna partita, incontro o pay-per-view nella guida per il prossimo giorno e mezzo. Aggiorna la guida nelle impostazioni se ti sembra sbagliato.</string>
+    <plurals name="events_channels">
+        <item quantity="one">Su %d canale</item>
+        <item quantity="many">Su %d canali</item>
+        <item quantity="other">Su %d canali</item>
+    </plurals>
+    <string name="reminder_event_text">Inizia a breve. Tocca per sintonizzarti.</string>
+</resources>

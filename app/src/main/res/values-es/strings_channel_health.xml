@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="health_title">Estado de los canales</string>
+    <string name="settings_channel_health_summary">Escanea todos los canales y oculta los que fallan una y otra vez</string>
+    <string name="health_help">Un escaneo prueba cada canal en directo, uno a uno, como hacían las TV antiguas al buscar emisoras. Si se cae internet o el servidor deja de responder, el escaneo espera o se detiene en lugar de culpar a los canales. Un canal solo se oculta tras fallar en dos escaneos separados por al menos seis horas, y vuelve en cuanto un escaneo lo encuentra funcionando.</string>
+    <string name="health_scan_now">Escanear canales</string>
+    <string name="health_stop">Detener escaneo</string>
+    <string name="health_starting">Iniciando el escaneo…</string>
+    <string name="health_while_scanning">El escaneo se pausa mientras ves algo, así que solo hay una emisión abierta.</string>
+    <string name="health_last_scan">Último escaneo %1$s</string>
+    <plurals name="health_working">
+        <item quantity="one">%1$d funciona</item>
+        <item quantity="many">%1$d funcionan</item>
+        <item quantity="other">%1$d funcionan</item>
+    </plurals>
+    <plurals name="health_failed">
+        <item quantity="one">%1$d falló</item>
+        <item quantity="many">%1$d fallaron</item>
+        <item quantity="other">%1$d fallaron</item>
+    </plurals>
+    <plurals name="health_unsure">
+        <item quantity="one">%1$d sin evaluar</item>
+        <item quantity="many">%1$d sin evaluar</item>
+        <item quantity="other">%1$d sin evaluar</item>
+    </plurals>
+    <string name="health_stopped_internet">El escaneo se detuvo porque no había internet. No se culpó a ningún canal.</string>
+    <string name="health_stopped_server">El escaneo se detuvo porque el servidor no enviaba ninguna emisión. No se culpó a ningún canal.</string>
+    <string name="health_stopped_busy">El escaneo se detuvo porque tu cuenta usaba todas sus conexiones, probablemente en otro dispositivo. Vuelve a intentarlo más tarde.</string>
+    <string name="health_hide_dead">Ocultar canales que fallan una y otra vez</string>
+    <string name="health_hide_placeholders">Ocultar canales de eventos vacíos</string>
+    <string name="health_hide_placeholders_summary">Quita los huecos con nombres como “No event streaming” hasta que el proveedor ponga un evento real</string>
+    <string name="health_hide_dead_summary">Desactívalo para mostrar todos los canales, incluidos los que ocultaron los escaneos</string>
+    <plurals name="health_hidden">
+        <item quantity="one">%1$d canal oculto</item>
+        <item quantity="many">%1$d canales ocultos</item>
+        <item quantity="other">%1$d canales ocultos</item>
+    </plurals>
+    <plurals name="health_once">
+        <item quantity="one">%1$d canal falló pero sigue visible</item>
+        <item quantity="many">%1$d canales fallaron pero siguen visibles</item>
+        <item quantity="other">%1$d canales fallaron pero siguen visibles</item>
+    </plurals>
+    <string name="health_show_again">Mostrar de nuevo</string>
+    <string name="health_reason_http">el servidor dijo que no está disponible</string>
+    <string name="health_reason_no_data">no llegó imagen</string>
+    <string name="health_reason_not_video">una página de error en lugar de vídeo</string>
+    <string name="health_reason_timeout">sin respuesta a tiempo</string>
+    <string name="health_reason_connection">no se pudo conectar</string>
+    <string name="health_reason_account">rechazado por la cuenta</string>
+    <string name="scan_channel">Escaneo de canales</string>
+    <string name="scan_running">Escaneando canales</string>
+    <plurals name="scan_progress">
+        <item quantity="one">%1$d de %2$d canal</item>
+        <item quantity="many">%1$d de %2$d canales</item>
+        <item quantity="other">%1$d de %2$d canales</item>
+    </plurals>
+</resources>

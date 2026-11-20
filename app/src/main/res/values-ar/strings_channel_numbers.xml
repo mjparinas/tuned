@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_channel_numbers">أرقام القنوات</string>
+    <string name="settings_channel_numbers_summary">اعرض رقمًا بجانب كل قناة مباشرة. اكتبه على جهاز التحكم أثناء المشاهدة لتغيير القناة، واضغط زر القناة الأخيرة للعودة.</string>
+    <string name="player_no_channel_number">لا توجد قناة %1$d</string>
+    <string name="player_flip_back">القناة الأخيرة</string>
+</resources>

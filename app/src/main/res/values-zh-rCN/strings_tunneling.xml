@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_tunneled_playback">隧道播放</string>
+    <string name="settings_tunneled_playback_summary">让电视自身的视频硬件保持音画同步，可使 4K 和体育节目更流畅。播放卡顿时可尝试开启。开启时声音延迟不起作用。</string>
+</resources>

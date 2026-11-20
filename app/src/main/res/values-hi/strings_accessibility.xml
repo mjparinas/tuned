@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="a11y_favourite">पसंदीदा</string>
+    <string name="a11y_playing">चल रहा है</string>
+    <string name="a11y_on_now">अभी चल रहा है</string>
+    <string name="a11y_current_profile">मौजूदा प्रोफ़ाइल</string>
+    <string name="a11y_play">चलाएं</string>
+    <string name="a11y_details">विवरण</string>
+    <string name="a11y_more_options">और विकल्प</string>
+    <string name="a11y_edit">संपादित करें</string>
+    <string name="a11y_guide_for">%1$s की गाइड</string>
+    <string name="colour_white">सफ़ेद</string>
+    <string name="colour_yellow">पीला</string>
+    <string name="colour_cyan">सियान</string>
+    <string name="colour_green">हरा</string>
+    <string name="colour_magenta">मैजेंटा</string>
+    <string name="colour_red">लाल</string>
+    <string name="colour_blue">नीला</string>
+    <string name="colour_black">काला</string>
+    <string name="colour_custom">रंग %1$s</string>
+</resources>

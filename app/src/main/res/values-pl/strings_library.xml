@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="watch_later">Do obejrzenia</string>
+    <string name="watch_later_add">Dodaj do obejrzenia</string>
+    <string name="watch_later_remove">Usuń z listy Do obejrzenia</string>
+    <string name="watched">Obejrzane</string>
+    <string name="mark_watched">Oznacz jako obejrzane</string>
+    <string name="mark_unwatched">Oznacz jako nieobejrzane</string>
+    <string name="mark_season_watched">Oznacz sezon jako obejrzany</string>
+    <string name="mark_season_unwatched">Oznacz sezon jako nieobejrzany</string>
+</resources>

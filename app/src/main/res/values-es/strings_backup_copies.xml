@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_backup_copies">Cambiar a una copia de reserva</string>
+    <string name="settings_backup_copies_summary">Cuando un canal deja de funcionar, reproduce otra copia de tu lista, como ESPN FHD en lugar de ESPN HD</string>
+    <string name="player_trying_copy">No funciona. Probando una copia de reserva (%1$d de %2$d)…</string>
+    <string name="player_copy_playing">Cambiado a %1$s</string>
+    <string name="player_no_copy_works">Este canal y sus copias de reserva no funcionan ahora mismo</string>
+    <string name="health_hide_failed_on_play">Ocultar canales que no se reproducen</string>
+    <string name="health_hide_failed_on_play_summary">Cuando un canal no carga aunque tu internet y el servicio funcionan (otro canal va bien), se oculta al momento. Vuelve cuando un escaneo lo encuentra funcionando, o con Mostrar de nuevo más abajo.</string>
+    <string name="health_reason_playback">no se reprodujo</string>
+</resources>

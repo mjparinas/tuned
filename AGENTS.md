@@ -47,7 +47,7 @@ Kotlin, Jetpack Compose with Material 3, Navigation Compose (type-safe routes), 
 
 - Formatting is ktlint's (`.editorconfig`, width 140) through Spotless, and Prettier's for YAML, JSON and Markdown. Don't hand-format.
 - detekt (`config/detekt/detekt.yml`) and Android Lint (`warningsAsErrors`) fail CI on any finding. Fix the cause; suppress only with a comment saying why.
-- Every string a person reads is in `res/values/strings.xml`; numbers that change a word use `<plurals>`.
+- Every string a person reads is in `res/values/strings.xml`; numbers that change a word use `<plurals>`. **The app is translated into 11 languages** ([languages](docs/decisions/languages.md); Melvin, 2026-11-20): a new or changed string gets its translation in every `values-xx` folder in the same pull request (Lint's `MissingTranslation` fails otherwise), "Tuned" is never translated, and the device's language picks the app's, with no picker in the app.
 - **Pop-ups are `TunedDialog`** (`ui/common/TunedDialog.kt`), never Material's `AlertDialog` directly (detekt enforces it), so every dialog keeps 24 dp off the screen's edges, stops at 560 dp and sits in the centre (Melvin, 2026-11-19: "these pop ups shouldn't take the full width"; [branding](docs/decisions/branding.md)).
 - **TV-safe** ([TV](docs/decisions/tv.md)): on a TV every screen sits inside the overscan margin (`TvSafeArea`, 48 dp sides, 27 dp top and bottom); a screen taller than 540 dp less that margin must scroll or change layout so nothing is cut off.
 - **Accessible by default** ([accessibility](docs/decisions/accessibility.md)): an icon-only button has a label, a state shown by colour is also given in words, switches are `toggleable`, tap targets are 48dp, and text containers use a minimum height, never a fixed one.
@@ -93,6 +93,7 @@ One file per topic in `docs/decisions/`, A to Z. Add a line when you add a topic
 - [Branding](docs/decisions/branding.md): name, the channel stack icon, colours, themes.
 - [Channel scan](docs/decisions/channel-scan.md): finding dead channels without blaming them for the internet or the server.
 - [Diagnostics](docs/decisions/diagnostics.md): crash reports, `launchSafely` and `attempt`, the log in Settings, keeping logins out of it.
+- [Languages](docs/decisions/languages.md): the 11 translations, the device's language picks one, what stays untranslated, right to left.
 - [Large screens](docs/decisions/large-screens.md): navigation rail, list and detail panes, the guide beside the player on tablets.
 - [Lists](docs/decisions/lists.md): Favourites and your own lists beside it, like a music app's playlists; renaming channels and changing logos.
 - [Live events](docs/decisions/events.md): today's games and fights from the guide, Tune, following and alerts.

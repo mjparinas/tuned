@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_audio_delay">تأخير الصوت</string>
+    <string name="settings_audio_delay_off">متزامن مع الصورة</string>
+    <string name="settings_audio_delay_earlier">الصوت أبكر بـ %d ms</string>
+    <string name="settings_audio_delay_later">الصوت متأخر بـ %d ms</string>
+</resources>

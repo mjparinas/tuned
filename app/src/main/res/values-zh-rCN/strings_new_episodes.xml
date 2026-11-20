@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="episode_new">新</string>
+    <plurals name="new_episodes">
+        <item quantity="other">%1$d 集新内容</item>
+    </plurals>
+</resources>

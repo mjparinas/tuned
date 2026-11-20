@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="watch_later">稍后观看</string>
+    <string name="watch_later_add">添加到稍后观看</string>
+    <string name="watch_later_remove">从稍后观看中移除</string>
+    <string name="watched">已观看</string>
+    <string name="mark_watched">标记为已观看</string>
+    <string name="mark_unwatched">标记为未观看</string>
+    <string name="mark_season_watched">将本季标记为已观看</string>
+    <string name="mark_season_unwatched">将本季标记为未观看</string>
+</resources>

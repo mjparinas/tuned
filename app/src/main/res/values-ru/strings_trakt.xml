@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="trakt_sign_in">Подключить Trakt</string>
+    <string name="trakt_sign_in_summary">Добавлять просмотренные фильмы и серии в историю Trakt</string>
+    <string name="trakt_signed_in">Подключено как %1$s</string>
+    <string name="trakt_account_unnamed">ваш аккаунт Trakt</string>
+    <string name="trakt_sign_out">Нажмите, чтобы отключить</string>
+    <string name="trakt_scrobble">Отмечать просмотренное (scrobble)</string>
+    <string name="trakt_scrobble_summary">Сообщать Trakt, когда фильм или серия начинается, ставится на паузу и заканчивается. ТВ в эфире не отправляется.</string>
+    <string name="trakt_asking">Запрашиваем код у Trakt…</string>
+    <string name="trakt_enter_code">На любом телефоне или компьютере откройте %1$s и введите этот код:</string>
+    <string name="trakt_waiting">Ждём, когда вы введёте код…</string>
+    <string name="sign_in_code_copy">Копировать код</string>
+    <string name="sign_in_code_copied">Код скопирован</string>
+    <string name="trakt_open_site">Открыть Trakt</string>
+    <string name="trakt_done">Подключено. Теперь всё, что вы смотрите, попадает в историю Trakt.</string>
+    <string name="trakt_expired">Срок действия кода истёк до ввода.</string>
+    <string name="trakt_denied">Trakt отклонил подключение.</string>
+    <string name="trakt_failed">Не удалось связаться с Trakt. Проверьте подключение и попробуйте снова.</string>
+    <string name="trakt_try_again">Повторить</string>
+</resources>

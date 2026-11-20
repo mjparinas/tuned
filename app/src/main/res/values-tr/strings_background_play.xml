@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_background_play">Arka planda oynatmaya devam et</string>
+    <string name="settings_background_play_summary">Uygulamadan çıktığında veya ekranı kilitlediğinde ses, bildirimdeki kontrollerle devam eder. Yine tek bağlantı.</string>
+</resources>

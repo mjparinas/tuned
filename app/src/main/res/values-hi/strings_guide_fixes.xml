@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="guide_fix_title">इस चैनल की गाइड ठीक करें</string>
+    <string name="guide_fix_summary">ऐसे चैनल के लिए जिसके समय गलत हैं, या जिसकी गाइड गलत चैनल दिखाती है। प्लेलिस्ट रीफ़्रेश होने पर भी सुधार बना रहता है।</string>
+    <string name="guide_fix_remove">सुधार वापस लें</string>
+    <string name="guide_fix_offset">समय खिसकाएं</string>
+    <string name="guide_fix_earlier">पहले</string>
+    <string name="guide_fix_later">बाद में</string>
+    <string name="guide_fix_no_offset">कोई बदलाव नहीं</string>
+    <string name="guide_fix_entry">गाइड प्रविष्टि</string>
+    <string name="guide_fix_entry_playlist">प्लेलिस्ट की अपनी</string>
+    <string name="guide_fix_choose">दूसरी चुनें</string>
+    <string name="guide_fix_entry_reset">प्लेलिस्ट की इस्तेमाल करें</string>
+    <string name="guide_fix_search">गाइड के चैनल खोजें</string>
+    <string name="guide_fix_no_results">कोई गाइड चैनल मेल नहीं खाता। अगर गाइड अभी पूरी डाउनलोड नहीं हुई है, तो बाद में फिर कोशिश करें।</string>
+    <string name="settings_guide_offset">गाइड समय ऑफ़सेट</string>
+    <string name="settings_extra_guides">अतिरिक्त गाइड लिंक</string>
+    <string name="settings_extra_guides_none">कोई नहीं</string>
+    <plurals name="settings_extra_guides_count">
+        <item quantity="one">%d लिंक</item>
+        <item quantity="other">%d लिंक</item>
+    </plurals>
+    <string name="settings_extra_guides_summary">प्रदाता की गाइड के बाद पढ़े जाने वाले XMLTV लिंक, उन चैनलों को भरने के लिए जिन्हें वह खाली छोड़ता है। सहेजने पर गाइड फिर से पढ़ी जाती है।</string>
+    <string name="settings_extra_guides_remove">लिंक हटाएं</string>
+    <string name="settings_extra_guides_add">लिंक जोड़ें (https://…)</string>
+</resources>

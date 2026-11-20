@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_tunneled_playback">Reprodução em túnel</string>
+    <string name="settings_tunneled_playback_summary">Deixa o hardware de vídeo da TV manter imagem e som juntos, o que pode deixar 4K e esportes mais suaves. Tente se a reprodução engasgar. O atraso do som não vale enquanto estiver ativado.</string>
+</resources>
