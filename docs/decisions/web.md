@@ -2,6 +2,10 @@
 
 Melvin, 2026-11-19: "is it possible to stream through a web ui, that could be a feature that is unlocked with pro", and the hard rule: **"i dont want any relaying"**. The plan is `tuned/tuned-web-player-plan.md` in the project files. He approved it the same day ("ok lets do it", then "try phase 0, put it behind a feature flag", yes to decisions 2 to 6).
 
+## Status: paused
+
+Melvin ran the provider check on his own provider the evening of 2026-11-19: "provider blocks web players" (no CORS). Phase 0 was the go or no-go, so the web player itself isn't being built. The check stays at `/check`, off by default behind `web_player`, and everything below records what was decided for when it comes back, most likely with the local helper.
+
 ## What was decided
 
 - **No relaying, ever.** Streams, playlists and guides go straight from the provider to the browser. Tuned's server only signs people in, checks Premium and hands over the account's backup. Never propose a stream relay or proxy through our servers. Melvin clarified the same day: "no relaying through tuned servers". A helper on the person's own computer that relays only when needed (as Stremio's local streaming server does at `127.0.0.1:11470`) fits that rule, but "i don't want to support relaying right now. that's a future feature", so it isn't built or planned yet.
