@@ -18,6 +18,7 @@ import com.tunedplayer.app.data.db.ChannelNumbers
 import com.tunedplayer.app.data.db.ChannelWithNow
 import com.tunedplayer.app.data.db.ContinueRow
 import com.tunedplayer.app.data.db.GroupCount
+import com.tunedplayer.app.data.db.GuideSearchIndex
 import com.tunedplayer.app.data.db.ItemEntity
 import com.tunedplayer.app.data.db.ListEntity
 import com.tunedplayer.app.data.db.ProfileEntity
@@ -88,6 +89,8 @@ class BrowseViewModel(
         viewModelScope.launchSafely("BrowseViewModel") { container.channelScan.releaseEventChannels() }
         // A cache from before channel numbers: number it once, in the background.
         viewModelScope.launchSafely("BrowseViewModel") { ChannelNumbers.fillIfMissing(container.db) }
+        // A guide cached before whole-guide search: index its titles once, in the background.
+        viewModelScope.launchSafely("BrowseViewModel") { GuideSearchIndex.fillIfMissing(container.db) }
         // The Android TV home screen rows (Continue watching, favourites); nothing on phones.
         TvHome.schedule(app)
     }
