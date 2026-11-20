@@ -14,6 +14,7 @@ Tuned is a native Android IPTV player. It signs in to an Xtream Codes-style serv
 ./gradlew :smoketest:pixel6Api34GithubDebugAndroidTest  # device smoke test on an emulator (CI runs it on every pull request)
 ./gradlew :app:testGithubDebugUnitTest -Pscreenshots  # every screen drawn on the JVM with sample data, PNGs in app/build/outputs/roborazzi
 npm ci && npm run format              # Prettier for YAML, JSON and Markdown; CI runs format:check
+node devices/a11y-check.mjs            # the website against WCAG 2.2 AA (axe, light and dark, 320px, focus); CI runs it
 ```
 
 ## Stack (Melvin, 2026-11-17: "use all modern libraries as much as possible")
@@ -113,4 +114,4 @@ One file per topic in `docs/decisions/`, A to Z. Add a line when you add a topic
 - [TV](docs/decisions/tv.md): Android TV launcher, focus outlines, remote keys in the player.
 - [Updates](docs/decisions/updates.md): GitHub Releases updater now, Play in-app updates later, semver tags, the application id and moving from `app.tuned`.
 - [Web player](docs/decisions/web.md): paused (2026-11-19). Premium playback in a browser with no relaying, and the provider check at `/check` behind a flag.
-- [Website](docs/decisions/website.md): the landing page on www.tunedplayer.com, the features list, store badges, the blog with a post per release, sitemap and robots.
+- [Website](docs/decisions/website.md): the landing page on www.tunedplayer.com, the features list, store badges, the blog with a post per release, sitemap and robots, WCAG 2.2 AA and its check in CI.

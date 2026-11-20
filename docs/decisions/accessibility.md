@@ -1,5 +1,7 @@
 # Accessibility
 
+This file is the Android app. The website's WCAG 2.2 AA rules and its automated check are in [website](website.md#accessibility-and-standards-melvin-2026-11-20).
+
 **What** (Melvin, 2026-11-18: "can you audit the app for any accessibility issues"). Tuned works with TalkBack, Switch Access, a keyboard or remote, large text and Android's "Time to take action" setting, without adding anything to the screen for people who don't use them. "Get out of the way" holds here too: the fixes are what a screen reader hears and how big a target is, not new buttons or pop-ups.
 
 **The player's controls stay up for a screen reader** (2026-11-18, `player/AccessibleControls.kt`, with a test). The controls hide after the time set in Settings › Playback (3 seconds by default). With TalkBack on, that hid them before a swipe could reach the second button, so while a screen reader is on they stay until the video is tapped again. Without one, Android's "Time to take action" setting can lengthen the chosen time, never shorten it. The playing channel in the mini guide says "Playing" as well as being coloured.

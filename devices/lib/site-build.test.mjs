@@ -2,7 +2,18 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { check } from "../build-site.mjs";
 import { SITE } from "../site/config.mjs";
-import { buildSite, inline, markdown, noteLine, parseFrontmatter, readPost, releasePost, releasePostPath, sitemap } from "./site-build.mjs";
+import {
+    buildSite,
+    inline,
+    markdown,
+    noteLine,
+    parseFrontmatter,
+    postCard,
+    readPost,
+    releasePost,
+    releasePostPath,
+    sitemap,
+} from "./site-build.mjs";
 
 test("the committed website matches its sources (run node devices/build-site.mjs)", () => {
     assert.deepEqual(check(), []);
@@ -25,9 +36,27 @@ test("block Markdown: headings never make a second h1, lists, tables and raw HTM
     assert.equal(markdown("# Top"), '<h2 id="top">Top</h2>');
     assert.equal(markdown("- a\n- b"), "<ul><li>a</li><li>b</li></ul>");
     assert.equal(markdown("1. a\n2. b"), "<ol><li>a</li><li>b</li></ol>");
-    assert.match(markdown("| A | B |\n|---|:-:|\n| 1 | 2 |"), /<th>A<\/th><th style="text-align:center">B<\/th>.*<td>1<\/td>/);
+    assert.match(
+        markdown("| A | B |\n|---|:-:|\n| 1 | 2 |"),
+        /<th scope="col">A<\/th><th scope="col" style="text-align:center">B<\/th>.*<td>1<\/td>/,
+    );
+    // A sideways-scrolling table can take focus and has a name, so a keyboard can scroll it (WCAG 2.1.1).
+    assert.match(markdown("| A | B |\n|---|---|\n| 1 | 2 |"), /^<div class="table" tabindex="0" role="region" aria-label="Table">/);
+    // An empty corner makes the first column row headings, and is a plain cell, never an empty heading (WCAG 1.3.1).
+    assert.match(
+        markdown("|  | Them | Us |\n|---|---|---|\n| Price | $5 | Free |"),
+        /<thead><tr><td><\/td><th scope="col">Them<\/th>.*<tr><th scope="row">Price<\/th><td>\$5<\/td>/,
+    );
     assert.equal(markdown('<img src="/x.png" alt="">'), '<img src="/x.png" alt="">');
     assert.equal(markdown("one\ntwo\n\nthree"), "<p>one two</p>\n<p>three</p>");
+});
+
+test("post cards never skip a heading level", () => {
+    const p = { url: "/blog/x/", kind: "guide", title: "T", description: "D", date: "2026-11-20" };
+    assert.match(postCard(p), /<h3>T<\/h3>/);
+    assert.match(postCard(p, 2), /<h2>T<\/h2>/);
+    // As a map callback it must not take the index as its level.
+    assert.match([p, p].map((x) => postCard(x))[1], /<h3>T<\/h3>/);
 });
 
 test("a post's address is its file's path", () => {

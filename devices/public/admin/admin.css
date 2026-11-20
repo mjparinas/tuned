@@ -7,8 +7,10 @@
     --line: #2a2538;
     --text: #efedf5;
     --muted: #a39db3;
-    --faint: #6f6982;
-    --violet: #8466ff;
+    --faint: #8a849c;
+    /* Violet behind white text, and violet as text: both 4.5:1 or more (WCAG 2.2 AA, 2026-11-20 audit). */
+    --violet: #7350ff;
+    --violet-ink: #a99aff;
     --violet-soft: rgba(132, 102, 255, 0.16);
     --teal: #3ee0c4;
     --teal-soft: rgba(62, 224, 196, 0.14);
@@ -27,13 +29,14 @@
         --line: #e4e1ee;
         --text: #17141f;
         --muted: #5d5770;
-        --faint: #8f89a3;
+        --faint: #6b6580;
         --violet: #6d4aff;
+        --violet-ink: #5b38f0;
         --violet-soft: rgba(109, 74, 255, 0.1);
-        --teal: #00897a;
+        --teal: #00736a;
         --teal-soft: rgba(0, 137, 122, 0.1);
-        --green: #15803d;
-        --amber: #b45309;
+        --green: #126b36;
+        --amber: #9a4a07;
         --red: #b91c1c;
         --shadow: 0 1px 2px rgba(23, 20, 31, 0.06), 0 6px 20px rgba(23, 20, 31, 0.05);
     }
@@ -69,7 +72,7 @@ body::before {
     z-index: 0;
 }
 a {
-    color: var(--violet);
+    color: var(--violet-ink);
 }
 button,
 input,
@@ -130,7 +133,7 @@ textarea {
     font-size: 11.5px;
     font-weight: 600;
     background: var(--violet-soft);
-    color: var(--violet);
+    color: var(--violet-ink);
 }
 .pill.teal {
     background: var(--teal-soft);
@@ -189,7 +192,7 @@ textarea {
     font-weight: 600;
 }
 .nav button[aria-current="page"] .icon {
-    color: var(--violet);
+    color: var(--violet-ink);
 }
 .nav .count {
     margin-left: auto;
@@ -379,7 +382,7 @@ textarea {
 .cards {
     display: grid;
     gap: 16px;
-    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(min(340px, 100%), 1fr));
 }
 .card {
     padding: 16px 18px;
@@ -619,6 +622,8 @@ select.plain {
 .item .body {
     flex: 1;
     min-width: 0;
+    /* Long names like KV_REST_API_TOKEN break rather than push the page sideways on a phone (WCAG 1.4.10). */
+    overflow-wrap: anywhere;
 }
 .item .title {
     font-weight: 600;
@@ -807,8 +812,9 @@ code {
     text-align: center;
     letter-spacing: 0.08em;
 }
-:focus-visible {
-    outline: 2px solid var(--violet);
+:focus-visible,
+.search:focus-within {
+    outline: 2px solid var(--violet-ink);
     outline-offset: 2px;
 }
 
@@ -845,4 +851,15 @@ code {
         border-color: #747775;
         color: #1f1f1f;
     }
+}
+
+/* Read by a screen reader, not shown. */
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
 }
