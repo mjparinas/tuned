@@ -13,4 +13,5 @@ devices/public/index.html
 devices/public/blog/**/*.html
 devices/public/features.json
 devices/public/chrome.js
+devices/public/privacy/index.html
 devices/public/check/vendor/*.js

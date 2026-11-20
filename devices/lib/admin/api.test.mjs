@@ -51,7 +51,7 @@ function world() {
         auth: {
             webAccount: async (r) => /web=(\w+)/.exec(r.headers.get("cookie") ?? "")?.[1] ?? null,
             account: async (id) => accounts[id] ?? null,
-            googleStart: async () => "https://accounts.google.com/x",
+            googleRedirect: async () => Response.redirect("https://accounts.google.com/x", 302),
             signInReady: () => true,
         },
         now: () => now,

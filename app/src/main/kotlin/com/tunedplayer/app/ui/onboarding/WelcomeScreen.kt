@@ -82,7 +82,7 @@ private fun WelcomeBody(
             Row(
                 Modifier
                     .fillMaxSize()
-                    .padding(horizontal = 24.dp, vertical = 16.dp),
+                    .padding(horizontal = 24.dp, vertical = 8.dp),
                 horizontalArrangement = Arrangement.spacedBy(32.dp, Alignment.CenterHorizontally),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
@@ -92,17 +92,24 @@ private fun WelcomeBody(
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
                     Welcome(logoSize = 72.dp)
-                    // Restore and the privacy line sit under the welcome, so the right column holds only the four
-                    // kinds and fits a TV's height (480 dp on some, less the overscan margin) without scrolling.
-                    RestoreFromAccount(onRestored)
+                    // Restore and the privacy line sit under the welcome, so the right column holds only the kinds.
+                    RestoreFromAccount(onRestored, compact = true)
                     Privacy()
                 }
+                // The kinds get the wider column and compact cards (smaller summaries, less padding), so all five,
+                // the phone card included, fit Melvin's TV (853 by 480 dp, less the overscan margin) without
+                // scrolling (Melvin, 2026-11-20: "Right side at the bottom is cut off"). Larger text still scrolls,
+                // and moving focus down with the remote brings the next card wholly into view; the padding inside
+                // the scroll keeps the focus ring of the first and last cards clear of the edge.
                 Column(
-                    Modifier.weight(1.2f).verticalScroll(rememberScrollState()),
+                    Modifier
+                        .weight(1.5f)
+                        .verticalScroll(rememberScrollState())
+                        .padding(vertical = 6.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
-                    Kinds(onPick, onPhone)
+                    Kinds(onPick, onPhone, compact = true)
                 }
             }
         } else {
@@ -159,13 +166,14 @@ private fun Welcome(logoSize: Dp) {
 private fun Kinds(
     onPick: (Credentials.Kind) -> Unit,
     onPhone: (() -> Unit)?,
+    compact: Boolean = false,
 ) {
     // On a TV, typing a login with the remote is the hard part, so the phone comes first (onboarding.md).
-    onPhone?.let { KindCard(Icons.Filled.PhoneAndroid, R.string.tv_signin_card, R.string.tv_signin_card_summary, it) }
-    KindCard(Icons.Filled.Dns, R.string.kind_xtream, R.string.kind_xtream_summary) { onPick(Credentials.Kind.Xtream) }
-    KindCard(Icons.Filled.Link, R.string.kind_link, R.string.kind_link_summary) { onPick(Credentials.Kind.Link) }
-    KindCard(Icons.Filled.FolderOpen, R.string.kind_file, R.string.kind_file_summary) { onPick(Credentials.Kind.File) }
-    KindCard(Icons.Filled.Router, R.string.kind_stalker, R.string.kind_stalker_summary) { onPick(Credentials.Kind.Stalker) }
+    onPhone?.let { KindCard(Icons.Filled.PhoneAndroid, R.string.tv_signin_card, R.string.tv_signin_card_summary, compact, it) }
+    KindCard(Icons.Filled.Dns, R.string.kind_xtream, R.string.kind_xtream_summary, compact) { onPick(Credentials.Kind.Xtream) }
+    KindCard(Icons.Filled.Link, R.string.kind_link, R.string.kind_link_summary, compact) { onPick(Credentials.Kind.Link) }
+    KindCard(Icons.Filled.FolderOpen, R.string.kind_file, R.string.kind_file_summary, compact) { onPick(Credentials.Kind.File) }
+    KindCard(Icons.Filled.Router, R.string.kind_stalker, R.string.kind_stalker_summary, compact) { onPick(Credentials.Kind.Stalker) }
 }
 
 @Composable
@@ -183,6 +191,7 @@ internal fun KindCard(
     icon: ImageVector,
     title: Int,
     summary: Int,
+    compact: Boolean = false,
     onClick: () -> Unit,
 ) {
     val shape = RoundedCornerShape(16.dp)
@@ -195,13 +204,23 @@ internal fun KindCard(
                 .fillMaxWidth()
                 .focusRing(shape, MaterialTheme.colorScheme.primary),
     ) {
-        Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-            Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(28.dp))
-            Column(Modifier.weight(1f).padding(horizontal = 16.dp)) {
+        // Compact (the side-by-side welcome on a TV or a phone held sideways): the same card, a little tighter, so the
+        // kinds fit a short screen. Still well over the 48 dp tap target.
+        Row(
+            Modifier.padding(horizontal = 16.dp, vertical = if (compact) 10.dp else 16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(
+                icon,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(if (compact) 24.dp else 28.dp),
+            )
+            Column(Modifier.weight(1f).padding(horizontal = if (compact) 12.dp else 16.dp)) {
                 Text(stringResource(title), style = MaterialTheme.typography.titleMedium)
                 Text(
                     stringResource(summary),
-                    style = MaterialTheme.typography.bodyMedium,
+                    style = if (compact) MaterialTheme.typography.bodySmall else MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }

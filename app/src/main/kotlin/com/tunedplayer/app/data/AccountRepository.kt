@@ -3,6 +3,7 @@ package com.tunedplayer.app.data
 import com.tunedplayer.app.BuildConfig
 import com.tunedplayer.app.core.XtreamAccount
 import com.tunedplayer.app.core.XtreamUrls
+import com.tunedplayer.app.diagnostics.attempt
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -10,7 +11,6 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import okhttp3.Request
-import java.io.IOException
 
 /**
  * The account's status (Melvin, 2026-11-17, from the app audit): expiry date and how many connections are in use, from
@@ -19,7 +19,8 @@ import java.io.IOException
  */
 class AccountRepository(
     private val http: OkHttpClient,
-    private val credentials: CredentialStore,
+    /** The login in use ([CredentialStore.load]). */
+    private val login: () -> Credentials?,
     private val settings: SettingsRepository,
     /** True while Tuned itself holds a stream: the player, or a download (which counts as a connection too). */
     private val ownStream: StateFlow<Boolean>,
@@ -46,29 +47,34 @@ class AccountRepository(
         refresh()
     }
 
+    /**
+     * Never throws: Settings and Home ask this on their own, often while the playlist is still downloading, so a server
+     * address OkHttp can't parse, a header it refuses or an answer it can't read is logged and the last answer kept,
+     * rather than ending the app (a TV opening Settings during the first load crashed on it, 2026-11-20).
+     */
     suspend fun refresh() {
-        val login = credentials.load() ?: return
+        val login = login() ?: return
         if (login.playlistUrl.isNotBlank()) return
         val agent =
             settings.settings
                 .first()
                 .userAgent
                 .ifBlank { "Tuned/${BuildConfig.VERSION_NAME}" }
-        val request =
-            Request
-                .Builder()
-                .url(XtreamUrls.account(login.server, login.username, login.password))
-                .header("User-Agent", agent)
-                .build()
         val info =
             withContext(Dispatchers.IO) {
-                try {
+                attempt(TAG, "Couldn't ask the server for the account's status") {
+                    val request =
+                        Request
+                            .Builder()
+                            .url(XtreamUrls.account(login.server, login.username, login.password))
+                            .header("User-Agent", agent)
+                            .build()
                     http.newCall(request).execute().use { r ->
-                        if (r.isSuccessful) XtreamAccount.info(r.body.string().take(MAX_ANSWER)) else null
+                        // Only the first [MAX_ANSWER] bytes are read, so a server sending something huge can't run a
+                        // TV that is busy saving the playlist out of memory.
+                        if (r.isSuccessful) XtreamAccount.info(r.peekBody(MAX_ANSWER.toLong()).string()) else null
                     }
-                } catch (_: IOException) {
-                    null
-                }
+                }.getOrNull()
             } ?: return
         val now = System.currentTimeMillis()
         state.value = Snapshot(info, now, withoutOwnStream = withoutOwnStream(ownStream.value, noStreamSince, now))
@@ -103,6 +109,7 @@ class AccountRepository(
 
         /** Servers take a little while to stop counting a closed stream. */
         const val OWN_STREAM_GONE_MS = 60_000L
+        private const val TAG = "Account"
         private const val MAX_ANSWER = 64 * 1024
     }
 }

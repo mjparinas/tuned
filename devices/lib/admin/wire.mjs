@@ -6,14 +6,14 @@ import { adminSessions } from "./session.mjs";
 import { systemHealth } from "./health.mjs";
 import { resendMailer } from "./automations.mjs";
 import { account } from "../account-store.mjs";
-import { googleStart, signInReady, webAccount } from "../auth.mjs";
+import { googleRedirect, signInReady, webAccount } from "../auth.mjs";
 
 export const handle = adminApi({
     data,
     redis,
     env: process.env,
     sessions: adminSessions(redis),
-    auth: { webAccount, account, googleStart, signInReady },
+    auth: { webAccount, account, googleRedirect, signInReady },
     system: systemHealth({ data, redis }),
     mail: resendMailer(),
 });

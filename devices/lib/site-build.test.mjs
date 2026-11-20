@@ -104,3 +104,12 @@ test("no committed page outside /blog/vs/ names GitHub or says everything is unl
         assert.ok(!/everything unlocked|has everything|every feature unlocked/i.test(text), `${page} says everything is unlocked`);
     }
 });
+
+test("the privacy policy is a page on the site, linked from every footer", async () => {
+    const { expected } = await import("../build-site.mjs");
+    const files = expected();
+    assert.match(files["privacy/index.html"], /<h1>Tuned privacy policy<\/h1>/);
+    assert.match(files["privacy/index.html"], /Last updated /);
+    assert.ok(files["chrome.js"].includes('href=\\"/privacy/\\"'));
+    assert.ok(files["sitemap.xml"].includes("/privacy/</loc>"));
+});

@@ -76,6 +76,16 @@ class BrowseScreenshots : Screenshots() {
 
     @Test fun shows() = shot("browse-shows", HomeRoute, wait = "Snowline", settings = DARK.copy(startTab = StartTab.SHOWS))
 
+    /** Films filed under "EN" still show with only Canada and the United States on (Melvin, 2026-11-20). */
+    @Test
+    fun moviesUsCanada() = shot(
+        "browse-movies-us-canada",
+        HomeRoute,
+        wait = "Glass Harbour",
+        settings =
+            DARK.copy(startTab = StartTab.MOVIES, hiddenRegions = SampleData.allButUsCanada, seenRegions = SampleData.regions),
+    )
+
     /** With more than one profile, the profile button sits beside the search box, as tall as it. */
     @Test
     fun showsWithProfiles() =

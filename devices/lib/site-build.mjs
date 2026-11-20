@@ -454,8 +454,7 @@ ${g.items.map((f) => `<li><span class="tick">${icon("check", 18)}</span><span><b
         .replaceAll("<!-- @badges-soon -->", storeBadges(site, "soon"))
         .replaceAll("<!-- @download-hero -->", downloadButton(site, "hero"))
         .replaceAll("<!-- @latest-posts -->", latest)
-        .replaceAll("<!-- @cta -->", ctaCard(site, "home", latestVersion))
-        .replaceAll("<!-- @version -->", esc(latestVersion ?? ""));
+        .replaceAll("<!-- @cta -->", ctaCard(site, "home"));
     const description =
         "Tuned is a fast, quiet IPTV player for Android phones, tablets and Android TV. Xtream Codes, M3U and MAC portals, a full TV guide, catch-up, downloads and casting. No ads.";
     return layout(site, {
@@ -490,11 +489,39 @@ ${g.items.map((f) => `<li><span class="tick">${icon("check", 18)}</span><span><b
 }
 
 /** sitemap.xml: the landing page, the blog's indexes and every post. */
+/**
+ * /privacy/, from docs/privacy.md (the one privacy policy, also published with docs/): its "# " title becomes the page's
+ * heading and its "Last updated" line the date under it (Melvin, 2026-11-20: "Fix the privacy page").
+ */
+export function privacyPage(site, text) {
+    const lines = text.replace(/\r\n/g, "\n").split("\n");
+    const title = (lines.find((l) => l.startsWith("# ")) ?? "# Privacy policy").slice(2).trim();
+    const updated = lines
+        .find((l) => /^Last updated:/i.test(l))
+        ?.replace(/^Last updated:\s*/i, "")
+        .trim();
+    const rest = lines.filter((l) => !l.startsWith("# ") && !/^Last updated:/i.test(l)).join("\n");
+    const body = `<article class="wrap post">
+<h1>${esc(title)}</h1>
+${updated ? `<p class="meta">Last updated ${esc(updated)}</p>` : ""}
+<div class="prose">
+${markdown(rest)}
+</div>
+</article>`;
+    return layout(site, {
+        title,
+        description:
+            "What Tuned stores, what it sends and to whom: your logins stay encrypted on your device, and nothing is sold or used for ads.",
+        path: "/privacy/",
+        body,
+    });
+}
+
 export function sitemap(site, { posts, folders }) {
     const newest = [...posts].sort(byDate)[0]?.date;
     const entry = (path, lastmod, priority) =>
         `  <url><loc>${site.url}${path}</loc>${lastmod ? `<lastmod>${lastmod}</lastmod>` : ""}<priority>${priority}</priority></url>`;
-    const lines = [entry("/", newest, "1.0"), entry("/blog/", newest, "0.8")];
+    const lines = [entry("/", newest, "1.0"), entry("/blog/", newest, "0.8"), entry("/privacy/", undefined, "0.3")];
     for (const f of folders) lines.push(entry(`/blog/${f}/`, [...posts].filter((p) => p.folder === f).sort(byDate)[0]?.date, "0.6"));
     for (const p of [...posts].sort(byDate)) lines.push(entry(p.url, p.date, p.kind === "release" ? "0.5" : "0.7"));
     return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${lines.join("\n")}\n</urlset>\n`;
@@ -517,7 +544,7 @@ export function feed(site, posts) {
  * Everything the site is built from, as { path under public/: contents }. `posts` is [{ path, text }] from site/posts,
  * `template` is site/home.html.
  */
-export function buildSite(site, { template, groups, posts: sources }) {
+export function buildSite(site, { template, groups, posts: sources, privacy }) {
     const posts = sources.map(({ path, text }) => readPost(path, text));
     const seen = new Set();
     for (const p of posts) {
@@ -531,6 +558,7 @@ export function buildSite(site, { template, groups, posts: sources }) {
     const folders = [...new Set(posts.map((p) => p.folder).filter(Boolean))].sort();
     const files = {
         "index.html": homePage(site, { template, groups, posts, latestVersion }),
+        ...(privacy ? { "privacy/index.html": privacyPage(site, privacy) } : {}),
         "blog/index.html": indexPage(site, { posts, latestVersion }),
         "blog/feed.xml": feed(site, posts),
         "sitemap.xml": sitemap(site, { posts, folders }),

@@ -90,7 +90,7 @@ class ChannelScanner(
         val s = settings.settings.first()
         // Hidden-by-scan channels are scanned too (to bring them back); empty event slots never play, so they aren't.
         val hidden =
-            (s.hiddenRegions + s.hiddenGroups).toList() +
+            (s.hiddenCountries() + s.hiddenGroups).toList() +
                 listOfNotNull(
                     Placeholders.HIDDEN_KEY.takeIf { s.hidePlaceholders },
                     RoundTheClock.HIDDEN_KEY.takeIf { s.hide247 },

@@ -77,12 +77,12 @@ object SampleData {
         channels.forEachIndexed { i, (name, group, region) ->
             item(i + 1L, ContentKind.LIVE, name, group, region, logo = logo(name), tvgId = "ch$i", number = i + 1)
         }
-        movies.forEachIndexed { i, (name, group) -> item(MOVIE_IDS + i, ContentKind.MOVIE, name, group, "CA", poster(name)) }
+        movies.forEachIndexed { i, (name, group) -> item(MOVIE_IDS + i, ContentKind.MOVIE, name, group, "EN", poster(name)) }
         var id = SHOW_IDS
         shows.forEach { (show, group, seasons) ->
             for (s in 1..seasons) {
                 for (e in 1..EPISODES) {
-                    item(id++, ContentKind.SERIES, "$show S0${s}E0$e", group, "CA", poster(show), show = show, season = s, episode = e)
+                    item(id++, ContentKind.SERIES, "$show S0${s}E0$e", group, "EN", poster(show), show = show, season = s, episode = e)
                 }
             }
         }
@@ -173,6 +173,12 @@ object SampleData {
             Triple("Rheinwelle", "DE | Allgemein", "DE"),
             Triple("Adria 1", "EXYU | Opšte", "EXYU"),
         )
+
+    /** Every region in the sample playlist, as the app remembers having seen them. */
+    val regions: Set<String> get() = channels.map { it.third }.toSet() + "EN"
+
+    /** Settings › Countries with only Canada and the United States on. */
+    val allButUsCanada: Set<String> get() = regions - setOf("US", "CA") + "none"
 
     val movies =
         listOf(

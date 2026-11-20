@@ -14,7 +14,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.tunedplayer.app.R
 import com.tunedplayer.app.container
 import com.tunedplayer.app.core.XtreamAccount
-import kotlinx.coroutines.launch
+import com.tunedplayer.app.diagnostics.launchSafely
 
 class AccountViewModel(
     app: Application,
@@ -23,7 +23,12 @@ class AccountViewModel(
     val snapshot = account.snapshot
 
     init {
-        viewModelScope.launch { account.refresh() }
+        // launchSafely, like Home's ask: a failure here used to end the app when Settings opened (2026-11-20).
+        viewModelScope.launchSafely(TAG) { account.refresh() }
+    }
+
+    private companion object {
+        const val TAG = "AccountSettings"
     }
 }
 

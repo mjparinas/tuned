@@ -16,6 +16,7 @@ import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import androidx.work.workDataOf
 import com.tunedplayer.app.R
+import com.tunedplayer.app.diagnostics.logFailures
 import com.tunedplayer.app.player.PlayerActivity
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -125,7 +126,9 @@ class ReminderWorker(
     context: Context,
     params: WorkerParameters,
 ) : CoroutineWorker(context, params) {
-    override suspend fun doWork(): Result {
+    override suspend fun doWork(): Result = logFailures("Reminder", failed = { Result.failure() }) { remind() }
+
+    private fun remind(): Result {
         val channelId = inputData.getLong(CHANNEL_ID, 0)
         val channelName = inputData.getString(CHANNEL_NAME).orEmpty()
         val title = inputData.getString(TITLE).orEmpty()
