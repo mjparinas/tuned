@@ -256,12 +256,17 @@ class SyncCopyRepository(
     /**
      * Takes another device's [syncCopy]: its settings, and its profiles with their favourites, watch later and the rest
      * in place of this device's, so a removal on one device removes it here too. Its playlists are added to the saved
-     * ones; a device with none in use starts on the first.
+     * ones; a device with none in use starts on the first. [takenFrom] is this device's copy that [plain] was joined
+     * with: a setting changed here since then keeps the newer choice (Melvin, 2026-11-20: a sort picked while the backup
+     * was being joined went back to the playlist's order).
      */
-    suspend fun applySyncCopy(plain: ByteArray): Applied = withContext(Dispatchers.IO) {
+    suspend fun applySyncCopy(
+        plain: ByteArray,
+        takenFrom: ByteArray? = null,
+    ): Applied = withContext(Dispatchers.IO) {
         val contents = decodeContents(plain)
         val refreshBefore = settings.snapshot()[REFRESH_KEY]
-        settings.restore(contents.settings.mapNotNull { (k, v) -> decode(v)?.let { k to it } }.toMap())
+        settings.restore(contents.settings.decoded(), takenFrom?.let { decodeContents(it).settings.decoded() })
         if (contents.profiles.isNotEmpty()) {
             ProfileSync(db).replace(contents.profiles)
             profiles.sync()
@@ -361,6 +366,8 @@ class SyncCopyRepository(
             .forEach { later.remove(it.key) }
         contents.watchLater.forEach { later.add(WatchLaterEntity(it.key, it.itemId, it.showKey, it.title, it.image, it.addedAt)) }
     }
+
+    private fun Map<String, JsonElement>.decoded(): Map<String, Any> = mapNotNull { (k, v) -> decode(v)?.let { k to it } }.toMap()
 
     private fun decodeContents(plain: ByteArray): Contents = runCatching {
         json.decodeFromString(Contents.serializer(), plain.decodeToString())
