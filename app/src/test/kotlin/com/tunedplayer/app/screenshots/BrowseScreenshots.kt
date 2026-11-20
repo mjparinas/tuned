@@ -206,6 +206,16 @@ class BrowseScreenshots : Screenshots() {
 
     @Test fun profiles() = shot("browse-profiles", ProfilesRoute(atStart = true), wait = text(R.string.profiles_title))
 
+    /** "Who's watching?" on a TV: the glow fills the screen to its edges, with the profiles inside the overscan margin. */
+    @Test
+    @Config(qualifiers = TV)
+    fun profilesOnTv() = shot("browse-profiles-tv", ProfilesRoute(atStart = true), wait = text(R.string.profiles_title))
+
+    @Test
+    @Config(qualifiers = TV)
+    fun profilesOnTvLight() =
+        shot("browse-profiles-tv-light", ProfilesRoute(atStart = true), wait = text(R.string.profiles_title), settings = LIGHT)
+
     /** Two named profiles, one for kids, opened from Home: the names must read clearly on the dark theme. */
     @Test
     fun profilesNamed() {
