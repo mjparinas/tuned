@@ -423,7 +423,7 @@
     <string name="search_nothing">Nothing found for \"%1$s\"</string>
     <string name="search_in_guide">In the guide</string>
     <string name="search_guide_on_now">On now</string>
-    <string name="search_guide_when">%1$s · %2$s</string>
+    <string name="search_guide_when" translatable="false">%1$s · %2$s</string>
     <string name="voice_search">Search by voice</string>
     <string name="voice_prompt">Say a channel, film, show or event</string>
 </resources>

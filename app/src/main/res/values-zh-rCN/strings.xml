@@ -388,6 +388,8 @@
     <string name="accent_red">红色</string>
     <string name="search_everything">搜索全部</string>
     <string name="search_nothing">未找到“%1$s”</string>
+    <string name="search_in_guide">节目单中</string>
+    <string name="search_guide_on_now">正在播出</string>
     <string name="voice_search">语音搜索</string>
     <string name="voice_prompt">说出频道、电影、剧集或赛事名称</string>
 </resources>

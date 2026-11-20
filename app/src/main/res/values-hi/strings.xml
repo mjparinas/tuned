@@ -404,6 +404,8 @@
     <string name="accent_red">लाल</string>
     <string name="search_everything">सब कुछ खोजें</string>
     <string name="search_nothing">\"%1$s\" के लिए कुछ नहीं मिला</string>
+    <string name="search_in_guide">गाइड में</string>
+    <string name="search_guide_on_now">अभी चल रहा है</string>
     <string name="voice_search">आवाज़ से खोजें</string>
     <string name="voice_prompt">कोई चैनल, फ़िल्म, शो या इवेंट बोलें</string>
 </resources>

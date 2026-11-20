@@ -436,6 +436,8 @@
     <string name="accent_red">Красный</string>
     <string name="search_everything">Искать везде</string>
     <string name="search_nothing">Ничего не найдено по запросу «%1$s»</string>
+    <string name="search_in_guide">В телегиде</string>
+    <string name="search_guide_on_now">Сейчас в эфире</string>
     <string name="voice_search">Голосовой поиск</string>
     <string name="voice_prompt">Назовите канал, фильм, сериал или событие</string>
 </resources>

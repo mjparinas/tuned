@@ -436,6 +436,8 @@
     <string name="accent_red">Czerwony</string>
     <string name="search_everything">Szukaj wszędzie</string>
     <string name="search_nothing">Nic nie znaleziono dla „%1$s”</string>
+    <string name="search_in_guide">W przewodniku</string>
+    <string name="search_guide_on_now">Teraz na antenie</string>
     <string name="voice_search">Szukaj głosowo</string>
     <string name="voice_prompt">Powiedz nazwę kanału, filmu, serialu lub wydarzenia</string>
 </resources>

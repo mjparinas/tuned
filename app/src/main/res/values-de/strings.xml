@@ -404,6 +404,8 @@
     <string name="accent_red">Rot</string>
     <string name="search_everything">Alles durchsuchen</string>
     <string name="search_nothing">Nichts gefunden für \"%1$s\"</string>
+    <string name="search_in_guide">Im Programm</string>
+    <string name="search_guide_on_now">Läuft gerade</string>
     <string name="voice_search">Sprachsuche</string>
     <string name="voice_prompt">Sag einen Sender, Film, eine Serie oder ein Event</string>
 </resources>

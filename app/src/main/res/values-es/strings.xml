@@ -420,6 +420,8 @@
     <string name="accent_red">Rojo</string>
     <string name="search_everything">Buscar en todo</string>
     <string name="search_nothing">No se encontró nada para \"%1$s\"</string>
+    <string name="search_in_guide">En la guía</string>
+    <string name="search_guide_on_now">En emisión</string>
     <string name="voice_search">Buscar por voz</string>
     <string name="voice_prompt">Di un canal, película, serie o evento</string>
 </resources>

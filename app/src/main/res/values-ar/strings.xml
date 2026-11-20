@@ -468,6 +468,8 @@
     <string name="accent_red">أحمر</string>
     <string name="search_everything">البحث في كل شيء</string>
     <string name="search_nothing">لم يُعثر على شيء لـ \"%1$s\"</string>
+    <string name="search_in_guide">في الدليل</string>
+    <string name="search_guide_on_now">يُعرض الآن</string>
     <string name="voice_search">البحث الصوتي</string>
     <string name="voice_prompt">قل اسم قناة أو فيلم أو مسلسل أو حدث</string>
 </resources>

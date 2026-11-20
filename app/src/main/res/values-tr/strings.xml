@@ -404,6 +404,8 @@
     <string name="accent_red">Kırmızı</string>
     <string name="search_everything">Her yerde ara</string>
     <string name="search_nothing">\"%1$s\" için bir şey bulunamadı</string>
+    <string name="search_in_guide">Rehberde</string>
+    <string name="search_guide_on_now">Şimdi yayında</string>
     <string name="voice_search">Sesle ara</string>
     <string name="voice_prompt">Bir kanal, film, dizi veya etkinlik söyle</string>
 </resources>
