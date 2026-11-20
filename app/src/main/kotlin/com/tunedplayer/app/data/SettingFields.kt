@@ -134,6 +134,7 @@ internal val SETTING_FIELDS: List<SettingField<*, *>> =
         bool("unmetered_only", { unmeteredOnly }) { copy(unmeteredOnly = it) },
         // Set by the website's "Refresh on my devices" and synced, so every device downloads its playlist again.
         long("refresh_requested_at", { refreshRequestedAt }) { copy(refreshRequestedAt = it) },
+        bool("keep_playlist_copies", { keepPlaylistCopies }) { copy(keepPlaylistCopies = it) },
         long("last_playlist_sync", { lastPlaylistSync }) { copy(lastPlaylistSync = it) }.notBackedUp(),
         long("last_guide_sync", { lastGuideSync }) { copy(lastGuideSync = it) }.notBackedUp(),
         string("last_sync_error", { lastSyncError }) { copy(lastSyncError = it) }.notBackedUp(),

@@ -59,6 +59,9 @@ class PlaylistsViewModel(
     val saved = MutableStateFlow(container.credentials.saved())
     val current = MutableStateFlow(container.credentials.load())
 
+    /** While the playlist in use changes: copying the old one aside and bringing the new one back take a moment. */
+    val switching = MutableStateFlow(false)
+
     /** Settings and the list re-read on return from the add and edit forms. */
     fun reload() {
         saved.value = container.credentials.saved()
@@ -69,9 +72,11 @@ class PlaylistsViewModel(
         login: Credentials,
         onDone: () -> Unit,
     ) {
-        viewModelScope.launchSafely("Playlists") {
+        switching.value = true
+        viewModelScope.launchSafely("Playlists", onError = { switching.value = false }) {
             container.session.useLogin(login)
             current.value = login
+            switching.value = false
             onDone()
         }
     }
@@ -91,9 +96,11 @@ class PlaylistsViewModel(
         onEmpty: () -> Unit,
     ) {
         val wasActive = current.value?.samePlaylist(login) == true
-        viewModelScope.launchSafely("Playlists") {
+        switching.value = wasActive
+        viewModelScope.launchSafely("Playlists", onError = { switching.value = false }) {
             val empty = container.session.removePlaylist(login)
             reload()
+            switching.value = false
             when {
                 empty -> onEmpty()
                 wasActive -> onSwitched()
@@ -110,6 +117,7 @@ fun PlaylistsRow(
 ) {
     val saved by vm.saved.collectAsStateWithLifecycle()
     val current by vm.current.collectAsStateWithLifecycle()
+    val switching by vm.switching.collectAsStateWithLifecycle()
     LaunchedEffect(Unit) { vm.reload() }
     SettingRow(
         stringResource(R.string.playlists),
@@ -180,6 +188,9 @@ fun PlaylistsScreen(
         }
     }
 
+    if (switching) {
+        TunedDialog(onDismissRequest = {}, text = { Text(stringResource(R.string.playlists_switching)) }, confirmButton = {})
+    }
     renaming?.let { login ->
         TextDialog(stringResource(R.string.playlists_rename), login.name, onDismiss = { renaming = null }) { name ->
             vm.rename(login, name)

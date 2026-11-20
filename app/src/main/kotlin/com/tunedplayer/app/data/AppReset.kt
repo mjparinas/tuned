@@ -124,10 +124,11 @@ class AppReset(
         }
     }
 
-    /** Subtitles, the sync staging files and the cache (the live rewind buffer, update downloads). */
+    /** Subtitles, the sync staging files, the copies of recent playlists and the cache (the live rewind buffer, update downloads). */
     private fun files() {
         context.filesDir.resolve(SUBTITLES).deleteRecursively()
         context.noBackupFilesDir.resolve(SYNC).deleteRecursively()
+        context.noBackupFilesDir.resolve(PlaylistCache.DIR).deleteRecursively()
         context.cacheDir
             .listFiles()
             .orEmpty()
