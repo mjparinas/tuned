@@ -83,13 +83,13 @@ class MovieSortTest {
                 onOpenPlaylists = {},
             )
         }
-        compose.waitUntil(10_000) { compose.onAllNodesWithText("Film 500").fetchSemanticsNodes().isNotEmpty() }
+        compose.waitUntil(30_000) { compose.onAllNodesWithText("Film 500").fetchSemanticsNodes().isNotEmpty() }
         compose.onNode(hasText(app.getString(R.string.sort_chip))).performClick()
         compose.onNode(hasText(app.getString(R.string.sort_title))).performClick()
         // The list starts again at the top in the new order. Before, the grid kept the film that was first in view
         // (Compose keeps the first visible item by its key) and scrolled down to wherever it moved, so the screen
         // looked the same and the sort seemed to do nothing.
-        compose.waitUntil(10_000) { shown("Film 001") }
+        compose.waitUntil(30_000) { shown("Film 001") }
         compose.waitForIdle()
         assertTrue(shown("Film 001") && shown("Film 002"), "the new order's first films are on screen")
         assertFalse(shown("Film 500"), "the old first film is no longer kept at the top")

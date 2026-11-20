@@ -31,7 +31,11 @@ class SortDetails(
         lock.withLock {
             if (!missing()) return
             AppLog.i(TAG) { "Reading times added and ratings for the Movies and Shows sorts" }
-            val agent = settings.settings.first().userAgent.ifBlank { null }
+            val agent =
+                settings.settings
+                    .first()
+                    .userAgent
+                    .ifBlank { null }
             val details = XtreamDetails(db, XtreamImport(http, login, agent))
             attempt(TAG, "Film details failed") { details.films() }
             attempt(TAG, "Show details failed") { details.shows() }
@@ -40,7 +44,9 @@ class SortDetails(
 
     /** Films or episodes in the cache, none of them with a time added or a rating. */
     private suspend fun missing(): Boolean = withContext(Dispatchers.IO) {
-        db.openHelper.readableDatabase.query(KNOWN).use { c -> c.moveToFirst() && c.getLong(0) > 0 && c.getLong(1) == 0L }
+        db.openHelper.readableDatabase
+            .query(KNOWN)
+            .use { c -> c.moveToFirst() && c.getLong(0) > 0 && c.getLong(1) == 0L }
     }
 
     private companion object {
