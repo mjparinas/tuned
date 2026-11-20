@@ -98,10 +98,10 @@ object GuideSearchIndex {
         val filter = channelFilter(marks)
         // Positional arguments go in the order they appear: the channel filter (in the join) comes first.
         val args = mutableListOf<Any>()
-        repeat(filter.uses) { args += keys }
-        args += if (adult) 1 else 0
-        repeat(filter.kidsUses) { args += keys }
-        args += listOf(match, now, now + WEEK, limit)
+        repeat(filter.uses) { args.addAll(keys) }
+        args.add(if (adult) 1 else 0)
+        repeat(filter.kidsUses) { args.addAll(keys) }
+        args.addAll(listOf(match, now, now + WEEK, limit))
         val query =
             """
             SELECT p.rowId AS rowId, p.channelId AS channelId, p.start AS start, p.stop AS stop, p.title AS title,
