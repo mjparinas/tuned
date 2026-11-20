@@ -1,6 +1,11 @@
 package com.tunedplayer.app.ui.browse
 
+import androidx.compose.ui.semantics.SemanticsNode
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.semantics.getOrNull
+import androidx.compose.ui.test.ComposeTimeoutException
 import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.isRoot
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.performClick
@@ -83,17 +88,34 @@ class MovieSortTest {
                 onOpenPlaylists = {},
             )
         }
-        compose.waitUntil(30_000) { compose.onAllNodesWithText("Film 500").fetchSemanticsNodes().isNotEmpty() }
+        waitFor("Film 500")
         compose.onNode(hasText(app.getString(R.string.sort_chip))).performClick()
         compose.onNode(hasText(app.getString(R.string.sort_title))).performClick()
         // The list starts again at the top in the new order. Before, the grid kept the film that was first in view
         // (Compose keeps the first visible item by its key) and scrolled down to wherever it moved, so the screen
         // looked the same and the sort seemed to do nothing.
-        compose.waitUntil(30_000) { shown("Film 001") }
+        waitFor("Film 001")
         compose.waitForIdle()
         assertTrue(shown("Film 001") && shown("Film 002"), "the new order's first films are on screen")
         assertFalse(shown("Film 500"), "the old first film is no longer kept at the top")
     }
+
+    /** Waits for [name], and names what is on screen instead when it never comes. */
+    private fun waitFor(name: String) {
+        try {
+            compose.waitUntil(30_000) { shown(name) }
+        } catch (e: ComposeTimeoutException) {
+            throw AssertionError("\"$name\" never showed; on screen: ${onScreen()}", e)
+        }
+    }
+
+    private fun onScreen(): String {
+        val roots = compose.onAllNodes(isRoot(), useUnmergedTree = true).fetchSemanticsNodes()
+        return roots.flatMap { texts(it) }.take(MAX_SHOWN).joinToString()
+    }
+
+    private fun texts(node: SemanticsNode): List<String> =
+        node.config.getOrNull(SemanticsProperties.Text).orEmpty().map { it.text } + node.children.flatMap { texts(it) }
 
     private fun shown(name: String) = compose.onAllNodesWithText(name).fetchSemanticsNodes().isNotEmpty()
 
@@ -126,5 +148,6 @@ class MovieSortTest {
     private companion object {
         const val FILMS = 500
         const val FIRST_ID = 50_000L
+        const val MAX_SHOWN = 40
     }
 }
