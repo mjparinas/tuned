@@ -101,7 +101,8 @@ class SendToTvViewModel(
             return
         }
         state.value = State.Enter(busy = true)
-        viewModelScope.launchSafely(TAG) {
+        // Whatever fails (and is logged), the button never stays stuck.
+        viewModelScope.launchSafely(TAG, onError = { state.value = State.Enter(R.string.send_tv_unreachable) }) {
             val found = container.tvRelay.key(code)
             state.value =
                 when (val key = found.getOrNull()) {
@@ -120,7 +121,7 @@ class SendToTvViewModel(
         val ready = state.value as? State.Ready ?: return
         if (ready.busy) return
         state.value = ready.copy(busy = true, error = null)
-        viewModelScope.launchSafely(TAG) {
+        viewModelScope.launchSafely(TAG, onError = { state.value = ready.copy(busy = false, error = R.string.send_tv_unreachable) }) {
             // Signed in to a Tuned account: a one-time code for it goes along, so the TV joins the same account.
             val account = container.tunedAccount
             val link = if (account.signedIn.value) account.newLink() else null
