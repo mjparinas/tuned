@@ -112,5 +112,5 @@ One file per topic in `docs/decisions/`, A to Z. Add a line when you add a topic
 - [Trakt](docs/decisions/trakt.md): signing in with a code, scrobbling films and episodes, the app's keys.
 - [TV](docs/decisions/tv.md): Android TV launcher, focus outlines, remote keys in the player.
 - [Updates](docs/decisions/updates.md): GitHub Releases updater now, Play in-app updates later, semver tags, the application id and moving from `app.tuned`.
-- [Web player](docs/decisions/web.md): Premium playback in a browser with no relaying, the free provider check at `/check`.
+- [Web player](docs/decisions/web.md): paused (2026-11-19). Premium playback in a browser with no relaying, and the provider check at `/check` behind a flag.
 - [Website](docs/decisions/website.md): the landing page on www.tunedplayer.com, the features list, store badges, the blog with a post per release, sitemap and robots.
