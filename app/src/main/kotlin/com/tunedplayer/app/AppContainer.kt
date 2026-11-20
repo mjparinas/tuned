@@ -91,6 +91,8 @@ class AppContainer(
             onSignedIn = { scheduler.refreshNow(first = true) },
             onGuideChanged = { scheduler.refreshNow(guideOnly = true) },
             onUsage = { usage.track(it) },
+            onSwitch = { session.useLogin(it) },
+            onRefresh = { scheduler.refreshNow() },
         )
     }
     val reminders by lazy { Reminders(context) }

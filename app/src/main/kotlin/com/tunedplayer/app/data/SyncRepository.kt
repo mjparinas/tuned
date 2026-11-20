@@ -28,6 +28,8 @@ import com.tunedplayer.app.diagnostics.AppLog
 import com.tunedplayer.app.diagnostics.attempt
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.trySendBlocking
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.buffer
 import kotlinx.coroutines.flow.channelFlow
 import kotlinx.coroutines.flow.first
@@ -92,6 +94,10 @@ class SyncRepository(
     suspend fun refreshAll(progress: (SyncProgress) -> Unit = {}): Result = lock.withLock {
         val items = refreshPlaylistLocked(progress)
         val programmes = attempt(TAG_SYNC, "Guide refresh failed") { refreshGuideLocked(progress) }.getOrElse { 0 } // not fatal
+        // A portal's films and shows come last: they take many small calls, and Live TV and the guide are ready first.
+        if (currentLogin()?.kind == Credentials.Kind.Stalker) {
+            attempt(TAG_SYNC, "The portal's films and shows failed") { refreshPortalLibrary(progress) }
+        }
         Result(items, programmes)
     }
 
@@ -199,7 +205,64 @@ class SyncRepository(
         progress(SyncProgress(SyncProgress.Step.Playlist))
         val channels = withContext(Dispatchers.IO) { stalker.portal(login).channels() }
         val saved = { rows: Int -> progress(SyncProgress(SyncProgress.Step.SavingPlaylist, rows.toLong())) }
-        return importPlaylist(saved) { add -> channels.forEachIndexed { order, channel -> add(Stalker.live(channel, order)) } }
+        // Only live channels change here; the films and shows from the last library refresh stay as they are.
+        return importPlaylist(saved, scope = "kind = 0") { add ->
+            channels.forEachIndexed {
+                order,
+                channel,
+                ->
+                add(Stalker.live(channel, order))
+            }
+        }
+    }
+
+    /**
+     * A portal's films and shows (Melvin, 2026-11-20: "add films and shows for mac portals"). Portals list them about
+     * fourteen at a time, so a big library is hundreds of small calls: they run after Live TV and the guide are in,
+     * and the films and shows from the last refresh stay on the lists until the new ones are all in. Films come from
+     * the `vod` section; shows from `series` and from `vod` items marked as series. A show is one stand-in row until
+     * it is opened ([loadShow]); one opened before keeps its episodes.
+     */
+    private suspend fun refreshPortalLibrary(progress: (SyncProgress) -> Unit) {
+        val login = currentLogin()?.takeIf { it.kind == Credentials.Kind.Stalker } ?: return
+        val portal = stalker.portal(login)
+        val saved = { rows: Int -> progress(SyncProgress(SyncProgress.Step.SavingPlaylist, rows.toLong())) }
+        val fetched = db.shows().fetchedEpisodes().groupBy { it.showKey }
+        var order = db.items().count()
+        var total = 0
+
+        suspend fun section(type: String): List<Pair<String, List<Stalker.VodItem>>> {
+            val categories =
+                attempt(TAG_SYNC, "No $type categories") {
+                    withContext(Dispatchers.IO) { portal.categories(type) }
+                }.getOrDefault(emptyList())
+            return categories.map { (id, title) ->
+                currentCoroutineContext().ensureActive()
+                val items =
+                    attempt(TAG_SYNC, "A $type category failed") {
+                        withContext(Dispatchers.IO) { buildList { portal.library(type, id, MAX_LIBRARY - total) { add(it) } } }
+                    }.getOrDefault(emptyList())
+                total += items.size
+                title to items
+            }
+        }
+        progress(SyncProgress(SyncProgress.Step.Playlist))
+        val films = section(Stalker.VOD)
+        val shows = section(Stalker.SERIES)
+        importPlaylist(saved, scope = "kind != 0") { add ->
+            suspend fun show(
+                type: String,
+                category: String,
+                item: Stalker.VodItem,
+            ) {
+                val kept = fetched[Episodes.showKey(item.name)]
+                if (kept.isNullOrEmpty()) add(Stalker.showStandIn(type, item, category, order++)) else kept.forEach { add(it.toEntry()) }
+            }
+            for ((category, items) in films) {
+                for (item in items) if (item.isSeries) show(Stalker.VOD, category, item) else add(Stalker.movie(item, category, order++))
+            }
+            for ((category, items) in shows) items.forEach { show(Stalker.SERIES, category, it) }
+        }
     }
 
     /**
@@ -413,9 +476,11 @@ class SyncRepository(
      */
     private suspend fun importPlaylist(
         saved: (Int) -> Unit,
+        /** Which cached streams this import replaces (SQL on `items`); the rest stay as they are. Null: all of them. */
+        scope: String? = null,
         fill: suspend (add: suspend (PlaylistEntry) -> Unit) -> Unit,
     ): Int {
-        val writer = PlaylistWriter(db)
+        val writer = PlaylistWriter(db, scope)
         writer.begin()
         try {
             val batch = ArrayList<ItemEntity>(BATCH)
@@ -471,7 +536,9 @@ class SyncRepository(
      * stand-in row. A show from the M3U has its episodes already, and this does nothing.
      */
     suspend fun loadShow(showKey: String) {
-        val standIn = db.items().episodesNow(showKey).firstOrNull { XtreamApi.standInId(it.url) != null } ?: return
+        val rows = db.items().episodesNow(showKey)
+        rows.firstOrNull { Stalker.standIn(it.url) != null }?.let { return loadPortalShow(showKey, it) }
+        val standIn = rows.firstOrNull { XtreamApi.standInId(it.url) != null } ?: return
         val login = currentLogin() ?: return
         val api = XtreamImport(http, login, userAgent())
         val episodes =
@@ -487,6 +554,35 @@ class SyncRepository(
         // The stand-in carried the show's cover; its episodes carry their own screenshots instead.
         standIn.logo?.takeIf { it.isNotBlank() }?.let { db.shows().saveCovers(listOf(ShowCoverEntity(showKey, it))) }
         db.shows().replaceStandIn(standIn.id, episodes)
+        ShowGroups.rebuild(db)
+    }
+
+    /** A portal show's seasons, fetched when it's first opened and swapped in for its stand-in row. */
+    private suspend fun loadPortalShow(
+        showKey: String,
+        standIn: ItemEntity,
+    ) {
+        val show = Stalker.standIn(standIn.url) ?: return
+        val login = currentLogin()?.takeIf { it.kind == Credentials.Kind.Stalker } ?: return
+        val seasons = withContext(Dispatchers.IO) { stalker.portal(login).seasons(show.type, show.id) }
+        val name = standIn.showName ?: standIn.name
+        var order = standIn.sortOrder
+        val episodes =
+            if (seasons.isNotEmpty()) {
+                seasons.flatMapIndexed { index, season ->
+                    val number = Stalker.seasonNumber(season.name, index)
+                    season.episodes.map { ep ->
+                        Stalker.episode(show.type, show.id, name, standIn.groupName, standIn.logo, season.cmd, number, ep, order++)
+                    }
+                }
+            } else {
+                // An old-style portal lists a show's episodes on the show itself, all in one season.
+                val cmd = show.cmd ?: return
+                show.episodes.map { ep -> Stalker.episode(show.type, show.id, name, standIn.groupName, standIn.logo, cmd, 1, ep, order++) }
+            }
+        if (episodes.isEmpty()) return
+        standIn.logo?.takeIf { it.isNotBlank() }?.let { db.shows().saveCovers(listOf(ShowCoverEntity(showKey, it))) }
+        db.shows().replaceStandIn(standIn.id, episodes.map { it.toRow() })
         ShowGroups.rebuild(db)
     }
 
@@ -539,6 +635,9 @@ class SyncRepository(
 
         /** A week: portals answer longer periods slowly, if at all. */
         const val MAX_PORTAL_GUIDE_HOURS = 168
+
+        /** Films and shows read from one portal at most, so a runaway library can't fill the device. */
+        const val MAX_LIBRARY = 200_000
     }
 }
 

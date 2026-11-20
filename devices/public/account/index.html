@@ -15,7 +15,7 @@
     </head>
     <body>
         <script src="/chrome.js" data-part="header"></script>
-        <main>
+        <main class="wide">
             <h1>Your Tuned account</h1>
             <p id="status" role="status" aria-live="polite"></p>
 
@@ -50,7 +50,7 @@
             </section>
 
             <div id="signed-in" hidden>
-                <section class="card">
+                <section class="card span">
                     <h2 id="who"></h2>
                     <p class="small" id="plan"></p>
                 </section>
@@ -78,6 +78,15 @@
                     <p class="small" id="seats"></p>
                     <div id="devices"></div>
                     <p class="message" id="devices-message" role="status" aria-live="polite"></p>
+                </section>
+
+                <section class="card">
+                    <h2>Playlists and settings</h2>
+                    <p class="small" id="library-line">
+                        Add an M3U link, an Xtream login or a MAC portal, and change your settings. Your phone and TV pick it up from your
+                        account.
+                    </p>
+                    <div class="actions"><a class="button" href="/account/playlists" data-track="open-playlists">Manage playlists</a></div>
                 </section>
 
                 <section class="card">
@@ -113,7 +122,7 @@
                     <div class="actions"><button type="button" id="redeem" data-track="redeem-code">Use code</button></div>
                 </section>
 
-                <section class="card" id="features">
+                <section class="card span" id="features">
                     <h2>What Tuned does</h2>
                     <p class="small">Everything in the app on your phone, tablet and TV. Tap a group to see what's in it.</p>
                     <div id="feature-groups"></div>

@@ -2,7 +2,19 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { check } from "../build-site.mjs";
 import { SITE } from "../site/config.mjs";
-import { buildSite, inline, markdown, noteLine, parseFrontmatter, readPost, releasePost, releasePostPath, sitemap } from "./site-build.mjs";
+import {
+    buildSite,
+    faqJsonLd,
+    homePosts,
+    inline,
+    markdown,
+    noteLine,
+    parseFrontmatter,
+    readPost,
+    releasePost,
+    releasePostPath,
+    sitemap,
+} from "./site-build.mjs";
 
 test("the committed website matches its sources (run node devices/build-site.mjs)", () => {
     assert.deepEqual(check(), []);
@@ -84,7 +96,14 @@ test("every page carries the Android download, and the sitemap lists every post"
 
 test("every hand-written page has the shared header and footer", async () => {
     const { readFileSync } = await import("node:fs");
-    for (const page of ["account/index.html", "tv/index.html", "devices/index.html", "app/signed-in.html", "check/index.html"]) {
+    for (const page of [
+        "account/index.html",
+        "account/playlists/index.html",
+        "tv/index.html",
+        "devices/index.html",
+        "app/signed-in.html",
+        "check/index.html",
+    ]) {
         const html = readFileSync(new URL(`../public/${page}`, import.meta.url), "utf8");
         assert.match(html, /<body>\s*<script src="\/chrome.js" data-part="header"><\/script>/, page);
         assert.match(html, /<script src="\/chrome.js" data-part="footer"><\/script>\s*<\/body>/, page);
@@ -112,4 +131,42 @@ test("the privacy policy is a page on the site, linked from every footer", async
     assert.match(files["privacy/index.html"], /Last updated /);
     assert.ok(files["chrome.js"].includes('href=\\"/privacy/\\"'));
     assert.ok(files["sitemap.xml"].includes("/privacy/</loc>"));
+});
+
+test("the landing page's hero has the one download button and no Coming soon badges (Melvin, 2026-11-20)", async () => {
+    const { readFile } = await import("node:fs/promises");
+    const html = await readFile(new URL("../public/index.html", import.meta.url), "utf8");
+    const hero = html.slice(html.indexOf('class="wrap hero"'), html.indexOf('class="facts"'));
+    assert.ok(hero.includes('data-cta="apk-hero"'));
+    assert.ok(!hero.includes("store-badge"), "no store badges in the hero");
+    assert.equal(html.split('class="badges"').length - 1, 1, "the store badges appear once, in Coming soon");
+});
+
+test("From the blog shows the chosen posts, then the newest that aren't release notes", async () => {
+    const post = (path, kind, date = "2026-11-19") =>
+        readPost(path, `---\ntitle: ${path}\ndescription: D\ndate: ${date}\nkind: ${kind}\n---\nBody`);
+    const posts = [
+        post("whats-new/tuned-9-0-0.md", "release", "2026-12-01"),
+        post("guides/a.md", "guide"),
+        post("vs/b.md", "compare"),
+        post("guides/c.md", "guide"),
+    ];
+    const paths = (site) => homePosts(site, posts).map((p) => p.path);
+    assert.deepEqual(paths({ homePosts: ["guides/c.md", "gone.md"] }), ["guides/c.md", "guides/a.md", "vs/b.md"]);
+    assert.deepEqual(paths({}), ["guides/a.md", "guides/c.md", "vs/b.md"]);
+    const { existsSync } = await import("node:fs");
+    for (const path of SITE.homePosts) assert.ok(existsSync(new URL(`../site/posts/${path}`, import.meta.url)), `${path} exists`);
+});
+
+test("the landing page's questions become FAQPage structured data", () => {
+    const [ld] = faqJsonLd(
+        '<details>\n<summary>Is it free?</summary>\n<p class="muted">Yes. See <a href="/x/">the  guide</a>.</p>\n</details>',
+    );
+    assert.equal(ld["@type"], "FAQPage");
+    assert.deepEqual(ld.mainEntity[0], {
+        "@type": "Question",
+        name: "Is it free?",
+        acceptedAnswer: { "@type": "Answer", text: "Yes. See the guide." },
+    });
+    assert.deepEqual(faqJsonLd("<p>none</p>"), []);
 });

@@ -22,9 +22,10 @@
 <link rel="alternate" type="application/rss+xml" title="Tuned blog" href="/blog/feed.xml" />
 <link rel="stylesheet" href="/site.css" />
 <link rel="stylesheet" href="/web.css" />
-<script type="application/ld+json">{"@context":"https://schema.org","@type":"SoftwareApplication","name":"Tuned","operatingSystem":"Android 8.0 or later","applicationCategory":"MultimediaApplication","description":"Tuned is a fast, quiet IPTV player for Android phones, tablets and Android TV. Xtream Codes, M3U and MAC portals, a full TV guide, catch-up, downloads and casting. No ads.","url":"https://www.tunedplayer.com","downloadUrl":"https://www.tunedplayer.com/download","softwareVersion":"2.0.0","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"SoftwareApplication","name":"Tuned","operatingSystem":"Android 8.0 or later","applicationCategory":"MultimediaApplication","description":"Tuned is a fast, quiet IPTV player for Android phones, tablets and Android TV. Xtream Codes, M3U and MAC portals, a full TV guide, catch-up, downloads and casting. No ads.","url":"https://www.tunedplayer.com","downloadUrl":"https://www.tunedplayer.com/download","softwareVersion":"2.0.1","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"Organization","name":"Tuned","url":"https://www.tunedplayer.com","logo":"https://www.tunedplayer.com/apple-touch-icon.png"}</script>
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebSite","name":"Tuned","url":"https://www.tunedplayer.com"}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"Does Tuned come with channels?","acceptedAnswer":{"@type":"Answer","text":"No. Tuned is a player: it plays the playlist from your own TV provider, through an Xtream Codes login, an M3U link or file, or a MAC portal. It doesn't sell or include any channels."}},{"@type":"Question","name":"Is it free?","acceptedAnswer":{"@type":"Answer","text":"Yes. Tuned is free, with no ads. Tuned Premium is an optional upgrade for the extras marked Premium in the list above."}},{"@type":"Question","name":"Which devices does it run on?","acceptedAnswer":{"@type":"Answer","text":"Android phones and tablets on Android 8.0 or later, and Android TV and Google TV. Samsung TV, iPhone, iPad and Mac apps are coming soon."}},{"@type":"Question","name":"How do I install it?","acceptedAnswer":{"@type":"Answer","text":"On a phone or tablet, tap Download for Android, open the file, and allow installs from your browser when Android asks. On Android TV or Google TV, install the free Downloader app from the TV's app store, type tunedplayer.com/download into it, and allow it to install apps. The Android TV guide has every step. After that Tuned offers each new version itself."}},{"@type":"Question","name":"Is my login safe?","acceptedAnswer":{"@type":"Answer","text":"Your login is encrypted on the device and stays there until you sign out. It never goes in the app's log. If you turn on a Tuned account, its backup carries your playlists to your other devices."}},{"@type":"Question","name":"Will it get my account blocked for streaming twice?","acceptedAnswer":{"@type":"Answer","text":"Tuned only ever opens one stream connection. The old stream closes before the next opens, nothing loads ahead, and downloads wait while you watch."}}]}</script>
 </head>
 <body class="web">
 <a class="skip" href="#main">Skip to the content</a>
@@ -42,7 +43,8 @@
 <main id="main">
 <!--
     The landing page's content (docs/decisions/website.md). devices/build-site.mjs puts it inside the shared page and
-    fills in the markers: @features (site/features.mjs), @badges-hero and @badges-soon (the store badges),
+    fills in the markers: @features (site/features.mjs), @badges-soon (the store badges, kept out of the hero so the
+    one button that works stands alone),
     @download-hero, @latest-posts (the three newest posts), @cta and @feature-count.
     Screenshots are the app's own screens drawn with sample data (docs/decisions/screenshots.md), in public/img/.
 -->
@@ -105,12 +107,6 @@
                 >Opens straight to your channels
             </li>
         </ul>
-        <div class="badges">
-<span class="store-badge soon" role="img" aria-label="Google Play: coming soon"><span aria-hidden="true" class="badge-inner"><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path fill="#4285F4" d="M3.6 1.8 13.5 12l-9.9 10.2c-.4-.2-.6-.6-.6-1.1V2.9c0-.5.2-.9.6-1.1z"/><path fill="#34A853" d="M3.6 1.8c.3-.2.8-.2 1.2.1l11.9 6.8-3.2 3.3z"/><path fill="#EA4335" d="m13.5 12 3.2 3.3-11.9 6.8c-.4.3-.9.3-1.2.1z"/><path fill="#FBBC04" d="m16.7 8.7 3.7 2.1c.9.5.9 1.9 0 2.4l-3.7 2.1-3.2-3.3z"/></svg><span class="badge-text"><small>GET IT ON</small><b>Google Play</b></span></span><span class="soon-pill" aria-hidden="true">Coming soon</span></span>
-<span class="store-badge soon" role="img" aria-label="App Store for iPhone and iPad: coming soon"><span aria-hidden="true" class="badge-inner"><svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor" aria-hidden="true"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg><span class="badge-text"><small>Download on the</small><b>App Store</b></span></span><span class="soon-pill" aria-hidden="true">Coming soon</span></span>
-<span class="store-badge soon" role="img" aria-label="Mac App Store: coming soon"><span aria-hidden="true" class="badge-inner"><svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor" aria-hidden="true"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg><span class="badge-text"><small>Download on the</small><b>Mac App Store</b></span></span><span class="soon-pill" aria-hidden="true">Coming soon</span></span>
-<span class="store-badge soon" role="img" aria-label="Samsung TV: coming soon"><span aria-hidden="true" class="badge-inner"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><rect x="2" y="4" width="20" height="13" rx="2"/><path d="M8 21h8M12 17v4"/></svg><span class="badge-text"><small>COMING TO</small><b>Samsung TV</b></span></span><span class="soon-pill" aria-hidden="true">Coming soon</span></span>
-</div>
     </div>
     <div class="hero-shots">
         <div class="phone">
@@ -136,7 +132,7 @@
             <dd>54</dd>
         </div>
         <div>
-            <dt>stream connection at a time</dt>
+            <dt>stream at a time, so your provider's limit is safe</dt>
             <dd>1</dd>
         </div>
         <div>
@@ -605,12 +601,6 @@
             Tuned is on Android phones, tablets and Android TV today. Apps for Samsung TVs, iPhone and iPad, and the Mac are on the way.
         </p>
         <div class="soon-card">
-            <ul class="platforms">
-                <li><b>Google Play</b><span>Coming soon</span></li>
-                <li><b>Samsung TV</b><span>Coming soon</span></li>
-                <li><b>iPhone and iPad</b><span>Coming soon</span></li>
-                <li><b>Mac</b><span>Coming soon</span></li>
-            </ul>
             <div class="badges">
 <span class="store-badge soon" role="img" aria-label="Google Play: coming soon"><span aria-hidden="true" class="badge-inner"><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path fill="#4285F4" d="M3.6 1.8 13.5 12l-9.9 10.2c-.4-.2-.6-.6-.6-1.1V2.9c0-.5.2-.9.6-1.1z"/><path fill="#34A853" d="M3.6 1.8c.3-.2.8-.2 1.2.1l11.9 6.8-3.2 3.3z"/><path fill="#EA4335" d="m13.5 12 3.2 3.3-11.9 6.8c-.4.3-.9.3-1.2.1z"/><path fill="#FBBC04" d="m16.7 8.7 3.7 2.1c.9.5.9 1.9 0 2.4l-3.7 2.1-3.2-3.3z"/></svg><span class="badge-text"><small>GET IT ON</small><b>Google Play</b></span></span><span class="soon-pill" aria-hidden="true">Coming soon</span></span>
 <span class="store-badge soon" role="img" aria-label="App Store for iPhone and iPad: coming soon"><span aria-hidden="true" class="badge-inner"><svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor" aria-hidden="true"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg><span class="badge-text"><small>Download on the</small><b>App Store</b></span></span><span class="soon-pill" aria-hidden="true">Coming soon</span></span>
@@ -649,8 +639,10 @@
             <details>
                 <summary>How do I install it?</summary>
                 <p class="muted">
-                    Download it on your device, open it, and allow installs from your browser when Android asks. After that Tuned offers
-                    each new version itself.
+                    On a phone or tablet, tap Download for Android, open the file, and allow installs from your browser when Android asks.
+                    On Android TV or Google TV, install the free Downloader app from the TV's app store, type tunedplayer.com/download into
+                    it, and allow it to install apps. The <a href="/blog/guides/android-tv/">Android TV guide</a> has every step. After that
+                    Tuned offers each new version itself.
                 </p>
             </details>
             <details>
@@ -678,9 +670,9 @@
             <a class="more" href="/blog/">All posts ›</a>
         </div>
         <ul class="post-grid">
-            <li class="post-card"><a href="/blog/whats-new/tuned-2-0-0/"><span class="kind">What&#39;s new</span><h3>What&#39;s new in Tuned 2.0.0</h3><p>Tuned 2.0 is a new install with a new app id, ready for Google Play. Your Tuned account brings your playlists, settings and profiles across in one tap.</p><time datetime="2026-11-19">November 19, 2026</time></a></li>
-<li class="post-card"><a href="/blog/whats-new/tuned-1-13-0/"><span class="kind">What&#39;s new</span><h3>What&#39;s new in Tuned 1.13.0</h3><p>Tuned 1.13 adds Tuned accounts, so every device keeps the same playlists and settings, plus new home screen widgets and casting that ends when you close the player.</p><time datetime="2026-11-19">November 19, 2026</time></a></li>
-<li class="post-card"><a href="/blog/whats-new/tuned-1-12-0/"><span class="kind">What&#39;s new</span><h3>What&#39;s new in Tuned 1.12.0</h3><p>Tuned 1.12 adds signing in on a TV with your phone, the new channel stack icon, a cleaner player with fit and lock buttons, and remote-friendly screens on TVs and tablets.</p><time datetime="2026-11-19">November 19, 2026</time></a></li>
+            <li class="post-card"><a href="/blog/roundups/best-iptv-player-android-tv/"><span class="kind">Roundups</span><h3>The best IPTV player for Android TV in 2026</h3><p>What to look for in an IPTV player for Android TV and Google TV, how Tuned approaches it, and how the popular alternatives compare.</p><time datetime="2026-11-19">November 19, 2026</time></a></li>
+<li class="post-card"><a href="/blog/roundups/tivimate-alternatives/"><span class="kind">Roundups</span><h3>The best TiviMate alternatives for Android TV</h3><p>Looking for something other than TiviMate? What to look for in a replacement, and how Tuned and other popular players compare.</p><time datetime="2026-11-19">November 19, 2026</time></a></li>
+<li class="post-card"><a href="/blog/guides/add-xtream-codes-playlist/"><span class="kind">Guides</span><h3>How to add an Xtream Codes playlist to Tuned</h3><p>Sign in with the server address, username and password your provider sent, and get Live TV, Movies, Shows and the guide in one step.</p><time datetime="2026-11-19">November 19, 2026</time></a></li>
         </ul>
         <section class="cta-card" aria-labelledby="cta-home">
 <img src="/icon.svg" alt="" width="64" height="64" />

@@ -114,6 +114,8 @@ data class AppSettings(
     /** The zone guide and event times show in, as a zone id; blank follows the phone (Settings › Guide). */
     val timeZone: String = "",
     val unmeteredOnly: Boolean = false,
+    /** When "Refresh on my devices" was last pressed on the website; a newer time downloads the playlist again. */
+    val refreshRequestedAt: Long = 0,
     val buffer: BufferMode = BufferMode.BALANCED,
     val audioLanguage: String = "",
     val resumePlayback: Boolean = true,
