@@ -99,6 +99,11 @@ class GuideWriter(
  */
 class PlaylistWriter(
     private val db: TunedDatabase,
+    /**
+     * Which cached streams this playlist replaces, as SQL on `items`; the rest are left alone. A portal's live channels
+     * and its films and shows are refreshed apart (`kind = 0`, `kind != 0`). Null: the whole cache.
+     */
+    private val scope: String? = null,
 ) {
     private val sql get() = db.openHelper.writableDatabase
     private val seen = HashSet<Long>()
@@ -159,7 +164,8 @@ class PlaylistWriter(
         // Which streams differ, worked out once, inside SQLite.
         sql.execSQL("DROP TABLE IF EXISTS temp.$CHANGED")
         sql.execSQL("CREATE TEMP TABLE $CHANGED (seq INTEGER PRIMARY KEY, id INTEGER NOT NULL)")
-        sql.execSQL("INSERT INTO $CHANGED (id) SELECT id FROM items WHERE id NOT IN (SELECT id FROM $NEXT)")
+        val inScope = scope?.let { " AND ($it)" }.orEmpty()
+        sql.execSQL("INSERT INTO $CHANGED (id) SELECT id FROM items WHERE id NOT IN (SELECT id FROM $NEXT)$inScope")
         sql.execSQL("INSERT INTO $CHANGED (id) SELECT n.id FROM $NEXT n JOIN items i ON i.id = n.id WHERE NOT ($SAME)")
         sql.execSQL("INSERT INTO $CHANGED (id) SELECT id FROM $NEXT WHERE id NOT IN (SELECT id FROM items)")
         val total = sql.query("SELECT COUNT(*) FROM $CHANGED").use { if (it.moveToFirst()) it.getLong(0) else 0L }

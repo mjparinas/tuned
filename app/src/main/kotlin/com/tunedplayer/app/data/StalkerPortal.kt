@@ -73,6 +73,95 @@ class StalkerPortal(
         return streamed(mapOf("type" to "itv", "action" to "get_all_channels")) { reader -> readChannels(reader, genres) }
     }
 
+    /** A library section's categories (`vod` or `series`), id to title, without the portal's "All" entry. */
+    fun categories(type: String): List<Pair<String, String>> =
+        (call(mapOf("type" to type, "action" to "get_categories")) { js(it) } as? JsonArray)
+            .orEmpty()
+            .mapNotNull { it as? JsonObject }
+            .mapNotNull { o -> o.text("id")?.takeIf { it != "*" }?.let { id -> id to o.text("title").orEmpty() } }
+
+    /**
+     * Every film or show in one category, a page at a time (portals send about fourteen per page), up to [limit].
+     * Stops at the last page, an empty page, or a portal that sends the same page again.
+     */
+    fun library(
+        type: String,
+        category: String,
+        limit: Int,
+        each: (Stalker.VodItem) -> Unit,
+    ) {
+        var page = 1
+        var sent = 0
+        var lastFirst: String? = null
+        while (sent < limit && page <= MAX_PAGES) {
+            val answer =
+                call(
+                    mapOf(
+                        "type" to type,
+                        "action" to "get_ordered_list",
+                        "category" to category,
+                        "genre" to "*",
+                        "sortby" to "added",
+                        "p" to page.toString(),
+                    ),
+                ) { js(it) } as? JsonObject ?: return
+            val items = (answer["data"] as? JsonArray).orEmpty().mapNotNull { (it as? JsonObject)?.let(::vodItem) }
+            if (items.isEmpty() || items.first().id == lastFirst) return
+            lastFirst = items.first().id
+            items.take(limit - sent).forEach(each)
+            sent += items.size
+            val total = answer.text("total_items")?.toIntOrNull() ?: return
+            val perPage = answer.text("max_page_items")?.toIntOrNull()?.takeIf { it > 0 } ?: items.size
+            if (page * perPage >= total) return
+            page++
+        }
+    }
+
+    /** A show's seasons (`movie_id` with season 0), each with the command and episode numbers to play from. */
+    fun seasons(
+        type: String,
+        showId: String,
+    ): List<Stalker.Season> {
+        val answer =
+            call(
+                mapOf(
+                    "type" to type,
+                    "action" to "get_ordered_list",
+                    "movie_id" to showId,
+                    "season_id" to "0",
+                    "episode_id" to "0",
+                    "p" to "1",
+                ),
+            ) { js(it) } as? JsonObject ?: return emptyList()
+        return (answer["data"] as? JsonArray).orEmpty().mapNotNull { e ->
+            val o = e as? JsonObject ?: return@mapNotNull null
+            val cmd = o.text("cmd")?.takeIf { it.isNotBlank() } ?: return@mapNotNull null
+            val episodes = numbers(o["series"])
+            if (episodes.isEmpty()) return@mapNotNull null
+            Stalker.Season(o.text("id").orEmpty(), o.text("name").orEmpty(), cmd, episodes)
+        }
+    }
+
+    private fun vodItem(o: JsonObject): Stalker.VodItem? {
+        val id = o.text("id")?.takeIf { it.isNotBlank() } ?: return null
+        val name = o.text("name")?.takeIf { it.isNotBlank() } ?: return null
+        val cmd = o.text("cmd").orEmpty()
+        val episodes = numbers(o["series"])
+        return Stalker.VodItem(
+            id = id,
+            name = name,
+            cmd = cmd,
+            logo = Stalker.logo(portal, o.text("screenshot_uri") ?: o.text("cover_big")),
+            isSeries = o.text("is_series") == "1" || o.text("is_series") == "true" || episodes.isNotEmpty(),
+            episodes = episodes,
+            adult = o.text("censored") == "1",
+        )
+    }
+
+    /** `[1, 2, 3]` or `["1", "2"]`, as numbers. */
+    private fun numbers(e: JsonElement?): List<Int> =
+        (e as? JsonArray).orEmpty().mapNotNull { (it as? JsonPrimitive)?.contentOrNull?.trim()?.toIntOrNull() }
+
     /** The stream to open for a channel's command, fresh from the portal. */
     fun streamFor(link: Stalker.Link): String {
         val answer =
@@ -82,7 +171,7 @@ class StalkerPortal(
                         "type" to link.type,
                         "action" to "create_link",
                         "cmd" to link.cmd,
-                        "series" to "",
+                        "series" to link.series.orEmpty(),
                         "forced_storage" to "undefined",
                         "disable_ad" to "0",
                         "download" to "0",
@@ -368,6 +457,9 @@ class StalkerPortal(
 
     private companion object {
         const val MAX_SMALL_ANSWER = 512 * 1024
+
+        /** A runaway portal that never says it's done stops here: 14,000 films or so in one category. */
+        const val MAX_PAGES = 1_000
         const val HTTP_UNAUTHORIZED = 401
         const val HTTP_FORBIDDEN = 403
         val CHANNEL_FIELDS = setOf("id", "name", "cmd", "logo", "tv_genre_id", "xmltv_id", "censored")
