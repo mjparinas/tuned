@@ -29,6 +29,20 @@ class ChannelShareTest {
     }
 
     @Test
+    fun aDeviceFillsItsOwnLoginBackIn() {
+        val links =
+            listOf(
+                "http://p.example:8080/live/sam/s3cr&t/101.ts",
+                "http://p.example:8080/get.php?username=sam&password=s3cr%26t&type=m3u",
+                "http://other.example/plain.m3u8",
+            )
+        for (link in links) {
+            val hidden = ChannelShare.hideLogin(link, "sam", "s3cr&t")
+            assertEquals(link, ChannelShare.showLogin(hidden, "sam", "s3cr&t"))
+        }
+    }
+
+    @Test
     fun theCopyHasTheChannelsAndOnlyTheirNextHours() {
         val now = 1_795_201_200_000L
         val channels =

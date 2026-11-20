@@ -70,6 +70,20 @@ object ChannelShare {
         return out
     }
 
+    /**
+     * The other way from [hideLogin]: [url] with `{login}`, `{user}` and `{pass}` filled from this device's own login,
+     * for a device that fills its channels from the account's copy when the provider can't be reached. The query's
+     * values are URL-encoded; the path's are as the provider's own links write them.
+     */
+    fun showLogin(
+        url: String,
+        username: String,
+        password: String,
+    ): String = url
+        .replace("/{login}/", "/$username/$password/")
+        .replace("{user}", URLEncoder.encode(username, Charsets.UTF_8))
+        .replace("{pass}", URLEncoder.encode(password, Charsets.UTF_8))
+
     /** What changes the channel list (not the guide), so an unchanged list isn't sent again before [REFRESH_MS]. */
     fun fingerprint(
         playlistId: String,

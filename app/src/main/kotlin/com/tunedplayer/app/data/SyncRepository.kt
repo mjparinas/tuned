@@ -10,6 +10,7 @@ import com.tunedplayer.app.core.GuideFixes
 import com.tunedplayer.app.core.M3uParser
 import com.tunedplayer.app.core.PlaylistEntry
 import com.tunedplayer.app.core.PlaylistLink
+import com.tunedplayer.app.core.Programme
 import com.tunedplayer.app.core.Search
 import com.tunedplayer.app.core.StableId
 import com.tunedplayer.app.core.Stalker
@@ -23,6 +24,7 @@ import com.tunedplayer.app.data.db.CatchUpItemEntity
 import com.tunedplayer.app.data.db.GuideWriter
 import com.tunedplayer.app.data.db.ItemEntity
 import com.tunedplayer.app.data.db.PlaylistWriter
+import com.tunedplayer.app.data.db.ProgrammeEntity
 import com.tunedplayer.app.data.db.ShowCoverEntity
 import com.tunedplayer.app.data.db.ShowDetailsEntity
 import com.tunedplayer.app.data.db.ShowGroups
@@ -120,6 +122,33 @@ class SyncRepository(
         fun report(progress: SyncProgress) {
             attempt(TAG_SYNC, "Couldn't report progress") { sink(progress.copy(steps = steps)) }
         }
+    }
+
+    /**
+     * Fills an empty cache from the copy kept in the Tuned account ([AccountChannels]) when the provider couldn't be
+     * read. The playlist's memo is forgotten, so the next refresh saves the provider's own file over it. Returns how
+     * many channels it saved; 0 when the cache already had channels (the provider got there first).
+     */
+    suspend fun fillFromCopy(
+        channels: List<PlaylistEntry>,
+        guide: List<Programme>,
+    ): Int = lock.withLock {
+        if (db.items().any()) return@withLock 0
+        memo.forget()
+        val count = importPlaylist(progress = {}) { add -> channels.forEach { add(it) } }
+        if (guide.isNotEmpty()) {
+            val writer = GuideWriter(db)
+            try {
+                writer.begin()
+                for (batch in guide.chunked(BATCH)) {
+                    writer.add(batch.map { ProgrammeEntity(0, it.channelId, it.start, it.stop, it.title, null) })
+                }
+                writer.commit()
+            } finally {
+                writer.discard()
+            }
+        }
+        count
     }
 
     private suspend fun refreshPlaylistLocked(progress: (SyncProgress) -> Unit): Int {
