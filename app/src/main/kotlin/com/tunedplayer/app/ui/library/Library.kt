@@ -44,6 +44,7 @@ import com.tunedplayer.app.R
 import com.tunedplayer.app.container
 import com.tunedplayer.app.data.db.WatchLaterEntity
 import com.tunedplayer.app.diagnostics.launchSafely
+import com.tunedplayer.app.ui.browse.rememberShowArt
 import com.tunedplayer.app.ui.common.focusRing
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -187,7 +188,9 @@ private fun LaterCard(
                 .clip(RoundedCornerShape(10.dp))
                 .background(MaterialTheme.colorScheme.surfaceContainerHigh),
         ) {
-            AsyncImage(model = row.image, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
+            // A show saved before its TMDB poster was known gets the show's cover now, not the still it was saved with.
+            val image = if (row.showKey != null) rememberShowArt(row.title, row.image).image else row.image
+            AsyncImage(model = image, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
         }
         Text(
             row.title,
