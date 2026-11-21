@@ -9,12 +9,11 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -24,6 +23,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
@@ -40,7 +40,10 @@ import com.tunedplayer.app.data.AppSettings
 import com.tunedplayer.app.data.db.RegionCount
 import com.tunedplayer.app.diagnostics.launchSafely
 import com.tunedplayer.app.ui.common.BackTopBar
+import com.tunedplayer.app.ui.common.SearchBoxButtonsBeside
 import com.tunedplayer.app.ui.common.regionName
+import com.tunedplayer.app.ui.common.remoteTextInput
+import com.tunedplayer.app.ui.common.searchBoxTrailing
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
@@ -123,21 +126,18 @@ private fun RegionSearchField(
     query: String,
     onChange: (String) -> Unit,
 ) {
-    OutlinedTextField(
-        value = query,
-        onValueChange = onChange,
-        placeholder = { Text(stringResource(R.string.regions_search)) },
-        leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
-        trailingIcon = {
-            if (query.isNotEmpty()) {
-                IconButton(onClick = { onChange("") }) {
-                    Icon(Icons.Filled.Close, contentDescription = stringResource(R.string.search_clear))
-                }
-            }
-        },
-        singleLine = true,
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
-    )
+    Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+        OutlinedTextField(
+            value = query,
+            onValueChange = onChange,
+            placeholder = { Text(stringResource(R.string.regions_search)) },
+            leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
+            trailingIcon = searchBoxTrailing(query, onChange, voice = false),
+            singleLine = true,
+            modifier = Modifier.remoteTextInput(OutlinedTextFieldDefaults.shape).weight(1f),
+        )
+        SearchBoxButtonsBeside(query, onChange, voice = false)
+    }
 }
 
 @Composable
