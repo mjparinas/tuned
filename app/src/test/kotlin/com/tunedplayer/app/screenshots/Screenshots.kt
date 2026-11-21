@@ -72,7 +72,12 @@ abstract class Screenshots {
         val engine = FakeImageLoaderEngine.Builder()
         SampleData.art.forEach { (key, image) -> engine.intercept(predicate = { it.toString() == key }, image = image) }
         SingletonImageLoader.setUnsafe(ImageLoader.Builder(app).components { add(engine.build()) }.build())
-        runBlocking(Dispatchers.IO) { SampleData.seed(app.container.db) }
+        runBlocking(Dispatchers.IO) {
+            SampleData.seed(app.container.db)
+            // The kept browse filters live in a DataStore that `preferencesDataStore` holds once per process, so filters a
+            // shot chose (Live TV's Filters sheet) would still be chosen in the next one and hide every channel.
+            app.container.browseFilters.clear()
+        }
     }
 
     /**
