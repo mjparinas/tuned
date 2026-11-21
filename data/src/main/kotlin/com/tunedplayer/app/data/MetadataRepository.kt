@@ -85,6 +85,12 @@ class MetadataRepository(
         tv: Boolean,
     ): Long? = dao.get(cacheKey(name, tv))?.takeIf { it.found && it.tmdbId > 0 }?.tmdbId
 
+    /** Whether TMDB has answered for [name] on this device, found or not ([TitleRatings] asks only about the rest). */
+    suspend fun answered(
+        name: String,
+        tv: Boolean,
+    ): Boolean = dao.get(cacheKey(name, tv)) != null
+
     /** What the device already knows, without asking the network. */
     suspend fun cached(
         name: String,

@@ -103,7 +103,7 @@ One file per topic in `docs/decisions/`, A to Z. Add a line when you add a topic
 - [Offline downloads](docs/decisions/offline.md): saving films and episodes, one connection at a time.
 - [Onboarding and playlists](docs/decisions/onboarding.md): the welcome screen, one form per playlist kind (Xtream, link, file, MAC portal), Settings › Playlists.
 - [People](docs/decisions/people.md): actor filmography pages, oldest first, with what is in the playlist marked.
-- [Playlist and guide](docs/decisions/playlist.md): Xtream URLs, how streams are sorted, sorting Movies and Shows (newest, year, rating, A to Z), countries and adult categories across providers, refresh.
+- [Playlist and guide](docs/decisions/playlist.md): Xtream URLs, how streams are sorted, sorting Movies and Shows (newest, year, rating as the poster shows it, A to Z), countries and adult categories across providers, refresh.
 - [Player](docs/decisions/player.md): Media3 setup, controls, captions, audio, cast, backup copies, TMDB details.
 - [Premium](docs/decisions/premium.md): the free app, the Premium unlock, prices, the GitHub and store builds, store policy.
 - [Profiles](docs/decisions/profiles.md): who's watching, kids profiles, profile PINs.

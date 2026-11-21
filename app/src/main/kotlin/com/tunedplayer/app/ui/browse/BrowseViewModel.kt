@@ -17,6 +17,7 @@ import com.tunedplayer.app.core.Search
 import com.tunedplayer.app.core.TitleSort
 import com.tunedplayer.app.data.AppSettings
 import com.tunedplayer.app.data.SyncProgress
+import com.tunedplayer.app.data.TitleRatings
 import com.tunedplayer.app.data.db.ChannelNumbers
 import com.tunedplayer.app.data.db.ChannelWithNow
 import com.tunedplayer.app.data.db.ContinueRow
@@ -312,6 +313,24 @@ class BrowseViewModel(
                 }
             }
             if (order != TitleSort.Order.PROVIDER) container.sortDetails.fillIfMissing()
+        }
+    }
+
+    /** Ratings being looked up for Top rated ([TitleRatings]), for the line above the grid; null when none are. */
+    val ratingProgress: StateFlow<TitleRatings.Progress?> get() = container.titleRatings.progress
+
+    init {
+        // Top rated sorts on the rating each poster shows, TMDB's: while it's chosen, the titles TMDB hasn't been asked
+        // about yet are looked up in the background, after the first screen is up, and the list re-sorts as they land.
+        viewModelScope.launchSafely("BrowseViewModel") {
+            container.quietStart.await()
+            combine(sort(ContentKind.MOVIE), sort(ContentKind.SERIES)) { films, shows ->
+                (films == TitleSort.Order.RATING) to (shows == TitleSort.Order.RATING)
+            }.distinctUntilChanged()
+                .collectLatest { (films, shows) ->
+                    if (films) attempt("BrowseViewModel", "Film ratings failed") { container.titleRatings.fill(tv = false) }
+                    if (shows) attempt("BrowseViewModel", "Show ratings failed") { container.titleRatings.fill(tv = true) }
+                }
         }
     }
 
