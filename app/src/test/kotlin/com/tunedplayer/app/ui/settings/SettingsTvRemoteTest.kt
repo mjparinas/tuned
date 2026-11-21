@@ -11,7 +11,6 @@ import androidx.compose.ui.test.isFocused
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
-import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performKeyInput
 import androidx.compose.ui.test.pressKey
 import androidx.compose.ui.test.requestFocus
@@ -103,15 +102,15 @@ class SettingsTvRemoteTest {
         compose.onNodeWithText("Autoplay").assertIsNotFocused()
     }
 
+    /** The choices as a choice's dialog shows them; Robolectric's dialog windows never take focus, so they're drawn here. */
     @Test
     fun aChoiceOpensOnTheOneInUse() {
         compose.setContent {
             TunedTheme(mode = ThemeMode.DARK) {
-                ChoiceRow("Theme", listOf("System", "Light", "Dark"), "Dark", label = { it }) {}
+                ChoiceOptions(listOf("System", "Light", "Dark"), "Dark", label = { it }) {}
             }
         }
-        compose.onNodeWithText("Theme").performClick()
-        compose.waitUntil(DIALOG_WAIT_MS) { runCatching { compose.onNodeWithText("Dark").assertIsFocused() }.isSuccess }
+        compose.waitForIdle()
         compose.onNodeWithText("Dark").assertIsFocused()
         compose.onNodeWithText("Light").assertIsNotFocused()
     }
@@ -141,5 +140,3 @@ class SettingsTvRemoteTest {
         name: String,
     ) = FavouriteRow(id = id, name = name, logo = null, tvgId = null)
 }
-
-private const val DIALOG_WAIT_MS = 2_000L

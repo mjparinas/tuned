@@ -197,31 +197,42 @@ fun <T> ChoiceRow(
             onDismissRequest = { open = false },
             title = { Text(title) },
             text = {
-                // On a TV the remote starts on the choice in use, so OK alone keeps it and an arrow moves from there.
-                val start = rememberDialogStartFocus()
-                Column(Modifier.verticalScroll(rememberScrollState())) {
-                    options.forEach { option ->
-                        Row(
-                            Modifier
-                                .fillMaxWidth()
-                                .then(if (option == selected) start.modifier else Modifier)
-                                .focusRing(RowFocusShape, MaterialTheme.colorScheme.primary)
-                                .selectable(selected = option == selected, role = Role.RadioButton, onClick = {
-                                    onSelect(option)
-                                    open = false
-                                })
-                                .padding(vertical = 10.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            RadioButton(selected = option == selected, onClick = null)
-                            Spacer(Modifier.width(12.dp))
-                            Text(label(option), style = MaterialTheme.typography.bodyLarge)
-                        }
-                    }
+                ChoiceOptions(options, selected, label) { option ->
+                    onSelect(option)
+                    open = false
                 }
             },
             confirmButton = { TextButton(onClick = { open = false }) { Text(stringResource(R.string.cancel)) } },
         )
+    }
+}
+
+/** The choices of a [ChoiceRow]'s dialog, one radio row each. */
+@Composable
+internal fun <T> ChoiceOptions(
+    options: List<T>,
+    selected: T,
+    label: @Composable (T) -> String,
+    onPick: (T) -> Unit,
+) {
+    // On a TV the remote starts on the choice in use, so OK alone keeps it and an arrow moves from there.
+    val start = rememberDialogStartFocus()
+    Column(Modifier.verticalScroll(rememberScrollState())) {
+        options.forEach { option ->
+            Row(
+                Modifier
+                    .fillMaxWidth()
+                    .then(if (option == selected) start.modifier else Modifier)
+                    .focusRing(RowFocusShape, MaterialTheme.colorScheme.primary)
+                    .selectable(selected = option == selected, role = Role.RadioButton, onClick = { onPick(option) })
+                    .padding(vertical = 10.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                RadioButton(selected = option == selected, onClick = null)
+                Spacer(Modifier.width(12.dp))
+                Text(label(option), style = MaterialTheme.typography.bodyLarge)
+            }
+        }
     }
 }
 
