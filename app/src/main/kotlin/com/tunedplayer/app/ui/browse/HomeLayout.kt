@@ -21,6 +21,7 @@ import androidx.compose.runtime.saveable.Saver
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.tunedplayer.app.R
@@ -121,14 +122,6 @@ internal fun HomeRail(
                     icon = { Icon(Icons.Filled.TravelExplore, contentDescription = null) },
                     label = { Text(stringResource(R.string.rail_search)) },
                 )
-                tvExtras.profile?.let { profile ->
-                    NavigationRailItem(
-                        selected = false,
-                        onClick = tvExtras.onOpenProfiles,
-                        icon = { ProfileBadge(profile, size = 32.dp) },
-                        label = { Text(stringResource(R.string.rail_profile)) },
-                    )
-                }
             }
             // Settings under Downloads on tablets and TV (Melvin, 2026-11-19); phones keep it in the menu by search.
             if (onOpenSettings != null) {
@@ -137,6 +130,22 @@ internal fun HomeRail(
                     onClick = onOpenSettings,
                     icon = { Icon(Icons.Filled.Settings, contentDescription = null) },
                     label = { Text(stringResource(R.string.settings)) },
+                )
+            }
+            // On a TV the profile is last, under its own name (Melvin, 2026-11-21: "move profile all the way to the bottom
+            // of the icons list. And instead of it saying profile on Android TV, it should actually say my name").
+            tvExtras?.profile?.let { profile ->
+                NavigationRailItem(
+                    selected = false,
+                    onClick = tvExtras.onOpenProfiles,
+                    icon = { ProfileBadge(profile, size = 32.dp) },
+                    label = {
+                        Text(
+                            profile.name.ifBlank { stringResource(R.string.rail_profile) },
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    },
                 )
             }
         }

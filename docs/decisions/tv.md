@@ -13,7 +13,7 @@
 
 **Dark by default** (Melvin, 2026-11-21: "Is there a way to set the TV app to dark mode by default?"). On a TV, Settings › Appearance › Theme left at "System default" means dark, because TVs such as the Shield report a light system theme that glares in a dark room; the window before the first frame is dark too (`values-television`). Picking Light there still gives light, and phones and tablets still follow the system (`ui/theme/Theme.kt`, `TvBrandTest`).
 
-**No menus on Home** (Melvin, 2026-11-19: "tv needs to be more stream lined and things should be easily accessible. especially on the tv, you have plenty of real estate"). A TV always shows the side rail, and the three-dot menu beside search is gone: Search, Profile and Settings are on the rail under Downloads, and Live TV has a button beside search for the guide grid. See [Large screens](large-screens.md).
+**No menus on Home** (Melvin, 2026-11-19: "tv needs to be more stream lined and things should be easily accessible. especially on the tv, you have plenty of real estate"). A TV always shows the side rail, and the three-dot menu beside search is gone: Search and Settings are on the rail under Downloads, then, with more than one profile, the profile watching, last on the rail under its own name and picture rather than "Profile" (Melvin, 2026-11-21: "move profile all the way to the bottom of the icons list. And instead of it saying profile on Android TV, it should actually say my name"), and Live TV has a button beside search for the guide grid. See [Large screens](large-screens.md).
 
 **Where focus goes** (Melvin, 2026-11-19: "Optimize TV for remotes", from the UX audit; `ui/common/TvFocus.kt`, paging rule in `core/ListPaging` with tests). On a TV only:
 
