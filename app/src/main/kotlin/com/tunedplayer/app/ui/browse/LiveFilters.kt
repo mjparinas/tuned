@@ -284,7 +284,7 @@ private fun LiveFiltersSheet(
                             label = { Text(stringResource(topicLabel(t))) },
                         )
                     }
-                    AdultChip(vm, quick, set, ring)
+                    AdultChip(vm, quick, set, modifier = ring)
                 }
             }
             val qualities = ChannelQuality.entries.filter { it in offers.qualities || it == quick.quality }
@@ -397,7 +397,7 @@ private fun AdultChip(
     vm: BrowseViewModel,
     quick: LiveQuick,
     set: (LiveQuick) -> Unit,
-    ring: Modifier,
+    modifier: Modifier = Modifier,
 ) {
     val gate by vm.liveAdult.collectAsStateWithLifecycle()
     var pin by remember { mutableStateOf<PinMode?>(null) }
@@ -408,7 +408,7 @@ private fun AdultChip(
 
         AdultGate.Unlocked -> {
             FilterChip(
-                modifier = ring,
+                modifier = modifier,
                 selected = on,
                 onClick = { set(quick.copy(topic = if (on) null else LiveTopic.ADULT)) },
                 label = { Text(stringResource(R.string.live_filter_adult)) },
@@ -417,7 +417,7 @@ private fun AdultChip(
 
         AdultGate.Locked, AdultGate.NoPin -> {
             FilterChip(
-                modifier = ring,
+                modifier = modifier,
                 selected = false,
                 onClick = { pin = if (gate == AdultGate.Locked) PinMode.Unlock else PinMode.Create },
                 label = { Text(stringResource(R.string.live_filter_adult)) },
