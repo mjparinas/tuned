@@ -248,6 +248,9 @@
     <string name="report_share_instead">المشاركة بدلًا من ذلك</string>
     <string name="report_sent">أُرسل إلى Tuned. شكرًا لإخبارنا.</string>
     <string name="report_send_failed">تعذّر الإرسال. تحقّق من الاتصال وحاول مرة أخرى، أو شاركه بدلًا من ذلك.</string>
+    <string name="logs_report_summary">يرسل هذا السجل وتفاصيل هذا الجهاز، مثل طرازه وإصدار Android، إلى Tuned. لا حاجة إلى الكتابة، ولا تُرسَل بيانات تسجيل الدخول.</string>
+    <string name="logs_report_sending">جارٍ إرسال هذا السجل وتفاصيل هذا الجهاز…</string>
+    <string name="logs_report_failed">تعذّر الإرسال. تحقّق من الاتصال، ثم حاول مرة أخرى.</string>
     <string name="settings_header_privacy">الخصوصية</string>
     <string name="settings_usage_stats">إرسال إحصاءات استخدام مجهولة</string>
     <string name="settings_usage_stats_summary">أيّ الشاشات والميزات تُستخدم وهل يعمل التشغيل، ليعرف Tuned ما يجب إصلاحه. لا يُرسَل أبدًا ما تشاهده أو تبحث عنه أو تكتبه.</string>

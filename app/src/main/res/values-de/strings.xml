@@ -240,6 +240,9 @@
     <string name="report_share_instead">Stattdessen teilen</string>
     <string name="report_sent">An Tuned gesendet. Danke für deine Meldung.</string>
     <string name="report_send_failed">Senden fehlgeschlagen. Prüfe die Verbindung und versuche es erneut, oder teile es stattdessen.</string>
+    <string name="logs_report_summary">Sendet dieses Protokoll und Details zu diesem Gerät, etwa Modell und Android-Version, an Tuned. Nichts zu tippen, und Anmeldedaten bleiben außen vor.</string>
+    <string name="logs_report_sending">Protokoll und Gerätedetails werden gesendet…</string>
+    <string name="logs_report_failed">Senden fehlgeschlagen. Prüfe die Verbindung und versuche es dann erneut.</string>
     <string name="settings_header_privacy">Datenschutz</string>
     <string name="settings_usage_stats">Anonyme Nutzungsstatistiken senden</string>
     <string name="settings_usage_stats_summary">Welche Bildschirme und Funktionen genutzt werden und ob die Wiedergabe klappt, damit Tuned weiß, was zu reparieren ist. Nie, was du schaust, suchst oder tippst.</string>

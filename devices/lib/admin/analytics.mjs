@@ -100,20 +100,31 @@ export function cleanBatch(body, now = Date.now()) {
     return { install: body.install, device: pick(INSTALL_FIELDS, body.device), test: body.test === true, events };
 }
 
-/** Problem reports sent from Settings › Report a problem: the person's words and the scrubbed log, length-capped. */
+/**
+ * Problem reports: from Settings › Report a problem (the person's words) or the Report button on Logs (no words, the
+ * device's details instead; Melvin, 2026-11-21), each with the scrubbed log, length-capped.
+ */
 export function cleanReport(body) {
     if (!body || typeof body !== "object") return null;
     const what = text(4_000)(body.what?.trim());
-    if (!what && !body.crash) return null;
+    const details = text(20_000)(body.details?.trim());
+    if (!what && !body.crash && !details) return null;
     return {
         install: ID.test(body.install ?? "") ? body.install : null,
         device: pick(INSTALL_FIELDS, body.device),
         what: what ?? "",
         crash: text(20_000)(body.crash) ?? "",
-        log: text(60_000)(body.log) ?? "",
+        log: text(150_000)(body.log) ?? "",
+        details: details ?? "",
         contact: text(200)(body.contact?.trim()) ?? "",
     };
 }
+
+/** The device's details go at the top of the log column, under a heading the admin splits on, so no new column is needed. */
+export const DETAILS_HEADING = "==== Device ====";
+export const LOG_HEADING = "==== Log ====";
+
+export const storedLog = (report) => (report.details ? `${DETAILS_HEADING}\n${report.details}\n${LOG_HEADING}\n${report.log}` : report.log);
 
 /** Countries come from Vercel's geo header, never from the address. */
 export const countryOf = (request) => {

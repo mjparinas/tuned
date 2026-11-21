@@ -238,6 +238,9 @@
     <string name="report_share_instead">改为分享</string>
     <string name="report_sent">已发送给 Tuned。感谢你的反馈。</string>
     <string name="report_send_failed">发送失败。请检查网络连接后重试，或改为分享。</string>
+    <string name="logs_report_summary">将此日志和此设备的详细信息（如型号和 Android 版本）发送给 Tuned。无需输入，不包含登录信息。</string>
+    <string name="logs_report_sending">正在发送此日志和设备详细信息…</string>
+    <string name="logs_report_failed">无法发送。请检查网络连接，然后重试。</string>
     <string name="settings_header_privacy">隐私</string>
     <string name="settings_usage_stats">发送匿名使用统计</string>
     <string name="settings_usage_stats_summary">哪些页面和功能被使用、播放是否成功，以便 Tuned 知道需要修复什么。绝不包括你观看、搜索或输入的内容。</string>
