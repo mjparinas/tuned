@@ -21,6 +21,7 @@ import android.widget.SeekBar
 import android.widget.TextView
 import androidx.annotation.OptIn
 import androidx.annotation.StringRes
+import androidx.core.view.isVisible
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.ui.PlayerView
@@ -246,8 +247,8 @@ internal class CastingScreen(
 
     /** What the header says the TV is doing, and whether its spinner shows (for tests and screenshots). */
     val statusText: CharSequence get() = status.text
-    val spinning: Boolean get() = spinner.visibility == View.VISIBLE
-    val volumeShown: Boolean get() = volume.visibility == View.VISIBLE
+    val spinning: Boolean get() = spinner.isVisible
+    val volumeShown: Boolean get() = volume.isVisible
 
     /** Whether a TV is picked and the screen is up. */
     var shown = false
