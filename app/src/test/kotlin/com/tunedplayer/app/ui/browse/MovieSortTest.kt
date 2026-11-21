@@ -54,10 +54,8 @@ class MovieSortTest {
             SampleData.seed(db)
             // No Continue watching row, so the grid's first item is a film, as for anyone who hasn't started one.
             db.library().clearHistory()
-            // The app's database outlives a test here, so another test's films (the 50,000 of the speed test) go first.
-            db.openHelper.writableDatabase.execSQL("DELETE FROM items WHERE id > $FIRST_ID")
-            // Five hundred films ahead of the sample's, in the playlist's order Film 500 to Film 001: pages of them.
-            val films = (1..FILMS).map { film(FIRST_ID + it, "Film %03d".format(FILMS + 1 - it), it - FILMS - 1 - AHEAD) }
+            // Fifty thousand films ahead of the sample's, as a big provider has, in the playlist's order Film 50000 to Film 00001.
+            val films = (1..FILMS).map { film(FIRST_ID + it, "Film %05d".format(FILMS + 1 - it), it - FILMS - 1) }
             db.items().insertAll(films)
             // As the screenshots do: Home reads some of its settings from the store as well as its parameter.
             app.container.settings.update { AppSettings(startTab = StartTab.MOVIES) }
@@ -90,19 +88,23 @@ class MovieSortTest {
                 onOpenPlaylists = {},
             )
         }
-        // Whatever else the database holds (another test's films can still be in it), the playlist's first film shows
-        // first, and A to Z puts the first title alphabetically there instead.
+        // The playlist's first film shows first, and A to Z puts the first title alphabetically there instead.
         val first = firstFilm("sortOrder")
         val firstAToZ = firstFilm("sortTitle, sortOrder")
         waitFor(first)
         println("MovieSortTest: first $first, first A to Z $firstAToZ")
         compose.onNode(hasText(app.getString(R.string.sort_chip))).performClick()
+        val started = System.nanoTime()
         compose.onNode(hasText(app.getString(R.string.sort_title))).performClick()
         // The list starts again at the top in the new order. Before, the grid kept the film that was first in view
         // (Compose keeps the first visible item by its key) and scrolled down to wherever it moved, so the screen
         // looked the same and the sort seemed to do nothing.
         waitFor(firstAToZ)
         compose.waitForIdle()
+        val took = (System.nanoTime() - started) / 1_000_000
+        println("MovieSortTest: sorted 50,000 films in $took ms")
+        // Melvin's report had the screen stopped for five seconds as he sorted: a big library sorts well inside that.
+        assertTrue(took < 3_000, "sorting took $took ms")
         assertTrue(shown(firstAToZ), "the new order's first film is on screen")
         assertFalse(shown(first), "the old first film is no longer kept at the top")
     }
@@ -164,11 +166,9 @@ class MovieSortTest {
     )
 
     private companion object {
-        const val FILMS = 500
+        const val FILMS = 50_000
         const val FIRST_ID = 50_000L
         const val MAX_SHOWN = 40
 
-        /** Ahead of any other test's films in the playlist's order, should one share the database. */
-        const val AHEAD = 1_000_000
     }
 }
