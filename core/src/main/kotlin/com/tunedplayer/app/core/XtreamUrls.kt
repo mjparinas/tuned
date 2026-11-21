@@ -71,5 +71,5 @@ object XtreamUrls {
         return out
     }
 
-    private fun enc(value: String): String = URLEncoder.encode(value, Charsets.UTF_8)
+    private fun enc(value: String): String = URLEncoder.encode(value, "UTF-8")
 }

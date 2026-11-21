@@ -40,8 +40,11 @@ interface TitleSortDao {
         listId: Long,
     ): PagingSource<Int, ItemEntity>
 
-    /** [ItemDao.items], highest rated first, titles without a rating last: read down its own index a page at a time ([ItemEntity]). */
-    @Query("SELECT * FROM items i $TITLE_FILTER ORDER BY i.rating DESC, i.sortOrder")
+    /**
+     * [ItemDao.items], highest rated first by the rating the poster shows ([TitleRatingsSql]), titles without one last:
+     * read down its own index a page at a time ([ItemEntity]).
+     */
+    @Query("SELECT * FROM items i $TITLE_FILTER ORDER BY i.topRating DESC, i.sortOrder")
     @Suppress("LongParameterList") // the filters of [ItemDao.items]
     fun itemsByRating(
         kind: Int,

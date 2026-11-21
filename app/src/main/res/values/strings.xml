@@ -412,6 +412,7 @@
     <string name="sort_added">Recently added</string>
     <string name="sort_year">Newest</string>
     <string name="sort_rating">Top rated</string>
+    <string name="sort_rating_progress">Getting ratings: %1$s of %2$s</string>
     <string name="sort_title">A to Z</string>
     <string name="live_filters">Filters</string>
     <string name="live_filters_title">Filter channels</string>

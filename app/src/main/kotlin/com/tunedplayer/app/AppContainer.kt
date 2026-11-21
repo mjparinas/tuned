@@ -32,6 +32,7 @@ import com.tunedplayer.app.data.StalkerLinks
 import com.tunedplayer.app.data.SubtitleRepository
 import com.tunedplayer.app.data.SyncCopyRepository
 import com.tunedplayer.app.data.SyncRepository
+import com.tunedplayer.app.data.TitleRatings
 import com.tunedplayer.app.data.TraktAccount
 import com.tunedplayer.app.data.TuneRepository
 import com.tunedplayer.app.data.TunedAccount
@@ -123,6 +124,7 @@ class AppContainer(
     private fun tmdbReachable() = connectivity.onlineNow() && ServerFlags.now.value.tmdb
 
     val metadata by lazy { MetadataRepository(http, BuildConfig.TMDB_API_KEY, db.metadata(), appScope, ::tmdbReachable) }
+    val titleRatings by lazy { TitleRatings(db, metadata) }
     val savedArtwork by lazy { SavedArtwork(context, db, metadata) }
     val trakt by lazy { TraktAccount(context, http) }
     val people by lazy { PeopleRepository(http, BuildConfig.TMDB_API_KEY, db.metadata(), ::tmdbReachable) }

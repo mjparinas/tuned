@@ -196,7 +196,7 @@ jobs:
         id: robolectric
       # ktlint, detekt and Android Lint fail on any finding (warnings are errors). --continue runs every check and
       # every test even after one fails, so one run shows everything that needs fixing.
-      - run: ./gradlew spotlessCheck detekt :app:lintGithubDebug :core:test :app:testGithubDebugUnitTest --continue
+      - run: ./gradlew spotlessCheck detekt :app:lintGithubDebug :core:test :core:animalsnifferMain :app:testGithubDebugUnitTest --continue
       - name: Print the findings
         if: failure()
         run: cat app/build/reports/lint-results-githubDebug.txt build/reports/detekt/detekt.txt 2>/dev/null || true
@@ -260,7 +260,7 @@ jobs:
       - uses: actions/checkout@v7
       - uses: ./.github/actions/setup-android
       - uses: ./.github/actions/robolectric-cache
-      - run: ./gradlew spotlessCheck detekt :app:lintGithubDebug :core:test :app:testGithubDebugUnitTest --continue
+      - run: ./gradlew spotlessCheck detekt :app:lintGithubDebug :core:test :core:animalsnifferMain :app:testGithubDebugUnitTest --continue
 
   android-cache:
     name: Gradle cache for the Android build

@@ -395,6 +395,7 @@
     <string name="sort_added">Zuletzt hinzugefügt</string>
     <string name="sort_year">Neueste</string>
     <string name="sort_rating">Bestbewertet</string>
+    <string name="sort_rating_progress">Bewertungen werden geladen: %1$s von %2$s</string>
     <string name="sort_title">A bis Z</string>
     <string name="live_filters">Filter</string>
     <string name="live_filters_title">Sender filtern</string>

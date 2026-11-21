@@ -395,6 +395,7 @@
     <string name="sort_added">Son eklenenler</string>
     <string name="sort_year">En yeni</string>
     <string name="sort_rating">En yüksek puanlı</string>
+    <string name="sort_rating_progress">Puanlar alınıyor: %2$s içinden %1$s</string>
     <string name="sort_title">A\'dan Z\'ye</string>
     <string name="live_filters">Filtreler</string>
     <string name="live_filters_title">Kanalları filtrele</string>

@@ -411,6 +411,7 @@
     <string name="sort_added">Adicionados recentemente</string>
     <string name="sort_year">Mais recentes</string>
     <string name="sort_rating">Mais bem avaliados</string>
+    <string name="sort_rating_progress">Obtendo avaliações: %1$s de %2$s</string>
     <string name="sort_title">A–Z</string>
     <string name="live_filters">Filtros</string>
     <string name="live_filters_title">Filtrar canais</string>

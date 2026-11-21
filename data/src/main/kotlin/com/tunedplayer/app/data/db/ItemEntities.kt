@@ -20,7 +20,7 @@ import androidx.room.PrimaryKey
         // the provider's order ([com.tunedplayer.app.core.TitleSort]).
         Index(value = ["kind", "added", "sortOrder"], orders = [Index.Order.ASC, Index.Order.DESC, Index.Order.ASC]),
         Index(value = ["kind", "year", "sortOrder"], orders = [Index.Order.ASC, Index.Order.DESC, Index.Order.ASC]),
-        Index(value = ["kind", "rating", "sortOrder"], orders = [Index.Order.ASC, Index.Order.DESC, Index.Order.ASC]),
+        Index(value = ["kind", "topRating", "sortOrder"], orders = [Index.Order.ASC, Index.Order.DESC, Index.Order.ASC]),
         Index(value = ["kind", "sortTitle", "sortOrder"]),
     ],
 )
@@ -53,6 +53,11 @@ data class ItemEntity(
     val rating: Double? = null,
     /** What A to Z sorts on ([com.tunedplayer.app.core.TitleSort.title]); an episode's is its show's. Empty for live channels. */
     @ColumnInfo(defaultValue = "''") val sortTitle: String = "",
+    /**
+     * What Top rated sorts a film on: the TMDB rating its poster shows, else the provider's [rating] ([TitleRatingsSql]).
+     * Worked out after each refresh and as TMDB answers; a refresh never writes it, so it isn't in [PlaylistWriter]'s columns.
+     */
+    val topRating: Double? = null,
 )
 
 /**

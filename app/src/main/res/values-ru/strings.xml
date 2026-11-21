@@ -427,6 +427,7 @@
     <string name="sort_added">Недавно добавленные</string>
     <string name="sort_year">Новые</string>
     <string name="sort_rating">Лучшие по рейтингу</string>
+    <string name="sort_rating_progress">Загрузка оценок: %1$s из %2$s</string>
     <string name="sort_title">От А до Я</string>
     <string name="live_filters">Фильтры</string>
     <string name="live_filters_title">Фильтр каналов</string>
