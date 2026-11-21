@@ -9,14 +9,23 @@ import java.security.MessageDigest
  * shares its list" so the page works with providers that don't let web pages read them. The page opens a channel in VLC
  * or another player, which connects to the provider itself: only this list goes through Tuned, never a stream.
  *
- * The copy is JSON, kept small: each channel is `[name, group, logo, guide id, number, link]` and each programme
- * `[start, stop, title]` in epoch seconds, by guide id. A link's login is replaced by `{login}`, `{user}` and `{pass}`,
+ * The copy is JSON, kept small: each channel is `[name, group, logo, guide id, number, link, country, adult]` and
+ * each programme `[start, stop, title, kind]` in epoch seconds, by guide id. The country is the app's own tag for the
+ * channel ([Regions], "" when it has none), adult is 1 or 0 and kind is [ProgrammeGenre.code], so the website filters
+ * as Live TV does (Melvin, 2026-11-21: the page is "basically the epg clone of the app"). The last two of each were
+ * added later: a reader takes a shorter row as having none. A link's login is replaced by `{login}`, `{user}` and `{pass}`,
  * which the page fills in from the playlist's login in the account, so the list itself carries no password.
  */
 object ChannelShare {
     /** The guide from an hour ago, so what's on now has its start, to [GUIDE_AFTER_MS] ahead. */
     const val GUIDE_BEFORE_MS = 60 * 60_000L
-    const val GUIDE_AFTER_MS = 12 * 60 * 60_000L
+    const val GUIDE_AFTER_MS = 24 * 60 * 60_000L
+
+    /** A copy too big with [GUIDE_AFTER_MS] of guide is tried again with this much, then with none. */
+    const val GUIDE_SHORT_MS = 12 * 60 * 60_000L
+
+    /** Goes up when the copy gains fields, so an app that updates sends the fuller copy at once. */
+    private const val FORMAT = 2
 
     /** Sent again at least this often, so the website's guide stays ahead of the clock. */
     const val REFRESH_MS = 6 * 60 * 60_000L
@@ -31,6 +40,8 @@ object ChannelShare {
         val epgId: String?,
         val number: Int,
         val url: String,
+        val region: String? = null,
+        val adult: Boolean = false,
     )
 
     data class Show(
@@ -38,6 +49,7 @@ object ChannelShare {
         val start: Long,
         val stop: Long,
         val title: String,
+        val genre: Int = 0,
     )
 
     /**
@@ -90,7 +102,7 @@ object ChannelShare {
         channels: List<Channel>,
     ): String = sha256(
         buildString {
-            append(playlistId)
+            append(FORMAT).append('\n').append(playlistId)
             for (c in channels) {
                 append('\n')
                     .append(c.name)
@@ -98,6 +110,9 @@ object ChannelShare {
                     .append(c.group)
                     .append('\t')
                     .append(c.url)
+                    .append('\t')
+                    .append(c.region.orEmpty())
+                    .append(if (c.adult) "\t1" else "\t0")
             }
         },
     )
@@ -156,13 +171,15 @@ object ChannelShare {
                 .append(c.number.toString())
                 .append(',')
                 .append(str(c.url))
-                .append(']')
+                .append(',')
+                .append(str(c.region.orEmpty()))
+                .append(if (c.adult) ",1]" else ",0]")
         }
         out.append("],\"guide\":{")
     }
 
     /**
-     * One channel's programmes from [now] less an hour to [GUIDE_AFTER_MS] ahead, in start order, each start once.
+     * One channel's programmes from [now] less an hour to [after] ahead, in start order, each start once.
      * [first] for the first entry written. False, writing nothing, when none fall in that window.
      */
     fun guideEntry(
@@ -171,9 +188,10 @@ object ChannelShare {
         id: String,
         shows: List<Show>,
         now: Long,
+        after: Long = GUIDE_AFTER_MS,
     ): Boolean {
         val from = now - GUIDE_BEFORE_MS
-        val to = now + GUIDE_AFTER_MS
+        val to = now + after
         val list = shows.filter { it.stop > from && it.start < to }.sortedBy { it.start }.distinctBy { it.start }
         if (list.isEmpty()) return false
         if (!first) out.append(',')
@@ -186,7 +204,11 @@ object ChannelShare {
                 .append(',')
                 .append((s.stop / MS).toString())
                 .append(',')
-            out.append(str(s.title)).append(']')
+            out
+                .append(str(s.title))
+                .append(',')
+                .append(s.genre.toString())
+                .append(']')
         }
         out.append(']')
         return true
