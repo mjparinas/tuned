@@ -27,6 +27,7 @@ import com.tunedplayer.app.TunedApp
 import com.tunedplayer.app.container
 import com.tunedplayer.app.core.TimeZones
 import com.tunedplayer.app.data.AppSettings
+import com.tunedplayer.app.data.BrowseFilterStore
 import com.tunedplayer.app.data.ThemeMode
 import com.tunedplayer.app.ui.AppNav
 import com.tunedplayer.app.ui.browseScreens
@@ -72,12 +73,10 @@ abstract class Screenshots {
         val engine = FakeImageLoaderEngine.Builder()
         SampleData.art.forEach { (key, image) -> engine.intercept(predicate = { it.toString() == key }, image = image) }
         SingletonImageLoader.setUnsafe(ImageLoader.Builder(app).components { add(engine.build()) }.build())
-        runBlocking(Dispatchers.IO) {
-            SampleData.seed(app.container.db)
-            // The kept browse filters live in a DataStore that `preferencesDataStore` holds once per process, so filters a
-            // shot chose (Live TV's Filters sheet) would still be chosen in the next one and hide every channel.
-            app.container.browseFilters.clear()
-        }
+        runBlocking(Dispatchers.IO) { SampleData.seed(app.container.db) }
+        // Filters chosen on a browse tab are kept on the device (BrowseFilterStore), and its DataStore outlives a test,
+        // so one shot's chosen filters (liveTvFiltersChosen) would empty Live TV in every shot after it.
+        runBlocking { BrowseFilterStore(app).clear() }
     }
 
     /**

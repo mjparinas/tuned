@@ -225,7 +225,7 @@ object SampleData {
         listOf(
             "The National Hour" to "The day's top stories from across the country and around the world.",
             "Morning Live" to "News, weather and traffic to start your day.",
-            "Hockey Night" to "Lakeside at Riverton, live from the Harbour Arena.",
+            "Riverton Hockey Hour" to "Lakeside at Riverton, live from the Harbour Arena.",
             "Planet Wild" to "A season on the tundra with a family of Arctic foxes.",
             "Late Edition" to "Interviews and a look at tomorrow's headlines.",
             "Weekend Kitchen" to "Three dishes from one pantry, in under an hour.",
