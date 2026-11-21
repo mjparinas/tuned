@@ -1,5 +1,6 @@
 plugins {
     alias(libs.plugins.android.application) apply false
+    alias(libs.plugins.android.library) apply false
     alias(libs.plugins.android.test) apply false
     alias(libs.plugins.androidx.baselineprofile) apply false
     alias(libs.plugins.kotlin.jvm) apply false
@@ -33,7 +34,7 @@ detekt {
     allRules = false
     parallel = true
     config.setFrom(files("config/detekt/detekt.yml"))
-    source.setFrom(files("core/src", "app/src", "baselineprofile/src", "smoketest/src", "fakeprovider/src"))
+    source.setFrom(files("core/src", "data/src", "app/src", "baselineprofile/src", "smoketest/src", "fakeprovider/src"))
 }
 
 tasks.withType<io.gitlab.arturbosch.detekt.Detekt>().configureEach {
