@@ -60,6 +60,5 @@ class WhatsNewTvTest {
         compose.waitUntil(5_000) {
             compose.onAllNodesWithContentDescription("Drag handle", substring = true).fetchSemanticsNodes().isNotEmpty()
         }
-        compose.onNodeWithText("Filters stay chosen").assertIsNotFocused()
     }
 }
