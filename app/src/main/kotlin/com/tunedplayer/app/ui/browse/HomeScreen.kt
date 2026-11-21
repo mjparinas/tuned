@@ -306,8 +306,18 @@ fun HomeScreen(
         ) { padding ->
             if (downloads) {
                 // Its own title bar sits under the space Home's Scaffold already left for the status bar.
-                Box(Modifier.padding(padding).consumeWindowInsets(padding).fillMaxSize()) {
-                    DownloadsScreen(onPlay = onPlay, onBack = null)
+                // The channels getting ready (the first download, or a refresh the person started) show above it as
+                // they do on the other tabs (Melvin, 2026-11-21: "I still want to see the fact that the channels are
+                // processing on the downloads page").
+                Column(Modifier.padding(padding).consumeWindowInsets(padding).fillMaxSize()) {
+                    val firstRun = empty == true && refreshing
+                    when {
+                        firstRun && progress != null -> RefreshBar(checkNotNull(progress))
+                        firstRun -> RefreshStarting()
+                        requestedProgress != null -> RefreshBar(checkNotNull(requestedProgress))
+                        requestedPending == true -> RefreshStarting()
+                    }
+                    Box(Modifier.weight(1f).fillMaxWidth()) { DownloadsScreen(onPlay = onPlay, onBack = null) }
                 }
                 return@Scaffold
             }
