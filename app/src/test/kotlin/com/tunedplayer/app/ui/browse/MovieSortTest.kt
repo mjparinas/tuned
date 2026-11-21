@@ -169,6 +169,5 @@ class MovieSortTest {
         const val FILMS = 50_000
         const val FIRST_ID = 50_000L
         const val MAX_SHOWN = 40
-
     }
 }
