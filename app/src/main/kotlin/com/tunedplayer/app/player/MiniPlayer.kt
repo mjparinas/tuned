@@ -46,7 +46,7 @@ object MiniPlayer {
     private val shown = MutableStateFlow<PlayRequest?>(null)
 
     /** What the mini player is playing, or null when there is none. */
-    val showing: StateFlow<PlayRequest?> = shown
+    internal val showing: StateFlow<PlayRequest?> = shown
 
     @Volatile
     private var closer: (() -> Unit)? = null
@@ -78,7 +78,7 @@ object MiniPlayer {
     /** Closes the mini player, which hangs up its stream. False when there was none. */
     fun close(): Boolean {
         val close = closer ?: return false
-        AppLog.i(TAG, "Closing the mini player")
+        AppLog.i(TAG) { "Closing the mini player" }
         attempt(TAG, "Couldn't close the mini player") { close() }
         return true
     }
@@ -116,7 +116,7 @@ object MiniPlayer {
     ) {
         handingOver = true
         try {
-            AppLog.i(TAG, "Something new picked: the mini player hangs up first")
+            AppLog.i(TAG) { "Something new picked: the mini player hangs up first" }
             withContext(Dispatchers.Main.immediate) { close() }
             val hungUp = withTimeoutOrNull(HANG_UP_MS) { playerOpen.first { !it } } != null
             if (!hungUp) AppLog.w(TAG, "The mini player took over ${HANG_UP_MS / 1_000} s to close; the player restarts on the pick")
@@ -209,7 +209,7 @@ object MiniPlayer {
         private fun appOpen(activity: Activity): Boolean {
             val tasks = attempt(TAG, "Couldn't read the app's screens") { activity.getSystemService(ActivityManager::class.java)?.appTasks }
             return tasks.getOrNull().orEmpty().any { task ->
-                val base = attempt(TAG, "Couldn't read a screen") { task.taskInfo.baseActivity?.className }
+                val base = attempt(TAG, "Couldn't read a screen") { task.taskInfo?.baseActivity?.className }
                 base.getOrNull() == MainActivity::class.java.name
             }
         }
