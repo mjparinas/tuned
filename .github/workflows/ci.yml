@@ -285,6 +285,10 @@ jobs:
     if: needs.changes.outputs.mobile == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 40
+    # The Gradle cache entry this job reads, shared with "Gradle cache for the smoke test", which writes it.
+    env: &device-cache
+      GRADLE_BUILD_ACTION_CACHE_KEY_JOB: device
+      GRADLE_BUILD_ACTION_CACHE_KEY_JOB_INSTANCE: ci
     steps:
       - uses: actions/checkout@v7
       - name: Let the emulator use KVM
@@ -311,6 +315,19 @@ jobs:
           name: smoke-test-reports
           path: smoketest/build/outputs/
           retention-days: 7
+
+  # Builds the two APKs the smoke test installs, without an emulator, so its Gradle cache follows staging too.
+  device-cache:
+    name: Gradle cache for the smoke test
+    needs: changes
+    if: needs.changes.outputs.warm == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env: *device-cache
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup-android
+      - run: ./gradlew :app:assembleGithubDebug :smoketest:assembleGithubDebug --no-configuration-cache
 
   # Melvin, 2026-11-17: the decision record "should be updated and kept in sync every time new features are added
   # or removed". A pull request titled feat:, breaking (!), revert or remove must change AGENTS.md or docs/decisions/.
