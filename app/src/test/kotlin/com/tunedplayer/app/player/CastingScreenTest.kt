@@ -2,7 +2,9 @@ package com.tunedplayer.app.player
 
 import android.app.Activity
 import android.view.View
+import android.view.ViewGroup
 import android.widget.FrameLayout
+import android.widget.TextView
 import androidx.annotation.OptIn
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
@@ -73,6 +75,23 @@ class CastingScreenTest {
 
         assertEquals("Playing", screen.statusText.toString())
         assertFalse(screen.spinning)
+    }
+
+    @Test
+    fun theHeadingIsNeverCutToTheStatusWidth() {
+        screen.update(look(TvState(playbackState = Player.STATE_READY, playWhenReady = true)))
+        val spec = View.MeasureSpec.makeMeasureSpec(WIDE_PX, View.MeasureSpec.AT_MOST)
+        screen.header.measure(spec, View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED))
+
+        // A short status ("Playing") once cut "Casting to SHIELD" to "C": the heading gets its whole width.
+        val heading = requireNotNull(texts(screen.header).find { it.text.toString() == "Casting to SHIELD" })
+        assertTrue(heading.measuredWidth >= heading.paint.measureText(heading.text.toString()).toInt())
+    }
+
+    private fun texts(view: View): List<TextView> = when (view) {
+        is TextView -> listOf(view)
+        is ViewGroup -> (0 until view.childCount).flatMap { texts(view.getChildAt(it)) }
+        else -> emptyList()
     }
 
     @Test
@@ -153,5 +172,6 @@ class CastingScreenTest {
 
     private companion object {
         const val REST_MS = 4_000
+        const val WIDE_PX = 2_000
     }
 }

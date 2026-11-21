@@ -149,8 +149,8 @@ internal class CastingScreen(
             val words =
                 LinearLayout(context).apply {
                     orientation = LinearLayout.VERTICAL
-                    // The cast icon as its own view: a TextView's relative compound drawable measured narrow and cut
-                    // the heading to "C" in the screenshots.
+                    // Both rows wrap their content: a vertical LinearLayout's default is match parent, which leaves a
+                    // row out of the column's width and cut the heading to "C" (the column took "Playing"'s width).
                     addView(
                         LinearLayout(context).apply {
                             orientation = LinearLayout.HORIZONTAL
@@ -164,6 +164,7 @@ internal class CastingScreen(
                             )
                             addView(heading)
                         },
+                        LinearLayout.LayoutParams(WRAP, WRAP),
                     )
                     addView(
                         LinearLayout(context).apply {
