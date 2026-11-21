@@ -20,6 +20,15 @@
 - Back while scrolled down goes to the top of the list first, as other TV apps do; the next Back leaves as before. A pane or dialog beside the list still closes first.
 - Focus is only put back within a moment of a page opening, so an item that scrolls into view later never pulls focus away from where the person is.
 
+**Search boxes and the remote** (Melvin, 2026-11-21: on TV search "it asks me to use my keyboard. I don't know how to do that ... there is a speaker icon. When I click right ... I can't access that speaker icon"; `ui/common/RemoteTextInput.kt`, `RemoteTextInputTest`). Every search box (search everything, Live TV's and the other tabs' search, Settings › Countries and languages, and the follow box on Live events) works with a remote alone:
+
+- OK opens the on-screen keyboard every time, from the D-pad's centre, Enter or a game pad's A (the Shield controller). Compose on its own only answered the centre key from a physical D-pad.
+- The box's buttons (the mic, Clear, Add) sit beside the box on a TV rather than inside it, because the remote can only move to something outside the box: Right from the box lands on them. The mic stays while there is text, so focus is never lost when voice fills the box.
+- The mic starts Android's own voice search (the same recogniser the remote's mic uses), and the words fill the box.
+- The box and each button show the accent ring while the remote is on them. Left and Right move between them rather than a cursor no one can see; the keyboard has its own arrows.
+
+The "use the keyboard on your mobile device" line is Android's own keyboard offering the phone's Google TV app as a keyboard, not Tuned's; the on-screen keyboard still opens on OK. Phones and tablets are unchanged.
+
 **Live TV uses the big screen** (Melvin, 2026-11-19: "use the big screen", from the UX audit). On a TV the channel list has the room to itself: the groups (Live events, Filters, All, Favourites, your lists, Recent and the provider's groups) run down a column on the left instead of a row across the top, so reaching a group is a few presses down rather than dozens sideways, and right goes into the channels. Beside the channels, the details of the one under the remote's focus: its logo, number and name, what's on now with the time and how far through it is, and what's next, each with its description from the guide (`ui/browse/ChannelInfo.kt`). The details are words and pictures from the guide on the device, never a preview of the channel, so there is still one stream connection ([scope](scope.md)); they take no focus, so the arrows stay in the list. They make room for the list on a TV too narrow for all three (a film or guide pane open beside the list, say). The guide grid and the phone and tablet layouts keep the row of chips.
 
 Beyond Live TV, a dedicated TV layout can come later if the phone layout proves awkward from the sofa.

@@ -27,13 +27,11 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
-import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.DownloadForOffline
 import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.Favorite
@@ -108,10 +106,13 @@ import com.tunedplayer.app.data.SyncProgress
 import com.tunedplayer.app.data.db.ChannelWithNow
 import com.tunedplayer.app.data.db.ProfileEntity
 import com.tunedplayer.app.diagnostics.DeviceClock
+import com.tunedplayer.app.ui.common.SearchBoxButtonsBeside
+import com.tunedplayer.app.ui.common.SearchBoxShape
 import com.tunedplayer.app.ui.common.UpdateBanner
-import com.tunedplayer.app.ui.common.VoiceSearchButton
 import com.tunedplayer.app.ui.common.focusRing
 import com.tunedplayer.app.ui.common.isTelevision
+import com.tunedplayer.app.ui.common.remoteTextInput
+import com.tunedplayer.app.ui.common.searchBoxTrailing
 import com.tunedplayer.app.ui.common.windowWidthDp
 import com.tunedplayer.app.ui.offline.DownloadsScreen
 import com.tunedplayer.app.ui.offline.DownloadsViewModel
@@ -449,26 +450,19 @@ private fun SearchBarRow(
                         Icon(Icons.Filled.Search, contentDescription = null)
                     }
                 },
-                trailingIcon = {
-                    if (text.isNotEmpty()) {
-                        IconButton(onClick = { onChange("") }) {
-                            Icon(Icons.Filled.Close, contentDescription = stringResource(R.string.search_clear))
-                        }
-                    } else {
-                        VoiceSearchButton(onResult = onChange)
-                    }
-                },
+                trailingIcon = searchBoxTrailing(text, onChange),
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
                 keyboardActions = KeyboardActions(onSearch = { onOpenSearch?.invoke() }),
-                shape = RoundedCornerShape(28.dp),
+                shape = SearchBoxShape,
                 colors =
                     TextFieldDefaults.colors(
                         focusedIndicatorColor = Color.Transparent,
                         unfocusedIndicatorColor = Color.Transparent,
                     ),
-                modifier = Modifier.weight(1f).heightIn(min = 52.dp),
+                modifier = Modifier.remoteTextInput(SearchBoxShape).weight(1f).heightIn(min = 52.dp),
             )
+            SearchBoxButtonsBeside(text, onChange)
             // Each button does one thing, in one press: the guide grid on Live TV, and the profile badge opening Who's
             // watching. Settings is in the bottom bar on phones and on the rail elsewhere.
             if (grid != null) GridToggleButton(grid, onToggleGrid)

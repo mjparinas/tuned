@@ -16,10 +16,8 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Radar
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
@@ -61,10 +59,13 @@ import com.tunedplayer.app.diagnostics.attempt
 import com.tunedplayer.app.ui.browse.FavouriteButton
 import com.tunedplayer.app.ui.browse.Logo
 import com.tunedplayer.app.ui.browse.rememberShowArt
+import com.tunedplayer.app.ui.common.SearchBoxButtonsBeside
+import com.tunedplayer.app.ui.common.SearchBoxShape
 import com.tunedplayer.app.ui.common.TimeLabels
-import com.tunedplayer.app.ui.common.VoiceSearchButton
 import com.tunedplayer.app.ui.common.focusRing
 import com.tunedplayer.app.ui.common.rememberTimeLabels
+import com.tunedplayer.app.ui.common.remoteTextInput
+import com.tunedplayer.app.ui.common.searchBoxTrailing
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.async
@@ -172,24 +173,22 @@ fun SearchScreen(
                         value = text,
                         onValueChange = { vm.query.value = it },
                         placeholder = { Text(stringResource(R.string.search_everything)) },
-                        trailingIcon = {
-                            if (text.isNotEmpty()) {
-                                IconButton(onClick = { vm.query.value = "" }) {
-                                    Icon(Icons.Filled.Close, contentDescription = stringResource(R.string.search_clear))
-                                }
-                            } else {
-                                VoiceSearchButton { vm.query.value = it }
-                            }
-                        },
+                        trailingIcon = searchBoxTrailing(text, { vm.query.value = it }),
                         singleLine = true,
-                        shape = RoundedCornerShape(28.dp),
+                        shape = SearchBoxShape,
                         colors =
                             TextFieldDefaults.colors(
                                 focusedIndicatorColor = Color.Transparent,
                                 unfocusedIndicatorColor = Color.Transparent,
                             ),
-                        modifier = Modifier.weight(1f).heightIn(min = 52.dp).focusRequester(focus),
+                        modifier =
+                            Modifier
+                                .remoteTextInput(SearchBoxShape)
+                                .weight(1f)
+                                .heightIn(min = 52.dp)
+                                .focusRequester(focus),
                     )
+                    SearchBoxButtonsBeside(text, { vm.query.value = it })
                 }
             }
         },
