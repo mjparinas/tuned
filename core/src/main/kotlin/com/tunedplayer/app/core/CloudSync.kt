@@ -36,6 +36,26 @@ object CloudSync {
         }
     }
 
+    /**
+     * The backup's version from the server's answer: its own `X-Backup-Version` header first, then the ETag. Vercel
+     * compresses the answer and so turns the ETag `"5"` into the weak `W/"5"`; read as a plain number that was null, so
+     * every save went on top of version 0 and was turned down as a conflict, run after run (2026-11-21). Null when
+     * neither header holds a version.
+     */
+    fun backupVersion(
+        header: String?,
+        etag: String?,
+    ): Int? = sequenceOf(header, etag).firstNotNullOfOrNull { value ->
+        value
+            ?.trim()
+            ?.removePrefix("W/")
+            ?.trim('"')
+            ?.takeIf { it.length in 1..MAX_VERSION_DIGITS && it.all(Char::isDigit) }
+            ?.toInt()
+    }
+
+    private const val MAX_VERSION_DIGITS = 9
+
     /** A fingerprint of the synced copy (SHA-256), stored with the backup to tell whether it changed. */
     fun fingerprint(plain: ByteArray): String = MessageDigest.getInstance("SHA-256").digest(plain).joinToString("") { "%02x".format(it) }
 }

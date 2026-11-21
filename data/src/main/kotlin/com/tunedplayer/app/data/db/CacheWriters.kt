@@ -205,9 +205,11 @@ class PlaylistWriter(
 
     /** Changes only the streams that differ, a chunk per transaction. */
     private suspend fun apply(onApply: (applied: Long, total: Long) -> Unit) {
-        // Which streams differ, worked out once, inside SQLite.
-        sql.execSQL("DROP TABLE IF EXISTS temp.$CHANGED")
-        sql.execSQL("CREATE TEMP TABLE $CHANGED (seq INTEGER PRIMARY KEY, id INTEGER NOT NULL)")
+        // Which streams differ, worked out once, inside SQLite. A real table, not a TEMP one: a temp table lives on one
+        // connection, and outside a transaction the count below is read on another of Room's connections, where it
+        // didn't exist ("no such table: items_changed", every refresh of a cached playlist failed, 2026-11-21).
+        sql.execSQL("DROP TABLE IF EXISTS $CHANGED")
+        sql.execSQL("CREATE TABLE $CHANGED (seq INTEGER PRIMARY KEY, id INTEGER NOT NULL)")
         val inScope = scope?.let { " AND ($it)" }.orEmpty()
         sql.execSQL("INSERT INTO $CHANGED (id) SELECT id FROM items WHERE id NOT IN (SELECT id FROM $NEXT)$inScope")
         sql.execSQL("INSERT INTO $CHANGED (id) SELECT n.id FROM $NEXT n JOIN items i ON i.id = n.id WHERE NOT ($SAME)")
@@ -215,7 +217,7 @@ class PlaylistWriter(
         val total = sql.query("SELECT COUNT(*) FROM $CHANGED").use { if (it.moveToFirst()) it.getLong(0) else 0L }
         // Most of it changed (a reordered or replaced playlist): building the table again beats changing each row.
         if (total >= REBUILD_MIN && total * 2 >= seen.size) {
-            sql.execSQL("DROP TABLE IF EXISTS temp.$CHANGED")
+            sql.execSQL("DROP TABLE IF EXISTS $CHANGED")
             return rebuild(onApply)
         }
         if (total > 0) onApply(0, total)
@@ -230,7 +232,7 @@ class PlaylistWriter(
             from = to + 1
             onApply(minOf(to, total), total)
         }
-        sql.execSQL("DROP TABLE IF EXISTS temp.$CHANGED")
+        sql.execSQL("DROP TABLE IF EXISTS $CHANGED")
         discard()
     }
 
@@ -272,6 +274,7 @@ class PlaylistWriter(
     /** Throws a half-written playlist away; the cache stays as it was. */
     fun discard() {
         sql.execSQL("DROP TABLE IF EXISTS $NEXT")
+        sql.execSQL("DROP TABLE IF EXISTS $CHANGED")
         GuideSearchIndex.dropNext(sql)
     }
 
