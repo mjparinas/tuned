@@ -12,6 +12,7 @@ import androidx.compose.ui.unit.dp
 import com.tunedplayer.app.R
 import com.tunedplayer.app.data.SyncProgress
 import com.tunedplayer.app.ui.SyncText
+import com.tunedplayer.app.ui.browse.RefreshStarting
 import com.tunedplayer.app.ui.common.UpdateBannerContent
 import com.tunedplayer.app.ui.common.UpdateInstallButton
 import com.tunedplayer.app.ui.common.UpdateText
@@ -41,6 +42,9 @@ class UpdateScreenshots : Screenshots() {
     fun installStepsTv() = part("update-install-steps-tv", "Waiting for you to confirm") { InstallSteps() }
 
     @Test fun settingsRows() = part("settings-busy-rows", "Backing up") { BusyRows() }
+
+    /** Home's bar between asking for a refresh and its first report. */
+    @Test fun refreshStarting() = part("browse-refresh-starting", "Starting the refresh") { Column { RefreshStarting() } }
 }
 
 private val READY = GitHubUpdates.State.Ready("2.5.0", File("tuned.apk"), size = 41_900_000)
