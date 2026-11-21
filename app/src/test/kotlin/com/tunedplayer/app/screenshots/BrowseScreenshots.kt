@@ -127,6 +127,11 @@ class BrowseScreenshots : Screenshots() {
     @Config(qualifiers = TV)
     fun liveTvOnTvLight() = shot("browse-live-tv-tv-light", HomeRoute, wait = "Maple News 24", settings = LIGHT)
 
+    /** The guide grid on Melvin's TV: the channel column is 260 dp wide, so long names show (Melvin, 2026-11-21). */
+    @Test
+    @Config(qualifiers = "w853dp-h480dp-land-television-xhdpi")
+    fun guideGridOnTv() = shot("browse-guide-grid-tv", HomeRoute, wait = "Maple News 24", settings = DARK.copy(liveGrid = true))
+
     /** Melvin's TV (853 by 480 dp) with every rail item: the rail scrolls under the mark rather than cutting Settings off. */
     @Test
     @Config(qualifiers = "w853dp-h480dp-land-television-xhdpi")
