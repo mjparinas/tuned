@@ -42,7 +42,7 @@ class FileServer(
 
     /** Serves [file] and returns its path on this server, such as `/k3x…/42.mp4`. */
     fun share(file: File): String {
-        val path = "/$key/" + URLEncoder.encode(file.name, Charsets.UTF_8).replace("+", "%20")
+        val path = "/$key/" + URLEncoder.encode(file.name, "UTF-8").replace("+", "%20")
         files[path] = file
         return path
     }
@@ -60,7 +60,7 @@ class FileServer(
         name: String,
         source: Made,
     ): String {
-        val folder = "/$key/" + URLEncoder.encode(name, Charsets.UTF_8).replace("+", "%20") + "/"
+        val folder = "/$key/" + URLEncoder.encode(name, "UTF-8").replace("+", "%20") + "/"
         made[folder] = source
         return folder
     }

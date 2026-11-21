@@ -130,5 +130,5 @@ object OpenSubtitles {
 
     const val DEFAULT_LANGUAGE = "en"
 
-    private fun enc(value: String) = URLEncoder.encode(value, Charsets.UTF_8)
+    private fun enc(value: String) = URLEncoder.encode(value, "UTF-8")
 }

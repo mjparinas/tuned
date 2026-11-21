@@ -81,8 +81,8 @@ object ChannelShare {
         password: String,
     ): String = url
         .replace("/{login}/", "/$username/$password/")
-        .replace("{user}", URLEncoder.encode(username, Charsets.UTF_8))
-        .replace("{pass}", URLEncoder.encode(password, Charsets.UTF_8))
+        .replace("{user}", URLEncoder.encode(username, "UTF-8"))
+        .replace("{pass}", URLEncoder.encode(password, "UTF-8"))
 
     /** What changes the channel list (not the guide), so an unchanged list isn't sent again before [REFRESH_MS]. */
     fun fingerprint(
@@ -201,7 +201,7 @@ object ChannelShare {
         new: String,
     ) = if (endsWith(old)) dropLast(old.length) + new else this
 
-    private fun forms(value: String) = setOf(value, URLEncoder.encode(value, Charsets.UTF_8))
+    private fun forms(value: String) = setOf(value, URLEncoder.encode(value, "UTF-8"))
 
     /** A JSON string, with the characters JSON needs escaped. */
     internal fun str(value: String): String = buildString(value.length + 2) {

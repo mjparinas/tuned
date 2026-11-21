@@ -76,7 +76,7 @@ sealed interface PlaylistLink {
             .filter { '=' in it }
             .associate { pair ->
                 val (key, value) = pair.split('=', limit = 2)
-                URLDecoder.decode(key, Charsets.UTF_8).lowercase() to URLDecoder.decode(value, Charsets.UTF_8)
+                URLDecoder.decode(key, "UTF-8").lowercase() to URLDecoder.decode(value, "UTF-8")
             }
     }
 }
