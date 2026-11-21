@@ -25,6 +25,7 @@ import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.AspectRatioFrameLayout
 import androidx.media3.ui.PlayerView
 import com.tunedplayer.app.R
+import com.tunedplayer.app.core.FitScale
 import com.tunedplayer.app.core.RemoteKeys
 import com.tunedplayer.app.data.VideoFit
 import com.tunedplayer.app.data.db.ItemEntity
@@ -105,6 +106,13 @@ class PlayerTools(
             addView(fitButton)
             addView(lockButton)
         }
+
+    init {
+        // Rotation, picture-in-picture or the guide docking beside the video change the screen's shape.
+        playerView.addOnLayoutChangeListener { _, left, top, right, bottom, oldLeft, oldTop, oldRight, oldBottom ->
+            if (right - left != oldRight - oldLeft || bottom - top != oldBottom - oldTop) refreshFitScale()
+        }
+    }
 
     /** Moves the captions earlier or later; placed beside the CC button by the player. */
     val subtitleTimingButton: ImageButton = button(R.drawable.ic_player_subtitle_timing, R.string.subtitle_timing) { pickSubtitleTiming() }
@@ -203,7 +211,29 @@ class PlayerTools(
                 VideoFit.ZOOM -> AspectRatioFrameLayout.RESIZE_MODE_ZOOM
                 VideoFit.STRETCH -> AspectRatioFrameLayout.RESIZE_MODE_FILL
             }
+        refreshFitScale()
         describeFit(fitButton)
+    }
+
+    /**
+     * Zoom and Stretch when the picture is already the screen's shape (16:9 on a TV): Media3's resize mode can't change
+     * anything then, so the surface itself is scaled ([FitScale]). Again when the video's size or the screen changes, and
+     * never in picture-in-picture, whose window is the picture's own shape.
+     */
+    fun refreshFitScale() {
+        val surface = playerView.videoSurfaceView ?: return
+        val size = hooks.player()?.videoSize
+        val videoAspect = if (size == null || size.height == 0) 0f else size.width * size.pixelWidthHeightRatio / size.height
+        val screenAspect = if (playerView.height == 0) 0f else playerView.width.toFloat() / playerView.height
+        val mode =
+            when (fit) {
+                VideoFit.FIT -> FitScale.Mode.FIT
+                VideoFit.ZOOM -> FitScale.Mode.ZOOM
+                VideoFit.STRETCH -> FitScale.Mode.STRETCH
+            }
+        val scale = if (activity.isInPictureInPictureMode) FitScale.NONE else FitScale.of(mode, videoAspect, screenAspect)
+        if (surface.scaleX != scale.x) surface.scaleX = scale.x
+        if (surface.scaleY != scale.y) surface.scaleY = scale.y
     }
 
     /** TalkBack hears what the fit button is set to, since the icon is the same for all three. */
