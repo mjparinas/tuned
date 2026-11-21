@@ -436,6 +436,33 @@ export function vlcLink(url, platform, title = "") {
     return null;
 }
 
+/**
+ * What a click on a channel or a programme does (Melvin, 2026-11-21: "click on a show or a channel on the website should
+ * either open the link up automatically in vlc if the browser supports it or copy the link to the clipboard so i can
+ * paste it into the player of my choice"). The link is always copied, so another player is a paste away; VLC opens
+ * too where it has a link of its own and the person hasn't chosen "Copy the link" instead.
+ */
+export function clickPlan(url, platform, title = "", choice = "vlc") {
+    const vlc = choice === "copy" ? null : vlcLink(url, platform, title);
+    return { vlc, copy: true };
+}
+
+/** The line a click leaves on screen, so it never looks as if nothing happened. */
+export function clickMessage({ name, vlc, copied }) {
+    const who = name || "This channel";
+    if (vlc && copied) return { tone: "ok", text: `Opening ${who} in VLC. The link is copied too, to paste into another player.` };
+    if (vlc) return { tone: "ok", text: `Opening ${who} in VLC.` };
+    if (copied) return { tone: "ok", text: `${who}'s link copied. Paste it into VLC (Media › Open Network Stream) or any player.` };
+    return {
+        tone: "error",
+        text: `This browser didn't allow copying, so ${who}'s playlist file was downloaded instead. Open it in any player.`,
+    };
+}
+
+/** Said a few seconds after VLC's link when the page never lost focus, which usually means VLC isn't installed. */
+export const vlcDidNotOpen = (name) =>
+    `VLC didn't seem to open. Is it installed? ${name || "The channel"}'s link is copied: paste it into any player.`;
+
 /** An M3U playlist of these channels, which any player opens: one channel's file, or the whole list's. */
 export function m3uFor(channels) {
     const clean = (s) =>

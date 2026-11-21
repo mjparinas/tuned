@@ -29,6 +29,9 @@ import {
     platformOf,
     progress,
     vlcLink,
+    clickPlan,
+    clickMessage,
+    vlcDidNotOpen,
     xmlText,
     xmltvTime,
     xtreamChannels,
@@ -188,6 +191,27 @@ test("VLC's own link on Android, iPhone and Mac; none on Windows, where the .m3u
     assert.equal(platformOf("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)", 5), "ios");
     assert.equal(platformOf("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)", 0), "mac");
     assert.equal(platformOf("Mozilla/5.0 (Windows NT 10.0; Win64; x64)"), "windows");
+});
+
+test("a click opens VLC where it has a link, and always copies the link", () => {
+    const url = "http://p.example:8080/live/u/p/1.ts";
+    assert.deepEqual(clickPlan(url, "mac", "CBC"), { vlc: `vlc://${url}`, copy: true });
+    assert.deepEqual(clickPlan(url, "windows", "CBC"), { vlc: null, copy: true });
+    assert.deepEqual(clickPlan(url, "other", "CBC"), { vlc: null, copy: true });
+    assert.deepEqual(clickPlan(url, "android", "CBC", "copy"), { vlc: null, copy: true });
+    assert.equal(clickPlan("not a link", "mac").vlc, null);
+});
+
+test("every click says what it did", () => {
+    assert.deepEqual(clickMessage({ name: "CBC", vlc: "vlc://x", copied: true }), {
+        tone: "ok",
+        text: "Opening CBC in VLC. The link is copied too, to paste into another player.",
+    });
+    assert.equal(clickMessage({ name: "CBC", vlc: "vlc://x", copied: false }).text, "Opening CBC in VLC.");
+    assert.equal(clickMessage({ name: "CBC", vlc: null, copied: true }).text.startsWith("CBC's link copied."), true);
+    assert.equal(clickMessage({ name: "CBC", vlc: null, copied: false }).tone, "error");
+    assert.match(clickMessage({ name: "", vlc: null, copied: true }).text, /^This channel's link copied/);
+    assert.match(vlcDidNotOpen("CBC"), /CBC's link is copied/);
 });
 
 test("a channel's .m3u file opens in any player, and names are safe for files", () => {
