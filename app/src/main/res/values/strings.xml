@@ -337,7 +337,6 @@
     </plurals>
     <string name="update_ready">Tuned %1$s is ready to install</string>
     <string name="update_install">Install</string>
-    <string name="update_failed">The update didn’t install. Tuned will try again next time.</string>
     <!-- Premium (docs/decisions/premium.md) -->
     <string name="premium_title">Tuned Premium</string>
     <string name="premium_lead">Everything you need to watch is free. Premium adds the extras for people who live in Tuned.</string>

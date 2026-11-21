@@ -32,6 +32,10 @@ Melvin, sending screenshots of Horizon Maps' settings: "Is there a way to style 
 - **Contrast.** Each badge colour has a deep shade for light themes and a soft one for dark themes, so the icon stays clear of its tinted circle; the text keeps the theme's own colours. Headers stay headings for screen readers, which read them as written, not spelled out.
 - Horizon Maps is GPL-3.0, so only the look was taken, never its code: copying it would make Tuned, including the paid Play build, GPL too.
 
+## Every button says it did something (Melvin, 2026-11-21)
+
+Melvin, after Install and Back up now: "please give the user feedback that something's happening". A row that starts work shows a small spinner at its end (`RowSpinner`) and says in its summary what is happening, then how it ended, so a tap is never met with nothing: Check for updates (checking, downloading with the size, each install step; [updates](updates.md)), Back up now ([accounts](accounts.md)), Refresh now (the same "Step 2 of 6 · Processing channels" line as the bar above the lists, or "Starting the refresh…" while it waits to start) and Clear watch history ("Watch history cleared"). Rows whose result shows at once (a switch, a choice, resetting caption style) need nothing more. A new row that starts work in the background does the same.
+
 ## How it's built
 
 Each page is its own file in `ui/settings/` (`SettingsPlayback.kt` and so on), listed in the `SettingsPage` enum, and opened with `SettingsPageRoute`. A new setting goes in its page's file; a new page is an enum entry, a branch in `SettingsPageContent` and a file. Rows that open another screen pass its route to `onOpen`. Stored settings are declared once each in `data/SettingFields.kt`.

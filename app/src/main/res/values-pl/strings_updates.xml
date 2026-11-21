@@ -6,4 +6,15 @@
     <string name="update_check_failed">Nie udało się połączyć z GitHubem. Spróbuj za chwilę.</string>
     <string name="update_channel">Aktualizacje</string>
     <string name="update_notification_text">Otwórz Tuned i stuknij Zainstaluj</string>
+    <string name="update_installing">Instalowanie Tuned %1$s</string>
+    <string name="update_busy">Instalowanie…</string>
+    <string name="update_downloading">Pobieranie Tuned %1$s</string>
+    <string name="update_step_download">Pobieranie aktualizacji</string>
+    <string name="update_step_check">Sprawdzanie pobranego pliku</string>
+    <string name="update_step_prepare">Przygotowywanie instalacji</string>
+    <string name="update_step_open">Otwieranie instalatora Androida</string>
+    <string name="update_step_confirm">Czekam na Twoje potwierdzenie</string>
+    <string name="update_problem_download">Nie udało się pobrać aktualizacji. Sprawdź połączenie i spróbuj ponownie.</string>
+    <string name="update_problem_space">Za mało wolnego miejsca na aktualizację. Zwolnij miejsce i spróbuj ponownie.</string>
+    <string name="update_problem_other">Aktualizacja nie została zainstalowana. Spróbuj ponownie.</string>
 </resources>

@@ -310,7 +310,6 @@
     </plurals>
     <string name="update_ready">Tuned %1$s 已可安装</string>
     <string name="update_install">安装</string>
-    <string name="update_failed">更新未能安装。Tuned 下次会再试。</string>
     <string name="premium_title">Tuned Premium</string>
     <string name="premium_lead">观看所需的一切都是免费的。Premium 为常用 Tuned 的人添加额外功能。</string>
     <string name="premium_on">Premium 已开启。感谢你支持 Tuned。</string>

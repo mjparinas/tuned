@@ -23,4 +23,8 @@
     <string name="restore_account_nothing">Ce compte n\'a pas encore de sauvegarde. Ajoutez plutôt une playlist ; une fois sauvegardée, vos autres appareils pourront la restaurer.</string>
     <string name="restore_account_no_playlist">Vos paramètres et profils sont revenus, mais la sauvegarde ne contient aucune playlist que cet appareil peut ouvrir. Les fichiers de playlist restent sur l\'appareil où ils ont été ajoutés. Ajoutez plutôt une playlist.</string>
     <string name="restore_account_offline">Impossible de joindre votre sauvegarde. Vérifiez la connexion et réessayez.</string>
+    <string name="tuned_account_backing_up">Sauvegarde…</string>
+    <string name="tuned_account_backed_up">Sauvegardé à l’instant</string>
+    <string name="tuned_account_backup_failed">Impossible de sauvegarder. Vérifiez votre connexion et réessayez.</string>
+    <string name="tuned_account_backup_paused">Les sauvegardes sont suspendues pour le moment. Réessayez plus tard.</string>
 </resources>
