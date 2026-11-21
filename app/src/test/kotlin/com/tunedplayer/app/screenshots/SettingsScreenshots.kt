@@ -11,8 +11,8 @@ import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.unit.dp
 import com.tunedplayer.app.R
 import com.tunedplayer.app.core.AccountSeats
-import com.tunedplayer.app.data.AppSettings
 import com.tunedplayer.app.data.AppReset
+import com.tunedplayer.app.data.AppSettings
 import com.tunedplayer.app.data.CaptionStyle
 import com.tunedplayer.app.data.LighterMode
 import com.tunedplayer.app.premium.MoreDevicesOffer
