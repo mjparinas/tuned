@@ -28,6 +28,7 @@ import com.tunedplayer.app.R
 import com.tunedplayer.app.container
 import com.tunedplayer.app.core.TvHandoff
 import com.tunedplayer.app.data.CloudSyncRepository
+import com.tunedplayer.app.data.ServerFlags
 import com.tunedplayer.app.data.TunedAccount
 import com.tunedplayer.app.data.TvRelay
 import com.tunedplayer.app.diagnostics.launchSafely
@@ -169,7 +170,39 @@ class TunedAccountViewModel(
 
     fun closeSignIn() = accountSignIn.close()
 
-    fun backUpNow() = CloudSyncWorker.schedule(app)
+    /** How the last Back up now went, shown under the row for a minute; null before a tap. */
+    enum class BackupResult { DONE, FAILED, PAUSED }
+
+    private val backupResultFlow = MutableStateFlow<BackupResult?>(null)
+    val backupResult: StateFlow<BackupResult?> = backupResultFlow.asStateFlow()
+
+    /**
+     * Backs up straight away rather than through WorkManager, which could wait minutes before starting, so the row can
+     * say "Backing up…" and then how it went (Melvin, 2026-11-21: "it doesn't seem like anything is happening"). A
+     * save that met another device's at the same moment joins it and saves again; a failure is logged, said under the
+     * row, and handed to the background run to try again later.
+     */
+    fun backUpNow() {
+        if (sync.status.value.running) return
+        backupResultFlow.value = null
+        viewModelScope.launchSafely(TAG, onError = { backupResultFlow.value = BackupResult.FAILED }) {
+            if (!ServerFlags.now.value.accountBackup) {
+                backupResultFlow.value = BackupResult.PAUSED
+                return@launchSafely
+            }
+            val saved = withContext(Dispatchers.IO) { sync.run() || sync.run() }
+            backupResultFlow.value = if (saved) BackupResult.DONE else BackupResult.FAILED
+            val container = app.container
+            if (saved) {
+                // The website's channel list, as the background run does; nobody waits on it.
+                container.appScope.launchSafely(TAG) { container.sharedChannels.run() }
+            } else {
+                CloudSyncWorker.schedule(app)
+            }
+            delay(RESULT_SHOWN_MS)
+            backupResultFlow.value = null
+        }
+    }
 
     fun signOut() {
         viewModelScope.launchSafely(TAG) { sync.stop() }
@@ -177,6 +210,7 @@ class TunedAccountViewModel(
 
     private companion object {
         const val TAG = "TunedAccountSettings"
+        const val RESULT_SHOWN_MS = 60_000L
     }
 }
 
@@ -190,6 +224,7 @@ fun TunedAccountRows(vm: TunedAccountViewModel = viewModel()) {
     val email by vm.email.collectAsStateWithLifecycle()
     val status by vm.status.collectAsStateWithLifecycle()
     val signIn by vm.signIn.collectAsStateWithLifecycle()
+    val backupResult by vm.backupResult.collectAsStateWithLifecycle()
     SectionHeader(stringResource(R.string.tuned_account))
     when {
         !signedIn && !premiumUnlocked() -> {
@@ -205,7 +240,12 @@ fun TunedAccountRows(vm: TunedAccountViewModel = viewModel()) {
         }
 
         else -> {
-            SettingRow(stringResource(R.string.tuned_account_backup_now), statusText(status), onClick = vm::backUpNow)
+            SettingRow(
+                stringResource(R.string.tuned_account_backup_now),
+                backupText(status, backupResult),
+                onClick = vm::backUpNow,
+                trailing = if (status.running) ({ RowSpinner() }) else null,
+            )
             SettingRow(
                 stringResource(R.string.tuned_account_sign_out),
                 listOfNotNull(
@@ -219,6 +259,19 @@ fun TunedAccountRows(vm: TunedAccountViewModel = viewModel()) {
     signIn?.let {
         AccountSignInDialog(it, stringResource(R.string.tuned_account_sign_in), onRetry = vm::startSignIn, onClose = vm::closeSignIn)
     }
+}
+
+/** "Backing up…" while it runs, then how Back up now went, then when it last backed up. */
+@Composable
+private fun backupText(
+    status: CloudSyncRepository.Status,
+    result: TunedAccountViewModel.BackupResult?,
+): String = when {
+    status.running -> stringResource(R.string.tuned_account_backing_up)
+    result == TunedAccountViewModel.BackupResult.DONE -> stringResource(R.string.tuned_account_backed_up)
+    result == TunedAccountViewModel.BackupResult.FAILED -> stringResource(R.string.tuned_account_backup_failed)
+    result == TunedAccountViewModel.BackupResult.PAUSED -> stringResource(R.string.tuned_account_backup_paused)
+    else -> statusText(status)
 }
 
 @Composable

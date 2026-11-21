@@ -23,4 +23,8 @@
     <string name="restore_account_nothing">Esta cuenta aún no tiene copia de seguridad. Añade una lista; cuando tenga copia, tus otros dispositivos podrán restaurarla.</string>
     <string name="restore_account_no_playlist">Tus ajustes y perfiles se recuperaron, pero la copia no tiene ninguna lista que este dispositivo pueda abrir. Los archivos de lista se quedan en el dispositivo donde se añadieron. Añade una lista.</string>
     <string name="restore_account_offline">No se pudo conectar con tu copia de seguridad. Revisa la conexión y vuelve a intentarlo.</string>
+    <string name="tuned_account_backing_up">Haciendo copia de seguridad…</string>
+    <string name="tuned_account_backed_up">Copia de seguridad hecha ahora mismo</string>
+    <string name="tuned_account_backup_failed">No se pudo hacer la copia de seguridad. Comprueba tu conexión e inténtalo de nuevo.</string>
+    <string name="tuned_account_backup_paused">Las copias de seguridad están en pausa por ahora. Inténtalo más tarde.</string>
 </resources>

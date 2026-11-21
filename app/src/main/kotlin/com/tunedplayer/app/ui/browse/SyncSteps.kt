@@ -171,6 +171,20 @@ internal fun SyncProgressBar(
     }
 }
 
+/** The same place as [RefreshBar], between the tap and the refresh's first report: a moving bar and "Starting the refresh…". */
+@Composable
+internal fun RefreshStarting() {
+    Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp)) {
+        Text(
+            stringResource(R.string.settings_refresh_starting),
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Spacer(Modifier.height(4.dp))
+        SyncProgressBar(null, Modifier.fillMaxWidth())
+    }
+}
+
 /**
  * A thin bar and one line above the lists while a refresh the person started runs, so a slow server is never a
  * mystery: "Step 2 of 6 · Processing channels · 45% · 12,345 items".

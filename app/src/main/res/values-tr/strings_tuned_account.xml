@@ -23,4 +23,8 @@
     <string name="restore_account_nothing">Bu hesabın henüz yedeği yok. Bunun yerine bir liste ekle; yedeklendiğinde diğer cihazların onu geri yükleyebilir.</string>
     <string name="restore_account_no_playlist">Ayarların ve profillerin geri geldi ama yedekte bu cihazın açabileceği bir liste yok. Liste dosyaları eklendikleri cihazda kalır. Bunun yerine bir liste ekle.</string>
     <string name="restore_account_offline">Yedeğine ulaşılamadı. Bağlantıyı kontrol edip tekrar dene.</string>
+    <string name="tuned_account_backing_up">Yedekleniyor…</string>
+    <string name="tuned_account_backed_up">Az önce yedeklendi</string>
+    <string name="tuned_account_backup_failed">Yedeklenemedi. Bağlantınızı kontrol edip tekrar deneyin.</string>
+    <string name="tuned_account_backup_paused">Yedeklemeler şimdilik duraklatıldı. Daha sonra tekrar deneyin.</string>
 </resources>

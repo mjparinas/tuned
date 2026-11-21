@@ -6,4 +6,15 @@
     <string name="update_check_failed">تعذّر الوصول إلى GitHub. حاول مرة أخرى بعد قليل.</string>
     <string name="update_channel">التحديثات</string>
     <string name="update_notification_text">افتح Tuned وانقر «تثبيت»</string>
+    <string name="update_installing">جارٍ تثبيت Tuned %1$s</string>
+    <string name="update_busy">جارٍ التثبيت…</string>
+    <string name="update_downloading">جارٍ تنزيل Tuned %1$s</string>
+    <string name="update_step_download">جارٍ تنزيل التحديث</string>
+    <string name="update_step_check">جارٍ التحقق من التنزيل</string>
+    <string name="update_step_prepare">جارٍ التحضير للتثبيت</string>
+    <string name="update_step_open">جارٍ فتح مثبّت Android</string>
+    <string name="update_step_confirm">في انتظار تأكيدك</string>
+    <string name="update_problem_download">تعذّر تنزيل التحديث. تحقق من اتصالك وحاول مرة أخرى.</string>
+    <string name="update_problem_space">لا توجد مساحة كافية للتحديث. أفرغ بعض المساحة وحاول مرة أخرى.</string>
+    <string name="update_problem_other">لم يُثبَّت التحديث. حاول مرة أخرى.</string>
 </resources>

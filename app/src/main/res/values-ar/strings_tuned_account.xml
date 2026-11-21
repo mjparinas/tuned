@@ -23,4 +23,8 @@
     <string name="restore_account_nothing">لا توجد نسخة احتياطية في هذا الحساب بعد. أضف قائمة تشغيل بدلًا من ذلك؛ وبعد نسخها احتياطيًا يمكن لأجهزتك الأخرى استعادتها.</string>
     <string name="restore_account_no_playlist">عادت إعداداتك وملفاتك الشخصية، لكن النسخة الاحتياطية لا تحوي قائمة تشغيل يمكن لهذا الجهاز فتحها. ملفات قوائم التشغيل تبقى على الجهاز الذي أُضيفت عليه. أضف قائمة تشغيل بدلًا من ذلك.</string>
     <string name="restore_account_offline">تعذّر الوصول إلى نسختك الاحتياطية. تحقّق من الاتصال وحاول مرة أخرى.</string>
+    <string name="tuned_account_backing_up">جارٍ النسخ الاحتياطي…</string>
+    <string name="tuned_account_backed_up">تم النسخ الاحتياطي للتو</string>
+    <string name="tuned_account_backup_failed">تعذّر النسخ الاحتياطي. تحقق من اتصالك وحاول مرة أخرى.</string>
+    <string name="tuned_account_backup_paused">النسخ الاحتياطي متوقف مؤقتًا. حاول لاحقًا.</string>
 </resources>
