@@ -270,14 +270,14 @@ internal class CastingScreen(
             FrameLayout
                 .LayoutParams(WRAP, WRAP, Gravity.CENTER)
                 .apply {
-                    bottomMargin = dp(HEADER_RAISE_DP * 2)
+                    bottomMargin = dp(HEADER_RAISE_DP)
                     marginStart = dp(SIDE_DP)
                     marginEnd = dp(SIDE_DP)
                 },
         )
         root.addView(
             actions,
-            FrameLayout.LayoutParams(WRAP, WRAP, Gravity.CENTER).apply { topMargin = dp(ACTIONS_DROP_DP * 2) },
+            FrameLayout.LayoutParams(WRAP, WRAP, Gravity.CENTER).apply { topMargin = dp(ACTIONS_DROP_DP) },
         )
         render()
     }
