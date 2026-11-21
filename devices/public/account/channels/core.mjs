@@ -482,6 +482,43 @@ export function fillLogin(link, login) {
         .replaceAll("{pass}", enc(pass));
 }
 
+const BACK_UP =
+    "Open this playlist in the latest Tuned app, signed in to this account, then tap Settings › Playlists and account › Back up now. Its channels show up here a minute later.";
+
+/**
+ * What the page says when the account holds no channel list for a playlist (Melvin, 2026-11-21: "if not, it should
+ * tell me in the UI"): a title, why, and what to do, for each reason the copy isn't there: "none" (the app never saved
+ * one), "empty" (it saved no channels this page can show), "too many" (the hourly limit) or "error" (our server).
+ */
+export function noCopyText(missing) {
+    switch (missing) {
+        case "empty":
+            return {
+                title: "No channels in this playlist's backup",
+                why: "Your Tuned app saved this playlist, but with no live channels this page can show.",
+                fix: `Refresh the playlist in Tuned first. ${BACK_UP}`,
+            };
+        case "too many":
+            return {
+                title: "Your backed-up channels couldn't be fetched just now",
+                why: "Too many playlists were opened this hour.",
+                fix: "Try again later.",
+            };
+        case "error":
+            return {
+                title: "Your backed-up channels couldn't be read",
+                why: "Tuned's server didn't answer this time.",
+                fix: "Reload the page in a moment.",
+            };
+        default:
+            return {
+                title: "No channels backed up for this playlist yet",
+                why: "Your Tuned app saves the channels and guide of the playlist it's playing to your account when it backs up, about once an hour, and it hasn't saved this one yet. Only the playlist in use on a device is saved.",
+                fix: BACK_UP,
+            };
+    }
+}
+
 /**
  * The app's copy (core ChannelShare's JSON) as the page's channels and guide: `{ channels, guide, savedAt }`, the
  * channels whose links need a login the page doesn't have left out. Null when it isn't a copy.

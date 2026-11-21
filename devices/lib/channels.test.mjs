@@ -16,6 +16,7 @@ import {
     fileName,
     fillLogin,
     fromAppCopy,
+    noCopyText,
     filterChannels,
     gridPlace,
     gridSlots,
@@ -359,4 +360,15 @@ test("the guide spans from just before now to its last programme, at most a day 
         Date.UTC(2026, 10, 21, 19, 0),
         Date.UTC(2026, 10, 21, 19, 30),
     ]);
+});
+
+test("a playlist with no channels in the account says so, why, and what to do", () => {
+    const none = noCopyText("none");
+    assert.equal(none.title, "No channels backed up for this playlist yet");
+    assert.match(none.fix, /Back up now/);
+    assert.match(noCopyText(undefined).title, /No channels backed up/);
+    assert.match(noCopyText("empty").fix, /Refresh the playlist/);
+    // Our own server failing isn't "not backed up".
+    assert.doesNotMatch(noCopyText("error").title, /backed up for/);
+    assert.equal(noCopyText("too many").fix, "Try again later.");
 });

@@ -137,6 +137,11 @@ function serve(port, { signedIn }) {
                 res.writeHead(200, { "Content-Type": "application/xml" });
                 return res.end(sampleGuide());
             }
+            if (path === "/api/account/channels" && signedIn) {
+                // No copy from the app yet: the page says so and reads the made-up provider instead.
+                res.writeHead(404, { "Content-Type": "application/json" });
+                return res.end(JSON.stringify({ status: "none" }));
+            }
             if (path.startsWith("/api/")) {
                 res.writeHead(200, { "Content-Type": "application/json" });
                 return res.end(JSON.stringify({ status: "signed out" }));

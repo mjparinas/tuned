@@ -15,6 +15,7 @@ import {
     applyFilters,
     fileName,
     fromAppCopy,
+    noCopyText,
     GENRES,
     genreOf,
     groupsOf,
@@ -776,45 +777,75 @@ async function open(p) {
                 ? xtreamPlaylistUrl(parseServer(login.server)?.base ?? login.server, login.username, login.password)
                 : login.link;
     drawWhole();
-    const fromApp = copy ? fromAppCopy(copy.body, hasLogin ? login : null) : null;
+    const fromApp = copy.body ? fromAppCopy(copy.body, hasLogin ? login : null) : null;
     // The app's copy, however old: the provider's own list usually can't be read from an https page.
     if (fromApp?.channels.length) return showAppCopy(fromApp, copy.by);
+    // No copy in the account: say so plainly, and why, rather than leaving an empty page (Melvin, 2026-11-21: "if not,
+    // it should tell me in the UI").
+    const missing = noCopyText(copy.missing ?? (copy.body ? "empty" : "none"));
     if (!hasLogin) {
         const why = {
             "signed out": "You're signed out. Sign in again on your account page.",
             "too many": "Too many playlists opened this hour. Try again later.",
-            "app only": "Open this playlist in the Tuned app once, signed in to your account, and its channels show up here.",
         };
-        tell("status", why[login.status] ?? "This playlist couldn't be opened. Reload the page and try again.");
+        if (why[login.status]) tell("status", why[login.status]);
+        else
+            showNoCopy(
+                missing,
+                login.status === "app only" ? "" : "This playlist's login couldn't be read, so the page can't ask your provider either.",
+            );
         return;
     }
-    tell("status", "Your Tuned app hasn't saved this playlist's channels yet. Asking your provider…", "ok");
+    tell("status", `${missing.title}. Asking your provider instead…`, "ok");
     const read = login.kind === "xtream" ? await readXtream(login) : await readLink(login);
     if (id !== state.loadId || read.error === "stopped") return;
     if (read.error) {
         tell("status", "");
-        $("blocked-why").textContent =
-            read.error === "empty" ? "Your provider's playlist came back empty." : (reasons[read.error] ?? reasons.unreachable);
-        $("blocked").hidden = false;
+        showNoCopy(
+            missing,
+            `Asking your provider instead didn't work: ${
+                read.error === "empty" ? "its playlist came back empty." : lowerFirst(reasons[read.error] ?? reasons.unreachable)
+            }`,
+        );
         return;
     }
     tell("source", "Straight from your provider.", "ok");
+    showNoCopy(missing, "Meanwhile, the channels above come straight from your provider, which this browser could read.");
     show(read.channels, new Map());
     loadGuide(read.guides, id);
 }
 
-/** The copy the Tuned app keeps in the account (docs/decisions/web.md › The app's copy), or null when there's none. */
+/**
+ * The copy the Tuned app keeps in the account (docs/decisions/web.md › The app's copy) as `{ body, by }`, or
+ * `{ missing }` saying why there's none: "none" (the app never saved one), "too many", or "error".
+ */
 async function appCopy(playlistId) {
     try {
         const res = await fetch(`/api/account/channels?playlist=${encodeURIComponent(playlistId)}`, {
             cache: "no-store",
             credentials: "same-origin",
         });
-        if (!res.ok) return null;
+        if (!res.ok) {
+            const status = (await res.json().catch(() => null))?.status;
+            return { missing: res.status === 404 && status === "none" ? "none" : status === "too many" ? "too many" : "error" };
+        }
         return { body: await res.json(), by: decodeURIComponent(res.headers.get("x-saved-by") ?? "") };
     } catch {
-        return null;
+        return { missing: "error" };
     }
+}
+
+/** The card that says this playlist has no channels in the account yet, why, and what to do. */
+function showNoCopy(missing, extra) {
+    $("blocked-title").textContent = missing.title;
+    $("blocked-why").textContent = missing.why;
+    $("blocked-fix").textContent = missing.fix;
+    $("blocked-extra").textContent = extra ?? "";
+    $("blocked").hidden = false;
+}
+
+function lowerFirst(text) {
+    return text ? text[0].toLowerCase() + text.slice(1) : text;
 }
 
 function showAppCopy(copy, by) {

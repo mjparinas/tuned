@@ -34,11 +34,12 @@ class CloudSyncWorker(
         val sync = applicationContext.container.cloudSync
         // The admin's `account_backup` switch pauses the hourly run too.
         if (!ServerFlags.now.value.accountBackup) return@logFailures Result.success()
-        if (!sync.run()) return@logFailures Result.retry()
+        val saved = sync.run()
         // Every signed-in app keeps its channel list in the account (Melvin, 2026-11-20), for the website's Channels and guide
-        // page and for a new or reset device whose provider download fails.
+        // page and for a new or reset device whose provider download fails. It doesn't wait on the backup: a backup that
+        // kept failing once held the list back too, and the website showed no channels (2026-11-21).
         attempt(TAG, "Couldn't save the channel list to the account") { applicationContext.container.sharedChannels.run() }
-        Result.success()
+        if (saved) Result.success() else Result.retry()
     }
 
     companion object {
