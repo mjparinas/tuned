@@ -93,6 +93,11 @@ internal fun PlaybackPage(
         vm.update { it.copy(pictureInPicture = on) }
     }
     SwitchRow(
+        stringResource(R.string.settings_mini_player),
+        settings.miniPlayer,
+        stringResource(R.string.settings_mini_player_summary),
+    ) { on -> vm.update { it.copy(miniPlayer = on) } }
+    SwitchRow(
         stringResource(R.string.settings_background_play),
         settings.backgroundPlay,
         stringResource(R.string.settings_background_play_summary),

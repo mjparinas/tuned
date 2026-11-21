@@ -27,6 +27,7 @@ import com.tunedplayer.app.core.TvHandoff
 import com.tunedplayer.app.data.AppSettings
 import com.tunedplayer.app.data.CastMember
 import com.tunedplayer.app.diagnostics.launchSafely
+import com.tunedplayer.app.player.MiniPlayer
 import com.tunedplayer.app.player.PlayerActivity
 import com.tunedplayer.app.ui.common.LocalTimeZone
 import com.tunedplayer.app.ui.common.TvSafeArea
@@ -84,6 +85,8 @@ class MainActivity : ComponentActivity() {
             }
         }
 
+        // With live TV in the mini player, Back on the first screen closes it before leaving the app (a TV remote's way).
+        MiniPlayer.closeOnBack(this)
         setContent {
             val s by settings.collectAsStateWithLifecycle()
             val current = s ?: return@setContent
