@@ -43,11 +43,11 @@ class TvBackdropBleedTest {
         }
         compose.waitForIdle()
         val bitmap = compose.onRoot().captureToImage().asAndroidBitmap()
-        // mdpi: 1 dp is 1 px. The top margin is 27 dp and the sides 48 dp; the glow is strongest at the top centre.
+        // mdpi: 1 dp is 1 px. The top margin is 27 dp and the sides 24 dp; the glow is strongest at the top centre.
         val midX = bitmap.width / 2
         val midY = bitmap.height / 2
         assertClose(bitmap, midX, 2, midX, 30, "$mode top")
-        assertClose(bitmap, 2, midY, 50, midY, "$mode side")
+        assertClose(bitmap, 2, midY, 26, midY, "$mode side")
     }
 
     private fun assertClose(

@@ -122,6 +122,17 @@ class BrowseScreenshots : Screenshots() {
     @Config(qualifiers = TV)
     fun liveTvOnTv() = shot("browse-live-tv-tv", HomeRoute, wait = "Maple News 24")
 
+    /** Tuned's mark heads the rail in the upper left, on the light theme too (Melvin, 2026-11-21). */
+    @Test
+    @Config(qualifiers = TV)
+    fun liveTvOnTvLight() = shot("browse-live-tv-tv-light", HomeRoute, wait = "Maple News 24", settings = LIGHT)
+
+    /** Melvin's TV (853 by 480 dp) with every rail item: the rail scrolls under the mark rather than cutting Settings off. */
+    @Test
+    @Config(qualifiers = "w853dp-h480dp-land-television-xhdpi")
+    fun liveTvOnSmallTvWithProfiles() =
+        shot("browse-live-tv-tv-small-profiles", HomeRoute, wait = "Maple News 24", settings = DARK.copy(profileCount = 2))
+
     @Test fun liveTvLight() = shot("browse-live-tv-light", HomeRoute, wait = "Maple News 24", settings = LIGHT)
 
     @Test fun movies() = shot("browse-movies", HomeRoute, wait = "Glass Harbour", settings = DARK.copy(startTab = StartTab.MOVIES))
