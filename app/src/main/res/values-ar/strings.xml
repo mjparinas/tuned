@@ -460,6 +460,7 @@
     <string name="sort_added">المضاف حديثًا</string>
     <string name="sort_year">الأحدث</string>
     <string name="sort_rating">الأعلى تقييمًا</string>
+    <string name="sort_rating_progress">جارٍ جلب التقييمات: %1$s من %2$s</string>
     <string name="sort_title">أ إلى ي</string>
     <string name="live_filters">عوامل التصفية</string>
     <string name="live_filters_title">تصفية القنوات</string>

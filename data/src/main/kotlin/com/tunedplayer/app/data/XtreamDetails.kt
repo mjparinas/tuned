@@ -6,6 +6,7 @@ import com.tunedplayer.app.core.Episodes
 import com.tunedplayer.app.core.XtreamApi
 import com.tunedplayer.app.data.db.ShowDetailsEntity
 import com.tunedplayer.app.data.db.ShowGroups
+import com.tunedplayer.app.data.db.TitleRatingsSql
 import com.tunedplayer.app.data.db.TunedDatabase
 import com.tunedplayer.app.data.db.offMain
 
@@ -33,6 +34,8 @@ class XtreamDetails(
             if (batch.size >= CHUNK) flush(batch)
         }
         flush(batch)
+        // Top rated falls back on the provider's rating where TMDB has none.
+        TitleRatingsSql.applyFilms(db)
     }
 
     suspend fun shows() {
