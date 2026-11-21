@@ -1,10 +1,14 @@
 package com.tunedplayer.app.ui.browse
 
 import android.content.Context
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
@@ -26,7 +30,8 @@ import org.robolectric.annotation.Config
  * On Melvin's TV (about 853 by 480 dp) the first download's seven numbered steps pushed the line under them, "Big
  * playlists can take a few minutes…", off the bottom of the screen (Melvin, 2026-11-21: "there's like descriptive text
  * that is slightly cut off at the very bottom"). Nothing on that screen takes focus, so a remote can't scroll to it:
- * every step and the line must show whole, inside the overscan margin, at once.
+ * every step and the line must show whole, inside the overscan margin, at once. It is drawn inside Home's rail and search
+ * row, as on the TV, because those take the height the steps were short of.
  */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [35], qualifiers = "w853dp-h480dp-land-television-xhdpi")
@@ -65,7 +70,23 @@ class FirstDownloadTvTest {
             MaterialTheme {
                 TvSafeArea {
                     Surface {
-                        FirstRun(refreshing = true, progress = progress.value, error = "", onRetry = {}, onChangeLogin = {})
+                        // Home's own chrome on a TV, which the first run sits inside: the rail and the search row above it.
+                        Row(Modifier.fillMaxSize()) {
+                            HomeRail(selected = 0, onSelect = {}, onOpenDownloads = {}, onOpenSettings = {})
+                            Column(Modifier.weight(1f)) {
+                                SearchBarRow(
+                                    text = "",
+                                    hint = "Search",
+                                    onChange = {},
+                                    grid = false,
+                                    onToggleGrid = {},
+                                    onOpenSearch = null,
+                                    profile = null,
+                                    onOpenProfiles = {},
+                                )
+                                FirstRun(refreshing = true, progress = progress.value, error = "", onRetry = {}, onChangeLogin = {})
+                            }
+                        }
                     }
                 }
             }

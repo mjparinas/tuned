@@ -414,7 +414,7 @@ fun HomeScreen(
 }
 
 @Composable
-private fun SearchBarRow(
+internal fun SearchBarRow(
     text: String,
     hint: String,
     onChange: (String) -> Unit,
