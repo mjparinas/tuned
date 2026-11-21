@@ -29,6 +29,16 @@ First "The width of the account view on the website can be wider please, it's to
 - **Playlists and settings**: Add a playlist sits by the Playlists title; on a desktop the form opens beside the list instead of under it, and the settings groups fill two columns top to bottom, so a short group never leaves a hole beside a long one.
 - Phones keep one column at 560 px. The accessibility check covers both pages signed in.
 
+## Dropdowns are Tuned's own (Melvin, 2026-11-21)
+
+Melvin, 2026-11-21, of the More seats card on `/account`: "something about this dropdown looks ugly, can you make it our own custom component. also spacing in that card looks a bit off to me", then "can you make changes to all the drop downs in the admin please". So no page shows the browser's own dropdown:
+
+- `public/select.js` dresses each `<select>` as Tuned's dropdown: a field like the text fields with a chevron that turns, and a list on a card under it (above it when there's no room below), the highlighted option shaded and the chosen one in the accent with a tick. Its look is `public/select.css`, whose `--ts-` properties default to `site.css`'s colours; the admin and the provider check set their own.
+- It keeps the `<select>`, hidden, as the source of truth, so a page's code still reads `.value`, sets options and listens for `change`, and forms still submit it. A page calls `enhanceSelect` on each one; the admin, which draws its fields as it goes, calls `watchSelects` once.
+- It is the WAI-ARIA select-only combobox: the label focuses it; ↓, ↑, Enter, Space open it; arrows, Home, End and Page Up/Down move; Enter, Space and Tab choose; Escape closes without choosing; typing jumps to a match. `a11y-check.mjs` checks those keys on the More seats card as well as running axe on every page with a dropdown.
+- Used on the account (More seats), Playlists and settings, Channels and guide, the provider check and the admin's Codes, Installs, Flags, Log and Revenue costs.
+- The More seats card puts "Extra seats" above its dropdown, the dropdown and Buy seats side by side at the same height, 16 px under the card's line like its other buttons, and the options say "1 seat", "2 seats" rather than bare numbers.
+
 ## The blog (Melvin, 2026-11-19)
 
 "Can you add blog posts that talk about whats new for each release and the date", and "ensure that each blog post has a CTA action, link to the android app".
