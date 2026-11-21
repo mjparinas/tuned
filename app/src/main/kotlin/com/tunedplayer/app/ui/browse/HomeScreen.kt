@@ -634,7 +634,7 @@ private fun CategoryChips(
 }
 
 @Composable
-private fun FirstRun(
+internal fun FirstRun(
     refreshing: Boolean,
     progress: SyncProgress?,
     error: String,
