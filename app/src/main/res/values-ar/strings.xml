@@ -370,7 +370,6 @@
     </plurals>
     <string name="update_ready">Tuned %1$s جاهز للتثبيت</string>
     <string name="update_install">تثبيت</string>
-    <string name="update_failed">لم يُثبَّت التحديث. سيحاول Tuned مرة أخرى في المرة القادمة.</string>
     <string name="premium_title">Tuned Premium</string>
     <string name="premium_lead">كل ما تحتاجه للمشاهدة مجاني. يضيف Premium ميزات إضافية لمن يقضون وقتهم في Tuned.</string>
     <string name="premium_on">Premium مفعّل. شكرًا لدعمك Tuned.</string>

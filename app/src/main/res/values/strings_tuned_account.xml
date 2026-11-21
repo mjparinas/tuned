@@ -28,4 +28,8 @@
     <string name="restore_account_nothing">This account has no backup yet. Add a playlist instead; once it\'s backed up, your other devices can restore it.</string>
     <string name="restore_account_no_playlist">Your settings and profiles came back, but the backup has no playlist this device can open. Playlist files stay on the device they were added on. Add a playlist instead.</string>
     <string name="restore_account_offline">Couldn\'t reach your backup. Check the connection and try again.</string>
+    <string name="tuned_account_backing_up">Backing up…</string>
+    <string name="tuned_account_backed_up">Backed up just now</string>
+    <string name="tuned_account_backup_failed">Couldn’t back up. Check your connection and try again.</string>
+    <string name="tuned_account_backup_paused">Backups are paused for now. Try again later.</string>
 </resources>

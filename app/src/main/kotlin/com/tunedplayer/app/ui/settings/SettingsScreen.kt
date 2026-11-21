@@ -71,7 +71,10 @@ import com.tunedplayer.app.ui.common.BackTopBar
 import com.tunedplayer.app.ui.common.windowWidthDp
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.withContext
@@ -108,6 +111,19 @@ class SettingsViewModel(
 
     fun refreshNow() = container.scheduler.refreshNow()
 
+    /** A refresh the person started is waiting to start or running, for "Refresh now" to say so. */
+    val refreshPending =
+        container.scheduler.requestedPending.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_MS), false)
+
+    /** What that refresh is doing ("Step 2 of 6 · Processing channels · 45%"), or null before it reports. */
+    val refreshProgress =
+        container.scheduler.requestedProgress.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_MS), null)
+
+    private val historyClearedFlow = MutableStateFlow(false)
+
+    /** "Clear watch history" finished, so its row says so instead of nothing happening. */
+    val historyCleared: StateFlow<Boolean> = historyClearedFlow.asStateFlow()
+
     /** Off also deletes the copies, so the space comes back at once. */
     fun keepPlaylistCopies(on: Boolean) {
         update { it.copy(keepPlaylistCopies = on) }
@@ -115,7 +131,10 @@ class SettingsViewModel(
     }
 
     fun clearHistory() {
-        viewModelScope.launchSafely("Settings") { container.db.library().clearHistory() }
+        viewModelScope.launchSafely("Settings") {
+            container.db.library().clearHistory()
+            historyClearedFlow.value = true
+        }
     }
 
     /** The downloads and recordings a sign-out asks about. */
@@ -496,3 +515,6 @@ private fun IconRow(
         }
     }
 }
+
+/** How long a flow keeps running after the screen stops watching, so turning the device keeps it. */
+private const val STOP_MS = 5_000L

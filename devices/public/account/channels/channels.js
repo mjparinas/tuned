@@ -8,6 +8,7 @@
 // handed to the player or copied.
 
 import { drawNav } from "/account/nav.js";
+import { enhanceSelect } from "/select.js";
 import { access, httpsVariant, isMixed, isPreviewHost, parseServer } from "/check/verdict.mjs";
 import {
     ago,
@@ -875,6 +876,9 @@ $("filters-clear").onclick = () => {
     drawFilters();
     draw();
 };
+enhanceSelect($("playlist"));
+enhanceSelect($("group"));
+enhanceSelect($("f-country"));
 $("filters-button").onclick = () => {
     const open = $("filters").hidden;
     $("filters").hidden = !open;

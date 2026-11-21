@@ -6,4 +6,12 @@
     <string name="cast_playing_on">Wiedergabe auf %1$s</string>
     <string name="cast_failed">%1$s konnte das nicht abspielen. Details unter Einstellungen › Updates und Erweitert › Protokolle.</string>
     <string name="cast_no_wifi">Verbinde das Handy mit demselben WLAN wie den Fernseher, um einen gespeicherten Film oder eine Folge zu streamen.</string>
+    <string name="cast_casting_to">Wird auf %1$s übertragen</string>
+    <string name="cast_tv_loading">Lädt auf %1$s…</string>
+    <string name="cast_tv_playing">Läuft</string>
+    <string name="cast_tv_paused">Pausiert</string>
+    <string name="cast_tv_finished">Zu Ende</string>
+    <string name="cast_tv_stopped">Gestoppt. Zum Neustart auf Wiedergabe tippen.</string>
+    <string name="cast_stop">Übertragung beenden</string>
+    <string name="cast_volume">Lautstärke des Fernsehers</string>
 </resources>

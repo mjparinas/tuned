@@ -33,9 +33,9 @@ object UpdateNotice {
         ) {
             return
         }
-        val already = updates.state.value is GitHubUpdates.State.Ready
+        val already = updates.state.value.pending != null
         if (updates.check() != GitHubUpdates.Outcome.READY || already) return
-        val ready = updates.state.value as? GitHubUpdates.State.Ready ?: return
+        val ready = updates.state.value.pending ?: return
         notify(context, ready.versionName)
     }
 

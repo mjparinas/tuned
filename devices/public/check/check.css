@@ -265,3 +265,14 @@ fieldset {
 .saved-list .not-here {
     color: var(--warn);
 }
+
+/* The dropdowns (select.js) fill the card's width and look like the check's other fields. */
+.tselect {
+    display: flex;
+    --ts-field: var(--bg);
+    --ts-field-open: var(--bg);
+    --ts-edge: var(--line);
+    --ts-height: 48px;
+    --ts-pad: 10px 12px;
+    --ts-radius: 10px;
+}

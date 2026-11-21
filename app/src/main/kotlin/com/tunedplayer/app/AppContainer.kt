@@ -92,7 +92,7 @@ class AppContainer(
     val quietStart = QuietStart(appScope)
     val scheduler = SyncScheduler(context) { quietStart.openNow() }
     val guideFixes by lazy { GuideFixRepository(db, sync, scheduler, credentials) }
-    val updates by lazy { GitHubUpdates(context, http) }
+    val updates by lazy { GitHubUpdates(context, http, scope = appScope) }
     val syncCopy by lazy { SyncCopyRepository(credentials, settings, db, profiles, trakt, IntroStore(context)) }
     val tunedAccount by lazy { TunedAccount(context, http) { tvSignInUrl } }
     val cloudSync by lazy {

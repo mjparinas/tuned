@@ -6,4 +6,12 @@
     <string name="cast_playing_on">%1$s üzerinde oynatılıyor</string>
     <string name="cast_failed">%1$s bunu oynatamadı. Ayrıntılar Ayarlar › Güncellemeler ve gelişmiş › Günlükler\'de.</string>
     <string name="cast_no_wifi">Kaydedilmiş bir film veya bölümü yayınlamak için telefonu TV ile aynı Wi-Fi\'ye bağla.</string>
+    <string name="cast_casting_to">%1$s cihazına yayınlanıyor</string>
+    <string name="cast_tv_loading">%1$s cihazında yükleniyor…</string>
+    <string name="cast_tv_playing">Oynatılıyor</string>
+    <string name="cast_tv_paused">Duraklatıldı</string>
+    <string name="cast_tv_finished">Bitti</string>
+    <string name="cast_tv_stopped">Durduruldu. Yeniden başlatmak için oynat\'a basın.</string>
+    <string name="cast_stop">Yayını durdur</string>
+    <string name="cast_volume">TV ses düzeyi</string>
 </resources>

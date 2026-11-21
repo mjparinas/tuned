@@ -3,6 +3,7 @@
 // Passwords and links never come back from the server; editing leaves a blank one as it was.
 
 import { drawNav, flagOn, showLinkedSection } from "/account/nav.js";
+import { enhanceSelect } from "/select.js";
 
 const $ = (id) => document.getElementById(id);
 let library = null;
@@ -137,6 +138,7 @@ function settingRow(s) {
     }
     control.id = id;
     row.append(label, control);
+    if (control.tagName === "SELECT") enhanceSelect(control, { label });
     return row;
 }
 

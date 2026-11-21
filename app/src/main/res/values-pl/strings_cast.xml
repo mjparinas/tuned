@@ -6,4 +6,12 @@
     <string name="cast_playing_on">Odtwarzanie na %1$s</string>
     <string name="cast_failed">%1$s nie może tego odtworzyć. Szczegóły w Ustawienia › Aktualizacje i zaawansowane › Dzienniki.</string>
     <string name="cast_no_wifi">Połącz telefon z tą samą siecią Wi-Fi co telewizor, aby przesłać zapisany film lub odcinek.</string>
+    <string name="cast_casting_to">Przesyłanie na %1$s</string>
+    <string name="cast_tv_loading">Wczytywanie na %1$s…</string>
+    <string name="cast_tv_playing">Odtwarzanie</string>
+    <string name="cast_tv_paused">Wstrzymano</string>
+    <string name="cast_tv_finished">Zakończono</string>
+    <string name="cast_tv_stopped">Zatrzymano. Naciśnij odtwarzanie, aby zacząć od nowa.</string>
+    <string name="cast_stop">Zatrzymaj przesyłanie</string>
+    <string name="cast_volume">Głośność telewizora</string>
 </resources>

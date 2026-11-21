@@ -6,4 +6,12 @@
     <string name="cast_playing_on">Reproduzindo em %1$s</string>
     <string name="cast_failed">%1$s não conseguiu reproduzir isto. Configurações › Atualizações e avançado › Registros tem os detalhes.</string>
     <string name="cast_no_wifi">Conecte o celular ao mesmo Wi-Fi da TV para transmitir um filme ou episódio salvo.</string>
+    <string name="cast_casting_to">Transmitindo para %1$s</string>
+    <string name="cast_tv_loading">Carregando em %1$s…</string>
+    <string name="cast_tv_playing">Reproduzindo</string>
+    <string name="cast_tv_paused">Pausado</string>
+    <string name="cast_tv_finished">Terminado</string>
+    <string name="cast_tv_stopped">Parado. Toque em reproduzir para começar de novo.</string>
+    <string name="cast_stop">Parar transmissão</string>
+    <string name="cast_volume">Volume da TV</string>
 </resources>

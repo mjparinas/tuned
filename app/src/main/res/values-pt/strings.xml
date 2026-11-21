@@ -334,7 +334,6 @@
     </plurals>
     <string name="update_ready">O Tuned %1$s está pronto para instalar</string>
     <string name="update_install">Instalar</string>
-    <string name="update_failed">A atualização não foi instalada. O Tuned vai tentar de novo da próxima vez.</string>
     <string name="premium_title">Tuned Premium</string>
     <string name="premium_lead">Tudo o que você precisa para assistir é grátis. O Premium traz extras para quem vive no Tuned.</string>
     <string name="premium_on">O Premium está ativado. Obrigado por apoiar o Tuned.</string>

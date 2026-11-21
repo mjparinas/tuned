@@ -6,4 +6,15 @@
     <string name="update_check_failed">GitHub तक नहीं पहुंच सके। थोड़ी देर में फिर कोशिश करें।</string>
     <string name="update_channel">अपडेट</string>
     <string name="update_notification_text">Tuned खोलें और इंस्टॉल करें पर टैप करें</string>
+    <string name="update_installing">Tuned %1$s इंस्टॉल हो रहा है</string>
+    <string name="update_busy">इंस्टॉल हो रहा है…</string>
+    <string name="update_downloading">Tuned %1$s डाउनलोड हो रहा है</string>
+    <string name="update_step_download">अपडेट डाउनलोड हो रहा है</string>
+    <string name="update_step_check">डाउनलोड जाँचा जा रहा है</string>
+    <string name="update_step_prepare">इंस्टॉल की तैयारी हो रही है</string>
+    <string name="update_step_open">Android का इंस्टॉलर खुल रहा है</string>
+    <string name="update_step_confirm">आपकी पुष्टि का इंतज़ार है</string>
+    <string name="update_problem_download">अपडेट डाउनलोड नहीं हो सका। अपना कनेक्शन जाँचें और फिर से कोशिश करें।</string>
+    <string name="update_problem_space">अपडेट के लिए पर्याप्त खाली जगह नहीं है। कुछ जगह खाली करें और फिर से कोशिश करें।</string>
+    <string name="update_problem_other">अपडेट इंस्टॉल नहीं हुआ। फिर से कोशिश करें।</string>
 </resources>
