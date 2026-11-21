@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.tunedplayer.app.R
 import com.tunedplayer.app.data.SyncProgress
@@ -67,23 +68,23 @@ private fun BusyRows() {
     val context = LocalContext.current
     Column(Modifier.fillMaxWidth()) {
         val downloading = GitHubUpdates.State.Installing(READY, InstallStep.PREPARE, 18_000_000, 41_900_000)
-        SettingRow(context.getString(R.string.settings_check_now), UpdateText.detail(context, downloading)) {
+        SettingRow(stringResource(R.string.settings_check_now), UpdateText.detail(context, downloading)) {
             UpdateInstallButton(downloading) {}
         }
         SettingRow(
-            context.getString(R.string.settings_check_now),
-            context.getString(R.string.update_problem_space),
+            stringResource(R.string.settings_check_now),
+            stringResource(R.string.update_problem_space),
             trailing = { UpdateInstallButton(GitHubUpdates.State.InstallFailed(READY, InstallProblem.SPACE)) {} },
         )
-        SettingRow(context.getString(R.string.tuned_account_backup_now), context.getString(R.string.tuned_account_backing_up)) {
+        SettingRow(stringResource(R.string.tuned_account_backup_now), stringResource(R.string.tuned_account_backing_up)) {
             RowSpinner()
         }
-        SettingRow(context.getString(R.string.tuned_account_backup_now), context.getString(R.string.tuned_account_backed_up))
-        SettingRow(context.getString(R.string.tuned_account_backup_now), context.getString(R.string.tuned_account_backup_failed))
+        SettingRow(stringResource(R.string.tuned_account_backup_now), stringResource(R.string.tuned_account_backed_up))
+        SettingRow(stringResource(R.string.tuned_account_backup_now), stringResource(R.string.tuned_account_backup_failed))
         SettingRow(
-            context.getString(R.string.settings_refresh_now),
+            stringResource(R.string.settings_refresh_now),
             SyncText.describe(context, SyncProgress(SyncProgress.Step.DownloadPlaylist, 6_200_000, 18_500_000)),
         ) { RowSpinner() }
-        SettingRow(context.getString(R.string.settings_clear_history), context.getString(R.string.settings_history_cleared))
+        SettingRow(stringResource(R.string.settings_clear_history), stringResource(R.string.settings_history_cleared))
     }
 }
