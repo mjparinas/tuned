@@ -108,6 +108,7 @@ import com.tunedplayer.app.data.db.ProfileEntity
 import com.tunedplayer.app.diagnostics.DeviceClock
 import com.tunedplayer.app.ui.common.SearchBoxButtonsBeside
 import com.tunedplayer.app.ui.common.SearchBoxShape
+import com.tunedplayer.app.ui.common.SearchBoxVoiceBefore
 import com.tunedplayer.app.ui.common.UpdateBanner
 import com.tunedplayer.app.ui.common.focusRing
 import com.tunedplayer.app.ui.common.isTelevision
@@ -435,6 +436,7 @@ private fun SearchBarRow(
                 .padding(start = 12.dp, end = 4.dp, top = 8.dp, bottom = 4.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
+            SearchBoxVoiceBefore(onChange)
             TextField(
                 value = text,
                 onValueChange = onChange,

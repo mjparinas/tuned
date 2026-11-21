@@ -61,6 +61,8 @@ import com.tunedplayer.app.ui.browse.Logo
 import com.tunedplayer.app.ui.browse.rememberShowArt
 import com.tunedplayer.app.ui.common.SearchBoxButtonsBeside
 import com.tunedplayer.app.ui.common.SearchBoxShape
+import com.tunedplayer.app.ui.common.SearchBoxVoiceBefore
+import com.tunedplayer.app.ui.common.SearchStartFocus
 import com.tunedplayer.app.ui.common.TimeLabels
 import com.tunedplayer.app.ui.common.focusRing
 import com.tunedplayer.app.ui.common.rememberTimeLabels
@@ -159,7 +161,8 @@ fun SearchScreen(
     val favourites by vm.favourites.collectAsStateWithLifecycle()
     val times = rememberTimeLabels()
     val focus = remember { FocusRequester() }
-    LaunchedEffect(Unit) { if (initialQuery.isBlank()) runCatching { focus.requestFocus() } }
+    val voiceFocus = remember { FocusRequester() }
+    SearchStartFocus(box = focus, mic = voiceFocus, enabled = initialQuery.isBlank())
 
     Scaffold(
         topBar = {
@@ -169,6 +172,7 @@ fun SearchScreen(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.back)) }
+                    SearchBoxVoiceBefore({ vm.query.value = it }, Modifier.focusRequester(voiceFocus))
                     TextField(
                         value = text,
                         onValueChange = { vm.query.value = it },
