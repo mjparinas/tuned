@@ -12,7 +12,7 @@ import kotlinx.serialization.json.Json
  * to reach it on his TV). [ProfileRepository] writes it each time the profiles change; the database's list replaces it
  * as soon as it arrives. A PIN is kept as the same salted hash the database keeps, never the PIN.
  */
-internal object ProfilesSeen {
+object ProfilesSeen {
     private const val TAG = "Profiles"
     private val json = Json { ignoreUnknownKeys = true }
     private val rows = ListSerializer(Row.serializer())

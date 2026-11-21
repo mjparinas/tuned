@@ -278,14 +278,18 @@ private fun ContinueCard(
     onClick: () -> Unit,
 ) {
     // TMDB's episode name ("The Simpsons · Kamp Krusty") reads better than its number, when it's known.
+    // Locals, since ContinueRow comes from :data and Kotlin won't smart-cast another module's properties.
+    val showName = row.showName
+    val season = row.season
+    val episode = row.episode
     val title =
         when {
-            row.showName != null && episodeName != null -> {
-                stringResource(R.string.continue_episode_named, Titles.display(row.showName), episodeName)
+            showName != null && episodeName != null -> {
+                stringResource(R.string.continue_episode_named, Titles.display(showName), episodeName)
             }
 
-            row.showName != null && row.season != null && row.episode != null -> {
-                stringResource(R.string.continue_episode, Titles.display(row.showName), row.season, row.episode)
+            showName != null && season != null && episode != null -> {
+                stringResource(R.string.continue_episode, Titles.display(showName), season, episode)
             }
 
             else -> {

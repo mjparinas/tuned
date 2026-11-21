@@ -10,4 +10,4 @@ import kotlinx.coroutines.withContext
  * and more while the Shows table was rebuilt from Home). Every helper here that uses `openHelper` starts with this, so
  * where it is called from never matters (docs/decisions/speed.md › Nothing on the screen thread).
  */
-internal suspend fun <T> offMain(block: suspend CoroutineScope.() -> T): T = withContext(Dispatchers.IO, block)
+suspend fun <T> offMain(block: suspend CoroutineScope.() -> T): T = withContext(Dispatchers.IO, block)
