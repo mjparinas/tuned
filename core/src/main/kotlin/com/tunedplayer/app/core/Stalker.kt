@@ -312,10 +312,10 @@ object Stalker {
         .digest(text.toByteArray())
         .joinToString("") { "%02X".format(it) }
 
-    private fun enc(value: String): String = URLEncoder.encode(value, Charsets.UTF_8)
+    private fun enc(value: String): String = URLEncoder.encode(value, "UTF-8")
 
     private fun dec(value: String): String = try {
-        URLDecoder.decode(value, Charsets.UTF_8)
+        URLDecoder.decode(value, "UTF-8")
     } catch (_: IllegalArgumentException) {
         value
     }

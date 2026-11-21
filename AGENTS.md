@@ -23,7 +23,7 @@ Kotlin, Jetpack Compose with Material 3, Navigation Compose (type-safe routes), 
 
 ## Modules
 
-- `:core`: plain Kotlin, no Android. The M3U and XMLTV parsers, sorting streams into Live TV, Movies and Shows, country detection, episode numbering, Xtream URLs. Anything that can be tested without a device goes here, with a test.
+- `:core`: plain Kotlin, no Android. The M3U and XMLTV parsers, sorting streams into Live TV, Movies and Shows, country detection, episode numbering, Xtream URLs. Anything that can be tested without a device goes here, with a test. It runs on Android 8.0 (minSdk 26), so it may only call Java that Android 8.0 has (`URLEncoder.encode(s, "UTF-8")`, never the `Charset` overload); Animal Sniffer fails CI otherwise ([diagnostics](docs/decisions/diagnostics.md)).
 - Application id and Kotlin package: `com.tunedplayer.app` (Melvin, 2026-11-19; `app.tuned` up to 1.13, a separate app to Android, [updates](docs/decisions/updates.md#application-id-melvin-2026-11-19)).
 - `:app`: the Android app, in two builds ([premium](docs/decisions/premium.md)): `github` (GitHub Releases, updates itself, everything unlocked) and `play` (Google Play and other stores: no self-updater, Premium sold through Play Billing). Neither build fills in a server (Melvin, 2026-11-19). Store builds never name a provider, channel or sports brand, in the app or the listing.
 - `:app` folders: `data/` (Room, DataStore settings, encrypted login, the Tuned account and its backup), `work/` (background refresh), `player/` (PlayerActivity), `ui/` (Compose screens, one screen and its ViewModel per file).

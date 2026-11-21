@@ -48,7 +48,7 @@ object StreamLink {
         headers: Map<String, String>,
     ): String {
         if (headers.isEmpty()) return url
-        return url + "|" + headers.entries.joinToString("&") { (k, v) -> "$k=${URLEncoder.encode(v, Charsets.UTF_8).replace("+", "%20")}" }
+        return url + "|" + headers.entries.joinToString("&") { (k, v) -> "$k=${URLEncoder.encode(v, "UTF-8").replace("+", "%20")}" }
     }
 
     /** A header from an `#EXTVLCOPT:` line, or null for any other option. */
@@ -68,7 +68,7 @@ object StreamLink {
     }
 
     private fun decode(value: String): String = try {
-        URLDecoder.decode(value.replace("+", "%2B"), Charsets.UTF_8)
+        URLDecoder.decode(value.replace("+", "%2B"), "UTF-8")
     } catch (_: IllegalArgumentException) {
         value // not encoded after all: "Mozilla/5.0 (X11; Linux)"
     }

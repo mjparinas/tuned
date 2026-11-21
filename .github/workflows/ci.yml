@@ -179,7 +179,7 @@ jobs:
         id: robolectric
       # ktlint, detekt and Android Lint fail on any finding (warnings are errors). --continue runs every check and
       # every test even after one fails, so one run shows everything that needs fixing.
-      - run: ./gradlew spotlessCheck detekt :app:lintGithubDebug :core:test :app:testGithubDebugUnitTest --continue
+      - run: ./gradlew spotlessCheck detekt :app:lintGithubDebug :core:test :core:animalsnifferMain :app:testGithubDebugUnitTest --continue
       - name: Print the findings
         if: failure()
         run: cat app/build/reports/lint-results-githubDebug.txt build/reports/detekt/detekt.txt 2>/dev/null || true
