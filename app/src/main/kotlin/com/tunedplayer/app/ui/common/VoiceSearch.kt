@@ -17,6 +17,17 @@ import androidx.compose.ui.res.stringResource
 import com.tunedplayer.app.R
 import com.tunedplayer.app.diagnostics.attempt
 
+/** Whether this device has a speech recogniser for [VoiceSearchButton]; it is checked once per screen. */
+@Composable
+fun rememberVoiceSearchAvailable(): Boolean {
+    val context = LocalContext.current
+    return remember(context) { voiceIntent().resolveActivity(context.packageManager) != null }
+}
+
+private fun voiceIntent(): Intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH)
+    .putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_WEB_SEARCH)
+    .putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 1)
+
 /**
  * A mic button that fills a search with what was said, through the phone's own speech recogniser (Google's on most
  * phones). It hides itself on devices without one.
@@ -26,16 +37,9 @@ fun VoiceSearchButton(
     onResult: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val context = LocalContext.current
     val prompt = stringResource(R.string.voice_prompt)
-    val intent =
-        remember {
-            Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH)
-                .putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_WEB_SEARCH)
-                .putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 1)
-        }
-    val available = remember { intent.resolveActivity(context.packageManager) != null }
-    if (!available) return
+    val intent = remember { voiceIntent() }
+    if (!rememberVoiceSearchAvailable()) return
     val launcher =
         rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
             if (result.resultCode != Activity.RESULT_OK) return@rememberLauncherForActivityResult
