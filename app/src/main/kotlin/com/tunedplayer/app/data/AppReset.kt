@@ -93,6 +93,7 @@ class AppReset(
                     step("the database") { c.db.wipe(if (keepDownloads) KEPT_WITH_DOWNLOADS else emptySet()) },
                     step("the settings") { c.settings.reset() },
                     step("the learned intros") { IntroStore(context).clear() },
+                    step("the chosen filters") { c.browseFilters.clear() },
                     step("the channel scan report") { c.channelScan.forgetReport() },
                     step("the files") { files() },
                     step("the pictures") { pictures(keepDownloads) },

@@ -4,6 +4,7 @@ import android.content.Context
 import com.tunedplayer.app.data.AccountChannels
 import com.tunedplayer.app.data.AccountRepository
 import com.tunedplayer.app.data.AppReset
+import com.tunedplayer.app.data.BrowseFilterStore
 import com.tunedplayer.app.data.ChannelEditor
 import com.tunedplayer.app.data.ChannelScanner
 import com.tunedplayer.app.data.CloudSyncRepository
@@ -125,7 +126,11 @@ class AppContainer(
     val savedArtwork by lazy { SavedArtwork(context, db, metadata) }
     val trakt by lazy { TraktAccount(context, http) }
     val people by lazy { PeopleRepository(http, BuildConfig.TMDB_API_KEY, db.metadata(), ::tmdbReachable) }
-    val profiles by lazy { ProfileRepository(db, settings) }
+    val profiles by lazy { ProfileRepository(db, settings, browseFilters) }
+
+    /** Each profile's chosen filters on the browse tabs, kept until changed ([BrowseFilterStore]). */
+    val browseFilters by lazy { BrowseFilterStore(context) }
+
     val premium by lazy { Premium(context, appScope, DeviceSeatsClient.create(context, http)) { tunedAccount } }
     val subtitles by lazy { SubtitleRepository(http, settings, credentials, metadata, context.filesDir.resolve("subtitles")) }
 

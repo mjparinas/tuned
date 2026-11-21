@@ -9,6 +9,7 @@ import com.tunedplayer.app.data.db.CurrentProfileEntity
 import com.tunedplayer.app.data.db.ProfileEntity
 import com.tunedplayer.app.data.db.Profiles
 import com.tunedplayer.app.data.db.TunedDatabase
+import com.tunedplayer.app.diagnostics.attempt
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
@@ -22,6 +23,7 @@ import kotlinx.coroutines.withContext
 class ProfileRepository(
     private val db: TunedDatabase,
     private val settings: SettingsRepository,
+    private val filters: BrowseFilterStore,
 ) {
     private val dao get() = db.profiles()
 
@@ -105,6 +107,7 @@ class ProfileRepository(
         val all = dao.allNow()
         if (all.size <= 1 || dao.currentNow()?.id == id) return
         dao.delete(id)
+        attempt("ProfileRepository", "Couldn't forget the removed profile's filters") { filters.forget(id) }
         mirror()
     }
 

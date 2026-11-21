@@ -46,15 +46,19 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.drop
+import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 
 /** What a list shows: a category, favourites only, or everything. */
 sealed interface Filter {
@@ -118,6 +122,15 @@ class BrowseViewModel(
     }
 
     private val filters = mutableMapOf<ContentKind, MutableStateFlow<Filter>>()
+
+    /**
+     * The profile's saved filters are in place ([SavedFilters]). The lists wait for them, briefly, so they don't load
+     * everything and then load again; declared before the lists, which read it while the ViewModel is built.
+     */
+    private val restored = MutableStateFlow(false)
+
+    /** Whether the saved filters are in place yet; for tests. */
+    internal val filtersRestored: StateFlow<Boolean> get() = restored
     private val searches = mutableMapOf<ContentKind, MutableStateFlow<String>>()
     private val groupFlows = mutableMapOf<ContentKind, StateFlow<List<GroupCount>>>()
 
@@ -149,12 +162,17 @@ class BrowseViewModel(
             }
         }
 
-    private fun query(kind: ContentKind): Flow<Query> = combine(
-        settings.map { it?.hiddenKeys() to (it?.showAdult ?: false) }.distinctUntilChanged(),
-        filter(kind),
-        search(kind).debounce(200).map { Search.normalize(it) }.distinctUntilChanged(),
-        if (kind == ContentKind.LIVE) clock else flow { emit(0L) },
-    ) { (hidden, adult), filter, search, now -> Query(hidden.orEmpty(), adult, filter, search, now) }
+    private fun query(kind: ContentKind): Flow<Query> = flow {
+        withTimeoutOrNull(RESTORE_WAIT_MS) { restored.first { it } }
+        emitAll(
+            combine(
+                settings.map { it?.hiddenKeys() to (it?.showAdult ?: false) }.distinctUntilChanged(),
+                filter(kind),
+                search(kind).debounce(200).map { Search.normalize(it) }.distinctUntilChanged(),
+                if (kind == ContentKind.LIVE) clock else flow { emit(0L) },
+            ) { (hidden, adult), filter, search, now -> Query(hidden.orEmpty(), adult, filter, search, now) },
+        )
+    }
 
     private val config = PagingConfig(pageSize = 60, prefetchDistance = 60, enablePlaceholders = true, initialLoadSize = 120)
 
@@ -495,5 +513,80 @@ class BrowseViewModel(
 
     fun rememberTab(index: Int) {
         viewModelScope.launchSafely("BrowseViewModel") { container.settings.update { it.copy(lastTab = index) } }
+    }
+
+    init {
+        // Each profile's filters stay chosen until changed, even after the app is closed (Melvin, 2026-11-21). Read
+        // when the profile is known and again when it changes; every change after that is written for that profile.
+        viewModelScope.launchSafely("BrowseViewModel", onError = { restored.value = true }) {
+            settings
+                .map { it?.profileId }
+                .distinctUntilChanged()
+                .collectLatest { id ->
+                    if (id == null) return@collectLatest
+                    restore(id)
+                    chosen().drop(1).collect { saved ->
+                        attempt("BrowseViewModel", "Couldn't save the filters") {
+                            container.browseFilters.set(id, SavedFilters.encode(saved))
+                        }
+                    }
+                }
+        }
+    }
+
+    /** Everything chosen on the tabs, as it changes. */
+    private fun chosen(): Flow<SavedFilters> = combine(
+        filter(ContentKind.LIVE),
+        filter(ContentKind.MOVIE),
+        filter(ContentKind.SERIES),
+        liveQuick,
+    ) { live, movies, shows, quick ->
+        SavedFilters(mapOf(ContentKind.LIVE to live, ContentKind.MOVIE to movies, ContentKind.SERIES to shows), quick)
+    }.distinctUntilChanged()
+
+    /** Puts [profileId]'s saved filters in place; nothing saved, or unreadable, is nothing chosen. */
+    private suspend fun restore(profileId: Long) {
+        val text = attempt("BrowseViewModel", "Couldn't read the saved filters") { container.browseFilters.get(profileId) }.getOrNull()
+        val saved = SavedFilters.decode(text)
+        ContentKind.entries.forEach { filter(it).value = saved.chip(it) }
+        liveQuick.value = saved.live
+        restored.value = true
+        ContentKind.entries.forEach { kind -> forgetIfGone(kind, saved.chip(kind)) }
+    }
+
+    /**
+     * A saved category or list that is gone (hidden, removed, or another playlist since) goes back to everything, so a
+     * tab never opens empty on a filter nobody can see. Checked once the tab's categories have loaded.
+     */
+    private fun forgetIfGone(
+        kind: ContentKind,
+        chosen: Filter,
+    ) {
+        if (chosen !is Filter.Group && chosen !is Filter.OwnList) return
+        viewModelScope.launchSafely("BrowseViewModel") {
+            val there =
+                when (chosen) {
+                    is Filter.Group -> {
+                        val names = withTimeoutOrNull(GONE_WAIT_MS) { groups(kind).first { it.isNotEmpty() } } ?: return@launchSafely
+                        names.any { it.groupName == chosen.name }
+                    }
+
+                    is Filter.OwnList -> {
+                        container.lists
+                            .withKind(kind)
+                            .first()
+                            .any { it.id == chosen.id }
+                    }
+                }
+            if (!there && filter(kind).value == chosen) filter(kind).value = Filter.All
+        }
+    }
+
+    private companion object {
+        /** How long the lists wait for the saved filters before loading without them; the read takes a few ms. */
+        const val RESTORE_WAIT_MS = 500L
+
+        /** How long a saved category waits for the tab's categories before it is trusted as it is. */
+        const val GONE_WAIT_MS = 15_000L
     }
 }
