@@ -15,6 +15,7 @@ test("the app alone skips the website", () => {
     for (const f of [
         "app/src/main/kotlin/app/tuned/X.kt",
         "core/build.gradle.kts",
+        "data/src/main/kotlin/com/tunedplayer/app/data/Settings.kt",
         "gradle/libs.versions.toml",
         "build.gradle.kts",
         "gradlew",

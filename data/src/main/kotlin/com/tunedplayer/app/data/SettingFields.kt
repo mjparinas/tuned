@@ -13,7 +13,7 @@ import androidx.datastore.preferences.core.stringSetPreferencesKey
  * One stored setting: its key, and how it reads from and writes to [AppSettings]. A new setting is one field in
  * [AppSettings] and one line in [SETTING_FIELDS], so two features adding settings never edit the same lines.
  */
-internal class SettingField<S : Any, T>(
+class SettingField<S : Any, T>(
     val key: Preferences.Key<S>,
     private val get: AppSettings.() -> T,
     private val set: AppSettings.(T) -> AppSettings,
@@ -94,7 +94,7 @@ private fun AppSettings.cc(change: CaptionStyle.() -> CaptionStyle) = copy(capti
  * different areas don't touch the same lines. Key names are on people's phones and in synced copies: never rename one.
  * `showAdult` isn't here: it lives in memory only (see [SettingsRepository]).
  */
-internal val SETTING_FIELDS: List<SettingField<*, *>> =
+val SETTING_FIELDS: List<SettingField<*, *>> =
     listOf(
         // Appearance
         choice("theme", { theme }) { copy(theme = it) },

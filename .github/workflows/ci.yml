@@ -42,6 +42,7 @@ jobs:
       mobile: ${{ steps.diff.outputs.mobile }}
       web: ${{ steps.diff.outputs.web }}
       record: ${{ steps.diff.outputs.record }}
+      warm: ${{ steps.diff.outputs.warm }}
       tree: ${{ steps.diff.outputs.tree }}
     steps:
       - uses: actions/checkout@v7
@@ -88,10 +89,22 @@ jobs:
           if [ "$EVENT" = push ]; then
             candidates="$GITHUB_SHA $candidates $(gh api "repos/$REPO/commits/$GITHUB_SHA/pulls" --jq '.[].head.sha' 2>/dev/null || true)"
           fi
+          # A merge into staging that already passed still refreshes the Gradle cache when it touched the app, since only
+          # main and staging write it and pull requests build from it (the Gradle cache jobs below).
+          warm() {
+            [ "$EVENT" = push ] && [ "$GITHUB_REF" = refs/heads/staging ] || return 0
+            case "$BEFORE" in ""|0000000000000000000000000000000000000000) return 0 ;; esac
+            git fetch --no-tags --depth=1 origin "$BEFORE" 2>/dev/null || return 0
+            if git diff --name-only "$BEFORE" HEAD | node scripts/ci-changes.mjs | grep -q 'mobile=true'; then
+              echo "warm=true" >> "$GITHUB_OUTPUT"
+              echo "::notice::The app changed, so the Gradle cache is refreshed for the next pull requests."
+            fi
+          }
           for c in $candidates; do
             if passed "$c" "$tree"; then
               echo "run=false" >> "$GITHUB_OUTPUT"
               echo "::notice::This exact tree already passed CI on ${c:0:7}, so nothing runs again."
+              warm
               exit 0
             fi
           done
@@ -172,6 +185,10 @@ jobs:
     if: needs.changes.outputs.mobile == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    # The Gradle cache entry this job reads, shared with "Gradle cache for the checks", which writes it.
+    env: &checks-cache
+      GRADLE_BUILD_ACTION_CACHE_KEY_JOB: checks
+      GRADLE_BUILD_ACTION_CACHE_KEY_JOB_INSTANCE: ci
     steps:
       - uses: actions/checkout@v7
       - uses: ./.github/actions/setup-android
@@ -207,6 +224,10 @@ jobs:
     runs-on: ubuntu-latest
     # 25 minutes, plus about 15 the first time a Media3 version's decoder is built.
     timeout-minutes: 40
+    # The Gradle cache entry this job reads, shared with "Gradle cache for the Android build", which writes it.
+    env: &android-cache
+      GRADLE_BUILD_ACTION_CACHE_KEY_JOB: android
+      GRADLE_BUILD_ACTION_CACHE_KEY_JOB_INSTANCE: ci
     steps:
       - uses: actions/checkout@v7
       - uses: ./.github/actions/setup-android
@@ -223,6 +244,38 @@ jobs:
         env:
           # The commit shown at the bottom of Settings: a pull request's own head, not the merge commit GitHub builds.
           GIT_COMMIT: ${{ github.event.pull_request.head.sha || github.sha }}
+
+  # Pull requests only read the Gradle cache, and since 2026-11-21 a merge into staging whose tree already passed runs
+  # nothing, so the cache would stop following staging and every pull request would compile all of it again. These two
+  # build what Checks and the Android build build, under their cache names, after each such merge that touched the app.
+  # "CI passed" doesn't wait for them, so a promotion doesn't either; a failure here only means a colder cache.
+  checks-cache:
+    name: Gradle cache for the checks
+    needs: changes
+    if: needs.changes.outputs.warm == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env: *checks-cache
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup-android
+      - uses: ./.github/actions/robolectric-cache
+      - run: ./gradlew spotlessCheck detekt :app:lintGithubDebug :core:test :core:animalsnifferMain :app:testGithubDebugUnitTest --continue
+
+  android-cache:
+    name: Gradle cache for the Android build
+    needs: changes
+    if: needs.changes.outputs.warm == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    env: *android-cache
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup-android
+      - uses: ./.github/actions/ffmpeg-decoder
+        with:
+          required: "false"
+      - run: ./gradlew :app:assembleRelease -x lintVitalGithubRelease -x lintVitalPlayRelease
 
   # The github debug app on an emulator against a fake provider: sign in, play, change channel, go back, and never two
   # stream connections at once (smoketest/, docs/decisions/diagnostics.md).
