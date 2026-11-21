@@ -311,11 +311,20 @@ class SettingsRepository(
         .mapKeys { it.key.name }
         .filterKeys { it !in DEVICE_ONLY }
 
-    /** Puts back what [snapshot] saved; values of a type the app doesn't store are skipped. */
+    /**
+     * Puts back what [snapshot] saved; values of a type the app doesn't store are skipped. [since] is the [snapshot] the
+     * values were worked out from (a backup joined with this device's copy): a setting that changed here after it, such
+     * as a sort picked while the backup was being joined, keeps the newer choice rather than going back.
+     */
     @Suppress("UNCHECKED_CAST") // a Set read back from a synced copy only ever holds the strings it was saved with
-    suspend fun restore(values: Map<String, Any>) {
+    suspend fun restore(
+        values: Map<String, Any>,
+        since: Map<String, Any>? = null,
+    ) {
         context.dataStore.edit { prefs ->
+            val now = prefs.asMap().mapKeys { it.key.name }
             for ((name, value) in values.filterKeys { it !in DEVICE_ONLY }) {
+                if (since != null && now[name] != since[name]) continue
                 when (value) {
                     is Boolean -> prefs[booleanPreferencesKey(name)] = value
                     is Int -> prefs[intPreferencesKey(name)] = value

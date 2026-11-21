@@ -236,7 +236,7 @@ class CloudSyncRepository(
         val merged = CopyMerge.merge(agreed, localJson, remoteJson, remoteWins)
         val applied =
             try {
-                syncCopy.applySyncCopy(merged.toString().toByteArray())
+                syncCopy.applySyncCopy(merged.toString().toByteArray(), takenFrom = plain)
             } catch (e: SyncCopyRepository.NotACopy) {
                 AppLog.w(TAG, "Couldn't read the backup; sending this device's", e)
                 replaceDamaged(plain, local, remote.version)

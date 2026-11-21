@@ -26,6 +26,7 @@ import com.tunedplayer.app.data.SavedArtwork
 import com.tunedplayer.app.data.ServerFlags
 import com.tunedplayer.app.data.SettingsRepository
 import com.tunedplayer.app.data.SharedChannels
+import com.tunedplayer.app.data.SortDetails
 import com.tunedplayer.app.data.StalkerLinks
 import com.tunedplayer.app.data.SubtitleRepository
 import com.tunedplayer.app.data.SyncCopyRepository
@@ -82,6 +83,7 @@ class AppContainer(
     /** The signed-in Stalker portal, and turning its channels into streams for the player, scans and casting. */
     val stalker by lazy { StalkerLinks(http, credentials::load) }
     val sync by lazy { SyncRepository(db, http, credentials::load, settings, context.noBackupFilesDir.resolve("sync"), stalker) }
+    val sortDetails by lazy { SortDetails(db, http, credentials::load, settings) }
     val tune by lazy { TuneRepository(db, settings) }
 
     /** Holds background work until the first screen is up (docs/decisions/speed.md › Quiet start). */
