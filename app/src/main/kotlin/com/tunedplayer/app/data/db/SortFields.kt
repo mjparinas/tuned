@@ -11,17 +11,15 @@ import kotlinx.coroutines.withContext
  * transaction so the lists never wait long. Times added and ratings come from the provider with the next refresh.
  */
 object SortFields {
-    suspend fun fillIfMissing(db: TunedDatabase) {
+    suspend fun fillIfMissing(db: TunedDatabase) = offMain {
         val sql = db.openHelper.writableDatabase
         val missing =
-            withContext(Dispatchers.IO) {
-                sql.query("SELECT id, COALESCE(showName, name), year FROM items WHERE kind != 0 AND sortTitle = ''").use { c ->
-                    val rows = ArrayList<Row>(c.count.coerceAtLeast(0))
-                    while (c.moveToNext()) rows += Row(c.getLong(0), c.getString(1), if (c.isNull(2)) null else c.getInt(2))
-                    rows
-                }
+            sql.query("SELECT id, COALESCE(showName, name), year FROM items WHERE kind != 0 AND sortTitle = ''").use { c ->
+                val rows = ArrayList<Row>(c.count.coerceAtLeast(0))
+                while (c.moveToNext()) rows += Row(c.getLong(0), c.getString(1), if (c.isNull(2)) null else c.getInt(2))
+                rows
             }
-        if (missing.isEmpty()) return
+        if (missing.isEmpty()) return@offMain
         missing.chunked(CHUNK).forEach { chunk ->
             val filled =
                 withContext(Dispatchers.Default) {

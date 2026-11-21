@@ -96,17 +96,23 @@ class BrowseViewModel(
         viewModelScope.launchSafely("BrowseViewModel") { container.account.refreshIfOld() }
         // Sports, PPV and event channels are never hidden as dead: bring back any hidden before that rule, or renamed since.
         viewModelScope.launchSafely("BrowseViewModel") { container.channelScan.releaseEventChannels() }
-        // A cache from before channel numbers: number it once, in the background.
-        viewModelScope.launchSafely("BrowseViewModel") { ChannelNumbers.fillIfMissing(container.db) }
-        // A cache from before the Movies and Shows sorts: work out its titles and years once, in the background.
+        // Catching up an old cache, once, in the background, after the first screen is up (Quiet start). Each helper
+        // runs its SQL off the screen thread itself (data/db/OffMain.kt).
         viewModelScope.launchSafely("BrowseViewModel") {
+            container.quietStart.await()
+            // A cache from before channel numbers: number it.
+            ChannelNumbers.fillIfMissing(container.db)
+            // A cache from before the Movies and Shows sorts: work out its titles and years.
             SortFields.fillIfMissing(container.db)
             // A sort chosen before its times and ratings were read: read them now rather than at the next refresh.
             val s = container.settings.settings.first()
             if (s.movieSort != TitleSort.Order.PROVIDER || s.showSort != TitleSort.Order.PROVIDER) container.sortDetails.fillIfMissing()
         }
-        // A guide cached before whole-guide search: index its titles once, in the background.
-        viewModelScope.launchSafely("BrowseViewModel") { GuideSearchIndex.fillIfMissing(container.db) }
+        // A guide cached before whole-guide search: index its titles.
+        viewModelScope.launchSafely("BrowseViewModel") {
+            container.quietStart.await()
+            GuideSearchIndex.fillIfMissing(container.db)
+        }
         // The Android TV home screen rows (Continue watching, favourites); nothing on phones.
         TvHome.schedule(app)
     }

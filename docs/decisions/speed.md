@@ -17,6 +17,13 @@ On his TV, "Who's watching?" stayed blank while the database was busy: it drew n
 - **The picker draws from a saved copy.** The profiles are kept with the settings (`profiles_seen`, this device only; `data/ProfilesSeen.kt`) each time they change, and the splash already waits for the settings, so "Who's watching?" draws with its first frame. The database's list replaces it as soon as it answers.
 - **Background work waits for the first screen** (`work/QuietStart.kt`). The backup and the channel list it shares, playlist and guide refreshes, downloads, channel scans, the TV home screen's row, the app icon's shortcuts, the update check and the region bookkeeping start 3 seconds after Home first draws, or 20 seconds after the app started for someone sitting on "Who's watching?" or the welcome screen, or 2 seconds after a start that brings up no screen (Android started the app only for background work). A refresh or scan the person asks for starts at once. Nothing is skipped: the work runs as it always did, a few seconds later.
 
+## Nothing on the screen thread (Melvin, 2026-11-20: freeze reports from 2.3.0 on his phone)
+
+2.3.0 froze Home for 5 seconds and more on his Samsung phone. Decoded with the release's R8 mapping, both freezes were SQL on the screen thread: the Shows table rebuild (`ShowGroups.rebuild`), once from the one-time sort fill (`SortFields.fillIfMissing`) and once from reading times added and ratings (`XtreamDetails.shows`), both started from Home's view model. Room moves its own DAO calls off the screen thread, but SQL through `openHelper` runs on whichever thread calls it. So:
+
+- **Every helper that runs SQL through `openHelper` starts with `offMain`** (`data/db/OffMain.kt`, a switch to the IO threads), so where it is called from never matters: the sort, channel number and guide index fills, the Shows table rebuild, `PRAGMA optimize`, the film details writes, the guide search index reset, and the refreshes' entry points (`SyncRepository.refreshAll`, `refreshGuide`, `fillFromCopy`). `OffMainTest` calls each from the screen thread and fails on any statement that ran there. New raw SQL does the same.
+- **The one-time fills for an old cache wait for Quiet start** like other background work, rather than starting while Home draws.
+
 ## Lighter mode for weak TV boxes (Melvin, 2026-11-19)
 
 From the Horizon Maps review ("Do 1, 2, 3, 4, 5, 6", idea 5). Cheap Android TV boxes have little memory and slow graphics, and a fade on every poster or a pulsing placeholder is enough to make them stutter or freeze. **Settings › Appearance › Lighter mode** is Automatic (the default), On or Off, and stays on the device rather than syncing, because the phone and the TV box differ. When it is on:

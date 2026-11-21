@@ -29,6 +29,7 @@ import com.tunedplayer.app.data.db.ShowCoverEntity
 import com.tunedplayer.app.data.db.ShowDetailsEntity
 import com.tunedplayer.app.data.db.ShowGroups
 import com.tunedplayer.app.data.db.TunedDatabase
+import com.tunedplayer.app.data.db.offMain
 import com.tunedplayer.app.diagnostics.AppLog
 import com.tunedplayer.app.diagnostics.attempt
 import kotlinx.coroutines.Dispatchers
@@ -87,26 +88,30 @@ class SyncRepository(
         val programmes: Int,
     )
 
-    suspend fun refreshAll(progress: (SyncProgress) -> Unit = {}): Result = lock.withLock {
-        val plan = Plan(progress)
-        plan.steps = SyncProgress.planFor(currentLogin(), headerGuide.exists())
-        plan.start()
-        val items = refreshPlaylistLocked(plan::report)
-        // A plain playlist's header names its guide, or doesn't: the steps now say which.
-        plan.steps = SyncProgress.planFor(currentLogin(), headerGuide.exists())
-        val programmes = attempt(TAG_SYNC, "Guide refresh failed") { refreshGuideLocked(plan::report) }.getOrElse { 0 } // not fatal
-        // A portal's films and shows come last: they take many small calls, and Live TV and the guide are ready first.
-        if (currentLogin()?.kind == Credentials.Kind.Stalker) {
-            attempt(TAG_SYNC, "The portal's films and shows failed") { refreshPortalLibrary(plan::report) }
+    suspend fun refreshAll(progress: (SyncProgress) -> Unit = {}): Result = offMain {
+        lock.withLock {
+            val plan = Plan(progress)
+            plan.steps = SyncProgress.planFor(currentLogin(), headerGuide.exists())
+            plan.start()
+            val items = refreshPlaylistLocked(plan::report)
+            // A plain playlist's header names its guide, or doesn't: the steps now say which.
+            plan.steps = SyncProgress.planFor(currentLogin(), headerGuide.exists())
+            val programmes = attempt(TAG_SYNC, "Guide refresh failed") { refreshGuideLocked(plan::report) }.getOrElse { 0 } // not fatal
+            // A portal's films and shows come last: they take many small calls, and Live TV and the guide are ready first.
+            if (currentLogin()?.kind == Credentials.Kind.Stalker) {
+                attempt(TAG_SYNC, "The portal's films and shows failed") { refreshPortalLibrary(plan::report) }
+            }
+            Result(items, programmes)
         }
-        Result(items, programmes)
     }
 
-    suspend fun refreshGuide(progress: (SyncProgress) -> Unit = {}): Int = lock.withLock {
-        val plan = Plan(progress)
-        plan.steps = SyncProgress.GUIDE
-        plan.start()
-        refreshGuideLocked(plan::report)
+    suspend fun refreshGuide(progress: (SyncProgress) -> Unit = {}): Int = offMain {
+        lock.withLock {
+            val plan = Plan(progress)
+            plan.steps = SyncProgress.GUIDE
+            plan.start()
+            refreshGuideLocked(plan::report)
+        }
     }
 
     /** Stamps each report with the refresh's steps, so the screens can number them. */
@@ -132,23 +137,25 @@ class SyncRepository(
     suspend fun fillFromCopy(
         channels: List<PlaylistEntry>,
         guide: List<Programme>,
-    ): Int = lock.withLock {
-        if (db.items().any()) return@withLock 0
-        memo.forget()
-        val count = importPlaylist(progress = {}) { add -> channels.forEach { add(it) } }
-        if (guide.isNotEmpty()) {
-            val writer = GuideWriter(db)
-            try {
-                writer.begin()
-                for (batch in guide.chunked(BATCH)) {
-                    writer.add(batch.map { ProgrammeEntity(0, it.channelId, it.start, it.stop, it.title, null) })
+    ): Int = offMain {
+        lock.withLock {
+            if (db.items().any()) return@withLock 0
+            memo.forget()
+            val count = importPlaylist(progress = {}) { add -> channels.forEach { add(it) } }
+            if (guide.isNotEmpty()) {
+                val writer = GuideWriter(db)
+                try {
+                    writer.begin()
+                    for (batch in guide.chunked(BATCH)) {
+                        writer.add(batch.map { ProgrammeEntity(0, it.channelId, it.start, it.stop, it.title, null) })
+                    }
+                    writer.commit()
+                } finally {
+                    writer.discard()
                 }
-                writer.commit()
-            } finally {
-                writer.discard()
             }
+            count
         }
-        count
     }
 
     private suspend fun refreshPlaylistLocked(progress: (SyncProgress) -> Unit): Int {

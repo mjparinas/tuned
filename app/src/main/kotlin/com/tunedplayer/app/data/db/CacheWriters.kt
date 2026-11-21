@@ -317,7 +317,7 @@ object ShowGroups {
             "FROM items WHERE kind = 2 AND showKey IS NOT NULL GROUP BY showKey, groupName, region, adult"
 
     /** Worked out beside the live table, then swapped in with one quick copy, so the Shows tab never waits long. */
-    suspend fun rebuild(db: TunedDatabase) {
+    suspend fun rebuild(db: TunedDatabase) = offMain {
         val sql = db.openHelper.writableDatabase
         sql.execSQL("DROP TABLE IF EXISTS temp.show_groups_next")
         sql.execSQL("CREATE TEMP TABLE show_groups_next AS $SELECT")
@@ -335,7 +335,7 @@ object Upkeep {
      * Lets SQLite refresh what it knows about the tables (`PRAGMA optimize`) after a big change, so it keeps picking
      * the right index. Cheap: it only analyzes what changed enough to matter.
      */
-    fun optimize(db: TunedDatabase) {
+    suspend fun optimize(db: TunedDatabase) = offMain {
         db.openHelper.writableDatabase
             .query("PRAGMA optimize")
             .use { it.moveToFirst() }
