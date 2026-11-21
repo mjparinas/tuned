@@ -29,6 +29,9 @@ object FreezeWatch {
     private const val TAG = "Freeze"
     private const val LIMIT_MS = 5_000L
     private const val TICK_MS = 1_000L
+
+    /** A one-second tick that took this long means Android paused the whole app, not just the screen thread. */
+    private const val PAUSE_MS = 3_000L
     private const val PREFS = "freeze_watch"
     private const val SEEN = "anr_seen_ms"
     private const val EXITS = 10
@@ -40,7 +43,7 @@ object FreezeWatch {
         if (Build.FINGERPRINT == "robolectric" || !started.compareAndSet(false, true)) return
         val app = context.applicationContext
         val main = Handler(Looper.getMainLooper())
-        val dog = FreezeWatchdog(LIMIT_MS, SystemClock.uptimeMillis())
+        val dog = FreezeWatchdog(LIMIT_MS, SystemClock.uptimeMillis(), PAUSE_MS)
         val waiting = AtomicBoolean(false)
         val answer =
             Runnable {

@@ -55,11 +55,15 @@ object GuideSearchIndex {
     const val INSERT_NEXT = "INSERT INTO `$NEXT` (docid, title) VALUES (?, ?)"
 
     /** Indexes a guide cached before this index existed, a chunk per transaction so lists never wait long. */
-    suspend fun fillIfMissing(db: TunedDatabase) = lock.withLock {
+    suspend fun fillIfMissing(db: TunedDatabase) = offMain {
+        lock.withLock { fill(db) }
+    }
+
+    private suspend fun fill(db: TunedDatabase) {
         val sql = db.openHelper.writableDatabase
         ensure(sql)
-        if (count(sql, "SELECT COUNT(*) FROM `${TABLE}_docsize`") > 0) return@withLock
-        if (count(sql, "SELECT COUNT(*) FROM programmes") == 0L) return@withLock
+        if (count(sql, "SELECT COUNT(*) FROM `${TABLE}_docsize`") > 0) return
+        if (count(sql, "SELECT COUNT(*) FROM programmes") == 0L) return
         var after = -1L
         while (true) {
             val chunk = mutableListOf<Pair<Long, String>>()
@@ -96,7 +100,7 @@ object GuideSearchIndex {
     ): List<GuideHit> {
         val match = Search.match(text)
         if (match.isEmpty()) return emptyList()
-        ensure(db.openHelper.writableDatabase)
+        offMain { ensure(db.openHelper.writableDatabase) }
         val keys = hidden.ifEmpty { listOf(NOTHING) }
         val marks = keys.joinToString { "?" }
         // The channel filter is the same as Live TV's, written for positional arguments: each `IN (:hidden)` takes

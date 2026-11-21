@@ -102,6 +102,11 @@ class CloudSyncRepository(
             prefs.edit { putLong(KEY_LAST_SYNC, now) }
             statusFlow.value = Status(now, Problem.NONE)
             true
+        } catch (_: TunedAccount.Conflict) {
+            // Not a failure: another device (or the website) saved between this run's read and its save. The next run
+            // reads the newer backup and joins it, so it's one line in the log, not a warning that looks like being offline.
+            AppLog.i(TAG) { "Another device saved the backup first; the next run joins it" }
+            false
         } catch (e: IOException) {
             AppLog.w(TAG, "Couldn't reach the backup", e)
             statusFlow.value = statusFlow.value.copy(problem = Problem.OFFLINE)
