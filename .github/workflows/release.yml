@@ -8,6 +8,12 @@ name: Release
 # Version name: the last release's version, bumped by the commits since (scripts/next-version.mjs); version code: made
 # from the version (1.2.3 -> 1002003), so every release is newer than the last for Android and the in-app updater. Skips itself with a notice until the
 # signing secrets exist.
+#
+# The APK and the bundle build side by side on two runners (2026-11-21, Melvin: "Is it possible to speed up ci without
+# affecting safety"). On one runner the two variants' Kotlin, release lint and R8 shared 4 cores and took about 13
+# minutes. They are the same signed builds with the same checks (release lint included) as before. The version is
+# worked out once, before either starts, and nothing is published (GitHub release, blog post, Play) until both have
+# built, as when they were one job.
 
 on:
   push:
@@ -29,13 +35,16 @@ permissions:
   contents: write
 
 jobs:
-  android:
-    name: Android · GitHub release and Play
+  version:
+    name: Version
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 5
     env:
       HAS_KEY: ${{ secrets.ANDROID_KEYSTORE_B64 != '' }}
-      HAS_PLAY: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON != '' }}
+    outputs:
+      has_key: ${{ env.HAS_KEY }}
+      version: ${{ steps.v.outputs.version }}
+      code: ${{ steps.v.outputs.code }}
     steps:
       - if: env.HAS_KEY != 'true'
         run: echo "::notice::ANDROID_KEYSTORE_B64 is not set, so the Android release is skipped."
@@ -43,11 +52,6 @@ jobs:
         if: env.HAS_KEY == 'true'
         with:
           fetch-depth: 0 # the tags and history, to work out the next version
-      - uses: ./.github/actions/setup-android
-        if: env.HAS_KEY == 'true'
-      # Dolby and DTS sound for devices that can't decode it themselves (docs/decisions/player.md).
-      - uses: ./.github/actions/ffmpeg-decoder
-        if: env.HAS_KEY == 'true'
       - id: v
         if: env.HAS_KEY == 'true'
         # Semver from the commits since the last release: feat -> minor, anything else -> patch, ! -> major.
@@ -55,8 +59,32 @@ jobs:
           version=$(node scripts/next-version.mjs)
           echo "version=$version" >> "$GITHUB_OUTPUT"
           echo "code=$(node scripts/next-version.mjs --code "$version")" >> "$GITHUB_OUTPUT"
-      - name: Signed APK and app bundle
-        if: env.HAS_KEY == 'true'
+
+  # The two signed builds, one per runner. A matrix keeps their steps identical; neither publishes anything.
+  build:
+    name: Android · ${{ matrix.name }}
+    needs: version
+    if: needs.version.outputs.has_key == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    strategy:
+      fail-fast: true
+      matrix:
+        include:
+          - name: GitHub APK
+            variant: githubRelease
+            task: :app:assembleGithubRelease
+            output: app/build/outputs/apk/github/release/app-github-release.apk
+          - name: Play bundle
+            variant: playRelease
+            task: :app:bundlePlayRelease
+            output: app/build/outputs/bundle/playRelease/app-play-release.aab
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup-android
+      # Dolby and DTS sound for devices that can't decode it themselves (docs/decisions/player.md).
+      - uses: ./.github/actions/ffmpeg-decoder
+      - name: Signed ${{ matrix.name }}
         env:
           ANDROID_KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_B64 }}
           ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
@@ -65,25 +93,53 @@ jobs:
           TRAKT_CLIENT_ID: ${{ secrets.TRAKT_CLIENT_ID }}
           # The Premium device list's address, a repository variable since it is in the app for anyone to see.
           PREMIUM_DEVICES_URL: ${{ vars.PREMIUM_DEVICES_URL }}
-          VERSION_CODE: ${{ steps.v.outputs.code }}
-          VERSION_NAME: ${{ steps.v.outputs.version }}
+          VERSION_CODE: ${{ needs.version.outputs.code }}
+          VERSION_NAME: ${{ needs.version.outputs.version }}
           GIT_COMMIT: ${{ github.sha }}
         run: |
           echo "$ANDROID_KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/upload.jks"
-          ANDROID_KEYSTORE_PATH="$RUNNER_TEMP/upload.jks" ./gradlew :app:assembleGithubRelease :app:bundlePlayRelease
+          ANDROID_KEYSTORE_PATH="$RUNNER_TEMP/upload.jks" ./gradlew ${{ matrix.task }}
           rm "$RUNNER_TEMP/upload.jks"
+      # Handed to the publish job: the build and R8's mapping for it, so a crash or freeze trace from this release can
+      # be decoded (docs/decisions/diagnostics.md).
+      - uses: actions/upload-artifact@v7
+        with:
+          name: build-${{ matrix.variant }}
+          path: |
+            ${{ matrix.output }}
+            app/build/outputs/mapping/${{ matrix.variant }}/mapping.txt
+          if-no-files-found: error
+          retention-days: 1
+
+  publish:
+    name: Android · GitHub release and Play
+    needs: [version, build]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      HAS_PLAY: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON != '' }}
+      VERSION: ${{ needs.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/download-artifact@v7
+        with:
+          pattern: build-*
+          path: app/build/outputs
+          merge-multiple: true
+      - name: Name the files
+        run: |
+          ls -R app/build/outputs
           cp app/build/outputs/apk/github/release/app-github-release.apk "$RUNNER_TEMP/tuned.apk"
-          # R8's mapping for the APK, so a crash or freeze trace from this release can be decoded (docs/decisions/diagnostics.md).
-          cp app/build/outputs/mapping/githubRelease/mapping.txt "$RUNNER_TEMP/tuned-${{ steps.v.outputs.version }}-mapping.txt"
+          cp app/build/outputs/mapping/githubRelease/mapping.txt "$RUNNER_TEMP/tuned-$VERSION-mapping.txt"
       - name: GitHub release
-        if: env.HAS_KEY == 'true' && !inputs.bundle_only
+        if: ${{ !inputs.bundle_only }}
         env:
           GH_TOKEN: ${{ github.token }}
-          TAG: v${{ steps.v.outputs.version }}
+          TAG: v${{ needs.version.outputs.version }}
         run: |
-          gh release create "$TAG" "$RUNNER_TEMP/tuned.apk" "$RUNNER_TEMP/tuned-${{ steps.v.outputs.version }}-mapping.txt" \
+          gh release create "$TAG" "$RUNNER_TEMP/tuned.apk" "$RUNNER_TEMP/tuned-$VERSION-mapping.txt" \
             --target "$GITHUB_SHA" \
-            --title "Tuned ${{ steps.v.outputs.version }}" \
+            --title "Tuned $VERSION" \
             --generate-notes \
             --latest
           echo "::notice::Released $TAG: https://github.com/${{ github.repository }}/releases/tag/$TAG"
@@ -91,10 +147,10 @@ jobs:
         # The website's "What's new" post for this release (docs/decisions/website.md), from the notes just published,
         # committed straight to main so the site has it the same day, then merged back into staging. Pushed with
         # GITHUB_TOKEN, so it starts no workflow (no second release); Vercel deploys it. Only for releases from main.
-        if: env.HAS_KEY == 'true' && !inputs.bundle_only && github.ref == 'refs/heads/main'
+        if: ${{ !inputs.bundle_only && github.ref == 'refs/heads/main' }}
         env:
           GH_TOKEN: ${{ github.token }}
-          TAG: v${{ steps.v.outputs.version }}
+          TAG: v${{ needs.version.outputs.version }}
         run: |
           gh release view "$TAG" --json body --jq .body > "$RUNNER_TEMP/notes.md"
           git fetch origin main
@@ -111,7 +167,6 @@ jobs:
             || echo "::warning::Could not merge main back into staging; merge it by hand so the post isn't lost at the next promotion."
           echo "::notice::Blog post: https://www.tunedplayer.com/blog/whats-new/tuned-$(echo "${TAG#v}" | tr . -)/"
       - uses: actions/upload-artifact@v7
-        if: env.HAS_KEY == 'true'
         # The R8 mappings of both builds, also kept when no GitHub release is made (bundle_only).
         with:
           name: tuned-r8-mapping
@@ -120,13 +175,12 @@ jobs:
             app/build/outputs/mapping/playRelease/mapping.txt
           retention-days: 90
       - uses: actions/upload-artifact@v7
-        if: env.HAS_KEY == 'true'
         with:
           name: tuned-release-aab
           path: app/build/outputs/bundle/playRelease/app-play-release.aab
           retention-days: 30
       - name: Upload to Play (internal)
-        if: env.HAS_KEY == 'true' && env.HAS_PLAY == 'true'
+        if: env.HAS_PLAY == 'true'
         # Pinned to a commit (v1.1.5): this third-party action is handed the Play service account, so a moved tag can't
         # swap in other code. Dependabot still offers updates.
         uses: r0adkll/upload-google-play@e738b9dd8f2476ea806d921b64aacd24f34515a5 # v1.1.5
@@ -139,5 +193,5 @@ jobs:
           status: completed
           # Play's in-app updates read this: 5 makes installed copies update at once (docs/decisions/updates.md).
           inAppUpdatePriority: 5
-      - if: env.HAS_KEY == 'true' && env.HAS_PLAY != 'true'
+      - if: env.HAS_PLAY != 'true'
         run: echo "::notice::PLAY_SERVICE_ACCOUNT_JSON is not set, so the bundle was built (see artifacts) but not uploaded to Play."
