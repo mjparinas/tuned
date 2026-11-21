@@ -9,7 +9,6 @@ import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
 import android.graphics.drawable.RippleDrawable
 import android.os.Build
-import android.text.TextUtils
 import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
@@ -127,8 +126,6 @@ internal class CastingScreen(
             setCompoundDrawablesRelativeWithIntrinsicBounds(R.drawable.ic_player_cast, 0, 0, 0)
             compoundDrawablePadding = dp(8)
             gravity = Gravity.CENTER_VERTICAL
-            maxLines = 1
-            ellipsize = TextUtils.TruncateAt.END
         }
 
     private val spinner =
