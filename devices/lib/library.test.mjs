@@ -200,7 +200,7 @@ test("settings and refresh go in the copy's settings", () => {
 // The app's own test (WebSettingsTest) checks types and defaults; this one runs when only the website changed.
 test("every website setting is a synced app setting", async () => {
     const { readFileSync } = await import("node:fs");
-    const fields = readFileSync(new URL("../../app/src/main/kotlin/com/tunedplayer/app/data/SettingFields.kt", import.meta.url), "utf8");
+    const fields = readFileSync(new URL("../../data/src/main/kotlin/com/tunedplayer/app/data/SettingFields.kt", import.meta.url), "utf8");
     for (const s of WEB_SETTINGS.flatMap((g) => g.settings)) {
         const line = fields.split("\n").find((l) => l.includes(`("${s.key}",`));
         assert.ok(line, `${s.key} isn't in SETTING_FIELDS`);
