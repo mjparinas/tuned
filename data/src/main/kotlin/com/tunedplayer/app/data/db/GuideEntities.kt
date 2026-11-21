@@ -23,6 +23,7 @@ data class ProgrammeSlot(
     val start: Long,
     val stop: Long,
     val title: String,
+    val genre: Int,
 )
 
 /**

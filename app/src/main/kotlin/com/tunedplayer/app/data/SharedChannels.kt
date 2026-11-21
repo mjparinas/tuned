@@ -13,7 +13,7 @@ import java.io.ByteArrayOutputStream
 import java.util.zip.GZIPOutputStream
 
 /**
- * Keeps a copy of the playlist in use's live channels and the next 12 hours of its guide in the Tuned account, for
+ * Keeps a copy of the playlist in use's live channels and the next day of its guide in the Tuned account, for
  * the website's Channels and guide page (docs/decisions/web.md › The app's copy). Melvin, 2026-11-20, chose "the app
  * shares its list" so the page works with providers that don't let web pages read them, and then that every signed-in
  * app keeps it there, whatever the `web_player` flag, so a new or reset device can fill Live TV from it when the
@@ -50,6 +50,8 @@ class SharedChannels(
                         epgId = it.tvgId,
                         number = it.number,
                         url = ChannelShare.hideLogin(it.url, c.username, c.password),
+                        region = it.region,
+                        adult = it.adult,
                     )
                 }
             if (channels.isEmpty()) return@withContext
@@ -60,9 +62,10 @@ class SharedChannels(
             ) {
                 return@withContext
             }
-            var gzipped = write(id, channels, now, withGuide = true)
-            // Too big with the guide (a huge playlist): the channels alone still open in VLC.
-            if (gzipped.size > ChannelShare.MAX_GZIPPED_BYTES) gzipped = write(id, channels, now, withGuide = false)
+            // A day of guide; too big (a huge playlist), half a day, then the channels alone, which still open in VLC.
+            var gzipped = write(id, channels, now, ChannelShare.GUIDE_AFTER_MS)
+            if (gzipped.size > ChannelShare.MAX_GZIPPED_BYTES) gzipped = write(id, channels, now, ChannelShare.GUIDE_SHORT_MS)
+            if (gzipped.size > ChannelShare.MAX_GZIPPED_BYTES) gzipped = write(id, channels, now, null)
             if (gzipped.size > ChannelShare.MAX_GZIPPED_BYTES) {
                 AppLog.w(TAG, "The channel list is too big to share with the website (${channels.size} channels)")
                 return@withContext
@@ -80,12 +83,12 @@ class SharedChannels(
         id: String,
         channels: List<ChannelShare.Channel>,
         now: Long,
-        withGuide: Boolean,
+        guideAfter: Long?,
     ): ByteArray {
         val bytes = ByteArrayOutputStream()
         GZIPOutputStream(bytes).bufferedWriter(Charsets.UTF_8).use { out ->
             ChannelShare.begin(out, id, channels, now)
-            if (withGuide) writeGuide(out, channels, now)
+            if (guideAfter != null) writeGuide(out, channels, now, guideAfter)
             ChannelShare.end(out)
         }
         return bytes.toByteArray()
@@ -95,14 +98,18 @@ class SharedChannels(
         out: Appendable,
         channels: List<ChannelShare.Channel>,
         now: Long,
+        after: Long,
     ) {
         var first = true
         val from = now - ChannelShare.GUIDE_BEFORE_MS
-        val to = now + ChannelShare.GUIDE_AFTER_MS
+        val to = now + after
         for (ids in ChannelShare.guideIds(channels).chunked(GUIDE_CHUNK)) {
-            val shows = db.channelShare().guideWindow(ids, from, to).map { ChannelShare.Show(it.channelId, it.start, it.stop, it.title) }
+            val shows =
+                db.channelShare().guideWindow(ids, from, to).map {
+                    ChannelShare.Show(it.channelId, it.start, it.stop, it.title, it.genre)
+                }
             for ((channel, list) in shows.groupBy { it.channelId }) {
-                if (ChannelShare.guideEntry(out, first, channel, list, now)) first = false
+                if (ChannelShare.guideEntry(out, first, channel, list, now, after)) first = false
             }
         }
     }

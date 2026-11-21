@@ -98,6 +98,174 @@ export function filterChannels(channels, { group = "", query = "", nowTitle = ()
     });
 }
 
+// ---------- Live TV's filters, as the app has them (core LiveTopic, ChannelQuality, ProgrammeGenre, Regions) ----------
+
+/** Words as the app's full-text index sees them (core Search.normalize): no accents, lower case, letters and digits. */
+export const normalize = (text) =>
+    String(text ?? "")
+        .normalize("NFD")
+        .replace(/\p{Mn}+/gu, "")
+        .toLowerCase()
+        .replace(/[^\p{L}\p{N}]+/gu, " ")
+        .trim();
+
+const tokens = (text) => normalize(text).split(" ").filter(Boolean);
+
+/** Whether `text` has one of `words`: `sport*` starts a word, a word with a space is a phrase (core LiveTopic.matches). */
+export function hasWord(text, words) {
+    const t = tokens(text);
+    return words.some((word) => {
+        if (word.includes(" ")) {
+            const phrase = word.split(" ");
+            for (let i = 0; i + phrase.length <= t.length; i++) if (phrase.every((w, j) => t[i + j] === w)) return true;
+            return false;
+        }
+        return word.endsWith("*") ? t.some((x) => x.startsWith(word.slice(0, -1))) : t.includes(word);
+    });
+}
+
+/** Live TV's kinds of channel, by name or category (core LiveTopic; Adult stays in the app, behind its PIN). */
+export const TOPICS = [
+    {
+        key: "sports",
+        label: "Sports",
+        words: "sport* eurosport* supersport* skysport* btsport* foxsport* beinsport* tntsport* football* soccer* hockey* baseball* basketball* wrestling* boxing* cricket* rugby* tennis* golf* nascar* motogp* indycar* bundesliga* laliga* matchday* gameday* espn* dazn* fubo* fight* ufc* tsn* bein wwe aew nfl nba nhl mlb mls ncaa epl f1 mma willow"
+            .split(" ")
+            .concat(["la liga", "premier league", "serie a", "ligue 1", "formula 1", "match day", "game day"]),
+    },
+    { key: "ppv", label: "PPV and events", words: ["ppv*", "pay per view", "event*"] },
+    {
+        key: "news",
+        label: "News",
+        words: "news* euronews* cnn* msnbc cnbc* bloomberg* aljazeera* france24 dw cgtn i24* cp24 bfm* lci noticias* notizie* nachrichten* actualites haber*"
+            .split(" ")
+            .concat(["al jazeera", "france 24", "nhk world", "trt world"]),
+    },
+    {
+        key: "kids",
+        label: "Kids",
+        words: "kid* child* cartoon* toon* teletoon* nick nickelodeon* nicktoons* cbeebies cbbc boomerang* babytv treehouse kika gulli jeunesse infantil* kinder* ninos"
+            .split(" ")
+            .concat(["disney junior", "disney jr", "disney channel", "baby tv", "pbs kids"]),
+    },
+    { key: "movies", label: "Movie channels", words: "movie* film* cine* kino* pelicula* hbo* showtime* starz* tcm mgm*".split(" ") },
+    {
+        key: "music",
+        label: "Music",
+        words: "music* musique* musik* mtv* vh1* vevo* cmt stingray* concert* karaoke* clubbing* 4music".split(" "),
+    },
+    {
+        key: "documentary",
+        label: "Documentaries",
+        words: "docu* documenta* doku* docs discovery* natgeo* history* historia smithsonian* curiosity* planete*"
+            .split(" ")
+            .concat(["nat geo", "national geographic", "animal planet", "science channel"]),
+    },
+];
+
+/** Picture quality from a word in the name (core ChannelQuality): whole words, so "hd" isn't "fhd". */
+export const QUALITIES = [
+    { key: "uhd", label: "4K", words: ["4k", "uhd", "2160p", "8k"] },
+    { key: "fhd", label: "FHD", words: ["fhd", "1080p", "1080i", "fullhd", "full hd"] },
+    { key: "hd", label: "HD", words: ["hd", "720p", "hdtv"] },
+    { key: "sd", label: "SD", words: ["sd", "480p", "576p", "576i", "480i", "lq"] },
+];
+
+/** What's on, by the code the app stores (core ProgrammeGenre.code). */
+export const GENRES = [
+    { code: 1, label: "Sports" },
+    { code: 2, label: "Movies" },
+    { code: 3, label: "News" },
+    { code: 4, label: "Kids" },
+    { code: 5, label: "Documentaries" },
+];
+
+/** A match between two sides ("Leafs vs Canadiens"), sports when the guide gives no kind (core ProgrammeGenre.of). */
+const versus = /\S\s+(vs\.?|v|@)\s+\S/i;
+export const genreOf = (p) => (p?.genre > 0 ? p.genre : versus.test(p?.title ?? "") ? 1 : 0);
+
+/** The app's names for its own tags (core Regions); any other tag is a country code the browser can name. */
+const tagNames = {
+    EN: "English",
+    AR: "Arabic",
+    KU: "Kurdish",
+    EX: "Ex-Yugoslavia",
+    LAT: "Latino",
+    AFR: "Africa",
+    ASIA: "Asia",
+    EUR: "Europe",
+    NORDIC: "Nordic",
+    UK: "United Kingdom",
+    US: "United States",
+    KR: "Korea",
+};
+let regionNames = null;
+export function regionName(tag) {
+    const t = String(tag ?? "").toUpperCase();
+    if (tagNames[t]) return tagNames[t];
+    try {
+        regionNames ??= new Intl.DisplayNames(["en-CA"], { type: "region" });
+        const name = /^[A-Z]{2}$/.test(t) ? regionNames.of(t) : null;
+        if (name && name !== t) return name;
+    } catch {
+        // An old browser: the tag itself.
+    }
+    return t;
+}
+
+/** The filters' empty state: every channel. */
+export const NO_FILTERS = Object.freeze({ group: "", query: "", topic: "", quality: "", onNow: 0, country: "", withGuide: false });
+
+/**
+ * Live TV's filters together, as the app narrows its list: group, typed words (in the name or what's on now), kind
+ * of channel, picture quality, kind of programme on now, country and Has guide. `nowOf(c)` is what's on now, or null.
+ */
+export function applyFilters(channels, f, nowOf = () => null) {
+    const words = fold(f.query ?? "")
+        .split(/\s+/)
+        .filter(Boolean);
+    const topic = TOPICS.find((t) => t.key === f.topic);
+    const quality = QUALITIES.find((q) => q.key === f.quality);
+    return channels.filter((c) => {
+        if (f.group && c.group !== f.group) return false;
+        if (f.country && c.region !== f.country) return false;
+        if (topic && !hasWord(c.name, topic.words) && !hasWord(c.group, topic.words)) return false;
+        if (quality && !hasWord(c.name, quality.words)) return false;
+        const on = f.onNow || f.withGuide || words.length ? nowOf(c) : null;
+        if (f.withGuide && !c.hasGuide) return false;
+        if (f.onNow && genreOf(on) !== f.onNow) return false;
+        if (!words.length) return true;
+        const hay = `${fold(c.name)} ${fold(on?.title ?? "")}`;
+        return words.every((w) => hay.includes(w));
+    });
+}
+
+/** Which choices would find anything, so only those are offered (as the app's filter sheet does). */
+export function offers(channels, nowOf = () => null) {
+    const countries = new Map();
+    const topics = new Set();
+    const qualities = new Set();
+    const genres = new Set();
+    let guide = false;
+    for (const c of channels) {
+        if (c.region) countries.set(c.region, (countries.get(c.region) ?? 0) + 1);
+        for (const t of TOPICS) if (!topics.has(t.key) && (hasWord(c.name, t.words) || hasWord(c.group, t.words))) topics.add(t.key);
+        for (const q of QUALITIES) if (!qualities.has(q.key) && hasWord(c.name, q.words)) qualities.add(q.key);
+        const g = genreOf(nowOf(c));
+        if (g) genres.add(g);
+        if (c.hasGuide) guide = true;
+    }
+    return {
+        countries: [...countries]
+            .map(([tag, count]) => ({ tag, name: regionName(tag), count }))
+            .sort((a, b) => a.name.localeCompare(b.name, "en-CA")),
+        topics: TOPICS.filter((t) => topics.has(t.key)),
+        qualities: QUALITIES.filter((q) => qualities.has(q.key)),
+        genres: GENRES.filter((g) => genres.has(g.code)),
+        guide,
+    };
+}
+
 // ---------- the guide (XMLTV) ----------
 
 /** An XMLTV time, `20261120190000 +0000` (the offset optional, UTC then), in milliseconds, or NaN. */
@@ -323,10 +491,13 @@ export function fromAppCopy(copy, login) {
     const channels = [];
     for (const c of copy.channels) {
         if (!Array.isArray(c)) continue;
-        const [name, group, logo, epgId, number, link] = c;
+        const [name, group, logo, epgId, number, link, region, adult] = c;
+        // Adult channels stay in the app, where they sit behind the parental PIN.
+        if (adult === 1) continue;
         const url = fillLogin(link, login);
         if (!url) continue;
         channels.push({
+            region: typeof region === "string" ? region.toUpperCase() : "",
             name: String(name ?? "").trim() || "Channel",
             group: String(group ?? ""),
             logo: String(logo ?? ""),
@@ -340,7 +511,13 @@ export function fromAppCopy(copy, login) {
         if (!Array.isArray(list)) continue;
         const shows = list
             .filter((p) => Array.isArray(p) && Number.isFinite(p[0]) && Number.isFinite(p[1]))
-            .map(([start, stop, title]) => ({ start: start * 1000, stop: stop * 1000, title: String(title ?? ""), desc: "" }))
+            .map(([start, stop, title, genre]) => ({
+                start: start * 1000,
+                stop: stop * 1000,
+                title: String(title ?? ""),
+                desc: "",
+                genre: Number(genre) || 0,
+            }))
             .sort((a, b) => a.start - b.start);
         if (shows.length) guide.set(id, shows);
     }
@@ -356,4 +533,33 @@ export function ago(then, now = Date.now()) {
     if (hours < 48) return `${hours} ${hours === 1 ? "hour" : "hours"} ago`;
     const days = Math.round(hours / 24);
     return `${days} days ago`;
+}
+
+/**
+ * Where a channel's logo is read from. An https page can't show an http picture (browsers block or upgrade it), so
+ * an http logo goes through Tuned's logo relay (`/api/account/logo`, pictures only: never a stream or a login).
+ */
+export function logoSrc(url, pageProtocol = "https:") {
+    const u = String(url ?? "").trim();
+    if (!/^https?:\/\//i.test(u)) return "";
+    if (/^https:/i.test(u) || pageProtocol !== "https:") return u;
+    return `/api/account/logo?u=${encodeURIComponent(u)}`;
+}
+
+/** The guide's times across the top: every half hour from `from` to `to`. */
+export function ticks(from, to, step = 1_800_000) {
+    const out = [];
+    for (let t = Math.ceil(from / step) * step; t < to; t += step) out.push(t);
+    return out;
+}
+
+/** The guide's span: from the half hour before `now` less `before`, to the last programme's end, at most `most` on. */
+export function guideSpan(guide, now, before = 1_800_000, most = 26 * 3_600_000) {
+    const from = Math.floor((now - before) / 1_800_000) * 1_800_000;
+    let last = now + 3 * 3_600_000;
+    for (const list of guide.values()) {
+        const end = list.at(-1)?.stop ?? 0;
+        if (end > last) last = end;
+    }
+    return { from, to: Math.min(Math.ceil(last / 1_800_000) * 1_800_000, from + most) };
 }

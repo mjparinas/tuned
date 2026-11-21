@@ -84,6 +84,8 @@ data class SharedChannelRow(
     val tvgId: String?,
     val number: Int,
     val url: String,
+    val region: String?,
+    val adult: Boolean,
 )
 
 /** A live channel's guide id and link, to match it with its catch-up days. */
