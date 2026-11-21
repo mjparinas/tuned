@@ -572,11 +572,10 @@ class BrowseViewModel(
                     }
 
                     is Filter.OwnList -> {
-                        container.lists.withKind(kind).first().any { it.id == chosen.id }
-                    }
-
-                    else -> {
-                        true
+                        container.lists
+                            .withKind(kind)
+                            .first()
+                            .any { it.id == chosen.id }
                     }
                 }
             if (!there && filter(kind).value == chosen) filter(kind).value = Filter.All

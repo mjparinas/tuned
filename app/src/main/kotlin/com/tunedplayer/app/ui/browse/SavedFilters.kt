@@ -26,9 +26,16 @@ data class SavedFilters(
         fun encode(saved: SavedFilters): String = json.encodeToString(
             Stored.serializer(),
             Stored(
-                chips = saved.chips.filterValues { it != Filter.All }.map { (k, f) -> k.code to encodeChip(f) }.toMap(),
+                chips =
+                    saved.chips
+                        .filterValues { it != Filter.All }
+                        .map { (k, f) -> k.code to encodeChip(f) }
+                        .toMap(),
                 // Adult channels need the parental PIN each time, so the Adult filter is never kept.
-                topic = saved.live.topic?.takeUnless { it.isAdult }?.name,
+                topic =
+                    saved.live.topic
+                        ?.takeUnless { it.isAdult }
+                        ?.name,
                 country = (saved.live.place as? LivePlace.Country)?.tag,
                 language = (saved.live.place as? LivePlace.Language)?.code,
                 languageTags = (saved.live.place as? LivePlace.Language)?.tags.orEmpty(),
