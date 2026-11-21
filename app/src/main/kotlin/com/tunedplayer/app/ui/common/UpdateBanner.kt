@@ -135,12 +135,16 @@ internal fun UpdateProgressBar(
 ) {
     val fraction = state.fraction
     val shaped = modifier.height(6.dp).clip(RoundedCornerShape(3.dp))
+    // On the banner's own colour: the default track is the secondary container, a green that clashes with it.
+    val track = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = TRACK_ALPHA)
     if (fraction != null) {
-        LinearProgressIndicator(progress = { fraction }, modifier = shaped, drawStopIndicator = {})
+        LinearProgressIndicator(progress = { fraction }, modifier = shaped, trackColor = track, drawStopIndicator = {})
     } else {
-        LinearProgressIndicator(modifier = shaped)
+        LinearProgressIndicator(modifier = shaped, trackColor = track)
     }
 }
+
+private const val TRACK_ALPHA = 0.24f
 
 /** The words for an install under way or stopped, for the banner and Settings › Check for updates. */
 object UpdateText {
