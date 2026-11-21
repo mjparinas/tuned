@@ -16,6 +16,7 @@ import androidx.media3.ui.PlayerView
 import com.github.takahirom.roborazzi.captureRoboImage
 import com.tunedplayer.app.R
 import com.tunedplayer.app.data.Accent
+import com.tunedplayer.app.player.CastingScreen
 import com.tunedplayer.app.player.InfoPills
 import com.tunedplayer.app.player.StatusNote
 import com.tunedplayer.app.player.StreamInfo
@@ -59,8 +60,30 @@ class PlayerScreenshots {
             seekable = true,
             subtitle = TvState.Subtitle("en", on = true),
         ),
-        note = "Playing on SHIELD",
+        note = null,
         busy = false,
+        casting = true,
+    )
+
+    /** A live channel the TV is still loading: the only time the casting screen shows a spinner, besides connecting. */
+    @Test
+    fun castingLoading() = shot(
+        "player-casting-loading",
+        TvState(playbackState = Player.STATE_BUFFERING),
+        note = null,
+        busy = false,
+        casting = true,
+    )
+
+    /** A DLNA TV says nothing back about its volume, so there is no slider; paused here. */
+    @Test
+    fun castingPausedDlna() = shot(
+        "player-casting-paused",
+        TvState(playWhenReady = false, playbackState = Player.STATE_READY),
+        note = null,
+        busy = false,
+        casting = true,
+        volume = null,
     )
 
     /** The seek bar in the accent, the fit and lock buttons and time of day at the top right, the stream's pills under the title. */
@@ -97,7 +120,7 @@ class PlayerScreenshots {
     )
 
     @Test
-    fun castingStarting() = shot("player-casting-starting", TvState(), note = "Starting on SHIELD…", busy = true)
+    fun castingStarting() = shot("player-casting-starting", TvState(), note = "Starting on SHIELD…", busy = true, casting = true)
 
     private fun shot(
         name: String,
@@ -106,6 +129,8 @@ class PlayerScreenshots {
         busy: Boolean,
         glance: StreamInfo.Pills? = null,
         captionsOn: Boolean = true,
+        casting: Boolean = false,
+        volume: Float? = 0.6f,
     ) {
         val activity = Robolectric.buildActivity(ComponentActivity::class.java).setup().get()
         val exo = ExoPlayer.Builder(activity).build()
@@ -122,6 +147,7 @@ class PlayerScreenshots {
         )
         val tv =
             object : TvControls {
+                // The controls read the stand-in TV in every shot, for times and seek bars without a stream.
                 override val casting = true
 
                 override fun state() = state
@@ -143,7 +169,7 @@ class PlayerScreenshots {
                 player = ViewPlayer(exo, { tv }, {}, { false })
             }
         tintScrubber(playerView, playerAccent(activity, Accent.VIOLET, dynamicColour = false))
-        placeBesideCaptions(playerView, captionButtons(activity, timingUsable = note == null && captionsOn))
+        placeBesideCaptions(playerView, captionButtons(activity, timingUsable = !casting && captionsOn))
         val density = activity.resources.displayMetrics.density
         val titles =
             LinearLayout(activity).apply {
@@ -165,11 +191,12 @@ class PlayerScreenshots {
                 addView(backButton(activity) {})
                 addView(titles, LinearLayout.LayoutParams(0, WRAP, 1f))
                 // The top row's own buttons (PlayerTools), with no three-dot menu: fit greyed out while the TV plays.
-                addView(toolButton(activity, R.drawable.ic_player_fit, R.string.player_fit).apply { usable(note == null) })
+                addView(toolButton(activity, R.drawable.ic_player_fit, R.string.player_fit).apply { usable(!casting) })
                 addView(toolButton(activity, R.drawable.ic_player_lock, R.string.player_lock))
                 addView(playerClock(activity))
             }
-        val status = StatusNote(activity).apply { note?.let { show(it, busy) } }
+        // Notes over the video are for the phone's own player; while casting they go on the casting screen.
+        val status = StatusNote(activity).apply { if (!casting) note?.let { show(it, busy) } }
         val root =
             FrameLayout(activity).apply {
                 setBackgroundColor(Color.BLACK)
@@ -185,6 +212,13 @@ class PlayerScreenshots {
                         .apply { bottomMargin = (STATUS_RAISE_DP * density).toInt() },
                 )
             }
+        if (casting) {
+            val screen = CastingScreen(activity, onVolume = {}, onStop = {}, restTimeoutMs = { 0 })
+            screen.attach(root, playerView)
+            screen.tint(playerAccent(activity, Accent.VIOLET, dynamicColour = false))
+            screen.update(CastingScreen.Look("SHIELD", null, state.takeIf { note == null }, volume))
+            screen.note(note, busy)
+        }
         activity.setContentView(root)
         playerView.showController()
         (playerView.player as ViewPlayer).tvChanged()
