@@ -162,3 +162,6 @@ const val TABLET = "w1280dp-h800dp-land-xhdpi"
 
 /** A 1080p Android TV (960 by 540 dp), drawn inside its overscan margin (docs/decisions/tv.md). */
 const val TV = "w960dp-h540dp-land-television-xhdpi"
+
+/** Melvin's TV (an Nvidia Shield), which lays out at about 853 by 480 dp, shorter than [TV]. */
+const val SMALL_TV = "w853dp-h480dp-land-television-xhdpi"

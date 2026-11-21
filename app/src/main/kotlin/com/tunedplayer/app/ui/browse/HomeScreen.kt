@@ -641,11 +641,19 @@ internal fun FirstRun(
     onRetry: () -> Unit,
     onChangeLogin: () -> Unit,
 ) {
-    // Centred, and scrolls when the steps run taller than a TV's screen inside its margin.
-    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        FirstRunBody(refreshing, progress, error, onRetry, onChangeLogin)
+    // Centred, and scrolls when the steps still run taller than the screen (very large text). On a short, wide screen
+    // (a TV, a phone held sideways) the steps go beside the title, because stacked they don't fit a TV.
+    BoxWithConstraints(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        val sideBySide = maxWidth >= FIRST_RUN_SIDE_BY_SIDE_WIDTH && maxHeight < FIRST_RUN_STACKED_HEIGHT
+        FirstRunBody(refreshing, progress, error, onRetry, onChangeLogin, sideBySide)
     }
 }
+
+/** Wide enough for the title beside the steps. */
+private val FIRST_RUN_SIDE_BY_SIDE_WIDTH = 600.dp
+
+/** Seven stacked steps with the title, the line under them and the padding need about this much height. */
+private val FIRST_RUN_STACKED_HEIGHT = 560.dp
 
 @Composable
 private fun FirstRunBody(
@@ -654,13 +662,17 @@ private fun FirstRunBody(
     error: String,
     onRetry: () -> Unit,
     onChangeLogin: () -> Unit,
+    sideBySide: Boolean,
 ) {
     Column(
-        Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(32.dp),
+        Modifier
+            .fillMaxWidth()
+            .verticalScroll(rememberScrollState())
+            .padding(horizontal = 32.dp, vertical = if (sideBySide) 16.dp else 32.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         if (refreshing || error.isBlank()) {
-            FirstDownload(progress)
+            FirstDownload(progress, sideBySide = sideBySide)
         } else {
             Text(stringResource(R.string.first_run_failed), style = MaterialTheme.typography.titleMedium)
             Spacer(Modifier.height(8.dp))
