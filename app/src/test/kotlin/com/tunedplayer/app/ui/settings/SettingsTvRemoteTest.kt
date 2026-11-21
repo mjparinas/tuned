@@ -58,11 +58,6 @@ class SettingsTvRemoteTest {
         compose.waitForIdle()
     }
 
-    private fun androidx.compose.ui.test.junit4.ComposeContentTestRule.onRoot() = onNode(
-        androidx.compose.ui.test
-            .isRoot(),
-    )
-
     /** The bug Melvin found: down on the text size changed the size instead of going to the next row. */
     @Test
     fun downAndUpLeaveASlider() {
@@ -116,7 +111,7 @@ class SettingsTvRemoteTest {
             }
         }
         compose.onNodeWithText("Theme").performClick()
-        compose.waitForIdle()
+        compose.waitUntil(DIALOG_WAIT_MS) { runCatching { compose.onNodeWithText("Dark").assertIsFocused() }.isSuccess }
         compose.onNodeWithText("Dark").assertIsFocused()
         compose.onNodeWithText("Light").assertIsNotFocused()
     }
@@ -146,3 +141,5 @@ class SettingsTvRemoteTest {
         name: String,
     ) = FavouriteRow(id = id, name = name, logo = null, tvgId = null)
 }
+
+private const val DIALOG_WAIT_MS = 2_000L

@@ -28,16 +28,22 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.staticCompositionLocalOf
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusDirection
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
@@ -55,11 +61,12 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.tunedplayer.app.R
+import com.tunedplayer.app.diagnostics.attempt
 import com.tunedplayer.app.ui.common.StartFocus
 import com.tunedplayer.app.ui.common.TunedDialog
 import com.tunedplayer.app.ui.common.focusRing
 import com.tunedplayer.app.ui.common.focusWithinRing
-import com.tunedplayer.app.ui.common.rememberStartFocus
+import com.tunedplayer.app.ui.common.isTelevision
 import com.tunedplayer.app.ui.common.startFocus
 import kotlin.math.roundToInt
 
@@ -191,13 +198,13 @@ fun <T> ChoiceRow(
             title = { Text(title) },
             text = {
                 // On a TV the remote starts on the choice in use, so OK alone keeps it and an arrow moves from there.
-                val start = rememberStartFocus()
+                val start = rememberDialogStartFocus()
                 Column(Modifier.verticalScroll(rememberScrollState())) {
                     options.forEach { option ->
                         Row(
                             Modifier
                                 .fillMaxWidth()
-                                .then(if (option == selected) Modifier.startFocus(start) else Modifier)
+                                .then(if (option == selected) start.modifier else Modifier)
                                 .focusRing(RowFocusShape, MaterialTheme.colorScheme.primary)
                                 .selectable(selected = option == selected, role = Role.RadioButton, onClick = {
                                     onSelect(option)
@@ -217,6 +224,42 @@ fun <T> ChoiceRow(
         )
     }
 }
+
+/**
+ * On a TV, where a dialog puts the remote when it opens ([modifier] on that element); does nothing elsewhere. A dialog's
+ * window isn't ready to take focus the moment it is composed, so it tries again each frame for a few frames until the
+ * element has focus, rather than once.
+ */
+@Stable
+private class DialogStartFocus(
+    val enabled: Boolean,
+) {
+    val requester = FocusRequester()
+    var focused = false
+
+    val modifier: Modifier
+        get() = if (!enabled) Modifier else Modifier.focusRequester(requester).onFocusChanged { if (it.isFocused) focused = true }
+}
+
+@Composable
+private fun rememberDialogStartFocus(): DialogStartFocus {
+    val tv = isTelevision()
+    val start = remember(tv) { DialogStartFocus(tv) }
+    LaunchedEffect(start) {
+        if (!start.enabled) return@LaunchedEffect
+        repeat(DIALOG_FOCUS_FRAMES) {
+            withFrameNanos { }
+            if (start.focused) return@LaunchedEffect
+            attempt(TAG, "Couldn't focus the choice in use") { start.requester.requestFocus() }
+        }
+    }
+    return start
+}
+
+/** How many frames a dialog is given to take focus; a dialog opens in one or two. */
+private const val DIALOG_FOCUS_FRAMES = 10
+
+private const val TAG = "Settings"
 
 /**
  * A slider that writes only when the finger lifts, so dragging doesn't hammer DataStore.
