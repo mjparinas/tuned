@@ -33,6 +33,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.tunedplayer.app.R
 import com.tunedplayer.app.data.SyncProgress
@@ -43,12 +44,31 @@ import com.tunedplayer.app.ui.SyncText
  * those as well, like processing, or inserting to database"): done steps are ticked, the current one has its own bar
  * and what it has got through (bytes of the full size, or how many channels so far), and the rest wait their turn.
  * Before the refresh first reports, a moving bar and a line say the download is on its way.
+ *
+ * [sideBySide] puts the title and the line about big playlists beside the steps rather than above and below them, for
+ * a short, wide screen such as a TV: stacked, seven steps pushed that line off the bottom of Melvin's TV, where nothing
+ * on the screen takes focus to scroll to it (Melvin, 2026-11-21: "there's like descriptive text that is slightly cut
+ * off at the very bottom").
  */
 @Composable
 internal fun FirstDownload(
     progress: SyncProgress?,
     modifier: Modifier = Modifier,
+    sideBySide: Boolean = false,
 ) {
+    if (progress != null && sideBySide) {
+        Row(modifier.widthIn(max = 880.dp), verticalAlignment = Alignment.CenterVertically) {
+            Column(Modifier.weight(1f)) {
+                Text(stringResource(R.string.first_run_loading), style = MaterialTheme.typography.titleLarge)
+                Spacer(Modifier.height(12.dp))
+                Hint(stringResource(R.string.first_run_keeps_going), TextAlign.Start)
+            }
+            Spacer(Modifier.width(40.dp))
+            // Closer together than stacked: beside Home's search row a TV has about 330 dp for all seven.
+            Steps(progress, Modifier.weight(1.5f), gap = 6.dp)
+        }
+        return
+    }
     Column(modifier.widthIn(max = 480.dp), horizontalAlignment = Alignment.CenterHorizontally) {
         Text(stringResource(R.string.first_run_loading), style = MaterialTheme.typography.titleMedium, textAlign = TextAlign.Center)
         Spacer(Modifier.height(16.dp))
@@ -58,21 +78,31 @@ internal fun FirstDownload(
             Hint(stringResource(R.string.login_downloading))
             return@Column
         }
-        val steps = if (progress.step in progress.steps) progress.steps else progress.steps + progress.step
-        val current = steps.indexOf(progress.step)
-        Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            steps.forEachIndexed { index, step ->
-                val state =
-                    when {
-                        index < current -> StepState.Done
-                        index == current -> StepState.Now
-                        else -> StepState.Waiting
-                    }
-                StepRow(index + 1, step, state, progress.takeIf { state == StepState.Now })
-            }
-        }
+        Steps(progress, Modifier.fillMaxWidth())
         Spacer(Modifier.height(16.dp))
         Hint(stringResource(R.string.first_run_keeps_going))
+    }
+}
+
+/** Every step of the plan in order, the running one with its bar and detail. */
+@Composable
+private fun Steps(
+    progress: SyncProgress,
+    modifier: Modifier = Modifier,
+    gap: Dp = 10.dp,
+) {
+    val steps = if (progress.step in progress.steps) progress.steps else progress.steps + progress.step
+    val current = steps.indexOf(progress.step)
+    Column(modifier, verticalArrangement = Arrangement.spacedBy(gap)) {
+        steps.forEachIndexed { index, step ->
+            val state =
+                when {
+                    index < current -> StepState.Done
+                    index == current -> StepState.Now
+                    else -> StepState.Waiting
+                }
+            StepRow(index + 1, step, state, progress.takeIf { state == StepState.Now })
+        }
     }
 }
 
@@ -147,12 +177,15 @@ private fun StepBadge(
 }
 
 @Composable
-private fun Hint(text: String) {
+private fun Hint(
+    text: String,
+    align: TextAlign = TextAlign.Center,
+) {
     Text(
         text,
         style = MaterialTheme.typography.bodyMedium,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
-        textAlign = TextAlign.Center,
+        textAlign = align,
     )
 }
 

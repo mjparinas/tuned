@@ -307,8 +307,18 @@ fun HomeScreen(
         ) { padding ->
             if (downloads) {
                 // Its own title bar sits under the space Home's Scaffold already left for the status bar.
-                Box(Modifier.padding(padding).consumeWindowInsets(padding).fillMaxSize()) {
-                    DownloadsScreen(onPlay = onPlay, onBack = null)
+                // The channels getting ready (the first download, or a refresh the person started) show above it as
+                // they do on the other tabs (Melvin, 2026-11-21: "I still want to see the fact that the channels are
+                // processing on the downloads page").
+                Column(Modifier.padding(padding).consumeWindowInsets(padding).fillMaxSize()) {
+                    val firstRun = empty == true && refreshing
+                    when {
+                        firstRun && progress != null -> RefreshBar(checkNotNull(progress))
+                        firstRun -> RefreshStarting()
+                        requestedProgress != null -> RefreshBar(checkNotNull(requestedProgress))
+                        requestedPending == true -> RefreshStarting()
+                    }
+                    Box(Modifier.weight(1f).fillMaxWidth()) { DownloadsScreen(onPlay = onPlay, onBack = null) }
                 }
                 return@Scaffold
             }
@@ -415,7 +425,7 @@ fun HomeScreen(
 }
 
 @Composable
-private fun SearchBarRow(
+internal fun SearchBarRow(
     text: String,
     hint: String,
     onChange: (String) -> Unit,
@@ -628,18 +638,26 @@ private fun CategoryChips(
 }
 
 @Composable
-private fun FirstRun(
+internal fun FirstRun(
     refreshing: Boolean,
     progress: SyncProgress?,
     error: String,
     onRetry: () -> Unit,
     onChangeLogin: () -> Unit,
 ) {
-    // Centred, and scrolls when the steps run taller than a TV's screen inside its margin.
-    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        FirstRunBody(refreshing, progress, error, onRetry, onChangeLogin)
+    // Centred, and scrolls when the steps still run taller than the screen (very large text). On a short, wide screen
+    // (a TV, a phone held sideways) the steps go beside the title, because stacked they don't fit a TV.
+    BoxWithConstraints(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        val sideBySide = maxWidth >= FIRST_RUN_SIDE_BY_SIDE_WIDTH && maxHeight < FIRST_RUN_STACKED_HEIGHT
+        FirstRunBody(refreshing, progress, error, onRetry, onChangeLogin, sideBySide)
     }
 }
+
+/** Wide enough for the title beside the steps. */
+private val FIRST_RUN_SIDE_BY_SIDE_WIDTH = 600.dp
+
+/** Seven stacked steps with the title, the line under them and the padding need about this much height. */
+private val FIRST_RUN_STACKED_HEIGHT = 560.dp
 
 @Composable
 private fun FirstRunBody(
@@ -648,13 +666,17 @@ private fun FirstRunBody(
     error: String,
     onRetry: () -> Unit,
     onChangeLogin: () -> Unit,
+    sideBySide: Boolean,
 ) {
     Column(
-        Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(32.dp),
+        Modifier
+            .fillMaxWidth()
+            .verticalScroll(rememberScrollState())
+            .padding(horizontal = 32.dp, vertical = if (sideBySide) 12.dp else 32.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         if (refreshing || error.isBlank()) {
-            FirstDownload(progress)
+            FirstDownload(progress, sideBySide = sideBySide)
         } else {
             Text(stringResource(R.string.first_run_failed), style = MaterialTheme.typography.titleMedium)
             Spacer(Modifier.height(8.dp))
