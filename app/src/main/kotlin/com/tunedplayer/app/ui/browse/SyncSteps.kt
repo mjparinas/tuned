@@ -33,6 +33,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.tunedplayer.app.R
 import com.tunedplayer.app.data.SyncProgress
@@ -62,8 +63,9 @@ internal fun FirstDownload(
                 Spacer(Modifier.height(12.dp))
                 Hint(stringResource(R.string.first_run_keeps_going), TextAlign.Start)
             }
-            Spacer(Modifier.width(48.dp))
-            Steps(progress, Modifier.weight(1.25f))
+            Spacer(Modifier.width(40.dp))
+            // Closer together than stacked: beside Home's search row a TV has about 330 dp for all seven.
+            Steps(progress, Modifier.weight(1.5f), gap = 6.dp)
         }
         return
     }
@@ -87,10 +89,11 @@ internal fun FirstDownload(
 private fun Steps(
     progress: SyncProgress,
     modifier: Modifier = Modifier,
+    gap: Dp = 10.dp,
 ) {
     val steps = if (progress.step in progress.steps) progress.steps else progress.steps + progress.step
     val current = steps.indexOf(progress.step)
-    Column(modifier, verticalArrangement = Arrangement.spacedBy(10.dp)) {
+    Column(modifier, verticalArrangement = Arrangement.spacedBy(gap)) {
         steps.forEachIndexed { index, step ->
             val state =
                 when {

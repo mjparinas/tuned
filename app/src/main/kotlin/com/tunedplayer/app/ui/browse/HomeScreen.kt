@@ -678,7 +678,7 @@ private fun FirstRunBody(
         Modifier
             .fillMaxWidth()
             .verticalScroll(rememberScrollState())
-            .padding(horizontal = 32.dp, vertical = if (sideBySide) 16.dp else 32.dp),
+            .padding(horizontal = 32.dp, vertical = if (sideBySide) 12.dp else 32.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         if (refreshing || error.isBlank()) {
