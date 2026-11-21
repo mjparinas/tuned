@@ -7,8 +7,8 @@ import androidx.room.withTransaction
  * before numbers existed gets them here once, in the background, a chunk per transaction so the lists never wait long.
  */
 object ChannelNumbers {
-    suspend fun fillIfMissing(db: TunedDatabase) {
-        if (!db.channelNumbers().hasUnnumbered()) return
+    suspend fun fillIfMissing(db: TunedDatabase) = offMain {
+        if (!db.channelNumbers().hasUnnumbered()) return@offMain
         val ids = db.channelNumbers().liveIdsInOrder()
         val sql = db.openHelper.writableDatabase
         ids.withIndex().chunked(CHUNK).forEach { chunk ->

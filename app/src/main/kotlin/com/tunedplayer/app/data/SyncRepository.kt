@@ -29,6 +29,7 @@ import com.tunedplayer.app.data.db.ShowCoverEntity
 import com.tunedplayer.app.data.db.ShowDetailsEntity
 import com.tunedplayer.app.data.db.ShowGroups
 import com.tunedplayer.app.data.db.TunedDatabase
+import com.tunedplayer.app.data.db.offMain
 import com.tunedplayer.app.diagnostics.AppLog
 import com.tunedplayer.app.diagnostics.attempt
 import kotlinx.coroutines.Dispatchers
@@ -87,7 +88,9 @@ class SyncRepository(
         val programmes: Int,
     )
 
-    suspend fun refreshAll(progress: (SyncProgress) -> Unit = {}): Result = lock.withLock {
+    suspend fun refreshAll(progress: (SyncProgress) -> Unit = {}): Result = offMain { refreshAllLocked(progress) }
+
+    private suspend fun refreshAllLocked(progress: (SyncProgress) -> Unit): Result = lock.withLock {
         val plan = Plan(progress)
         plan.steps = SyncProgress.planFor(currentLogin(), headerGuide.exists())
         plan.start()
@@ -102,7 +105,9 @@ class SyncRepository(
         Result(items, programmes)
     }
 
-    suspend fun refreshGuide(progress: (SyncProgress) -> Unit = {}): Int = lock.withLock {
+    suspend fun refreshGuide(progress: (SyncProgress) -> Unit = {}): Int = offMain { refreshGuideOnly(progress) }
+
+    private suspend fun refreshGuideOnly(progress: (SyncProgress) -> Unit): Int = lock.withLock {
         val plan = Plan(progress)
         plan.steps = SyncProgress.GUIDE
         plan.start()
@@ -130,6 +135,11 @@ class SyncRepository(
      * many channels it saved; 0 when the cache already had channels (the provider got there first).
      */
     suspend fun fillFromCopy(
+        channels: List<PlaylistEntry>,
+        guide: List<Programme>,
+    ): Int = offMain { fillFromCopyLocked(channels, guide) }
+
+    private suspend fun fillFromCopyLocked(
         channels: List<PlaylistEntry>,
         guide: List<Programme>,
     ): Int = lock.withLock {

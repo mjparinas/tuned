@@ -7,8 +7,7 @@ import com.tunedplayer.app.core.XtreamApi
 import com.tunedplayer.app.data.db.ShowDetailsEntity
 import com.tunedplayer.app.data.db.ShowGroups
 import com.tunedplayer.app.data.db.TunedDatabase
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
+import com.tunedplayer.app.data.db.offMain
 
 /**
  * When each film and show was added, its year and its rating, from the Xtream API, for the Movies and Shows sorts
@@ -45,7 +44,7 @@ class XtreamDetails(
     }
 
     /** The cache's films by their Xtream stream id, the number their link ends in. */
-    private suspend fun filmIds(): Map<String, Long> = withContext(Dispatchers.IO) {
+    private suspend fun filmIds(): Map<String, Long> = offMain {
         val ids = HashMap<String, Long>()
         sql.query("SELECT id, url FROM items WHERE kind = 1").use { c ->
             while (c.moveToNext()) CatchUp.streamId(c.getString(1))?.let { ids[it] = c.getLong(0) }
@@ -53,8 +52,8 @@ class XtreamDetails(
         ids
     }
 
-    private suspend fun flush(batch: MutableList<Pending>) {
-        if (batch.isEmpty()) return
+    private suspend fun flush(batch: MutableList<Pending>) = offMain {
+        if (batch.isEmpty()) return@offMain
         db.withTransaction {
             // A time or rating the server leaves out keeps the one already known; a year only fills a missing one,
             // because the name's year is as good. Rows that wouldn't change aren't written at all.

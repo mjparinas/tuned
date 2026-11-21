@@ -4,6 +4,7 @@ import android.content.Context
 import com.tunedplayer.app.container
 import com.tunedplayer.app.data.db.GuideSearchIndex
 import com.tunedplayer.app.data.db.TunedDatabase
+import com.tunedplayer.app.data.db.offMain
 import com.tunedplayer.app.diagnostics.attempt
 import com.tunedplayer.app.work.Reminders
 import com.tunedplayer.app.work.ScanWorker
@@ -90,7 +91,7 @@ class PlaylistSession(
         db.shows().deleteCovers()
         db.shows().deleteDetails()
         db.programmes().deleteAll()
-        GuideSearchIndex.lock.withLock { GuideSearchIndex.reset(db.openHelper.writableDatabase) }
+        offMain { GuideSearchIndex.lock.withLock { GuideSearchIndex.reset(db.openHelper.writableDatabase) } }
         db.catchUp().deleteAll()
         db.channelScan().deleteAll()
     }
