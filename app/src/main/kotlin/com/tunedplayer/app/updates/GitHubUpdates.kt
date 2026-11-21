@@ -312,10 +312,12 @@ class GitHubUpdates(
             return
         }
         if (now is State.Installing) {
-            AppLog.i(TAG, "Install tapped again while on ${now.step.name.lowercase()}")
+            AppLog.i(TAG) { "Install tapped again while on ${now.step.name.lowercase()}" }
             return
         }
-        AppLog.i(TAG, "Install tapped: Tuned ${ready.versionName}, Android ${Build.VERSION.SDK_INT}, ${Build.MANUFACTURER} ${Build.MODEL}")
+        AppLog.i(TAG) {
+            "Install tapped: Tuned ${ready.versionName}, Android ${Build.VERSION.SDK_INT}, ${Build.MANUFACTURER} ${Build.MODEL}"
+        }
         val app = activity.applicationContext
         val allowed = attempt(TAG, "install permission") { app.packageManager.canRequestPackageInstalls() }.getOrDefault(true)
         if (!allowed) {
@@ -338,7 +340,7 @@ class GitHubUpdates(
         activity: Context,
         ready: State.Ready,
     ) {
-        AppLog.i(TAG, "Tuned isn't allowed to install apps yet; opening Android's setting")
+        AppLog.i(TAG) { "Tuned isn't allowed to install apps yet; opening Android's setting" }
         val pages =
             listOf(
                 Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES, "package:${activity.packageName}".toUri()),
@@ -351,7 +353,7 @@ class GitHubUpdates(
             awaitingPermission = false
             _state.value = State.InstallFailed(ready, InstallProblem.PERMISSION)
         } else {
-            AppLog.i(TAG, "Opened ${opened.action}${if (opened.data != null) " for Tuned" else ""}")
+            AppLog.i(TAG) { "Opened ${opened.action}${if (opened.data != null) " for Tuned" else ""}" }
             awaitingPermission = true
         }
     }
@@ -400,7 +402,7 @@ class GitHubUpdates(
         step(InstallStep.PREPARE, 0)
         val installer = context.packageManager.packageInstaller
         val id = installer.createSession(PackageInstaller.SessionParams(PackageInstaller.SessionParams.MODE_FULL_INSTALL))
-        AppLog.i(TAG, "Copying the update into Android's installer (session $id, $size bytes)")
+        AppLog.i(TAG) { "Copying the update into Android's installer (session $id, $size bytes)" }
         try {
             commit(context, installer, id, apk) { step(InstallStep.PREPARE, it) }
         } catch (e: CancellationException) {
@@ -414,7 +416,7 @@ class GitHubUpdates(
         // answer before this line runs, so only a step still preparing moves on.
         val handed = State.Installing(ready, InstallStep.OPEN_INSTALLER)
         _state.compareAndSet(State.Installing(ready, InstallStep.PREPARE, size, size), handed)
-        AppLog.i(TAG, "Handed the update to Android's installer; waiting for its answer")
+        AppLog.i(TAG) { "Handed the update to Android's installer; waiting for its answer" }
         // Some devices never answer at all: rather than "Opening Android's installer" for ever, say it didn't open.
         delay(installerTimeoutMs)
         if (_state.compareAndSet(handed, State.InstallFailed(ready, InstallProblem.INSTALLER))) {
@@ -471,7 +473,7 @@ class GitHubUpdates(
         status: Int,
         message: String?,
     ) {
-        AppLog.i(TAG, "Android's installer answered: status $status${message?.let { ", $it" }.orEmpty()}")
+        AppLog.i(TAG) { "Android's installer answered: status $status${message?.let { ", $it" }.orEmpty()}" }
         val now = _state.value as? State.Installing ?: return
         when (status) {
             PackageInstaller.STATUS_PENDING_USER_ACTION -> {
@@ -505,7 +507,7 @@ class GitHubUpdates(
         if (!awaitingPermission || ready == null) return
         awaitingPermission = false
         if (attempt(TAG, "install permission") { activity.packageManager.canRequestPackageInstalls() }.getOrDefault(false)) {
-            AppLog.i(TAG, "Allowed to install apps now; carrying on")
+            AppLog.i(TAG) { "Allowed to install apps now; carrying on" }
             install(activity)
         } else {
             AppLog.w(TAG, "Came back without allowing Tuned to install apps")
