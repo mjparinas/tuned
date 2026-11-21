@@ -21,7 +21,6 @@ import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -50,7 +49,11 @@ import com.tunedplayer.app.core.LiveTopic
 import com.tunedplayer.app.core.ProgrammeGenre
 import com.tunedplayer.app.core.RegionLanguages
 import com.tunedplayer.app.core.Regions
+import com.tunedplayer.app.ui.common.TunedSheet
+import com.tunedplayer.app.ui.common.focusRing
 import com.tunedplayer.app.ui.common.regionName
+import com.tunedplayer.app.ui.common.rememberStartFocus
+import com.tunedplayer.app.ui.common.startFocus
 import com.tunedplayer.app.ui.settings.PinDialog
 import com.tunedplayer.app.ui.settings.PinMode
 import com.tunedplayer.app.ui.settings.languageName
@@ -251,7 +254,10 @@ private fun LiveFiltersSheet(
     val set = { q: LiveQuick -> vm.liveQuick.value = q }
     // Read once as the sheet opens; until then (a moment) only what is already chosen shows.
     val offers by produceState(LiveOffers()) { value = vm.liveOffers() }
-    ModalBottomSheet(onDismissRequest = onDismiss) {
+    // On a TV the remote shows where it is with an outline on each chip, and starts on the first type.
+    val ring = Modifier.focusRing(MaterialTheme.shapes.small, MaterialTheme.colorScheme.primary)
+    val start = rememberStartFocus()
+    TunedSheet(onDismissRequest = onDismiss) {
         LazyColumn(
             contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 24.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
@@ -269,15 +275,16 @@ private fun LiveFiltersSheet(
             }
             item(key = "topics") {
                 Section(stringResource(R.string.live_filters_type)) {
-                    LiveTopic.entries.filterNot { it.isAdult }.forEach { t ->
+                    LiveTopic.entries.filterNot { it.isAdult }.forEachIndexed { i, t ->
                         val on = quick.topic == t
                         FilterChip(
+                            modifier = if (i == 0) Modifier.startFocus(start).then(ring) else ring,
                             selected = on,
                             onClick = { set(quick.copy(topic = if (on) null else t)) },
                             label = { Text(stringResource(topicLabel(t))) },
                         )
                     }
-                    AdultChip(vm, quick, set)
+                    AdultChip(vm, quick, set, ring)
                 }
             }
             val qualities = ChannelQuality.entries.filter { it in offers.qualities || it == quick.quality }
@@ -287,6 +294,7 @@ private fun LiveFiltersSheet(
                         qualities.forEach { q ->
                             val on = quick.quality == q
                             FilterChip(
+                                modifier = ring,
                                 selected = on,
                                 onClick = { set(quick.copy(quality = if (on) null else q)) },
                                 label = { Text(stringResource(qualityLabel(q))) },
@@ -302,6 +310,7 @@ private fun LiveFiltersSheet(
                         genres.forEach { g ->
                             val on = quick.onNow == g
                             FilterChip(
+                                modifier = ring,
                                 selected = on,
                                 onClick = { set(quick.copy(onNow = if (on) null else g)) },
                                 label = { Text(stringResource(genreLabel(g))) },
@@ -318,6 +327,7 @@ private fun LiveFiltersSheet(
                     Section(stringResource(R.string.live_filters_only)) {
                         if (guide) {
                             FilterChip(
+                                modifier = ring,
                                 selected = quick.withGuide,
                                 onClick = { set(quick.copy(withGuide = !quick.withGuide)) },
                                 label = { Text(stringResource(R.string.live_filter_guide)) },
@@ -325,6 +335,7 @@ private fun LiveFiltersSheet(
                         }
                         if (catchUp) {
                             FilterChip(
+                                modifier = ring,
                                 selected = quick.catchUp,
                                 onClick = { set(quick.copy(catchUp = !quick.catchUp)) },
                                 label = { Text(stringResource(R.string.live_filter_catch_up)) },
@@ -332,6 +343,7 @@ private fun LiveFiltersSheet(
                         }
                         if (watched) {
                             FilterChip(
+                                modifier = ring,
                                 selected = quick.watched,
                                 onClick = { set(quick.copy(watched = !quick.watched)) },
                                 label = { Text(stringResource(R.string.live_filter_watched)) },
@@ -346,6 +358,7 @@ private fun LiveFiltersSheet(
                         languages.forEach { (code, tags) ->
                             val on = (quick.place as? LivePlace.Language)?.code == code
                             FilterChip(
+                                modifier = ring,
                                 selected = on,
                                 onClick = { set(quick.copy(place = if (on) null else LivePlace.Language(code, tags))) },
                                 label = { Text(languageName(code)) },
@@ -361,6 +374,7 @@ private fun LiveFiltersSheet(
                             val place = LivePlace.Country(r.region)
                             val on = quick.place == place
                             FilterChip(
+                                modifier = ring,
                                 selected = on,
                                 onClick = { set(quick.copy(place = if (on) null else place)) },
                                 label = { Text(regionName(r.region)) },
@@ -383,6 +397,7 @@ private fun AdultChip(
     vm: BrowseViewModel,
     quick: LiveQuick,
     set: (LiveQuick) -> Unit,
+    ring: Modifier,
 ) {
     val gate by vm.liveAdult.collectAsStateWithLifecycle()
     var pin by remember { mutableStateOf<PinMode?>(null) }
@@ -393,6 +408,7 @@ private fun AdultChip(
 
         AdultGate.Unlocked -> {
             FilterChip(
+                modifier = ring,
                 selected = on,
                 onClick = { set(quick.copy(topic = if (on) null else LiveTopic.ADULT)) },
                 label = { Text(stringResource(R.string.live_filter_adult)) },
@@ -401,6 +417,7 @@ private fun AdultChip(
 
         AdultGate.Locked, AdultGate.NoPin -> {
             FilterChip(
+                modifier = ring,
                 selected = false,
                 onClick = { pin = if (gate == AdultGate.Locked) PinMode.Unlock else PinMode.Create },
                 label = { Text(stringResource(R.string.live_filter_adult)) },

@@ -89,6 +89,17 @@ class BrowseScreenshots : Screenshots() {
         overlay = {},
     )
 
+    /** The Filters panel on a TV: the whole screen, no drag handle, the remote on the first type. */
+    @Test
+    @Config(qualifiers = TV)
+    fun liveTvFiltersTv() = shot(
+        "browse-live-tv-filters-tv",
+        HomeRoute,
+        wait = "Maple News 24",
+        then = { openFilters() },
+        overlay = {},
+    )
+
     /** Several filters chosen: the chip names the first two and how many more. */
     @Test
     fun liveTvFiltersChosen() = shot(

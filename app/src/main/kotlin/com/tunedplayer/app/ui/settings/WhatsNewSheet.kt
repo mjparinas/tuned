@@ -25,8 +25,6 @@ import androidx.compose.material.icons.filled.Build
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -49,15 +47,14 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
 import com.tunedplayer.app.BuildConfig
 import com.tunedplayer.app.R
 import com.tunedplayer.app.container
 import com.tunedplayer.app.core.ReleaseNotes
 import com.tunedplayer.app.core.ReleaseNotes.Kind
 import com.tunedplayer.app.ui.common.StartFocus
-import com.tunedplayer.app.ui.common.TvSafeArea
+import com.tunedplayer.app.ui.common.TunedSheet
+import com.tunedplayer.app.ui.common.TvFullScreen
 import com.tunedplayer.app.ui.common.focusRing
 import com.tunedplayer.app.ui.common.isTelevision
 import com.tunedplayer.app.ui.common.startFocus
@@ -92,7 +89,7 @@ internal fun WhatsNew(
         WhatsNewTv(notes, onRetry, onDismiss)
         return
     }
-    ModalBottomSheet(onDismissRequest = onDismiss) {
+    TunedSheet(onDismissRequest = onDismiss) {
         Column(Modifier.navigationBarsPadding().padding(horizontal = 20.dp).padding(bottom = 16.dp)) {
             NotesHeader((notes as? WhatsNewNotes.Loaded)?.changes)
             LazyColumn(
@@ -122,52 +119,45 @@ private fun WhatsNewTv(
     onRetry: () -> Unit,
     onDismiss: () -> Unit,
 ) {
-    Dialog(
-        onDismissRequest = onDismiss,
-        properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false),
-    ) {
-        Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
-            TvSafeArea {
-                val hasChanges = (notes as? WhatsNewNotes.Loaded)?.changes?.isNotEmpty() == true
-                // Done holds focus while the notes load; once they show, the first change takes it.
-                val start = remember(hasChanges) { StartFocus(enabled = true) }
-                val list = rememberLazyListState()
-                val scope = rememberCoroutineScope()
-                Row(Modifier.fillMaxSize(), horizontalArrangement = Arrangement.spacedBy(32.dp)) {
-                    Column(Modifier.width(TV_HEADER_WIDTH).fillMaxHeight(), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                        NotesHeader((notes as? WhatsNewNotes.Loaded)?.changes)
-                        Button(
-                            onClick = onDismiss,
-                            modifier =
-                                Modifier
-                                    .fillMaxWidth()
-                                    .heightIn(min = 52.dp)
-                                    .then(if (hasChanges) Modifier else Modifier.startFocus(start)),
-                        ) {
-                            Text(stringResource(R.string.whats_new_done))
-                        }
-                    }
-                    LazyColumn(
-                        Modifier.weight(1f).fillMaxHeight(),
-                        state = list,
-                        verticalArrangement = Arrangement.spacedBy(10.dp),
-                        contentPadding = PaddingValues(bottom = 16.dp),
-                    ) {
-                        notesItems(notes, onRetry) { change, first ->
-                            val shape = RoundedCornerShape(20.dp)
-                            ChangeCard(
-                                change,
-                                Modifier
-                                    .then(if (first) Modifier.startFocus(start) else Modifier)
-                                    // Back on the first change shows its pill above it, which focus alone wouldn't.
-                                    .onFocusChanged { if (it.isFocused && first) scope.launch { list.animateScrollToItem(0) } }
-                                    .focusRing(shape, MaterialTheme.colorScheme.primary)
-                                    // One stop for TalkBack too: the change is read as a whole.
-                                    .semantics(mergeDescendants = true) {}
-                                    .focusable(),
-                            )
-                        }
-                    }
+    TvFullScreen(onDismiss) {
+        val hasChanges = (notes as? WhatsNewNotes.Loaded)?.changes?.isNotEmpty() == true
+        // Done holds focus while the notes load; once they show, the first change takes it.
+        val start = remember(hasChanges) { StartFocus(enabled = true) }
+        val list = rememberLazyListState()
+        val scope = rememberCoroutineScope()
+        Row(Modifier.fillMaxSize(), horizontalArrangement = Arrangement.spacedBy(32.dp)) {
+            Column(Modifier.width(TV_HEADER_WIDTH).fillMaxHeight(), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                NotesHeader((notes as? WhatsNewNotes.Loaded)?.changes)
+                Button(
+                    onClick = onDismiss,
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .heightIn(min = 52.dp)
+                            .then(if (hasChanges) Modifier else Modifier.startFocus(start)),
+                ) {
+                    Text(stringResource(R.string.whats_new_done))
+                }
+            }
+            LazyColumn(
+                Modifier.weight(1f).fillMaxHeight(),
+                state = list,
+                verticalArrangement = Arrangement.spacedBy(10.dp),
+                contentPadding = PaddingValues(bottom = 16.dp),
+            ) {
+                notesItems(notes, onRetry) { change, first ->
+                    val shape = RoundedCornerShape(20.dp)
+                    ChangeCard(
+                        change,
+                        Modifier
+                            .then(if (first) Modifier.startFocus(start) else Modifier)
+                            // Back on the first change shows its pill above it, which focus alone wouldn't.
+                            .onFocusChanged { if (it.isFocused && first) scope.launch { list.animateScrollToItem(0) } }
+                            .focusRing(shape, MaterialTheme.colorScheme.primary)
+                            // One stop for TalkBack too: the change is read as a whole.
+                            .semantics(mergeDescendants = true) {}
+                            .focusable(),
+                    )
                 }
             }
         }
