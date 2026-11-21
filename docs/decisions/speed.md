@@ -24,6 +24,14 @@ On his TV, "Who's watching?" stayed blank while the database was busy: it drew n
 - **Every helper that runs SQL through `openHelper` starts with `offMain`** (`data/db/OffMain.kt`, a switch to the IO threads), so where it is called from never matters: the sort, channel number and guide index fills, the Shows table rebuild, `PRAGMA optimize`, the film details writes, the guide search index reset, and the refreshes' entry points (`SyncRepository.refreshAll`, `refreshGuide`, `fillFromCopy`). `OffMainTest` calls each from the screen thread and fails on any statement that ran there. New raw SQL does the same.
 - **The one-time fills for an old cache wait for Quiet start** like other background work, rather than starting while Home draws.
 
+## First download (Melvin, 2026-11-21)
+
+Melvin: "processing channels on my TV is incredibly slow". His Nvidia Shield was about 10% through a playlist of around 150,000 streams after 5 minutes. The first download wrote each batch of 1,000 straight into the live table, so every stream updated ten indexes and the search index, every open list started over after every batch, and the Shows table was rebuilt every 25,000 streams.
+
+- **Built in one go** (`PlaylistWriter` in `data/db/CacheWriters.kt`). The first 2,000 streams still go straight into the lists. The rest goes into the side table, which has no primary key now, so rows are appended rather than sorted in as they arrive. At the end, in one transaction, the indexes and search triggers are read from the schema Room made, dropped, the side table is copied in sorted by id, and they are built again and the search index rebuilt. A refresh killed halfway leaves the cache as it was. A refresh where 10,000 or more streams changed, and at least half of them, is rebuilt the same way instead of 2,000 rows a transaction.
+- **Reading and saving side by side.** The file is read and turned into rows on one coroutine while the batches already read are written on another, up to four batches ahead.
+- **Measured** on a generated playlist of 150,000 streams (40,000 channels, 60,000 films, 50,000 episodes) with the app's parser and the real `items` schema, on a desktop CPU: Processing channels went from 19.7 s to 2.4 s, and the whole first download's database work from 19.7 s to 4.3 s (5.8 s on two cores). The old way also restarted every open list after each batch, which this doesn't measure and which costs far more on a TV.
+
 ## Lighter mode for weak TV boxes (Melvin, 2026-11-19)
 
 From the Horizon Maps review ("Do 1, 2, 3, 4, 5, 6", idea 5). Cheap Android TV boxes have little memory and slow graphics, and a fade on every poster or a pulsing placeholder is enough to make them stutter or freeze. **Settings › Appearance › Lighter mode** is Automatic (the default), On or Off, and stays on the device rather than syncing, because the phone and the TV box differ. When it is on:
