@@ -64,7 +64,11 @@ class OffMainTest {
                         episode = null,
                         sortOrder = id.toInt(),
                     )
-                if (film.kind == 2) film.copy(showKey = "show ${id % 5}", showName = "Show ${id % 5}", season = 1, episode = id.toInt()) else film
+                if (film.kind == 2) {
+                    film.copy(showKey = "show ${id % 5}", showName = "Show ${id % 5}", season = 1, episode = id.toInt())
+                } else {
+                    film
+                }
             },
         )
         db.programmes().insertAll(
