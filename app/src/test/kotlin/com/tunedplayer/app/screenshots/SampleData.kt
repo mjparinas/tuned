@@ -26,6 +26,7 @@ import com.tunedplayer.app.data.db.ProfileEntity
 import com.tunedplayer.app.data.db.Profiles
 import com.tunedplayer.app.data.db.ProgrammeEntity
 import com.tunedplayer.app.data.db.ShowGroups
+import com.tunedplayer.app.data.db.TitleRatingsSql
 import com.tunedplayer.app.data.db.TunedDatabase
 
 /**
@@ -170,6 +171,30 @@ object SampleData {
                 ),
             )
         }
+        // The films' TMDB ratings, as their posters' stars show them and Top rated sorts them; the last has too few
+        // votes for one, so it goes last.
+        movies.forEachIndexed { i, (name, _) ->
+            db.metadata().upsert(
+                MetadataEntity(
+                    cacheKey = "movie|$name",
+                    found = true,
+                    full = false,
+                    tmdbId = 500L + i,
+                    title = name,
+                    year = null,
+                    overview = null,
+                    rating = if (i == movies.lastIndex) null else 4.1 + (i * 13 % 50) / 10.0,
+                    poster = null,
+                    backdrop = null,
+                    genres = "",
+                    runtime = null,
+                    cast = "",
+                    trailer = null,
+                    fetchedAt = now,
+                ),
+            )
+        }
+        TitleRatingsSql.applyAll(db)
     }
 
     const val MOVIE_IDS = 1_000L
@@ -225,7 +250,7 @@ object SampleData {
         listOf(
             "The National Hour" to "The day's top stories from across the country and around the world.",
             "Morning Live" to "News, weather and traffic to start your day.",
-            "Hockey Night" to "Lakeside at Riverton, live from the Harbour Arena.",
+            "Riverton Hockey Hour" to "Lakeside at Riverton, live from the Harbour Arena.",
             "Planet Wild" to "A season on the tundra with a family of Arctic foxes.",
             "Late Edition" to "Interviews and a look at tomorrow's headlines.",
             "Weekend Kitchen" to "Three dishes from one pantry, in under an hour.",

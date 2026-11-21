@@ -1,6 +1,5 @@
 package com.tunedplayer.app.data
 
-import com.tunedplayer.app.BuildConfig
 import com.tunedplayer.app.core.ContentKind
 import com.tunedplayer.app.core.OpenSubtitles
 import com.tunedplayer.app.data.db.ItemEntity

@@ -1,7 +1,13 @@
 package com.tunedplayer.app.ui.browse
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.grid.GridItemSpan
+import androidx.compose.foundation.lazy.grid.LazyGridScope
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Sort
 import androidx.compose.material.icons.filled.ArrowDropDown
@@ -10,6 +16,8 @@ import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -28,6 +36,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.tunedplayer.app.R
 import com.tunedplayer.app.core.ContentKind
 import com.tunedplayer.app.core.TitleSort
+import com.tunedplayer.app.data.TitleRatings
+import java.text.NumberFormat
 
 /**
  * Movies' and Shows' sort, first in the tab's chip row (Melvin, 2026-11-20: "sort by newest first or sort by the
@@ -85,4 +95,26 @@ internal fun sortName(order: TitleSort.Order): Int = when (order) {
     TitleSort.Order.YEAR -> R.string.sort_year
     TitleSort.Order.RATING -> R.string.sort_rating
     TitleSort.Order.TITLE -> R.string.sort_title
+}
+
+/**
+ * Above a grid sorted Top rated while its ratings are being looked up ([TitleRatings]): how many of how many, and a
+ * bar, so the list re-sorting under it is no mystery. Gone once they're in.
+ */
+internal fun LazyGridScope.ratingProgress(progress: TitleRatings.Progress?) {
+    if (progress == null || progress.total <= 0) return
+    item(key = "rating-progress", span = { GridItemSpan(maxLineSpan) }, contentType = "rating-progress") {
+        val numbers = NumberFormat.getIntegerInstance()
+        Column(Modifier.fillMaxWidth().padding(bottom = 4.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Text(
+                stringResource(R.string.sort_rating_progress, numbers.format(progress.done), numbers.format(progress.total)),
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            LinearProgressIndicator(
+                progress = { progress.done.toFloat() / progress.total },
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
+    }
 }

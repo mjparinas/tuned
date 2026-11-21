@@ -88,6 +88,7 @@ internal fun MovieGrid(
     val library: LibraryViewModel = viewModel()
     val watched by library.watched.collectAsStateWithLifecycle()
     val later by library.laterKeys.collectAsStateWithLifecycle()
+    val ratings by vm.ratingProgress.collectAsStateWithLifecycle()
     val state = rememberLazyGridState()
     val focus = rememberTvFocus(focusReturn)
     Box(Modifier.fillMaxSize()) {
@@ -99,6 +100,7 @@ internal fun MovieGrid(
             verticalArrangement = Arrangement.spacedBy(14.dp),
             modifier = Modifier.fillMaxSize().tvPagedGrid(focus, state),
         ) {
+            ratingProgress(ratings?.takeIf { !it.tv })
             continueWatching(vm, ContentKind.MOVIE, onPlay)
             watchLaterRow(shows = false, visible = { fullList(vm, ContentKind.MOVIE) }, onOpenMovie = onOpenMovie, onOpenShow = { _, _ -> })
             if (movies.firstLoad) items(SKELETON_ROWS) { PosterPlaceholder() }
@@ -154,6 +156,7 @@ internal fun ShowGrid(
     val shows = vm.shows.collectAsLazyPagingItems()
     val library: LibraryViewModel = viewModel()
     val later by library.laterKeys.collectAsStateWithLifecycle()
+    val ratings by vm.ratingProgress.collectAsStateWithLifecycle()
     val state = rememberLazyGridState()
     val focus = rememberTvFocus(focusReturn)
     Box(Modifier.fillMaxSize()) {
@@ -165,6 +168,7 @@ internal fun ShowGrid(
             verticalArrangement = Arrangement.spacedBy(14.dp),
             modifier = Modifier.fillMaxSize().tvPagedGrid(focus, state),
         ) {
+            ratingProgress(ratings?.takeIf { it.tv })
             continueWatching(vm, ContentKind.SERIES, onPlay)
             watchLaterRow(shows = true, visible = { fullList(vm, ContentKind.SERIES) }, onOpenMovie = {}, onOpenShow = onOpenShow)
             if (shows.firstLoad) items(SKELETON_ROWS) { PosterPlaceholder() }
@@ -278,14 +282,18 @@ private fun ContinueCard(
     onClick: () -> Unit,
 ) {
     // TMDB's episode name ("The Simpsons · Kamp Krusty") reads better than its number, when it's known.
+    // Locals, since ContinueRow comes from :data and Kotlin won't smart-cast another module's properties.
+    val showName = row.showName
+    val season = row.season
+    val episode = row.episode
     val title =
         when {
-            row.showName != null && episodeName != null -> {
-                stringResource(R.string.continue_episode_named, Titles.display(row.showName), episodeName)
+            showName != null && episodeName != null -> {
+                stringResource(R.string.continue_episode_named, Titles.display(showName), episodeName)
             }
 
-            row.showName != null && row.season != null && row.episode != null -> {
-                stringResource(R.string.continue_episode, Titles.display(row.showName), row.season, row.episode)
+            showName != null && season != null && episode != null -> {
+                stringResource(R.string.continue_episode, Titles.display(showName), season, episode)
             }
 
             else -> {

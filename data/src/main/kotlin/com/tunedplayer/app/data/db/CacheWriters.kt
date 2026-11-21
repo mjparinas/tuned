@@ -163,6 +163,8 @@ class PlaylistWriter(
             apply(onApply)
         }
         ShowGroups.rebuild(db)
+        // Rewritten films start without what Top rated sorts on: put the posters' ratings back.
+        TitleRatingsSql.applyFilms(db)
         Upkeep.optimize(db)
         return seen.size
     }
@@ -324,6 +326,8 @@ object ShowGroups {
         db.withTransaction {
             sql.execSQL("DELETE FROM show_groups")
             sql.execSQL("INSERT INTO show_groups ($COLUMNS) SELECT * FROM temp.show_groups_next")
+            // The rating each card shows (TMDB's) goes over the provider's, so Top rated sorts on it.
+            sql.execSQL(TitleRatingsSql.SHOWS)
         }
         sql.execSQL("DROP TABLE IF EXISTS temp.show_groups_next")
     }

@@ -34,7 +34,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         CatchUpItemEntity::class,
         ShowDetailsEntity::class,
     ],
-    version = 22,
+    version = 23,
     exportSchema = true,
 )
 abstract class TunedDatabase : RoomDatabase() {
@@ -104,6 +104,7 @@ abstract class TunedDatabase : RoomDatabase() {
                 MIGRATION_19_20,
                 MIGRATION_20_21,
                 MIGRATION_21_22,
+                MIGRATION_22_23,
             ).addCallback(FirstProfile)
             // Going back to an older release (installing an older APK) can't keep a newer database: start it afresh
             // rather than crash on every launch. Upgrades always migrate, above.
@@ -374,6 +375,22 @@ abstract class TunedDatabase : RoomDatabase() {
                     db.execSQL(
                         "CREATE TABLE IF NOT EXISTS `show_details` (`showKey` TEXT NOT NULL, `added` INTEGER NOT NULL, " +
                             "`year` INTEGER, `rating` REAL, PRIMARY KEY(`showKey`))",
+                    )
+                }
+            }
+
+        /**
+         * Adds what Top rated sorts films on ([ItemEntity.topRating]: the poster's TMDB rating, else the provider's),
+         * read down its own index instead of the provider's rating. It is filled in the background ([TitleRatingsSql]).
+         */
+        val MIGRATION_22_23 =
+            object : Migration(22, 23) {
+                override fun migrate(db: SupportSQLiteDatabase) {
+                    db.execSQL("ALTER TABLE `items` ADD COLUMN `topRating` REAL")
+                    db.execSQL("DROP INDEX IF EXISTS `index_items_kind_rating_sortOrder`")
+                    db.execSQL(
+                        "CREATE INDEX IF NOT EXISTS `index_items_kind_topRating_sortOrder` " +
+                            "ON `items` (`kind` ASC, `topRating` DESC, `sortOrder` ASC)",
                     )
                 }
             }

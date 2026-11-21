@@ -412,6 +412,7 @@
     <string name="sort_added">Aggiunti di recente</string>
     <string name="sort_year">Più recenti</string>
     <string name="sort_rating">Più votati</string>
+    <string name="sort_rating_progress">Recupero valutazioni: %1$s di %2$s</string>
     <string name="sort_title">Dalla A alla Z</string>
     <string name="live_filters">Filtri</string>
     <string name="live_filters_title">Filtra canali</string>

@@ -8,7 +8,7 @@ export function area(file) {
     if (file.startsWith("devices/site/") || file === "docs/privacy.md") return "web";
     if (file.endsWith(".md") || file.startsWith("docs/")) return "docs";
     if (file.startsWith("devices/")) return "web";
-    if (/^(app|core|smoketest|fakeprovider|baselineprofile|gradle|config)\//.test(file)) return "mobile";
+    if (/^(app|core|data|smoketest|fakeprovider|baselineprofile|gradle|config)\//.test(file)) return "mobile";
     if (file.startsWith(".github/actions/")) return "mobile"; // setup-android and the Robolectric cache
     if (/^[^/]+\.gradle\.kts$/.test(file) || /^(gradle\.properties|gradlew|gradlew\.bat|\.editorconfig)$/.test(file)) {
         return "mobile";

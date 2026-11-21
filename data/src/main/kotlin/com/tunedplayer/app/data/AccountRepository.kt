@@ -1,6 +1,5 @@
 package com.tunedplayer.app.data
 
-import com.tunedplayer.app.BuildConfig
 import com.tunedplayer.app.core.XtreamAccount
 import com.tunedplayer.app.core.XtreamUrls
 import com.tunedplayer.app.diagnostics.attempt

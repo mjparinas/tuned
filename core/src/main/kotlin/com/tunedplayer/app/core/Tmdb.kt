@@ -118,5 +118,5 @@ object Tmdb {
 
     private fun apiKey(key: String) = if (isToken(key)) "" else "&api_key=${enc(key.trim())}"
 
-    private fun enc(value: String) = URLEncoder.encode(value, Charsets.UTF_8)
+    private fun enc(value: String) = URLEncoder.encode(value, "UTF-8")
 }

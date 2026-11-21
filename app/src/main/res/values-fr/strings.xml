@@ -412,6 +412,7 @@
     <string name="sort_added">Ajouts récents</string>
     <string name="sort_year">Plus récents</string>
     <string name="sort_rating">Mieux notés</string>
+    <string name="sort_rating_progress">Récupération des notes : %1$s sur %2$s</string>
     <string name="sort_title">A à Z</string>
     <string name="live_filters">Filtres</string>
     <string name="live_filters_title">Filtrer les chaînes</string>

@@ -45,6 +45,7 @@ class TitleSortsTest {
                 film(4, "Mondo", added = 0, rating = 6.0),
             ),
         )
+        TitleRatingsSql.applyAll(db)
         assertEquals(listOf("EN - Zulu Dawn (1979)", "Avatar", "|FR| Élan", "Mondo"), movies(Order.PROVIDER))
         assertEquals(listOf("EN - Zulu Dawn (1979)", "|FR| Élan", "Avatar", "Mondo"), movies(Order.ADDED))
         assertEquals(listOf("|FR| Élan", "EN - Zulu Dawn (1979)", "Avatar", "Mondo"), movies(Order.YEAR))
@@ -59,6 +60,7 @@ class TitleSortsTest {
         db.items().insertAll(
             listOf(film(1, "Dune", added = 1, rating = 7.0), film(2, "Dune Part Two", added = 2, rating = 8.0), film(3, "Heat")),
         )
+        TitleRatingsSql.applyAll(db)
         val found = db.sortedItems(Order.RATING, 1, emptyList(), false, null, false, "dune", Search.match("dune"), 0).all()
         assertEquals(listOf("Dune Part Two", "Dune"), found.map { it.name })
     }
@@ -66,7 +68,7 @@ class TitleSortsTest {
     @Test
     fun everySortReadsDownAnIndexInsteadOfSortingTheList() {
         val orders =
-            listOf("i.added DESC, i.sortOrder", "i.year DESC, i.sortOrder", "i.rating DESC, i.sortOrder", "i.sortTitle, i.sortOrder")
+            listOf("i.added DESC, i.sortOrder", "i.year DESC, i.sortOrder", "i.topRating DESC, i.sortOrder", "i.sortTitle, i.sortOrder")
         for (order in orders) {
             val plan =
                 db.openHelper.readableDatabase.query("EXPLAIN QUERY PLAN SELECT * FROM items i WHERE i.kind = 1 ORDER BY $order").use { c ->
@@ -119,6 +121,86 @@ class TitleSortsTest {
         assertEquals(listOf("New", "Kept"), movies(Order.ADDED))
     }
 
+    /**
+     * Melvin, 2026-11-21: "sorting by rating ... doesn't really seem to be doing anything". The star on a poster is
+     * TMDB's, but Top rated sorted on the provider's rating, which his provider leaves out, so the list stayed in the
+     * playlist's order: 5.4, none, 5.8, 4.5, none, 7.9.
+     */
+    @Test
+    fun topRatedSortsOnTheRatingThePosterShowsWithUnratedLast() = runTest {
+        db.items().insertAll(
+            listOf(
+                film(1, "Outcome (2026)"),
+                film(2, "Junk (2026)"),
+                film(3, "Tiny Fugitives (2026)"),
+                film(4, "Livestream From Hell (2026)"),
+                film(5, "Never Looked Up"),
+                film(6, "The Love Hypothesis (2026)", rating = 3.0),
+                film(7, "Provider Only", rating = 6.5),
+            ),
+        )
+        tmdb("movie|Outcome (2026)", 5.4)
+        tmdb("movie|Junk (2026)", null)
+        tmdb("movie|Tiny Fugitives (2026)", 5.8)
+        tmdb("movie|Livestream From Hell (2026)", 4.5)
+        // TMDB's rating goes over the provider's, as on the poster.
+        tmdb("movie|The Love Hypothesis (2026)", 7.9)
+        TitleRatingsSql.applyAll(db)
+        assertEquals(
+            listOf(
+                "The Love Hypothesis (2026)",
+                // Not on TMDB yet: the provider's rating stands in.
+                "Provider Only",
+                "Tiny Fugitives (2026)",
+                "Outcome (2026)",
+                "Livestream From Hell (2026)",
+                // No rating anywhere: last, in playlist order.
+                "Junk (2026)",
+                "Never Looked Up",
+            ),
+            movies(Order.RATING),
+        )
+    }
+
+    @Test
+    fun aRefreshKeepsThePostersRatingsInPlace() = runTest {
+        db.items().insertAll(listOf(film(1, "Low", rating = 9.0), film(2, "High", rating = 2.0)))
+        tmdb("movie|Low", 3.0)
+        tmdb("movie|High", 8.0)
+        TitleRatingsSql.applyAll(db)
+        val writer = PlaylistWriter(db)
+        writer.begin()
+        // The provider's ratings change, so both rows are rewritten; the posters' ratings still decide.
+        val next = listOf(film(1, "Low", rating = 9.5), film(2, "High", rating = 1.0))
+        next.forEach { writer.accept(it.id) }
+        writer.add(next)
+        writer.commit()
+        assertEquals(listOf("High", "Low"), movies(Order.RATING))
+        assertEquals(8.0, db.items().get(2)?.topRating)
+    }
+
+    @Test
+    fun showsSortOnTheirCardsRatings() = runTest {
+        db.items().insertAll(
+            listOf(episode(1, "Harbour Town", added = 1), episode(2, "Snowline", added = 2), episode(3, "The Night Desk", added = 3)),
+        )
+        db.shows().replaceDetails(listOf(ShowDetailsEntity("harbour town", added = 0, year = null, rating = 9.0)))
+        tmdb("tv|Harbour Town", 6.1)
+        tmdb("tv|The Night Desk", 8.4)
+        ShowGroups.rebuild(db)
+        val tab = db.sortedShowsTab(Order.RATING, emptyList(), false, null).all().map { it.showName }
+        assertEquals(listOf("The Night Desk", "Harbour Town", "Snowline"), tab)
+        val searched = db.sortedShows(Order.RATING, emptyList(), false, null, false, "", "").all().map { it.showName }
+        assertEquals(listOf("The Night Desk", "Harbour Town", "Snowline"), searched)
+    }
+
+    private suspend fun tmdb(
+        key: String,
+        rating: Double?,
+    ) = db.metadata().upsert(
+        MetadataEntity(key, true, false, 1, key.substringAfter('|'), null, null, rating, null, null, "", null, "", null, 0),
+    )
+
     @Test
     fun anOldCacheGetsItsTitlesAndYearsInTheBackground() = runTest {
         db.items().insertAll(listOf(film(1, "EN - Dune (2021)").copy(sortTitle = "", year = null)))
@@ -160,12 +242,16 @@ class TitleSortsTest {
                 "`episodes` INTEGER NOT NULL, `sortOrder` INTEGER NOT NULL)",
         )
         TunedDatabase.MIGRATION_21_22.migrate(old)
+        TunedDatabase.MIGRATION_22_23.migrate(old)
         val fresh = db.openHelper.writableDatabase
         for (table in listOf("items", "show_groups", "show_details")) assertEquals(columns(fresh, table), columns(old, table), table)
-        for (index in listOf("added", "year", "rating", "sortTitle")) {
+        for (index in listOf("added", "year", "topRating", "sortTitle")) {
             val name = "index_items_kind_${index}_sortOrder"
             assertEquals(indexShape(fresh, name), indexShape(old, name), name)
+            assertTrue(indexShape(old, name).isNotEmpty(), name)
         }
+        // The provider-only rating index went with version 23.
+        assertTrue(indexShape(old, "index_items_kind_rating_sortOrder").isEmpty())
         helper.close()
     }
 

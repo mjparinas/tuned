@@ -6,7 +6,6 @@ import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
-import com.tunedplayer.app.BuildConfig
 import com.tunedplayer.app.core.ChannelScan
 import com.tunedplayer.app.core.ChannelScan.Failure
 import com.tunedplayer.app.core.EventChannels
