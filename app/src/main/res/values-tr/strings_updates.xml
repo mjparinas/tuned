@@ -17,4 +17,6 @@
     <string name="update_problem_download">Güncelleme indirilemedi. Bağlantınızı kontrol edip tekrar deneyin.</string>
     <string name="update_problem_space">Güncelleme için yeterli boş alan yok. Yer açıp tekrar deneyin.</string>
     <string name="update_problem_other">Güncelleme yüklenmedi. Tekrar deneyin.</string>
+    <string name="update_problem_permission">Tuned\'ın henüz güncelleme yükleme izni yok. Android ayarlarında Bilinmeyen uygulamaları yükle altında Tuned\'ı açın (TV\'de: Güvenlik ve kısıtlamalar › Bilinmeyen kaynaklar), sonra tekrar deneyin.</string>
+    <string name="update_problem_installer">Android\'in yükleyicisi açılmadı. Tekrar deneyin.</string>
 </resources>

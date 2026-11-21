@@ -17,4 +17,6 @@
     <string name="update_problem_download">अपडेट डाउनलोड नहीं हो सका। अपना कनेक्शन जाँचें और फिर से कोशिश करें।</string>
     <string name="update_problem_space">अपडेट के लिए पर्याप्त खाली जगह नहीं है। कुछ जगह खाली करें और फिर से कोशिश करें।</string>
     <string name="update_problem_other">अपडेट इंस्टॉल नहीं हुआ। फिर से कोशिश करें।</string>
+    <string name="update_problem_permission">Tuned को अभी अपडेट इंस्टॉल करने की अनुमति नहीं है। Android की सेटिंग में अनजान ऐप्लिकेशन इंस्टॉल करें के अंतर्गत Tuned चालू करें (टीवी पर: सुरक्षा और प्रतिबंध › अज्ञात स्रोत), फिर से कोशिश करें।</string>
+    <string name="update_problem_installer">Android का इंस्टॉलर नहीं खुला। फिर से कोशिश करें।</string>
 </resources>
