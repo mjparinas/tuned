@@ -111,6 +111,6 @@ class ProfileRepository(
     private suspend fun mirror() {
         val all = dao.allNow()
         val now = dao.currentNow() ?: all.firstOrNull()
-        settings.mirrorProfile(now?.id ?: Profiles.FIRST, now?.kids ?: false, all.size.coerceAtLeast(1))
+        settings.mirrorProfile(now?.id ?: Profiles.FIRST, now?.kids ?: false, all.size.coerceAtLeast(1), ProfilesSeen.encode(all))
     }
 }

@@ -73,13 +73,15 @@ jobs:
           ANDROID_KEYSTORE_PATH="$RUNNER_TEMP/upload.jks" ./gradlew :app:assembleGithubRelease :app:bundlePlayRelease
           rm "$RUNNER_TEMP/upload.jks"
           cp app/build/outputs/apk/github/release/app-github-release.apk "$RUNNER_TEMP/tuned.apk"
+          # R8's mapping for the APK, so a crash or freeze trace from this release can be decoded (docs/decisions/diagnostics.md).
+          cp app/build/outputs/mapping/githubRelease/mapping.txt "$RUNNER_TEMP/tuned-${{ steps.v.outputs.version }}-mapping.txt"
       - name: GitHub release
         if: env.HAS_KEY == 'true' && !inputs.bundle_only
         env:
           GH_TOKEN: ${{ github.token }}
           TAG: v${{ steps.v.outputs.version }}
         run: |
-          gh release create "$TAG" "$RUNNER_TEMP/tuned.apk" \
+          gh release create "$TAG" "$RUNNER_TEMP/tuned.apk" "$RUNNER_TEMP/tuned-${{ steps.v.outputs.version }}-mapping.txt" \
             --target "$GITHUB_SHA" \
             --title "Tuned ${{ steps.v.outputs.version }}" \
             --generate-notes \
@@ -108,6 +110,15 @@ jobs:
           gh api "repos/${{ github.repository }}/merges" -f base=staging -f head=main -f commit_message="Bring main back into staging" \
             || echo "::warning::Could not merge main back into staging; merge it by hand so the post isn't lost at the next promotion."
           echo "::notice::Blog post: https://www.tunedplayer.com/blog/whats-new/tuned-$(echo "${TAG#v}" | tr . -)/"
+      - uses: actions/upload-artifact@v7
+        if: env.HAS_KEY == 'true'
+        # The R8 mappings of both builds, also kept when no GitHub release is made (bundle_only).
+        with:
+          name: tuned-r8-mapping
+          path: |
+            app/build/outputs/mapping/githubRelease/mapping.txt
+            app/build/outputs/mapping/playRelease/mapping.txt
+          retention-days: 90
       - uses: actions/upload-artifact@v7
         if: env.HAS_KEY == 'true'
         with:

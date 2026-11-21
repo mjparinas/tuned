@@ -193,4 +193,5 @@ internal val SETTING_FIELDS: List<SettingField<*, *>> =
         long("profile_id", { profileId }) { copy(profileId = it) }.notBackedUp(),
         bool("kids_profile", { kidsProfile }) { copy(kidsProfile = it) }.notBackedUp(),
         int("profile_count", { profileCount }) { copy(profileCount = it) }.notBackedUp(),
+        string("profiles_seen", { profilesSeen }) { copy(profilesSeen = it) }.notBackedUp(),
     )
