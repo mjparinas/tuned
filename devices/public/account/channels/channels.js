@@ -6,6 +6,7 @@
 // Links are never shown on the page (they carry the login); they're only copied or handed to the player.
 
 import { drawNav } from "/account/nav.js";
+import { enhanceSelect } from "/select.js";
 import { access, httpsVariant, isMixed, isPreviewHost, parseServer } from "/check/verdict.mjs";
 import {
     filterChannels,
@@ -612,6 +613,8 @@ $("search").oninput = () => {
     state.shown = state.view === "grid" ? GRID_PAGE : PAGE;
     draw();
 };
+enhanceSelect($("playlist"));
+enhanceSelect($("group"));
 $("group").onchange = $("search").oninput;
 $("more").onclick = () => {
     state.shown += state.view === "grid" ? GRID_PAGE : PAGE;

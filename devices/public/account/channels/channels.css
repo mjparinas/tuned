@@ -29,7 +29,7 @@
     flex: 0 1 16rem;
     min-width: 0;
 }
-.field select,
+.field .tselect,
 .field input {
     width: 100%;
 }

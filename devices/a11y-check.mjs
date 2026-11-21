@@ -4,7 +4,8 @@
 // dark with reduced motion, and runs axe-core's WCAG 2.2 A and AA rules and its best practices. The account page is
 // checked signed out and signed in (with a made-up account and library), and the admin with admin-preview.mjs's sample data.
 // It also checks that no page scrolls sideways at 320 px wide (WCAG 1.4.10) and that everything Tab reaches shows a
-// focus ring (2.4.7). Any finding fails, with the page, the rule and the elements.
+// focus ring (2.4.7), and that the site's own dropdown works from the keyboard. Any finding fails, with the page, the
+// rule and the elements.
 import { spawn } from "node:child_process";
 import { readFile, readdir, stat } from "node:fs/promises";
 import { createServer } from "node:http";
@@ -237,6 +238,46 @@ async function reflowAndFocus(page, where) {
     }
 }
 
+/**
+ * Tuned's own dropdown (public/select.js) works from the keyboard as a native select does: its label focuses it, ↓
+ * opens it on the chosen option, ↓ and Enter choose the next one and close it, Escape closes it without choosing, and
+ * the hidden <select> the page reads follows along. Checked on the account's More seats card.
+ */
+async function dropdownKeys(context) {
+    const where = "/account (signed in) › Extra seats dropdown";
+    const page = await context.newPage();
+    try {
+        await page.goto("http://localhost:4191/account/", { waitUntil: "networkidle" });
+        const box = page.locator("#buy-seats .tselect-button");
+        const expanded = () => box.getAttribute("aria-expanded");
+        const value = () => page.locator("#seat-count").inputValue();
+        await page.evaluate(() => {
+            window.changes = 0;
+            document.getElementById("seat-count").addEventListener("change", () => window.changes++);
+        });
+        await page.locator('label[for="seat-count"]').click();
+        if (!(await box.evaluate((el) => el === document.activeElement))) note(where, "its label doesn't focus it");
+        if ((await box.getAttribute("role")) !== "combobox") note(where, "isn't a combobox");
+        await page.keyboard.press("ArrowDown");
+        if ((await expanded()) !== "true") note(where, "↓ doesn't open it");
+        await page.keyboard.press("ArrowDown");
+        const active = await box.getAttribute("aria-activedescendant");
+        if (!active || (await page.locator(`#${active}`).getAttribute("role")) !== "option") note(where, "↓ doesn't highlight an option");
+        await page.keyboard.press("Enter");
+        if ((await expanded()) !== "false" || (await value()) !== "2") note(where, "Enter doesn't choose the highlighted option");
+        await page.keyboard.press("ArrowDown");
+        await page.keyboard.press("End");
+        await page.keyboard.press("Escape");
+        if ((await expanded()) !== "false" || (await value()) !== "2") note(where, "Escape doesn't close it without choosing");
+        if ((await page.evaluate(() => window.changes)) !== 1) note(where, "the page isn't told of a choice once, by a change event");
+        if ((await box.innerText()).trim() !== "2 seats") note(where, "doesn't show the chosen option");
+    } catch (e) {
+        note(where, `couldn't be checked: ${e.message}`);
+    } finally {
+        await page.close();
+    }
+}
+
 const site = await serve(4190, { signedIn: false });
 const signedIn = await serve(4191, { signedIn: true });
 const admin = spawn(process.execPath, [join(here, "admin-preview.mjs")], { stdio: "ignore" });
@@ -289,6 +330,7 @@ try {
             await page.close();
         }
     });
+    await dropdownKeys(dark);
     const unique = [...new Set(findings)];
     if (unique.length) {
         console.error(`${unique.length} accessibility finding(s):\n${unique.map((f) => `  ${f}`).join("\n")}`);

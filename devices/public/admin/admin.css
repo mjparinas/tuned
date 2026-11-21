@@ -600,6 +600,41 @@ select.plain {
     background: var(--panel-2);
     color: var(--text);
 }
+/* The dropdowns (select.js, /select.css) in the admin's colours and its 36 px fields. */
+.tselect {
+    --ts-field: var(--panel-2);
+    --ts-field-open: var(--panel);
+    --ts-edge: var(--line);
+    --ts-hover-edge: var(--faint);
+    --ts-accent: var(--violet-ink);
+    --ts-panel: var(--panel);
+    --ts-panel-edge: var(--line);
+    --ts-shade: var(--panel-2);
+    --ts-muted: var(--muted);
+    --ts-danger: var(--red);
+    --ts-height: 36px;
+    --ts-pad: 6px 8px 6px 10px;
+    --ts-radius: 10px;
+    --ts-option-height: 36px;
+    color: var(--text);
+}
+.tselect .tselect-button {
+    gap: 8px;
+    min-width: 0;
+}
+.tselect .tselect-chevron,
+.tselect .tselect-tick {
+    width: 16px;
+    height: 16px;
+}
+.tselect .tselect-option {
+    padding: 7px 10px;
+    border-radius: 8px;
+}
+.field .tselect {
+    display: flex;
+}
+
 .form {
     display: grid;
     gap: 10px;

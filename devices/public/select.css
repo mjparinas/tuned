@@ -1,0 +1,150 @@
+/*
+ * Tuned's own dropdown (select.js; docs/decisions/website.md › Dropdowns; Melvin, 2026-11-21): a field like the text
+ * fields, with a chevron that turns when it opens, and a list on a card under it. The highlighted option is shaded; the
+ * chosen one is in the accent with a tick. Its colours and sizes are the --ts- properties below, which default to
+ * site.css's tokens; a page with its own look (the admin, the provider check) sets them on .tselect.
+ */
+.tselect {
+    --ts-field: var(--card-2);
+    --ts-field-open: var(--card);
+    --ts-edge: var(--field-line);
+    --ts-hover-edge: var(--text);
+    --ts-accent: var(--primary);
+    --ts-panel: var(--card);
+    --ts-panel-edge: var(--line);
+    --ts-shade: var(--card-2);
+    --ts-muted: var(--muted);
+    --ts-danger: var(--danger);
+    --ts-height: 52px;
+    --ts-pad: 12px 14px 12px 16px;
+    --ts-radius: 14px;
+    --ts-option-height: 44px;
+    position: relative;
+    display: inline-flex;
+    max-width: 100%;
+    vertical-align: middle;
+}
+.tselect-button {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    min-width: 5.5rem;
+    min-height: var(--ts-height);
+    padding: var(--ts-pad);
+    color: inherit;
+    background: var(--ts-field);
+    border: 1px solid var(--ts-edge);
+    border-radius: var(--ts-radius);
+    cursor: pointer;
+    user-select: none;
+    transition:
+        border-color 0.15s,
+        background-color 0.15s;
+}
+.tselect-button:hover {
+    border-color: var(--ts-hover-edge);
+}
+.tselect.is-open .tselect-button,
+.tselect-button:focus {
+    border-color: var(--ts-accent);
+    background: var(--ts-field-open);
+}
+.tselect-button[aria-invalid="true"] {
+    border-color: var(--ts-danger);
+}
+.tselect.is-disabled .tselect-button {
+    opacity: 0.45;
+    cursor: default;
+}
+.tselect-value {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.tselect-chevron,
+.tselect-tick {
+    flex-shrink: 0;
+    width: 20px;
+    height: 20px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+.tselect-chevron {
+    color: var(--ts-muted);
+    transition: transform 0.15s;
+}
+.tselect.is-open .tselect-chevron {
+    transform: rotate(180deg);
+}
+.tselect-list {
+    position: absolute;
+    z-index: 30;
+    top: calc(100% + 6px);
+    left: 0;
+    width: max-content;
+    min-width: 100%;
+    max-width: min(24rem, calc(100vw - 32px));
+    max-height: min(320px, 60vh);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: 6px;
+    background: var(--ts-panel);
+    border: 1px solid var(--ts-panel-edge);
+    border-radius: var(--ts-radius);
+    box-shadow:
+        0 2px 4px rgba(0, 0, 0, 0.08),
+        0 12px 32px rgba(0, 0, 0, 0.22);
+}
+.tselect.opens-up .tselect-list {
+    top: auto;
+    bottom: calc(100% + 6px);
+}
+.tselect.opens-left .tselect-list {
+    left: auto;
+    right: 0;
+}
+.tselect-option {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    min-height: var(--ts-option-height);
+    padding: 10px 12px;
+    border-radius: 10px;
+    cursor: pointer;
+    overflow-wrap: break-word;
+}
+.tselect-option[data-active] {
+    background: var(--ts-shade);
+}
+.tselect-option[aria-selected="true"] {
+    color: var(--ts-accent);
+    font-weight: 600;
+}
+.tselect-option[aria-disabled="true"] {
+    opacity: 0.45;
+    cursor: default;
+}
+.tselect-option .tselect-tick {
+    visibility: hidden;
+}
+.tselect-option[aria-selected="true"] .tselect-tick {
+    visibility: visible;
+}
+@media (forced-colors: active) {
+    .tselect-option[data-active] {
+        outline: 2px solid Highlight;
+    }
+}
+@media (prefers-reduced-motion: reduce) {
+    .tselect-button,
+    .tselect-chevron {
+        transition: none;
+    }
+}
