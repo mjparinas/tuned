@@ -322,7 +322,6 @@
     </plurals>
     <string name="update_ready">Tuned %1$s yüklenmeye hazır</string>
     <string name="update_install">Yükle</string>
-    <string name="update_failed">Güncelleme yüklenmedi. Tuned bir dahaki sefere tekrar deneyecek.</string>
     <string name="premium_title">Tuned Premium</string>
     <string name="premium_lead">İzlemek için gereken her şey ücretsiz. Premium, Tuned\'da yaşayanlar için ekstralar ekler.</string>
     <string name="premium_on">Premium açık. Tuned\'ı desteklediğin için teşekkürler.</string>

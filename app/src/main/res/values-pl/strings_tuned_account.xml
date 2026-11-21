@@ -23,4 +23,8 @@
     <string name="restore_account_nothing">To konto nie ma jeszcze kopii zapasowej. Dodaj playlistę; gdy powstanie kopia, inne urządzenia będą mogły ją przywrócić.</string>
     <string name="restore_account_no_playlist">Ustawienia i profile wróciły, ale w kopii nie ma playlisty, którą to urządzenie może otworzyć. Pliki playlist zostają na urządzeniu, na którym je dodano. Dodaj playlistę.</string>
     <string name="restore_account_offline">Nie udało się połączyć z kopią zapasową. Sprawdź połączenie i spróbuj ponownie.</string>
+    <string name="tuned_account_backing_up">Tworzenie kopii zapasowej…</string>
+    <string name="tuned_account_backed_up">Kopia zapasowa utworzona przed chwilą</string>
+    <string name="tuned_account_backup_failed">Nie udało się utworzyć kopii zapasowej. Sprawdź połączenie i spróbuj ponownie.</string>
+    <string name="tuned_account_backup_paused">Kopie zapasowe są na razie wstrzymane. Spróbuj później.</string>
 </resources>

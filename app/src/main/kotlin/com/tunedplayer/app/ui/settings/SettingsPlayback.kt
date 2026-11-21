@@ -1,9 +1,11 @@
 package com.tunedplayer.app.ui.settings
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.tunedplayer.app.R
 import com.tunedplayer.app.data.AppSettings
 import com.tunedplayer.app.data.BufferMode
@@ -142,7 +144,12 @@ internal fun PlaybackPage(
         settings.seekForwardMs,
         label = { ms -> pluralStringResource(R.plurals.seconds, (ms / 1000).toInt(), (ms / 1000).toInt()) },
     ) { ms -> vm.update { it.copy(seekForwardMs = ms) } }
-    SettingRow(stringResource(R.string.settings_clear_history), onClick = vm::clearHistory)
+    val historyCleared by vm.historyCleared.collectAsStateWithLifecycle()
+    SettingRow(
+        stringResource(R.string.settings_clear_history),
+        if (historyCleared) stringResource(R.string.settings_history_cleared) else null,
+        onClick = vm::clearHistory,
+    )
     SubtitleSettings(settings, vm::update)
 }
 

@@ -81,7 +81,11 @@ class AppUpdates(
 
     /** An immediate update interrupted (app left mid-install) must be resumed, as Play's docs require. */
     fun resume() {
-        if (!fromPlay) return
+        if (!fromPlay) {
+            // Back from the installer's confirm window, or from allowing Tuned to install apps.
+            activity.container.updates.onReturned(activity)
+            return
+        }
         manager.appUpdateInfo.addOnSuccessListener { info ->
             when {
                 info.updateAvailability() == UpdateAvailability.DEVELOPER_TRIGGERED_UPDATE_IN_PROGRESS -> {

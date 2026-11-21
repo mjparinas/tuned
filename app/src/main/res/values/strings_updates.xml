@@ -6,4 +6,15 @@
     <string name="update_check_failed">Couldn’t reach GitHub. Try again in a moment.</string>
     <string name="update_channel">Updates</string>
     <string name="update_notification_text">Open Tuned and tap Install</string>
+    <string name="update_installing">Installing Tuned %1$s</string>
+    <string name="update_busy">Installing…</string>
+    <string name="update_downloading">Downloading Tuned %1$s</string>
+    <string name="update_step_download">Downloading the update</string>
+    <string name="update_step_check">Checking the download</string>
+    <string name="update_step_prepare">Preparing to install</string>
+    <string name="update_step_open">Opening Android’s installer</string>
+    <string name="update_step_confirm">Waiting for you to confirm</string>
+    <string name="update_problem_download">Couldn’t download the update. Check your connection and try again.</string>
+    <string name="update_problem_space">Not enough free space for the update. Free some space and try again.</string>
+    <string name="update_problem_other">The update didn’t install. Try again.</string>
 </resources>

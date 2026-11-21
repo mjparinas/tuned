@@ -18,6 +18,7 @@ import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
@@ -92,6 +93,15 @@ fun SettingRow(
             trailing()
         }
     }
+}
+
+/**
+ * A small spinner at the end of a row while what it started runs (a backup, a refresh), beside a summary that says the
+ * same in words, so a tap is never met with nothing (Melvin, 2026-11-21).
+ */
+@Composable
+fun RowSpinner() {
+    CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp)
 }
 
 @Composable

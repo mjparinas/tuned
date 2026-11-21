@@ -23,4 +23,8 @@
     <string name="restore_account_nothing">Esta conta ainda não tem backup. Adicione uma lista; depois do backup, seus outros dispositivos podem restaurá-la.</string>
     <string name="restore_account_no_playlist">Suas configurações e perfis voltaram, mas o backup não tem nenhuma lista que este dispositivo consiga abrir. Arquivos de lista ficam no dispositivo onde foram adicionados. Adicione uma lista.</string>
     <string name="restore_account_offline">Não foi possível acessar seu backup. Confira a conexão e tente de novo.</string>
+    <string name="tuned_account_backing_up">Fazendo backup…</string>
+    <string name="tuned_account_backed_up">Backup feito agora mesmo</string>
+    <string name="tuned_account_backup_failed">Não foi possível fazer o backup. Verifique sua conexão e tente novamente.</string>
+    <string name="tuned_account_backup_paused">Os backups estão pausados por enquanto. Tente novamente mais tarde.</string>
 </resources>

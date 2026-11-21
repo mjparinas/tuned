@@ -1,5 +1,6 @@
 // Tuned admin (docs/decisions/admin.md): one page, no framework. Each section has its own address (?tab=Users,
 // &open=<id> for an account or install, &days=<period>), and every move goes in the browser's history.
+import { watchSelects } from "/select.js";
 
 // --- Small helpers ---
 
@@ -2076,4 +2077,5 @@ function askCode(s) {
 }
 
 readUrl();
+watchSelects();
 gate();

@@ -4,15 +4,18 @@ import android.content.Intent
 import android.net.Uri
 import android.text.format.DateUtils
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.tunedplayer.app.R
 import com.tunedplayer.app.core.TimeZones
 import com.tunedplayer.app.data.AppSettings
 import com.tunedplayer.app.diagnostics.DeviceClock
 import com.tunedplayer.app.diagnostics.startActivitySafely
+import com.tunedplayer.app.ui.SyncText
 import com.tunedplayer.app.ui.common.isTelevision
 import java.time.ZoneId
 import android.provider.Settings as AndroidSettings
@@ -26,11 +29,7 @@ internal fun GuidePage(
     val hoursLabel: @Composable (Int) -> String = { h ->
         if (h == 0) stringResource(R.string.refresh_off) else pluralStringResource(R.plurals.refresh_every_hours, h, h)
     }
-    SettingRow(
-        stringResource(R.string.settings_refresh_now),
-        lastSync(settings),
-        onClick = vm::refreshNow,
-    )
+    RefreshNowRow(settings, vm)
     ChoiceRow(stringResource(R.string.settings_playlist_refresh), hours, settings.playlistRefreshHours, hoursLabel) { h ->
         vm.update { it.copy(playlistRefreshHours = h) }
     }
@@ -78,6 +77,27 @@ internal fun GuidePage(
         },
     ) { m -> vm.update { it.copy(reminderLeadMinutes = m) } }
     NotificationsRow()
+}
+
+/**
+ * Refresh now: while the refresh it started waits or runs, says which step it is on (the same line as the bar above the
+ * lists) with a spinner, and then when it last refreshed or what went wrong.
+ */
+@Composable
+private fun RefreshNowRow(
+    settings: AppSettings,
+    vm: SettingsViewModel,
+) {
+    val pending by vm.refreshPending.collectAsStateWithLifecycle()
+    val progress by vm.refreshProgress.collectAsStateWithLifecycle()
+    val context = LocalContext.current
+    SettingRow(
+        stringResource(R.string.settings_refresh_now),
+        progress?.let { SyncText.describe(context, it) }
+            ?: if (pending) stringResource(R.string.settings_refresh_starting) else lastSync(settings),
+        onClick = vm::refreshNow,
+        trailing = if (pending || progress != null) ({ RowSpinner() }) else null,
+    )
 }
 
 /**

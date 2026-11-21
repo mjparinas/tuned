@@ -6,4 +6,12 @@
     <string name="cast_playing_on">يُعرض على %1$s</string>
     <string name="cast_failed">تعذّر على %1$s تشغيل هذا. التفاصيل في الإعدادات › التحديثات والخيارات المتقدمة › السجلات.</string>
     <string name="cast_no_wifi">وصّل الهاتف بشبكة Wi-Fi نفسها التي يتصل بها التلفزيون لبث فيلم أو حلقة محفوظة.</string>
+    <string name="cast_casting_to">البث إلى %1$s</string>
+    <string name="cast_tv_loading">جارٍ التحميل على %1$s…</string>
+    <string name="cast_tv_playing">قيد التشغيل</string>
+    <string name="cast_tv_paused">متوقف مؤقتًا</string>
+    <string name="cast_tv_finished">انتهى</string>
+    <string name="cast_tv_stopped">توقف. اضغط تشغيل لبدئه من جديد.</string>
+    <string name="cast_stop">إيقاف البث</string>
+    <string name="cast_volume">مستوى صوت التلفزيون</string>
 </resources>

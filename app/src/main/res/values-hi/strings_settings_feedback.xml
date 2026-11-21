@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_refresh_starting">रीफ़्रेश शुरू हो रहा है…</string>
+    <string name="settings_history_cleared">देखने का इतिहास मिटा दिया गया</string>
+</resources>

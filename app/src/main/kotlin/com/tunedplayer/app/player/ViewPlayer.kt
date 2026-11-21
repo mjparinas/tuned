@@ -56,7 +56,17 @@ class ViewPlayer(
     /** The TV started, stopped, moved or changed its subtitles, or a cast began or ended: the controls look again. */
     fun tvChanged() {
         val events = Player.Events(FlagSet.Builder().apply { TV_EVENTS.forEach(::add) }.build())
-        synchronized(watchers) { watchers.toList() }.forEach { it.onEvents(this, events) }
+        val state = playbackState
+        val whenReady = playWhenReady
+        val playing = isPlaying
+        synchronized(watchers) { watchers.toList() }.forEach {
+            // PlayerView's buffering spinner listens for these, not for onEvents: told only onEvents, it kept spinning
+            // over a TV that had long been playing (Melvin, 2026-11-21).
+            it.onPlaybackStateChanged(state)
+            it.onPlayWhenReadyChanged(whenReady, Player.PLAY_WHEN_READY_CHANGE_REASON_REMOTE)
+            it.onIsPlayingChanged(playing)
+            it.onEvents(this, events)
+        }
     }
 
     override fun isCommandAvailable(command: Int): Boolean = availableCommands.contains(command)

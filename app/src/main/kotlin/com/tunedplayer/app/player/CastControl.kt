@@ -11,6 +11,7 @@ import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.mediarouter.app.MediaRouteButton
 import androidx.mediarouter.media.MediaRouteSelector
+import com.google.android.gms.cast.Cast
 import com.google.android.gms.cast.CastMediaControlIntent
 import com.google.android.gms.cast.CastStatusCodes
 import com.google.android.gms.cast.HlsSegmentFormat
@@ -97,8 +98,9 @@ class CastControl(
     private var streamFolder: String? = null
     private var lastPlayerState = MediaStatus.PLAYER_STATE_UNKNOWN
 
-    /** The TV being cast to, for the note over the video. */
-    private var tvName: String? = null
+    /** The TV being cast to, from the moment one is picked until the cast ends; the casting screen shows while it is set. */
+    var tvName: String? = null
+        private set
 
     /** A cast left with nothing playing, ended as the player opened: its end doesn't move the phone's player. */
     private var stopped: CastSession? = null
@@ -170,6 +172,12 @@ class CastControl(
                 // Say so over the video rather than leave "Playing on SHIELD" showing over nothing.
                 session?.let { onStatus(activity.getString(R.string.cast_failed, name(it)), false) }
             }
+        }
+
+    /** The TV's volume changed (from the casting screen, the TV's remote or the phone's volume keys). */
+    private val volumeListener =
+        object : Cast.Listener() {
+            override fun onVolumeChanged() = onTvChanged()
         }
 
     /** The standard cast button, listing Chromecasts (with Play services) and DLNA TVs together. */
@@ -274,6 +282,7 @@ class CastControl(
             attach(s)
             tvName = name(s)
             playing()
+            onTvChanged()
             return
         }
         AppLog.i(TAG) { "${name(s)} is connected but ${state?.let(::playerState) ?: "has nothing"}: ending the cast, playing here" }
@@ -285,19 +294,22 @@ class CastControl(
     private fun connecting(s: CastSession) {
         tvName = name(s)
         onStatus(activity.getString(R.string.cast_connecting, name(s)), true)
+        onTvChanged()
     }
 
     /** The TV couldn't be reached (or the person cancelled): the phone carries on, so the note goes. */
     private fun notConnected(s: CastSession) {
         onStatus(null, false)
         if (session != null) return
+        tvName = null
+        onTvChanged()
         Toast.makeText(activity, activity.getString(R.string.cast_connect_failed, name(s)), Toast.LENGTH_LONG).show()
     }
 
-    /** The TV is showing it. */
+    /** The TV is showing it: the step's note goes, and the casting screen says what the TV does ("Playing", "Paused"). */
     private fun playing() {
-        val name = tvName ?: return
-        onStatus(activity.getString(R.string.cast_playing_on, name), false)
+        if (tvName == null) return
+        onStatus(null, false)
     }
 
     /** The TV takes over: the phone lets go of its stream so the provider sees a single connection. */
@@ -309,10 +321,44 @@ class CastControl(
     }
 
     private fun attach(s: CastSession) {
-        session?.remoteMediaClient?.unregisterCallback(mediaCallback)
+        detach()
         session = s
         lastPlayerState = MediaStatus.PLAYER_STATE_UNKNOWN
         s.remoteMediaClient?.registerCallback(mediaCallback)
+        attempt(TAG, "Couldn't follow the TV's volume") { s.addCastListener(volumeListener) }
+    }
+
+    private fun detach() {
+        val s = session ?: return
+        s.remoteMediaClient?.unregisterCallback(mediaCallback)
+        attempt(TAG, "Couldn't stop following the TV's volume") { s.removeCastListener(volumeListener) }
+    }
+
+    /** The TV's volume from 0 to 1, or null when the phone can't change it (a DLNA TV, or not connected yet). */
+    val volume: Float?
+        get() {
+            if (dlna.active) return null
+            val s = session?.takeIf { it.isConnected } ?: return null
+            return attempt(TAG, "Couldn't read the TV's volume") { s.getVolume().toFloat() }.getOrNull()
+        }
+
+    /** The casting screen's volume slider: sets the TV's volume, from 0 to 1. */
+    fun setVolume(level: Float) {
+        val s = session?.takeIf { it.isConnected } ?: return
+        attempt(TAG, "Couldn't change the TV's volume") { s.setVolume(level.coerceIn(0f, 1f).toDouble()) }
+    }
+
+    /**
+     * Stop casting, from the casting screen: the TV stops and its app closes, and the phone plays on from where the TV
+     * was, as when the cast is ended from the cast button.
+     */
+    fun stop() {
+        AppLog.i(TAG) { "Stop casting pressed for ${tvName ?: "the TV"}" }
+        if (dlna.active) {
+            dlna.disconnect()
+        } else {
+            attempt(TAG, "Couldn't end the cast") { context?.sessionManager?.endCurrentSession(true) }
+        }
     }
 
     /**
@@ -334,6 +380,7 @@ class CastControl(
         val positionMs = exo.currentPosition
         exo.stop()
         load(item, isLive(), positionMs)
+        onTvChanged()
     }
 
     /** Back on the phone, from where the TV was for films and episodes. */
@@ -342,7 +389,7 @@ class CastControl(
         preparing?.cancel()
         lastLoad = null
         stopServing()
-        session?.remoteMediaClient?.unregisterCallback(mediaCallback)
+        detach()
         session = null
         tvName = null
         subtitles.stop()
@@ -623,7 +670,7 @@ class CastControl(
         retry?.cancel()
         preparing?.cancel()
         stopServing()
-        session?.remoteMediaClient?.unregisterCallback(mediaCallback)
+        detach()
         // Before the cast ends, so its end doesn't start the phone's player as the screen closes.
         context?.sessionManager?.removeSessionManagerListener(listener, CastSession::class.java)
         if (leaving && casting) {

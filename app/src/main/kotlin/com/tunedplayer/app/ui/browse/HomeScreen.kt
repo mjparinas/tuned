@@ -329,7 +329,13 @@ fun HomeScreen(
                         )
                         return@Column
                     }
-                    requestedProgress?.let { RefreshBar(it) }
+                    // From the tap on, not only once the refresh reports: a refresh waiting to start (for a connection, or for
+                    // the first screen to settle) says so too (Melvin, 2026-11-21: "There should always be some type of
+                    // feedback that something's happening").
+                    when {
+                        requestedProgress != null -> RefreshBar(checkNotNull(requestedProgress))
+                        requestedPending == true -> RefreshStarting()
+                    }
                     UpdateBanner(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp))
                     // Live TV's channel list on a TV uses the room (Melvin, 2026-11-19: "use the big screen"): the groups down
                     // the left, the channels in the middle and what the focused channel is showing on the right.
@@ -363,7 +369,7 @@ fun HomeScreen(
                     val body: @Composable () -> Unit = {
                         if (settings.pullToRefresh) {
                             PullToRefreshBox(
-                                isRefreshing = requestedRefreshing && requestedProgress == null,
+                                isRefreshing = (requestedRefreshing || requestedPending == true) && requestedProgress == null,
                                 onRefresh = vm::refresh,
                                 modifier = Modifier.fillMaxSize(),
                             ) {

@@ -6,4 +6,15 @@
     <string name="update_check_failed">GitHub ist nicht erreichbar. Versuche es gleich noch einmal.</string>
     <string name="update_channel">Updates</string>
     <string name="update_notification_text">Öffne Tuned und tippe auf Installieren</string>
+    <string name="update_installing">Tuned %1$s wird installiert</string>
+    <string name="update_busy">Wird installiert…</string>
+    <string name="update_downloading">Tuned %1$s wird heruntergeladen</string>
+    <string name="update_step_download">Update wird heruntergeladen</string>
+    <string name="update_step_check">Download wird geprüft</string>
+    <string name="update_step_prepare">Installation wird vorbereitet</string>
+    <string name="update_step_open">Android-Installationsprogramm wird geöffnet</string>
+    <string name="update_step_confirm">Warte auf deine Bestätigung</string>
+    <string name="update_problem_download">Das Update konnte nicht heruntergeladen werden. Prüfe deine Verbindung und versuche es erneut.</string>
+    <string name="update_problem_space">Nicht genug freier Speicher für das Update. Gib Speicher frei und versuche es erneut.</string>
+    <string name="update_problem_other">Das Update wurde nicht installiert. Versuche es erneut.</string>
 </resources>

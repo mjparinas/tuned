@@ -2,6 +2,7 @@
 // backup, pairing a TV, signing out and deleting the account. Everything goes through /api with the session cookie.
 import { normalizeCode } from "/tv/seal.js";
 import { drawNav, showLinkedSection } from "/account/nav.js";
+import { enhanceSelect } from "/select.js";
 
 const $ = (id) => document.getElementById(id);
 const status = $("status");
@@ -147,7 +148,7 @@ function render() {
         ...Array.from({ length: me.seats.canBuy }, (_, i) => {
             const option = document.createElement("option");
             option.value = String(i + 1);
-            option.textContent = String(i + 1);
+            option.textContent = plural(i + 1, "seat", "seats");
             return option;
         }),
     );
@@ -192,6 +193,7 @@ async function checkout(product, quantity = 1) {
 }
 
 for (const button of document.querySelectorAll("[data-product]")) button.onclick = () => checkout(button.dataset.product);
+enhanceSelect($("seat-count"));
 $("buy-seat").onclick = () => checkout(me.seats.seatKind, Number($("seat-count").value));
 $("billing").onclick = async () => {
     const answer = await call("POST", "/api/stripe/portal");

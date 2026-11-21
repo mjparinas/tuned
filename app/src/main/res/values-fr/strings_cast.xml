@@ -6,4 +6,12 @@
     <string name="cast_playing_on">Lecture sur %1$s</string>
     <string name="cast_failed">%1$s n\'a pas pu lire ceci. Paramètres › Mises à jour et avancé › Journaux contient les détails.</string>
     <string name="cast_no_wifi">Connectez le téléphone au même Wi-Fi que la TV pour caster un film ou un épisode enregistré.</string>
+    <string name="cast_casting_to">Diffusion sur %1$s</string>
+    <string name="cast_tv_loading">Chargement sur %1$s…</string>
+    <string name="cast_tv_playing">Lecture en cours</string>
+    <string name="cast_tv_paused">En pause</string>
+    <string name="cast_tv_finished">Terminé</string>
+    <string name="cast_tv_stopped">Arrêté. Appuyez sur lecture pour reprendre.</string>
+    <string name="cast_stop">Arrêter la diffusion</string>
+    <string name="cast_volume">Volume de la TV</string>
 </resources>
