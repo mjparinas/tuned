@@ -259,7 +259,8 @@ class TunedAccount(
     /** One call; a 401 means this device was signed out or removed, so the account is forgotten here too. */
     private suspend fun call(request: Request): Answer = withContext(Dispatchers.IO) {
         http.newCall(request).execute().use { response ->
-            val answer = Answer(
+            val answer =
+                Answer(
                     response.code,
                     response.body.string(),
                     CloudSync.backupVersion(response.header("X-Backup-Version"), response.header("ETag")),
