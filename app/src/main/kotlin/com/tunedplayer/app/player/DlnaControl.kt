@@ -104,6 +104,15 @@ class DlnaControl(
 
     fun play() = send(Dlna.play(), "Play")
 
+    /**
+     * Stop casting from the casting screen: the picker lets go of the TV, which stops it and ends the cast as the
+     * picker's own Stop casting does, so the phone carries on.
+     */
+    fun disconnect() {
+        if (!active) return
+        attempt("Dlna", "Couldn't let go of the TV") { router.unselect(MediaRouter.UNSELECT_REASON_STOPPED) }
+    }
+
     fun pause() = send(Dlna.pause(), "Pause")
 
     /**
