@@ -43,7 +43,8 @@ import androidx.compose.ui.input.key.KeyEvent as ComposeKeyEvent
 
 /**
  * A search box driven by a TV remote (Melvin, 2026-11-21: "there is a speaker icon. When I click right ... I can't
- * access that speaker icon"): the mic sits before the box and has the remote first, Right from the box reaches Clear, and OK opens the on-screen keyboard.
+ * access that speaker icon"): the mic sits before the box and has the remote first, Right from the box reaches Clear,
+ * and OK opens the on-screen keyboard.
  */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [35], qualifiers = "w960dp-h540dp-land-television-xhdpi")
