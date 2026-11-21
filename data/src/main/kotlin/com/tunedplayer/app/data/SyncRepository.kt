@@ -32,13 +32,16 @@ import com.tunedplayer.app.data.db.offMain
 import com.tunedplayer.app.diagnostics.AppLog
 import com.tunedplayer.app.diagnostics.attempt
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.trySendBlocking
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.buffer
 import kotlinx.coroutines.flow.channelFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.mapNotNull
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
@@ -590,21 +593,21 @@ class SyncRepository(
         val writer = PlaylistWriter(db, scope)
         writer.begin()
         try {
-            val batch = ArrayList<ItemEntity>(BATCH)
-            var live = 0
-            fill { entry ->
-                val parsed = entry.toRow()
-                if (writer.accept(parsed.id)) {
-                    // Live channels are numbered 1 up in playlist order, for typing a number on the remote.
-                    batch += if (parsed.kind == ContentKind.LIVE.code) parsed.copy(number = ++live) else parsed
-                    if (batch.size == BATCH) {
-                        writer.add(batch.toList())
-                        batch.clear()
+            // Reading and saving run side by side: the file is read on this coroutine while the batches already read
+            // are written on another, so a slow TV box keeps both its reading and its storage busy.
+            coroutineScope {
+                val batches = Channel<List<ItemEntity>>(BATCHES_AHEAD)
+                val saver = launch(Dispatchers.IO) { for (batch in batches) writer.add(batch) }
+                try {
+                    readBatches(writer, fill) { batch ->
+                        batches.send(batch)
                         progress(reads.at(read, writer.count))
                     }
+                } finally {
+                    batches.close()
                 }
+                saver.join()
             }
-            writer.add(batch)
             progress(reads.at(read, writer.count))
             progress(SyncProgress(save))
             // An empty answer changes nothing, so it never wipes a good cache.
@@ -614,6 +617,27 @@ class SyncRepository(
         } finally {
             writer.discard() // a no-op after a commit; after a failure, the cache stays as it was
         }
+    }
+
+    /** The streams [fill] adds as rows, a repeat left out, handed to [send] [BATCH] at a time and the rest at the end. */
+    private suspend fun readBatches(
+        writer: PlaylistWriter,
+        fill: suspend (add: suspend (PlaylistEntry) -> Unit) -> Unit,
+        send: suspend (List<ItemEntity>) -> Unit,
+    ) {
+        var batch = ArrayList<ItemEntity>(BATCH)
+        var live = 0
+        fill { entry ->
+            val parsed = entry.toRow()
+            if (!writer.accept(parsed.id)) return@fill
+            // Live channels are numbered 1 up in playlist order, for typing a number on the remote.
+            batch += if (parsed.kind == ContentKind.LIVE.code) parsed.copy(number = ++live) else parsed
+            if (batch.size == BATCH) {
+                send(batch)
+                batch = ArrayList(BATCH)
+            }
+        }
+        send(batch)
     }
 
     /**
@@ -722,34 +746,11 @@ class SyncRepository(
         rating = rating,
     )
 
-    private fun PlaylistEntry.toRow(): ItemEntity {
-        val ep = episode
-        return ItemEntity(
-            id = StableId.of(this),
-            kind = kind.code,
-            name = name,
-            searchName = Search.normalize(name),
-            groupName = group,
-            region = region,
-            adult = adult,
-            logo = logo,
-            url = url,
-            tvgId = tvgId,
-            showKey = ep?.let { Episodes.showKey(it.showName) },
-            showName = ep?.showName,
-            season = ep?.season,
-            episode = ep?.episode,
-            sortOrder = order,
-            added = added,
-            // What Movies and Shows sort on; live channels don't need it, and a big playlist is mostly live.
-            year = if (kind == ContentKind.LIVE) null else year ?: TitleSort.yearInName(ep?.showName ?: name),
-            rating = rating,
-            sortTitle = if (kind == ContentKind.LIVE) "" else TitleSort.title(ep?.showName ?: name),
-        )
-    }
-
     private companion object {
         const val BATCH = 1_000
+
+        /** Batches read ahead of the one being saved; a few, so reading never waits on a slow write for long. */
+        const val BATCHES_AHEAD = 4
         const val HEADER_PEEK = 8_192
         const val SQL_VARIABLES = 900
         const val MAX_ACCOUNT_ANSWER = 64_000
@@ -764,3 +765,30 @@ class SyncRepository(
 }
 
 private const val TAG_SYNC = "Sync"
+
+/** A playlist entry as the row the cache keeps. */
+private fun PlaylistEntry.toRow(): ItemEntity {
+    val ep = episode
+    return ItemEntity(
+        id = StableId.of(this),
+        kind = kind.code,
+        name = name,
+        searchName = Search.normalize(name),
+        groupName = group,
+        region = region,
+        adult = adult,
+        logo = logo,
+        url = url,
+        tvgId = tvgId,
+        showKey = ep?.let { Episodes.showKey(it.showName) },
+        showName = ep?.showName,
+        season = ep?.season,
+        episode = ep?.episode,
+        sortOrder = order,
+        added = added,
+        // What Movies and Shows sort on; live channels don't need it, and a big playlist is mostly live.
+        year = if (kind == ContentKind.LIVE) null else year ?: TitleSort.yearInName(ep?.showName ?: name),
+        rating = rating,
+        sortTitle = if (kind == ContentKind.LIVE) "" else TitleSort.title(ep?.showName ?: name),
+    )
+}

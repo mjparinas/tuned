@@ -97,7 +97,14 @@ class GuideWriter(
  * over, so on a big playlist they never finished while a refresh ran. Instead the new playlist goes into a side table
  * that nothing reads, and [commit] then changes only the streams that differ: removed, renamed, moved or new. It does
  * that a few thousand rows per transaction, so a search waits at most a moment, and each stream is always either its
- * old self or its new self. The very first download has no cache to keep, so it fills the lists as it arrives.
+ * old self or its new self.
+ *
+ * When most of the cache changes, above all on the very first download, changing it row by row is the slow part: each
+ * row updates ten indexes and the search index, and on a TV box that ran at a few hundred streams a second (Melvin,
+ * 2026-11-21: "processing channels on my TV is incredibly slow"). Then [commit] builds the table in one go instead:
+ * the indexes and the search index are dropped, the side table copied in, and they're built again, sorted once, inside
+ * one transaction, so a refresh killed halfway leaves the cache as it was. The first download still puts its first
+ * [PREVIEW] streams straight into the lists, so there is something to watch at once.
  */
 class PlaylistWriter(
     private val db: TunedDatabase,
@@ -108,16 +115,21 @@ class PlaylistWriter(
     private val scope: String? = null,
 ) {
     private val sql get() = db.openHelper.writableDatabase
+    private val where = scope?.let { " WHERE ($it)" }.orEmpty()
     private val seen = HashSet<Long>()
-    private var direct = false
-    private var batches = 0
+
+    /** Nothing of this scope was cached: the first download, which is built in one go and shows its first rows at once. */
+    private var fresh = false
+    private var straight = 0
 
     suspend fun begin() {
         seen.clear()
-        batches = 0
+        straight = 0
         discard()
-        direct = !db.items().any()
-        if (!direct) sql.execSQL("CREATE TABLE $NEXT ($SCHEMA)")
+        fresh = offMain { sql.query("SELECT EXISTS(SELECT 1 FROM items$where)").use { it.moveToFirst() && it.getInt(0) == 0 } }
+        // No primary key: rows are appended in the order they arrive, which is far quicker than keeping them sorted by
+        // id as they come (ids are hashes). Repeats never get here ([accept]); [commit] adds the id index it needs.
+        sql.execSQL("CREATE TABLE $NEXT ($SCHEMA)")
     }
 
     /** Adds a stream unless the playlist already listed it; returns false for a repeat. */
@@ -127,14 +139,13 @@ class PlaylistWriter(
 
     suspend fun add(batch: List<ItemEntity>) {
         if (batch.isEmpty()) return
-        if (direct) {
+        // The first download's first streams show at once, so there is something to watch while the rest is read.
+        if (fresh && straight < PREVIEW) {
             db.items().insertAll(batch)
-            // The first download fills the lists as it goes; the Shows tab catches up every so often.
-            if (++batches % SHOWS_EVERY == 0) ShowGroups.rebuild(db)
-            return
+            straight += batch.size
         }
         db.withTransaction {
-            sql.compileStatement("INSERT OR REPLACE INTO $NEXT ($COLUMNS) VALUES (${COLUMN_LIST.joinToString { "?" }})").use { insert ->
+            sql.compileStatement("INSERT INTO $NEXT ($COLUMNS) VALUES (${COLUMN_LIST.joinToString { "?" }})").use { insert ->
                 for (item in batch) {
                     insert.bind(item)
                     insert.executeInsert()
@@ -149,17 +160,22 @@ class PlaylistWriter(
      * changes nothing, so a server that answers with nothing can't wipe a good cache.
      */
     suspend fun commit(
-        /** Streams applied to the cache so far and how many differ, as each chunk lands. */
+        /** Streams applied to the cache so far and how many differ, as each chunk lands; or steps of a rebuild. */
         onApply: (applied: Long, total: Long) -> Unit = { _, _ -> },
     ): Int {
         if (seen.isEmpty()) {
             discard()
             return 0
         }
-        // The person's renamed channels and logos go over the provider's, before the cache takes them.
-        ChannelEdits.applyTo(sql, if (direct) "items" else NEXT)
-        if (!direct) {
-            keepSortDetails()
+        offMain {
+            sql.execSQL("CREATE UNIQUE INDEX $NEXT_ID ON $NEXT (id)")
+            // The person's renamed channels and logos go over the provider's, before the cache takes them.
+            ChannelEdits.applyTo(sql, NEXT)
+        }
+        if (fresh) {
+            rebuild(onApply)
+        } else {
+            offMain { keepSortDetails() }
             apply(onApply)
         }
         ShowGroups.rebuild(db)
@@ -197,6 +213,11 @@ class PlaylistWriter(
         sql.execSQL("INSERT INTO $CHANGED (id) SELECT n.id FROM $NEXT n JOIN items i ON i.id = n.id WHERE NOT ($SAME)")
         sql.execSQL("INSERT INTO $CHANGED (id) SELECT id FROM $NEXT WHERE id NOT IN (SELECT id FROM items)")
         val total = sql.query("SELECT COUNT(*) FROM $CHANGED").use { if (it.moveToFirst()) it.getLong(0) else 0L }
+        // Most of it changed (a reordered or replaced playlist): building the table again beats changing each row.
+        if (total >= REBUILD_MIN && total * 2 >= seen.size) {
+            sql.execSQL("DROP TABLE IF EXISTS temp.$CHANGED")
+            return rebuild(onApply)
+        }
         if (total > 0) onApply(0, total)
         var from = 1L
         while (from <= total) {
@@ -210,6 +231,41 @@ class PlaylistWriter(
             onApply(minOf(to, total), total)
         }
         sql.execSQL("DROP TABLE IF EXISTS temp.$CHANGED")
+        discard()
+    }
+
+    /**
+     * Replaces this scope's cached streams with the side table's in one transaction: the indexes and the search index
+     * are dropped first and built again after the copy, each sorted once, rather than updated for every row. They are
+     * read back from the schema Room made, so they come back exactly as they were. Lists read the old cache meanwhile.
+     */
+    private suspend fun rebuild(onApply: (applied: Long, total: Long) -> Unit) {
+        val schema =
+            offMain {
+                sql
+                    .query(
+                        "SELECT type, name, sql FROM sqlite_master WHERE tbl_name = 'items' AND sql IS NOT NULL AND " +
+                            "(type = 'index' OR (type = 'trigger' AND name LIKE 'room_fts_content_sync_items_fts_%'))",
+                    ).use { c -> buildList { while (c.moveToNext()) add(Triple(c.getString(0), c.getString(1), c.getString(2))) } }
+            }
+        val indexes = schema.count { it.first == "index" }
+        // Steps: the copy, each index, and the search index.
+        val total = (indexes + 2).toLong()
+        var done = 0L
+        onApply(done, total)
+        db.withTransaction {
+            for ((type, name, _) in schema) sql.execSQL("DROP ${type.uppercase()} IF EXISTS `$name`")
+            sql.execSQL("DELETE FROM items$where")
+            sql.execSQL("INSERT INTO items ($COLUMNS) SELECT $COLUMNS FROM $NEXT ORDER BY id")
+            onApply(++done, total)
+            for ((type, _, create) in schema) {
+                sql.execSQL(create)
+                if (type == "index") onApply(++done, total)
+            }
+            // The search index reads every name again from the table it covers.
+            sql.execSQL("INSERT INTO items_fts(items_fts) VALUES('rebuild')")
+            onApply(++done, total)
+        }
         discard()
     }
 
@@ -261,8 +317,13 @@ class PlaylistWriter(
         /** Small enough that a search waiting behind one is never kept long. */
         const val APPLY_CHUNK = 2_000
 
-        /** Batches between Shows tab refreshes during a first download: every 25,000 streams or so. */
-        const val SHOWS_EVERY = 25
+        const val NEXT_ID = "items_next_id"
+
+        /** Streams the first download shows straight away, before the rest is read. */
+        const val PREVIEW = 2_000
+
+        /** Changed streams from which a refresh rebuilds the table rather than changing it row by row (when most changed). */
+        const val REBUILD_MIN = 10_000
 
         /** The columns of [ItemEntity], in the order [bind] fills them. */
         val COLUMN_LIST =
@@ -290,7 +351,7 @@ class PlaylistWriter(
             )
         val COLUMNS = COLUMN_LIST.joinToString()
         const val SCHEMA =
-            "id INTEGER NOT NULL PRIMARY KEY, kind INTEGER NOT NULL, name TEXT NOT NULL, searchName TEXT NOT NULL, " +
+            "id INTEGER NOT NULL, kind INTEGER NOT NULL, name TEXT NOT NULL, searchName TEXT NOT NULL, " +
                 "groupName TEXT NOT NULL, region TEXT, adult INTEGER NOT NULL, logo TEXT, url TEXT NOT NULL, tvgId TEXT, " +
                 "showKey TEXT, showName TEXT, season INTEGER, episode INTEGER, sortOrder INTEGER NOT NULL, " +
                 "number INTEGER NOT NULL DEFAULT 0, added INTEGER NOT NULL DEFAULT 0, year INTEGER, rating REAL, " +
