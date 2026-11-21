@@ -49,6 +49,8 @@ class MovieSortSpeedTest {
             SampleData.seed(db)
             // No Continue watching row, so the grid's first item is a film, as for anyone who hasn't started one.
             db.library().clearHistory()
+            // The app's database outlives a test here, so another test's films (the 50,000 of the speed test) go first.
+            db.openHelper.writableDatabase.execSQL("DELETE FROM items WHERE id > $FIRST_ID")
             // Fifty thousand films ahead of the sample's, as a big provider has, in the playlist's order Film 50000 to Film 00001.
             val films = (1..FILMS).map { film(FIRST_ID + it, "Film %05d".format(FILMS + 1 - it), it - FILMS - 1) }
             db.items().insertAll(films)

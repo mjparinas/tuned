@@ -54,6 +54,8 @@ class MovieSortTest {
             SampleData.seed(db)
             // No Continue watching row, so the grid's first item is a film, as for anyone who hasn't started one.
             db.library().clearHistory()
+            // The app's database outlives a test here, so another test's films (the 50,000 of the speed test) go first.
+            db.openHelper.writableDatabase.execSQL("DELETE FROM items WHERE id > $FIRST_ID")
             // Five hundred films ahead of the sample's, in the playlist's order Film 500 to Film 001: pages of them.
             val films = (1..FILMS).map { film(FIRST_ID + it, "Film %03d".format(FILMS + 1 - it), it - FILMS - 1) }
             db.items().insertAll(films)
@@ -114,8 +116,10 @@ class MovieSortTest {
         return roots.flatMap { texts(it) }.take(MAX_SHOWN).joinToString()
     }
 
-    private fun texts(node: SemanticsNode): List<String> =
-        node.config.getOrNull(SemanticsProperties.Text).orEmpty().map { it.text } + node.children.flatMap { texts(it) }
+    private fun texts(node: SemanticsNode): List<String> = node.config
+        .getOrNull(SemanticsProperties.Text)
+        .orEmpty()
+        .map { it.text } + node.children.flatMap { texts(it) }
 
     private fun shown(name: String) = compose.onAllNodesWithText(name).fetchSemanticsNodes().isNotEmpty()
 
