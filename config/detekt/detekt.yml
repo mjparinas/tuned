@@ -49,4 +49,6 @@ style:
     imports:
       - value: "androidx.compose.material3.AlertDialog"
         reason: "Use com.tunedplayer.app.ui.common.TunedDialog, which keeps every pop-up off the screen's edges (docs/decisions/branding.md)."
-    excludes: ["**/ui/common/TunedDialog.kt"]
+      - value: "androidx.compose.material3.ModalBottomSheet"
+        reason: "Use com.tunedplayer.app.ui.common.TunedSheet, which fills the screen on a TV so the remote can use it (docs/decisions/tv.md)."
+    excludes: ["**/ui/common/TunedDialog.kt", "**/ui/common/TunedSheet.kt"]
