@@ -82,6 +82,35 @@ class CacheWritersTest {
     }
 
     @Test
+    fun aRefreshWorksOnTheAppsOwnDatabaseWithSeveralConnections() = runTest {
+        // The app's database is a file in WAL mode, where Room reads on other connections than it writes. The list of
+        // changed streams was a TEMP table, which only the connection that made it can see, so counting it failed with
+        // "no such table: items_changed" and every refresh of a cached playlist failed (2026-11-21).
+        val name = "cache-writers-wal.db"
+        context.deleteDatabase(name)
+        val file =
+            Room
+                .databaseBuilder(context, TunedDatabase::class.java, name)
+                .setJournalMode(androidx.room.RoomDatabase.JournalMode.WRITE_AHEAD_LOGGING)
+                .build()
+        try {
+            file.items().insertAll(listOf(item(1, "Old one"), item(2, "Kept")))
+            val writer = PlaylistWriter(file)
+            writer.begin()
+            val next = listOf(item(2, "Kept, renamed"), item(3, "New"))
+            next.forEach { writer.accept(it.id) }
+            writer.add(next)
+
+            assertEquals(2, writer.commit())
+            assertEquals(listOf(2L, 3L), file.items().allIds().sorted())
+            assertEquals("Kept, renamed", file.items().get(2)?.name)
+        } finally {
+            file.close()
+            context.deleteDatabase(name)
+        }
+    }
+
+    @Test
     fun aRefreshThatChangesEverythingLandsWhole() = runTest {
         db.items().insertAll((1L..5_000L).map { item(it, "Old $it") })
         val writer = PlaylistWriter(db)

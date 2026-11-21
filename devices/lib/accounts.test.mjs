@@ -127,6 +127,7 @@ test("cookies, same-site checks and backup versions", () => {
     assert.equal(sameSite(form), false);
     assert.equal(baseVersion('"4"'), 4);
     assert.equal(baseVersion("0"), 0);
+    assert.equal(baseVersion('W/"4"'), 4);
     assert.equal(baseVersion("x"), null);
     assert.equal(baseVersion(null), null);
 });

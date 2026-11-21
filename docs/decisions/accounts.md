@@ -53,7 +53,7 @@ The rules of [premium](premium.md#three-devices-per-purchase) carry over, now pe
 
 ## Backups
 
-The app's sync copy (everything sync between devices copies today) as plain JSON, logins included, not encrypted, as Melvin chose for Drive. `/api/backup`: GET the newest (or `?version=N`), PUT a new one on top of the version named in `If-Match` (409 with the newest version when another device saved since, so the device pulls and decides again), DELETE all. The last 5 versions are kept, 4 MB at most, 120 uploads an hour per account. Anyone who got into the Vercel or Neon project could read the logins; Melvin accepted that.
+The app's sync copy (everything sync between devices copies today) as plain JSON, logins included, not encrypted, as Melvin chose for Drive. `/api/backup`: GET the newest (or `?version=N`), PUT a new one on top of the version named in `If-Match` (409 with the newest version when another device saved since, so the device pulls and decides again), DELETE all. The version also comes in `X-Backup-Version`, which the app reads first (core `CloudSync.backupVersion`, tested): Vercel compresses the answer and turns the ETag `"5"` into the weak `W/"5"`, which the app read as version 0, so once a backup existed every save was a conflict and "Another device saved the backup first" repeated forever (2026-11-21). The app also reads a weak ETag now, and the server takes `W/"N"` in `If-Match`. The last 5 versions are kept, 4 MB at most, 120 uploads an hour per account. Anyone who got into the Vercel or Neon project could read the logins; Melvin accepted that.
 
 ## Playlists and settings on the website
 

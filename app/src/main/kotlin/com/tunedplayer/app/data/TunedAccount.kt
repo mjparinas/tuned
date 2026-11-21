@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.core.content.edit
 import com.tunedplayer.app.BuildConfig
 import com.tunedplayer.app.core.AccountSeats
+import com.tunedplayer.app.core.CloudSync
 import com.tunedplayer.app.core.DeviceSeats
 import com.tunedplayer.app.core.SeatDevice
 import com.tunedplayer.app.diagnostics.AppLog
@@ -117,12 +118,12 @@ class TunedAccount(
     /** The backup, or null when the account has none yet. Throws [IOException] when the server can't be asked. */
     suspend fun find(): Remote? {
         val request = signedIn(Request.Builder().url(url("api/backup")).get())
-        val (status, text, etag) = call(request)
+        val (status, text, version) = call(request)
         if (status == HTTP_NOT_FOUND) return null
         if (status != HTTP_OK) throw IOException("The backup answered $status")
         val stored = json.decodeFromString(Stored.serializer(), text)
         return Remote(
-            version = etag?.trim('"')?.toIntOrNull() ?: 0,
+            version = version ?: 0,
             fingerprint = stored.fingerprint,
             changedAt = stored.changedAt,
             copy = stored.copy.toString().toByteArray(),
@@ -251,13 +252,18 @@ class TunedAccount(
     private data class Answer(
         val status: Int,
         val text: String,
-        val etag: String?,
+        /** The backup's version, from its own header or the ETag, which Vercel weakens to `W/"5"` ([CloudSync.backupVersion]). */
+        val version: Int?,
     )
 
     /** One call; a 401 means this device was signed out or removed, so the account is forgotten here too. */
     private suspend fun call(request: Request): Answer = withContext(Dispatchers.IO) {
         http.newCall(request).execute().use { response ->
-            val answer = Answer(response.code, response.body.string(), response.header("ETag"))
+            val answer = Answer(
+                    response.code,
+                    response.body.string(),
+                    CloudSync.backupVersion(response.header("X-Backup-Version"), response.header("ETag")),
+                )
             if (answer.status == HTTP_UNAUTHORIZED && request.header("Authorization") != null) {
                 AppLog.w(TAG, "This device was signed out of its Tuned account")
                 disconnect()

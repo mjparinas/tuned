@@ -193,12 +193,9 @@ class TunedAccountViewModel(
             val saved = withContext(Dispatchers.IO) { sync.run() || sync.run() }
             backupResultFlow.value = if (saved) BackupResult.DONE else BackupResult.FAILED
             val container = app.container
-            if (saved) {
-                // The website's channel list, as the background run does; nobody waits on it.
-                container.appScope.launchSafely(TAG) { container.sharedChannels.run() }
-            } else {
-                CloudSyncWorker.schedule(app)
-            }
+            // The website's channel list, as the background run does, whether or not the backup went through; nobody waits on it.
+            container.appScope.launchSafely(TAG) { container.sharedChannels.run() }
+            if (!saved) CloudSyncWorker.schedule(app)
             delay(RESULT_SHOWN_MS)
             backupResultFlow.value = null
         }
