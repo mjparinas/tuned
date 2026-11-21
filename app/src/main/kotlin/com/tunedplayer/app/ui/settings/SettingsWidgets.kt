@@ -17,6 +17,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -27,24 +28,63 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.staticCompositionLocalOf
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusDirection
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.key.type
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.tunedplayer.app.R
+import com.tunedplayer.app.diagnostics.attempt
+import com.tunedplayer.app.ui.common.StartFocus
 import com.tunedplayer.app.ui.common.TunedDialog
+import com.tunedplayer.app.ui.common.focusRing
+import com.tunedplayer.app.ui.common.focusWithinRing
+import com.tunedplayer.app.ui.common.isTelevision
+import com.tunedplayer.app.ui.common.startFocus
+import kotlin.math.roundToInt
+
+/**
+ * The outline round a Settings row while a TV remote is on it (Melvin, 2026-11-21: Settings "can be appropriately
+ * adjusted using a remote control"). Material's own focus shade is too faint to see from the sofa; touch never focuses a
+ * row, so phones look the same.
+ */
+internal val RowFocusShape = RoundedCornerShape(12.dp)
+
+/**
+ * On a TV, where a page of Settings puts the remote when it opens: the first row that can take it, so OK alone works
+ * and the first arrow moves from somewhere visible (the screens that open full screen provide it; null elsewhere).
+ */
+internal val LocalRowStartFocus = staticCompositionLocalOf<StartFocus?> { null }
+
+/** Gives a row the page's start focus ([LocalRowStartFocus]), if the page has one and no row above took it. */
+private fun Modifier.rowStartFocus(start: StartFocus?): Modifier = if (start == null) this else startFocus(start)
 
 @Composable
 fun SectionHeader(text: String) {
@@ -78,8 +118,16 @@ fun SettingRow(
     Row(
         Modifier
             .fillMaxWidth()
-            .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
-            .padding(horizontal = 16.dp, vertical = 14.dp),
+            .then(
+                if (onClick != null) {
+                    Modifier
+                        .rowStartFocus(LocalRowStartFocus.current)
+                        .focusRing(RowFocusShape, MaterialTheme.colorScheme.primary)
+                        .clickable(onClick = onClick)
+                } else {
+                    Modifier
+                },
+            ).padding(horizontal = 16.dp, vertical = 14.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Column(Modifier.weight(1f)) {
@@ -115,6 +163,8 @@ fun SwitchRow(
     Row(
         Modifier
             .fillMaxWidth()
+            .rowStartFocus(LocalRowStartFocus.current)
+            .focusRing(RowFocusShape, MaterialTheme.colorScheme.primary)
             // Toggleable, not selectable: a screen reader then says "on" or "off" rather than "selected".
             .toggleable(value = checked, role = Role.Switch, onValueChange = onChange)
             .padding(horizontal = 16.dp, vertical = 12.dp),
@@ -147,23 +197,9 @@ fun <T> ChoiceRow(
             onDismissRequest = { open = false },
             title = { Text(title) },
             text = {
-                Column(Modifier.verticalScroll(rememberScrollState())) {
-                    options.forEach { option ->
-                        Row(
-                            Modifier
-                                .fillMaxWidth()
-                                .selectable(selected = option == selected, role = Role.RadioButton, onClick = {
-                                    onSelect(option)
-                                    open = false
-                                })
-                                .padding(vertical = 10.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            RadioButton(selected = option == selected, onClick = null)
-                            Spacer(Modifier.width(12.dp))
-                            Text(label(option), style = MaterialTheme.typography.bodyLarge)
-                        }
-                    }
+                ChoiceOptions(options, selected, label) { option ->
+                    onSelect(option)
+                    open = false
                 }
             },
             confirmButton = { TextButton(onClick = { open = false }) { Text(stringResource(R.string.cancel)) } },
@@ -171,7 +207,79 @@ fun <T> ChoiceRow(
     }
 }
 
-/** A slider that writes only when the finger lifts, so dragging doesn't hammer DataStore. */
+/** The choices of a [ChoiceRow]'s dialog, one radio row each. */
+@Composable
+internal fun <T> ChoiceOptions(
+    options: List<T>,
+    selected: T,
+    label: @Composable (T) -> String,
+    onPick: (T) -> Unit,
+) {
+    // On a TV the remote starts on the choice in use, so OK alone keeps it and an arrow moves from there.
+    val start = rememberDialogStartFocus()
+    Column(Modifier.verticalScroll(rememberScrollState())) {
+        options.forEach { option ->
+            Row(
+                Modifier
+                    .fillMaxWidth()
+                    .then(if (option == selected) start.modifier else Modifier)
+                    .focusRing(RowFocusShape, MaterialTheme.colorScheme.primary)
+                    .selectable(selected = option == selected, role = Role.RadioButton, onClick = { onPick(option) })
+                    .padding(vertical = 10.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                RadioButton(selected = option == selected, onClick = null)
+                Spacer(Modifier.width(12.dp))
+                Text(label(option), style = MaterialTheme.typography.bodyLarge)
+            }
+        }
+    }
+}
+
+/**
+ * On a TV, where a dialog puts the remote when it opens ([modifier] on that element); does nothing elsewhere. A dialog's
+ * window isn't ready to take focus the moment it is composed, so it tries again each frame for a few frames until the
+ * element has focus, rather than once.
+ */
+@Stable
+private class DialogStartFocus(
+    val enabled: Boolean,
+) {
+    val requester = FocusRequester()
+    var focused = false
+
+    val modifier: Modifier
+        get() = if (!enabled) Modifier else Modifier.focusRequester(requester).onFocusChanged { if (it.isFocused) focused = true }
+}
+
+@Composable
+private fun rememberDialogStartFocus(): DialogStartFocus {
+    val tv = isTelevision()
+    val start = remember(tv) { DialogStartFocus(tv) }
+    LaunchedEffect(start) {
+        if (!start.enabled) return@LaunchedEffect
+        repeat(DIALOG_FOCUS_FRAMES) {
+            withFrameNanos { }
+            if (start.focused) return@LaunchedEffect
+            attempt(TAG, "Couldn't focus the choice in use") { start.requester.requestFocus() }
+        }
+    }
+    return start
+}
+
+/** How many frames a dialog is given to take focus; a dialog opens in one or two. */
+private const val DIALOG_FOCUS_FRAMES = 10
+
+private const val TAG = "Settings"
+
+/**
+ * A slider that writes only when the finger lifts, so dragging doesn't hammer DataStore.
+ *
+ * With a TV remote (or a keyboard), up and down leave it for the row above or below, as on every other row, and left
+ * and right move it a step and save (Melvin, 2026-11-21: "up and down would take me to the different options within
+ * captions, and left and right would adjust the size"). Material's slider takes all four arrows, so up and down
+ * changed the size and the rows below it couldn't be reached.
+ */
 @Composable
 fun SliderRow(
     title: String,
@@ -183,7 +291,14 @@ fun SliderRow(
 ) {
     if (searchHides(title)) return
     var current by remember(value) { mutableFloatStateOf(value) }
-    Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp)) {
+    val focus = LocalFocusManager.current
+    val rtl = LocalLayoutDirection.current == LayoutDirection.Rtl
+    Column(
+        Modifier
+            .fillMaxWidth()
+            .focusWithinRing(RowFocusShape, MaterialTheme.colorScheme.primary)
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+    ) {
         Row {
             Text(title, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
             Text(label(current), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -194,9 +309,63 @@ fun SliderRow(
             onValueChangeFinished = { onChange(current) },
             valueRange = range,
             steps = steps,
+            modifier =
+                Modifier
+                    .rowStartFocus(LocalRowStartFocus.current)
+                    .semantics { contentDescription = title }
+                    .remoteSlider(
+                        onLeave = { focus.moveFocus(it) },
+                        onStep = { more ->
+                            val next = sliderStep(current, range, steps, more = more != rtl)
+                            if (next != current) {
+                                current = next
+                                onChange(next)
+                            }
+                        },
+                    ),
         )
     }
 }
+
+/**
+ * A remote's arrows on a slider: up and down [onLeave] it, left and right [onStep] it (true for right). Both the press
+ * and the release are kept from Material's slider, which would otherwise move on up and down too.
+ */
+private fun Modifier.remoteSlider(
+    onLeave: (FocusDirection) -> Unit,
+    onStep: (more: Boolean) -> Unit,
+): Modifier = onPreviewKeyEvent { event ->
+    val press = event.type == KeyEventType.KeyDown
+    when (event.key) {
+        Key.DirectionUp -> if (press) onLeave(FocusDirection.Up)
+        Key.DirectionDown -> if (press) onLeave(FocusDirection.Down)
+        Key.DirectionLeft -> if (press) onStep(false)
+        Key.DirectionRight -> if (press) onStep(true)
+        else -> return@onPreviewKeyEvent false
+    }
+    true
+}
+
+/**
+ * Where one press of left or right moves a slider: the next of its [steps] stops (or a twentieth of the range when it
+ * has none), never past either end. A value between stops goes to the nearest one first.
+ */
+internal fun sliderStep(
+    value: Float,
+    range: ClosedFloatingPointRange<Float>,
+    steps: Int,
+    more: Boolean,
+): Float {
+    val span = range.endInclusive - range.start
+    if (span <= 0f) return range.start
+    val stops = if (steps > 0) steps + 1 else FREE_SLIDER_STOPS
+    val step = span / stops
+    val index = ((value - range.start) / step).roundToInt() + if (more) 1 else -1
+    return (range.start + index.coerceIn(0, stops) * step).coerceIn(range.start, range.endInclusive)
+}
+
+/** How many presses take a slider without steps from one end to the other. */
+private const val FREE_SLIDER_STOPS = 20
 
 /** Caption colours: the FCC-style palette TVs use, so every choice reads well. */
 val captionPalette =
@@ -252,7 +421,10 @@ fun ColourRow(
                             width = if (on) 3.dp else 1.dp,
                             color = if (on) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant,
                             shape = CircleShape,
-                        ).selectable(selected = on, role = Role.RadioButton, onClick = { onSelect(c) })
+                        )
+                        // White (or black in light mode) rather than the accent, which already marks the colour chosen.
+                        .focusRing(CircleShape, MaterialTheme.colorScheme.onSurface)
+                        .selectable(selected = on, role = Role.RadioButton, onClick = { onSelect(c) })
                         .semantics { contentDescription = name },
                 )
             }

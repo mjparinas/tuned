@@ -40,6 +40,7 @@ import com.tunedplayer.app.data.db.ChannelEditEntity
 import com.tunedplayer.app.diagnostics.launchSafely
 import com.tunedplayer.app.premium.Premium
 import com.tunedplayer.app.ui.common.TunedDialog
+import com.tunedplayer.app.ui.common.focusRing
 
 /** Renaming a channel or changing its logo, or the Premium screen while that's locked (docs/decisions/premium.md). */
 @Stable
@@ -176,7 +177,8 @@ private fun ChangeLogoDialog(
                                         } else {
                                             Modifier
                                         },
-                                    ).clickable(role = Role.RadioButton) { link = logo }
+                                    ).focusRing(RoundedCornerShape(8.dp), MaterialTheme.colorScheme.onSurface)
+                                    .clickable(role = Role.RadioButton) { link = logo }
                                     .semantics {
                                         contentDescription = label
                                         selected = chosen

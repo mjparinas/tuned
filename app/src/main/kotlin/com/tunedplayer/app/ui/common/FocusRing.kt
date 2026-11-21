@@ -23,19 +23,31 @@ fun Modifier.focusRing(
     shape: Shape,
     color: Color,
     width: Dp = 3.dp,
-): Modifier = this then FocusRingElement(shape, color, width)
+): Modifier = this then FocusRingElement(shape, color, width, within = false)
+
+/**
+ * The same outline while anything inside has focus, for a row whose focusable is a child, such as a slider under its
+ * title, so the outline goes round the whole row rather than the slider's track.
+ */
+fun Modifier.focusWithinRing(
+    shape: Shape,
+    color: Color,
+    width: Dp = 3.dp,
+): Modifier = this then FocusRingElement(shape, color, width, within = true)
 
 private data class FocusRingElement(
     val shape: Shape,
     val color: Color,
     val width: Dp,
+    val within: Boolean,
 ) : ModifierNodeElement<FocusRingNode>() {
-    override fun create() = FocusRingNode(shape, color, width)
+    override fun create() = FocusRingNode(shape, color, width, within)
 
     override fun update(node: FocusRingNode) {
         node.shape = shape
         node.color = color
         node.width = width
+        node.within = within
         node.invalidateDraw()
     }
 
@@ -44,6 +56,7 @@ private data class FocusRingElement(
         properties["shape"] = shape
         properties["color"] = color
         properties["width"] = width
+        properties["within"] = within
     }
 }
 
@@ -51,14 +64,16 @@ private class FocusRingNode(
     var shape: Shape,
     var color: Color,
     var width: Dp,
+    var within: Boolean,
 ) : Modifier.Node(),
     FocusEventModifierNode,
     DrawModifierNode {
     private var focused = false
 
     override fun onFocusEvent(focusState: FocusState) {
-        if (focusState.isFocused != focused) {
-            focused = focusState.isFocused
+        val now = if (within) focusState.hasFocus else focusState.isFocused
+        if (now != focused) {
+            focused = now
             invalidateDraw()
         }
     }

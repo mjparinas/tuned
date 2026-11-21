@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Remove
@@ -44,6 +45,7 @@ import com.tunedplayer.app.data.db.GuideFixEntity
 import com.tunedplayer.app.data.db.ItemEntity
 import com.tunedplayer.app.diagnostics.launchSafely
 import com.tunedplayer.app.ui.common.TunedDialog
+import com.tunedplayer.app.ui.common.focusRing
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -247,6 +249,7 @@ private fun GuideEntryPicker(
                 Column(
                     Modifier
                         .fillMaxWidth()
+                        .focusRing(RoundedCornerShape(8.dp), MaterialTheme.colorScheme.primary)
                         .clickable { onPick(c.id) }
                         .padding(vertical = 10.dp),
                 ) {
