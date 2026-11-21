@@ -22,12 +22,12 @@ fun BackTopBar(
     title: String,
     /** Null for a page with nowhere to go back to, such as a section of Home: no arrow. */
     onBack: (() -> Unit)?,
-    actions: @Composable RowScope.() -> Unit = {},
     /**
      * Over a screen's own backdrop (the glow behind "Who's watching?"), the bar is see-through so the backdrop shows
      * behind the title, rather than a block of the surface colour (Melvin, 2026-11-21).
      */
     transparent: Boolean = false,
+    actions: @Composable RowScope.() -> Unit = {},
 ) {
     TopAppBar(
         title = { Text(title, maxLines = 1, overflow = TextOverflow.Ellipsis) },
