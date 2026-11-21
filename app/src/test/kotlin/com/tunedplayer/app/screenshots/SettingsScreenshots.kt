@@ -152,7 +152,7 @@ class SettingsScreenshots : Screenshots() {
     fun whatsNew() = shot(
         "settings-whats-new",
         SettingsRoute,
-        wait = text(R.string.whats_new_kind_improved),
+        wait = "Top rated lists films",
         overlay = { WhatsNew(WhatsNewNotes.Loaded(SAMPLE_CHANGES), onRetry = {}, onDismiss = {}) },
     )
 
@@ -162,7 +162,7 @@ class SettingsScreenshots : Screenshots() {
     fun whatsNewTv() = shot(
         "settings-whats-new-tv",
         SettingsRoute,
-        wait = text(R.string.whats_new_kind_improved),
+        wait = "Top rated lists films",
         overlay = { WhatsNew(WhatsNewNotes.Loaded(SAMPLE_CHANGES), onRetry = {}, onDismiss = {}) },
     )
 
