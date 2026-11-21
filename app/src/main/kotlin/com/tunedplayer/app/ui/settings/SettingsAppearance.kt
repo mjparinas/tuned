@@ -39,6 +39,7 @@ import com.tunedplayer.app.data.AppSettings
 import com.tunedplayer.app.data.LighterMode
 import com.tunedplayer.app.data.ThemeMode
 import com.tunedplayer.app.diagnostics.Lighter
+import com.tunedplayer.app.ui.common.focusRing
 import com.tunedplayer.app.ui.theme.swatch
 
 @Composable
@@ -126,6 +127,7 @@ internal fun AccentRow(
                             .aspectRatio(1f)
                             .clip(CircleShape)
                             .background(accent.swatch())
+                            .focusRing(CircleShape, MaterialTheme.colorScheme.onSurface)
                             .selectable(selected = accent == selected, role = Role.RadioButton, onClick = { onPick(accent) })
                             .semantics { contentDescription = name },
                 ) {

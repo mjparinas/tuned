@@ -80,6 +80,16 @@ class SettingsScreenshots : Screenshots() {
         settings = DARK.copy(captions = CaptionStyle(enabled = true)),
     )
 
+    /** Captions on a TV: the preview beside the rows, the remote starting on Show captions. */
+    @Test
+    @Config(qualifiers = TV)
+    fun captionsTv() = shot(
+        "settings-captions-tv",
+        CaptionSettingsRoute,
+        wait = text(R.string.settings_captions),
+        settings = DARK.copy(captions = CaptionStyle(enabled = true)),
+    )
+
     @Test
     fun countries() = shot(
         "settings-countries",
