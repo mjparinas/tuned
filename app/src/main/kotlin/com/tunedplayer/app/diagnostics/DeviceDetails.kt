@@ -140,7 +140,11 @@ object DeviceDetails {
         add("Security patch") { Build.VERSION.SECURITY_PATCH }
         add("Android build") { Build.DISPLAY }
         add("Fingerprint") { Build.FINGERPRINT }
-        add("WebView") { android.webkit.WebView.getCurrentWebViewPackage()?.versionName }
+        add("WebView") {
+            android.webkit.WebView
+                .getCurrentWebViewPackage()
+                ?.versionName
+        }
         add("Touch screen") { context.packageManager.hasSystemFeature(PackageManager.FEATURE_TOUCHSCREEN) }
     }
 
@@ -160,7 +164,13 @@ object DeviceDetails {
                 "${mode.physicalWidth}×${mode.physicalHeight}@${"%.0f".format(Locale.ROOT, mode.refreshRate)}"
             }
         }
-        add("HDR") { display?.hdrCapabilities?.supportedHdrTypes?.joinToString { hdr(it) }?.ifEmpty { "none" } }
+        add("HDR") {
+            display
+                ?.hdrCapabilities
+                ?.supportedHdrTypes
+                ?.joinToString { hdr(it) }
+                ?.ifEmpty { "none" }
+        }
     }
 
     private fun memory(context: Context) = section("Memory") {
@@ -226,7 +236,10 @@ object DeviceDetails {
 
     private fun region(context: Context) = section("Language and time") {
         add("Language") { Locale.getDefault().toLanguageTag() }
-        add("Device languages") { context.resources.configuration.locales.toLanguageTags() }
+        add("Device languages") {
+            context.resources.configuration.locales
+                .toLanguageTags()
+        }
         add("Time zone") { TimeZone.getDefault().id }
         add("24-hour clock") { DateFormat.is24HourFormat(context) }
         add("Time now") { date(System.currentTimeMillis()) }
@@ -301,5 +314,7 @@ object DeviceDetails {
 
     private fun minutes(ms: Long): String = "${ms / 60_000} min"
 
-    private fun date(ms: Long): String = java.text.DateFormat.getDateTimeInstance().format(java.util.Date(ms))
+    private fun date(ms: Long): String = java.text.DateFormat
+        .getDateTimeInstance()
+        .format(java.util.Date(ms))
 }
