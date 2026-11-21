@@ -13,6 +13,8 @@ import { access, httpsVariant, isMixed, isPreviewHost, parseServer } from "/chec
 import {
     ago,
     applyFilters,
+    clickMessage,
+    clickPlan,
     fileName,
     fromAppCopy,
     noCopyText,
@@ -33,6 +35,7 @@ import {
     QUALITIES,
     ticks,
     TOPICS,
+    vlcDidNotOpen,
     vlcLink,
     xtreamChannels,
     xtreamGuideUrl,
@@ -62,6 +65,7 @@ const state = {
     span: null, // the guide's { from, to }
     loadId: 0,
     abort: null,
+    click: "vlc", // what a click does: "vlc" (open VLC where it can, and copy) or "copy" (copy only)
 };
 
 const kindNames = { xtream: "Xtream login", link: "M3U link", stalker: "MAC portal", file: "File" };
@@ -263,26 +267,108 @@ function download(name, text) {
     setTimeout(() => URL.revokeObjectURL(a.href), 10_000);
 }
 
-async function copy(text, where, what) {
+/** Copies text, with the old way for browsers that refuse the clipboard API. Starts at once, inside the click. */
+async function copyText(text) {
     try {
         await navigator.clipboard.writeText(text);
-        tell(where, `${what} copied. In VLC: Media › Open Network Stream, then paste.`, "ok");
+        return true;
     } catch {
-        tell(where, "This browser didn't allow copying. Use the playlist file instead.");
+        const box = document.createElement("textarea");
+        box.value = text;
+        box.setAttribute("readonly", "");
+        box.style.position = "fixed";
+        box.style.opacity = "0";
+        document.body.append(box);
+        box.select();
+        let ok = false;
+        try {
+            ok = document.execCommand("copy");
+        } catch {
+            ok = false;
+        }
+        box.remove();
+        return ok;
     }
 }
 
-/**
- * Opens a channel in VLC: VLC's own link on Android, iPhone and Mac; elsewhere (Windows, Linux, where VLC has no
- * link) a one-channel playlist file, which opens in VLC or the usual player.
- */
-function play(c) {
-    const vlc = vlcLink(c.url, platform, c.name);
-    if (vlc) location.href = vlc;
-    else download(fileName(c.name), m3uFor([c]));
+let toastTimer = 0;
+/** A line at the bottom of the screen that every click leaves, wherever the page is scrolled to. */
+function toast(text, tone = "ok") {
+    const box = $("toast");
+    clearTimeout(toastTimer);
+    box.textContent = text;
+    box.dataset.tone = tone;
+    box.hidden = false;
+    toastTimer = setTimeout(() => (box.hidden = true), 7000);
 }
 
-const playLabel = (c) => (vlcLink(c.url, platform, c.name) ? `Open ${c.name} in VLC` : `Play ${c.name} in VLC or your usual player`);
+async function copy(text, where, what) {
+    const copied = await copyText(text);
+    const message = copied
+        ? `${what} copied. Paste it into VLC (Media › Open Network Stream) or any player.`
+        : "This browser didn't allow copying. Use the playlist file instead.";
+    tell(where, message, copied ? "ok" : "error");
+    toast(message, copied ? "ok" : "error");
+}
+
+/** Says so when VLC's link left the page in front, which usually means VLC isn't on this device. */
+function watchVlc(name) {
+    let left = false;
+    const away = () => (left = true);
+    window.addEventListener("blur", away, { once: true });
+    document.addEventListener("visibilitychange", away, { once: true });
+    setTimeout(() => {
+        window.removeEventListener("blur", away);
+        document.removeEventListener("visibilitychange", away);
+        if (!left && document.hasFocus()) toast(vlcDidNotOpen(name), "error");
+    }, 3000);
+}
+
+/**
+ * A click on a channel or a programme: the link is copied, and VLC opens too where it has a link of its own
+ * (Android, iPhone and iPad, Mac) unless the person chose "Copy the link". When the browser refuses to copy and VLC
+ * can't open, the one-channel playlist file downloads instead, so a click always does something and says what.
+ */
+async function play(c) {
+    const { vlc } = clickPlan(c.url, platform, c.name, state.click);
+    // Copy before VLC takes the focus: the clipboard only works while the page is in front.
+    const copying = copyText(c.url);
+    if (vlc) location.href = vlc;
+    const copied = await copying;
+    if (!vlc && !copied) download(fileName(c.name), m3uFor([c]));
+    const { text, tone } = clickMessage({ name: c.name, vlc, copied });
+    toast(text, tone);
+    if ($("show").open) tell("show-message", text, tone);
+    if (vlc && copied) watchVlc(c.name);
+}
+
+const playLabel = (c) =>
+    clickPlan(c.url, platform, c.name, state.click).vlc ? `Open ${c.name} in VLC` : `Copy ${c.name}'s link for your player`;
+
+/** The choice of what a click does, kept in this browser. Only where VLC has a link: elsewhere a click copies. */
+const CLICK_KEY = "tuned.channels.click";
+function setUpClick() {
+    try {
+        state.click = localStorage.getItem(CLICK_KEY) === "copy" ? "copy" : "vlc";
+    } catch {
+        state.click = "vlc";
+    }
+    const canOpen = !!vlcLink("http://example.com/1.ts", platform);
+    $("click-field").hidden = !canOpen;
+    if (!canOpen) return;
+    $("click").value = state.click;
+    enhanceSelect($("click"));
+    $("click").onchange = () => {
+        state.click = $("click").value === "copy" ? "copy" : "vlc";
+        try {
+            localStorage.setItem(CLICK_KEY, state.click);
+        } catch {
+            // Private windows can refuse storage; the choice still holds until the page closes.
+        }
+        toast(state.click === "copy" ? "A click now copies the link." : "A click now opens VLC and copies the link.");
+        if (state.channels.length) draw();
+    };
+}
 
 function drawWhole() {
     const url = state.wholeUrl;
@@ -380,7 +466,7 @@ function showDetails(c, p) {
     tell("show-message", "", "ok");
     const open = document.createElement("button");
     open.type = "button";
-    open.textContent = vlcLink(c.url, platform, c.name) ? `Open ${c.name} in VLC` : `Play ${c.name}`;
+    open.textContent = clickPlan(c.url, platform, c.name, state.click).vlc ? `Open ${c.name} in VLC` : `Copy ${c.name}'s link`;
     open.onclick = () => play(c);
     const file = document.createElement("button");
     file.type = "button";
@@ -484,11 +570,12 @@ function gridRow(c, now) {
         label.className = "epg-label";
         label.append(spoken(`${c.name}, ${onNow ? "on now" : past ? "ended" : dayName(p.start)}: `), title, range);
         block.append(label);
-        // What's on now plays, as in the app; anything still to come shows its details.
-        if (onNow) {
+        // What's on now, or still to come, opens the channel (Melvin, 2026-11-21: "click on a show or a channel ...
+        // should either open the link up automatically in vlc ... or copy the link"). Details are in Now and next.
+        if (!past) {
             block.title = playLabel(c);
             block.onclick = () => play(c);
-        } else if (!past) block.onclick = () => showDetails(c, p);
+        }
         track.append(block);
     }
     row.append(cell, track);
@@ -915,6 +1002,7 @@ $("filters-button").onclick = () => {
     $("filters").hidden = !open;
     $("filters-button").setAttribute("aria-expanded", String(open));
 };
+setUpClick();
 $("more").onclick = more;
 $("earlier").onclick = () => ($("grid").scrollLeft -= 2 * 60 * perMinute());
 $("later").onclick = () => ($("grid").scrollLeft += 2 * 60 * perMinute());
