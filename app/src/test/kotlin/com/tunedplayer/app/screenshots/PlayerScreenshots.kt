@@ -212,13 +212,7 @@ class PlayerScreenshots {
                         .apply { bottomMargin = (STATUS_RAISE_DP * density).toInt() },
                 )
             }
-        if (casting) {
-            val screen = CastingScreen(activity, onVolume = {}, onStop = {}, restTimeoutMs = { 0 })
-            screen.attach(root, playerView)
-            screen.tint(playerAccent(activity, Accent.VIOLET, dynamicColour = false))
-            screen.update(CastingScreen.Look("SHIELD", null, state.takeIf { note == null }, volume))
-            screen.note(note, busy)
-        }
+        if (casting) castOnto(root, playerView, CastingScreen.Look("SHIELD", null, state.takeIf { note == null }, volume), note, busy)
         activity.setContentView(root)
         playerView.showController()
         (playerView.player as ViewPlayer).tvChanged()
@@ -226,6 +220,21 @@ class PlayerScreenshots {
         shadowOf(Looper.getMainLooper()).idle()
         root.captureRoboImage("$name.png")
         exo.release()
+    }
+
+    /** The casting screen over [playerView], as `PlayerActivity` shows it while a TV plays. */
+    private fun castOnto(
+        root: FrameLayout,
+        playerView: PlayerView,
+        look: CastingScreen.Look,
+        note: String?,
+        busy: Boolean,
+    ) {
+        val screen = CastingScreen(root.context, { null }) { 0 }
+        screen.attach(root, playerView)
+        screen.tint(playerAccent(root.context, Accent.VIOLET, dynamicColour = false))
+        screen.update(look)
+        screen.note(note, busy)
     }
 
     /** Subtitle search and timing; timing is greyed out while casting (the TV draws the captions) or while subtitles are off. */

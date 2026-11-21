@@ -55,7 +55,7 @@ class CastingScreenTest {
         playerView = PlayerView(activity)
         val root = FrameLayout(activity).apply { addView(playerView) }
         activity.setContentView(root)
-        screen = CastingScreen(activity, onVolume = {}, onStop = {}, restTimeoutMs = { REST_MS })
+        screen = CastingScreen(activity, { null }) { REST_MS }
         screen.attach(root, playerView)
     }
 

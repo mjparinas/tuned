@@ -28,6 +28,7 @@ import coil3.dispose
 import coil3.load
 import coil3.size.Precision
 import com.tunedplayer.app.R
+import com.tunedplayer.app.data.db.ItemEntity
 import com.tunedplayer.app.diagnostics.attempt
 
 /**
@@ -50,10 +51,8 @@ import com.tunedplayer.app.diagnostics.attempt
 @OptIn(UnstableApi::class)
 internal class CastingScreen(
     private val context: Context,
-    /** The volume slider moved, from 0 to 1. */
-    private val onVolume: (Float) -> Unit,
-    /** Stop casting was pressed. */
-    private val onStop: () -> Unit,
+    /** The cast, if any: the volume slider and Stop casting drive it, and [follow] reads the TV from it. */
+    private val cast: () -> CastControl?,
     /** How long the controls stay up when nothing is cast, to put back when the cast ends. */
     private val restTimeoutMs: () -> Int,
 ) {
@@ -191,7 +190,7 @@ internal class CastingScreen(
                         progress: Int,
                         fromUser: Boolean,
                     ) {
-                        if (fromUser) onVolume(progress.toFloat() / VOLUME_STEPS)
+                        if (fromUser) cast()?.setVolume(progress.toFloat() / VOLUME_STEPS)
                     }
 
                     override fun onStartTrackingTouch(bar: SeekBar) {
@@ -200,7 +199,7 @@ internal class CastingScreen(
 
                     override fun onStopTrackingTouch(bar: SeekBar) {
                         dragging = false
-                        onVolume(bar.progress.toFloat() / VOLUME_STEPS)
+                        cast()?.setVolume(bar.progress.toFloat() / VOLUME_STEPS)
                     }
                 },
             )
@@ -233,7 +232,7 @@ internal class CastingScreen(
             background = RippleDrawable(ColorStateList.valueOf(BUTTON_RIPPLE), shape, null)
             isClickable = true
             isFocusable = true
-            setOnClickListener { onStop() }
+            setOnClickListener { cast()?.stop() }
         }
 
     /** The volume and Stop casting, below the centre controls. */
@@ -296,6 +295,20 @@ internal class CastingScreen(
         volume.progressTintList = ColorStateList.valueOf(accent)
         volume.thumbTintList = ColorStateList.valueOf(accent)
     }
+
+    /** A cast began, changed or ended, or [item] took over on the TV: shows what [cast] says. */
+    fun follow(item: ItemEntity?) {
+        val now = cast()
+        val tv = now?.tvName
+        update(if (now == null || tv == null) null else Look(tv, item?.logo, if (now.casting) now.tv.state() else null, now.volume))
+    }
+
+    /** How long the controls stay up: for good while casting, else as set. */
+    fun timeoutMs(): Int = if (shown) 0 else restTimeoutMs()
+
+    /** The player's notes go here from the moment a TV is picked, else to [elsewhere]. */
+    fun notesOr(elsewhere: (String?, Boolean) -> Unit): (String?, Boolean) -> Unit =
+        { text, busy -> if (cast()?.tvName != null) note(text, busy) else elsewhere(text, busy) }
 
     /** A cast began, changed or ended ([look] null). */
     fun update(look: Look?) {

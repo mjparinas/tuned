@@ -112,14 +112,7 @@ class PlayerActivity : FragmentActivity() {
     private var cast: CastControl? = null
 
     /** The phone's screen while a TV plays: a remote, not the stale frame; see [CastingScreen]. */
-    private val castScreen by lazy {
-        CastingScreen(
-            this,
-            onVolume = { level -> cast?.setVolume(level) },
-            onStop = { cast?.stop() },
-            restTimeoutMs = { AccessibleControls.timeoutMs(this, settings.controlsTimeoutMs) },
-        )
-    }
+    private val castScreen by lazy { CastingScreen(this, { cast }) { AccessibleControls.timeoutMs(this, settings.controlsTimeoutMs) } }
 
     /** Saved copies in the queue, by item id: played from the device here, and served from the phone when casting. */
     private var savedFiles: Map<Long, File> = emptyMap()
@@ -278,9 +271,7 @@ class PlayerActivity : FragmentActivity() {
             settings = container.settings.settings.first()
             if (settings.landscapePlayback) requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
             tools.applyFit(settings.videoFit)
-            val accent = playerAccent(this@PlayerActivity, settings.accent, settings.dynamicColour)
-            tintScrubber(playerView, accent)
-            castScreen.tint(accent)
+            tintScrubber(playerView, playerAccent(this@PlayerActivity, settings.accent, settings.dynamicColour).also(castScreen::tint))
             if (settings.playerGestures) setUpGestures()
             if (settings.autoReconnect) reconnect.start()
             val query = intent.getStringExtra(EXTRA_TUNE)
@@ -421,16 +412,17 @@ class PlayerActivity : FragmentActivity() {
                 current = { player?.let { queue.getOrNull(it.currentMediaItemIndex) } },
                 isLive = ::live,
                 savedFile = { id -> savedFiles[id] },
-                onStatus = { text, busy ->
-                    when {
-                        // From the moment a TV is picked, its steps and problems show on the casting screen.
-                        cast?.tvName != null -> castScreen.note(text, busy)
-
-                        text == null -> statusView.visibility = View.GONE
-
-                        else -> statusView.show(text, busy)
-                    }
-                },
+                // From the moment a TV is picked, its steps and problems show on the casting screen.
+                onStatus =
+                    castScreen.notesOr { text, busy ->
+                        if (text ==
+                            null
+                        ) {
+                            statusView.visibility = View.GONE
+                        } else {
+                            statusView.show(text, busy)
+                        }
+                    },
                 subtitleOffsetMs = { subtitleTiming.offsetMs },
                 onTvChanged = ::castChanged,
                 resolve = container.stalker::resolve,
@@ -466,12 +458,7 @@ class PlayerActivity : FragmentActivity() {
         (playerView.player as? ViewPlayer)?.tvChanged()
         // Speed and sound tracks don't apply to the TV; Media3 enables the button again once the cast ends.
         if (cast?.casting == true) playerView.findViewById<View>(androidx.media3.ui.R.id.exo_settings)?.usable(false)
-        val c = cast
-        val tv = c?.tvName
-        val item = player?.let { queue.getOrNull(it.currentMediaItemIndex) }
-        castScreen.update(
-            if (c == null || tv == null) null else CastingScreen.Look(tv, item?.logo, if (c.casting) c.tv.state() else null, c.volume),
-        )
+        castScreen.follow(player?.let { queue.getOrNull(it.currentMediaItemIndex) })
         tools.onControls(View.VISIBLE)
         recorder.onControls(View.VISIBLE)
         pills.update()
@@ -545,8 +532,7 @@ class PlayerActivity : FragmentActivity() {
         playerView.player = shown
         // Media buttons and the Assistant act through the same player as the on-screen controls.
         session.attach(shown)
-        // While casting the controls stay up (the casting screen sets that).
-        if (!castScreen.shown) playerView.setControllerShowTimeoutMs(AccessibleControls.timeoutMs(this, settings.controlsTimeoutMs))
+        playerView.setControllerShowTimeoutMs(castScreen.timeoutMs())
         playerView.setShowNextButton(queue.size > 1)
         playerView.setShowPreviousButton(queue.size > 1)
         // Live channels can rewind and catch up once paused (see [LiveTimeshift]); the buttons are greyed out until then.
