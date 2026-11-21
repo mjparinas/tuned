@@ -18,6 +18,7 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.sync.Mutex
@@ -51,6 +52,8 @@ class GitHubUpdates(
     private val downloader: Downloader = Downloader(http),
     /** Where an install runs: the app's scope, so leaving the screen part way doesn't stop it. */
     private val scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Default),
+    /** How long Android's installer has to answer once the APK is handed over, before Install says it didn't open. */
+    private val installerTimeoutMs: Long = INSTALLER_TIMEOUT_MS,
 ) {
     sealed interface State {
         data object Idle : State
@@ -111,7 +114,13 @@ class GitHubUpdates(
         CONFIRM(3),
     }
 
-    enum class InstallProblem { DOWNLOAD, SPACE, REFUSED, OTHER }
+    /**
+     * Why an install stopped. [PERMISSION]: Tuned isn't allowed to install apps and Android's setting for it couldn't be
+     * opened, or the person came back without turning it on. [INSTALLER]: the APK was handed over and Android's installer
+     * never answered. Both happened silently on an Nvidia Shield (Melvin, 2026-11-21: "when I click install, nothing
+     * happens. And when I check the logs, there are nothing in the logs").
+     */
+    enum class InstallProblem { DOWNLOAD, SPACE, PERMISSION, INSTALLER, REFUSED, OTHER }
 
     private val _state = MutableStateFlow<State>(State.Idle)
     val state: StateFlow<State> = _state
@@ -296,23 +305,56 @@ class GitHubUpdates(
      * carries on by itself ([onReturned]).
      */
     fun install(activity: Context) {
-        val ready = _state.value.pending ?: return
-        if (_state.value is State.Installing) return
+        val now = _state.value
+        val ready = now.pending
+        if (ready == null) {
+            AppLog.w(TAG, "Install tapped with no update waiting (${now::class.simpleName})")
+            return
+        }
+        if (now is State.Installing) {
+            AppLog.i(TAG) { "Install tapped again while on ${now.step.name.lowercase()}" }
+            return
+        }
+        AppLog.i(TAG) {
+            "Install tapped: Tuned ${ready.versionName}, Android ${Build.VERSION.SDK_INT}, ${Build.MANUFACTURER} ${Build.MODEL}"
+        }
         val app = activity.applicationContext
         val allowed = attempt(TAG, "install permission") { app.packageManager.canRequestPackageInstalls() }.getOrDefault(true)
         if (!allowed) {
-            awaitingPermission = true
-            activity.startActivitySafely(
-                Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES, "package:${activity.packageName}".toUri())
-                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
-                TAG,
-            )
+            askPermission(activity, ready)
             return
         }
         awaitingPermission = false
         _state.value = State.Installing(ready, InstallStep.CHECK, 0, ready.size)
         scope.launchSafely(TAG, onError = { _state.value = State.InstallFailed(ready, InstallProblem.OTHER) }) {
             installSafely(app, ready)
+        }
+    }
+
+    /**
+     * Opens Android's "allow Tuned to install apps" setting. A TV's settings may not have the page for one app (or any
+     * page for it), so this falls back to the list of apps and then to security settings; if none opens, Install says
+     * what to turn on rather than doing nothing.
+     */
+    private fun askPermission(
+        activity: Context,
+        ready: State.Ready,
+    ) {
+        AppLog.i(TAG) { "Tuned isn't allowed to install apps yet; opening Android's setting" }
+        val pages =
+            listOf(
+                Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES, "package:${activity.packageName}".toUri()),
+                Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES),
+                Intent(Settings.ACTION_SECURITY_SETTINGS),
+            )
+        val opened = pages.firstOrNull { activity.startActivitySafely(it.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK), TAG) }
+        if (opened == null) {
+            AppLog.w(TAG, "No settings page to allow installs could be opened")
+            awaitingPermission = false
+            _state.value = State.InstallFailed(ready, InstallProblem.PERMISSION)
+        } else {
+            AppLog.i(TAG) { "Opened ${opened.action}${if (opened.data != null) " for Tuned" else ""}" }
+            awaitingPermission = true
         }
     }
 
@@ -360,6 +402,7 @@ class GitHubUpdates(
         step(InstallStep.PREPARE, 0)
         val installer = context.packageManager.packageInstaller
         val id = installer.createSession(PackageInstaller.SessionParams(PackageInstaller.SessionParams.MODE_FULL_INSTALL))
+        AppLog.i(TAG) { "Copying the update into Android's installer (session $id, $size bytes)" }
         try {
             commit(context, installer, id, apk) { step(InstallStep.PREPARE, it) }
         } catch (e: CancellationException) {
@@ -371,7 +414,14 @@ class GitHubUpdates(
         }
         // Handed over: the installer answers through InstallResultReceiver, usually with its confirm window. It can
         // answer before this line runs, so only a step still preparing moves on.
-        _state.compareAndSet(State.Installing(ready, InstallStep.PREPARE, size, size), State.Installing(ready, InstallStep.OPEN_INSTALLER))
+        val handed = State.Installing(ready, InstallStep.OPEN_INSTALLER)
+        _state.compareAndSet(State.Installing(ready, InstallStep.PREPARE, size, size), handed)
+        AppLog.i(TAG) { "Handed the update to Android's installer; waiting for its answer" }
+        // Some devices never answer at all: rather than "Opening Android's installer" for ever, say it didn't open.
+        delay(installerTimeoutMs)
+        if (_state.compareAndSet(handed, State.InstallFailed(ready, InstallProblem.INSTALLER))) {
+            AppLog.w(TAG, "Android's installer didn't answer within ${installerTimeoutMs / MS_PER_SECOND} s")
+        }
     }
 
     private fun commit(
@@ -423,6 +473,7 @@ class GitHubUpdates(
         status: Int,
         message: String?,
     ) {
+        AppLog.i(TAG) { "Android's installer answered: status $status${message?.let { ", $it" }.orEmpty()}" }
         val now = _state.value as? State.Installing ?: return
         when (status) {
             PackageInstaller.STATUS_PENDING_USER_ACTION -> {
@@ -452,11 +503,15 @@ class GitHubUpdates(
     fun onReturned(activity: Context) {
         val now = _state.value
         if (now is State.Installing && now.step == InstallStep.CONFIRM) _state.value = now.ready
-        if (awaitingPermission &&
-            now.pending != null &&
-            attempt(TAG, "install permission") { activity.packageManager.canRequestPackageInstalls() }.getOrDefault(false)
-        ) {
+        val ready = now.pending
+        if (!awaitingPermission || ready == null) return
+        awaitingPermission = false
+        if (attempt(TAG, "install permission") { activity.packageManager.canRequestPackageInstalls() }.getOrDefault(false)) {
+            AppLog.i(TAG) { "Allowed to install apps now; carrying on" }
             install(activity)
+        } else {
+            AppLog.w(TAG, "Came back without allowing Tuned to install apps")
+            _state.value = State.InstallFailed(ready, InstallProblem.PERMISSION)
         }
     }
 
@@ -484,6 +539,8 @@ class GitHubUpdates(
         private const val SHA256 = "sha256:"
         private const val BUFFER = 64 * 1024
         private const val PLAY_STORE = "com.android.vending"
+        private const val INSTALLER_TIMEOUT_MS = 30_000L
+        private const val MS_PER_SECOND = 1000
     }
 }
 

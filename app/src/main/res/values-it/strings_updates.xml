@@ -17,4 +17,6 @@
     <string name="update_problem_download">Impossibile scaricare l’aggiornamento. Controlla la connessione e riprova.</string>
     <string name="update_problem_space">Spazio libero insufficiente per l’aggiornamento. Libera spazio e riprova.</string>
     <string name="update_problem_other">L’aggiornamento non è stato installato. Riprova.</string>
+    <string name="update_problem_permission">Tuned non ha ancora il permesso di installare aggiornamenti. Attiva Tuned in Installa app sconosciute nelle impostazioni di Android (su una TV: Sicurezza e limitazioni › Origini sconosciute), poi riprova.</string>
+    <string name="update_problem_installer">Il programma di installazione di Android non si è aperto. Riprova.</string>
 </resources>

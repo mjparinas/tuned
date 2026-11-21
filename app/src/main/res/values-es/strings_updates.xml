@@ -17,4 +17,6 @@
     <string name="update_problem_download">No se pudo descargar la actualización. Comprueba tu conexión e inténtalo de nuevo.</string>
     <string name="update_problem_space">No hay suficiente espacio libre para la actualización. Libera espacio e inténtalo de nuevo.</string>
     <string name="update_problem_other">La actualización no se instaló. Inténtalo de nuevo.</string>
+    <string name="update_problem_permission">Tuned aún no tiene permiso para instalar actualizaciones. Activa Tuned en Instalar apps desconocidas en los ajustes de Android (en una TV: Seguridad y restricciones › Orígenes desconocidos) y vuelve a intentarlo.</string>
+    <string name="update_problem_installer">El instalador de Android no se abrió. Inténtalo de nuevo.</string>
 </resources>

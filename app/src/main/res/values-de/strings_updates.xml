@@ -17,4 +17,6 @@
     <string name="update_problem_download">Das Update konnte nicht heruntergeladen werden. Prüfe deine Verbindung und versuche es erneut.</string>
     <string name="update_problem_space">Nicht genug freier Speicher für das Update. Gib Speicher frei und versuche es erneut.</string>
     <string name="update_problem_other">Das Update wurde nicht installiert. Versuche es erneut.</string>
+    <string name="update_problem_permission">Tuned darf noch keine Updates installieren. Aktiviere Tuned in den Android-Einstellungen unter „Unbekannte Apps installieren“ (auf einem Fernseher: Sicherheit &amp; Einschränkungen › Unbekannte Quellen) und versuche es dann erneut.</string>
+    <string name="update_problem_installer">Das Android-Installationsprogramm hat sich nicht geöffnet. Versuche es erneut.</string>
 </resources>

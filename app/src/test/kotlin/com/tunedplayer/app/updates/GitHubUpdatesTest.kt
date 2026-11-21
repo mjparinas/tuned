@@ -1,7 +1,9 @@
 package com.tunedplayer.app.updates
 
+import android.app.Application
 import android.content.Context
 import android.content.pm.PackageInstaller
+import android.provider.Settings
 import androidx.test.core.app.ApplicationProvider
 import com.tunedplayer.app.data.Downloader
 import kotlinx.coroutines.Dispatchers
@@ -52,13 +54,17 @@ class GitHubUpdatesTest {
 
     @After fun stop() = server.close()
 
-    private fun updates(installedCode: Int) = GitHubUpdates(
+    private fun updates(
+        installedCode: Int,
+        installerTimeoutMs: Long = WAIT_MS * 2,
+    ) = GitHubUpdates(
         context,
         OkHttpClient(),
         api = server.url("/").toString().trimEnd('/'),
         installedCode = installedCode,
         enabled = true,
         downloader = Downloader(OkHttpClient(), backoffMs = { 0 }),
+        installerTimeoutMs = installerTimeoutMs,
     )
 
     private fun sha256(bytes: ByteArray) = MessageDigest.getInstance("SHA-256").digest(bytes).joinToString("") {
@@ -314,6 +320,59 @@ class GitHubUpdatesTest {
         updates.onInstallerAnswer(PackageInstaller.STATUS_FAILURE_STORAGE, "not enough space")
 
         assertEquals(GitHubUpdates.InstallProblem.SPACE, assertIs<GitHubUpdates.State.InstallFailed>(updates.state.value).problem)
+    }
+
+    /**
+     * Melvin (2026-11-21), on an Nvidia Shield: "when I click install, nothing happens. And when I check the logs, there
+     * are nothing in the logs". Before, a device with no settings page for "install unknown apps" left Install doing
+     * nothing at all.
+     */
+    @Test
+    fun noSettingsPageToAllowInstallsSaysWhatToTurnOn() = runBlocking<Unit> {
+        serve({ json(release("v1.2.1")) })
+        val updates = updates(installed120)
+        updates.check()
+        shadowOf(context.packageManager).setCanRequestPackageInstalls(false)
+        shadowOf(context as Application).checkActivities(true) // nothing resolves, as on the TV
+
+        updates.install(context)
+
+        assertEquals(GitHubUpdates.InstallProblem.PERMISSION, assertIs<GitHubUpdates.State.InstallFailed>(updates.state.value).problem)
+    }
+
+    @Test
+    fun comingBackWithoutAllowingInstallsSaysSo() = runBlocking<Unit> {
+        serve({ json(release("v1.2.1")) })
+        val updates = updates(installed120)
+        updates.check()
+        shadowOf(context.packageManager).setCanRequestPackageInstalls(false)
+
+        updates.install(context)
+        val opened = checkNotNull(shadowOf(context as Application).nextStartedActivity)
+        assertEquals(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES, opened.action)
+        assertEquals("package:${context.packageName}", opened.dataString)
+        assertIs<GitHubUpdates.State.Ready>(updates.state.value)
+
+        updates.onReturned(context)
+
+        assertEquals(GitHubUpdates.InstallProblem.PERMISSION, assertIs<GitHubUpdates.State.InstallFailed>(updates.state.value).problem)
+        // Turned on afterwards, Try again installs.
+        allowInstalls()
+        updates.install(context)
+        assertIs<GitHubUpdates.State.Installing>(updates.handedOver())
+    }
+
+    @Test
+    fun anInstallerThatNeverAnswersSaysItDidNotOpen() = runBlocking<Unit> {
+        serve({ json(release("v1.2.1")) })
+        val updates = updates(installed120, installerTimeoutMs = 200)
+        updates.check()
+        allowInstalls()
+
+        updates.install(context)
+
+        val failed = assertIs<GitHubUpdates.State.InstallFailed>(updates.await { it is GitHubUpdates.State.InstallFailed })
+        assertEquals(GitHubUpdates.InstallProblem.INSTALLER, failed.problem)
     }
 
     private companion object {
