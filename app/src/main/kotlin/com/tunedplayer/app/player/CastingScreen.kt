@@ -123,9 +123,6 @@ internal class CastingScreen(
             setTextColor(Color.WHITE)
             textSize = 20f
             setTypeface(typeface, Typeface.BOLD)
-            setCompoundDrawablesRelativeWithIntrinsicBounds(R.drawable.ic_player_cast, 0, 0, 0)
-            compoundDrawablePadding = dp(8)
-            gravity = Gravity.CENTER_VERTICAL
         }
 
     private val spinner =
@@ -153,7 +150,22 @@ internal class CastingScreen(
             val words =
                 LinearLayout(context).apply {
                     orientation = LinearLayout.VERTICAL
-                    addView(heading)
+                    // The cast icon as its own view: a TextView's relative compound drawable measured narrow and cut
+                    // the heading to "C" in the screenshots.
+                    addView(
+                        LinearLayout(context).apply {
+                            orientation = LinearLayout.HORIZONTAL
+                            gravity = Gravity.CENTER_VERTICAL
+                            addView(
+                                ImageView(context).apply {
+                                    setImageResource(R.drawable.ic_player_cast)
+                                    importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
+                                },
+                                LinearLayout.LayoutParams(dp(24), dp(24)).apply { marginEnd = dp(8) },
+                            )
+                            addView(heading)
+                        },
+                    )
                     addView(
                         LinearLayout(context).apply {
                             orientation = LinearLayout.HORIZONTAL
