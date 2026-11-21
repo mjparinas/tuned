@@ -993,6 +993,10 @@ const SECTIONS = {
                     { id: r.id, status: s, note: note.value },
                     s === "done" ? "Marked done." : s === "dismissed" ? "Dismissed." : "Back to read.",
                 )) && render();
+            // The Report button on Logs puts the device's details above the log (lib/admin/analytics.mjs, storedLog).
+            const split = (r.log ?? "").startsWith("==== Device ====\n") ? r.log.indexOf("\n==== Log ====\n") : -1;
+            const details = split > 0 ? r.log.slice("==== Device ====\n".length, split) : "";
+            const log = split > 0 ? r.log.slice(split + "\n==== Log ====\n".length) : r.log;
             return h(
                 "div",
                 { class: "card" },
@@ -1000,7 +1004,7 @@ const SECTIONS = {
                     "h2",
                     {},
                     h("span", { class: `dot ${r.crash ? "red" : "violet"}`, style: "margin-top:0" }),
-                    r.crash ? "Crash or freeze, with words" : "Problem report",
+                    details && !r.what ? "Logs sent from the app" : r.crash ? "Crash or freeze, with words" : "Problem report",
                     h(
                         "span",
                         { class: "note" },
@@ -1010,11 +1014,19 @@ const SECTIONS = {
                 h(
                     "p",
                     { style: "margin:0 0 8px;white-space:pre-wrap" },
-                    r.what || h("span", { class: "faint" }, "No words, only the crash."),
+                    r.what ||
+                        h(
+                            "span",
+                            { class: "faint" },
+                            details ? "Sent from Logs with one button, so no words." : "No words, only the crash.",
+                        ),
                 ),
+                details
+                    ? Object.assign(h("details", {}, h("summary", {}, "Device and install"), h("pre", {}, details)), { open: true })
+                    : null,
                 r.contact ? h("p", { class: "faint", style: "margin:0 0 8px" }, `Reply to: ${r.contact}`) : null,
                 r.crash ? h("details", {}, h("summary", {}, "Crash or freeze report"), h("pre", {}, r.crash)) : null,
-                r.log ? h("details", {}, h("summary", {}, "Log (logins already removed by the app)"), h("pre", {}, r.log)) : null,
+                log ? h("details", {}, h("summary", {}, "Log (logins already removed by the app)"), h("pre", {}, log)) : null,
                 h(
                     "div",
                     { class: "row", style: "margin-top:12px" },
@@ -1049,7 +1061,9 @@ const SECTIONS = {
                       h(
                           "div",
                           { class: "empty" },
-                          status === "open" ? "Nothing to read. Reports from Settings › Report a problem land here." : "Nothing here.",
+                          status === "open"
+                              ? "Nothing to read. Reports from Settings › Report a problem and the Report button on Logs land here."
+                              : "Nothing here.",
                       ),
                   ),
         );

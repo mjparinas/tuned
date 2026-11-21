@@ -240,6 +240,9 @@
     <string name="report_share_instead">इसके बजाय शेयर करें</string>
     <string name="report_sent">Tuned को भेज दिया गया। बताने के लिए धन्यवाद।</string>
     <string name="report_send_failed">भेजा नहीं जा सका। कनेक्शन जांचें और फिर से कोशिश करें, या इसके बजाय शेयर करें।</string>
+    <string name="logs_report_summary">यह लॉग और इस डिवाइस की जानकारी, जैसे मॉडल और Android वर्शन, Tuned को भेजता है। कुछ टाइप नहीं करना है, और लॉगिन शामिल नहीं होते।</string>
+    <string name="logs_report_sending">यह लॉग और डिवाइस की जानकारी भेजी जा रही है…</string>
+    <string name="logs_report_failed">भेजा नहीं जा सका। कनेक्शन जाँचें, फिर दोबारा कोशिश करें।</string>
     <string name="settings_header_privacy">गोपनीयता</string>
     <string name="settings_usage_stats">गुमनाम उपयोग आंकड़े भेजें</string>
     <string name="settings_usage_stats_summary">कौन-सी स्क्रीन और सुविधाएं इस्तेमाल होती हैं और प्लेबैक काम करता है या नहीं, ताकि Tuned जाने कि क्या ठीक करना है। आप क्या देखते, खोजते या टाइप करते हैं, यह कभी नहीं।</string>

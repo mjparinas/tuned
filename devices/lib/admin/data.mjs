@@ -5,6 +5,7 @@ import { checkoutAllowed, seatPlan } from "../accounts.mjs";
 import { entitlements as accountEntitlements } from "../account-store.mjs";
 import { change, fillDays, funnel, biggestDrop, monthlyCosts, mrr, revenue as sumRevenue } from "./metrics.mjs";
 import { KINDS, redeemProblem } from "./codes.mjs";
+import { storedLog } from "./analytics.mjs";
 
 const since = (n) => `now() - make_interval(days => ${n})`;
 const real = `NOT i.test`;
@@ -489,7 +490,7 @@ export async function saveReport(report) {
             report.device.android ?? null,
             report.what,
             report.crash,
-            report.log,
+            storedLog(report),
             report.contact,
         ],
     );
@@ -500,7 +501,7 @@ export async function saveReport(report) {
 
 export async function reports(status = "open") {
     const rows = await query(
-        `SELECT id, at, install_id, build, version, model, android, what, crash, left(log, 60000) AS log, contact, status, note, handled_by, handled_at
+        `SELECT id, at, install_id, build, version, model, android, what, crash, left(log, 200000) AS log, contact, status, note, handled_by, handled_at
          FROM problem_reports WHERE ($1 = 'all' OR status = $1) ORDER BY at DESC LIMIT 100`,
         [status],
     );

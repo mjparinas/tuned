@@ -114,16 +114,64 @@ object ProblemReport {
                     contact = contact.trim().take(CONTACT_CHARS),
                 ),
             )
-        return attempt(TAG, "Couldn't send the report to Tuned") {
-            val request =
-                Request
-                    .Builder()
-                    .url("$site/api/report")
-                    .post(body.toRequestBody(JSON))
-                    .build()
-            http.newCall(request).execute().use { it.isSuccessful }
-        }.getOrDefault(false)
+        return post(http, site, body)
     }
+
+    /**
+     * The Report button on Logs (Melvin, 2026-11-21: "on the logs screen, there should be a report button and it should
+     * automatically send all of the users logs, and all of their device information to me"): nothing to type, so it
+     * works with a TV remote. It sends [DeviceDetails] (logins masked), the last few crash or freeze reports and the
+     * whole log to the same `POST /api/report` as Report a problem, so it lands in the admin's Reports. Returns whether
+     * it arrived. Call it off the main thread.
+     */
+    suspend fun sendLogsToTuned(
+        context: Context,
+        http: OkHttpClient,
+        base: String,
+        install: String?,
+    ): Boolean {
+        val site = base.trim().trimEnd('/')
+        if (site.isEmpty()) return false
+        val details = DeviceDetails.collect(context)
+        val crashes =
+            CrashReporter
+                .reports(context)
+                .take(LOGS_CRASHES)
+                .joinToString("\n---- Earlier ----\n") { it.text }
+                .take(REPORT_CHARS)
+        val log =
+            AppLog
+                .snapshot()
+                .joinToString("\n") { it.format() }
+                .takeLast(LOGS_LOG_CHARS)
+        val body =
+            Json.encodeToString(
+                Sent(
+                    install = install,
+                    device = UsageStats.device(context),
+                    what = "",
+                    crash = crashes,
+                    log = log,
+                    contact = "",
+                    details = details,
+                ),
+            )
+        return post(http, site, body)
+    }
+
+    private fun post(
+        http: OkHttpClient,
+        site: String,
+        body: String,
+    ): Boolean = attempt(TAG, "Couldn't send the report to Tuned") {
+        val request =
+            Request
+                .Builder()
+                .url("$site/api/report")
+                .post(body.toRequestBody(JSON))
+                .build()
+        http.newCall(request).execute().use { it.isSuccessful }
+    }.getOrDefault(false)
 
     @Serializable
     private data class Sent(
@@ -133,11 +181,17 @@ object ProblemReport {
         val crash: String,
         val log: String,
         val contact: String,
+        /** Only from the Logs screen's Report: [DeviceDetails]. */
+        val details: String = "",
     )
 
     private const val WHAT_CHARS = 4_000
     private const val SENT_LOG_CHARS = 60_000
     private const val CONTACT_CHARS = 200
+
+    /** All of the log (1,000 lines at most), within what the server keeps. */
+    private const val LOGS_LOG_CHARS = 150_000
+    private const val LOGS_CRASHES = 3
     private val JSON = "application/json".toMediaType()
 
     enum class Outcome { SHARED, COPIED, FAILED }

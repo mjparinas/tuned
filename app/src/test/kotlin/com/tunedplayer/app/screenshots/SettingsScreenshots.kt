@@ -17,12 +17,15 @@ import com.tunedplayer.app.data.LighterMode
 import com.tunedplayer.app.premium.MoreDevicesOffer
 import com.tunedplayer.app.premium.Offer
 import com.tunedplayer.app.ui.CaptionSettingsRoute
+import com.tunedplayer.app.ui.DeveloperLogRoute
 import com.tunedplayer.app.ui.RegionSettingsRoute
 import com.tunedplayer.app.ui.SettingsPageRoute
 import com.tunedplayer.app.ui.SettingsRoute
 import com.tunedplayer.app.ui.onboarding.QrModules
 import com.tunedplayer.app.ui.settings.AccountSignIn
 import com.tunedplayer.app.ui.settings.AccountSignInDialog
+import com.tunedplayer.app.ui.settings.LogReport
+import com.tunedplayer.app.ui.settings.ReportRow
 import com.tunedplayer.app.ui.settings.SettingsPage
 import com.tunedplayer.app.ui.settings.SignOutDialog
 import com.tunedplayer.app.ui.settings.SignOutDownloadsDialog
@@ -62,6 +65,34 @@ class SettingsScreenshots : Screenshots() {
         wait = text(R.string.settings_user_agent),
         then = { compose.onNodeWithText(text(R.string.report_title)).performScrollTo() },
     )
+
+    /** On a TV, Troubleshooting has only Logs: there's no keyboard to say what happened. */
+    @Test
+    @Config(qualifiers = TV)
+    fun aboutOnTv() = shot(
+        "settings-about-tv",
+        SettingsPageRoute(SettingsPage.ABOUT.name),
+        wait = text(R.string.settings_user_agent),
+        then = { compose.onNodeWithText(text(R.string.logs_title)).performScrollTo() },
+    )
+
+    /** Logs, with Send to Tuned first: the log and this device's details with nothing to type. */
+    @Test fun logs() = shot("settings-logs", DeveloperLogRoute, wait = text(R.string.logs_report_summary))
+
+    /** Logs on a TV, where the remote starts on Send to Tuned. */
+    @Test
+    @Config(qualifiers = TV)
+    fun logsOnTv() = shot("settings-logs-tv", DeveloperLogRoute, wait = text(R.string.logs_report_summary))
+
+    /** Send to Tuned while it sends, and after a failed send, with Try again. */
+    @Test
+    fun logsReportStates() = part("settings-logs-report-states", text(R.string.logs_report_failed)) {
+        Column {
+            ReportRow(LogReport.SENDING) {}
+            ReportRow(LogReport.SENT) {}
+            ReportRow(LogReport.FAILED) {}
+        }
+    }
 
     /** The usage stats switch, under Privacy in Settings › About. */
     @Test

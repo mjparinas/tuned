@@ -240,6 +240,9 @@
     <string name="report_share_instead">Bunun yerine paylaş</string>
     <string name="report_sent">Tuned\'a gönderildi. Bildirdiğin için teşekkürler.</string>
     <string name="report_send_failed">Gönderilemedi. Bağlantıyı kontrol edip tekrar dene veya bunun yerine paylaş.</string>
+    <string name="logs_report_summary">Bu günlüğü ve bu cihazın model ve Android sürümü gibi bilgilerini Tuned\'a gönderir. Bir şey yazmanız gerekmez, giriş bilgileri dahil edilmez.</string>
+    <string name="logs_report_sending">Günlük ve cihaz bilgileri gönderiliyor…</string>
+    <string name="logs_report_failed">Gönderilemedi. Bağlantıyı kontrol edip tekrar deneyin.</string>
     <string name="settings_header_privacy">Gizlilik</string>
     <string name="settings_usage_stats">Anonim kullanım istatistikleri gönder</string>
     <string name="settings_usage_stats_summary">Hangi ekranların ve özelliklerin kullanıldığı ve oynatmanın çalışıp çalışmadığı; böylece Tuned neyi düzelteceğini bilir. Ne izlediğin, aradığın veya yazdığın asla gönderilmez.</string>

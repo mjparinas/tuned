@@ -244,6 +244,9 @@
     <string name="report_share_instead">Поделиться</string>
     <string name="report_sent">Отправлено в Tuned. Спасибо, что сообщили.</string>
     <string name="report_send_failed">Не удалось отправить. Проверьте подключение и попробуйте снова или поделитесь отчётом.</string>
+    <string name="logs_report_summary">Отправляет этот журнал и сведения об устройстве, например модель и версию Android, в Tuned. Ничего вводить не нужно, данные входа не передаются.</string>
+    <string name="logs_report_sending">Отправка журнала и сведений об устройстве…</string>
+    <string name="logs_report_failed">Не удалось отправить. Проверьте подключение и повторите попытку.</string>
     <string name="settings_header_privacy">Конфиденциальность</string>
     <string name="settings_usage_stats">Отправлять анонимную статистику</string>
     <string name="settings_usage_stats_summary">Какие экраны и функции используются и работает ли воспроизведение, чтобы Tuned знал, что исправлять. Никогда то, что вы смотрите, ищете или вводите.</string>

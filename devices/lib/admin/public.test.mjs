@@ -81,4 +81,6 @@ test("a report needs words or a crash", async () => {
     assert.equal((await api.report(post("/api/report", { what: "" }))).status, 400);
     assert.equal((await api.report(post("/api/report", { what: "No guide", install }))).status, 200);
     assert.equal(saved.reports[0].what, "No guide");
+    assert.equal((await api.report(post("/api/report", { what: "", details: "Model: Shield", log: "E/x" }))).status, 200);
+    assert.equal(saved.reports[1].details, "Model: Shield");
 });
