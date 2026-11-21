@@ -39,6 +39,7 @@ class AppResetTest {
         runBlocking(Dispatchers.IO) {
             c.settings.update { it.copy(theme = ThemeMode.LIGHT, accent = Accent.entries.last()) }
             c.settings.setAdultPin("1234")
+            c.browseFilters.set(1, "{\"chips\":{\"0\":\"fav\"}}")
             library.addFavourite(FavouriteEntity(1, addedAt = 1))
             offline.writeText("film")
             partial.writeText("half")
@@ -57,6 +58,7 @@ class AppResetTest {
         assertEquals(AppSettings().theme, s.theme)
         assertEquals(AppSettings().accent, s.accent)
         assertFalse(c.settings.hasAdultPin.first())
+        assertEquals(null, c.browseFilters.get(1))
         assertEquals(emptyList(), library.favouriteIds().first())
         assertEquals(0, downloads.count())
         assertFalse(offline.exists())

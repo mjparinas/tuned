@@ -57,11 +57,31 @@ jobs:
           tree=$(git rev-parse 'HEAD^{tree}')
           echo "tree=$tree" >> "$GITHUB_OUTPUT"
           everything() { { echo "run=true"; echo "mobile=true"; echo "web=true"; } >> "$GITHUB_OUTPUT"; exit 0; }
-          passed() {
-            [ -n "$1" ] || return 1
+          recorded() {
             desc=$(gh api "repos/$REPO/commits/$1/statuses?per_page=100" \
               --jq '[.[] | select(.context == "CI passed tree")][0] | select(.state == "success") | .description' 2>/dev/null || true)
             [ "$desc" = "Passed on tree $2" ]
+          }
+          # Whether CI passed on commit $1 with tree $2: on the commit itself or, for a merge pushed with GITHUB_TOKEN
+          # (which starts no CI: the promotion's "Bring main back into staging"), on a parent with exactly the same
+          # files, up to three merges back. Without this, the first pull request after a promotion couldn't record its
+          # tree, nor could any after it, and every merge into staging ran the whole of CI again (2026-11-21).
+          passed() {
+            local sha=$1 depth info parents p
+            [ -n "$sha" ] || return 1
+            for depth in 1 2 3 4; do
+              recorded "$sha" "$2" && return 0
+              info=$(gh api "repos/$REPO/commits/$sha" --jq '[.commit.tree.sha] + [.parents[].sha] | join(" ")' 2>/dev/null) || return 1
+              [ "${info%% *}" = "$2" ] || return 1
+              parents=${info#* }
+              [ "$parents" != "$info" ] || return 1
+              sha=""
+              for p in $parents; do
+                if [ "$(gh api "repos/$REPO/commits/$p" --jq .commit.tree.sha 2>/dev/null)" = "$2" ]; then sha=$p; break; fi
+              done
+              [ -n "$sha" ] || return 1
+            done
+            return 1
           }
 
           candidates="$(git rev-parse HEAD^@ 2>/dev/null || true)"
