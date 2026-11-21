@@ -23,4 +23,8 @@
     <string name="restore_account_nothing">此账号还没有备份。请改为添加播放列表；备份完成后，你的其他设备就可以恢复它。</string>
     <string name="restore_account_no_playlist">你的设置和个人资料已恢复，但备份中没有此设备能打开的播放列表。播放列表文件只保存在添加它的设备上。请改为添加播放列表。</string>
     <string name="restore_account_offline">无法连接你的备份。请检查网络连接后重试。</string>
+    <string name="tuned_account_backing_up">正在备份…</string>
+    <string name="tuned_account_backed_up">刚刚已备份</string>
+    <string name="tuned_account_backup_failed">无法备份。请检查网络连接后重试。</string>
+    <string name="tuned_account_backup_paused">备份暂时已暂停。请稍后重试。</string>
 </resources>

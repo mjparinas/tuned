@@ -11,6 +11,7 @@
         <link rel="icon" href="/icon.svg" type="image/svg+xml" />
         <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
         <link rel="stylesheet" href="/site.css" />
+        <link rel="stylesheet" href="/select.css" />
         <link rel="stylesheet" href="/web.css" />
         <link rel="stylesheet" href="/account/account.css" />
     </head>
@@ -110,10 +111,12 @@
                             <button type="button" data-product="premium_yearly" data-track="buy-yearly">Yearly</button>
                             <button type="button" data-product="premium_lifetime" data-track="buy-lifetime">Lifetime</button>
                         </div>
-                        <div class="actions" id="buy-seats" hidden>
-                            <label for="seat-count" class="small">Extra seats</label>
-                            <select id="seat-count"></select>
-                            <button type="button" id="buy-seat" data-track="buy-seat">Buy seats</button>
+                        <div class="seat-buy" id="buy-seats" hidden>
+                            <label for="seat-count">Extra seats</label>
+                            <div class="seat-row">
+                                <select id="seat-count"></select>
+                                <button type="button" id="buy-seat" data-track="buy-seat">Buy seats</button>
+                            </div>
                         </div>
                         <div class="actions">
                             <button type="button" class="quiet" id="billing" hidden>Receipts and billing</button>

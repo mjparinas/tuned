@@ -17,6 +17,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -75,6 +76,7 @@ private fun PremiumScreen(
     val purchased by premium.purchased.collectAsStateWithLifecycle()
     var offers by remember { mutableStateOf<List<Offer>?>(null) }
     var note by remember { mutableStateOf<Int?>(null) }
+    var restoring by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
     LaunchedEffect(unlocked) { if (!unlocked && !purchased) offers = premium.store.offers() }
     Scaffold(topBar = { BackTopBar(stringResource(R.string.premium_title), onBack) }) { padding ->
@@ -124,19 +126,35 @@ private fun PremiumScreen(
                         }
                     }
                 }
+                // A spinner where the words were while the store answers, so the tap is never met with nothing
+                // (Melvin, 2026-11-21); a second tap meanwhile does nothing.
                 TextButton(
                     onClick = {
-                        scope.launchSafely(TAG) {
-                            note =
-                                when (premium.restore()) {
-                                    true -> null
-                                    false -> R.string.premium_nothing_to_restore
-                                    null -> R.string.premium_store_unreachable
-                                }
+                        if (!restoring) {
+                            restoring = true
+                            note = null
+                            scope.launchSafely(TAG, onError = {
+                                restoring = false
+                                note = R.string.premium_store_unreachable
+                            }) {
+                                note =
+                                    when (premium.restore()) {
+                                        true -> null
+                                        false -> R.string.premium_nothing_to_restore
+                                        null -> R.string.premium_store_unreachable
+                                    }
+                                restoring = false
+                            }
                         }
                     },
                     modifier = Modifier.fillMaxWidth(),
-                ) { Text(stringResource(R.string.premium_restore)) }
+                ) {
+                    if (restoring) {
+                        CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp)
+                    } else {
+                        Text(stringResource(R.string.premium_restore))
+                    }
+                }
                 note?.let { Text(stringResource(it), style = MaterialTheme.typography.bodyMedium) }
                 Text(stringResource(R.string.premium_fine_print), style = MaterialTheme.typography.bodySmall)
             }

@@ -1,12 +1,17 @@
 package com.tunedplayer.app.updates
 
+import android.app.Application
 import android.content.Context
+import android.content.pm.PackageInstaller
+import android.provider.Settings
 import androidx.test.core.app.ApplicationProvider
 import com.tunedplayer.app.data.Downloader
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeout
 import mockwebserver3.Dispatcher
 import mockwebserver3.MockResponse
 import mockwebserver3.MockWebServer
@@ -18,6 +23,7 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
+import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
 import java.security.MessageDigest
 import java.util.concurrent.CopyOnWriteArrayList
@@ -48,13 +54,17 @@ class GitHubUpdatesTest {
 
     @After fun stop() = server.close()
 
-    private fun updates(installedCode: Int) = GitHubUpdates(
+    private fun updates(
+        installedCode: Int,
+        installerTimeoutMs: Long = WAIT_MS * 2,
+    ) = GitHubUpdates(
         context,
         OkHttpClient(),
         api = server.url("/").toString().trimEnd('/'),
         installedCode = installedCode,
         enabled = true,
         downloader = Downloader(OkHttpClient(), backoffMs = { 0 }),
+        installerTimeoutMs = installerTimeoutMs,
     )
 
     private fun sha256(bytes: ByteArray) = MessageDigest.getInstance("SHA-256").digest(bytes).joinToString("") {
@@ -199,5 +209,173 @@ class GitHubUpdatesTest {
         // And the next chance asks again at once, rather than in an hour.
         assertEquals(GitHubUpdates.Outcome.READY, updates.check())
         assertEquals(2, paths.count { it.endsWith("/releases/latest") })
+    }
+
+    private fun allowInstalls() = shadowOf(context.packageManager).setCanRequestPackageInstalls(true)
+
+    private suspend fun GitHubUpdates.await(done: (GitHubUpdates.State) -> Boolean): GitHubUpdates.State =
+        withTimeout(WAIT_MS) { state.first(done) }
+
+    private suspend fun GitHubUpdates.handedOver(): GitHubUpdates.State = await {
+        (it is GitHubUpdates.State.Installing && it.step == GitHubUpdates.InstallStep.OPEN_INSTALLER) ||
+            it is GitHubUpdates.State.InstallFailed
+    }
+
+    /**
+     * Melvin (2026-11-21): "When I click on install, there should be some type of spinner or an indication that it's
+     * downloading, processing, and then it installs". Before, Install copied the APK into Android's installer on the
+     * screen thread and the banner didn't change until the installer appeared seconds later.
+     */
+    @Test
+    fun installSaysItIsWorkingAtOnceAndHandsTheApkToAndroid() = runBlocking<Unit> {
+        serve({ json(release("v1.2.1")) })
+        val updates = updates(installed120)
+        assertEquals(GitHubUpdates.Outcome.READY, updates.check())
+        allowInstalls()
+
+        updates.install(context)
+
+        // On the tap itself, before any of the work.
+        assertIs<GitHubUpdates.State.Installing>(updates.state.value)
+        val handed = assertIs<GitHubUpdates.State.Installing>(updates.handedOver())
+        assertEquals(GitHubUpdates.InstallStep.OPEN_INSTALLER, handed.step)
+        assertEquals("1.2.1", handed.ready.versionName)
+        // A second tap while it works starts nothing new.
+        updates.install(context)
+        assertEquals(handed, updates.state.value)
+
+        // Android's confirm window opens, and the person cancels it: back to Install, no error.
+        updates.onInstallerAnswer(PackageInstaller.STATUS_PENDING_USER_ACTION, null)
+        assertEquals(GitHubUpdates.InstallStep.CONFIRM, assertIs<GitHubUpdates.State.Installing>(updates.state.value).step)
+        updates.onInstallerAnswer(PackageInstaller.STATUS_FAILURE_ABORTED, null)
+        assertEquals(handed.ready, updates.state.value)
+    }
+
+    @Test
+    fun leavingTheConfirmWindowOpenShowsInstallAgainOnReturn() = runBlocking<Unit> {
+        serve({ json(release("v1.2.1")) })
+        val updates = updates(installed120)
+        updates.check()
+        allowInstalls()
+        updates.install(context)
+        val handed = assertIs<GitHubUpdates.State.Installing>(updates.handedOver())
+        updates.onInstallerAnswer(PackageInstaller.STATUS_PENDING_USER_ACTION, null)
+
+        updates.onReturned(context)
+
+        assertEquals(handed.ready, updates.state.value)
+    }
+
+    @Test
+    fun anUpdateTheCacheLostIsDownloadedAgainOnInstall() = runBlocking<Unit> {
+        serve({ json(release("v1.2.1")) })
+        val updates = updates(installed120)
+        updates.check()
+        val ready = assertIs<GitHubUpdates.State.Ready>(updates.state.value)
+        ready.apk.delete() // Android cleared Tuned's cache
+        paths.clear()
+        allowInstalls()
+
+        updates.install(context)
+
+        assertIs<GitHubUpdates.State.Installing>(updates.handedOver())
+        assertEquals(listOf("/download/tuned.apk", "/files/tuned.apk"), paths)
+        assertContentEquals(apk, ready.apk.readBytes())
+    }
+
+    @Test
+    fun aFailedDownloadSaysSoAndTryAgainWorks() = runBlocking<Unit> {
+        serve({ json(release("v1.2.1")) })
+        val updates = updates(installed120)
+        updates.check()
+        assertIs<GitHubUpdates.State.Ready>(updates.state.value).apk.delete()
+        val working = server.dispatcher
+        server.dispatcher =
+            object : Dispatcher() {
+                override fun dispatch(request: RecordedRequest) = MockResponse.Builder().code(404).build()
+            }
+        allowInstalls()
+
+        updates.install(context)
+
+        val failed = assertIs<GitHubUpdates.State.InstallFailed>(updates.handedOver())
+        assertEquals(GitHubUpdates.InstallProblem.DOWNLOAD, failed.problem)
+        // A check doesn't throw the waiting update away.
+        assertEquals(GitHubUpdates.Outcome.READY, updates.check(force = true))
+
+        server.dispatcher = working
+        updates.install(context)
+        assertIs<GitHubUpdates.State.Installing>(updates.handedOver())
+    }
+
+    @Test
+    fun theInstallerRunningOutOfSpaceSaysSo() = runBlocking<Unit> {
+        serve({ json(release("v1.2.1")) })
+        val updates = updates(installed120)
+        updates.check()
+        allowInstalls()
+        updates.install(context)
+        updates.handedOver()
+
+        updates.onInstallerAnswer(PackageInstaller.STATUS_FAILURE_STORAGE, "not enough space")
+
+        assertEquals(GitHubUpdates.InstallProblem.SPACE, assertIs<GitHubUpdates.State.InstallFailed>(updates.state.value).problem)
+    }
+
+    /**
+     * Melvin (2026-11-21), on an Nvidia Shield: "when I click install, nothing happens. And when I check the logs, there
+     * are nothing in the logs". Before, a device with no settings page for "install unknown apps" left Install doing
+     * nothing at all.
+     */
+    @Test
+    fun noSettingsPageToAllowInstallsSaysWhatToTurnOn() = runBlocking<Unit> {
+        serve({ json(release("v1.2.1")) })
+        val updates = updates(installed120)
+        updates.check()
+        shadowOf(context.packageManager).setCanRequestPackageInstalls(false)
+        shadowOf(context as Application).checkActivities(true) // nothing resolves, as on the TV
+
+        updates.install(context)
+
+        assertEquals(GitHubUpdates.InstallProblem.PERMISSION, assertIs<GitHubUpdates.State.InstallFailed>(updates.state.value).problem)
+    }
+
+    @Test
+    fun comingBackWithoutAllowingInstallsSaysSo() = runBlocking<Unit> {
+        serve({ json(release("v1.2.1")) })
+        val updates = updates(installed120)
+        updates.check()
+        shadowOf(context.packageManager).setCanRequestPackageInstalls(false)
+
+        updates.install(context)
+        val opened = checkNotNull(shadowOf(context as Application).nextStartedActivity)
+        assertEquals(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES, opened.action)
+        assertEquals("package:${context.packageName}", opened.dataString)
+        assertIs<GitHubUpdates.State.Ready>(updates.state.value)
+
+        updates.onReturned(context)
+
+        assertEquals(GitHubUpdates.InstallProblem.PERMISSION, assertIs<GitHubUpdates.State.InstallFailed>(updates.state.value).problem)
+        // Turned on afterwards, Try again installs.
+        allowInstalls()
+        updates.install(context)
+        assertIs<GitHubUpdates.State.Installing>(updates.handedOver())
+    }
+
+    @Test
+    fun anInstallerThatNeverAnswersSaysItDidNotOpen() = runBlocking<Unit> {
+        serve({ json(release("v1.2.1")) })
+        val updates = updates(installed120, installerTimeoutMs = 200)
+        updates.check()
+        allowInstalls()
+
+        updates.install(context)
+
+        val failed = assertIs<GitHubUpdates.State.InstallFailed>(updates.await { it is GitHubUpdates.State.InstallFailed })
+        assertEquals(GitHubUpdates.InstallProblem.INSTALLER, failed.problem)
+    }
+
+    private companion object {
+        const val WAIT_MS = 10_000L
     }
 }

@@ -61,6 +61,8 @@ class CloudSyncRepository(
     data class Status(
         val lastSyncAt: Long,
         val problem: Problem,
+        /** A run is going on now, for "Backing up…" in Settings (Melvin, 2026-11-21). */
+        val running: Boolean = false,
     )
 
     private val prefs = context.getSharedPreferences("tuned.backup", Context.MODE_PRIVATE)
@@ -96,6 +98,7 @@ class CloudSyncRepository(
     @Suppress("TooGenericExceptionCaught") // logged and reported as a failed run: nothing is hidden
     suspend fun run(): Boolean = lock.withLock {
         if (!account.signedIn.value) return@withLock true
+        statusFlow.value = statusFlow.value.copy(running = true)
         try {
             sync()
             val now = System.currentTimeMillis()
@@ -118,6 +121,8 @@ class CloudSyncRepository(
             AppLog.e(TAG, "Backup run failed", e)
             statusFlow.value = statusFlow.value.copy(problem = Problem.OFFLINE)
             false
+        } finally {
+            statusFlow.value = statusFlow.value.copy(running = false)
         }
     }
 

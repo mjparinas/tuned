@@ -155,6 +155,28 @@ a.button.quiet:hover {
     background: var(--card-2);
 }
 
+/* Buying more seats (Melvin, 2026-11-21: "spacing in that card looks a bit off"): the label above its dropdown, and the
+   dropdown and Buy seats side by side at the same height, under the card's line with the same 16 px as its buttons. */
+.seat-buy {
+    margin-top: 16px;
+}
+.seat-buy > label {
+    margin: 0 0 6px;
+}
+.seat-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: stretch;
+    gap: 8px;
+}
+.seat-row .tselect {
+    flex: 0 0 9rem;
+}
+.seat-row button {
+    flex: 1 1 auto;
+    max-width: 14rem;
+}
+
 /* Seats in use, as a bar under the line that says it in words. */
 .seat-bar {
     height: 8px;

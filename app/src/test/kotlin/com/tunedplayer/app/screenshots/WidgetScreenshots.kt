@@ -30,12 +30,14 @@ import com.tunedplayer.app.widget.FavouritesWidget
 import com.tunedplayer.app.widget.WidgetLook
 import com.tunedplayer.app.widget.WidgetTheme
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.Robolectric
 import org.robolectric.RobolectricTestRunner
+import java.util.concurrent.Executors
 
 /**
  * The home screen widgets (docs/decisions/architecture.md), drawn by Glance into the same RemoteViews a launcher gets,
@@ -150,9 +152,14 @@ class WidgetScreenshots : Screenshots() {
             }
         var row: LinearLayout? = null
         widgets.forEach { placed ->
+            // One thread, not Dispatchers.IO: Glance's session copies the RemoteViews tree while its composition can
+            // still be adding to it, and on a pool of threads the two ran at once now and then
+            // (ConcurrentModificationException in RemoteViewsRoot.copy, 2026-11-21).
             val views =
-                runBlocking(Dispatchers.IO) {
-                    Drawn(look, placed.content).compose(app, size = DpSize(placed.width.dp, placed.height.dp))
+                Executors.newSingleThreadExecutor().asCoroutineDispatcher().use { one ->
+                    runBlocking(one) {
+                        Drawn(look, placed.content).compose(app, size = DpSize(placed.width.dp, placed.height.dp))
+                    }
                 }
             val view: View = views.apply(activity, page)
             val frame = FrameLayout(activity).apply { addView(view, FrameLayout.LayoutParams(px(placed.width), px(placed.height))) }

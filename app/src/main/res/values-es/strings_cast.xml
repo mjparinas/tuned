@@ -6,4 +6,12 @@
     <string name="cast_playing_on">Reproduciendo en %1$s</string>
     <string name="cast_failed">%1$s no pudo reproducir esto. Ajustes › Actualizaciones y avanzado › Registros tiene los detalles.</string>
     <string name="cast_no_wifi">Conecta el móvil a la misma Wi-Fi que la TV para enviar una película o episodio guardado.</string>
+    <string name="cast_casting_to">Enviando a %1$s</string>
+    <string name="cast_tv_loading">Cargando en %1$s…</string>
+    <string name="cast_tv_playing">Reproduciendo</string>
+    <string name="cast_tv_paused">En pausa</string>
+    <string name="cast_tv_finished">Terminado</string>
+    <string name="cast_tv_stopped">Detenido. Pulsa reproducir para empezar de nuevo.</string>
+    <string name="cast_stop">Dejar de enviar</string>
+    <string name="cast_volume">Volumen de la TV</string>
 </resources>

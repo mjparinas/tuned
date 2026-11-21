@@ -6,4 +6,12 @@
     <string name="cast_playing_on">Playing on %1$s</string>
     <string name="cast_failed">%1$s couldn\'t play this. Settings › Updates and advanced › Logs has the details.</string>
     <string name="cast_no_wifi">Connect the phone to the same Wi-Fi as the TV to cast a saved film or episode.</string>
+    <string name="cast_casting_to">Casting to %1$s</string>
+    <string name="cast_tv_loading">Loading on %1$s…</string>
+    <string name="cast_tv_playing">Playing</string>
+    <string name="cast_tv_paused">Paused</string>
+    <string name="cast_tv_finished">Finished</string>
+    <string name="cast_tv_stopped">Stopped. Press play to start it again.</string>
+    <string name="cast_stop">Stop casting</string>
+    <string name="cast_volume">TV volume</string>
 </resources>

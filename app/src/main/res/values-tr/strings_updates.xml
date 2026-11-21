@@ -6,4 +6,17 @@
     <string name="update_check_failed">GitHub\'a ulaşılamadı. Birazdan tekrar dene.</string>
     <string name="update_channel">Güncellemeler</string>
     <string name="update_notification_text">Tuned\'ı aç ve Yükle\'ye dokun</string>
+    <string name="update_installing">Tuned %1$s yükleniyor</string>
+    <string name="update_busy">Yükleniyor…</string>
+    <string name="update_downloading">Tuned %1$s indiriliyor</string>
+    <string name="update_step_download">Güncelleme indiriliyor</string>
+    <string name="update_step_check">İndirme denetleniyor</string>
+    <string name="update_step_prepare">Yüklemeye hazırlanıyor</string>
+    <string name="update_step_open">Android yükleyicisi açılıyor</string>
+    <string name="update_step_confirm">Onayınız bekleniyor</string>
+    <string name="update_problem_download">Güncelleme indirilemedi. Bağlantınızı kontrol edip tekrar deneyin.</string>
+    <string name="update_problem_space">Güncelleme için yeterli boş alan yok. Yer açıp tekrar deneyin.</string>
+    <string name="update_problem_other">Güncelleme yüklenmedi. Tekrar deneyin.</string>
+    <string name="update_problem_permission">Tuned\'ın henüz güncelleme yükleme izni yok. Android ayarlarında Bilinmeyen uygulamaları yükle altında Tuned\'ı açın (TV\'de: Güvenlik ve kısıtlamalar › Bilinmeyen kaynaklar), sonra tekrar deneyin.</string>
+    <string name="update_problem_installer">Android\'in yükleyicisi açılmadı. Tekrar deneyin.</string>
 </resources>

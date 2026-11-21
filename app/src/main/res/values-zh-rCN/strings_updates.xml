@@ -6,4 +6,17 @@
     <string name="update_check_failed">无法连接 GitHub。请稍后重试。</string>
     <string name="update_channel">更新</string>
     <string name="update_notification_text">打开 Tuned 并点按“安装”</string>
+    <string name="update_installing">正在安装 Tuned %1$s</string>
+    <string name="update_busy">正在安装…</string>
+    <string name="update_downloading">正在下载 Tuned %1$s</string>
+    <string name="update_step_download">正在下载更新</string>
+    <string name="update_step_check">正在检查下载内容</string>
+    <string name="update_step_prepare">正在准备安装</string>
+    <string name="update_step_open">正在打开 Android 安装程序</string>
+    <string name="update_step_confirm">等待你确认</string>
+    <string name="update_problem_download">无法下载更新。请检查网络连接后重试。</string>
+    <string name="update_problem_space">可用空间不足，无法安装更新。请释放空间后重试。</string>
+    <string name="update_problem_other">更新未能安装。请重试。</string>
+    <string name="update_problem_permission">Tuned 尚未获准安装更新。请在 Android 设置的“安装未知应用”中为 Tuned 开启权限（电视上：安全和限制 › 未知来源），然后重试。</string>
+    <string name="update_problem_installer">Android 安装程序未能打开。请重试。</string>
 </resources>

@@ -6,4 +6,12 @@
     <string name="cast_playing_on">%1$s पर चल रहा है</string>
     <string name="cast_failed">%1$s इसे नहीं चला सका। सेटिंग › अपडेट और उन्नत › लॉग में विवरण है।</string>
     <string name="cast_no_wifi">सहेजी गई फ़िल्म या एपिसोड कास्ट करने के लिए फ़ोन को टीवी वाले Wi-Fi से कनेक्ट करें।</string>
+    <string name="cast_casting_to">%1$s पर कास्ट हो रहा है</string>
+    <string name="cast_tv_loading">%1$s पर लोड हो रहा है…</string>
+    <string name="cast_tv_playing">चल रहा है</string>
+    <string name="cast_tv_paused">रुका हुआ</string>
+    <string name="cast_tv_finished">समाप्त</string>
+    <string name="cast_tv_stopped">रुक गया। फिर से शुरू करने के लिए चलाएँ दबाएँ।</string>
+    <string name="cast_stop">कास्ट करना बंद करें</string>
+    <string name="cast_volume">टीवी की आवाज़</string>
 </resources>

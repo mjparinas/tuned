@@ -1,42 +1,51 @@
-// The channel list and guide (docs/decisions/web.md › The channel list; Melvin, 2026-11-20: "show me all the channels
-// and have a link that allows me to open up vlc or some other player? include an epg"). Behind the web_player flag.
-// The signed-in browser gets one saved playlist's login from /api/account/check, then reads the channel list and guide
-// straight from the provider, as the provider check does. A channel opens in VLC or another player on this device,
-// which connects to the provider itself: this page never plays or fetches a stream, and nothing passes through Tuned.
-// Links are never shown on the page (they carry the login); they're only copied or handed to the player.
+// The channels and guide (docs/decisions/web.md › The channel list; Melvin, 2026-11-20: "show me all the channels and
+// have a link that allows me to open up vlc or some other player? include an epg"; 2026-11-21: "basically the epg
+// clone of the app itself", "with logos and everything", "when i click on a channel, that should open up in vlc
+// automatically"). Behind the web_player flag. The channels and guide come from the copy the Tuned app keeps in the
+// account (api/account/channels); only a playlist without one is read straight from the provider, as the provider
+// check does. A channel opens in VLC or another player on this device, which connects to the provider itself: this
+// page never plays or fetches a stream. Links are never shown on the page (they carry the login); they're only
+// handed to the player or copied.
 
 import { drawNav } from "/account/nav.js";
+import { enhanceSelect } from "/select.js";
 import { access, httpsVariant, isMixed, isPreviewHost, parseServer } from "/check/verdict.mjs";
 import {
-    filterChannels,
+    ago,
+    applyFilters,
     fileName,
-    gridPlace,
-    gridSlots,
+    fromAppCopy,
+    GENRES,
+    genreOf,
     groupsOf,
     GuideReader,
+    guideSpan,
     headerGuide,
+    logoSrc,
     m3uFor,
+    NO_FILTERS,
     nowNext,
+    offers,
     parseM3u,
     platformOf,
     progress,
+    QUALITIES,
+    ticks,
+    TOPICS,
     vlcLink,
     xtreamChannels,
     xtreamGuideUrl,
     xtreamPlaylistUrl,
-    ago,
-    fromAppCopy,
 } from "/account/channels/core.mjs";
 
 const $ = (id) => document.getElementById(id);
 const LIST_TIMEOUT_MS = 30_000;
 const GUIDE_TIMEOUT_MS = 120_000;
-const PAGE = 150;
-const GRID_PAGE = 40;
+/** Rows drawn at a time; more as the guide scrolls down. */
+const PAGE = 60;
 const GUIDE_BEFORE_MS = 3_600_000;
-const GUIDE_AFTER_MS = 12 * 3_600_000;
-/** The app sends its copy at least every 6 hours while it's used; older than a day, the provider is asked first. */
-const COPY_FRESH_MS = 24 * 3_600_000;
+const GUIDE_AFTER_MS = 24 * 3_600_000;
+const HOUR = 3_600_000;
 const platform = platformOf(navigator.userAgent, navigator.maxTouchPoints);
 
 const state = {
@@ -44,9 +53,12 @@ const state = {
     current: null, // the playlist view from /api/account/library
     channels: [],
     guide: new Map(),
+    filters: { ...NO_FILTERS },
+    items: [], // the channels the filters leave
     wholeUrl: "",
     shown: PAGE,
-    view: "list",
+    view: "grid",
+    span: null, // the guide's { from, to }
     loadId: 0,
     abort: null,
 };
@@ -237,7 +249,7 @@ async function readGuide(url, reader, onProgress) {
     return false;
 }
 
-// ---------- links for the player ----------
+// ---------- opening a channel in the player ----------
 
 function download(name, text) {
     const blob = new Blob([text], { type: "audio/x-mpegurl" });
@@ -259,224 +271,449 @@ async function copy(text, where, what) {
     }
 }
 
+/**
+ * Opens a channel in VLC: VLC's own link on Android, iPhone and Mac; elsewhere (Windows, Linux, where VLC has no
+ * link) a one-channel playlist file, which opens in VLC or the usual player.
+ */
+function play(c) {
+    const vlc = vlcLink(c.url, platform, c.name);
+    if (vlc) location.href = vlc;
+    else download(fileName(c.name), m3uFor([c]));
+}
+
+const playLabel = (c) => (vlcLink(c.url, platform, c.name) ? `Open ${c.name} in VLC` : `Play ${c.name} in VLC or your usual player`);
+
 function drawWhole() {
     const url = state.wholeUrl;
     const name = state.current?.name || state.current?.detail || "Tuned playlist";
     const vlc = url ? vlcLink(url, platform, name) : null;
+    $("whole-card").hidden = !url;
     $("whole-vlc").hidden = !vlc;
     if (vlc) $("whole-vlc").href = vlc;
-    $("whole-file").disabled = !url;
-    $("whole-copy").disabled = !url;
     // A playlist whose one entry is the provider's own playlist link: VLC opens it and reads the whole list itself.
     $("whole-file").onclick = () => download(fileName(name), m3uFor([{ name, url }]));
     $("whole-copy").onclick = () => copy(url, "pick-message", "Playlist link");
-}
-
-function channelActions(c) {
-    const box = document.createElement("div");
-    box.className = "row-actions";
-    const vlc = vlcLink(c.url, platform, c.name);
-    if (vlc) {
-        const open = document.createElement("a");
-        open.className = "button";
-        open.href = vlc;
-        open.textContent = "Open in VLC";
-        open.setAttribute("aria-label", `Open ${c.name} in VLC`);
-        box.append(open);
-    }
-    const file = document.createElement("button");
-    file.type = "button";
-    file.className = vlc ? "quiet" : "";
-    file.textContent = vlc ? "Playlist file" : "Play";
-    file.title = "A playlist file for this channel, which opens in VLC or your usual player";
-    file.setAttribute("aria-label", vlc ? `Playlist file for ${c.name}` : `Play ${c.name} in VLC or your usual player`);
-    file.onclick = () => download(fileName(c.name), m3uFor([c]));
-    const link = document.createElement("button");
-    link.type = "button";
-    link.className = "quiet";
-    link.textContent = "Copy link";
-    link.setAttribute("aria-label", `Copy link for ${c.name}`);
-    link.onclick = () => copy(c.url, "pick-message", `${c.name}'s link`);
-    box.append(file, link);
-    return box;
 }
 
 // ---------- drawing ----------
 
 const time = (ms) => new Date(ms).toLocaleTimeString("en-CA", { hour: "numeric", minute: "2-digit" });
 const programmes = (c) => (c.epgId ? state.guide.get(c.epgId) : null) ?? null;
-const nowTitle = (c) => nowNext(programmes(c), Date.now()).now?.title ?? "";
+const nowOf = (c) => nowNext(programmes(c), Date.now()).now;
+const genreName = (code) => GENRES.find((g) => g.code === code)?.label ?? "";
+const zone = (() => {
+    try {
+        return (
+            new Intl.DateTimeFormat("en-CA", { timeZoneName: "short" }).formatToParts(new Date()).find((p) => p.type === "timeZoneName")
+                ?.value ?? ""
+        );
+    } catch {
+        return "";
+    }
+})();
+function dayName(ms) {
+    const d = new Date(ms);
+    const today = new Date();
+    if (d.toDateString() === today.toDateString()) return "Today";
+    const tomorrow = new Date(today.getTime() + 86_400_000);
+    if (d.toDateString() === tomorrow.toDateString()) return "Tomorrow";
+    return d.toLocaleDateString("en-CA", { weekday: "short", month: "short", day: "numeric" });
+}
 
-function logo(c) {
+function logo(c, size = "") {
     const box = document.createElement("span");
-    box.className = "logo";
+    box.className = `logo ${size}`.trim();
     box.setAttribute("aria-hidden", "true");
     box.textContent = (c.name.match(/[\p{L}\p{N}]/u)?.[0] ?? "•").toUpperCase();
-    if (c.logo && /^https?:\/\//i.test(c.logo)) {
+    const src = logoSrc(c.logo, location.protocol);
+    if (src) {
         const img = document.createElement("img");
         img.alt = "";
         img.loading = "lazy";
         img.decoding = "async";
         img.referrerPolicy = "no-referrer";
-        img.src = c.logo;
+        img.src = src;
         img.onerror = () => img.remove();
         box.append(img);
     }
     return box;
 }
 
-function filtered() {
-    return filterChannels(state.channels, { group: $("group").value, query: $("search").value, nowTitle });
+/** Words for a screen reader only, so a button's name still starts with the text it shows (WCAG 2.5.3). */
+function spoken(text) {
+    const span = document.createElement("span");
+    span.className = "visually-hidden";
+    span.textContent = text;
+    return span;
 }
+
+function channelLabel(c) {
+    const box = document.createElement("span");
+    box.className = "ch-text";
+    if (c.number) {
+        const n = document.createElement("span");
+        n.className = "ch-number";
+        n.textContent = c.number;
+        box.append(n);
+    }
+    const name = document.createElement("span");
+    name.className = "ch-name";
+    name.textContent = c.name;
+    box.append(name);
+    return box;
+}
+
+/** A programme's details, and what to do with its channel. */
+function showDetails(c, p) {
+    const now = Date.now();
+    $("show-logo").replaceChildren(logo(c));
+    $("show-channel").textContent = c.number ? `${c.number}  ${c.name}` : c.name;
+    $("show-title").textContent = p ? p.title || "Untitled" : c.name;
+    const kind = p ? genreName(genreOf(p)) : "";
+    const when = p
+        ? `${p.start <= now && p.stop > now ? "On now · " : `${dayName(p.start)} · `}${time(p.start)} to ${time(p.stop)}${kind ? ` · ${kind}` : ""}`
+        : c.group;
+    $("show-when").textContent = when;
+    const { next } = nowNext(programmes(c), p ? p.stop - 1 : now);
+    $("show-next").textContent = next && next !== p ? `Then: ${time(next.start)} ${next.title || "Untitled"}` : "";
+    tell("show-message", "", "ok");
+    const open = document.createElement("button");
+    open.type = "button";
+    open.textContent = vlcLink(c.url, platform, c.name) ? `Open ${c.name} in VLC` : `Play ${c.name}`;
+    open.onclick = () => play(c);
+    const file = document.createElement("button");
+    file.type = "button";
+    file.className = "quiet";
+    file.textContent = "Playlist file";
+    file.setAttribute("aria-label", `Playlist file for ${c.name}`);
+    file.onclick = () => download(fileName(c.name), m3uFor([c]));
+    const link = document.createElement("button");
+    link.type = "button";
+    link.className = "quiet";
+    link.textContent = "Copy link";
+    link.setAttribute("aria-label", `Copy link for ${c.name}`);
+    link.onclick = () => copy(c.url, "show-message", `${c.name}'s link`);
+    $("show-actions").replaceChildren(open, file, link);
+    $("show").showModal();
+    open.focus();
+}
+
+// ----- the guide: channels down the side, time across, as the app's Live TV guide -----
+
+/** Width of a minute, in pixels: wider screens show more time rather than bigger cells, as in the app. */
+const perMinute = () => (matchMedia("(max-width: 600px)").matches ? 3 : 4);
+const xOf = (t) => ((t - state.span.from) / 60_000) * perMinute();
+
+function gridHead() {
+    const { from, to } = state.span;
+    const head = document.createElement("div");
+    head.className = "epg-row epg-head";
+    head.setAttribute("role", "row");
+    const corner = document.createElement("div");
+    corner.className = "epg-ch epg-corner";
+    corner.setAttribute("role", "columnheader");
+    corner.id = "epg-day";
+    corner.textContent = `${dayName(from)}${zone ? ` · ${zone}` : ""}`;
+    const times = document.createElement("div");
+    times.className = "epg-track epg-times";
+    times.setAttribute("role", "columnheader");
+    times.style.width = `${xOf(to)}px`;
+    for (const t of ticks(from, to)) {
+        const label = document.createElement("span");
+        label.style.left = `${xOf(t)}px`;
+        const midnight = new Date(t).getHours() === 0 && new Date(t).getMinutes() === 0;
+        label.textContent = midnight ? `${dayName(t)} ${time(t)}` : time(t);
+        times.append(label);
+    }
+    head.append(corner, times);
+    return head;
+}
+
+function gridRow(c, now) {
+    const { from, to } = state.span;
+    const row = document.createElement("div");
+    row.className = "epg-row";
+    row.setAttribute("role", "row");
+    const cell = document.createElement("div");
+    cell.className = "epg-ch";
+    cell.setAttribute("role", "rowheader");
+    const open = document.createElement("button");
+    open.type = "button";
+    open.className = "epg-open";
+    open.title = playLabel(c);
+    open.onclick = () => play(c);
+    open.append(logo(c, "small"), channelLabel(c), spoken(`. ${playLabel(c)}`));
+    cell.append(open);
+    const track = document.createElement("div");
+    track.className = "epg-track";
+    track.setAttribute("role", "cell");
+    track.style.width = `${xOf(to)}px`;
+    const shows = (programmes(c) ?? []).filter((p) => p.stop > from && p.start < to);
+    if (!shows.length) {
+        const none = document.createElement("button");
+        none.type = "button";
+        none.className = "epg-show epg-none";
+        none.style.left = "0";
+        none.style.width = `${xOf(to)}px`;
+        const text = document.createElement("span");
+        text.className = "epg-label";
+        text.textContent = "No guide for this channel";
+        none.append(spoken(`${c.name}: `), text, spoken(`. ${playLabel(c)}`));
+        none.onclick = () => play(c);
+        track.append(none);
+    }
+    for (const p of shows) {
+        const onNow = p.start <= now && p.stop > now;
+        const past = p.stop <= now;
+        // A programme that has ended can't be watched, so it's text, not a button.
+        const block = document.createElement(past ? "div" : "button");
+        if (!past) block.type = "button";
+        block.className = `epg-show${onNow ? " on" : p.stop <= now ? " past" : ""}`;
+        const left = Math.max(0, xOf(p.start));
+        block.style.left = `${left}px`;
+        block.style.width = `${Math.max(8, xOf(Math.min(p.stop, to)) - left)}px`;
+        const title = document.createElement("span");
+        title.className = "epg-title";
+        title.textContent = p.title || "Untitled";
+        const range = document.createElement("span");
+        range.className = "epg-time";
+        range.textContent = `${time(p.start)} to ${time(p.stop)}`;
+        // The label sticks inside the guide's left edge, so a programme that began before the view keeps its title in sight.
+        const label = document.createElement("span");
+        label.className = "epg-label";
+        label.append(spoken(`${c.name}, ${onNow ? "on now" : past ? "ended" : dayName(p.start)}: `), title, range);
+        block.append(label);
+        // What's on now plays, as in the app; anything still to come shows its details.
+        if (onNow) {
+            block.title = playLabel(c);
+            block.onclick = () => play(c);
+        } else if (!past) block.onclick = () => showDetails(c, p);
+        track.append(block);
+    }
+    row.append(cell, track);
+    return row;
+}
+
+function nowLine(now) {
+    const line = document.createElement("span");
+    line.className = "epg-now";
+    line.id = "epg-now";
+    line.setAttribute("aria-hidden", "true");
+    line.style.left = `calc(var(--ch) + ${xOf(now)}px)`;
+    return line;
+}
+
+function drawGrid(now) {
+    const box = $("grid");
+    const keep = box.scrollLeft;
+    const table = document.createElement("div");
+    table.className = "epg-table";
+    table.setAttribute("role", "table");
+    table.setAttribute("aria-label", "Guide");
+    table.append(gridHead(), ...state.items.slice(0, state.shown).map((c) => gridRow(c, now)), nowLine(now));
+    box.replaceChildren(table);
+    box.scrollLeft = keep;
+}
+
+function scrollGuide(to, smooth = true) {
+    const box = $("grid");
+    box.scrollTo({ left: Math.max(0, xOf(to)), behavior: smooth ? "smooth" : "auto" });
+}
+
+/** The day in the corner follows what's in view. */
+function followDay() {
+    const corner = $("epg-day");
+    if (!corner || !state.span) return;
+    const at = state.span.from + ($("grid").scrollLeft / perMinute()) * 60_000;
+    corner.textContent = `${dayName(at)}${zone ? ` · ${zone}` : ""}`;
+}
+
+// ----- the list: what's on now and next, as the app's Live TV list -----
 
 function listRow(c, now) {
     const li = document.createElement("li");
     li.className = "channel";
-    const text = document.createElement("div");
+    const open = document.createElement("button");
+    open.type = "button";
+    open.className = "channel-open";
+    open.onclick = () => play(c);
+    const text = document.createElement("span");
     text.className = "channel-text";
-    const name = document.createElement("div");
+    const name = document.createElement("span");
     name.className = "channel-name";
     name.textContent = c.number ? `${c.number}  ${c.name}` : c.name;
     text.append(name);
     const { now: on, next } = nowNext(programmes(c), now);
     if (on) {
-        const line = document.createElement("p");
+        const line = document.createElement("span");
         line.className = "small now";
-        line.textContent = `Now: ${on.title || "Untitled"} · until ${time(on.stop)}`;
-        if (on.desc) line.title = on.desc;
+        line.textContent = `${on.title || "Untitled"} · until ${time(on.stop)}`;
         const bar = document.createElement("span");
         bar.className = "bar";
-        bar.setAttribute("role", "img");
-        const pct = Math.round(progress(on, now) * 100);
-        bar.setAttribute("aria-label", `${pct}% through`);
-        bar.style.setProperty("--done", `${pct}%`);
+        bar.style.setProperty("--done", `${Math.round(progress(on, now) * 100)}%`);
         text.append(line, bar);
     }
     if (next) {
-        const line = document.createElement("p");
+        const line = document.createElement("span");
         line.className = "small";
         line.textContent = `Next: ${time(next.start)} ${next.title || "Untitled"}`;
         text.append(line);
     }
-    if (!on && !next && state.guide.size) {
-        const line = document.createElement("p");
+    if (!on && !next) {
+        const line = document.createElement("span");
         line.className = "small";
         line.textContent = c.group || "No guide for this channel";
         text.append(line);
-    } else if (!state.guide.size && c.group) {
-        const line = document.createElement("p");
-        line.className = "small";
-        line.textContent = c.group;
-        text.append(line);
     }
-    li.append(logo(c), text, channelActions(c));
+    open.append(logo(c), text, spoken(`. ${playLabel(c)}`));
+    const more = document.createElement("button");
+    more.type = "button";
+    more.className = "quiet";
+    more.textContent = "Details";
+    more.setAttribute("aria-label", `Details for ${c.name}`);
+    more.onclick = () => showDetails(c, on ?? next);
+    li.append(open, more);
     return li;
 }
 
-function drawList(items, now) {
-    $("list").replaceChildren(...items.slice(0, state.shown).map((c) => listRow(c, now)));
-}
-
-function drawGrid(items, now) {
-    const slots = gridSlots(now, 3);
-    const from = slots[0];
-    const to = from + slots.length * 1_800_000;
-    const grid = document.createElement("div");
-    grid.className = "guide-grid";
-    grid.setAttribute("role", "table");
-    grid.setAttribute("aria-label", "Guide for the next three hours");
-    const head = document.createElement("div");
-    head.className = "grid-row grid-head";
-    head.setAttribute("role", "row");
-    const corner = document.createElement("div");
-    corner.className = "grid-channel";
-    corner.setAttribute("role", "columnheader");
-    corner.textContent = "Channel";
-    const times = document.createElement("div");
-    times.className = "grid-times";
-    times.setAttribute("role", "columnheader");
-    for (const s of slots) {
-        const t = document.createElement("span");
-        t.textContent = time(s);
-        times.append(t);
-    }
-    const nowLine = document.createElement("span");
-    nowLine.className = "now-line";
-    nowLine.style.left = `${((now - from) / (to - from)) * 100}%`;
-    nowLine.setAttribute("aria-hidden", "true");
-    times.append(nowLine);
-    head.append(corner, times);
-    grid.append(head);
-    for (const c of items.slice(0, state.shown)) {
-        const row = document.createElement("div");
-        row.className = "grid-row";
-        row.setAttribute("role", "row");
-        const cell = document.createElement("div");
-        cell.className = "grid-channel";
-        cell.setAttribute("role", "rowheader");
-        const vlc = vlcLink(c.url, platform, c.name);
-        const open = document.createElement(vlc ? "a" : "button");
-        open.className = "grid-open";
-        if (vlc) open.href = vlc;
-        else {
-            open.type = "button";
-            open.onclick = () => download(fileName(c.name), m3uFor([c]));
-        }
-        open.setAttribute("aria-label", vlc ? `Open ${c.name} in VLC` : `Play ${c.name} in VLC or your usual player`);
-        open.append(logo(c));
-        const label = document.createElement("span");
-        label.textContent = c.name;
-        open.append(label);
-        cell.append(open);
-        const track = document.createElement("div");
-        track.className = "grid-track";
-        track.setAttribute("role", "cell");
-        const shows = (programmes(c) ?? []).map((p) => [p, gridPlace(p, from, to)]).filter(([, at]) => at);
-        if (!shows.length) {
-            const none = document.createElement("span");
-            none.className = "grid-none small";
-            none.textContent = "No guide";
-            track.append(none);
-        }
-        for (const [p, at] of shows) {
-            const block = document.createElement("span");
-            block.className = "grid-show";
-            if (p.start <= now && p.stop > now) block.classList.add("on");
-            block.style.left = `${at.left * 100}%`;
-            block.style.width = `${at.width * 100}%`;
-            block.textContent = p.title || "Untitled";
-            block.title = `${time(p.start)} to ${time(p.stop)}  ${p.title}${p.desc ? `\n${p.desc}` : ""}`;
-            track.append(block);
-        }
-        row.append(cell, track);
-        grid.append(row);
-    }
-    $("grid").replaceChildren(grid);
-}
-
 function draw() {
-    const items = filtered();
     const now = Date.now();
+    state.items = applyFilters(state.channels, state.filters, nowOf);
     const total = state.channels.length;
+    const n = state.items.length;
     $("count").textContent =
-        items.length === total
+        n === total
             ? `${total.toLocaleString("en-CA")} ${total === 1 ? "channel" : "channels"}`
-            : `${items.length.toLocaleString("en-CA")} of ${total.toLocaleString("en-CA")} channels`;
+            : `${n.toLocaleString("en-CA")} of ${total.toLocaleString("en-CA")} channels`;
     const grid = state.view === "grid";
-    $("list").hidden = grid;
-    $("grid").hidden = !grid;
-    if (grid) drawGrid(items, now);
-    else drawList(items, now);
-    $("more").hidden = items.length <= state.shown;
+    $("grid-box").hidden = !grid || !n;
+    $("list").hidden = grid || !n;
+    $("none").hidden = n > 0;
+    if (grid && n) drawGrid(now);
+    else if (n) $("list").replaceChildren(...state.items.slice(0, state.shown).map((c) => listRow(c, now)));
+    $("more").hidden = n <= state.shown;
+    drawFilterButton();
+}
+
+/** More rows as the guide nears its end, so a long playlist doesn't draw thousands of rows at once. */
+function more() {
+    if (state.shown >= state.items.length) return;
+    state.shown += PAGE;
+    draw();
+}
+
+// ---------- the filters, as the app's Live TV filters ----------
+
+const filterKey = () => `tuned.channels.filters.${state.current?.id ?? ""}`;
+
+function saveFilters() {
+    try {
+        localStorage.setItem(filterKey(), JSON.stringify({ ...state.filters, query: "" }));
+    } catch {
+        // Private browsing: the filters last until the page closes.
+    }
+}
+
+function loadFilters() {
+    try {
+        const saved = JSON.parse(localStorage.getItem(filterKey()) ?? "null");
+        return saved ? { ...NO_FILTERS, ...saved, query: "" } : { ...NO_FILTERS };
+    } catch {
+        return { ...NO_FILTERS };
+    }
+}
+
+function chips(id, name, choices, chosen, onPick) {
+    const box = $(id);
+    const legend = box.querySelector("legend");
+    const all = [{ value: "", label: "Any" }, ...choices];
+    box.replaceChildren(
+        legend,
+        ...all.map(({ value, label }) => {
+            const l = document.createElement("label");
+            const input = document.createElement("input");
+            input.type = "radio";
+            input.name = name;
+            input.value = String(value);
+            input.checked = String(chosen ?? "") === String(value);
+            input.onchange = () => onPick(value);
+            l.append(input, label);
+            return l;
+        }),
+    );
+    box.hidden = choices.length === 0;
+}
+
+function setFilter(change) {
+    state.filters = { ...state.filters, ...change };
+    state.shown = PAGE;
+    saveFilters();
+    draw();
+}
+
+function drawFilters() {
+    const offer = offers(state.channels, nowOf);
+    const f = state.filters;
+    // A chosen filter always shows, even if nothing has it now (what's on moves on).
+    const keep = (list, key, value) =>
+        value && !list.some((x) => x[key] === value)
+            ? [...list, ...[TOPICS, QUALITIES, GENRES].flat().filter((x) => x[key] === value)]
+            : list;
+    chips(
+        "f-topic",
+        "topic",
+        keep(offer.topics, "key", f.topic).map((t) => ({ value: t.key, label: t.label })),
+        f.topic,
+        (v) => setFilter({ topic: v }),
+    );
+    chips(
+        "f-quality",
+        "quality",
+        keep(offer.qualities, "key", f.quality).map((q) => ({ value: q.key, label: q.label })),
+        f.quality,
+        (v) => setFilter({ quality: v }),
+    );
+    chips(
+        "f-on-now",
+        "on-now",
+        keep(offer.genres, "code", f.onNow).map((g) => ({ value: g.code, label: g.label })),
+        f.onNow || "",
+        (v) => setFilter({ onNow: Number(v) || 0 }),
+    );
+    const countries = offer.countries;
+    $("f-country").replaceChildren(
+        new Option("Every country", ""),
+        ...countries.map((c) => new Option(`${c.name} (${c.count.toLocaleString("en-CA")})`, c.tag)),
+    );
+    $("f-country").value = countries.some((c) => c.tag === f.country) ? f.country : "";
+    $("f-country-field").hidden = countries.length < 2;
+    $("f-guide").checked = f.withGuide;
+    $("f-guide-field").hidden = !offer.guide;
+}
+
+function drawFilterButton() {
+    const f = state.filters;
+    const parts = [
+        TOPICS.find((t) => t.key === f.topic)?.label,
+        QUALITIES.find((q) => q.key === f.quality)?.label,
+        f.onNow ? `${genreName(f.onNow)} on now` : "",
+        f.withGuide ? "Has guide" : "",
+        f.country ? $("f-country").selectedOptions[0]?.text.replace(/ \(.*\)$/, "") : "",
+    ].filter(Boolean);
+    const shown = parts.slice(0, 2).join(" · ");
+    $("filters-button").textContent = parts.length ? `Filters: ${parts.length > 2 ? `${shown} +${parts.length - 2}` : shown}` : "Filters";
+    $("filters-button").classList.toggle("chosen", parts.length > 0);
 }
 
 function drawGroups() {
     const groups = groupsOf(state.channels).filter((g) => g.name);
     $("group").replaceChildren(
-        new Option(`All groups`, ""),
+        new Option("All categories", ""),
         ...groups.map((g) => new Option(`${g.name} (${g.count.toLocaleString("en-CA")})`, g.name)),
     );
     $("group").disabled = groups.length === 0;
+    $("group").value = groups.some((g) => g.name === state.filters.group) ? state.filters.group : "";
+    if (!$("group").value) state.filters.group = "";
 }
 
 // ---------- loading a playlist ----------
@@ -487,11 +724,30 @@ function reset() {
     state.channels = [];
     state.guide = new Map();
     state.wholeUrl = "";
-    state.shown = state.view === "grid" ? GRID_PAGE : PAGE;
-    $("channels").hidden = true;
+    state.shown = PAGE;
+    $("channels").classList.add("empty");
     $("blocked").hidden = true;
+    $("grid").replaceChildren();
+    $("list").replaceChildren();
     tell("pick-message", "");
-    tell("guide-line", "", "ok");
+    tell("source", "", "ok");
+    tell("count", "", "ok");
+}
+
+/** Shows the channels: the filters this playlist had last time, and the guide at now. */
+function show(channels, guide) {
+    for (const c of channels) c.hasGuide = Boolean(c.epgId && guide.has(c.epgId));
+    state.channels = channels;
+    state.guide = guide;
+    state.span = guideSpan(guide, Date.now());
+    state.filters = loadFilters();
+    $("search").value = "";
+    tell("status", "");
+    $("channels").classList.remove("empty");
+    drawGroups();
+    drawFilters();
+    draw();
+    requestAnimationFrame(() => scrollGuide(Date.now() - 30 * 60_000, false));
 }
 
 async function open(p) {
@@ -506,8 +762,8 @@ async function open(p) {
         tell("status", "A MAC portal only works in the Tuned app: a web page or VLC can't sign in to it as a set-top box does.", "error");
         return;
     }
-    tell("status", "Getting this playlist from your account…", "ok");
-    // The login and the app's copy at once: the copy is on our server, so it's usually there first.
+    tell("status", "Getting your channels and guide from your account…", "ok");
+    // The login and the app's copy at once: both are on our server.
     const [login, copy] = await Promise.all([
         p.kind === "file" ? Promise.resolve({ status: "app only" }) : getJson(`/api/account/check?id=${encodeURIComponent(p.id)}`),
         appCopy(p.id),
@@ -521,9 +777,8 @@ async function open(p) {
                 : login.link;
     drawWhole();
     const fromApp = copy ? fromAppCopy(copy.body, hasLogin ? login : null) : null;
-    const fresh = fromApp?.savedAt && Date.now() - fromApp.savedAt < COPY_FRESH_MS;
-    // A fresh copy from the app opens at once and needs nothing from the provider.
-    if (fromApp?.channels.length && (fresh || !hasLogin)) return showAppCopy(fromApp, copy.by);
+    // The app's copy, however old: the provider's own list usually can't be read from an https page.
+    if (fromApp?.channels.length) return showAppCopy(fromApp, copy.by);
     if (!hasLogin) {
         const why = {
             "signed out": "You're signed out. Sign in again on your account page.",
@@ -533,24 +788,18 @@ async function open(p) {
         tell("status", why[login.status] ?? "This playlist couldn't be opened. Reload the page and try again.");
         return;
     }
-    tell("status", "Asking your provider for its channel list…", "ok");
+    tell("status", "Your Tuned app hasn't saved this playlist's channels yet. Asking your provider…", "ok");
     const read = login.kind === "xtream" ? await readXtream(login) : await readLink(login);
     if (id !== state.loadId || read.error === "stopped") return;
     if (read.error) {
-        // The provider doesn't let web pages read it: the app's copy, however old, is better than nothing.
-        if (fromApp?.channels.length) return showAppCopy(fromApp, copy.by);
         tell("status", "");
         $("blocked-why").textContent =
             read.error === "empty" ? "Your provider's playlist came back empty." : (reasons[read.error] ?? reasons.unreachable);
-        $("blocked-setting").hidden = read.error !== "insecure";
         $("blocked").hidden = false;
         return;
     }
-    state.channels = read.channels;
-    tell("status", "");
-    drawGroups();
-    $("channels").hidden = false;
-    draw();
+    tell("source", "Straight from your provider.", "ok");
+    show(read.channels, new Map());
     loadGuide(read.guides, id);
 }
 
@@ -569,59 +818,87 @@ async function appCopy(playlistId) {
 }
 
 function showAppCopy(copy, by) {
-    state.channels = copy.channels;
-    state.guide = copy.guide;
-    tell("status", "");
     const from = by ? `your Tuned app on ${by}` : "your Tuned app";
     const when = copy.savedAt ? `, ${ago(copy.savedAt)}` : "";
+    const stale = copy.savedAt && Date.now() - copy.savedAt > 24 * HOUR ? " Open Tuned to bring it up to date." : "";
     const guide = copy.guide.size ? ` Guide for ${copy.guide.size.toLocaleString("en-CA")} channels.` : " No guide came with it.";
-    tell("guide-line", `From ${from}${when}.${guide}`, "ok");
-    drawGroups();
-    $("channels").hidden = false;
-    draw();
+    tell("source", `From ${from}${when}.${guide}${stale}`, "ok");
+    show(copy.channels, copy.guide);
 }
 
 async function loadGuide(guides, id) {
     const urls = [...new Set(guides.filter(Boolean))];
     const ids = new Set(state.channels.map((c) => c.epgId).filter(Boolean));
     if (!urls.length || !ids.size) {
-        tell("guide-line", urls.length ? "These channels don't name a guide." : "This playlist has no guide.", "ok");
+        tell(
+            "source",
+            urls.length
+                ? "Straight from your provider. These channels don't name a guide."
+                : "Straight from your provider, which has no guide.",
+            "ok",
+        );
         return;
     }
     const now = Date.now();
     const reader = new GuideReader(ids, now - GUIDE_BEFORE_MS, now + GUIDE_AFTER_MS);
-    tell("guide-line", "Reading the guide…", "ok");
+    tell("source", "Reading the guide…", "ok");
     let read = 0;
     for (const url of urls) {
         const ok = await readGuide(url, reader, (n) => {
-            if (id === state.loadId) tell("guide-line", `Reading the guide… ${n.toLocaleString("en-CA")} programmes so far`, "ok");
+            if (id === state.loadId) tell("source", `Reading the guide… ${n.toLocaleString("en-CA")} programmes so far`, "ok");
         });
         if (id !== state.loadId) return;
         if (ok) read++;
     }
-    state.guide = reader.done();
-    if (!read) tell("guide-line", "Your provider's guide couldn't be read from a web page, so the list has no guide.");
-    else if (!state.guide.size) tell("guide-line", "The guide has nothing for these channels in the next 12 hours.", "ok");
-    else tell("guide-line", `Guide for the next 12 hours, ${state.guide.size.toLocaleString("en-CA")} channels.`, "ok");
+    const guide = reader.done();
+    if (!read) tell("source", "Your provider's guide couldn't be read from a web page, so there's no guide.");
+    else tell("source", `Straight from your provider. Guide for ${guide.size.toLocaleString("en-CA")} channels.`, "ok");
+    const keep = state.filters;
+    show(state.channels, guide);
+    state.filters = keep;
     draw();
 }
 
 // ---------- start ----------
 
+let typing = 0;
 $("search").oninput = () => {
-    state.shown = state.view === "grid" ? GRID_PAGE : PAGE;
+    clearTimeout(typing);
+    typing = setTimeout(() => setFilter({ query: $("search").value }), 150);
+};
+$("group").onchange = () => setFilter({ group: $("group").value });
+$("f-country").onchange = () => setFilter({ country: $("f-country").value });
+$("f-guide").onchange = () => setFilter({ withGuide: $("f-guide").checked });
+$("filters-clear").onclick = () => {
+    state.filters = { ...NO_FILTERS, query: state.filters.query };
+    saveFilters();
+    $("group").value = "";
+    drawFilters();
     draw();
 };
-$("group").onchange = $("search").oninput;
-$("more").onclick = () => {
-    state.shown += state.view === "grid" ? GRID_PAGE : PAGE;
-    draw();
+enhanceSelect($("playlist"));
+enhanceSelect($("group"));
+enhanceSelect($("f-country"));
+$("filters-button").onclick = () => {
+    const open = $("filters").hidden;
+    $("filters").hidden = !open;
+    $("filters-button").setAttribute("aria-expanded", String(open));
 };
+$("more").onclick = more;
+$("earlier").onclick = () => ($("grid").scrollLeft -= 2 * 60 * perMinute());
+$("later").onclick = () => ($("grid").scrollLeft += 2 * 60 * perMinute());
+$("to-now").onclick = () => scrollGuide(Date.now() - 30 * 60_000);
+$("grid").addEventListener("scroll", () => {
+    requestAnimationFrame(followDay);
+    const box = $("grid");
+    if (box.scrollTop + box.clientHeight > box.scrollHeight - 400) more();
+});
 for (const radio of document.querySelectorAll('input[name="view"]'))
     radio.onchange = () => {
         state.view = radio.value;
-        state.shown = state.view === "grid" ? GRID_PAGE : PAGE;
+        state.shown = PAGE;
         draw();
+        if (state.view === "grid") requestAnimationFrame(() => scrollGuide(Date.now() - 30 * 60_000, false));
     };
 $("playlist").onchange = () => {
     const p = state.playlists.find((x) => x.id === $("playlist").value);
@@ -629,7 +906,9 @@ $("playlist").onchange = () => {
 };
 // What's on now moves on by itself, but only while someone is looking.
 setInterval(() => {
-    if (!document.hidden && state.channels.length) draw();
+    if (document.hidden || !state.channels.length) return;
+    if (state.view === "grid" && $("epg-now")) $("epg-now").style.left = `calc(var(--ch) + ${xOf(Date.now())}px)`;
+    else draw();
 }, 60_000);
 
 async function start() {
@@ -653,7 +932,8 @@ async function start() {
     state.playlists = library.playlists ?? [];
     if (!state.playlists.length) {
         tell("status", "Your account has no playlists yet. Add one on the Playlists page or in the Tuned app.", "ok");
-        $("pick").hidden = true;
+        $("channels").hidden = true;
+        $("whole-card").hidden = true;
         return;
     }
     $("playlist").replaceChildren(

@@ -23,4 +23,8 @@
     <string name="restore_account_nothing">Dieses Konto hat noch keine Sicherung. Füge stattdessen eine Playlist hinzu; sobald sie gesichert ist, können deine anderen Geräte sie wiederherstellen.</string>
     <string name="restore_account_no_playlist">Deine Einstellungen und Profile sind zurück, aber die Sicherung enthält keine Playlist, die dieses Gerät öffnen kann. Playlist-Dateien bleiben auf dem Gerät, auf dem sie hinzugefügt wurden. Füge stattdessen eine Playlist hinzu.</string>
     <string name="restore_account_offline">Deine Sicherung ist nicht erreichbar. Prüfe die Verbindung und versuche es erneut.</string>
+    <string name="tuned_account_backing_up">Wird gesichert…</string>
+    <string name="tuned_account_backed_up">Gerade gesichert</string>
+    <string name="tuned_account_backup_failed">Sicherung fehlgeschlagen. Prüfe deine Verbindung und versuche es erneut.</string>
+    <string name="tuned_account_backup_paused">Sicherungen sind vorerst pausiert. Versuche es später erneut.</string>
 </resources>

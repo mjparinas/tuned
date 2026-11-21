@@ -18,6 +18,11 @@ test("a channel list from the app is read with its playlist and size", () => {
     assert.deepEqual(readUpload(gz({ ...good, channels: [], guide: {} })), { playlist: "74d5b50ccf496f21", channels: 0 });
 });
 
+test("a newer app's rows, with country and adult, are read too", () => {
+    const newer = { ...good, channels: [["CBC", "Canada", "", "cbc.ca", 1, "http://p/live/{login}/1.ts", "CA", 0]] };
+    assert.deepEqual(readUpload(gz(newer)), { playlist: good.playlist, channels: 1 });
+});
+
 test("anything else is turned away", () => {
     assert.equal(readUpload(Buffer.alloc(0)).error, "bad request");
     assert.equal(readUpload(Buffer.from("not gzip")).error, "bad request");

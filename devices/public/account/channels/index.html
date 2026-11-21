@@ -12,6 +12,7 @@
         <link rel="icon" href="/icon.svg" type="image/svg+xml" />
         <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
         <link rel="stylesheet" href="/site.css" />
+        <link rel="stylesheet" href="/select.css" />
         <link rel="stylesheet" href="/web.css" />
         <link rel="stylesheet" href="/account/account.css" />
         <link rel="stylesheet" href="/account/playlists/playlists.css" />
@@ -19,14 +20,14 @@
     </head>
     <body>
         <script src="/chrome.js" data-part="header"></script>
-        <main class="wide account">
+        <main class="wide account epg-page">
             <div class="account-head">
                 <p class="back"><a href="/account">‹ Your Tuned account</a></p>
                 <h1>Channels and guide</h1>
                 <p class="small">
-                    Open any channel in VLC or another player on this device. The list and guide come straight from your provider, or from
-                    the copy your Tuned app keeps in your account when your provider doesn't allow web pages. The player connects to your
-                    provider itself: no video passes through Tuned.
+                    Your Live TV guide, as the Tuned app shows it. Click a channel, or what's on now, and it opens in VLC on this device.
+                    The channels and guide come from the copy your Tuned app keeps in your account, so they show even when your provider
+                    blocks web pages. VLC connects to your provider itself: no video passes through Tuned.
                 </p>
                 <p id="status" role="status" aria-live="polite"></p>
             </div>
@@ -45,65 +46,104 @@
                 </section>
 
                 <div id="signed-in" hidden>
-                    <section class="card span" id="pick" aria-labelledby="pick-title">
-                        <h2 id="pick-title" class="visually-hidden">Playlist</h2>
-                        <div class="pick-row">
+                    <section class="card span epg-card" id="channels" aria-labelledby="channels-title">
+                        <h2 id="channels-title" class="visually-hidden">Live TV</h2>
+                        <div class="epg-bar">
                             <div class="field">
                                 <label for="playlist">Playlist</label>
                                 <select id="playlist"></select>
                             </div>
-                            <div class="whole" role="group" aria-label="The whole playlist">
-                                <a class="button quiet" id="whole-vlc" hidden>Open the whole playlist in VLC</a>
-                                <button type="button" class="quiet" id="whole-file">Playlist file for VLC</button>
-                                <button type="button" class="quiet" id="whole-copy">Copy playlist link</button>
-                            </div>
-                        </div>
-                        <p class="message" id="pick-message" role="status" aria-live="polite"></p>
-                    </section>
-
-                    <section class="card span" id="blocked" hidden aria-labelledby="blocked-title">
-                        <h2 id="blocked-title">Your provider doesn't let web pages read its channel list</h2>
-                        <p id="blocked-why"></p>
-                        <p>
-                            Open this playlist in the Tuned app, signed in to your account, and its channels and guide show up here within
-                            the hour: the app shares its own copy. Until then, VLC can still open the whole playlist itself with the buttons
-                            above, as it isn't a web page.
-                        </p>
-                        <p id="blocked-setting" hidden>
-                            Your provider's address is http and this page is https. In Chrome or Edge, open the padlock › Site settings ›
-                            Insecure content › Allow, then reload. Firefox: the padlock › Turn off protection for now. Safari has no such
-                            setting.
-                        </p>
-                        <div class="actions"><a class="button quiet" href="/check">Check my provider</a></div>
-                    </section>
-
-                    <section class="card span" id="channels" hidden aria-labelledby="channels-title">
-                        <div class="card-head">
-                            <h2 id="channels-title">Live TV</h2>
-                            <fieldset class="kinds views" id="views">
-                                <legend class="visually-hidden">View</legend>
-                                <label><input type="radio" name="view" value="list" checked />Now and next</label>
-                                <label><input type="radio" name="view" value="grid" />Guide</label>
-                            </fieldset>
-                        </div>
-                        <div class="filters">
                             <div class="field grow">
                                 <label for="search">Search channels and what's on</label>
                                 <input id="search" type="search" autocomplete="off" spellcheck="false" placeholder="Hockey, CBC, news…" />
                             </div>
                             <div class="field">
-                                <label for="group">Group</label>
+                                <label for="group">Category</label>
                                 <select id="group"></select>
                             </div>
+                            <button
+                                type="button"
+                                class="quiet filters-button"
+                                id="filters-button"
+                                aria-expanded="false"
+                                aria-controls="filters"
+                            >
+                                Filters
+                            </button>
+                            <fieldset class="kinds views" id="views">
+                                <legend class="visually-hidden">View</legend>
+                                <label><input type="radio" name="view" value="grid" checked />Guide</label>
+                                <label><input type="radio" name="view" value="list" />Now and next</label>
+                            </fieldset>
                         </div>
+
+                        <div class="filters-panel" id="filters" hidden>
+                            <fieldset class="kinds" id="f-topic"><legend>Type</legend></fieldset>
+                            <fieldset class="kinds" id="f-quality"><legend>Quality</legend></fieldset>
+                            <fieldset class="kinds" id="f-on-now"><legend>On now</legend></fieldset>
+                            <div class="filters-row">
+                                <div class="field" id="f-country-field">
+                                    <label for="f-country">Country</label>
+                                    <select id="f-country"></select>
+                                </div>
+                                <label class="check" id="f-guide-field"><input type="checkbox" id="f-guide" />Has guide</label>
+                                <button type="button" class="quiet" id="filters-clear">Clear filters</button>
+                            </div>
+                        </div>
+
+                        <p class="small" id="source" aria-live="polite"></p>
                         <p class="small" id="count" aria-live="polite"></p>
-                        <p class="small" id="guide-line" aria-live="polite"></p>
-                        <ul class="channel-list" id="list"></ul>
-                        <div class="grid-wrap" id="grid" hidden></div>
-                        <div class="actions"><button type="button" class="quiet" id="more" hidden>Show more</button></div>
+
+                        <div class="epg-wrap" id="grid-box">
+                            <div class="epg-nav" role="group" aria-label="Move through the guide">
+                                <button type="button" class="quiet" id="earlier">‹ Earlier</button>
+                                <button type="button" class="quiet" id="to-now">Now</button>
+                                <button type="button" class="quiet" id="later">Later ›</button>
+                            </div>
+                            <div class="epg" id="grid" tabindex="0" role="region" aria-label="Guide"></div>
+                        </div>
+                        <ul class="channel-list" id="list" hidden></ul>
+                        <p class="small none" id="none" hidden>No channels match these filters.</p>
+                        <div class="actions"><button type="button" class="quiet" id="more" hidden>Show more channels</button></div>
+                    </section>
+
+                    <section class="card span" id="blocked" hidden aria-labelledby="blocked-title">
+                        <h2 id="blocked-title">Open this playlist in the Tuned app first</h2>
+                        <p id="blocked-why"></p>
+                        <p>
+                            Open this playlist in the Tuned app, signed in to your account, and its channels and guide show up here within
+                            the hour: the app keeps a copy in your account. Until then, VLC can still open the whole playlist itself with
+                            the buttons below.
+                        </p>
+                        <div class="actions"><a class="button quiet" href="/check">Check my provider</a></div>
+                    </section>
+
+                    <section class="card span" id="whole-card" aria-labelledby="whole-title">
+                        <h2 id="whole-title">The whole playlist in VLC</h2>
+                        <p class="small">VLC reads every channel itself, without the guide.</p>
+                        <div class="whole" role="group" aria-labelledby="whole-title">
+                            <a class="button quiet" id="whole-vlc" hidden>Open the whole playlist in VLC</a>
+                            <button type="button" class="quiet" id="whole-file">Playlist file for VLC</button>
+                            <button type="button" class="quiet" id="whole-copy">Copy playlist link</button>
+                        </div>
+                        <p class="message" id="pick-message" role="status" aria-live="polite"></p>
                     </section>
                 </div>
             </div>
+            <dialog class="show-dialog" id="show" aria-labelledby="show-title">
+                <div class="show-head">
+                    <span id="show-logo"></span>
+                    <div>
+                        <p class="small" id="show-channel"></p>
+                        <h2 id="show-title"></h2>
+                        <p class="small" id="show-when"></p>
+                    </div>
+                </div>
+                <p id="show-next" class="small"></p>
+                <div class="actions" id="show-actions"></div>
+                <p class="message" id="show-message" role="status" aria-live="polite"></p>
+                <form method="dialog" class="actions"><button class="quiet" value="close">Close</button></form>
+            </dialog>
         </main>
         <script type="module" src="/account/channels/channels.js"></script>
         <script src="/beacon.js" defer></script>

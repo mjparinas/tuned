@@ -7,6 +7,7 @@ import android.content.Context
 import android.content.Intent
 import android.os.Build
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -34,6 +35,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
@@ -53,6 +55,8 @@ import com.tunedplayer.app.diagnostics.attempt
 import com.tunedplayer.app.diagnostics.launchSafely
 import com.tunedplayer.app.diagnostics.startActivitySafely
 import com.tunedplayer.app.ui.common.BackTopBar
+import com.tunedplayer.app.ui.common.focusRing
+import com.tunedplayer.app.ui.common.isTelevision
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -164,7 +168,13 @@ fun DeveloperLogScreen(
 @Composable
 private fun CrashRow(crash: CrashReport) {
     var open by rememberSaveable(crash.timeMs) { mutableStateOf(false) }
-    Column(Modifier.fillMaxWidth().clickable { open = !open }.padding(horizontal = 16.dp, vertical = 10.dp)) {
+    Column(
+        Modifier
+            .fillMaxWidth()
+            .focusRing(RectangleShape, MaterialTheme.colorScheme.primary)
+            .clickable { open = !open }
+            .padding(horizontal = 16.dp, vertical = 10.dp),
+    ) {
         Text(
             DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT).format(Date(crash.timeMs)),
             style = MaterialTheme.typography.bodyLarge,
@@ -192,14 +202,22 @@ private fun LogLine(entry: LogEntry) {
             LogLevel.WARN -> MaterialTheme.colorScheme.tertiary
             else -> MaterialTheme.colorScheme.onSurface
         }
-    SelectionContainer {
+    val line: @Composable (Modifier) -> Unit = { modifier ->
         Text(
             entry.format(),
             color = colour,
             fontFamily = FontFamily.Monospace,
             style = MaterialTheme.typography.bodySmall,
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 3.dp),
+            modifier = modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 3.dp),
         )
+    }
+    if (isTelevision()) {
+        // A remote can't select text, and a list of plain text gives it nothing to land on, so the log couldn't be
+        // scrolled past the crash reports. On a TV each line takes focus, with an outline, and Copy and Share above
+        // still take the whole log.
+        line(Modifier.focusRing(RectangleShape, MaterialTheme.colorScheme.primary, width = 2.dp).focusable())
+    } else {
+        SelectionContainer { line(Modifier) }
     }
 }
 

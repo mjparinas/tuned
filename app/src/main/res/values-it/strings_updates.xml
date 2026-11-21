@@ -6,4 +6,17 @@
     <string name="update_check_failed">Impossibile raggiungere GitHub. Riprova tra poco.</string>
     <string name="update_channel">Aggiornamenti</string>
     <string name="update_notification_text">Apri Tuned e tocca Installa</string>
+    <string name="update_installing">Installazione di Tuned %1$s</string>
+    <string name="update_busy">Installazione…</string>
+    <string name="update_downloading">Download di Tuned %1$s</string>
+    <string name="update_step_download">Download dell’aggiornamento</string>
+    <string name="update_step_check">Verifica del download</string>
+    <string name="update_step_prepare">Preparazione dell’installazione</string>
+    <string name="update_step_open">Apertura del programma di installazione di Android</string>
+    <string name="update_step_confirm">In attesa della tua conferma</string>
+    <string name="update_problem_download">Impossibile scaricare l’aggiornamento. Controlla la connessione e riprova.</string>
+    <string name="update_problem_space">Spazio libero insufficiente per l’aggiornamento. Libera spazio e riprova.</string>
+    <string name="update_problem_other">L’aggiornamento non è stato installato. Riprova.</string>
+    <string name="update_problem_permission">Tuned non ha ancora il permesso di installare aggiornamenti. Attiva Tuned in Installa app sconosciute nelle impostazioni di Android (su una TV: Sicurezza e limitazioni › Origini sconosciute), poi riprova.</string>
+    <string name="update_problem_installer">Il programma di installazione di Android non si è aperto. Riprova.</string>
 </resources>

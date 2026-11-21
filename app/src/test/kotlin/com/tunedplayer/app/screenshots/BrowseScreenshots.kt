@@ -34,6 +34,7 @@ import com.tunedplayer.app.ui.ProfilesRoute
 import com.tunedplayer.app.ui.SearchRoute
 import com.tunedplayer.app.ui.ShowRoute
 import com.tunedplayer.app.ui.browse.FirstDownload
+import com.tunedplayer.app.ui.browse.FirstRun
 import com.tunedplayer.app.ui.browse.RefreshBar
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
@@ -86,6 +87,17 @@ class BrowseScreenshots : Screenshots() {
         wait = "Maple News 24",
         then = { openFilters() },
         // The sheet is a window of its own, so the picture takes in every window.
+        overlay = {},
+    )
+
+    /** The Filters panel on a TV: the whole screen, no drag handle, the remote on the first type. */
+    @Test
+    @Config(qualifiers = TV)
+    fun liveTvFiltersTv() = shot(
+        "browse-live-tv-filters-tv",
+        HomeRoute,
+        wait = "Maple News 24",
+        then = { openFilters() },
         overlay = {},
     )
 
@@ -202,6 +214,11 @@ class BrowseScreenshots : Screenshots() {
     /** Whole-guide search: later programmes, with the day and time they start and their channel. */
     @Test fun searchGuide() = shot("browse-search-guide", SearchRoute("planet wild"), wait = text(R.string.search_in_guide))
 
+    // On a TV the box's Clear and mic buttons sit beside it, where Right on the remote reaches them (2026-11-21).
+    @Test
+    @Config(qualifiers = TV)
+    fun searchOnTv() = shot("browse-search-tv", SearchRoute("hockey"), wait = "Riverton Hockey Hour")
+
     @Test fun events() = shot("browse-events", EventsRoute, wait = text(R.string.events_title))
 
     @Test fun downloads() = shot("browse-downloads", DownloadsRoute, wait = text(R.string.downloads))
@@ -246,9 +263,15 @@ class BrowseScreenshots : Screenshots() {
     /** The first download's numbered steps, part way through processing the channels. */
     @Test fun firstDownload() = part("browse-first-download", "Processing channels") { FirstDownloadSample() }
 
+    /** On a TV the steps go beside the title, so the line under them isn't cut off at the bottom. */
     @Test
     @Config(qualifiers = TV)
-    fun firstDownloadTv() = part("browse-first-download-tv", "Processing channels") { FirstDownloadSample() }
+    fun firstDownloadTv() = part("browse-first-download-tv", "Processing channels") { FirstRunSample() }
+
+    /** The same on Melvin's TV, which is shorter than a standard 1080p one (FirstDownloadTvTest checks it fits). */
+    @Test
+    @Config(qualifiers = SMALL_TV)
+    fun firstDownloadSmallTv() = part("browse-first-download-small-tv", "Processing channels") { FirstRunSample() }
 
     /** Still downloading, from a server that gives no size: what has arrived so far. */
     @Test
@@ -274,4 +297,16 @@ private fun FirstDownloadSample() {
     Box(Modifier.fillMaxSize().padding(32.dp), contentAlignment = Alignment.Center) {
         FirstDownload(SyncProgress(SyncProgress.Step.ReadPlaylist, 21_600_000, 48_000_000, rows = 12_345, steps = SAMPLE_STEPS))
     }
+}
+
+/** The first run screen itself, as Home shows it, with the same sample progress. */
+@Composable
+private fun FirstRunSample() {
+    FirstRun(
+        refreshing = true,
+        progress = SyncProgress(SyncProgress.Step.ReadPlaylist, 21_600_000, 48_000_000, rows = 12_345, steps = SAMPLE_STEPS),
+        error = "",
+        onRetry = {},
+        onChangeLogin = {},
+    )
 }

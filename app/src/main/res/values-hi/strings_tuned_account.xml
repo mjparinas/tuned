@@ -23,4 +23,8 @@
     <string name="restore_account_nothing">इस खाते में अभी कोई बैकअप नहीं है। इसके बजाय एक प्लेलिस्ट जोड़ें; बैकअप होने पर आपके दूसरे डिवाइस इसे बहाल कर सकते हैं।</string>
     <string name="restore_account_no_playlist">आपकी सेटिंग और प्रोफ़ाइल वापस आ गईं, पर बैकअप में ऐसी कोई प्लेलिस्ट नहीं है जिसे यह डिवाइस खोल सके। प्लेलिस्ट फ़ाइलें उसी डिवाइस पर रहती हैं जिस पर जोड़ी गई थीं। इसके बजाय एक प्लेलिस्ट जोड़ें।</string>
     <string name="restore_account_offline">आपके बैकअप तक नहीं पहुंच सके। कनेक्शन जांचें और फिर से कोशिश करें।</string>
+    <string name="tuned_account_backing_up">बैकअप हो रहा है…</string>
+    <string name="tuned_account_backed_up">अभी-अभी बैकअप हुआ</string>
+    <string name="tuned_account_backup_failed">बैकअप नहीं हो सका। अपना कनेक्शन जाँचें और फिर से कोशिश करें।</string>
+    <string name="tuned_account_backup_paused">बैकअप अभी रुके हुए हैं। बाद में फिर से कोशिश करें।</string>
 </resources>

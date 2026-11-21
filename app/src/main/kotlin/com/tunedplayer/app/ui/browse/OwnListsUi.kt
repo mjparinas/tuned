@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.toggleable
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.PlaylistPlay
@@ -48,6 +49,7 @@ import com.tunedplayer.app.data.db.ListEntity
 import com.tunedplayer.app.diagnostics.launchSafely
 import com.tunedplayer.app.premium.Premium
 import com.tunedplayer.app.ui.common.TunedDialog
+import com.tunedplayer.app.ui.common.focusRing
 
 /** Opens "Add to list" for a channel or film, or the Premium screen while lists are locked (docs/decisions/premium.md). */
 @Stable
@@ -103,6 +105,7 @@ private fun AddToListDialog(
                         Modifier
                             .fillMaxWidth()
                             .heightIn(min = 48.dp)
+                            .focusRing(RoundedCornerShape(8.dp), MaterialTheme.colorScheme.primary)
                             .toggleable(value = on, role = Role.Checkbox) { now ->
                                 scope.launchSafely(TAG) { lists.set(list.id, itemId, now) }
                             },
@@ -117,6 +120,7 @@ private fun AddToListDialog(
                     Modifier
                         .fillMaxWidth()
                         .heightIn(min = 48.dp)
+                        .focusRing(RoundedCornerShape(8.dp), MaterialTheme.colorScheme.primary)
                         .clickable { naming = true },
                     verticalAlignment = Alignment.CenterVertically,
                 ) {

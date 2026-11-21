@@ -6,4 +6,17 @@
     <string name="update_check_failed">Не удалось связаться с GitHub. Попробуйте чуть позже.</string>
     <string name="update_channel">Обновления</string>
     <string name="update_notification_text">Откройте Tuned и нажмите «Установить»</string>
+    <string name="update_installing">Установка Tuned %1$s</string>
+    <string name="update_busy">Установка…</string>
+    <string name="update_downloading">Загрузка Tuned %1$s</string>
+    <string name="update_step_download">Загрузка обновления</string>
+    <string name="update_step_check">Проверка загрузки</string>
+    <string name="update_step_prepare">Подготовка к установке</string>
+    <string name="update_step_open">Открытие установщика Android</string>
+    <string name="update_step_confirm">Ожидание вашего подтверждения</string>
+    <string name="update_problem_download">Не удалось загрузить обновление. Проверьте подключение и повторите попытку.</string>
+    <string name="update_problem_space">Недостаточно свободного места для обновления. Освободите место и повторите попытку.</string>
+    <string name="update_problem_other">Обновление не установилось. Повторите попытку.</string>
+    <string name="update_problem_permission">Tuned пока не может устанавливать обновления. Включите Tuned в разделе «Установка неизвестных приложений» в настройках Android (на телевизоре: Безопасность и ограничения › Неизвестные источники) и повторите попытку.</string>
+    <string name="update_problem_installer">Установщик Android не открылся. Повторите попытку.</string>
 </resources>

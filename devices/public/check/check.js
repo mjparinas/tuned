@@ -1,5 +1,6 @@
 // The provider check (docs/decisions/web.md): Phase 0 of the web player. Everything runs in this browser; the
 // address and login stay in memory and are never sent to Tuned. One stream at a time, closed before the next opens.
+import { enhanceSelect } from "/select.js";
 import {
     access,
     anywayTries,
@@ -872,4 +873,6 @@ async function start() {
     if (autoCheck) checkSaved(new URLSearchParams(location.search).get("playlist"));
 }
 
+enhanceSelect($("live"));
+enhanceSelect($("film"));
 start();
