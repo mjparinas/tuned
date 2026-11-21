@@ -241,6 +241,16 @@ class BrowseScreenshots : Screenshots() {
     fun profilesOnTvLight() =
         shot("browse-profiles-tv-light", ProfilesRoute(atStart = true), wait = text(R.string.profiles_title), settings = LIGHT)
 
+    /** "Who's watching?" opened from the TV's rail: the glow shows behind the title, with no bar over it (Melvin, 2026-11-21). */
+    @Test
+    @Config(qualifiers = TV)
+    fun profilesFromHomeOnTv() = shot("browse-profiles-home-tv", ProfilesRoute(), wait = text(R.string.profiles_title))
+
+    @Test
+    @Config(qualifiers = TV)
+    fun profilesFromHomeOnTvLight() =
+        shot("browse-profiles-home-tv-light", ProfilesRoute(), wait = text(R.string.profiles_title), settings = LIGHT)
+
     /** Two named profiles, one for kids, opened from Home: the names must read clearly on the dark theme. */
     @Test
     fun profilesNamed() {
