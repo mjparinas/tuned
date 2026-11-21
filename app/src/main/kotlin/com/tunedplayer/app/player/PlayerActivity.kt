@@ -713,6 +713,7 @@ class PlayerActivity : FragmentActivity() {
 
         override fun onVideoSizeChanged(videoSize: VideoSize) {
             frameRate.onVideo(player?.videoFormat?.frameRate)
+            tools.refreshFitScale()
             if (Build.VERSION.SDK_INT >=
                 Build.VERSION_CODES.S
             ) {
