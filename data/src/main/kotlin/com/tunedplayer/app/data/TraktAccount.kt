@@ -2,7 +2,6 @@ package com.tunedplayer.app.data
 
 import android.content.Context
 import androidx.core.content.edit
-import com.tunedplayer.app.BuildConfig
 import com.tunedplayer.app.core.Trakt
 import com.tunedplayer.app.diagnostics.AppLog
 import com.tunedplayer.app.diagnostics.attempt

@@ -3,8 +3,6 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.kotlin.serialization)
-    alias(libs.plugins.ksp)
-    alias(libs.plugins.room)
     alias(libs.plugins.androidx.baselineprofile)
 }
 
@@ -161,17 +159,9 @@ baselineProfile {
     }
 }
 
-// Room's plugin writes each variant's schema separately, so debug and release builds don't race on one file.
-room {
-    schemaDirectory("$projectDir/schemas")
-}
-
-ksp {
-    arg("room.generateKotlin", "true")
-}
-
 dependencies {
     implementation(project(":core"))
+    implementation(project(":data"))
 
     // Media3's FFmpeg decoder for Dolby and DTS sound, which Google doesn't publish: CI builds it from the matching
     // androidx/media tag (.github/actions/ffmpeg-decoder). Media3 finds it by name, so a build without it (a local
@@ -203,10 +193,10 @@ dependencies {
     implementation(libs.androidx.lifecycle.process)
     implementation(libs.androidx.navigation.compose)
 
+    // Room itself is in :data, which generates the database code; the screens use its paging sources and DAOs.
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)
     implementation(libs.androidx.room.paging)
-    ksp(libs.androidx.room.compiler)
     implementation(libs.androidx.paging.compose)
 
     implementation(libs.androidx.work.runtime)

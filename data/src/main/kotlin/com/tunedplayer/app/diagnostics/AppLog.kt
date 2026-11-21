@@ -1,8 +1,8 @@
 package com.tunedplayer.app.diagnostics
 
 import android.util.Log
-import com.tunedplayer.app.BuildConfig
 import com.tunedplayer.app.core.LogScrubber
+import com.tunedplayer.app.data.BuildConfig
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow

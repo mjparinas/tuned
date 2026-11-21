@@ -135,7 +135,7 @@ internal const val CHANNEL_FILTER =
  * recordings, and those this profile has watched. `:genre` keeps the channels whose programme on now ([NOW_JOIN]'s
  * `p`) is of that kind ([com.tunedplayer.app.core.ProgrammeGenre.code]), or 0 for any.
  */
-internal const val LIVE_QUICK =
+const val LIVE_QUICK =
     "AND (:topic = '' OR ('g:' || i.groupName) IN (:quick) " +
         "OR i.id IN (SELECT docid FROM items_fts WHERE items_fts MATCH :topic)) " +
         "AND ('any' IN (:quick) OR i.region IN (:quick)) " +
