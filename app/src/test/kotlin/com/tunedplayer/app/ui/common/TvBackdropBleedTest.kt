@@ -6,6 +6,7 @@ import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onRoot
 import com.tunedplayer.app.data.ThemeMode
+import com.tunedplayer.app.ui.settings.ProfilesTopBar
 import com.tunedplayer.app.ui.settings.WelcomeScaffold
 import com.tunedplayer.app.ui.theme.TunedTheme
 import org.junit.Rule
@@ -35,6 +36,29 @@ class TvBackdropBleedTest {
     @Test
     fun profilesBackdropFillsTheMarginOnTheDarkTheme() = assertNoFrame(ThemeMode.DARK)
 
+    /**
+     * Opened from Home, "Who's watching?" has a title bar, which drew a block of the surface colour (white on the light
+     * theme) over the glow (Melvin, 2026-11-21). The bar is see-through: beside the title, it matches the glow just below.
+     */
+    @Test
+    fun theTitleBarShowsTheGlowOnTheLightTheme() = assertTitleBarClear(ThemeMode.LIGHT)
+
+    @Test
+    fun theTitleBarShowsTheGlowOnTheDarkTheme() = assertTitleBarClear(ThemeMode.DARK)
+
+    private fun assertTitleBarClear(mode: ThemeMode) {
+        compose.setContent {
+            TunedTheme(mode = mode) {
+                TvSafeArea { WelcomeScaffold(topBar = { ProfilesTopBar(managing = false, onBack = {}) }) { _ -> } }
+            }
+        }
+        compose.waitForIdle()
+        val bitmap = compose.onRoot().captureToImage().asAndroidBitmap()
+        // The bar is 64 dp tall from the top margin (27 dp); its right end holds no text. Just below it is the glow.
+        val x = bitmap.width - 60
+        assertClose(bitmap, x, 27 + 32, x, 27 + 64 + 4, "$mode title bar")
+    }
+
     private fun assertNoFrame(mode: ThemeMode) {
         compose.setContent {
             TunedTheme(mode = mode) {
@@ -43,11 +67,11 @@ class TvBackdropBleedTest {
         }
         compose.waitForIdle()
         val bitmap = compose.onRoot().captureToImage().asAndroidBitmap()
-        // mdpi: 1 dp is 1 px. The top margin is 27 dp and the sides 48 dp; the glow is strongest at the top centre.
+        // mdpi: 1 dp is 1 px. The top margin is 27 dp and the sides 24 dp; the glow is strongest at the top centre.
         val midX = bitmap.width / 2
         val midY = bitmap.height / 2
         assertClose(bitmap, midX, 2, midX, 30, "$mode top")
-        assertClose(bitmap, 2, midY, 50, midY, "$mode side")
+        assertClose(bitmap, 2, midY, 26, midY, "$mode side")
     }
 
     private fun assertClose(

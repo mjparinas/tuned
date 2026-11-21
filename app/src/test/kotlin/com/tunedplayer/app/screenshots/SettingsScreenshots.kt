@@ -11,6 +11,7 @@ import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.unit.dp
 import com.tunedplayer.app.R
 import com.tunedplayer.app.core.AccountSeats
+import com.tunedplayer.app.data.AppSettings
 import com.tunedplayer.app.data.AppReset
 import com.tunedplayer.app.data.CaptionStyle
 import com.tunedplayer.app.data.LighterMode
@@ -41,6 +42,16 @@ class SettingsScreenshots : Screenshots() {
     @Test
     @Config(qualifiers = TABLET)
     fun settingsTablet() = shot("settings-tablet", SettingsRoute, wait = text(R.string.settings_playback))
+
+    /** Settings on a TV with the theme left at the system default, which is dark there, and Tuned's mark top left. */
+    @Test
+    @Config(qualifiers = TV)
+    fun settingsOnTv() = shot("settings-tv", SettingsRoute, wait = text(R.string.settings_playback), settings = AppSettings())
+
+    /** The same with Light picked in Appearance: the mark and name still read. */
+    @Test
+    @Config(qualifiers = TV)
+    fun settingsOnTvLight() = shot("settings-tv-light", SettingsRoute, wait = text(R.string.settings_playback), settings = LIGHT)
 
     /** The cards and coloured badges in the light theme, where the badge colours are deepest. */
     @Test fun settingsLight() = shot("settings-light", SettingsRoute, wait = text(R.string.settings_playback), settings = LIGHT)
