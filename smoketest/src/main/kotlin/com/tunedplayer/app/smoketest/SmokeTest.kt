@@ -1,6 +1,7 @@
 package com.tunedplayer.app.smoketest
 
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.view.KeyEvent
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
@@ -10,6 +11,7 @@ import androidx.test.uiautomator.Until
 import com.tunedplayer.app.fakeprovider.FakeProvider
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
+import org.junit.Assume.assumeTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -82,9 +84,67 @@ class SmokeTest {
         assertEquals("streams opened: ${FakeProvider.streamsRequested}", 1, FakeProvider.mostOpenAtOnce)
 
         assertTrue("Back didn't return to Live TV", leavePlayer())
+        // The channel carries on in the mini player, so the download still waits; Back on Live TV closes it.
+        closeMiniPlayer()
         awaitFilmRequests(2)
         Thread.sleep(PLAY_MS)
         assertEquals("streams opened: ${FakeProvider.streamsRequested}", 1, FakeProvider.mostOpenAtOnce)
+    }
+
+    /**
+     * Melvin, 2026-11-21: Back on live TV keeps the channel playing "in a small video somewhere out of the way" while
+     * browsing, and "when i find something i like and click on it, it should stop the mini live tv from streaming
+     * first before it streams the new show". The same stream carries on into the mini player (no new request), the
+     * next pick opens only after it hangs up, and Back on Live TV closes it.
+     */
+    @Test
+    fun liveTvKeepsPlayingInTheMiniPlayerAndHangsUpForTheNextPick() {
+        val pm = instrumentation.targetContext.packageManager
+        assumeTrue("no picture-in-picture on this emulator", pm.hasSystemFeature(PackageManager.FEATURE_PICTURE_IN_PICTURE))
+        launch()
+        signIn()
+        device.wait(Until.findObject(By.text(FakeProvider.FIRST_CHANNEL)), SCREEN_MS).click()
+        awaitStreams(1)
+        Thread.sleep(PLAY_MS)
+        val asked = FakeProvider.streamsRequested.size
+
+        assertTrue("Back didn't return to Live TV", leavePlayer())
+        assertTrue("Back didn't shrink the player into the mini player", await { inMiniPlayer() })
+        Thread.sleep(PLAY_MS)
+        assertEquals("the mini player reconnected: ${FakeProvider.streamsRequested}", asked, FakeProvider.streamsRequested.size)
+        assertEquals("the mini player's stream isn't open", 1, FakeProvider.openNow)
+
+        val next = device.findObjects(By.textStartsWith("Channel ")).firstOrNull { it.text != FakeProvider.FIRST_CHANNEL }
+        checkNotNull(next) { "Live TV lists no other channel" }
+        next.click()
+        awaitStreams(2)
+        Thread.sleep(PLAY_MS)
+        assertTrue("the next pick stayed in the small window", await { !inMiniPlayer() })
+        assertEquals("streams opened: ${FakeProvider.streamsRequested}", 1, FakeProvider.mostOpenAtOnce)
+
+        assertTrue("Back didn't return to Live TV", leavePlayer())
+        assertTrue("Back didn't shrink the player into the mini player", await { inMiniPlayer() })
+        closeMiniPlayer()
+        assertTrue("Back on Live TV didn't close the mini player", await { !inMiniPlayer() })
+        assertEquals("streams opened: ${FakeProvider.streamsRequested}", 1, FakeProvider.mostOpenAtOnce)
+    }
+
+    /** Back on Live TV with the mini player showing closes it, and its stream hangs up. */
+    private fun closeMiniPlayer() {
+        device.pressBack()
+        check(await { FakeProvider.openNow == 0 }) { "the mini player's stream is still open" }
+    }
+
+    /** The player is in Android's picture-in-picture window. */
+    private fun inMiniPlayer(): Boolean = device.executeShellCommand("dumpsys activity activities").contains("mode=pinned")
+
+    private fun await(condition: () -> Boolean): Boolean {
+        val until = System.currentTimeMillis() + STREAM_MS
+        while (System.currentTimeMillis() < until) {
+            if (condition()) return true
+            Thread.sleep(POLL_MS)
+        }
+        return false
     }
 
     private fun signIn() {

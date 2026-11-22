@@ -199,6 +199,8 @@
     <string name="settings_autoplay">Play next episode automatically</string>
     <string name="settings_pip">Picture-in-picture</string>
     <string name="settings_pip_summary">Keep watching in a small window when you leave the app</string>
+    <string name="settings_mini_player">Mini player on Back</string>
+    <string name="settings_mini_player_summary">Back on a live channel keeps it playing in a small window while you browse. Anything new you pick stops it first</string>
     <string name="settings_landscape">Rotate to landscape for playback</string>
     <string name="settings_controls_timeout">Hide controls after</string>
     <string name="settings_tune">Auto-tune</string>

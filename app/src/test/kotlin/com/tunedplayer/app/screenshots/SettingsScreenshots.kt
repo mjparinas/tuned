@@ -57,6 +57,15 @@ class SettingsScreenshots : Screenshots() {
         settings = DARK.copy(lighterMode = LighterMode.ON),
     )
 
+    /** Mini player on Back, beside Picture-in-picture in Settings › Player (Melvin, 2026-11-21). */
+    @Test
+    fun miniPlayer() = shot(
+        "settings-mini-player",
+        SettingsPageRoute(SettingsPage.PLAYBACK.name),
+        wait = text(R.string.settings_resume),
+        then = { compose.onNodeWithText(text(R.string.settings_mini_player)).performScrollTo() },
+    )
+
     /** Report a problem, under Troubleshooting in Settings › About. */
     @Test
     fun reportProblem() = shot(

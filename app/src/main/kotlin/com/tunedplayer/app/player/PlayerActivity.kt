@@ -257,6 +257,20 @@ class PlayerActivity : FragmentActivity() {
 
     private val frameRate by lazy { FrameRateMatch(this) { settings.matchFrameRate && cast?.casting != true } }
 
+    /** Back on a live channel keeps it playing in a small window over the app; see [MiniPlayer]. */
+    private val mini by lazy {
+        MiniPlayer.Screen(
+            this,
+            MiniPlayer.Screen.Hooks(
+                enabled = { settings.miniPlayer },
+                liveChannel = { live() && player?.currentMediaItem?.mediaId != CatchUpLinks.ID.toString() },
+                casting = { cast?.casting == true },
+                playing = { player?.playWhenReady == true },
+                params = { pipParams(player, playerView, settings.pictureInPicture) },
+            ),
+        )
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         // One connection to the provider at a time: downloads and channel scans wait while anything plays.
@@ -264,6 +278,8 @@ class PlayerActivity : FragmentActivity() {
         container.offline.pause()
         // A cast carries on while the app is in the background; downloads keep waiting while a TV plays.
         container.tvCasting.watch()
+        // Before the tools' own Back (the guide, the lock), so they come first.
+        onBackPressedDispatcher.addCallback(this, mini.back)
         buildViews()
         hideSystemBars(window)
         // Nothing to show if the channel can't be read: log it and close rather than sit on a black screen.
@@ -793,6 +809,7 @@ class PlayerActivity : FragmentActivity() {
         newConfig: Configuration,
     ) {
         super.onPictureInPictureModeChanged(isInPictureInPictureMode, newConfig)
+        mini.onPictureInPicture(isInPictureInPictureMode)
         playerView.useController = !isInPictureInPictureMode && !tools.locked
         recorder.hideMark(isInPictureInPictureMode)
         jumpToLive.hide(isInPictureInPictureMode)
@@ -862,13 +879,15 @@ class PlayerActivity : FragmentActivity() {
         cast?.release(leaving = isFinishing)
         reconnect.stop()
         background.release()
+        mini.release()
         session.release()
         // The stream closes before downloads carry on, so the provider never sees two connections.
         player?.release()
         player = null
         container.account.noStreamSince = System.currentTimeMillis()
         container.playerOpen.value = false
-        container.appScope.launch { container.offline.start() }
+        // Closed for the next pick from the mini player: that opens now, so downloads keep waiting.
+        if (!MiniPlayer.handingOver) container.appScope.launch { container.offline.start() }
         super.onDestroy()
     }
 
@@ -902,7 +921,7 @@ class PlayerActivity : FragmentActivity() {
             context: Context,
             itemId: Long,
         ) {
-            context.startActivity(intent(context, itemId))
+            MiniPlayer.open(context, intent(context, itemId))
         }
 
         /** A recording of a live channel ([com.tunedplayer.app.data.Recordings]), from the device. */
@@ -910,7 +929,7 @@ class PlayerActivity : FragmentActivity() {
             context: Context,
             id: Long,
         ) {
-            context.startActivity(Intent(context, PlayerActivity::class.java).putExtra(EXTRA_RECORDING, id))
+            MiniPlayer.open(context, Intent(context, PlayerActivity::class.java).putExtra(EXTRA_RECORDING, id))
         }
 
         /** Catch-up: the recording of [title] on channel [itemId], from [from] to [until]. */
@@ -921,7 +940,8 @@ class PlayerActivity : FragmentActivity() {
             from: Long,
             until: Long,
         ) {
-            context.startActivity(
+            MiniPlayer.open(
+                context,
                 intent(context, itemId).putExtra(EXTRA_FROM, from).putExtra(EXTRA_UNTIL, until).putExtra(EXTRA_TITLE, title),
             )
         }
@@ -937,7 +957,7 @@ class PlayerActivity : FragmentActivity() {
             context: Context,
             query: String,
         ) {
-            context.startActivity(tuneIntent(context, query))
+            MiniPlayer.open(context, tuneIntent(context, query))
         }
     }
 }
