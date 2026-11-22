@@ -106,10 +106,41 @@ function settingValue(settings, s) {
     return s.default;
 }
 
+/** A profile as the channels page manages favourites and lists for it. */
+function profileView(p) {
+    return {
+        id: p.id,
+        name: String(p.name ?? "You"),
+        favourites: (p.favourites ?? []).map((f) => f.itemId).filter((id) => Number.isFinite(id)),
+        lists: (p.lists ?? []).map((l) => ({
+            id: l.id,
+            name: String(l.name ?? ""),
+            items: (l.items ?? []).map((i) => i.itemId).filter((id) => Number.isFinite(id)),
+        })),
+    };
+}
+
 /** Everything the page shows: the playlists, the settings with their values, and when a refresh was last asked for. */
 export function libraryView(stored) {
     const copy = stored?.copy ?? {};
     const refresh = copy.settings?.[REFRESH_KEY]?.l;
+    let profiles = Array.isArray(copy.profiles) ? copy.profiles.map(profileView) : [];
+    // Older copies kept favourites and lists at the top level; the channels page still shows them as one profile.
+    if (!profiles.length && (copy.favourites?.length || copy.lists?.length)) {
+        profiles = [
+            profileView({
+                id: 1,
+                name: "You",
+                favourites: copy.favourites,
+                lists: copy.lists,
+            }),
+        ];
+    }
+    const edits = {};
+    for (const e of copy.channelEdits ?? []) {
+        if (!Number.isFinite(e?.itemId)) continue;
+        edits[e.itemId] = { name: e.name ?? null, logo: e.logo ?? null };
+    }
     return {
         status: "ok",
         exists: Boolean(stored),
@@ -119,6 +150,8 @@ export function libraryView(stored) {
             settings: g.settings.map((s) => ({ ...s, value: settingValue(copy.settings, s) })),
         })),
         refreshAskedAt: typeof refresh === "number" ? refresh : null,
+        profiles,
+        channelEdits: edits,
     };
 }
 
@@ -316,8 +349,175 @@ export function applyChange(stored, change, now = Date.now()) {
             copy.settings = { ...(copy.settings ?? {}), [REFRESH_KEY]: { l: now } };
             break;
         }
+        case "channel_edit": {
+            const edited = applyChannelEdit(copy, change);
+            if (edited.error) return edited;
+            break;
+        }
+        case "favourite": {
+            const fav = applyFavourite(copy, change, now);
+            if (fav.error) return fav;
+            break;
+        }
+        case "list_add": {
+            const added = applyListAdd(copy, change, now);
+            if (added.error) return added;
+            break;
+        }
+        case "list_rename": {
+            const renamed = applyListRename(copy, change);
+            if (renamed.error) return renamed;
+            break;
+        }
+        case "list_delete": {
+            const deleted = applyListDelete(copy, change);
+            if (deleted.error) return deleted;
+            break;
+        }
+        case "list_item": {
+            const item = applyListItem(copy, change, now);
+            if (item.error) return item;
+            break;
+        }
         default:
             return { error: "bad request" };
     }
     return { stored: { fingerprint: `web-${randomBytes(12).toString("hex")}`, changedAt: now, copy } };
+}
+
+const MAX_NAME = 60;
+const itemIdOf = (v) => (Number.isFinite(Number(v)) && Number(v) > 0 ? Math.trunc(Number(v)) : null);
+const trimName = (v) =>
+    String(v ?? "")
+        .trim()
+        .slice(0, MAX_NAME);
+
+/** The profile [change.profileId] lives on, creating a default one when the backup has none yet. */
+function ensureProfile(copy, profileId, now) {
+    if (!Array.isArray(copy.profiles)) copy.profiles = [];
+    if (!copy.profiles.length) {
+        copy.profiles.push({
+            id: 1,
+            name: "You",
+            colour: 0,
+            kids: false,
+            createdAt: now,
+            favourites: Array.isArray(copy.favourites) ? copy.favourites : [],
+            lists: Array.isArray(copy.lists) ? copy.lists : [],
+        });
+        delete copy.favourites;
+        delete copy.lists;
+        delete copy.partial;
+    }
+    const id = itemIdOf(profileId) ?? copy.profiles[0].id;
+    const profile = copy.profiles.find((p) => p.id === id);
+    if (!profile) return { error: "gone" };
+    if (!Array.isArray(profile.favourites)) profile.favourites = [];
+    if (!Array.isArray(profile.lists)) profile.lists = [];
+    return { profile };
+}
+
+/** Rename and/or change logo for one channel (docs/decisions/lists.md); blank clears that side. */
+function applyChannelEdit(copy, change) {
+    const itemId = itemIdOf(change.itemId);
+    if (!itemId) return { error: "bad request" };
+    if (!("name" in change) && !("logo" in change)) return { error: "bad request" };
+    const name = "name" in change ? (change.name == null || change.name === "" ? null : trimName(change.name) || null) : undefined;
+    const logo =
+        "logo" in change
+            ? change.logo == null || change.logo === ""
+                ? null
+                : String(change.logo).trim().slice(0, MAX_TEXT) || null
+            : undefined;
+    if (name !== undefined && name !== null && !name) return { error: "bad request", field: "name" };
+    if (logo !== undefined && logo !== null && !/^https?:\/\//i.test(logo)) return { error: "bad logo", field: "logo" };
+    const edits = Array.isArray(copy.channelEdits) ? [...copy.channelEdits] : [];
+    const at = edits.findIndex((e) => e.itemId === itemId);
+    const prev = at >= 0 ? edits[at] : { itemId, name: null, logo: null };
+    const next = {
+        itemId,
+        name: name !== undefined ? name : (prev.name ?? null),
+        logo: logo !== undefined ? logo : (prev.logo ?? null),
+    };
+    if (!next.name && !next.logo) {
+        copy.channelEdits = edits.filter((e) => e.itemId !== itemId);
+    } else if (at >= 0) {
+        edits[at] = next;
+        copy.channelEdits = edits;
+    } else {
+        copy.channelEdits = [...edits, next];
+    }
+    delete copy.partial;
+    return {};
+}
+
+function applyFavourite(copy, change, now) {
+    const itemId = itemIdOf(change.itemId);
+    if (!itemId || typeof change.on !== "boolean") return { error: "bad request" };
+    const found = ensureProfile(copy, change.profileId, now);
+    if (found.error) return found;
+    const { profile } = found;
+    const rest = profile.favourites.filter((f) => f.itemId !== itemId);
+    if (change.on) {
+        const position = rest.reduce((m, f) => Math.max(m, f.position ?? 0), 0) + 1;
+        profile.favourites = [...rest, { itemId, addedAt: now, position }].sort((a, b) => a.itemId - b.itemId);
+    } else {
+        profile.favourites = rest;
+    }
+    return {};
+}
+
+function applyListAdd(copy, change, now) {
+    const name = trimName(change.name);
+    if (!name) return { error: "bad request", field: "name" };
+    const found = ensureProfile(copy, change.profileId, now);
+    if (found.error) return found;
+    const { profile } = found;
+    if (profile.lists.length >= 50) return { error: "too many lists" };
+    const id = Number(BigInt("0x" + randomBytes(7).toString("hex")) % BigInt(Number.MAX_SAFE_INTEGER - 1)) + 1;
+    const position = profile.lists.reduce((m, l) => Math.max(m, l.position ?? 0), 0) + 1;
+    profile.lists = [...profile.lists, { id, name, position, createdAt: now, items: [] }];
+    return {};
+}
+
+function applyListRename(copy, change) {
+    const listId = itemIdOf(change.listId);
+    const name = trimName(change.name);
+    if (!listId || !name) return { error: "bad request", field: "name" };
+    const found = ensureProfile(copy, change.profileId, Date.now());
+    if (found.error) return found;
+    const list = found.profile.lists.find((l) => l.id === listId);
+    if (!list) return { error: "gone" };
+    list.name = name;
+    return {};
+}
+
+function applyListDelete(copy, change) {
+    const listId = itemIdOf(change.listId);
+    if (!listId) return { error: "bad request" };
+    const found = ensureProfile(copy, change.profileId, Date.now());
+    if (found.error) return found;
+    const before = found.profile.lists.length;
+    found.profile.lists = found.profile.lists.filter((l) => l.id !== listId);
+    if (found.profile.lists.length === before) return { error: "gone" };
+    return {};
+}
+
+function applyListItem(copy, change, now) {
+    const listId = itemIdOf(change.listId);
+    const itemId = itemIdOf(change.itemId);
+    if (!listId || !itemId || typeof change.on !== "boolean") return { error: "bad request" };
+    const found = ensureProfile(copy, change.profileId, now);
+    if (found.error) return found;
+    const list = found.profile.lists.find((l) => l.id === listId);
+    if (!list) return { error: "gone" };
+    if (!Array.isArray(list.items)) list.items = [];
+    const rest = list.items.filter((i) => i.itemId !== itemId);
+    if (change.on) {
+        const position = rest.reduce((m, i) => Math.max(m, i.position ?? 0), 0) + 1;
+        list.items = [...rest, { itemId, addedAt: now, position }].sort((a, b) => a.itemId - b.itemId);
+    } else {
+        list.items = rest;
+    }
+    return {};
 }

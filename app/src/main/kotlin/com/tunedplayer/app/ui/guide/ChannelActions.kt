@@ -26,8 +26,8 @@ import com.tunedplayer.app.ui.common.isTelevision
 /**
  * What a channel's long-press menu holds, as buttons at the top of its page (Melvin, 2026-11-19: "Optimize TV for remotes,
  * avoid 3 dot drop downs"). Holding OK on a remote is something few people find, so every channel's page shows them in
- * sight; a long press in the list stays as a shortcut on phones. Android TV leaves Rename channel out
- * (docs/decisions/tv.md).
+ * sight; a long press in the list stays as a shortcut on phones. Android TV leaves Rename channel and Change logo out
+ * (docs/decisions/tv.md); favourites and Add to list stay.
  */
 @Composable
 internal fun ChannelActions(
@@ -36,15 +36,16 @@ internal fun ChannelActions(
 ) {
     val lists = rememberListPicker()
     val edits = rememberChannelEditPicker()
+    val onPhone = !isTelevision()
     FlowRow(
         modifier.fillMaxWidth().padding(PaddingValues(horizontal = 16.dp, vertical = 8.dp)),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         Action(Icons.AutoMirrored.Filled.PlaylistAdd, stringResource(R.string.list_add)) { lists.open(channelId) }
-        if (!isTelevision()) {
+        if (onPhone) {
             Action(Icons.Filled.DriveFileRenameOutline, stringResource(R.string.channel_rename)) { edits.rename(channelId) }
+            Action(Icons.Filled.Image, stringResource(R.string.channel_change_logo)) { edits.changeLogo(channelId) }
         }
-        Action(Icons.Filled.Image, stringResource(R.string.channel_change_logo)) { edits.changeLogo(channelId) }
     }
 }
 

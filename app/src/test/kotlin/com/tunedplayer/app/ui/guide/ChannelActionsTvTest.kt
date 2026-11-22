@@ -15,7 +15,7 @@ import org.robolectric.annotation.Config
 import kotlin.test.assertFalse
 import kotlin.test.assertNull
 
-/** Android TV never offers or opens channel renaming (Melvin, 2026-11-22). */
+/** Android TV never offers or opens channel rename or logo change (Melvin, 2026-11-22). */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [35], qualifiers = "w960dp-h540dp-land-television-xhdpi")
 class ChannelActionsTvTest {
@@ -23,27 +23,29 @@ class ChannelActionsTvTest {
     private val context = ApplicationProvider.getApplicationContext<android.content.Context>()
 
     @Test
-    fun channelPageLeavesOutRenameButKeepsAddToListAndChangeLogo() {
+    fun channelPageLeavesOutRenameAndChangeLogoButKeepsAddToList() {
         compose.setContent { MaterialTheme { ChannelActions(channelId = 1) } }
 
         compose.onNodeWithText(context.getString(R.string.channel_rename)).assertDoesNotExist()
+        compose.onNodeWithText(context.getString(R.string.channel_change_logo)).assertDoesNotExist()
         compose.onNodeWithText(context.getString(R.string.list_add)).assertIsDisplayed()
-        compose.onNodeWithText(context.getString(R.string.channel_change_logo)).assertIsDisplayed()
     }
 
     @Test
-    fun renamePickerRefusesTheActionDefensively() {
+    fun renameAndLogoPickersRefuseTheActionDefensively() {
         var openedPremium = false
-        val picker = ChannelEditPicker({ false }, { false }, { openedPremium = true })
+        val picker = ChannelEditPicker({ false }, { false }, { false }, { openedPremium = true })
 
         picker.rename(1)
+        picker.changeLogo(1)
 
         assertNull(picker.renaming)
+        assertNull(picker.changingLogo)
         assertFalse(openedPremium)
     }
 }
 
-/** Phones and tablets retain channel renaming. */
+/** Phones and tablets retain channel renaming and logo changes. */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [35], qualifiers = "w411dp-h891dp-notnight-xxhdpi")
 class ChannelActionsPhoneTest {
@@ -51,9 +53,10 @@ class ChannelActionsPhoneTest {
     private val context = ApplicationProvider.getApplicationContext<android.content.Context>()
 
     @Test
-    fun channelPageStillOffersRename() {
+    fun channelPageStillOffersRenameAndChangeLogo() {
         compose.setContent { MaterialTheme { ChannelActions(channelId = 1) } }
 
         compose.onNodeWithText(context.getString(R.string.channel_rename)).assertIsDisplayed()
+        compose.onNodeWithText(context.getString(R.string.channel_change_logo)).assertIsDisplayed()
     }
 }

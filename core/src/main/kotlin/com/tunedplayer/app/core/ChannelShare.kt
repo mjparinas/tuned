@@ -9,12 +9,14 @@ import java.security.MessageDigest
  * shares its list" so the page works with providers that don't let web pages read them. The page opens a channel in VLC
  * or another player, which connects to the provider itself: only this list goes through Tuned, never a stream.
  *
- * The copy is JSON, kept small: each channel is `[name, group, logo, guide id, number, link, country, adult]` and
+ * The copy is JSON, kept small: each channel is `[name, group, logo, guide id, number, link, country, adult, id]` and
  * each programme `[start, stop, title, kind]` in epoch seconds, by guide id. The country is the app's own tag for the
  * channel ([Regions], "" when it has none), adult is 1 or 0 and kind is [ProgrammeGenre.code], so the website filters
- * as Live TV does (Melvin, 2026-11-21: the page is "basically the epg clone of the app"). The last two of each were
- * added later: a reader takes a shorter row as having none. A link's login is replaced by `{login}`, `{user}` and `{pass}`,
- * which the page fills in from the playlist's login in the account, so the list itself carries no password.
+ * as Live TV does (Melvin, 2026-11-21: the page is "basically the epg clone of the app"). The id is the channel's stable
+ * Room id, so the website can rename it, change its logo and favourite it into the account backup (Melvin, 2026-11-22).
+ * Country, adult and id were added later: a reader takes a shorter row as having none. A link's login is replaced by
+ * `{login}`, `{user}` and `{pass}`, which the page fills in from the playlist's login in the account, so the list itself
+ * carries no password.
  */
 object ChannelShare {
     /** The guide from an hour ago, so what's on now has its start, to [GUIDE_AFTER_MS] ahead. */
@@ -25,7 +27,7 @@ object ChannelShare {
     const val GUIDE_SHORT_MS = 12 * 60 * 60_000L
 
     /** Goes up when the copy gains fields, so an app that updates sends the fuller copy at once. */
-    private const val FORMAT = 2
+    private const val FORMAT = 3
 
     /** Sent again at least this often, so the website's guide stays ahead of the clock. */
     const val REFRESH_MS = 6 * 60 * 60_000L
@@ -42,6 +44,8 @@ object ChannelShare {
         val url: String,
         val region: String? = null,
         val adult: Boolean = false,
+        /** The channel's stable id in the app's database; 0 when an older sender left it out. */
+        val id: Long = 0,
     )
 
     data class Show(
@@ -105,6 +109,8 @@ object ChannelShare {
             append(FORMAT).append('\n').append(playlistId)
             for (c in channels) {
                 append('\n')
+                    .append(c.id)
+                    .append('\t')
                     .append(c.name)
                     .append('\t')
                     .append(c.group)
@@ -173,7 +179,9 @@ object ChannelShare {
                 .append(str(c.url))
                 .append(',')
                 .append(str(c.region.orEmpty()))
-                .append(if (c.adult) ",1]" else ",0]")
+                .append(if (c.adult) ",1," else ",0,")
+                .append(c.id.toString())
+                .append(']')
         }
         out.append("],\"guide\":{")
     }

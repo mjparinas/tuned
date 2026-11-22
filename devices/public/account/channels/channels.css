@@ -479,3 +479,25 @@
 .toast[hidden] {
     display: none;
 }
+
+/* Manage lists on the channels page (docs/decisions/lists.md). */
+#lists .row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--hairline);
+}
+#lists .row:last-child {
+    border-bottom: 0;
+}
+#lists .row > div:first-child {
+    min-width: 0;
+}
+.edit-form .field {
+    margin: 12px 0;
+}
+.edit-form input {
+    width: 100%;
+}
