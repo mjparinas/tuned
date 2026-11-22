@@ -171,6 +171,7 @@ private val KNOWN_KEYS =
         "hide_placeholders",
         "hide_247",
         "picture_in_picture",
+        "mini_player",
         "background_play",
         "media_buttons",
         "player_gestures",

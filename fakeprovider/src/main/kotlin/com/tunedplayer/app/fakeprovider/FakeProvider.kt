@@ -53,6 +53,9 @@ object FakeProvider {
     /** The most stream connections that were open at the same moment since [reset]. */
     val mostOpenAtOnce: Int get() = most.get()
 
+    /** Stream connections open right now. */
+    val openNow: Int get() = open.get()
+
     @Synchronized
     fun start() {
         if (server != null) return
