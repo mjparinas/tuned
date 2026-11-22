@@ -14,10 +14,16 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.GridItemSpan
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -30,6 +36,7 @@ import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.PrimaryScrollableTabRow
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -42,6 +49,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
@@ -59,14 +67,18 @@ import com.tunedplayer.app.core.Episodes
 import com.tunedplayer.app.core.Titles
 import com.tunedplayer.app.data.CastMember
 import com.tunedplayer.app.data.EpisodeInfo
+import com.tunedplayer.app.data.Metadata
 import com.tunedplayer.app.data.db.HistoryEntity
 import com.tunedplayer.app.data.db.ItemEntity
 import com.tunedplayer.app.data.db.SeenEpisodeEntity
 import com.tunedplayer.app.diagnostics.launchSafely
 import com.tunedplayer.app.ui.common.BackTopBar
+import com.tunedplayer.app.ui.common.StartFocus
 import com.tunedplayer.app.ui.common.focusRing
+import com.tunedplayer.app.ui.common.isTelevision
 import com.tunedplayer.app.ui.common.rememberStartFocus
 import com.tunedplayer.app.ui.common.startFocus
+import com.tunedplayer.app.ui.details.DetailsBackdrop
 import com.tunedplayer.app.ui.details.DetailsBody
 import com.tunedplayer.app.ui.details.DetailsViewModel
 import com.tunedplayer.app.ui.details.MetaLine
@@ -175,77 +187,331 @@ fun ShowScreen(
     val seasonEpisodes = if (tmdbId != null && season != null) episodeInfo[seasonKey(tmdbId, season)] else null
 
     val start = rememberStartFocus()
-    Scaffold(topBar = { BackTopBar(Titles.display(title), onBack) }) { padding ->
-        Column(Modifier.padding(padding).fillMaxSize()) {
-            if (seasons.size > 1) {
-                PrimaryScrollableTabRow(selectedTabIndex = selected.coerceIn(0, seasons.size - 1), edgePadding = 12.dp) {
-                    seasons.forEachIndexed { index, s ->
-                        Tab(
-                            selected = index == selected,
-                            onClick = { selected = index },
-                            // On a TV the remote starts on the season showing, one press from its episodes.
-                            modifier = if (index == selected) Modifier.startFocus(start) else Modifier,
-                            text = { Text(stringResource(R.string.season, s)) },
-                        )
-                    }
-                }
-            }
-            LazyColumn(contentPadding = PaddingValues(vertical = 8.dp)) {
-                item(key = "details") {
-                    Column(Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
-                        metadata?.backdrop?.let { image ->
-                            AsyncImage(
-                                model = image,
-                                contentDescription = null,
-                                contentScale = ContentScale.Crop,
-                                modifier = Modifier.fillMaxWidth().aspectRatio(16f / 9f).clip(RoundedCornerShape(12.dp)),
-                            )
-                            Spacer(Modifier.height(12.dp))
-                        }
-                        MetaLine(metadata)
-                        Spacer(Modifier.height(12.dp))
-                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            metadata?.trailer?.let { TrailerButton(it) }
-                            WatchLaterButton(LibraryViewModel.show(showKey, title, metadata?.poster ?: episodes.firstOrNull()?.logo))
-                        }
-                        Spacer(Modifier.height(12.dp))
-                        DetailsBody(metadata, hasKey, onOpenPerson = onOpenPerson)
-                    }
-                }
-                val shown = episodes.filter { season == null || (it.season ?: 1) == season }
-                item(key = "season-actions") {
-                    val allWatched = shown.isNotEmpty() && shown.all { progress[it.id].isWatched() }
-                    // A flow row: when both buttons don't fit side by side, the second goes on its own line
-                    // instead of squeezing to one letter per line.
-                    FlowRow(
-                        Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalArrangement = Arrangement.spacedBy(4.dp),
-                    ) {
-                        SeasonDownloadButton(shown)
-                        if (shown.isNotEmpty()) {
-                            TextButton(onClick = { library.setWatched(shown.map { it.id }, !allWatched) }) {
-                                Text(
-                                    stringResource(if (allWatched) R.string.mark_season_unwatched else R.string.mark_season_watched),
-                                    maxLines = 1,
-                                )
-                            }
-                        }
-                    }
-                }
-                items(shown, key = { it.id }) { ep ->
-                    EpisodeRow(
-                        ep,
-                        seasonEpisodes?.get(ep.episode ?: 1),
-                        progress[ep.id],
-                        isNew = ep.id in fresh,
-                        onClick = { onPlay(ep.id) },
-                        onToggleWatched = { done -> library.setWatched(listOf(ep.id), done) },
-                        // With one season, the remote starts on its first episode.
-                        modifier = if (seasons.size <= 1 && ep.id == shown.first().id) Modifier.startFocus(start) else Modifier,
+    val tv = isTelevision()
+    if (tv) {
+        TvShowPage(
+            seasons = seasons,
+            selected = selected,
+            onSelectSeason = { selected = it },
+            episodes = episodes,
+            season = season,
+            seasonEpisodes = seasonEpisodes,
+            progress = progress,
+            fresh = fresh,
+            metadata = metadata,
+            hasKey = hasKey,
+            showKey = showKey,
+            title = title,
+            onPlay = onPlay,
+            onBack = onBack,
+            onOpenPerson = onOpenPerson,
+            onToggleWatched = { ids, done -> library.setWatched(ids, done) },
+            start = start,
+        )
+    } else {
+        Scaffold(topBar = { BackTopBar(Titles.display(title), onBack) }) { padding ->
+            PhoneShowDetails(
+                seasons = seasons,
+                selected = selected,
+                onSelectSeason = { selected = it },
+                episodes = episodes,
+                season = season,
+                seasonEpisodes = seasonEpisodes,
+                progress = progress,
+                fresh = fresh,
+                metadata = metadata,
+                hasKey = hasKey,
+                showKey = showKey,
+                title = title,
+                onPlay = onPlay,
+                onOpenPerson = onOpenPerson,
+                onToggleWatched = { ids, done -> library.setWatched(ids, done) },
+                start = start,
+                modifier = Modifier.padding(padding),
+            )
+        }
+    }
+}
+
+@Composable
+private fun PhoneShowDetails(
+    seasons: List<Int>,
+    selected: Int,
+    onSelectSeason: (Int) -> Unit,
+    episodes: List<ItemEntity>,
+    season: Int?,
+    seasonEpisodes: Map<Int, EpisodeInfo>?,
+    progress: Map<Long, HistoryEntity>,
+    fresh: Set<Long>,
+    metadata: Metadata?,
+    hasKey: Boolean,
+    showKey: String,
+    title: String,
+    onPlay: (Long) -> Unit,
+    onOpenPerson: (CastMember) -> Unit,
+    onToggleWatched: (List<Long>, Boolean) -> Unit,
+    start: StartFocus,
+    modifier: Modifier = Modifier,
+) {
+    Column(modifier.fillMaxSize()) {
+        if (seasons.size > 1) {
+            PrimaryScrollableTabRow(selectedTabIndex = selected.coerceIn(0, seasons.size - 1), edgePadding = 12.dp) {
+                seasons.forEachIndexed { index, s ->
+                    Tab(
+                        selected = index == selected,
+                        onClick = { onSelectSeason(index) },
+                        // On a TV the remote starts on the season showing, one press from its episodes.
+                        modifier = if (index == selected) Modifier.startFocus(start) else Modifier,
+                        text = { Text(stringResource(R.string.season, s)) },
                     )
                 }
             }
+        }
+        LazyColumn(contentPadding = PaddingValues(vertical = 8.dp)) {
+            item(key = "details") {
+                Column(Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
+                    metadata?.backdrop?.let { image ->
+                        AsyncImage(
+                            model = image,
+                            contentDescription = null,
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier.fillMaxWidth().aspectRatio(16f / 9f).clip(RoundedCornerShape(12.dp)),
+                        )
+                        Spacer(Modifier.height(12.dp))
+                    }
+                    MetaLine(metadata)
+                    Spacer(Modifier.height(12.dp))
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        metadata?.trailer?.let { TrailerButton(it) }
+                        WatchLaterButton(LibraryViewModel.show(showKey, title, metadata?.poster ?: episodes.firstOrNull()?.logo))
+                    }
+                    Spacer(Modifier.height(12.dp))
+                    DetailsBody(metadata, hasKey, onOpenPerson = onOpenPerson)
+                }
+            }
+            val shown = episodes.filter { season == null || (it.season ?: 1) == season }
+            item(key = "season-actions") {
+                SeasonActions(shown, progress, onToggleWatched, Modifier.padding(horizontal = 16.dp, vertical = 4.dp))
+            }
+            items(shown, key = { it.id }) { ep ->
+                EpisodeRow(
+                    ep,
+                    seasonEpisodes?.get(ep.episode ?: 1),
+                    progress[ep.id],
+                    isNew = ep.id in fresh,
+                    onClick = { onPlay(ep.id) },
+                    onToggleWatched = { done -> onToggleWatched(listOf(ep.id), done) },
+                    // With one season, the remote starts on its first episode.
+                    modifier = if (seasons.size <= 1 && ep.id == shown.first().id) Modifier.startFocus(start) else Modifier,
+                )
+            }
+        }
+    }
+}
+
+/**
+ * A TV show uses the whole screen like a film: cinematic hero, then full-width season tabs, then a grid of episode
+ * screenshots. Melvin, 2026-11-22: no right-hand slide-out; seasons take the full width and switch the episode grid.
+ */
+@Composable
+private fun TvShowPage(
+    seasons: List<Int>,
+    selected: Int,
+    onSelectSeason: (Int) -> Unit,
+    episodes: List<ItemEntity>,
+    season: Int?,
+    seasonEpisodes: Map<Int, EpisodeInfo>?,
+    progress: Map<Long, HistoryEntity>,
+    fresh: Set<Long>,
+    metadata: Metadata?,
+    hasKey: Boolean,
+    showKey: String,
+    title: String,
+    onPlay: (Long) -> Unit,
+    onBack: () -> Unit,
+    onOpenPerson: (CastMember) -> Unit,
+    onToggleWatched: (List<Long>, Boolean) -> Unit,
+    start: StartFocus,
+) {
+    val shown = episodes.filter { season == null || (it.season ?: 1) == season }
+    val poster = metadata?.poster ?: episodes.firstOrNull()?.logo
+    Surface(color = MaterialTheme.colorScheme.background, modifier = Modifier.fillMaxSize()) {
+        LazyVerticalGrid(
+            columns = GridCells.Adaptive(TV_EPISODE_CARD_WIDTH),
+            contentPadding = PaddingValues(start = 14.dp, end = 14.dp, bottom = 16.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+            modifier = Modifier.fillMaxSize().navigationBarsPadding(),
+        ) {
+            // Hero, season tabs and season actions stay one column so the film-style overlap works, then the grid
+            // of episode cards begins.
+            item(key = "header", span = { GridItemSpan(maxLineSpan) }) {
+                Column(Modifier.fillMaxWidth()) {
+                    DetailsBackdrop(metadata?.backdrop ?: metadata?.poster ?: poster, onBack)
+                    Row(Modifier.padding(horizontal = 20.dp).offset(y = (-72).dp)) {
+                        AsyncImage(
+                            model = poster,
+                            contentDescription = null,
+                            contentScale = ContentScale.Crop,
+                            modifier =
+                                Modifier
+                                    .width(112.dp)
+                                    .aspectRatio(2f / 3f)
+                                    .shadow(12.dp, RoundedCornerShape(12.dp))
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .background(MaterialTheme.colorScheme.surfaceContainerHigh),
+                        )
+                        Spacer(Modifier.width(16.dp))
+                        Column(Modifier.padding(top = 56.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                            Text(
+                                metadata?.title ?: Titles.display(title),
+                                style = MaterialTheme.typography.headlineSmall,
+                                fontWeight = FontWeight.Bold,
+                                maxLines = 3,
+                                overflow = TextOverflow.Ellipsis,
+                            )
+                            MetaLine(metadata)
+                        }
+                    }
+                    Column(
+                        Modifier.padding(horizontal = 20.dp).offset(y = (-56).dp),
+                        verticalArrangement = Arrangement.spacedBy(16.dp),
+                    ) {
+                        FlowRow(
+                            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp),
+                            itemVerticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            metadata?.trailer?.let { TrailerButton(it) }
+                            WatchLaterButton(LibraryViewModel.show(showKey, title, poster))
+                        }
+                        DetailsBody(metadata, hasKey, onOpenPerson = onOpenPerson)
+                        if (seasons.size > 1) {
+                            PrimaryScrollableTabRow(
+                                selectedTabIndex = selected.coerceIn(0, seasons.size - 1),
+                                edgePadding = 0.dp,
+                                modifier = Modifier.fillMaxWidth(),
+                            ) {
+                                seasons.forEachIndexed { index, number ->
+                                    Tab(
+                                        selected = index == selected,
+                                        onClick = { onSelectSeason(index) },
+                                        // The remote opens on the season showing, then Down reaches its episode grid.
+                                        modifier = if (index == selected) Modifier.startFocus(start) else Modifier,
+                                        text = { Text(stringResource(R.string.season, number)) },
+                                    )
+                                }
+                            }
+                        }
+                        SeasonActions(shown, progress, onToggleWatched)
+                    }
+                }
+            }
+            items(shown, key = { it.id }) { episode ->
+                TvEpisodeCard(
+                    episode = episode,
+                    info = seasonEpisodes?.get(episode.episode ?: 1),
+                    history = progress[episode.id],
+                    isNew = episode.id in fresh,
+                    onClick = { onPlay(episode.id) },
+                    onToggleWatched = { done -> onToggleWatched(listOf(episode.id), done) },
+                    modifier =
+                        if (seasons.size <= 1 && episode.id == shown.firstOrNull()?.id) {
+                            Modifier.startFocus(start)
+                        } else {
+                            Modifier
+                        },
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun SeasonActions(
+    shown: List<ItemEntity>,
+    progress: Map<Long, HistoryEntity>,
+    onToggleWatched: (List<Long>, Boolean) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val allWatched = shown.isNotEmpty() && shown.all { progress[it.id].isWatched() }
+    FlowRow(
+        modifier,
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalArrangement = Arrangement.spacedBy(4.dp),
+        itemVerticalAlignment = Alignment.CenterVertically,
+    ) {
+        SeasonDownloadButton(shown)
+        if (shown.isNotEmpty()) {
+            TextButton(onClick = { onToggleWatched(shown.map { it.id }, !allWatched) }) {
+                Text(
+                    stringResource(if (allWatched) R.string.mark_season_unwatched else R.string.mark_season_watched),
+                    maxLines = 1,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun TvEpisodeCard(
+    episode: ItemEntity,
+    info: EpisodeInfo?,
+    history: HistoryEntity?,
+    isNew: Boolean,
+    onClick: () -> Unit,
+    onToggleWatched: (Boolean) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val watched = history.isWatched()
+    Column(
+        modifier
+            .clip(RoundedCornerShape(10.dp))
+            .focusRing(RoundedCornerShape(10.dp), MaterialTheme.colorScheme.primary)
+            .clickable(onClick = onClick)
+            .background(MaterialTheme.colorScheme.surfaceContainer)
+            .padding(6.dp),
+    ) {
+        EpisodeStill(
+            still = info?.still ?: episode.logo,
+            started = history.takeIf { !watched },
+            modifier = Modifier.fillMaxWidth(),
+        )
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Column(Modifier.weight(1f).padding(start = 4.dp, top = 6.dp, bottom = 6.dp)) {
+                val number = episode.episode ?: 1
+                val name = info?.name ?: Episodes.title(episode.name)?.let(Titles::display)
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        stringResource(R.string.episode_label, number),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    if (isNew) {
+                        Text(
+                            stringResource(R.string.episode_new),
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.padding(start = 8.dp),
+                        )
+                    }
+                }
+                Text(
+                    name ?: stringResource(R.string.episode_label, number),
+                    style = MaterialTheme.typography.bodyMedium,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+            IconButton(onClick = { onToggleWatched(!watched) }) {
+                Icon(
+                    if (watched) Icons.Filled.CheckCircle else Icons.Outlined.CheckCircle,
+                    contentDescription = stringResource(if (watched) R.string.mark_unwatched else R.string.mark_watched),
+                    tint = if (watched) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.outline,
+                )
+            }
+            DownloadButton(episode)
         }
     }
 }
@@ -277,7 +543,7 @@ private fun EpisodeRow(
                 tint = if (watched) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.outline,
             )
         }
-        EpisodeStill(info?.still, history.takeIf { !watched })
+        EpisodeStill(info?.still ?: episode.logo, history.takeIf { !watched })
         Spacer(Modifier.width(12.dp))
         Column(Modifier.weight(1f)) {
             val number = episode.episode ?: 1
@@ -339,10 +605,10 @@ private fun EpisodeRow(
 private fun EpisodeStill(
     still: String?,
     started: HistoryEntity?,
+    modifier: Modifier = Modifier.width(STILL_WIDTH),
 ) {
     Box(
-        Modifier
-            .width(STILL_WIDTH)
+        modifier
             .aspectRatio(16f / 9f)
             .clip(RoundedCornerShape(8.dp))
             .background(MaterialTheme.colorScheme.surfaceContainerHigh),
@@ -363,6 +629,7 @@ private fun EpisodeStill(
 }
 
 private val STILL_WIDTH = 112.dp
+private val TV_EPISODE_CARD_WIDTH = 210.dp
 
 private fun seasonKey(
     tmdbId: Long,

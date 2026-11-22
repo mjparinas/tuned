@@ -177,6 +177,7 @@ fun HomeScreen(
     val rail = tv || ScreenLayout.rail(widthDp)
     val panes = ScreenLayout.panes(widthDp)
     // On a wide screen a film, show or guide opens beside the list; on anything narrower it opens full screen.
+    // A TV show is the exception: its cinematic page needs the whole width for seasons and episode thumbnails.
     var detail by rememberSaveable(stateSaver = Detail.saver) { mutableStateOf<Detail?>(null) }
     // Home is up: background work may start a moment later (docs/decisions/speed.md › Quiet start).
     LaunchedEffect(Unit) { vm.homeShown() }
@@ -201,7 +202,9 @@ fun HomeScreen(
         focusReturn += 1
     }
     BackHandler(enabled = detail != null, onBack = closeDetail)
-    val openShow: (String, String) -> Unit = if (panes) { key, title -> detail = Detail.show(key, title) } else onOpenShow
+    // Melvin, 2026-11-22: no right-hand slide-out for a TV show; open full screen like a film's cinematic page.
+    val openShow: (String, String) -> Unit =
+        if (panes && !tv) { key, title -> detail = Detail.show(key, title) } else onOpenShow
     val openMovie: (Long) -> Unit = if (panes) { id -> detail = Detail.movie(id) } else onOpenMovie
     val openGuide: (Long) -> Unit = if (panes) { id -> detail = Detail.guide(id) } else onOpenGuide
     // Downloads is a section of Home like the three tabs, so the bar stays under it; back returns to the tab before.
