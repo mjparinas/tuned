@@ -264,8 +264,10 @@ class PlayerActivity : FragmentActivity() {
         container.offline.pause()
         // A cast carries on while the app is in the background; downloads keep waiting while a TV plays.
         container.tvCasting.watch()
-        // Back on a live channel keeps it playing in a small window over the app; before the tools' own Back, so they come first.
-        MiniPlayer.Screen(this, { settings }, ::live, { cast?.casting == true }, { player }) { playerView }
+        // Back keeps regular content playing in a small window over the app; before the tools' own Back, so they come first.
+        MiniPlayer.Screen(this, { settings }, { player?.let { queue.getOrNull(it.currentMediaItemIndex) }?.id }, { cast?.casting == true }, { player }) {
+            playerView
+        }
         buildViews()
         hideSystemBars(window)
         // Nothing to show if the channel can't be read: log it and close rather than sit on a black screen.

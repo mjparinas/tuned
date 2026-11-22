@@ -29,7 +29,7 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 /**
- * The mini player (Melvin, 2026-11-21): Back on live TV keeps the channel playing in a small window while browsing,
+ * The mini player (Melvin, 2026-11-21): Back keeps live TV, films and episodes playing in a small window while browsing,
  * and "when i find something i like and click on it, it should stop the mini live tv from streaming first before it
  * streams the new show". One stream connection, ever.
  */
@@ -142,7 +142,7 @@ class MiniPlayerTest {
     fun `the player screen shows in the mini player while small and clears it when it closes`() {
         val activity = Robolectric.buildActivity(ComponentActivity::class.java, PlayerActivity.intent(context(), 7)).setup()
         val screen = activity.get()
-        MiniPlayer.Screen(screen, { AppSettings() }, { true }, { false }, { null }) { error("not drawn") }
+        MiniPlayer.Screen(screen, { AppSettings() }, { 7L }, { false }, { null }) { error("not drawn") }
         screen.onPictureInPictureModeChanged(true, Configuration(screen.resources.configuration))
         assertEquals(PlayRequest(7, null, 0, 0), MiniPlayer.showing.value)
         screen.onPictureInPictureModeChanged(false, Configuration(screen.resources.configuration))
@@ -155,15 +155,22 @@ class MiniPlayerTest {
     private fun context() = ApplicationProvider.getApplicationContext<Context>()
 
     @Test
-    fun `Back shrinks a live channel playing on this device with the app open`() {
+    fun `Back shrinks regular content playing on this device with the app open`() {
         assertTrue(shrinks())
+    }
+
+    @Test
+    fun `live channels films and episodes are regular mini player content but one-off videos are not`() {
+        assertTrue(MiniPlayer.regularContent(7L))
+        assertFalse(MiniPlayer.regularContent(CatchUpLinks.ID), "catch-up or a recording")
+        assertFalse(MiniPlayer.regularContent(null), "nothing loaded")
     }
 
     @Test
     fun `Back closes the player as before otherwise`() {
         assertFalse(shrinks(enabled = false), "the setting is off")
         assertFalse(shrinks(supported = false), "no picture-in-picture on this device")
-        assertFalse(shrinks(liveChannel = false), "a film, an episode, catch-up or a recording")
+        assertFalse(shrinks(regularContent = false), "catch-up or a recording")
         assertFalse(shrinks(casting = true), "closing the player ends the cast")
         assertFalse(shrinks(playing = false), "paused")
         assertFalse(shrinks(appOpen = false), "opened from a widget, with no lists to browse")
@@ -172,11 +179,11 @@ class MiniPlayerTest {
     private fun shrinks(
         enabled: Boolean = true,
         supported: Boolean = true,
-        liveChannel: Boolean = true,
+        regularContent: Boolean = true,
         casting: Boolean = false,
         playing: Boolean = true,
         appOpen: Boolean = true,
-    ) = MiniPlayer.shrinksOnBack(enabled, supported, liveChannel, casting, playing, appOpen)
+    ) = MiniPlayer.shrinksOnBack(enabled, supported, regularContent, casting, playing, appOpen)
 
     private companion object {
         const val HANG_UP_MS = 400L

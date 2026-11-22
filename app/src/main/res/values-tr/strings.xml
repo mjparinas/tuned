@@ -189,7 +189,7 @@
     <string name="settings_pip">Pencere içinde pencere</string>
     <string name="settings_pip_summary">Uygulamadan çıkınca küçük bir pencerede izlemeye devam et</string>
     <string name="settings_mini_player">Geri ile mini oynatıcı</string>
-    <string name="settings_mini_player_summary">Canlı kanaldan geri dönünce kanal siz gezinirken küçük bir pencerede oynamaya devam eder. Yeni bir seçim önce onu durdurur</string>
+    <string name="settings_mini_player_summary">İzlerken geri dönünce video siz gezinirken küçük bir pencerede oynamaya devam eder. Yeni bir seçim önce onu durdurur</string>
     <string name="settings_landscape">Oynatırken yataya döndür</string>
     <string name="settings_controls_timeout">Kontrolleri gizleme süresi</string>
     <string name="settings_tune">Otomatik ayar</string>

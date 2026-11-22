@@ -190,7 +190,7 @@
     <string name="settings_pip">Picture-in-picture</string>
     <string name="settings_pip_summary">Continue assistindo numa janela pequena quando sair do app</string>
     <string name="settings_mini_player">Miniplayer ao voltar</string>
-    <string name="settings_mini_player_summary">Voltar de um canal ao vivo o mantém numa janela pequena enquanto você navega. O que você escolher depois o para primeiro</string>
+    <string name="settings_mini_player_summary">Voltar durante a reprodução a mantém numa janela pequena enquanto você navega. O que você escolher depois a para primeiro</string>
     <string name="settings_landscape">Girar para paisagem ao reproduzir</string>
     <string name="settings_controls_timeout">Ocultar controles após</string>
     <string name="settings_tune">Sintonia automática</string>

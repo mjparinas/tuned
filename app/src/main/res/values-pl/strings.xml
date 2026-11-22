@@ -191,7 +191,7 @@
     <string name="settings_pip">Obraz w obrazie</string>
     <string name="settings_pip_summary">Oglądaj dalej w małym oknie po wyjściu z aplikacji</string>
     <string name="settings_mini_player">Miniodtwarzacz po cofnięciu</string>
-    <string name="settings_mini_player_summary">Cofnięcie z kanału na żywo zostawia go w małym oknie, gdy przeglądasz. Wybranie czegoś nowego najpierw go zatrzymuje</string>
+    <string name="settings_mini_player_summary">Cofnięcie podczas oglądania pozostawia materiał w małym oknie, gdy przeglądasz. Wybranie czegoś nowego najpierw go zatrzymuje</string>
     <string name="settings_landscape">Obracaj do poziomu podczas odtwarzania</string>
     <string name="settings_controls_timeout">Ukrywaj elementy sterujące po</string>
     <string name="settings_tune">Auto-strojenie</string>
