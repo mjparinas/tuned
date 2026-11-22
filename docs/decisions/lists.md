@@ -9,7 +9,7 @@
 
 ## Renaming a channel and changing its logo
 
-Melvin, 2026-11-19: "do the rename if people want it. yes it should be premium." A live channel's page has **Rename channel** and **Change logo** as buttons at the top, beside **Add to list** (Melvin, 2026-11-19: "Optimize TV for remotes, avoid 3 dot drop downs"), and its long-press menu has them too as a shortcut. Every channel row has the button to its page, guide or not, so all of this is one press away on a remote.
+Melvin, 2026-11-19: "do the rename if people want it. yes it should be premium." On phones and tablets, a live channel's page has **Rename channel** and **Change logo** as buttons at the top, beside **Add to list** (Melvin, 2026-11-19: "Optimize TV for remotes, avoid 3 dot drop downs"), and its long-press menu has them too as a shortcut. **Android TV does not allow renaming channels** (Melvin, 2026-11-22: "Don't allow renaming channels on android tv"), so it leaves Rename channel out of both places while Change logo stays. Every channel row has the button to its page, guide or not.
 
 - A new name shows everywhere at once: the lists, search, the guide, the player and the widget, because it is written over the cached channel (`channel_edits`, Room v19, and `ChannelEditor`). Search finds the provider's name as well as the new one. "Use the original name" puts the provider's back.
 - A new logo is one of the logos other copies of the channel use (the HD copy's logo for an FHD copy that has none), or a picture link. "Use the original logo" puts the provider's back.

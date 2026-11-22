@@ -41,10 +41,12 @@ import com.tunedplayer.app.diagnostics.launchSafely
 import com.tunedplayer.app.premium.Premium
 import com.tunedplayer.app.ui.common.TunedDialog
 import com.tunedplayer.app.ui.common.focusRing
+import com.tunedplayer.app.ui.common.isTelevision
 
 /** Renaming a channel or changing its logo, or the Premium screen while that's locked (docs/decisions/premium.md). */
 @Stable
 class ChannelEditPicker internal constructor(
+    private val canRename: () -> Boolean,
     private val unlocked: () -> Boolean,
     private val locked: () -> Unit,
 ) {
@@ -52,6 +54,7 @@ class ChannelEditPicker internal constructor(
     internal var changingLogo by mutableStateOf<Long?>(null)
 
     fun rename(id: Long) {
+        if (!canRename()) return
         if (unlocked()) renaming = id else locked()
     }
 
@@ -67,7 +70,8 @@ fun rememberChannelEditPicker(): ChannelEditPicker {
     val unlocked by context.container.premium.unlocked
         .collectAsStateWithLifecycle()
     val isUnlocked by rememberUpdatedState(unlocked)
-    val picker = remember { ChannelEditPicker({ isUnlocked }, { Premium.open(context) }) }
+    val renameAllowed by rememberUpdatedState(!isTelevision())
+    val picker = remember { ChannelEditPicker({ renameAllowed }, { isUnlocked }, { Premium.open(context) }) }
     picker.renaming?.let { id -> RenameChannelDialog(id) { picker.renaming = null } }
     picker.changingLogo?.let { id -> ChangeLogoDialog(id) { picker.changingLogo = null } }
     return picker
