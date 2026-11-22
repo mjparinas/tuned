@@ -555,8 +555,6 @@ private fun CategoryChips(
                 list = list,
                 selected = on,
                 onSelect = { filterFlow.value = if (on) Filter.All else Filter.OwnList(list.id) },
-                onRename = { vm.renameList(list.id, it) },
-                onDelete = { vm.deleteList(list.id) },
             )
         }
         if (kind == ContentKind.LIVE) {

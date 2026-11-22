@@ -6,6 +6,10 @@
     <string name="list_name">名称</string>
     <string name="list_save">保存</string>
     <string name="list_done">完成</string>
+    <string name="lists_manage">管理列表</string>
+    <string name="lists_manage_summary">重命名或删除你的列表</string>
+    <string name="lists_manage_empty">你还没有列表。可从频道或电影中添加。</string>
+    <string name="lists_manage_row_summary">选择以重命名</string>
     <string name="list_rename">重命名列表</string>
     <string name="list_delete">删除列表</string>
     <string name="list_delete_title">删除“%s”？</string>

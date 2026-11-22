@@ -6,6 +6,10 @@
     <string name="list_name">Название</string>
     <string name="list_save">Сохранить</string>
     <string name="list_done">Готово</string>
+    <string name="lists_manage">Управление списками</string>
+    <string name="lists_manage_summary">Переименовывайте или удаляйте свои списки</string>
+    <string name="lists_manage_empty">У вас пока нет списков. Добавьте список из канала или фильма.</string>
+    <string name="lists_manage_row_summary">Выберите, чтобы переименовать</string>
     <string name="list_rename">Переименовать список</string>
     <string name="list_delete">Удалить список</string>
     <string name="list_delete_title">Удалить «%s»?</string>
