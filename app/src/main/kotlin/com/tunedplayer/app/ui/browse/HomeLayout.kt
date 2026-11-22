@@ -65,7 +65,7 @@ internal data class Detail(
     }
 }
 
-/** What a TV's rail adds below Downloads, since a TV has no menu beside search. */
+/** What a TV's rail adds below the browse tabs, since a TV has no menu beside search. */
 internal class RailExtras(
     val onOpenSearch: () -> Unit,
     /** The profile now watching, or null with only one profile. */
@@ -76,7 +76,7 @@ internal class RailExtras(
 /** On tablets and unfolded foldables the tabs run down the left edge instead of along the bottom. */
 @Composable
 internal fun HomeRail(
-    /** The tab shown, or null while Downloads is. */
+    /** The tab shown, or null while Downloads is on a tablet. */
     selected: Int?,
     onSelect: (Int) -> Unit,
     onOpenDownloads: () -> Unit,
@@ -109,12 +109,15 @@ internal fun HomeRail(
                     label = { Text(stringResource(t.label)) },
                 )
             }
-            NavigationRailItem(
-                selected = selected == null,
-                onClick = onOpenDownloads,
-                icon = { DownloadsIcon() },
-                label = { Text(stringResource(R.string.downloads)) },
-            )
+            // Downloads are intentionally absent on Android TV; tablets keep the page in their rail.
+            if (tvExtras == null) {
+                NavigationRailItem(
+                    selected = selected == null,
+                    onClick = onOpenDownloads,
+                    icon = { DownloadsIcon() },
+                    label = { Text(stringResource(R.string.downloads)) },
+                )
+            }
             if (tvExtras != null) {
                 NavigationRailItem(
                     selected = false,
@@ -123,7 +126,7 @@ internal fun HomeRail(
                     label = { Text(stringResource(R.string.rail_search)) },
                 )
             }
-            // Settings under Downloads on tablets and TV (Melvin, 2026-11-19); phones keep it in the menu by search.
+            // Settings is in the rail on tablets and TV; phones keep it in the bottom bar.
             if (onOpenSettings != null) {
                 NavigationRailItem(
                     selected = false,
