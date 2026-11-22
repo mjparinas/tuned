@@ -178,8 +178,6 @@ object MiniPlayer {
     class Screen(
         private val activity: ComponentActivity,
         private val settings: () -> AppSettings,
-        /** The current item's id; catch-up and recordings share a sentinel that is told apart here. */
-        private val contentId: () -> Long?,
         private val casting: () -> Boolean,
         private val player: () -> Player?,
         private val view: () -> PlayerView,
@@ -211,7 +209,7 @@ object MiniPlayer {
                 shrinksOnBack(
                     enabled = settings().miniPlayer,
                     supported = supported,
-                    regularContent = regularContent(contentId()),
+                    regularContent = regularContent(player()?.currentMediaItem?.mediaId?.toLongOrNull()),
                     casting = casting(),
                     playing = player()?.playWhenReady == true,
                     appOpen = appOpen(activity),

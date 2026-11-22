@@ -142,7 +142,7 @@ class MiniPlayerTest {
     fun `the player screen shows in the mini player while small and clears it when it closes`() {
         val activity = Robolectric.buildActivity(ComponentActivity::class.java, PlayerActivity.intent(context(), 7)).setup()
         val screen = activity.get()
-        MiniPlayer.Screen(screen, { AppSettings() }, { 7L }, { false }, { null }) { error("not drawn") }
+        MiniPlayer.Screen(screen, { AppSettings() }, { false }, { null }) { error("not drawn") }
         screen.onPictureInPictureModeChanged(true, Configuration(screen.resources.configuration))
         assertEquals(PlayRequest(7, null, 0, 0), MiniPlayer.showing.value)
         screen.onPictureInPictureModeChanged(false, Configuration(screen.resources.configuration))
