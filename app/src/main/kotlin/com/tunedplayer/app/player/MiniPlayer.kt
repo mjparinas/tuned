@@ -2,14 +2,19 @@ package com.tunedplayer.app.player
 
 import android.app.Activity
 import android.app.ActivityManager
-import android.app.PictureInPictureParams
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import androidx.activity.ComponentActivity
 import androidx.activity.OnBackPressedCallback
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.lifecycleScope
+import androidx.media3.common.Player
+import androidx.media3.ui.PlayerView
+import com.tunedplayer.app.AppContainer
 import com.tunedplayer.app.container
+import com.tunedplayer.app.data.AppSettings
 import com.tunedplayer.app.diagnostics.AppLog
 import com.tunedplayer.app.diagnostics.attempt
 import com.tunedplayer.app.diagnostics.launchSafely
@@ -73,6 +78,15 @@ object MiniPlayer {
         if (closer !== close) return
         closer = null
         shown.value = null
+    }
+
+    /**
+     * The player screen hung up its stream: downloads carry on, unless it closed for the next pick from the mini player,
+     * which opens now, so they keep waiting.
+     */
+    internal fun playerClosed(container: AppContainer) {
+        container.playerOpen.value = false
+        if (!handingOver) container.appScope.launch { container.offline.start() }
     }
 
     /** Closes the mini player, which hangs up its stream. False when there was none. */
@@ -153,26 +167,24 @@ object MiniPlayer {
         activity.lifecycleScope.launchSafely(TAG) { showing.collect { callback.isEnabled = it != null } }
     }
 
-    /** The player screen's side of it: Back, entering and leaving the small window, and closing. */
+    /**
+     * The player screen's side of it: Back, entering and leaving the small window, and closing. It wires itself to
+     * [activity] when created, so the player only creates it (in onCreate, before the tools' own Back, so the guide and
+     * the lock still come first).
+     */
     class Screen(
         private val activity: ComponentActivity,
-        private val hooks: Hooks,
+        private val settings: () -> AppSettings,
+        /** A live channel's queue (catch-up and recordings are told apart here). */
+        private val live: () -> Boolean,
+        private val casting: () -> Boolean,
+        private val player: () -> Player?,
+        private val view: () -> PlayerView,
     ) {
-        class Hooks(
-            /** Settings › Player › Mini player on Back. */
-            val enabled: () -> Boolean,
-            /** A live channel is on, not catch-up or a recording. */
-            val liveChannel: () -> Boolean,
-            val casting: () -> Boolean,
-            /** Playing or about to (not paused). */
-            val playing: () -> Boolean,
-            val params: () -> PictureInPictureParams,
-        )
-
         private val close: () -> Unit = { activity.finish() }
 
         /** Back: the mini player when it can, otherwise what Back always did (close the player). */
-        val back =
+        private val back =
             object : OnBackPressedCallback(true) {
                 override fun handleOnBackPressed() {
                     if (shrink()) return
@@ -182,28 +194,33 @@ object MiniPlayer {
                 }
             }
 
+        init {
+            activity.onBackPressedDispatcher.addCallback(activity, back)
+            activity.addOnPictureInPictureModeChangedListener { change ->
+                if (change.isInPictureInPictureMode) shown(PlayRequest.of(activity.intent), close) else gone(close)
+            }
+            activity.lifecycle.addObserver(LifecycleEventObserver { _, event -> if (event == Lifecycle.Event.ON_DESTROY) gone(close) })
+        }
+
         private fun shrink(): Boolean {
             val supported = activity.packageManager.hasSystemFeature(PackageManager.FEATURE_PICTURE_IN_PICTURE)
             val go =
                 shrinksOnBack(
-                    enabled = hooks.enabled(),
+                    enabled = settings().miniPlayer,
                     supported = supported,
-                    liveChannel = hooks.liveChannel(),
-                    casting = hooks.casting(),
-                    playing = hooks.playing(),
+                    liveChannel = live() && player()?.currentMediaItem?.mediaId != CatchUpLinks.ID.toString(),
+                    casting = casting(),
+                    playing = player()?.playWhenReady == true,
                     appOpen = appOpen(activity),
                 )
             if (!go) return false
             // Android refuses when picture-in-picture is turned off for Tuned in its settings: Back closes the player then.
-            val entered = attempt(TAG, "Couldn't shrink into the mini player") { activity.enterPictureInPictureMode(hooks.params()) }
+            val entered =
+                attempt(TAG, "Couldn't shrink into the mini player") {
+                    activity.enterPictureInPictureMode(pipParams(player(), view(), settings().pictureInPicture))
+                }
             return entered.getOrDefault(false)
         }
-
-        fun onPictureInPicture(inPictureInPicture: Boolean) {
-            if (inPictureInPicture) shown(PlayRequest.of(activity.intent), close) else gone(close)
-        }
-
-        fun release() = gone(close)
 
         /** The app's lists are open in a task of their own or under the player. */
         private fun appOpen(activity: Activity): Boolean {

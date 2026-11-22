@@ -1,5 +1,10 @@
 package com.tunedplayer.app.player
 
+import android.content.Context
+import android.content.res.Configuration
+import androidx.activity.ComponentActivity
+import androidx.test.core.app.ApplicationProvider
+import com.tunedplayer.app.data.AppSettings
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
@@ -15,6 +20,7 @@ import org.junit.After
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.robolectric.Robolectric
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import kotlin.test.assertEquals
@@ -131,6 +137,22 @@ class MiniPlayerTest {
         assertEquals(1, closed)
         MiniPlayer.gone(close)
     }
+
+    @Test
+    fun `the player screen shows in the mini player while small and clears it when it closes`() {
+        val activity = Robolectric.buildActivity(ComponentActivity::class.java, PlayerActivity.intent(context(), 7)).setup()
+        val screen = activity.get()
+        MiniPlayer.Screen(screen, { AppSettings() }, { true }, { false }, { null }) { error("not drawn") }
+        screen.onPictureInPictureModeChanged(true, Configuration(screen.resources.configuration))
+        assertEquals(PlayRequest(7, null, 0, 0), MiniPlayer.showing.value)
+        screen.onPictureInPictureModeChanged(false, Configuration(screen.resources.configuration))
+        assertNull(MiniPlayer.showing.value)
+        screen.onPictureInPictureModeChanged(true, Configuration(screen.resources.configuration))
+        activity.destroy()
+        assertNull(MiniPlayer.showing.value)
+    }
+
+    private fun context() = ApplicationProvider.getApplicationContext<Context>()
 
     @Test
     fun `Back shrinks a live channel playing on this device with the app open`() {

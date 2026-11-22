@@ -90,6 +90,17 @@ class BrowseScreenshots : Screenshots() {
         overlay = {},
     )
 
+    /** The Filters panel on a TV: the whole screen, no drag handle, the remote on the first type. */
+    @Test
+    @Config(qualifiers = TV)
+    fun liveTvFiltersTv() = shot(
+        "browse-live-tv-filters-tv",
+        HomeRoute,
+        wait = "Maple News 24",
+        then = { openFilters() },
+        overlay = {},
+    )
+
     /** Several filters chosen: the chip names the first two and how many more. */
     @Test
     fun liveTvFiltersChosen() = shot(
@@ -122,6 +133,22 @@ class BrowseScreenshots : Screenshots() {
     @Test
     @Config(qualifiers = TV)
     fun liveTvOnTv() = shot("browse-live-tv-tv", HomeRoute, wait = "Maple News 24")
+
+    /** Tuned's mark heads the rail in the upper left, on the light theme too (Melvin, 2026-11-21). */
+    @Test
+    @Config(qualifiers = TV)
+    fun liveTvOnTvLight() = shot("browse-live-tv-tv-light", HomeRoute, wait = "Maple News 24", settings = LIGHT)
+
+    /** The guide grid on Melvin's TV: the channel column is 260 dp wide, so long names show (Melvin, 2026-11-21). */
+    @Test
+    @Config(qualifiers = "w853dp-h480dp-land-television-xhdpi")
+    fun guideGridOnTv() = shot("browse-guide-grid-tv", HomeRoute, wait = "Maple News 24", settings = DARK.copy(liveGrid = true))
+
+    /** Melvin's TV (853 by 480 dp) with every rail item: the rail scrolls under the mark rather than cutting Settings off. */
+    @Test
+    @Config(qualifiers = "w853dp-h480dp-land-television-xhdpi")
+    fun liveTvOnSmallTvWithProfiles() =
+        shot("browse-live-tv-tv-small-profiles", HomeRoute, wait = "Maple News 24", settings = DARK.copy(profileCount = 2))
 
     @Test fun liveTvLight() = shot("browse-live-tv-light", HomeRoute, wait = "Maple News 24", settings = LIGHT)
 
@@ -235,6 +262,16 @@ class BrowseScreenshots : Screenshots() {
     @Config(qualifiers = TV)
     fun profilesOnTvLight() =
         shot("browse-profiles-tv-light", ProfilesRoute(atStart = true), wait = text(R.string.profiles_title), settings = LIGHT)
+
+    /** "Who's watching?" opened from the TV's rail: the glow shows behind the title, with no bar over it (Melvin, 2026-11-21). */
+    @Test
+    @Config(qualifiers = TV)
+    fun profilesFromHomeOnTv() = shot("browse-profiles-home-tv", ProfilesRoute(), wait = text(R.string.profiles_title))
+
+    @Test
+    @Config(qualifiers = TV)
+    fun profilesFromHomeOnTvLight() =
+        shot("browse-profiles-home-tv-light", ProfilesRoute(), wait = text(R.string.profiles_title), settings = LIGHT)
 
     /** Two named profiles, one for kids, opened from Home: the names must read clearly on the dark theme. */
     @Test

@@ -22,6 +22,7 @@ From Horizon Maps' screenshots, which Melvin wanted Settings to look like. Setti
 
 - It never opens by itself after an update: Tuned has no pop-ups ([AGENTS.md](../../AGENTS.md), "Get out of the way").
 - Store builds have no GitHub release to read, so they show the version without the button.
+- **On a TV it fills the screen** (Melvin, 2026-11-21: "Dragging handles shouldn't really be on the TV app... what's new should just show the entire set of updates... it should be easy to scroll using the remote"). A bottom sheet opened half way with a drag handle a remote can't use, so a TV shows a full-screen page inside the overscan margin instead: the header and **Done** on the left, always in view, and every change on the right. Each change takes focus with an outline, so Up and Down step through them and the list scrolls; focus starts on the first change (Done while the notes load), Left reaches Done, and Back closes it. Phones and tablets keep the sheet. `WhatsNewTvTest` checks there is no drag handle and the first change has focus.
 
 ## Application id (Melvin, 2026-11-19)
 

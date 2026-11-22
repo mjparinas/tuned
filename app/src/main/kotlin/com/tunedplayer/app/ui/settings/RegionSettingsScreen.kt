@@ -136,7 +136,7 @@ private fun RegionSearchField(
             singleLine = true,
             modifier = Modifier.remoteTextInput(OutlinedTextFieldDefaults.shape).weight(1f),
         )
-        SearchBoxButtonsBeside(query, onChange, voice = false)
+        SearchBoxButtonsBeside(query, onChange)
     }
 }
 

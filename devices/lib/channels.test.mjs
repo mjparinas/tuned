@@ -16,6 +16,7 @@ import {
     fileName,
     fillLogin,
     fromAppCopy,
+    noCopyText,
     filterChannels,
     gridPlace,
     gridSlots,
@@ -28,6 +29,9 @@ import {
     platformOf,
     progress,
     vlcLink,
+    clickPlan,
+    clickMessage,
+    vlcDidNotOpen,
     xmlText,
     xmltvTime,
     xtreamChannels,
@@ -187,6 +191,27 @@ test("VLC's own link on Android, iPhone and Mac; none on Windows, where the .m3u
     assert.equal(platformOf("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)", 5), "ios");
     assert.equal(platformOf("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)", 0), "mac");
     assert.equal(platformOf("Mozilla/5.0 (Windows NT 10.0; Win64; x64)"), "windows");
+});
+
+test("a click opens VLC where it has a link, and always copies the link", () => {
+    const url = "http://p.example:8080/live/u/p/1.ts";
+    assert.deepEqual(clickPlan(url, "mac", "CBC"), { vlc: `vlc://${url}`, copy: true });
+    assert.deepEqual(clickPlan(url, "windows", "CBC"), { vlc: null, copy: true });
+    assert.deepEqual(clickPlan(url, "other", "CBC"), { vlc: null, copy: true });
+    assert.deepEqual(clickPlan(url, "android", "CBC", "copy"), { vlc: null, copy: true });
+    assert.equal(clickPlan("not a link", "mac").vlc, null);
+});
+
+test("every click says what it did", () => {
+    assert.deepEqual(clickMessage({ name: "CBC", vlc: "vlc://x", copied: true }), {
+        tone: "ok",
+        text: "Opening CBC in VLC. The link is copied too, to paste into another player.",
+    });
+    assert.equal(clickMessage({ name: "CBC", vlc: "vlc://x", copied: false }).text, "Opening CBC in VLC.");
+    assert.equal(clickMessage({ name: "CBC", vlc: null, copied: true }).text.startsWith("CBC's link copied."), true);
+    assert.equal(clickMessage({ name: "CBC", vlc: null, copied: false }).tone, "error");
+    assert.match(clickMessage({ name: "", vlc: null, copied: true }).text, /^This channel's link copied/);
+    assert.match(vlcDidNotOpen("CBC"), /CBC's link is copied/);
 });
 
 test("a channel's .m3u file opens in any player, and names are safe for files", () => {
@@ -359,4 +384,15 @@ test("the guide spans from just before now to its last programme, at most a day 
         Date.UTC(2026, 10, 21, 19, 0),
         Date.UTC(2026, 10, 21, 19, 30),
     ]);
+});
+
+test("a playlist with no channels in the account says so, why, and what to do", () => {
+    const none = noCopyText("none");
+    assert.equal(none.title, "No channels backed up for this playlist yet");
+    assert.match(none.fix, /Back up now/);
+    assert.match(noCopyText(undefined).title, /No channels backed up/);
+    assert.match(noCopyText("empty").fix, /Refresh the playlist/);
+    // Our own server failing isn't "not backed up".
+    assert.doesNotMatch(noCopyText("error").title, /backed up for/);
+    assert.equal(noCopyText("too many").fix, "Try again later.");
 });

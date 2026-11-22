@@ -463,3 +463,19 @@
         max-width: min(1760px, 100%);
     }
 }
+
+/* What a click did, at the bottom of the screen wherever the page is scrolled (Melvin, 2026-11-21). */
+.toast {
+    position: fixed;
+    left: 50%;
+    bottom: 24px;
+    z-index: 30;
+    width: max-content;
+    max-width: min(560px, calc(100vw - 32px));
+    margin: 0;
+    transform: translateX(-50%);
+    box-shadow: var(--shadow);
+}
+.toast[hidden] {
+    display: none;
+}

@@ -72,6 +72,7 @@ import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.VerticalDivider
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -106,8 +107,10 @@ import com.tunedplayer.app.data.SyncProgress
 import com.tunedplayer.app.data.db.ChannelWithNow
 import com.tunedplayer.app.data.db.ProfileEntity
 import com.tunedplayer.app.diagnostics.DeviceClock
+import com.tunedplayer.app.ui.common.LocalTvBrandShown
 import com.tunedplayer.app.ui.common.SearchBoxButtonsBeside
 import com.tunedplayer.app.ui.common.SearchBoxShape
+import com.tunedplayer.app.ui.common.SearchBoxVoiceBefore
 import com.tunedplayer.app.ui.common.UpdateBanner
 import com.tunedplayer.app.ui.common.focusRing
 import com.tunedplayer.app.ui.common.isTelevision
@@ -228,197 +231,200 @@ fun HomeScreen(
         }
     }
 
-    Row(Modifier.fillMaxSize()) {
-        // A kids profile has no way into Settings; switching profile (with a PIN) is the way out.
-        val openSettings = onOpenSettings.takeUnless { settings.kidsProfile }
-        if (rail) {
-            HomeRail(
-                selected = selected.takeUnless { downloads },
-                onSelect = select,
-                onOpenDownloads = openDownloads,
-                onOpenSettings = openSettings,
-                // On a TV the menu's other items move to the rail too.
-                tvExtras =
-                    if (tv) {
-                        RailExtras(
-                            onOpenSearch = { onOpenSearch(vm.search(tab.kind).value.trim()) },
-                            profile = profile.takeIf { settings.profileCount > 1 },
-                            onOpenProfiles = onOpenProfiles,
-                        )
-                    } else {
-                        null
-                    },
-            )
-        }
-        Scaffold(
-            modifier = Modifier.weight(1 - ScreenLayout.DETAIL_FRACTION),
-            snackbarHost = { SnackbarHost(snackbar) },
-            floatingActionButton = {
-                // Auto-tune: with a search on Live TV (a channel or an event, say "UFC"), find one that works and play it.
-                if (!downloads && tab.kind == ContentKind.LIVE && liveSearch.isNotBlank()) {
-                    ExtendedFloatingActionButton(
-                        onClick = { onTune(liveSearch.trim()) },
-                        icon = { Icon(Icons.Filled.Radar, contentDescription = null) },
-                        text = { Text(stringResource(R.string.tune_button)) },
-                    )
-                }
-            },
-            topBar = {
-                // Downloads has its own title bar.
-                if (downloads) return@Scaffold
-                val search = vm.search(tab.kind)
-                val text by search.collectAsStateWithLifecycle()
-                SearchBarRow(
-                    text = text,
-                    hint = stringResource(tab.search),
-                    onChange = { search.value = it },
-                    grid = if (tab.kind == ContentKind.LIVE) settings.liveGrid else null,
-                    onToggleGrid = { vm.setLiveGrid(!settings.liveGrid) },
-                    // The words typed on the tab carry over, so the search isn't typed twice. A TV has it on the rail.
-                    onOpenSearch = { onOpenSearch(text.trim()) }.takeUnless { tv },
-                    profile = profile.takeIf { settings.profileCount > 1 && !tv },
-                    onOpenProfiles = onOpenProfiles,
+    // On a TV the rail shows Tuned's mark, so Downloads' and the panes' title bars leave it out.
+    CompositionLocalProvider(LocalTvBrandShown provides (tv && rail)) {
+        Row(Modifier.fillMaxSize()) {
+            // A kids profile has no way into Settings; switching profile (with a PIN) is the way out.
+            val openSettings = onOpenSettings.takeUnless { settings.kidsProfile }
+            if (rail) {
+                HomeRail(
+                    selected = selected.takeUnless { downloads },
+                    onSelect = select,
+                    onOpenDownloads = openDownloads,
+                    onOpenSettings = openSettings,
+                    // On a TV the menu's other items move to the rail too.
+                    tvExtras =
+                        if (tv) {
+                            RailExtras(
+                                onOpenSearch = { onOpenSearch(vm.search(tab.kind).value.trim()) },
+                                profile = profile.takeIf { settings.profileCount > 1 },
+                                onOpenProfiles = onOpenProfiles,
+                            )
+                        } else {
+                            null
+                        },
                 )
-            },
-            bottomBar = {
-                if (!rail) {
-                    NavigationBar {
-                        tabs.forEachIndexed { index, t ->
-                            NavigationBarItem(
-                                selected = !downloads && index == selected,
-                                onClick = { select(index) },
-                                icon = { Icon(t.icon, contentDescription = null) },
-                                label = { Text(stringResource(t.label)) },
-                            )
-                        }
-                        DownloadsNavItem(downloads, openDownloads)
-                        // Settings is the bar's last item on phones, one tap away rather than in a menu (Melvin, 2026-11-19).
-                        if (openSettings != null) {
-                            NavigationBarItem(
-                                selected = false,
-                                onClick = openSettings,
-                                icon = { Icon(Icons.Filled.Settings, contentDescription = null) },
-                                label = { Text(stringResource(R.string.settings)) },
-                            )
-                        }
-                    }
-                }
-            },
-        ) { padding ->
-            if (downloads) {
-                // Its own title bar sits under the space Home's Scaffold already left for the status bar.
-                // The channels getting ready (the first download, or a refresh the person started) show above it as
-                // they do on the other tabs (Melvin, 2026-11-21: "I still want to see the fact that the channels are
-                // processing on the downloads page").
-                Column(Modifier.padding(padding).consumeWindowInsets(padding).fillMaxSize()) {
-                    val firstRun = empty == true && refreshing
-                    when {
-                        firstRun && progress != null -> RefreshBar(checkNotNull(progress))
-                        firstRun -> RefreshStarting()
-                        requestedProgress != null -> RefreshBar(checkNotNull(requestedProgress))
-                        requestedPending == true -> RefreshStarting()
-                    }
-                    Box(Modifier.weight(1f).fillMaxWidth()) { DownloadsScreen(onPlay = onPlay, onBack = null) }
-                }
-                return@Scaffold
             }
-            Column(Modifier.padding(padding).fillMaxSize()) {
-                if (empty == true) {
-                    // No download queued or running and no error saved: it ended without saying why, so say so with
-                    // Retry rather than spin on forever (Melvin, 2026-11-20).
-                    val ended = !refreshing && requestedPending == false
-                    FirstRun(
-                        refreshing = refreshing,
-                        progress = progress,
-                        error = lastError.ifBlank { if (ended) stringResource(R.string.sync_stopped) else "" },
-                        onRetry = vm::retryFirst,
-                        onChangeLogin = onOpenPlaylists,
+            Scaffold(
+                modifier = Modifier.weight(1 - ScreenLayout.DETAIL_FRACTION),
+                snackbarHost = { SnackbarHost(snackbar) },
+                floatingActionButton = {
+                    // Auto-tune: with a search on Live TV (a channel or an event, say "UFC"), find one that works and play it.
+                    if (!downloads && tab.kind == ContentKind.LIVE && liveSearch.isNotBlank()) {
+                        ExtendedFloatingActionButton(
+                            onClick = { onTune(liveSearch.trim()) },
+                            icon = { Icon(Icons.Filled.Radar, contentDescription = null) },
+                            text = { Text(stringResource(R.string.tune_button)) },
+                        )
+                    }
+                },
+                topBar = {
+                    // Downloads has its own title bar.
+                    if (downloads) return@Scaffold
+                    val search = vm.search(tab.kind)
+                    val text by search.collectAsStateWithLifecycle()
+                    SearchBarRow(
+                        text = text,
+                        hint = stringResource(tab.search),
+                        onChange = { search.value = it },
+                        grid = if (tab.kind == ContentKind.LIVE) settings.liveGrid else null,
+                        onToggleGrid = { vm.setLiveGrid(!settings.liveGrid) },
+                        // The words typed on the tab carry over, so the search isn't typed twice. A TV has it on the rail.
+                        onOpenSearch = { onOpenSearch(text.trim()) }.takeUnless { tv },
+                        profile = profile.takeIf { settings.profileCount > 1 && !tv },
+                        onOpenProfiles = onOpenProfiles,
                     )
-                    return@Column
-                }
-                // From the tap on, not only once the refresh reports: a refresh waiting to start (for a connection, or for
-                // the first screen to settle) says so too (Melvin, 2026-11-21: "There should always be some type of
-                // feedback that something's happening").
-                when {
-                    requestedProgress != null -> RefreshBar(checkNotNull(requestedProgress))
-                    requestedPending == true -> RefreshStarting()
-                }
-                UpdateBanner(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp))
-                // Live TV's channel list on a TV uses the room (Melvin, 2026-11-19: "use the big screen"): the groups down
-                // the left, the channels in the middle and what the focused channel is showing on the right.
-                val tvColumns = tv && tab.kind == ContentKind.LIVE && !settings.liveGrid
-                val events = onOpenEvents.takeIf { tab.kind == ContentKind.LIVE }
-                if (!tvColumns) CategoryChips(vm, tab.kind, onGroupHidden, events)
-                val lists: @Composable () -> Unit = {
-                    when (tab.kind) {
-                        ContentKind.LIVE -> {
-                            LiveTab(
-                                vm,
-                                settings,
-                                onPlay,
-                                openGuide,
-                                onOpenSearch,
-                                focusReturn,
-                                onFocusChannel = if (tvColumns) ({ focusedChannel = it }) else null,
-                            )
-                        }
-
-                        ContentKind.MOVIE -> {
-                            MovieGrid(vm, onPlay, openMovie, settings.alwaysShowScrollbar, onOpenSearch, focusReturn)
-                        }
-
-                        ContentKind.SERIES -> {
-                            ShowGrid(vm, openShow, onPlay, settings.alwaysShowScrollbar, onOpenSearch, focusReturn)
-                        }
-                    }
-                }
-                // Pull to refresh is a setting, off by default; Settings › Refresh now always works.
-                val body: @Composable () -> Unit = {
-                    if (settings.pullToRefresh) {
-                        PullToRefreshBox(
-                            isRefreshing = (requestedRefreshing || requestedPending == true) && requestedProgress == null,
-                            onRefresh = vm::refresh,
-                            modifier = Modifier.fillMaxSize(),
-                        ) {
-                            lists()
-                        }
-                    } else {
-                        Box(Modifier.fillMaxSize()) { lists() }
-                    }
-                }
-                if (tvColumns) {
-                    BoxWithConstraints(Modifier.fillMaxSize()) {
-                        // The details take what the groups and a readable channel list leave, up to a limit, and are
-                        // left out on a TV too narrow for them (a pane open beside the list, say).
-                        val info = (maxWidth - TV_GROUPS_WIDTH - TV_LIST_MIN_WIDTH).coerceAtMost(TV_INFO_MAX_WIDTH)
-                        Row(Modifier.fillMaxSize()) {
-                            CategoryChips(
-                                vm,
-                                tab.kind,
-                                onGroupHidden,
-                                events,
-                                vertical = true,
-                                modifier = Modifier.width(TV_GROUPS_WIDTH).fillMaxHeight(),
-                            )
-                            Box(Modifier.weight(1f)) { body() }
-                            if (info >= TV_INFO_MIN_WIDTH) {
-                                ChannelInfoPane(
-                                    focusedChannel,
-                                    Modifier.width(info).fillMaxHeight().padding(start = 4.dp, end = 12.dp, top = 4.dp, bottom = 16.dp),
+                },
+                bottomBar = {
+                    if (!rail) {
+                        NavigationBar {
+                            tabs.forEachIndexed { index, t ->
+                                NavigationBarItem(
+                                    selected = !downloads && index == selected,
+                                    onClick = { select(index) },
+                                    icon = { Icon(t.icon, contentDescription = null) },
+                                    label = { Text(stringResource(t.label)) },
+                                )
+                            }
+                            DownloadsNavItem(downloads, openDownloads)
+                            // Settings is the bar's last item on phones, one tap away rather than in a menu (Melvin, 2026-11-19).
+                            if (openSettings != null) {
+                                NavigationBarItem(
+                                    selected = false,
+                                    onClick = openSettings,
+                                    icon = { Icon(Icons.Filled.Settings, contentDescription = null) },
+                                    label = { Text(stringResource(R.string.settings)) },
                                 )
                             }
                         }
                     }
-                } else {
-                    body()
+                },
+            ) { padding ->
+                if (downloads) {
+                    // Its own title bar sits under the space Home's Scaffold already left for the status bar.
+                    // The channels getting ready (the first download, or a refresh the person started) show above it as
+                    // they do on the other tabs (Melvin, 2026-11-21: "I still want to see the fact that the channels are
+                    // processing on the downloads page").
+                    Column(Modifier.padding(padding).consumeWindowInsets(padding).fillMaxSize()) {
+                        val firstRun = empty == true && refreshing
+                        when {
+                            firstRun && progress != null -> RefreshBar(checkNotNull(progress))
+                            firstRun -> RefreshStarting()
+                            requestedProgress != null -> RefreshBar(checkNotNull(requestedProgress))
+                            requestedPending == true -> RefreshStarting()
+                        }
+                        Box(Modifier.weight(1f).fillMaxWidth()) { DownloadsScreen(onPlay = onPlay, onBack = null) }
+                    }
+                    return@Scaffold
+                }
+                Column(Modifier.padding(padding).fillMaxSize()) {
+                    if (empty == true) {
+                        // No download queued or running and no error saved: it ended without saying why, so say so with
+                        // Retry rather than spin on forever (Melvin, 2026-11-20).
+                        val ended = !refreshing && requestedPending == false
+                        FirstRun(
+                            refreshing = refreshing,
+                            progress = progress,
+                            error = lastError.ifBlank { if (ended) stringResource(R.string.sync_stopped) else "" },
+                            onRetry = vm::retryFirst,
+                            onChangeLogin = onOpenPlaylists,
+                        )
+                        return@Column
+                    }
+                    // From the tap on, not only once the refresh reports: a refresh waiting to start (for a connection, or for
+                    // the first screen to settle) says so too (Melvin, 2026-11-21: "There should always be some type of
+                    // feedback that something's happening").
+                    when {
+                        requestedProgress != null -> RefreshBar(checkNotNull(requestedProgress))
+                        requestedPending == true -> RefreshStarting()
+                    }
+                    UpdateBanner(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp))
+                    // Live TV's channel list on a TV uses the room (Melvin, 2026-11-19: "use the big screen"): the groups down
+                    // the left, the channels in the middle and what the focused channel is showing on the right.
+                    val tvColumns = tv && tab.kind == ContentKind.LIVE && !settings.liveGrid
+                    val events = onOpenEvents.takeIf { tab.kind == ContentKind.LIVE }
+                    if (!tvColumns) CategoryChips(vm, tab.kind, onGroupHidden, events)
+                    val lists: @Composable () -> Unit = {
+                        when (tab.kind) {
+                            ContentKind.LIVE -> {
+                                LiveTab(
+                                    vm,
+                                    settings,
+                                    onPlay,
+                                    openGuide,
+                                    onOpenSearch,
+                                    focusReturn,
+                                    onFocusChannel = if (tvColumns) ({ focusedChannel = it }) else null,
+                                )
+                            }
+
+                            ContentKind.MOVIE -> {
+                                MovieGrid(vm, onPlay, openMovie, settings.alwaysShowScrollbar, onOpenSearch, focusReturn)
+                            }
+
+                            ContentKind.SERIES -> {
+                                ShowGrid(vm, openShow, onPlay, settings.alwaysShowScrollbar, onOpenSearch, focusReturn)
+                            }
+                        }
+                    }
+                    // Pull to refresh is a setting, off by default; Settings › Refresh now always works.
+                    val body: @Composable () -> Unit = {
+                        if (settings.pullToRefresh) {
+                            PullToRefreshBox(
+                                isRefreshing = (requestedRefreshing || requestedPending == true) && requestedProgress == null,
+                                onRefresh = vm::refresh,
+                                modifier = Modifier.fillMaxSize(),
+                            ) {
+                                lists()
+                            }
+                        } else {
+                            Box(Modifier.fillMaxSize()) { lists() }
+                        }
+                    }
+                    if (tvColumns) {
+                        BoxWithConstraints(Modifier.fillMaxSize()) {
+                            // The details take what the groups and a readable channel list leave, up to a limit, and are
+                            // left out on a TV too narrow for them (a pane open beside the list, say).
+                            val info = (maxWidth - TV_GROUPS_WIDTH - TV_LIST_MIN_WIDTH).coerceAtMost(TV_INFO_MAX_WIDTH)
+                            Row(Modifier.fillMaxSize()) {
+                                CategoryChips(
+                                    vm,
+                                    tab.kind,
+                                    onGroupHidden,
+                                    events,
+                                    vertical = true,
+                                    modifier = Modifier.width(TV_GROUPS_WIDTH).fillMaxHeight(),
+                                )
+                                Box(Modifier.weight(1f)) { body() }
+                                if (info >= TV_INFO_MIN_WIDTH) {
+                                    ChannelInfoPane(
+                                        focusedChannel,
+                                        Modifier.width(info).fillMaxHeight().padding(start = 4.dp, end = 12.dp, top = 4.dp, bottom = 16.dp),
+                                    )
+                                }
+                            }
+                        }
+                    } else {
+                        body()
+                    }
                 }
             }
-        }
-        val open = detail
-        if (panes && open != null) {
-            VerticalDivider()
-            Box(Modifier.weight(ScreenLayout.DETAIL_FRACTION).fillMaxHeight()) {
-                DetailPane(open, onPlay = onPlay, onClose = closeDetail, onOpenPerson = onOpenPerson)
+            val open = detail
+            if (panes && open != null) {
+                VerticalDivider()
+                Box(Modifier.weight(ScreenLayout.DETAIL_FRACTION).fillMaxHeight()) {
+                    DetailPane(open, onPlay = onPlay, onClose = closeDetail, onOpenPerson = onOpenPerson)
+                }
             }
         }
     }
@@ -445,6 +451,7 @@ internal fun SearchBarRow(
                 .padding(start = 12.dp, end = 4.dp, top = 8.dp, bottom = 4.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
+            SearchBoxVoiceBefore(onChange)
             TextField(
                 value = text,
                 onValueChange = onChange,
