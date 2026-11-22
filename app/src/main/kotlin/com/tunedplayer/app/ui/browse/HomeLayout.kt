@@ -1,7 +1,13 @@
 package com.tunedplayer.app.ui.browse
 
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.TravelExplore
@@ -12,13 +18,16 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.key
 import androidx.compose.runtime.saveable.Saver
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.tunedplayer.app.R
 import com.tunedplayer.app.data.CastMember
 import com.tunedplayer.app.data.db.ProfileEntity
+import com.tunedplayer.app.ui.common.TvBrand
 import com.tunedplayer.app.ui.details.MovieScreen
 import com.tunedplayer.app.ui.guide.GuideScreen
 import com.tunedplayer.app.ui.settings.ProfileBadge
@@ -76,46 +85,69 @@ internal fun HomeRail(
     /** On a TV only: search and the profile, which a tablet keeps in the menu beside search. */
     tvExtras: RailExtras? = null,
 ) {
-    NavigationRail {
-        Spacer(Modifier.height(8.dp))
-        tabs.forEachIndexed { index, t ->
-            NavigationRailItem(
-                selected = index == selected,
-                onClick = { onSelect(index) },
-                icon = { Icon(t.icon, contentDescription = null) },
-                label = { Text(stringResource(t.label)) },
-            )
-        }
-        NavigationRailItem(
-            selected = selected == null,
-            onClick = onOpenDownloads,
-            icon = { DownloadsIcon() },
-            label = { Text(stringResource(R.string.downloads)) },
-        )
+    // On a TV, Tuned's mark and name head the rail, in the screen's upper left (Melvin, 2026-11-21).
+    val header: (@Composable ColumnScope.() -> Unit)? =
         if (tvExtras != null) {
+            { TvBrand(stacked = true, modifier = Modifier.padding(top = 4.dp, bottom = 8.dp)) }
+        } else {
+            null
+        }
+    NavigationRail(header = header) {
+        // A TV's rail holds up to seven items under the mark, more than fit on a short TV (480 dp), so it scrolls;
+        // the remote's focus brings the item it lands on into view.
+        Column(
+            Modifier.verticalScroll(rememberScrollState()),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
+            Spacer(Modifier.height(8.dp))
+            tabs.forEachIndexed { index, t ->
+                NavigationRailItem(
+                    selected = index == selected,
+                    onClick = { onSelect(index) },
+                    icon = { Icon(t.icon, contentDescription = null) },
+                    label = { Text(stringResource(t.label)) },
+                )
+            }
             NavigationRailItem(
-                selected = false,
-                onClick = tvExtras.onOpenSearch,
-                icon = { Icon(Icons.Filled.TravelExplore, contentDescription = null) },
-                label = { Text(stringResource(R.string.rail_search)) },
+                selected = selected == null,
+                onClick = onOpenDownloads,
+                icon = { DownloadsIcon() },
+                label = { Text(stringResource(R.string.downloads)) },
             )
-            tvExtras.profile?.let { profile ->
+            if (tvExtras != null) {
+                NavigationRailItem(
+                    selected = false,
+                    onClick = tvExtras.onOpenSearch,
+                    icon = { Icon(Icons.Filled.TravelExplore, contentDescription = null) },
+                    label = { Text(stringResource(R.string.rail_search)) },
+                )
+            }
+            // Settings under Downloads on tablets and TV (Melvin, 2026-11-19); phones keep it in the menu by search.
+            if (onOpenSettings != null) {
+                NavigationRailItem(
+                    selected = false,
+                    onClick = onOpenSettings,
+                    icon = { Icon(Icons.Filled.Settings, contentDescription = null) },
+                    label = { Text(stringResource(R.string.settings)) },
+                )
+            }
+            // On a TV the profile is last, under its own name (Melvin, 2026-11-21: "move profile all the way to the bottom
+            // of the icons list. And instead of it saying profile on Android TV, it should actually say my name").
+            tvExtras?.profile?.let { profile ->
                 NavigationRailItem(
                     selected = false,
                     onClick = tvExtras.onOpenProfiles,
                     icon = { ProfileBadge(profile, size = 32.dp) },
-                    label = { Text(stringResource(R.string.rail_profile)) },
+                    label = {
+                        Text(
+                            profile.name.ifBlank { stringResource(R.string.rail_profile) },
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    },
                 )
             }
-        }
-        // Settings under Downloads on tablets and TV (Melvin, 2026-11-19); phones keep it in the menu by search.
-        if (onOpenSettings != null) {
-            NavigationRailItem(
-                selected = false,
-                onClick = onOpenSettings,
-                icon = { Icon(Icons.Filled.Settings, contentDescription = null) },
-                label = { Text(stringResource(R.string.settings)) },
-            )
         }
     }
 }

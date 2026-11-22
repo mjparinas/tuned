@@ -189,7 +189,7 @@
     <string name="settings_pip">पिक्चर-इन-पिक्चर</string>
     <string name="settings_pip_summary">ऐप छोड़ने पर एक छोटी विंडो में देखते रहें</string>
     <string name="settings_mini_player">वापस जाने पर मिनी प्लेयर</string>
-    <string name="settings_mini_player_summary">लाइव चैनल से वापस जाने पर वह ब्राउज़ करते समय एक छोटी विंडो में चलता रहता है। कुछ नया चुनने पर पहले वह बंद होता है</string>
+    <string name="settings_mini_player_summary">देखते समय वापस जाने पर वीडियो ब्राउज़ करते हुए छोटी विंडो में चलता रहता है। कुछ नया चुनने पर पहले वह बंद होता है</string>
     <string name="settings_landscape">प्लेबैक के लिए लैंडस्केप में घुमाएं</string>
     <string name="settings_controls_timeout">इतनी देर बाद कंट्रोल छिपाएं</string>
     <string name="settings_tune">ऑटो-ट्यून</string>
@@ -242,6 +242,9 @@
     <string name="report_share_instead">इसके बजाय शेयर करें</string>
     <string name="report_sent">Tuned को भेज दिया गया। बताने के लिए धन्यवाद।</string>
     <string name="report_send_failed">भेजा नहीं जा सका। कनेक्शन जांचें और फिर से कोशिश करें, या इसके बजाय शेयर करें।</string>
+    <string name="logs_report_summary">यह लॉग और इस डिवाइस की जानकारी, जैसे मॉडल और Android वर्शन, Tuned को भेजता है। कुछ टाइप नहीं करना है, और लॉगिन शामिल नहीं होते।</string>
+    <string name="logs_report_sending">यह लॉग और डिवाइस की जानकारी भेजी जा रही है…</string>
+    <string name="logs_report_failed">भेजा नहीं जा सका। कनेक्शन जाँचें, फिर दोबारा कोशिश करें।</string>
     <string name="settings_header_privacy">गोपनीयता</string>
     <string name="settings_usage_stats">गुमनाम उपयोग आंकड़े भेजें</string>
     <string name="settings_usage_stats_summary">कौन-सी स्क्रीन और सुविधाएं इस्तेमाल होती हैं और प्लेबैक काम करता है या नहीं, ताकि Tuned जाने कि क्या ठीक करना है। आप क्या देखते, खोजते या टाइप करते हैं, यह कभी नहीं।</string>

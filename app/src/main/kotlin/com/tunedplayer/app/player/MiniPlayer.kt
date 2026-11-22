@@ -32,8 +32,8 @@ import kotlinx.coroutines.withTimeoutOrNull
  * to continue playing in a small video somewhere out of the way ... when i find something i like and click on it, it
  * should stop the mini live tv from streaming first before it streams the new show"; docs/decisions/player.md).
  *
- * Back on a live channel shrinks the player into Android's picture-in-picture window, in a corner over the app, and
- * the app's lists show underneath to browse. It is the same player screen, the same player and the same connection,
+ * Back on a live channel, film or episode shrinks the player into Android's picture-in-picture window, in a corner
+ * over the app, and the app's lists show underneath to browse. It is the same player screen, player and connection,
  * so nothing reconnects, and downloads keep waiting as they do while anything plays. Tapping the window (or, on a TV,
  * the system's picture-in-picture menu) brings it back to full screen, and so does picking the same channel again.
  *
@@ -142,17 +142,20 @@ object MiniPlayer {
 
     /**
      * Whether Back should shrink the player into the mini player rather than close it: the setting is on, the device
-     * has picture-in-picture, a live channel (not catch-up or a recording) is playing on this device (not cast), and
+     * has picture-in-picture, regular content (not catch-up or a recording) is playing on this device (not cast), and
      * the app's lists are open to browse under it (not opened straight from a widget or another app).
      */
     internal fun shrinksOnBack(
         enabled: Boolean,
         supported: Boolean,
-        liveChannel: Boolean,
+        regularContent: Boolean,
         casting: Boolean,
         playing: Boolean,
         appOpen: Boolean,
-    ): Boolean = enabled && supported && liveChannel && !casting && playing && appOpen
+    ): Boolean = enabled && supported && regularContent && !casting && playing && appOpen
+
+    /** A playlist item may shrink; the sentinel is shared by one-off catch-up programmes and recordings. */
+    internal fun regularContent(id: Long?): Boolean = id != null && id != CatchUpLinks.ID
 
     /** Back on the app's own screens, once nothing else wants it, closes the mini player before it leaves the app. */
     fun closeOnBack(activity: ComponentActivity) {
@@ -175,8 +178,6 @@ object MiniPlayer {
     class Screen(
         private val activity: ComponentActivity,
         private val settings: () -> AppSettings,
-        /** A live channel's queue (catch-up and recordings are told apart here). */
-        private val live: () -> Boolean,
         private val casting: () -> Boolean,
         private val player: () -> Player?,
         private val view: () -> PlayerView,
@@ -208,7 +209,7 @@ object MiniPlayer {
                 shrinksOnBack(
                     enabled = settings().miniPlayer,
                     supported = supported,
-                    liveChannel = live() && player()?.currentMediaItem?.mediaId != CatchUpLinks.ID.toString(),
+                    regularContent = regularContent(player()?.currentMediaItem?.mediaId?.toLongOrNull()),
                     casting = casting(),
                     playing = player()?.playWhenReady == true,
                     appOpen = appOpen(activity),

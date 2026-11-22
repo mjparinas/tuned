@@ -200,7 +200,7 @@
     <string name="settings_pip">Picture-in-picture</string>
     <string name="settings_pip_summary">Keep watching in a small window when you leave the app</string>
     <string name="settings_mini_player">Mini player on Back</string>
-    <string name="settings_mini_player_summary">Back on a live channel keeps it playing in a small window while you browse. Anything new you pick stops it first</string>
+    <string name="settings_mini_player_summary">Back while watching keeps it playing in a small window while you browse. Anything new you pick stops it first</string>
     <string name="settings_landscape">Rotate to landscape for playback</string>
     <string name="settings_controls_timeout">Hide controls after</string>
     <string name="settings_tune">Auto-tune</string>
@@ -255,6 +255,9 @@
     <string name="report_share_instead">Share instead</string>
     <string name="report_sent">Sent to Tuned. Thanks for telling us.</string>
     <string name="report_send_failed">Couldn\'t send it. Check the connection and try again, or share it instead.</string>
+    <string name="logs_report_summary">Sends this log and this device\'s details, like its model and Android version, to Tuned. Nothing to type, and logins are left out.</string>
+    <string name="logs_report_sending">Sending this log and this device\'s details…</string>
+    <string name="logs_report_failed">Couldn\'t send it. Check the connection, then try again.</string>
     <string name="settings_header_privacy">Privacy</string>
     <string name="settings_usage_stats">Send anonymous usage stats</string>
     <string name="settings_usage_stats_summary">Which screens and features get used and whether plays work, so Tuned knows what to fix. Never what you watch, search or type.</string>

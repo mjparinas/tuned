@@ -22,8 +22,10 @@ fun isTelevision(): Boolean =
     (LocalConfiguration.current.uiMode and Configuration.UI_MODE_TYPE_MASK) == Configuration.UI_MODE_TYPE_TELEVISION
 
 /**
- * Many TVs crop the edges of the picture (overscan), so on a TV every screen keeps clear of the outer 5%: Google's
- * TV margins of 48 dp at the sides and 27 dp at the top and bottom. The margin is filled with the theme's background,
+ * Many TVs crop the edges of the picture (overscan), so on a TV every screen keeps a margin: 27 dp at the top and
+ * bottom (Google's 5%) and 24 dp at the sides, half of Google's 48 dp (Melvin, 2026-11-21: "a little bit too much
+ * padding on the left and right hand side. Top and bottom is fine"). Today's TVs crop little or nothing, and 24 dp
+ * still keeps text off the edge of one that crops 2.5%. The margin is filled with the theme's background,
  * so it looks like part of the screen. A screen that paints its own backdrop (a glow, a gradient) puts it on a layer
  * with [bleedIntoTvMargin], so the backdrop reaches the screen's edges while its content stays inside the margin;
  * otherwise the plain margin shows as a frame around it (Melvin, 2026-11-20: "there is a thick white boarder").
@@ -72,5 +74,5 @@ fun Modifier.bleedIntoTvMargin(margin: TvMargin): Modifier {
     }
 }
 
-private val TV_SIDE_MARGIN = 48.dp
+private val TV_SIDE_MARGIN = 24.dp
 private val TV_TOP_MARGIN = 27.dp

@@ -85,7 +85,7 @@ class MainActivity : ComponentActivity() {
             }
         }
 
-        // With live TV in the mini player, Back on the first screen closes it before leaving the app (a TV remote's way).
+        // With something in the mini player, Back on the first screen closes it before leaving the app (a TV remote's way).
         MiniPlayer.closeOnBack(this)
         setContent {
             val s by settings.collectAsStateWithLifecycle()

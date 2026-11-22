@@ -189,7 +189,7 @@
     <string name="settings_pip">Pencere içinde pencere</string>
     <string name="settings_pip_summary">Uygulamadan çıkınca küçük bir pencerede izlemeye devam et</string>
     <string name="settings_mini_player">Geri ile mini oynatıcı</string>
-    <string name="settings_mini_player_summary">Canlı kanaldan geri dönünce kanal siz gezinirken küçük bir pencerede oynamaya devam eder. Yeni bir seçim önce onu durdurur</string>
+    <string name="settings_mini_player_summary">İzlerken geri dönünce video siz gezinirken küçük bir pencerede oynamaya devam eder. Yeni bir seçim önce onu durdurur</string>
     <string name="settings_landscape">Oynatırken yataya döndür</string>
     <string name="settings_controls_timeout">Kontrolleri gizleme süresi</string>
     <string name="settings_tune">Otomatik ayar</string>
@@ -242,6 +242,9 @@
     <string name="report_share_instead">Bunun yerine paylaş</string>
     <string name="report_sent">Tuned\'a gönderildi. Bildirdiğin için teşekkürler.</string>
     <string name="report_send_failed">Gönderilemedi. Bağlantıyı kontrol edip tekrar dene veya bunun yerine paylaş.</string>
+    <string name="logs_report_summary">Bu günlüğü ve bu cihazın model ve Android sürümü gibi bilgilerini Tuned\'a gönderir. Bir şey yazmanız gerekmez, giriş bilgileri dahil edilmez.</string>
+    <string name="logs_report_sending">Günlük ve cihaz bilgileri gönderiliyor…</string>
+    <string name="logs_report_failed">Gönderilemedi. Bağlantıyı kontrol edip tekrar deneyin.</string>
     <string name="settings_header_privacy">Gizlilik</string>
     <string name="settings_usage_stats">Anonim kullanım istatistikleri gönder</string>
     <string name="settings_usage_stats_summary">Hangi ekranların ve özelliklerin kullanıldığı ve oynatmanın çalışıp çalışmadığı; böylece Tuned neyi düzelteceğini bilir. Ne izlediğin, aradığın veya yazdığın asla gönderilmez.</string>

@@ -13,17 +13,21 @@ import com.tunedplayer.app.R
 import com.tunedplayer.app.core.AccountSeats
 import com.tunedplayer.app.core.ReleaseNotes
 import com.tunedplayer.app.data.AppReset
+import com.tunedplayer.app.data.AppSettings
 import com.tunedplayer.app.data.CaptionStyle
 import com.tunedplayer.app.data.LighterMode
 import com.tunedplayer.app.premium.MoreDevicesOffer
 import com.tunedplayer.app.premium.Offer
 import com.tunedplayer.app.ui.CaptionSettingsRoute
+import com.tunedplayer.app.ui.DeveloperLogRoute
 import com.tunedplayer.app.ui.RegionSettingsRoute
 import com.tunedplayer.app.ui.SettingsPageRoute
 import com.tunedplayer.app.ui.SettingsRoute
 import com.tunedplayer.app.ui.onboarding.QrModules
 import com.tunedplayer.app.ui.settings.AccountSignIn
 import com.tunedplayer.app.ui.settings.AccountSignInDialog
+import com.tunedplayer.app.ui.settings.LogReport
+import com.tunedplayer.app.ui.settings.ReportRow
 import com.tunedplayer.app.ui.settings.SettingsPage
 import com.tunedplayer.app.ui.settings.SignOutDialog
 import com.tunedplayer.app.ui.settings.SignOutDownloadsDialog
@@ -44,6 +48,16 @@ class SettingsScreenshots : Screenshots() {
     @Test
     @Config(qualifiers = TABLET)
     fun settingsTablet() = shot("settings-tablet", SettingsRoute, wait = text(R.string.settings_playback))
+
+    /** Settings on a TV with the theme left at the system default, which is dark there, and Tuned's mark top left. */
+    @Test
+    @Config(qualifiers = TV)
+    fun settingsOnTv() = shot("settings-tv", SettingsRoute, wait = text(R.string.settings_playback), settings = AppSettings())
+
+    /** The same with Light picked in Appearance: the mark and name still read. */
+    @Test
+    @Config(qualifiers = TV)
+    fun settingsOnTvLight() = shot("settings-tv-light", SettingsRoute, wait = text(R.string.settings_playback), settings = LIGHT)
 
     /** The cards and coloured badges in the light theme, where the badge colours are deepest. */
     @Test fun settingsLight() = shot("settings-light", SettingsRoute, wait = text(R.string.settings_playback), settings = LIGHT)
@@ -74,6 +88,34 @@ class SettingsScreenshots : Screenshots() {
         wait = text(R.string.settings_user_agent),
         then = { compose.onNodeWithText(text(R.string.report_title)).performScrollTo() },
     )
+
+    /** On a TV, Troubleshooting has only Logs: there's no keyboard to say what happened. */
+    @Test
+    @Config(qualifiers = TV)
+    fun aboutOnTv() = shot(
+        "settings-about-tv",
+        SettingsPageRoute(SettingsPage.ABOUT.name),
+        wait = text(R.string.settings_user_agent),
+        then = { compose.onNodeWithText(text(R.string.logs_title)).performScrollTo() },
+    )
+
+    /** Logs, with Send to Tuned first: the log and this device's details with nothing to type. */
+    @Test fun logs() = shot("settings-logs", DeveloperLogRoute, wait = text(R.string.logs_report_summary))
+
+    /** Logs on a TV, where the remote starts on Send to Tuned. */
+    @Test
+    @Config(qualifiers = TV)
+    fun logsOnTv() = shot("settings-logs-tv", DeveloperLogRoute, wait = text(R.string.logs_report_summary))
+
+    /** Send to Tuned while it sends, and after a failed send, with Try again. */
+    @Test
+    fun logsReportStates() = part("settings-logs-report-states", text(R.string.logs_report_failed)) {
+        Column {
+            ReportRow(LogReport.SENDING) {}
+            ReportRow(LogReport.SENT) {}
+            ReportRow(LogReport.FAILED) {}
+        }
+    }
 
     /** The usage stats switch, under Privacy in Settings › About. */
     @Test

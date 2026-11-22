@@ -36,6 +36,7 @@ import com.tunedplayer.app.diagnostics.launchSafely
 import com.tunedplayer.app.premium.PremiumRow
 import com.tunedplayer.app.ui.DeveloperLogRoute
 import com.tunedplayer.app.ui.common.TunedDialog
+import com.tunedplayer.app.ui.common.isTelevision
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -60,7 +61,9 @@ internal fun AboutPage(
     SectionHeader(stringResource(R.string.settings_header_privacy))
     UsageStatsRow(settings) { choice -> vm.update { it.copy(usageStats = choice) } }
     SectionHeader(stringResource(R.string.settings_header_troubleshooting))
-    ReportProblemRow()
+    // A TV has no keyboard to say what happened (Melvin, 2026-11-21: "on android tv, remove report a problem because
+    // people can't type"); there, Logs' Report button sends everything with one press.
+    if (!isTelevision()) ReportProblemRow()
     SettingRow(
         stringResource(R.string.logs_title),
         stringResource(R.string.settings_logs_summary),
