@@ -47,8 +47,26 @@ class ChannelShareTest {
         val now = 1_795_201_200_000L
         val channels =
             listOf(
-                ChannelShare.Channel("CBC \"East\"", "Canada", "http://i/cbc.png", "cbc.ca", 1, "http://p/live/{login}/1.ts", "ca", id = 11),
-                ChannelShare.Channel("CP24", "News", null, null, 2, "http://p/live/{login}/2.ts", adult = true, id = 12),
+                ChannelShare.Channel(
+                    "CBC \"East\"",
+                    "Canada",
+                    "http://i/cbc.png",
+                    "cbc.ca",
+                    1,
+                    "http://p/live/{login}/1.ts",
+                    "ca",
+                    id = 11,
+                ),
+                ChannelShare.Channel(
+                    "CP24",
+                    "News",
+                    null,
+                    null,
+                    2,
+                    "http://p/live/{login}/2.ts",
+                    adult = true,
+                    id = 12,
+                ),
             )
         val hour = 3_600_000L
         val shows =
