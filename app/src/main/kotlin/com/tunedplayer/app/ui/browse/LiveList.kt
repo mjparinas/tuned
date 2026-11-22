@@ -56,6 +56,7 @@ import com.tunedplayer.app.ui.common.FastScrollbar
 import com.tunedplayer.app.ui.common.SKELETON_ROWS
 import com.tunedplayer.app.ui.common.firstLoad
 import com.tunedplayer.app.ui.common.focusRing
+import com.tunedplayer.app.ui.common.isTelevision
 import com.tunedplayer.app.ui.common.peekOrNull
 import com.tunedplayer.app.ui.common.rememberFastScroll
 import com.tunedplayer.app.ui.common.rememberTvFocus
@@ -115,6 +116,7 @@ private fun LiveList(
     val favourites by vm.favouriteIds.collectAsStateWithLifecycle()
     val picker = rememberListPicker()
     val editPicker = rememberChannelEditPicker()
+    val canRename = !isTelevision()
     val state = rememberLazyListState()
     val focus = rememberTvFocus(focusReturn)
     Box(Modifier.fillMaxSize()) {
@@ -150,7 +152,7 @@ private fun LiveList(
                         onGuide = { onOpenGuide(channel.id) },
                         onToggleFavourite = { vm.toggleFavourite(channel.id, favourite) },
                         onAddToList = { picker.open(channel.id) },
-                        onRename = { editPicker.rename(channel.id) },
+                        onRename = if (canRename) ({ editPicker.rename(channel.id) }) else null,
                         onChangeLogo = { editPicker.changeLogo(channel.id) },
                     )
                 }
@@ -190,7 +192,7 @@ private fun ChannelRow(
     onGuide: () -> Unit,
     onToggleFavourite: () -> Unit,
     onAddToList: () -> Unit,
-    onRename: () -> Unit,
+    onRename: (() -> Unit)?,
     onChangeLogo: () -> Unit,
     /** On a TV, where the remote's focus comes back to ([tvFocusItem]). */
     modifier: Modifier = Modifier,
@@ -257,8 +259,8 @@ private fun ChannelRow(
                 }
             }
             FavouriteButton(favourite, onToggleFavourite)
-            // Every channel has its page (its guide, with add to list, rename and change logo as buttons), so what the long
-            // press offers is also one press away on a remote, guide or not.
+            // Every channel has its page (its guide, with add to list, rename on phones, and change logo as buttons), so what
+            // the long press offers is also one press away on a remote, guide or not.
             IconButton(onClick = onGuide) {
                 // Named with the channel, so a screen reader's list of buttons doesn't read "Guide" a hundred times.
                 Icon(Icons.AutoMirrored.Filled.List, contentDescription = stringResource(R.string.a11y_guide_for, channel.name))
@@ -279,13 +281,15 @@ private fun ChannelRow(
                     onAddToList()
                 },
             )
-            DropdownMenuItem(
-                text = { Text(stringResource(R.string.channel_rename)) },
-                onClick = {
-                    menu = false
-                    onRename()
-                },
-            )
+            if (onRename != null) {
+                DropdownMenuItem(
+                    text = { Text(stringResource(R.string.channel_rename)) },
+                    onClick = {
+                        menu = false
+                        onRename()
+                    },
+                )
+            }
             DropdownMenuItem(
                 text = { Text(stringResource(R.string.channel_change_logo)) },
                 onClick = {
