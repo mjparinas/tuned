@@ -21,7 +21,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -352,11 +351,11 @@ fun HomeScreen(
                         requestedPending == true -> RefreshStarting()
                     }
                     UpdateBanner(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp))
-                    // Live TV's channel list on a TV uses the room (Melvin, 2026-11-19: "use the big screen"): the groups down
-                    // the left, the channels in the middle and what the focused channel is showing on the right.
+                    // Live TV's channel list on a TV uses the room for what the focused channel is showing beside the list.
+                    // Its groups stay in the same horizontal row as the guide grid (Melvin, 2026-11-22).
                     val tvColumns = tv && tab.kind == ContentKind.LIVE && !settings.liveGrid
                     val events = onOpenEvents.takeIf { tab.kind == ContentKind.LIVE }
-                    if (!tvColumns) CategoryChips(vm, tab.kind, onGroupHidden, events)
+                    CategoryChips(vm, tab.kind, onGroupHidden, events)
                     val lists: @Composable () -> Unit = {
                         when (tab.kind) {
                             ContentKind.LIVE -> {
@@ -396,18 +395,10 @@ fun HomeScreen(
                     }
                     if (tvColumns) {
                         BoxWithConstraints(Modifier.fillMaxSize()) {
-                            // The details take what the groups and a readable channel list leave, up to a limit, and are
-                            // left out on a TV too narrow for them (a pane open beside the list, say).
-                            val info = (maxWidth - TV_GROUPS_WIDTH - TV_LIST_MIN_WIDTH).coerceAtMost(TV_INFO_MAX_WIDTH)
+                            // The details take what a readable channel list leaves, up to a limit, and are left out on a TV
+                            // too narrow for them (a pane open beside the list, say).
+                            val info = (maxWidth - TV_LIST_MIN_WIDTH).coerceAtMost(TV_INFO_MAX_WIDTH)
                             Row(Modifier.fillMaxSize()) {
-                                CategoryChips(
-                                    vm,
-                                    tab.kind,
-                                    onGroupHidden,
-                                    events,
-                                    vertical = true,
-                                    modifier = Modifier.width(TV_GROUPS_WIDTH).fillMaxHeight(),
-                                )
                                 Box(Modifier.weight(1f)) { body() }
                                 if (info >= TV_INFO_MIN_WIDTH) {
                                     ChannelInfoPane(
@@ -516,8 +507,6 @@ private fun CategoryChips(
     /** Live events, first in Live TV's row (it used to be an icon beside search). Null elsewhere. */
     onOpenEvents: (() -> Unit)?,
     modifier: Modifier = Modifier,
-    /** Down the left of Live TV on a TV, instead of a row across the top (Melvin, 2026-11-19: "use the big screen"). */
-    vertical: Boolean = false,
 ) {
     val groups by vm.groups(kind).collectAsStateWithLifecycle()
     val lists by vm.lists(kind).collectAsStateWithLifecycle()
@@ -582,7 +571,7 @@ private fun CategoryChips(
             val pinned = PinnedGroups.isPinned(pins, kind.code, g.groupName)
             val pinLabel = stringResource(if (pinned) R.string.group_unpin else R.string.group_pin)
             val pin = { vm.togglePin(kind, g.groupName) }
-            // A flow row, so in a TV's narrow column Pin and Hide wrap under the group rather than off the edge.
+            // A flow row lets Pin and Hide sit beside the selected group without shrinking their tap targets.
             FlowRow(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 itemVerticalAlignment = Alignment.CenterVertically,
@@ -627,22 +616,12 @@ private fun CategoryChips(
             }
         }
     }
-    // A TV's column: one group under the next, so the arrows go straight down the groups and right into the channels.
-    if (vertical) {
-        LazyColumn(
-            modifier,
-            contentPadding = PaddingValues(start = 12.dp, end = 8.dp, top = 6.dp, bottom = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(2.dp),
-            content = content,
-        )
-    } else {
-        LazyRow(
-            modifier,
-            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            content = content,
-        )
-    }
+    LazyRow(
+        modifier,
+        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        content = content,
+    )
 }
 
 @Composable
@@ -728,10 +707,9 @@ internal fun DownloadsIcon(downloads: DownloadsViewModel = viewModel()) {
 }
 
 /**
- * Live TV on a TV: the column of groups and the focused channel's details either side of the channels. The list keeps
- * room for a channel's name beside its buttons; the details are left out before the names get cut short.
+ * Live TV on a TV: the focused channel's details sit beside the channels. The list keeps room for a channel's name
+ * beside its buttons; the details are left out before the names get cut short.
  */
-private val TV_GROUPS_WIDTH = 160.dp
 private val TV_LIST_MIN_WIDTH = 340.dp
 private val TV_INFO_MIN_WIDTH = 180.dp
 private val TV_INFO_MAX_WIDTH = 260.dp
