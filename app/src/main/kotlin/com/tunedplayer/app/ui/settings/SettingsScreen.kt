@@ -68,6 +68,10 @@ import com.tunedplayer.app.diagnostics.launchSafely
 import com.tunedplayer.app.ui.CaptionSettingsRoute
 import com.tunedplayer.app.ui.SettingsPageRoute
 import com.tunedplayer.app.ui.common.BackTopBar
+import com.tunedplayer.app.ui.common.StartFocus
+import com.tunedplayer.app.ui.common.focusRing
+import com.tunedplayer.app.ui.common.rememberStartFocus
+import com.tunedplayer.app.ui.common.startFocus
 import com.tunedplayer.app.ui.common.windowWidthDp
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
@@ -243,6 +247,8 @@ fun SettingsScreen(
     vm: SettingsViewModel = viewModel(),
 ) {
     var query by rememberSaveable { mutableStateOf("") }
+    // On a TV the remote starts on the page shown beside the list (or the first page), not the search box above it.
+    val start = rememberStartFocus()
     val pages: @Composable (open: (route: Any) -> Unit, shown: SettingsPage?) -> Unit = { open, shown ->
         SettingsSearchField(query) { query = it }
         val words = remember(query) { settingsWords(query) }
@@ -252,7 +258,7 @@ fun SettingsScreen(
             SettingsSection.entries.forEach { section ->
                 SectionHeader(stringResource(section.title))
                 SettingsPage.entries.filter { it.section == section }.forEach { page ->
-                    PageRow(page, open, selected = page == shown)
+                    PageRow(page, open, selected = page == shown, start = start.takeIf { page == (shown ?: SettingsPage.PLAYLISTS) })
                     // Captions is a screen of its own, so it has its own row after Playback.
                     if (page == SettingsPage.PLAYBACK) CaptionsRow(settings, open)
                 }
@@ -465,6 +471,7 @@ private fun SettingsScaffold(
     onBack: () -> Unit,
     content: @Composable () -> Unit,
 ) {
+    val start = rememberStartFocus()
     Scaffold(topBar = { BackTopBar(title, onBack) }) { padding ->
         SettingsGroups(
             Modifier
@@ -473,7 +480,10 @@ private fun SettingsScaffold(
                 .verticalScroll(rememberScrollState())
                 .navigationBarsPadding()
                 .padding(bottom = 16.dp),
-        ) { content() }
+        ) {
+            // A page opened on its own starts the remote on its first row; the search results don't.
+            CompositionLocalProvider(LocalRowStartFocus provides start.takeIf { it.enabled }, content)
+        }
     }
 }
 
@@ -483,7 +493,9 @@ private fun PageRow(
     onOpen: (route: Any) -> Unit,
     /** The page shown beside the list on a wide screen. */
     selected: Boolean = false,
-) = IconRow(page.icon, page.hue, stringResource(page.title), stringResource(page.summary), selected) {
+    /** Set on the row the remote starts on, on a TV. */
+    start: StartFocus? = null,
+) = IconRow(page.icon, page.hue, stringResource(page.title), stringResource(page.summary), selected, start) {
     onOpen(SettingsPageRoute(page.name))
 }
 
@@ -495,6 +507,7 @@ private fun IconRow(
     title: String,
     summary: String,
     selected: Boolean = false,
+    start: StartFocus? = null,
     onClick: () -> Unit,
 ) {
     Row(
@@ -502,6 +515,8 @@ private fun IconRow(
             .fillMaxWidth()
             .heightIn(min = 72.dp)
             .then(if (selected) Modifier.background(MaterialTheme.colorScheme.secondaryContainer) else Modifier)
+            .then(if (start != null) Modifier.startFocus(start) else Modifier)
+            .focusRing(RowFocusShape, MaterialTheme.colorScheme.primary)
             // The page shown is named as selected for a screen reader, not only by its colour.
             .selectable(selected = selected, role = Role.Tab, onClick = onClick)
             .padding(horizontal = 16.dp, vertical = 12.dp),

@@ -436,6 +436,33 @@ export function vlcLink(url, platform, title = "") {
     return null;
 }
 
+/**
+ * What a click on a channel or a programme does (Melvin, 2026-11-21: "click on a show or a channel on the website should
+ * either open the link up automatically in vlc if the browser supports it or copy the link to the clipboard so i can
+ * paste it into the player of my choice"). The link is always copied, so another player is a paste away; VLC opens
+ * too where it has a link of its own and the person hasn't chosen "Copy the link" instead.
+ */
+export function clickPlan(url, platform, title = "", choice = "vlc") {
+    const vlc = choice === "copy" ? null : vlcLink(url, platform, title);
+    return { vlc, copy: true };
+}
+
+/** The line a click leaves on screen, so it never looks as if nothing happened. */
+export function clickMessage({ name, vlc, copied }) {
+    const who = name || "This channel";
+    if (vlc && copied) return { tone: "ok", text: `Opening ${who} in VLC. The link is copied too, to paste into another player.` };
+    if (vlc) return { tone: "ok", text: `Opening ${who} in VLC.` };
+    if (copied) return { tone: "ok", text: `${who}'s link copied. Paste it into VLC (Media › Open Network Stream) or any player.` };
+    return {
+        tone: "error",
+        text: `This browser didn't allow copying, so ${who}'s playlist file was downloaded instead. Open it in any player.`,
+    };
+}
+
+/** Said a few seconds after VLC's link when the page never lost focus, which usually means VLC isn't installed. */
+export const vlcDidNotOpen = (name) =>
+    `VLC didn't seem to open. Is it installed? ${name || "The channel"}'s link is copied: paste it into any player.`;
+
 /** An M3U playlist of these channels, which any player opens: one channel's file, or the whole list's. */
 export function m3uFor(channels) {
     const clean = (s) =>
@@ -480,6 +507,43 @@ export function fillLogin(link, login) {
         .replaceAll("{login}", `${enc(user)}/${enc(pass)}`)
         .replaceAll("{user}", enc(user))
         .replaceAll("{pass}", enc(pass));
+}
+
+const BACK_UP =
+    "Open this playlist in the latest Tuned app, signed in to this account, then tap Settings › Playlists and account › Back up now. Its channels show up here a minute later.";
+
+/**
+ * What the page says when the account holds no channel list for a playlist (Melvin, 2026-11-21: "if not, it should
+ * tell me in the UI"): a title, why, and what to do, for each reason the copy isn't there: "none" (the app never saved
+ * one), "empty" (it saved no channels this page can show), "too many" (the hourly limit) or "error" (our server).
+ */
+export function noCopyText(missing) {
+    switch (missing) {
+        case "empty":
+            return {
+                title: "No channels in this playlist's backup",
+                why: "Your Tuned app saved this playlist, but with no live channels this page can show.",
+                fix: `Refresh the playlist in Tuned first. ${BACK_UP}`,
+            };
+        case "too many":
+            return {
+                title: "Your backed-up channels couldn't be fetched just now",
+                why: "Too many playlists were opened this hour.",
+                fix: "Try again later.",
+            };
+        case "error":
+            return {
+                title: "Your backed-up channels couldn't be read",
+                why: "Tuned's server didn't answer this time.",
+                fix: "Reload the page in a moment.",
+            };
+        default:
+            return {
+                title: "No channels backed up for this playlist yet",
+                why: "Your Tuned app saves the channels and guide of the playlist it's playing to your account when it backs up, about once an hour, and it hasn't saved this one yet. Only the playlist in use on a device is saved.",
+                fix: BACK_UP,
+            };
+    }
 }
 
 /**

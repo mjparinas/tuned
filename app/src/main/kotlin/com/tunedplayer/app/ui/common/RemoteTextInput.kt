@@ -6,7 +6,6 @@ import android.view.KeyEvent.KEYCODE_DPAD_LEFT
 import android.view.KeyEvent.KEYCODE_DPAD_RIGHT
 import android.view.KeyEvent.KEYCODE_ENTER
 import android.view.KeyEvent.KEYCODE_NUMPAD_ENTER
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -15,11 +14,12 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
 import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.focus.FocusManager
+import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.input.key.KeyEventType
@@ -33,6 +33,7 @@ import androidx.compose.ui.platform.SoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.tunedplayer.app.R
+import com.tunedplayer.app.diagnostics.attempt
 
 /**
  * Makes a text field work with a TV remote (Melvin, 2026-11-21: on TV search "it asks me to use my keyboard. I don't
@@ -91,9 +92,10 @@ internal object RemoteKeys {
 
 /**
  * The buttons that belong to a search box: Clear while there is text, and the mic. On a phone they sit inside the box
- * as its trailing icon (pass it as `trailingIcon`); on a TV they are put beside the box with [SearchBoxButtonsBeside],
- * because the remote can only reach what is outside the box, and the mic stays while there is text so focus on it is
- * never lost when voice fills the box.
+ * as its trailing icon (pass it as `trailingIcon`). On a TV the remote can only reach what is outside the box, so the mic
+ * goes before it with [SearchBoxVoiceBefore] and Clear after it with [SearchBoxButtonsBeside], as on other TV apps
+ * (Melvin, 2026-11-21: "in many apps the mic is on the left and the search box is on the right"). The mic stays while
+ * there is text, so focus on it is never lost when voice fills the box.
  */
 @Composable
 fun searchBoxTrailing(
@@ -111,18 +113,44 @@ fun searchBoxTrailing(
     }
 }
 
-/** On a TV, the search box's buttons beside it, each with a focus ring; nothing on a phone. Call it in the box's row. */
+/**
+ * On a TV, the mic before the search box, with a focus ring; nothing on a phone, or where there is no speech
+ * recogniser. [modifier] can carry a focus requester, so a screen can open with the remote on the mic.
+ */
+@Composable
+fun SearchBoxVoiceBefore(
+    onChange: (String) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    if (!isTelevision()) return
+    VoiceSearchButton(onResult = onChange, modifier = modifier.remoteButtonRing())
+}
+
+/**
+ * Where the remote starts on a search screen: on a TV the mic, as on other TV apps, so OK alone starts talking (Melvin,
+ * 2026-11-21: "on android tv, the mic should be selected by default"); on a TV without a speech recogniser, and on a
+ * phone, the box. Nothing when [enabled] is false (a search that opened with words already in it).
+ */
+@Composable
+fun SearchStartFocus(
+    box: FocusRequester,
+    mic: FocusRequester,
+    enabled: Boolean = true,
+) {
+    val micFirst = isTelevision() && rememberVoiceSearchAvailable()
+    LaunchedEffect(Unit) {
+        if (enabled) attempt("SearchFocus", "Couldn't focus search") { (if (micFirst) mic else box).requestFocus() }
+    }
+}
+
+/** On a TV, Clear after the search box while there is text, with a focus ring; nothing on a phone. */
 @Composable
 fun SearchBoxButtonsBeside(
     text: String,
     onChange: (String) -> Unit,
-    voice: Boolean = true,
 ) {
     if (!isTelevision()) return
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        if (text.isNotEmpty()) ClearButton(onChange, Modifier.remoteButtonRing())
-        if (voice) VoiceSearchButton(onResult = onChange, modifier = Modifier.remoteButtonRing())
-    }
+    if (text.isNotEmpty()) ClearButton(onChange, Modifier.remoteButtonRing())
 }
 
 @Composable

@@ -137,7 +137,10 @@ export function sameSite(request) {
 
 /** The version a backup upload starts from, from its If-Match header ("0" for the first). */
 export function baseVersion(header) {
-    const value = String(header ?? "").replace(/"/g, "");
+    const value = String(header ?? "")
+        .trim()
+        .replace(/^W\//, "")
+        .replace(/"/g, "");
     return /^\d{1,9}$/.test(value) ? Number(value) : null;
 }
 

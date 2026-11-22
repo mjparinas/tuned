@@ -25,9 +25,10 @@
                 <p class="back"><a href="/account">‹ Your Tuned account</a></p>
                 <h1>Channels and guide</h1>
                 <p class="small">
-                    Your Live TV guide, as the Tuned app shows it. Click a channel, or what's on now, and it opens in VLC on this device.
-                    The channels and guide come from the copy your Tuned app keeps in your account, so they show even when your provider
-                    blocks web pages. VLC connects to your provider itself: no video passes through Tuned.
+                    Your Live TV guide, as the Tuned app shows it. Click a channel or a show and it opens in VLC on this device where the
+                    browser can, and its link is copied so you can paste it into any player. The channels and guide come from the copy your
+                    Tuned app keeps in your account, so they show even when your provider blocks web pages. VLC connects to your provider
+                    itself: no video passes through Tuned.
                 </p>
                 <p id="status" role="status" aria-live="polite"></p>
             </div>
@@ -70,6 +71,13 @@
                             >
                                 Filters
                             </button>
+                            <div class="field" id="click-field" hidden>
+                                <label for="click">Clicking a channel</label>
+                                <select id="click">
+                                    <option value="vlc">Opens VLC, copies link</option>
+                                    <option value="copy">Copies link only</option>
+                                </select>
+                            </div>
                             <fieldset class="kinds views" id="views">
                                 <legend class="visually-hidden">View</legend>
                                 <label><input type="radio" name="view" value="grid" checked />Guide</label>
@@ -108,13 +116,11 @@
                     </section>
 
                     <section class="card span" id="blocked" hidden aria-labelledby="blocked-title">
-                        <h2 id="blocked-title">Open this playlist in the Tuned app first</h2>
+                        <h2 id="blocked-title">No channels backed up for this playlist yet</h2>
                         <p id="blocked-why"></p>
-                        <p>
-                            Open this playlist in the Tuned app, signed in to your account, and its channels and guide show up here within
-                            the hour: the app keeps a copy in your account. Until then, VLC can still open the whole playlist itself with
-                            the buttons below.
-                        </p>
+                        <p><strong id="blocked-fix"></strong></p>
+                        <p class="small" id="blocked-extra"></p>
+                        <p class="small">Until then, VLC can still open the whole playlist itself with the buttons below.</p>
                         <div class="actions"><a class="button quiet" href="/check">Check my provider</a></div>
                     </section>
 
@@ -144,6 +150,7 @@
                 <p class="message" id="show-message" role="status" aria-live="polite"></p>
                 <form method="dialog" class="actions"><button class="quiet" value="close">Close</button></form>
             </dialog>
+            <p class="message toast" id="toast" role="status" aria-live="polite" hidden></p>
         </main>
         <script type="module" src="/account/channels/channels.js"></script>
         <script src="/beacon.js" defer></script>

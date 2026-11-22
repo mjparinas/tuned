@@ -1,6 +1,7 @@
 // /api/backup (docs/decisions/accounts.md): the account's backup, the app's sync copy as JSON, not encrypted
 // (Melvin, 2026-11-19: "i dont want to encrypt backups"). Kept gzipped in Postgres, the last few versions.
-//   GET            a signed-in device: the newest copy (or `?version=N`), with its version in ETag
+//   GET            a signed-in device: the newest copy (or `?version=N`), with its version in X-Backup-Version and ETag
+//                  (Vercel weakens the ETag of a compressed answer to W/"N", so the app reads X-Backup-Version first)
 //   PUT            a signed-in device: a new copy on top of the version in If-Match ("0" for the first);
 //                  409 with the newest version when another device saved since
 //   DELETE         the website or a device: deletes every version
@@ -20,7 +21,12 @@ export function GET(request) {
         const found = await backup(device.account, asked == null ? null : baseVersion(asked));
         if (!found) return json({ status: "none" }, 404);
         return new Response(gunzipSync(Buffer.from(found.data, "base64")), {
-            headers: { "Content-Type": "application/json", "Cache-Control": "no-store", ETag: `"${found.version}"` },
+            headers: {
+                "Content-Type": "application/json",
+                "Cache-Control": "no-store",
+                ETag: `"${found.version}"`,
+                "X-Backup-Version": String(found.version),
+            },
         });
     });
 }
@@ -48,7 +54,7 @@ export function PUT(request) {
             const newest = (await backupInfo(device.account))[0];
             return json({ status: "conflict", version: newest?.version ?? 0 }, 409);
         }
-        return json({ status: "ok", version }, 200, { ETag: `"${version}"` });
+        return json({ status: "ok", version }, 200, { ETag: `"${version}"`, "X-Backup-Version": String(version) });
     });
 }
 

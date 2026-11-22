@@ -30,6 +30,7 @@ import com.tunedplayer.app.BuildConfig
 import com.tunedplayer.app.R
 import com.tunedplayer.app.core.UserAgents
 import com.tunedplayer.app.ui.common.TunedDialog
+import com.tunedplayer.app.ui.common.focusRing
 
 /**
  * Settings › About › User agent: a picklist of what common players and set-top boxes send, Tuned first and the
@@ -104,6 +105,7 @@ private fun Choice(
         Modifier
             .fillMaxWidth()
             .heightIn(min = 48.dp)
+            .focusRing(RowFocusShape, MaterialTheme.colorScheme.primary)
             .selectable(selected = on, role = Role.RadioButton, onClick = onClick)
             .padding(vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
