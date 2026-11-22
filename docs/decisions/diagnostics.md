@@ -25,12 +25,22 @@ Melvin, 2026-11-17: "optimize for the app not crashing or being unreliable", and
 
 ## Settings › Updates and advanced › Logs
 
-- **Logs** is always there, under Troubleshooting: crash reports, then the recent log newest first, with copy, share (plain text, up to 200,000 characters) and clear.
+- **Logs** is always there, under Troubleshooting: Send to Tuned (below), crash reports, then the recent log newest first, with copy, share (plain text, up to 200,000 characters) and clear.
 - **Developer mode was removed** (Melvin, 2026-11-18: "remove developer mode but keep logs"). It was a switch that kept the detailed log and showed Logs; now both are always on, so there is nothing to turn on before a problem can be looked into. The old stored `developer_mode` value is simply ignored.
 
 ## Report a problem (Melvin, 2026-11-19)
 
 "Do 3", from the Horizon Maps review. Settings › Updates and advanced › Troubleshooting › **Report a problem** gathers what a fix needs in one tap: the version and build, whether it's the GitHub or store copy, the device and Android version, a blank "What happened" space, the latest crash or freeze report and the last 400 log lines (`diagnostics/ProblemReport.kt`). Since the admin (2026-11-19) it first asks what happened and, optionally, an email for a reply, then offers **Send to Tuned**, which sends it to the admin's Reports ([admin](admin.md)), or **Share instead**, which opens the share sheet so the person picks where it goes (email, a chat, a note). A device with nothing to share to (some TVs) gets it copied instead, and the row says so. Every line has already been through `AppLog.scrub`, so no login is in it. It is capped at 200,000 characters, like Logs' share.
+
+## Report from Logs, and none on a TV (Melvin, 2026-11-21)
+
+"on android tv, remove report a problem because people can't type. instead, on the logs screen, there should be a report button and it should automatically send all of the users logs, and all of their device information to me (type of phone, version of os, version of the tuned app, etc. the more data the better). don't forget a spinner while sending". So:
+
+- **Report a problem is gone on a TV**: Troubleshooting there has only Logs. Phones and tablets keep it, with its words and Share instead.
+- **Logs opens on Send to Tuned**, on every device, first in the list and where a TV's remote starts, so OK alone sends it. Nothing to type. A spinner and "Sending this log and this device's details…" while it sends, then "Sent to Tuned" or, in red words, that it couldn't, with the title turned to Try again. The send lives in the screen's view model, so turning the screen doesn't drop it.
+- **What goes** (`diagnostics/DeviceDetails.kt`, `ProblemReport.sendLogsToTuned`): the whole log (up to 150,000 characters), the last three crash or freeze reports, and the device's details in sections: Tuned (version, build, GitHub or store, debug, who installed it, when installed and updated, how long it has run, Premium, how many reports are saved); the device (maker, brand, model, device, product, hardware, chip, CPU and cores, TV, tablet or phone, Android and API level, security patch, Android's build and fingerprint, WebView version, touch screen); the screen (pixels, dp, density, font scale, orientation, refresh rate, display modes, HDR); memory (total, free, low, the app's limit and use); storage (free of total, the database, app files, cache, downloads); the network (connected, Wi-Fi, Ethernet, mobile, VPN, whether the internet checked out, metered, speed estimate, private DNS); power (battery, plugged in, battery saver, battery limits); language and time (language, device languages, time zone, 24-hour clock, the time); the account (the Tuned account's email when signed in, the install id while usage stats are on); and playlists (how many, of which kinds, which is in use, live channels, films, episodes, guide entries, downloads). A fact that can't be read says why rather than stopping the rest.
+- **Never a login**: no playlist's server, username, password or link is read into it, only counts and kinds; and the whole text goes through `AppLog.scrub` and then has every saved playlist's password, username, playlist link and guide links masked, as written and as they appear in a link (`DeviceDetailsTest`). The log and crash reports were scrubbed as they were written.
+- It goes to the same `POST /api/report` as Report a problem, so it lands in the admin's Reports and its email in the same way ([admin](admin.md)).
 
 ## Device smoke test (2026-11-18)
 

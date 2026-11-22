@@ -244,6 +244,9 @@
     <string name="report_share_instead">Partager plutôt</string>
     <string name="report_sent">Envoyé à Tuned. Merci de nous l\'avoir signalé.</string>
     <string name="report_send_failed">Envoi impossible. Vérifiez la connexion et réessayez, ou partagez-le plutôt.</string>
+    <string name="logs_report_summary">Envoie ce journal et les détails de cet appareil, comme son modèle et sa version d\'Android, à Tuned. Rien à saisir, et les identifiants sont exclus.</string>
+    <string name="logs_report_sending">Envoi du journal et des détails de l\'appareil…</string>
+    <string name="logs_report_failed">Échec de l\'envoi. Vérifiez la connexion, puis réessayez.</string>
     <string name="settings_header_privacy">Confidentialité</string>
     <string name="settings_usage_stats">Envoyer des statistiques d\'utilisation anonymes</string>
     <string name="settings_usage_stats_summary">Les écrans et fonctions utilisés et si les lectures fonctionnent, pour que Tuned sache quoi corriger. Jamais ce que vous regardez, cherchez ou tapez.</string>

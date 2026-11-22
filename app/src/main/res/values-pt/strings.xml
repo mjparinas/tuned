@@ -244,6 +244,9 @@
     <string name="report_share_instead">Compartilhar</string>
     <string name="report_sent">Enviado ao Tuned. Obrigado por avisar.</string>
     <string name="report_send_failed">Não foi possível enviar. Confira a conexão e tente de novo, ou compartilhe.</string>
+    <string name="logs_report_summary">Envia este registro e os detalhes deste dispositivo, como modelo e versão do Android, ao Tuned. Nada para digitar, e os logins ficam de fora.</string>
+    <string name="logs_report_sending">Enviando este registro e os detalhes do dispositivo…</string>
+    <string name="logs_report_failed">Não foi possível enviar. Verifique a conexão e tente novamente.</string>
     <string name="settings_header_privacy">Privacidade</string>
     <string name="settings_usage_stats">Enviar estatísticas de uso anônimas</string>
     <string name="settings_usage_stats_summary">Quais telas e recursos são usados e se a reprodução funciona, para o Tuned saber o que corrigir. Nunca o que você assiste, busca ou digita.</string>

@@ -255,6 +255,9 @@
     <string name="report_share_instead">Share instead</string>
     <string name="report_sent">Sent to Tuned. Thanks for telling us.</string>
     <string name="report_send_failed">Couldn\'t send it. Check the connection and try again, or share it instead.</string>
+    <string name="logs_report_summary">Sends this log and this device\'s details, like its model and Android version, to Tuned. Nothing to type, and logins are left out.</string>
+    <string name="logs_report_sending">Sending this log and this device\'s details…</string>
+    <string name="logs_report_failed">Couldn\'t send it. Check the connection, then try again.</string>
     <string name="settings_header_privacy">Privacy</string>
     <string name="settings_usage_stats">Send anonymous usage stats</string>
     <string name="settings_usage_stats_summary">Which screens and features get used and whether plays work, so Tuned knows what to fix. Never what you watch, search or type.</string>

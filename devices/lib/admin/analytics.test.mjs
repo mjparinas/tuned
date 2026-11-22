@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { cleanBatch, cleanPageView, cleanReport, describeAgent, EVENTS, visitorHash } from "./analytics.mjs";
+import { cleanBatch, cleanPageView, cleanReport, describeAgent, EVENTS, storedLog, visitorHash } from "./analytics.mjs";
 
 const install = "0123456789abcdef0123456789abcdef";
 const now = 1_800_000_000_000;
@@ -43,8 +43,18 @@ test("a wrong install id is refused and odd times become now", () => {
 test("a report needs words or a crash, and is capped", () => {
     assert.equal(cleanReport({ what: "  " }), null);
     const report = cleanReport({ what: "Guide is empty", log: "x".repeat(100_000), install });
-    assert.equal(report.log.length, 60_000);
+    assert.equal(report.log.length, 100_000);
+    assert.equal(cleanReport({ log: "x".repeat(200_000), details: "Model: Shield" }).log.length, 150_000);
     assert.equal(report.install, install);
+});
+
+test("the Logs screen's report needs no words, and keeps the device's details above the log", () => {
+    const report = cleanReport({ what: "", details: "  Model: SHIELD Android TV\nAndroid: 11 (API 30)  ", log: "E/Sync boom", install });
+    assert.equal(report.what, "");
+    assert.equal(report.details, "Model: SHIELD Android TV\nAndroid: 11 (API 30)");
+    assert.equal(storedLog(report), "==== Device ====\nModel: SHIELD Android TV\nAndroid: 11 (API 30)\n==== Log ====\nE/Sync boom");
+    assert.equal(storedLog(cleanReport({ what: "No guide", log: "plain" })), "plain");
+    assert.equal(cleanReport({ what: "", details: "   ", log: "only a log" }), null);
 });
 
 const req = (headers = {}, url = "https://www.tunedplayer.com/api/pv") => new Request(url, { method: "POST", headers });
