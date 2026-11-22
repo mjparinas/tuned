@@ -8,6 +8,7 @@ import com.tunedplayer.app.ui.settings.ChannelHealthScreen
 import com.tunedplayer.app.ui.settings.DeveloperLogScreen
 import com.tunedplayer.app.ui.settings.FavouriteOrderScreen
 import com.tunedplayer.app.ui.settings.HiddenGroupsScreen
+import com.tunedplayer.app.ui.settings.ManageListsScreen
 import com.tunedplayer.app.ui.settings.RegionSettingsScreen
 import com.tunedplayer.app.ui.settings.SettingsPage
 import com.tunedplayer.app.ui.settings.SettingsPageScreen
@@ -30,6 +31,8 @@ import kotlinx.serialization.Serializable
 @Serializable data object ChannelHealthRoute
 
 @Serializable data object FavouriteOrderRoute
+
+@Serializable data object ManageListsRoute
 
 /** Settings › Updates and advanced › Logs. */
 @Serializable data object DeveloperLogRoute
@@ -66,5 +69,6 @@ fun NavGraphBuilder.settingsScreens(app: AppNav) {
         ChannelHealthScreen(settings = app.settings, onBack = { app.nav.popBackStack() })
     }
     composable<FavouriteOrderRoute> { FavouriteOrderScreen(onBack = { app.nav.popBackStack() }) }
+    composable<ManageListsRoute> { ManageListsScreen(onBack = { app.nav.popBackStack() }) }
     composable<DeveloperLogRoute> { DeveloperLogScreen(onBack = { app.nav.popBackStack() }) }
 }
