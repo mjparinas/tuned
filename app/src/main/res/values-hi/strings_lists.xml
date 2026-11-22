@@ -6,6 +6,10 @@
     <string name="list_name">नाम</string>
     <string name="list_save">सहेजें</string>
     <string name="list_done">हो गया</string>
+    <string name="lists_manage">सूचियाँ प्रबंधित करें</string>
+    <string name="lists_manage_summary">अपनी सूचियों का नाम बदलें या उन्हें हटाएँ</string>
+    <string name="lists_manage_empty">अभी कोई सूची नहीं है। किसी चैनल या फ़िल्म से सूची जोड़ें।</string>
+    <string name="lists_manage_row_summary">नाम बदलने के लिए चुनें</string>
     <string name="list_rename">सूची का नाम बदलें</string>
     <string name="list_delete">सूची हटाएं</string>
     <string name="list_delete_title">“%s” हटाएं?</string>

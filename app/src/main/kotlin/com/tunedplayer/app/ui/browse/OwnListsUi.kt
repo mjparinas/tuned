@@ -1,9 +1,7 @@
 package com.tunedplayer.app.ui.browse
 
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -18,9 +16,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.PlaylistPlay
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
@@ -162,62 +157,21 @@ internal fun ListNameDialog(
 }
 
 /**
- * A list's chip in the row above Live TV or Movies. While it is chosen, Rename and Delete sit beside it as chips of their
- * own, full-size and one press away, rather than in a small menu inside it (Melvin, 2026-11-19: "avoid 3 dot drop downs").
+ * A list's chip in the row above Live TV or Movies. Filters only: rename and delete live in Settings › Manage lists
+ * (Melvin, 2026-11-22: "Remove rename list and delete list on the chips on live tv", then the same for Movies).
  */
 @Composable
 internal fun OwnListChip(
     list: ListEntity,
     selected: Boolean,
     onSelect: () -> Unit,
-    onRename: (String) -> Unit,
-    onDelete: () -> Unit,
 ) {
-    var renaming by remember { mutableStateOf(false) }
-    var deleting by remember { mutableStateOf(false) }
-    val renameLabel = stringResource(R.string.list_rename)
-    val deleteLabel = stringResource(R.string.list_delete)
-    // A flow row, so in a TV's narrow column of groups Rename and Delete wrap under the list rather than off the edge.
-    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), itemVerticalAlignment = Alignment.CenterVertically) {
-        FilterChip(
-            selected = selected,
-            onClick = onSelect,
-            leadingIcon = { Icon(Icons.AutoMirrored.Filled.PlaylistPlay, contentDescription = null, modifier = Modifier.size(16.dp)) },
-            label = { Text(list.name) },
-        )
-        if (selected) {
-            AssistChip(
-                onClick = { renaming = true },
-                leadingIcon = { Icon(Icons.Filled.Edit, contentDescription = null, modifier = Modifier.size(16.dp)) },
-                label = { Text(renameLabel) },
-            )
-            AssistChip(
-                onClick = { deleting = true },
-                leadingIcon = { Icon(Icons.Filled.Delete, contentDescription = null, modifier = Modifier.size(16.dp)) },
-                label = { Text(deleteLabel) },
-            )
-        }
-    }
-    if (renaming) {
-        ListNameDialog(R.string.list_rename, list.name, onDismiss = { renaming = false }) { name ->
-            renaming = false
-            onRename(name)
-        }
-    }
-    if (deleting) {
-        TunedDialog(
-            onDismissRequest = { deleting = false },
-            title = { Text(stringResource(R.string.list_delete_title, list.name)) },
-            text = { Text(stringResource(R.string.list_delete_body)) },
-            confirmButton = {
-                TextButton(onClick = {
-                    deleting = false
-                    onDelete()
-                }) { Text(deleteLabel) }
-            },
-            dismissButton = { TextButton(onClick = { deleting = false }) { Text(stringResource(R.string.cancel)) } },
-        )
-    }
+    FilterChip(
+        selected = selected,
+        onClick = onSelect,
+        leadingIcon = { Icon(Icons.AutoMirrored.Filled.PlaylistPlay, contentDescription = null, modifier = Modifier.size(16.dp)) },
+        label = { Text(list.name) },
+    )
 }
 
 private const val TAG = "OwnLists"

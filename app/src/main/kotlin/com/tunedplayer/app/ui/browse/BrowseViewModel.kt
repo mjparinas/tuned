@@ -490,19 +490,6 @@ class BrowseViewModel(
         container.lists.withKind(kind).stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
     }
 
-    fun renameList(
-        id: Long,
-        name: String,
-    ) {
-        viewModelScope.launchSafely("BrowseViewModel") { container.lists.rename(id, name) }
-    }
-
-    /** Deletes a list; a tab showing it goes back to everything. */
-    fun deleteList(id: Long) {
-        filters.values.forEach { f -> if (f.value == Filter.OwnList(id)) f.value = Filter.All }
-        viewModelScope.launchSafely("BrowseViewModel") { container.lists.delete(id) }
-    }
-
     /** Hides a group from its section everywhere; Settings › Hidden groups brings it back. */
     fun hideGroup(
         kind: ContentKind,

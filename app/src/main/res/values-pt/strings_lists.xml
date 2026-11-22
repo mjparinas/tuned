@@ -6,6 +6,10 @@
     <string name="list_name">Nome</string>
     <string name="list_save">Salvar</string>
     <string name="list_done">Concluído</string>
+    <string name="lists_manage">Gerir listas</string>
+    <string name="lists_manage_summary">Mude o nome ou apague as suas listas</string>
+    <string name="lists_manage_empty">Ainda não tem listas. Adicione uma a partir de um canal ou filme.</string>
+    <string name="lists_manage_row_summary">Selecione para mudar o nome</string>
     <string name="list_rename">Renomear lista</string>
     <string name="list_delete">Apagar lista</string>
     <string name="list_delete_title">Apagar “%s”?</string>
