@@ -17,4 +17,6 @@
     <string name="update_problem_download">تعذّر تنزيل التحديث. تحقق من اتصالك وحاول مرة أخرى.</string>
     <string name="update_problem_space">لا توجد مساحة كافية للتحديث. أفرغ بعض المساحة وحاول مرة أخرى.</string>
     <string name="update_problem_other">لم يُثبَّت التحديث. حاول مرة أخرى.</string>
+    <string name="update_problem_permission">لا يُسمح لـ Tuned بتثبيت التحديثات بعد. فعّل Tuned ضمن «تثبيت التطبيقات غير المعروفة» في إعدادات Android (على التلفزيون: الأمان والقيود › مصادر غير معروفة)، ثم حاول مرة أخرى.</string>
+    <string name="update_problem_installer">لم يُفتح مُثبِّت Android. حاول مرة أخرى.</string>
 </resources>

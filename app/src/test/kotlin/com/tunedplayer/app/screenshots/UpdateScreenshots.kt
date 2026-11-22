@@ -58,6 +58,7 @@ private val STATES =
         GitHubUpdates.State.Installing(READY, InstallStep.OPEN_INSTALLER),
         GitHubUpdates.State.Installing(READY, InstallStep.CONFIRM),
         GitHubUpdates.State.InstallFailed(READY, InstallProblem.DOWNLOAD),
+        GitHubUpdates.State.InstallFailed(READY, InstallProblem.PERMISSION),
     )
 
 @Composable

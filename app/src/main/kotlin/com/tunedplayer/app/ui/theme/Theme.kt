@@ -21,6 +21,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.tunedplayer.app.data.Accent
 import com.tunedplayer.app.data.ThemeMode
+import com.tunedplayer.app.ui.common.TvFocusShade
 import com.tunedplayer.app.ui.common.isTelevision
 
 /** Brand colours (docs/decisions/branding.md): Tuned violet with a signal teal accent. */
@@ -220,5 +221,5 @@ fun TunedTheme(
             tunedScheme(dark, accent, pureBlack = false)
         }
     if (dark && pureBlack) scheme = scheme.pureBlack()
-    MaterialTheme(colorScheme = scheme, typography = TunedType, shapes = TunedShapes, content = content)
+    MaterialTheme(colorScheme = scheme, typography = TunedType, shapes = TunedShapes) { TvFocusShade(content) }
 }

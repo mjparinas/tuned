@@ -41,4 +41,15 @@ class CloudSyncTest {
         assertEquals(one, CloudSync.fingerprint("same".toByteArray()))
         assertNotEquals(one, CloudSync.fingerprint("other".toByteArray()))
     }
+
+    @Test
+    fun aWeakEtagStillGivesTheBackupsVersion() {
+        // Vercel weakens the ETag of a compressed answer; read as 0, every save was a conflict (2026-11-21).
+        assertEquals(5, CloudSync.backupVersion(null, "W/\"5\""))
+        assertEquals(5, CloudSync.backupVersion(null, "\"5\""))
+        assertEquals(7, CloudSync.backupVersion("7", "W/\"5\""))
+        assertEquals(5, CloudSync.backupVersion("", "W/\"5\""))
+        assertEquals(null, CloudSync.backupVersion(null, "W/\"619e04087f\""))
+        assertEquals(null, CloudSync.backupVersion(null, null))
+    }
 }

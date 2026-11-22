@@ -82,6 +82,35 @@ class CacheWritersTest {
     }
 
     @Test
+    fun aRefreshWorksOnTheAppsOwnDatabaseWithSeveralConnections() = runTest {
+        // The app's database is a file in WAL mode, where Room reads on other connections than it writes. The list of
+        // changed streams was a TEMP table, which only the connection that made it can see, so counting it failed with
+        // "no such table: items_changed" and every refresh of a cached playlist failed (2026-11-21).
+        val name = "cache-writers-wal.db"
+        context.deleteDatabase(name)
+        val file =
+            Room
+                .databaseBuilder(context, TunedDatabase::class.java, name)
+                .setJournalMode(androidx.room.RoomDatabase.JournalMode.WRITE_AHEAD_LOGGING)
+                .build()
+        try {
+            file.items().insertAll(listOf(item(1, "Old one"), item(2, "Kept")))
+            val writer = PlaylistWriter(file)
+            writer.begin()
+            val next = listOf(item(2, "Kept, renamed"), item(3, "New"))
+            next.forEach { writer.accept(it.id) }
+            writer.add(next)
+
+            assertEquals(2, writer.commit())
+            assertEquals(listOf(2L, 3L), file.items().allIds().sorted())
+            assertEquals("Kept, renamed", file.items().get(2)?.name)
+        } finally {
+            file.close()
+            context.deleteDatabase(name)
+        }
+    }
+
+    @Test
     fun aRefreshThatChangesEverythingLandsWhole() = runTest {
         db.items().insertAll((1L..5_000L).map { item(it, "Old $it") })
         val writer = PlaylistWriter(db)
@@ -107,6 +136,59 @@ class CacheWritersTest {
     }
 
     @Test
+    fun theFirstDownloadShowsItsFirstStreamsAndBuildsTheRestInOneGo() = runTest {
+        val schema = itemsSchema()
+        val writer = PlaylistWriter(db)
+        writer.begin()
+        val all = (1L..3_000L).map { item(it, "Film $it") }
+        all.forEach { writer.accept(it.id) }
+        all.chunked(1_000).forEach { writer.add(it) }
+
+        // While the rest is read, only the first streams are in the lists, so no batch makes every list start over.
+        assertEquals(2_000, db.items().count())
+
+        val steps = mutableListOf<Pair<Long, Long>>()
+        assertEquals(3_000, writer.commit { done, total -> steps += done to total })
+        assertEquals((1L..3_000L).toList(), db.items().allIds().sorted())
+        assertEquals(listOf(2_999L), search("2999"))
+        // The indexes and the search index come back exactly as Room made them.
+        assertEquals(schema, itemsSchema())
+        assertEquals(steps.last().second, steps.last().first)
+        assertFalse(tableExists("items_next"))
+    }
+
+    @Test
+    fun aRefreshThatReplacesMostOfTheCacheIsRebuiltWhole() = runTest {
+        val schema = itemsSchema()
+        db.items().insertAll((1L..12_000L).map { item(it, "Old $it") })
+        val writer = PlaylistWriter(db)
+        writer.begin()
+        val next = (6_001L..18_000L).map { item(it, "New $it") }
+        next.forEach { writer.accept(it.id) }
+        next.chunked(1_000).forEach { writer.add(it) }
+        assertEquals(12_000, db.items().count())
+
+        assertEquals(12_000, writer.commit())
+        assertEquals((6_001L..18_000L).toList(), db.items().allIds().sorted())
+        assertEquals(emptyList(), search("old"))
+        assertEquals(listOf(17_999L), search("17999"))
+        assertEquals(schema, itemsSchema())
+    }
+
+    @Test
+    fun aFirstDownloadOfOnePartLeavesTheOtherPart() = runTest {
+        db.items().insertAll(listOf(item(1, "A film", kind = 1)))
+        val writer = PlaylistWriter(db, scope = "kind = 0")
+        writer.begin()
+        val live = listOf(item(2, "A channel", kind = 0), item(3, "Another channel", kind = 0))
+        live.forEach { writer.accept(it.id) }
+        writer.add(live)
+        assertEquals(2, writer.commit())
+        assertEquals(listOf(1L, 2L, 3L), db.items().allIds().sorted())
+        assertEquals(listOf(1L), search("film"))
+    }
+
+    @Test
     fun aFailedRefreshLeavesTheCache() = runTest {
         db.items().insertAll(listOf(item(1, "One")))
         val writer = PlaylistWriter(db)
@@ -127,6 +209,10 @@ class CacheWritersTest {
         assertEquals(listOf(1L, 2L), db.items().allIds().sorted())
     }
 
+    private fun itemsSchema() = db.openHelper.readableDatabase
+        .query("SELECT type, name, sql FROM sqlite_master WHERE tbl_name = 'items' ORDER BY name")
+        .use { c -> buildList { while (c.moveToNext()) add("${c.getString(0)} ${c.getString(1)} ${c.getString(2)}") } }
+
     private fun sideTableExists() = tableExists("programmes_next")
 
     private fun tableExists(name: String) = db.openHelper.readableDatabase
@@ -145,9 +231,10 @@ class CacheWritersTest {
     private fun item(
         id: Long,
         name: String,
+        kind: Int = 1,
     ) = ItemEntity(
         id = id,
-        kind = 1,
+        kind = kind,
         name = name,
         searchName = Search.normalize(name),
         groupName = "News",

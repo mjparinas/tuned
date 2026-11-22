@@ -11,6 +11,7 @@ import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.unit.dp
 import com.tunedplayer.app.R
 import com.tunedplayer.app.core.AccountSeats
+import com.tunedplayer.app.core.ReleaseNotes
 import com.tunedplayer.app.data.AppReset
 import com.tunedplayer.app.data.AppSettings
 import com.tunedplayer.app.data.CaptionStyle
@@ -27,6 +28,8 @@ import com.tunedplayer.app.ui.settings.AccountSignInDialog
 import com.tunedplayer.app.ui.settings.SettingsPage
 import com.tunedplayer.app.ui.settings.SignOutDialog
 import com.tunedplayer.app.ui.settings.SignOutDownloadsDialog
+import com.tunedplayer.app.ui.settings.WhatsNew
+import com.tunedplayer.app.ui.settings.WhatsNewNotes
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.ParameterizedRobolectricTestRunner
@@ -86,6 +89,16 @@ class SettingsScreenshots : Screenshots() {
     @Test
     fun captions() = shot(
         "settings-captions",
+        CaptionSettingsRoute,
+        wait = text(R.string.settings_captions),
+        settings = DARK.copy(captions = CaptionStyle(enabled = true)),
+    )
+
+    /** Captions on a TV: the preview beside the rows, the remote starting on Show captions. */
+    @Test
+    @Config(qualifiers = TV)
+    fun captionsTv() = shot(
+        "settings-captions-tv",
         CaptionSettingsRoute,
         wait = text(R.string.settings_captions),
         settings = DARK.copy(captions = CaptionStyle(enabled = true)),
@@ -155,6 +168,25 @@ class SettingsScreenshots : Screenshots() {
         overlay = { AccountSignInDialog(SIGN_IN_CODE, text(R.string.tuned_account_sign_in), onRetry = {}, onClose = {}) },
     )
 
+    /** What's new on a phone: the bottom sheet from Settings › Tuned › Version. */
+    @Test
+    fun whatsNew() = shot(
+        "settings-whats-new",
+        SettingsRoute,
+        wait = "filters chosen on each tab",
+        overlay = { WhatsNew(WhatsNewNotes.Loaded(SAMPLE_CHANGES), onRetry = {}, onDismiss = {}) },
+    )
+
+    /** What's new on a TV: the whole screen, no drag handle, the first change focused and Done always in view. */
+    @Test
+    @Config(qualifiers = TV)
+    fun whatsNewTv() = shot(
+        "settings-whats-new-tv",
+        SettingsRoute,
+        wait = "filters chosen on each tab",
+        overlay = { WhatsNew(WhatsNewNotes.Loaded(SAMPLE_CHANGES), onRetry = {}, onDismiss = {}) },
+    )
+
     /** Settings › Guide and refresh › Notifications, which opens Android's page for the dot on the app icon. */
     @Test
     fun notifications() = shot(
@@ -189,6 +221,21 @@ class SettingsScreenshots : Screenshots() {
         then = { compose.onNodeWithText(text(R.string.settings_user_agent)).performScrollTo().performClick() },
     )
 }
+
+/** A release's notes, long enough that they scroll on a TV. */
+private val SAMPLE_CHANGES =
+    ReleaseNotes.parse(
+        """
+        * feat: keep the filters chosen on each tab, per profile (#268)
+        * feat: show progress for installing updates and every refresh (#273)
+        * feat: turn the phone into a remote while casting (#274)
+        * perf: open Live TV faster from the cache (#270)
+        * refactor: tidier More seats card (#280)
+        * fix: Top rated lists films by their rating again (#279)
+        * fix: the app no longer closes on Android 11 when searching (#276)
+        * fix: the guide keeps its place after a refresh (#271)
+        """.trimIndent(),
+    )
 
 private const val SIGN_IN_PAGE = "https://www.tunedplayer.com/account?tv=K7QF29MD"
 private val SIGN_IN_CODE = AccountSignIn.State.Code("K7QF-29MD", SIGN_IN_PAGE, QrModules.of(SIGN_IN_PAGE))

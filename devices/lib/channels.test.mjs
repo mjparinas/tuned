@@ -3,9 +3,20 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
     ago,
+    applyFilters,
+    genreOf,
+    guideSpan,
+    hasWord,
+    logoSrc,
+    NO_FILTERS,
+    normalize,
+    offers,
+    regionName,
+    ticks,
     fileName,
     fillLogin,
     fromAppCopy,
+    noCopyText,
     filterChannels,
     gridPlace,
     gridSlots,
@@ -18,6 +29,9 @@ import {
     platformOf,
     progress,
     vlcLink,
+    clickPlan,
+    clickMessage,
+    vlcDidNotOpen,
     xmlText,
     xmltvTime,
     xtreamChannels,
@@ -179,6 +193,27 @@ test("VLC's own link on Android, iPhone and Mac; none on Windows, where the .m3u
     assert.equal(platformOf("Mozilla/5.0 (Windows NT 10.0; Win64; x64)"), "windows");
 });
 
+test("a click opens VLC where it has a link, and always copies the link", () => {
+    const url = "http://p.example:8080/live/u/p/1.ts";
+    assert.deepEqual(clickPlan(url, "mac", "CBC"), { vlc: `vlc://${url}`, copy: true });
+    assert.deepEqual(clickPlan(url, "windows", "CBC"), { vlc: null, copy: true });
+    assert.deepEqual(clickPlan(url, "other", "CBC"), { vlc: null, copy: true });
+    assert.deepEqual(clickPlan(url, "android", "CBC", "copy"), { vlc: null, copy: true });
+    assert.equal(clickPlan("not a link", "mac").vlc, null);
+});
+
+test("every click says what it did", () => {
+    assert.deepEqual(clickMessage({ name: "CBC", vlc: "vlc://x", copied: true }), {
+        tone: "ok",
+        text: "Opening CBC in VLC. The link is copied too, to paste into another player.",
+    });
+    assert.equal(clickMessage({ name: "CBC", vlc: "vlc://x", copied: false }).text, "Opening CBC in VLC.");
+    assert.equal(clickMessage({ name: "CBC", vlc: null, copied: true }).text.startsWith("CBC's link copied."), true);
+    assert.equal(clickMessage({ name: "CBC", vlc: null, copied: false }).tone, "error");
+    assert.match(clickMessage({ name: "", vlc: null, copied: true }).text, /^This channel's link copied/);
+    assert.match(vlcDidNotOpen("CBC"), /CBC's link is copied/);
+});
+
 test("a channel's .m3u file opens in any player, and names are safe for files", () => {
     const text = m3uFor([{ name: 'A, "B"\nC', group: "News", epgId: "a.ca", logo: "", url: "http://p/1.ts\n" }]);
     assert.equal(text, '#EXTM3U\n#EXTINF:-1 tvg-id="a.ca" group-title="News",A   B C\nhttp://p/1.ts\n');
@@ -211,6 +246,7 @@ test("the app's copy becomes channels and a guide, with the login put back", () 
         ["http://p:8080/live/me%40x/a%2Fb/1.ts", "http://p/play?username=me%40x&password=a%2Fb", "http://other/stream.m3u8"],
     );
     assert.deepEqual(read.channels[0], {
+        region: "",
         name: "CBC",
         group: "Canada",
         logo: "http://i/cbc.png",
@@ -243,4 +279,120 @@ test("how long ago, in words", () => {
     assert.equal(ago(now - 60_000, now), "1 minute ago");
     assert.equal(ago(now - 3 * 3_600_000, now), "3 hours ago");
     assert.equal(ago(now - 3 * 86_400_000, now), "3 days ago");
+});
+
+test("a newer app's copy brings each channel's country and each programme's kind, and leaves adult channels in the app", () => {
+    const copy = {
+        v: 1,
+        channels: [
+            ["TSN 1 FHD", "CA| Sports", "", "tsn1.ca", 1, "http://p/1.ts", "ca", 0],
+            ["Late night", "XXX", "", "", 2, "http://p/2.ts", "", 1],
+        ],
+        guide: { "tsn1.ca": [[1_795_201_200, 1_795_204_800, "Leafs vs Habs", 1]] },
+    };
+    const read = fromAppCopy(copy, null);
+    assert.deepEqual(
+        read.channels.map((c) => [c.name, c.region]),
+        [["TSN 1 FHD", "CA"]],
+    );
+    assert.equal(read.guide.get("tsn1.ca")[0].genre, 1);
+});
+
+test("words as the app matches them: a starred word starts a word, a phrase is in order, accents don't count", () => {
+    assert.equal(normalize("Télé-Québec  HD"), "tele quebec hd");
+    assert.equal(hasWord("Sportsnet One", ["sport*"]), true);
+    assert.equal(hasWord("CNN HD", ["hd"]), true);
+    assert.equal(hasWord("CNN FHD", ["hd"]), false);
+    assert.equal(hasWord("US| Premier League 1", ["premier league"]), true);
+    assert.equal(hasWord("League Premier", ["premier league"]), false);
+});
+
+const sample = [
+    { name: "TSN 1 FHD", group: "CA| Sports", region: "CA", epgId: "tsn1", hasGuide: true },
+    { name: "CNN HD", group: "US| News", region: "US", epgId: "cnn", hasGuide: true },
+    { name: "Treehouse", group: "CA| Kids", region: "CA", epgId: "", hasGuide: false },
+    { name: "Sky Cinema 4K", group: "UK| Movies", region: "UK", epgId: "sky", hasGuide: true },
+];
+const on = { tsn1: { title: "Leafs vs Habs", genre: 0 }, cnn: { title: "Newsroom", genre: 3 }, sky: { title: "Dune", genre: 2 } };
+const nowOf = (c) => on[c.epgId] ?? null;
+const names = (list) => list.map((c) => c.name);
+
+test("Live TV's filters narrow together, as in the app", () => {
+    assert.equal(applyFilters(sample, NO_FILTERS, nowOf).length, 4);
+    assert.deepEqual(names(applyFilters(sample, { ...NO_FILTERS, topic: "sports" }, nowOf)), ["TSN 1 FHD"]);
+    assert.deepEqual(names(applyFilters(sample, { ...NO_FILTERS, topic: "kids" }, nowOf)), ["Treehouse"]);
+    assert.deepEqual(names(applyFilters(sample, { ...NO_FILTERS, quality: "hd" }, nowOf)), ["CNN HD"]);
+    assert.deepEqual(names(applyFilters(sample, { ...NO_FILTERS, quality: "uhd" }, nowOf)), ["Sky Cinema 4K"]);
+    assert.deepEqual(names(applyFilters(sample, { ...NO_FILTERS, country: "CA" }, nowOf)), ["TSN 1 FHD", "Treehouse"]);
+    assert.deepEqual(names(applyFilters(sample, { ...NO_FILTERS, withGuide: true, country: "CA" }, nowOf)), ["TSN 1 FHD"]);
+    // A match between two sides is sports when the guide doesn't say.
+    assert.deepEqual(names(applyFilters(sample, { ...NO_FILTERS, onNow: 1 }, nowOf)), ["TSN 1 FHD"]);
+    assert.deepEqual(names(applyFilters(sample, { ...NO_FILTERS, onNow: 2 }, nowOf)), ["Sky Cinema 4K"]);
+    assert.deepEqual(names(applyFilters(sample, { ...NO_FILTERS, query: "dune" }, nowOf)), ["Sky Cinema 4K"]);
+    assert.deepEqual(names(applyFilters(sample, { ...NO_FILTERS, group: "US| News" }, nowOf)), ["CNN HD"]);
+    assert.equal(genreOf({ title: "Arsenal v Chelsea" }), 1);
+    assert.equal(genreOf({ title: "Movie night" }), 0);
+});
+
+test("only the filters that would find something are offered, countries by name", () => {
+    const o = offers(sample, nowOf);
+    assert.deepEqual(
+        o.countries.map((c) => [c.tag, c.name, c.count]),
+        [
+            ["CA", "Canada", 2],
+            ["UK", "United Kingdom", 1],
+            ["US", "United States", 1],
+        ],
+    );
+    assert.deepEqual(
+        o.topics.map((t) => t.key),
+        ["sports", "news", "kids", "movies"],
+    );
+    assert.deepEqual(
+        o.qualities.map((q) => q.key),
+        ["uhd", "fhd", "hd"],
+    );
+    assert.deepEqual(
+        o.genres.map((g) => g.code),
+        [1, 2, 3],
+    );
+    assert.equal(o.guide, true);
+    assert.equal(regionName("EN"), "English");
+    assert.equal(regionName("de"), "Germany");
+    assert.equal(regionName("ZZZ"), "ZZZ");
+});
+
+test("an http logo goes through the logo relay on an https page; https ones and anything else don't", () => {
+    assert.equal(logoSrc("https://i.example/a.png"), "https://i.example/a.png");
+    assert.equal(logoSrc("http://i.example/a.png"), "/api/account/logo?u=http%3A%2F%2Fi.example%2Fa.png");
+    assert.equal(logoSrc("http://i.example/a.png", "http:"), "http://i.example/a.png");
+    assert.equal(logoSrc("data:image/png;base64,xx"), "");
+    assert.equal(logoSrc(""), "");
+});
+
+test("the guide spans from just before now to its last programme, at most a day and a bit", () => {
+    const now = Date.UTC(2026, 10, 21, 19, 10);
+    const guide = new Map([["a", [{ start: now, stop: now + 10 * 3_600_000 }]]]);
+    const span = guideSpan(guide, now);
+    assert.equal(span.from, Date.UTC(2026, 10, 21, 18, 30));
+    assert.equal(span.to, Date.UTC(2026, 10, 22, 5, 30));
+    assert.equal(guideSpan(new Map(), now).to, Date.UTC(2026, 10, 21, 22, 30));
+    const long = new Map([["a", [{ start: now, stop: now + 90 * 3_600_000 }]]]);
+    assert.equal(guideSpan(long, now).to - guideSpan(long, now).from, 26 * 3_600_000);
+    assert.deepEqual(ticks(Date.UTC(2026, 10, 21, 18, 10), Date.UTC(2026, 10, 21, 19, 31)), [
+        Date.UTC(2026, 10, 21, 18, 30),
+        Date.UTC(2026, 10, 21, 19, 0),
+        Date.UTC(2026, 10, 21, 19, 30),
+    ]);
+});
+
+test("a playlist with no channels in the account says so, why, and what to do", () => {
+    const none = noCopyText("none");
+    assert.equal(none.title, "No channels backed up for this playlist yet");
+    assert.match(none.fix, /Back up now/);
+    assert.match(noCopyText(undefined).title, /No channels backed up/);
+    assert.match(noCopyText("empty").fix, /Refresh the playlist/);
+    // Our own server failing isn't "not backed up".
+    assert.doesNotMatch(noCopyText("error").title, /backed up for/);
+    assert.equal(noCopyText("too many").fix, "Try again later.");
 });

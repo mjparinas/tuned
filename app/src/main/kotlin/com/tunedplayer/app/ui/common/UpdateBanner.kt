@@ -169,6 +169,8 @@ object UpdateText {
                 when (state.problem) {
                     InstallProblem.DOWNLOAD -> R.string.update_problem_download
                     InstallProblem.SPACE -> R.string.update_problem_space
+                    InstallProblem.PERMISSION -> R.string.update_problem_permission
+                    InstallProblem.INSTALLER -> R.string.update_problem_installer
                     InstallProblem.REFUSED, InstallProblem.OTHER -> R.string.update_problem_other
                 },
             )

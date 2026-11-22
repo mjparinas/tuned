@@ -45,7 +45,14 @@ fun UpdateCheckRow() {
     SettingRow(
         stringResource(R.string.settings_check_now),
         summary,
-        onClick = { if (state !is GitHubUpdates.State.Checking) scope.launchSafely("Updates") { outcome = updates.check(force = true) } },
+        // With an update waiting, the row itself installs: a TV remote lands on the row, not on the button at its end, so
+        // OK used to run another check that found the same update and did nothing visible (Melvin, 2026-11-21).
+        onClick = {
+            when {
+                ready != null -> if (state !is GitHubUpdates.State.Installing) updates.install(context)
+                state !is GitHubUpdates.State.Checking -> scope.launchSafely("Updates") { outcome = updates.check(force = true) }
+            }
+        },
         trailing =
             when {
                 ready != null -> {

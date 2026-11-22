@@ -17,4 +17,6 @@
     <string name="update_problem_download">Impossible de télécharger la mise à jour. Vérifiez votre connexion et réessayez.</string>
     <string name="update_problem_space">Pas assez d’espace libre pour la mise à jour. Libérez de l’espace et réessayez.</string>
     <string name="update_problem_other">La mise à jour ne s’est pas installée. Réessayez.</string>
+    <string name="update_problem_permission">Tuned n’est pas encore autorisé à installer des mises à jour. Activez Tuned dans Installer des applis inconnues, dans les paramètres d’Android (sur un téléviseur : Sécurité et restrictions › Sources inconnues), puis réessayez.</string>
+    <string name="update_problem_installer">Le programme d’installation d’Android ne s’est pas ouvert. Réessayez.</string>
 </resources>

@@ -17,4 +17,6 @@
     <string name="update_problem_download">Не удалось загрузить обновление. Проверьте подключение и повторите попытку.</string>
     <string name="update_problem_space">Недостаточно свободного места для обновления. Освободите место и повторите попытку.</string>
     <string name="update_problem_other">Обновление не установилось. Повторите попытку.</string>
+    <string name="update_problem_permission">Tuned пока не может устанавливать обновления. Включите Tuned в разделе «Установка неизвестных приложений» в настройках Android (на телевизоре: Безопасность и ограничения › Неизвестные источники) и повторите попытку.</string>
+    <string name="update_problem_installer">Установщик Android не открылся. Повторите попытку.</string>
 </resources>
