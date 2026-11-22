@@ -22,6 +22,7 @@ import androidx.compose.ui.unit.sp
 import com.tunedplayer.app.data.Accent
 import com.tunedplayer.app.data.ThemeMode
 import com.tunedplayer.app.ui.common.TvFocusShade
+import com.tunedplayer.app.ui.common.isTelevision
 
 /** Brand colours (docs/decisions/branding.md): Tuned violet with a signal teal accent. */
 object Brand {
@@ -192,9 +193,13 @@ fun playerAccent(
     return scheme.primary.toArgb()
 }
 
+/**
+ * On a TV the system default is dark (Melvin, 2026-11-21: "Is there a way to set the TV app to dark mode by default?"):
+ * TVs such as the Shield report light, which glares in a dark room. Picking Light in Appearance still gives light.
+ */
 @Composable
 fun isDark(mode: ThemeMode): Boolean = when (mode) {
-    ThemeMode.SYSTEM -> isSystemInDarkTheme()
+    ThemeMode.SYSTEM -> isSystemInDarkTheme() || isTelevision()
     ThemeMode.LIGHT -> false
     ThemeMode.DARK -> true
 }

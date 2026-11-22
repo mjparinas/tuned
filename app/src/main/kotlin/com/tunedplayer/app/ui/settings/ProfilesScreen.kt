@@ -253,7 +253,7 @@ fun ProfilesScreen(
             if (atStart) {
                 BrandBar()
             } else {
-                BackTopBar(stringResource(if (managing) R.string.profiles_manage else R.string.profiles_title), onBack)
+                ProfilesTopBar(managing, onBack)
             }
         },
     ) { padding ->
@@ -424,6 +424,15 @@ internal fun WelcomeScaffold(
             content = content,
         )
     }
+}
+
+/** The title bar of "Who's watching?" opened from Home: see-through, so the glow shows behind the title. */
+@Composable
+internal fun ProfilesTopBar(
+    managing: Boolean,
+    onBack: () -> Unit,
+) {
+    BackTopBar(stringResource(if (managing) R.string.profiles_manage else R.string.profiles_title), onBack, transparent = true)
 }
 
 /** The app's mark and name in the upper left of "Who's watching?" at start, so the first screen says whose it is. */
