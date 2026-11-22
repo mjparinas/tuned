@@ -187,6 +187,8 @@
     <string name="settings_autoplay">自动播放下一集</string>
     <string name="settings_pip">画中画</string>
     <string name="settings_pip_summary">离开应用时在小窗口中继续观看</string>
+    <string name="settings_mini_player">返回时显示迷你播放器</string>
+    <string name="settings_mini_player_summary">在直播频道按返回后，频道会在小窗口中继续播放，方便浏览。选择新内容时会先停止它</string>
     <string name="settings_landscape">播放时旋转为横屏</string>
     <string name="settings_controls_timeout">隐藏控件的时间</string>
     <string name="settings_tune">自动调台</string>
