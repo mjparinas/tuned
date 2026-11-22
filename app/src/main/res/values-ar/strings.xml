@@ -193,7 +193,7 @@
     <string name="settings_pip">صورة داخل صورة</string>
     <string name="settings_pip_summary">تابع المشاهدة في نافذة صغيرة عند مغادرة التطبيق</string>
     <string name="settings_mini_player">المشغّل المصغّر عند الرجوع</string>
-    <string name="settings_mini_player_summary">الرجوع من قناة مباشرة يُبقيها تعمل في نافذة صغيرة أثناء التصفح. أي شيء جديد تختاره يوقفها أولًا</string>
+    <string name="settings_mini_player_summary">الرجوع أثناء المشاهدة يُبقي الفيديو يعمل في نافذة صغيرة أثناء التصفح. أي شيء جديد تختاره يوقفه أولًا</string>
     <string name="settings_landscape">التدوير إلى الوضع الأفقي عند التشغيل</string>
     <string name="settings_controls_timeout">إخفاء عناصر التحكم بعد</string>
     <string name="settings_tune">الضبط التلقائي</string>
