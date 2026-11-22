@@ -264,6 +264,8 @@ class PlayerActivity : FragmentActivity() {
         container.offline.pause()
         // A cast carries on while the app is in the background; downloads keep waiting while a TV plays.
         container.tvCasting.watch()
+        // Back on a live channel keeps it playing in a small window over the app; before the tools' own Back, so they come first.
+        MiniPlayer.Screen(this, { settings }, ::live, { cast?.casting == true }, { player }) { playerView }
         buildViews()
         hideSystemBars(window)
         // Nothing to show if the channel can't be read: log it and close rather than sit on a black screen.
@@ -867,8 +869,7 @@ class PlayerActivity : FragmentActivity() {
         player?.release()
         player = null
         container.account.noStreamSince = System.currentTimeMillis()
-        container.playerOpen.value = false
-        container.appScope.launch { container.offline.start() }
+        MiniPlayer.playerClosed(container)
         super.onDestroy()
     }
 
@@ -902,7 +903,7 @@ class PlayerActivity : FragmentActivity() {
             context: Context,
             itemId: Long,
         ) {
-            context.startActivity(intent(context, itemId))
+            MiniPlayer.open(context, intent(context, itemId))
         }
 
         /** A recording of a live channel ([com.tunedplayer.app.data.Recordings]), from the device. */
@@ -910,7 +911,7 @@ class PlayerActivity : FragmentActivity() {
             context: Context,
             id: Long,
         ) {
-            context.startActivity(Intent(context, PlayerActivity::class.java).putExtra(EXTRA_RECORDING, id))
+            MiniPlayer.open(context, Intent(context, PlayerActivity::class.java).putExtra(EXTRA_RECORDING, id))
         }
 
         /** Catch-up: the recording of [title] on channel [itemId], from [from] to [until]. */
@@ -921,7 +922,8 @@ class PlayerActivity : FragmentActivity() {
             from: Long,
             until: Long,
         ) {
-            context.startActivity(
+            MiniPlayer.open(
+                context,
                 intent(context, itemId).putExtra(EXTRA_FROM, from).putExtra(EXTRA_UNTIL, until).putExtra(EXTRA_TITLE, title),
             )
         }
@@ -937,7 +939,7 @@ class PlayerActivity : FragmentActivity() {
             context: Context,
             query: String,
         ) {
-            context.startActivity(tuneIntent(context, query))
+            MiniPlayer.open(context, tuneIntent(context, query))
         }
     }
 }

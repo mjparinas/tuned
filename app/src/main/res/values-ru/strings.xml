@@ -190,6 +190,8 @@
     <string name="settings_autoplay">Автоматически включать следующую серию</string>
     <string name="settings_pip">Картинка в картинке</string>
     <string name="settings_pip_summary">Смотреть в маленьком окне после выхода из приложения</string>
+    <string name="settings_mini_player">Мини-плеер по кнопке «Назад»</string>
+    <string name="settings_mini_player_summary">«Назад» на прямом эфире оставляет канал в маленьком окне, пока вы выбираете. Новый выбор сначала останавливает его</string>
     <string name="settings_landscape">Поворачивать в альбомный режим при просмотре</string>
     <string name="settings_controls_timeout">Скрывать управление через</string>
     <string name="settings_tune">Автонастройка</string>

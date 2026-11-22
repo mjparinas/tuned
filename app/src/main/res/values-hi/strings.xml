@@ -188,6 +188,8 @@
     <string name="settings_autoplay">अगला एपिसोड अपने आप चलाएं</string>
     <string name="settings_pip">पिक्चर-इन-पिक्चर</string>
     <string name="settings_pip_summary">ऐप छोड़ने पर एक छोटी विंडो में देखते रहें</string>
+    <string name="settings_mini_player">वापस जाने पर मिनी प्लेयर</string>
+    <string name="settings_mini_player_summary">लाइव चैनल से वापस जाने पर वह ब्राउज़ करते समय एक छोटी विंडो में चलता रहता है। कुछ नया चुनने पर पहले वह बंद होता है</string>
     <string name="settings_landscape">प्लेबैक के लिए लैंडस्केप में घुमाएं</string>
     <string name="settings_controls_timeout">इतनी देर बाद कंट्रोल छिपाएं</string>
     <string name="settings_tune">ऑटो-ट्यून</string>

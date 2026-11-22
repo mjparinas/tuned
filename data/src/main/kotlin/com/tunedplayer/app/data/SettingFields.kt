@@ -155,6 +155,7 @@ val SETTING_FIELDS: List<SettingField<*, *>> =
         int("live_rewind_minutes", { liveRewindMinutes }) { copy(liveRewindMinutes = it) },
         int("record_padding_minutes", { recordPaddingMinutes }) { copy(recordPaddingMinutes = it) },
         bool("picture_in_picture", { pictureInPicture }) { copy(pictureInPicture = it) },
+        bool("mini_player", { miniPlayer }) { copy(miniPlayer = it) },
         bool("background_play", { backgroundPlay }) { copy(backgroundPlay = it) },
         bool("media_buttons", { mediaButtons }) { copy(mediaButtons = it) },
         bool("player_gestures", { playerGestures }) { copy(playerGestures = it) },

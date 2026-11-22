@@ -188,6 +188,8 @@
     <string name="settings_autoplay">Nächste Folge automatisch abspielen</string>
     <string name="settings_pip">Bild-im-Bild</string>
     <string name="settings_pip_summary">In einem kleinen Fenster weiterschauen, wenn du die App verlässt</string>
+    <string name="settings_mini_player">Mini-Player bei Zurück</string>
+    <string name="settings_mini_player_summary">Zurück bei einem Live-Sender lässt ihn in einem kleinen Fenster weiterlaufen, während du stöberst. Was du neu auswählst, beendet ihn zuerst</string>
     <string name="settings_landscape">Zur Wiedergabe ins Querformat drehen</string>
     <string name="settings_controls_timeout">Steuerelemente ausblenden nach</string>
     <string name="settings_tune">Automatische Sendersuche</string>

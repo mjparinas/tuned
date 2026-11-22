@@ -65,6 +65,7 @@ import com.tunedplayer.app.data.db.ProgrammeEntity
 import com.tunedplayer.app.diagnostics.attempt
 import com.tunedplayer.app.ui.browse.Logo
 import com.tunedplayer.app.ui.common.focusRing
+import com.tunedplayer.app.ui.common.isTelevision
 import com.tunedplayer.app.ui.common.rememberTimeLabels
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.SharingStarted
@@ -142,6 +143,7 @@ private val HEADER_HEIGHT = 36.dp
 /** Pixels per minute of the timeline; wider screens show more time rather than bigger cells. */
 private const val DP_PER_MINUTE = 3.2f
 private const val WIDE_DP = 840
+private val TV_CHANNEL_WIDTH = 260.dp
 
 /** How much off-screen time each row lays out on either side, so a remote can move onto the next programme. */
 private const val MARGIN = GuideGrid.HOUR
@@ -176,9 +178,17 @@ fun GuideGridView(
     // Read only inside lambdas and derived state, so a swipe doesn't recompose the grid frame by frame.
     val offset = rememberSaveable { mutableFloatStateOf(0f) }
 
+    val tv = isTelevision()
     BoxWithConstraints(Modifier.fillMaxSize()) {
         val wide = maxWidth.value >= WIDE_DP
-        val channelWidth = if (wide) 200.dp else 116.dp
+        // A TV's grid is narrower than WIDE_DP beside the rail, yet has room: long channel names get 260 dp there, two
+        // lines before they're cut (Melvin, 2026-11-21: "the channel name is mostly cut off").
+        val channelWidth =
+            when {
+                tv -> TV_CHANNEL_WIDTH
+                wide -> 200.dp
+                else -> 116.dp
+            }
         val density = LocalDensity.current
         val pxPerMinute = with(density) { DP_PER_MINUTE.dp.toPx() }
         val visibleMinutes = ((maxWidth - channelWidth).value / DP_PER_MINUTE).coerceAtLeast(30f)

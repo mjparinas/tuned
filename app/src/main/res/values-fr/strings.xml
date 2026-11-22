@@ -189,6 +189,8 @@
     <string name="settings_autoplay">Lire l\'épisode suivant automatiquement</string>
     <string name="settings_pip">Picture-in-picture</string>
     <string name="settings_pip_summary">Continuer à regarder dans une petite fenêtre quand vous quittez l\'appli</string>
+    <string name="settings_mini_player">Mini-lecteur au retour</string>
+    <string name="settings_mini_player_summary">Revenir depuis une chaîne en direct la garde dans une petite fenêtre pendant que vous parcourez. Ce que vous choisissez ensuite l\'arrête d\'abord</string>
     <string name="settings_landscape">Passer en paysage pour la lecture</string>
     <string name="settings_controls_timeout">Masquer les commandes après</string>
     <string name="settings_tune">Syntonisation auto</string>

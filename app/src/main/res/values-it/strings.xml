@@ -189,6 +189,8 @@
     <string name="settings_autoplay">Riproduci automaticamente l\'episodio successivo</string>
     <string name="settings_pip">Picture-in-picture</string>
     <string name="settings_pip_summary">Continua a guardare in una piccola finestra quando esci dall\'app</string>
+    <string name="settings_mini_player">Mini player con Indietro</string>
+    <string name="settings_mini_player_summary">Indietro su un canale in diretta lo lascia in una piccola finestra mentre sfogli. Quello che scegli dopo lo ferma prima</string>
     <string name="settings_landscape">Ruota in orizzontale per la riproduzione</string>
     <string name="settings_controls_timeout">Nascondi i controlli dopo</string>
     <string name="settings_tune">Sintonizzazione automatica</string>

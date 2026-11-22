@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- A TV is dark by default, whatever the system says (docs/decisions/tv.md), so the window before the first frame is too. -->
+    <style name="Theme.Tuned" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@color/splash_background</item>
+    </style>
+</resources>
