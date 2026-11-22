@@ -221,6 +221,11 @@ class BrowseScreenshots : Screenshots() {
 
     @Test fun show() = shot("browse-show", ShowRoute(Episodes.showKey("Harbour Town"), "Harbour Town"), wait = "Harbour Town")
 
+    /** A TV show opens full screen with a cinematic hero, season tabs and an episode thumbnail grid. */
+    @Test
+    @Config(qualifiers = TV)
+    fun showOnTv() = shot("browse-show-tv", ShowRoute(Episodes.showKey("Harbour Town"), "Harbour Town"), wait = "Season 1")
+
     @Test fun movie() = shot("browse-movie", MovieRoute(SampleData.MOVIE_IDS), wait = "Northern Lights")
 
     @Test fun guide() = shot("browse-guide", GuideRoute(1), wait = "Maple News 24")
