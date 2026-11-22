@@ -41,6 +41,7 @@ import {
     xtreamGuideUrl,
     xtreamPlaylistUrl,
 } from "/account/channels/core.mjs";
+import { wireEdits } from "/account/channels/edits.js";
 
 const $ = (id) => document.getElementById(id);
 const LIST_TIMEOUT_MS = 30_000;
@@ -66,7 +67,17 @@ const state = {
     loadId: 0,
     abort: null,
     click: "vlc", // what a click does: "vlc" (open VLC where it can, and copy) or "copy" (copy only)
+    profiles: [],
+    profileId: 1,
+    channelEdits: {},
 };
+
+let edits;
+edits = wireEdits({
+    getState: () => state,
+    onLibrary: (library) => edits.takeLibrary(library),
+    redraw: () => draw(),
+});
 
 const kindNames = { xtream: "Xtream login", link: "M3U link", stalker: "MAC portal", file: "File" };
 
@@ -451,7 +462,8 @@ function channelLabel(c) {
 }
 
 /** A programme's details, and what to do with its channel. */
-function showDetails(c, p) {
+function showDetails(raw, p) {
+    const c = edits.display(raw);
     const now = Date.now();
     $("show-logo").replaceChildren(logo(c));
     $("show-channel").textContent = c.number ? `${c.number}  ${c.name}` : c.name;
@@ -480,10 +492,11 @@ function showDetails(c, p) {
     link.textContent = "Copy link";
     link.setAttribute("aria-label", `Copy link for ${c.name}`);
     link.onclick = () => copy(c.url, "show-message", `${c.name}'s link`);
-    $("show-actions").replaceChildren(open, file, link);
+    $("show-actions").replaceChildren(open, file, link, ...edits.channelButtons(raw));
     $("show").showModal();
     open.focus();
 }
+edits.setShowDetailsRefresh((raw) => showDetails(raw, null));
 
 // ----- the guide: channels down the side, time across, as the app's Live TV guide -----
 
@@ -666,7 +679,7 @@ function listRow(c, now) {
 
 function draw() {
     const now = Date.now();
-    state.items = applyFilters(state.channels, state.filters, nowOf);
+    state.items = applyFilters(state.channels.map(edits.display), state.filters, nowOf);
     const total = state.channels.length;
     const n = state.items.length;
     $("count").textContent =
@@ -1048,6 +1061,8 @@ async function start() {
     $("account-nav").hidden = false;
     drawNav($("account-nav"), "channels");
     $("signed-in").hidden = false;
+    edits.takeLibrary(library);
+    enhanceSelect($("profile"));
     state.playlists = library.playlists ?? [];
     if (!state.playlists.length) {
         tell("status", "Your account has no playlists yet. Add one on the Playlists page or in the Tuned app.", "ok");

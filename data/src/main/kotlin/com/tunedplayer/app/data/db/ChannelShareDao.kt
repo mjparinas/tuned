@@ -7,7 +7,7 @@ import androidx.room.Query
 @Dao
 interface ChannelShareDao {
     /** Every live channel in playlist order. */
-    @Query("SELECT name, groupName, logo, tvgId, number, url, region, adult FROM items WHERE kind = 0 ORDER BY sortOrder")
+    @Query("SELECT id, name, groupName, logo, tvgId, number, url, region, adult FROM items WHERE kind = 0 ORDER BY sortOrder")
     suspend fun liveChannels(): List<SharedChannelRow>
 
     /** [channelIds]' programmes on at any point from [from] to [to]. */

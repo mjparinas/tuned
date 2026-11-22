@@ -47,6 +47,7 @@ import com.tunedplayer.app.ui.common.isTelevision
 @Stable
 class ChannelEditPicker internal constructor(
     private val canRename: () -> Boolean,
+    private val canChangeLogo: () -> Boolean,
     private val unlocked: () -> Boolean,
     private val locked: () -> Unit,
 ) {
@@ -59,6 +60,7 @@ class ChannelEditPicker internal constructor(
     }
 
     fun changeLogo(id: Long) {
+        if (!canChangeLogo()) return
         if (unlocked()) changingLogo = id else locked()
     }
 }
@@ -70,8 +72,9 @@ fun rememberChannelEditPicker(): ChannelEditPicker {
     val unlocked by context.container.premium.unlocked
         .collectAsStateWithLifecycle()
     val isUnlocked by rememberUpdatedState(unlocked)
-    val renameAllowed by rememberUpdatedState(!isTelevision())
-    val picker = remember { ChannelEditPicker({ renameAllowed }, { isUnlocked }, { Premium.open(context) }) }
+    // Typing-heavy edits stay off Android TV (Melvin, 2026-11-22); phones, tablets and the website keep them.
+    val onPhone by rememberUpdatedState(!isTelevision())
+    val picker = remember { ChannelEditPicker({ onPhone }, { onPhone }, { isUnlocked }, { Premium.open(context) }) }
     picker.renaming?.let { id -> RenameChannelDialog(id) { picker.renaming = null } }
     picker.changingLogo?.let { id -> ChangeLogoDialog(id) { picker.changingLogo = null } }
     return picker
