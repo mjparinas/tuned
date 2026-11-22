@@ -208,11 +208,13 @@ fun HomeScreen(
     val openMovie: (Long) -> Unit = if (panes) { id -> detail = Detail.movie(id) } else onOpenMovie
     val openGuide: (Long) -> Unit = if (panes) { id -> detail = Detail.guide(id) } else onOpenGuide
     // Downloads is a section of Home like the three tabs, so the bar stays under it; back returns to the tab before.
-    var downloads by rememberSaveable { mutableStateOf(false) }
-    BackHandler(enabled = downloads) { downloads = false }
-    val openDownloads = { downloads = true }
+    var downloadsRequested by rememberSaveable { mutableStateOf(false) }
+    // A saved Home state from an older app version must not restore the Downloads page on a TV.
+    val downloads = downloadsRequested && !tv
+    BackHandler(enabled = downloads) { downloadsRequested = false }
+    val openDownloads = { downloadsRequested = true }
     val select: (Int) -> Unit = { index ->
-        downloads = false
+        downloadsRequested = false
         selected = index
         vm.rememberTab(index)
     }

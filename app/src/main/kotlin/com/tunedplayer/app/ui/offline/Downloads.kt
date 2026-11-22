@@ -89,6 +89,7 @@ import com.tunedplayer.app.premium.Premium
 import com.tunedplayer.app.ui.browse.Poster
 import com.tunedplayer.app.ui.common.BackTopBar
 import com.tunedplayer.app.ui.common.focusRing
+import com.tunedplayer.app.ui.common.isTelevision
 import com.tunedplayer.app.ui.common.windowWidthDp
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -203,19 +204,22 @@ class DownloadsViewModel(
 @Composable
 fun DownloadButton(
     item: ItemEntity,
-    vm: DownloadsViewModel = viewModel(),
+    vm: DownloadsViewModel? = null,
 ) {
-    val byItem by vm.byItem.collectAsStateWithLifecycle()
+    // Downloads are a phone and tablet feature. A TV never offers an action, including for an item already saved.
+    if (isTelevision()) return
+    val model = vm ?: viewModel()
+    val byItem by model.byItem.collectAsStateWithLifecycle()
     val row = byItem[item.id]
     when (row?.state) {
         null -> {
-            IconButton(onClick = { vm.add(item) }) {
+            IconButton(onClick = { model.add(item) }) {
                 Icon(Icons.Filled.Download, contentDescription = stringResource(R.string.download))
             }
         }
 
         DownloadEntity.DONE -> {
-            IconButton(onClick = { vm.remove(item.id) }) {
+            IconButton(onClick = { model.remove(item.id) }) {
                 Icon(
                     Icons.Filled.DownloadDone,
                     contentDescription = stringResource(R.string.download_remove),
@@ -225,13 +229,13 @@ fun DownloadButton(
         }
 
         DownloadEntity.FAILED -> {
-            IconButton(onClick = { vm.retry(item.id) }) {
+            IconButton(onClick = { model.retry(item.id) }) {
                 Icon(Icons.Filled.ErrorOutline, contentDescription = stringResource(R.string.download_retry))
             }
         }
 
         else -> {
-            IconButton(onClick = { vm.remove(item.id) }) {
+            IconButton(onClick = { model.remove(item.id) }) {
                 Box(contentAlignment = Alignment.Center) {
                     val fraction = row.fraction()
                     if (fraction == null) {
@@ -686,10 +690,11 @@ private fun ActiveActions(
 @Composable
 fun SeasonDownloadButton(
     episodes: List<ItemEntity>,
-    vm: DownloadsViewModel = viewModel(),
+    vm: DownloadsViewModel? = null,
 ) {
-    if (episodes.isEmpty()) return
-    val byItem by vm.byItem.collectAsStateWithLifecycle()
+    if (isTelevision() || episodes.isEmpty()) return
+    val model = vm ?: viewModel()
+    val byItem by model.byItem.collectAsStateWithLifecycle()
     val saved = episodes.count { byItem[it.id]?.state == DownloadEntity.DONE }
     val queued = episodes.count { byItem[it.id] != null }
     when {
@@ -712,7 +717,7 @@ fun SeasonDownloadButton(
         }
 
         else -> {
-            OutlinedButton(onClick = { vm.addAll(episodes) }) {
+            OutlinedButton(onClick = { model.addAll(episodes) }) {
                 Icon(Icons.Filled.Download, null, Modifier.size(18.dp))
                 Spacer(Modifier.width(8.dp))
                 Text(pluralStringResource(R.plurals.download_season, episodes.size - queued, episodes.size - queued))

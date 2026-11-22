@@ -32,6 +32,7 @@ import com.tunedplayer.app.player.PlayerActivity
 import com.tunedplayer.app.ui.common.LocalTimeZone
 import com.tunedplayer.app.ui.common.TvSafeArea
 import com.tunedplayer.app.ui.common.WithOfflineBanner
+import com.tunedplayer.app.ui.common.isTelevision
 import com.tunedplayer.app.ui.theme.TunedTheme
 import com.tunedplayer.app.updates.UpdateNotice
 import com.tunedplayer.app.widget.AppShortcuts
@@ -119,7 +120,7 @@ class MainActivity : ComponentActivity() {
         // A way to the saved films and episodes, except where it can't help (adding a playlist, or already there).
         val addingPlaylist = here != null && (here.hasRoute<WelcomeRoute>() || here.hasRoute<AddPlaylistRoute>())
         val toDownloads =
-            if (here == null || addingPlaylist || here.hasRoute<DownloadsRoute>()) {
+            if (isTelevision() || here == null || addingPlaylist || here.hasRoute<DownloadsRoute>()) {
                 null
             } else {
                 { nav.navigate(DownloadsRoute) { launchSingleTop = true } }
