@@ -12,7 +12,7 @@
     <string name="settings_page_playback_summary">Audio, resume, skip intro, rewind and the player controls</string>
     <string name="settings_page_reliability">When a channel fails</string>
     <string name="settings_page_reliability_summary">Reconnecting, backup copies, auto-tune and channel health</string>
-    <string name="settings_page_appearance_summary">Theme, colours and pure black</string>
+    <string name="settings_page_appearance_summary">Theme, colours, pure black and TV screen calibration</string>
     <string name="settings_page_about">Updates and advanced</string>
     <string name="settings_page_about_summary">Updates, user agent and logs</string>
     <string name="settings_header_hidden">What\'s hidden</string>

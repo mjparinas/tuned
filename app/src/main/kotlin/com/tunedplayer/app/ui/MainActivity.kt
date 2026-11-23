@@ -30,10 +30,12 @@ import com.tunedplayer.app.diagnostics.launchSafely
 import com.tunedplayer.app.player.MiniPlayer
 import com.tunedplayer.app.player.PlayerActivity
 import com.tunedplayer.app.ui.common.LocalTimeZone
+import com.tunedplayer.app.ui.common.LocalTvCalibration
 import com.tunedplayer.app.ui.common.TvKeyboardHost
 import com.tunedplayer.app.ui.common.TvSafeArea
 import com.tunedplayer.app.ui.common.WithOfflineBanner
 import com.tunedplayer.app.ui.common.isTelevision
+import com.tunedplayer.app.ui.common.tvCalibration
 import com.tunedplayer.app.ui.theme.TunedTheme
 import com.tunedplayer.app.updates.UpdateNotice
 import com.tunedplayer.app.widget.AppShortcuts
@@ -98,7 +100,10 @@ class MainActivity : ComponentActivity() {
                 pureBlack = current.pureBlack,
                 accent = current.accent,
             ) {
-                CompositionLocalProvider(LocalTimeZone provides TimeZones.resolve(current.timeZone)) {
+                CompositionLocalProvider(
+                    LocalTimeZone provides TimeZones.resolve(current.timeZone),
+                    LocalTvCalibration provides current.tvCalibration(),
+                ) {
                     TvKeyboardHost { TvSafeArea { Navigation(current, signedIn) } }
                 }
             }

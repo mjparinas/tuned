@@ -23,6 +23,7 @@ import com.tunedplayer.app.ui.DeveloperLogRoute
 import com.tunedplayer.app.ui.RegionSettingsRoute
 import com.tunedplayer.app.ui.SettingsPageRoute
 import com.tunedplayer.app.ui.SettingsRoute
+import com.tunedplayer.app.ui.TvScreenCalibrateRoute
 import com.tunedplayer.app.ui.onboarding.QrModules
 import com.tunedplayer.app.ui.settings.AccountSignIn
 import com.tunedplayer.app.ui.settings.AccountSignInDialog
@@ -69,6 +70,15 @@ class SettingsScreenshots : Screenshots() {
         SettingsPageRoute(SettingsPage.APPEARANCE.name),
         wait = text(R.string.settings_lighter),
         settings = DARK.copy(lighterMode = LighterMode.ON),
+    )
+
+    /** Calibrate screen on a TV: corner marks and the move / stretch sliders (Melvin, 2026-11-22). */
+    @Test
+    @Config(qualifiers = TV)
+    fun tvCalibrate() = shot(
+        "settings-tv-calibrate",
+        TvScreenCalibrateRoute,
+        wait = text(R.string.settings_tv_calibrate_hint),
     )
 
     /** Mini player on Back, beside Picture-in-picture in Settings › Player (Melvin, 2026-11-21). */

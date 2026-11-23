@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_tv_calibrate">Ekranı kalibre et</string>
+    <string name="settings_tv_calibrate_summary">Köşeler televizyonun hemen içinde kalsın diye görüntüyü kaydırın ve gerin</string>
+    <string name="settings_tv_calibrate_hint">Her köşedeki işaretlere bakın. Aşağıdaki kontrollerle görüntüyü kaydırın veya gerin; her işaret televizyon kenarının hemen içinde kalsın. Bir işaret kesiliyorsa küçültün; işaretin dışında boşluk görüyorsanız gerin. Sıfırla varsayılanlara döner.</string>
+    <string name="settings_tv_calibrate_horizontal">Sola veya sağa kaydır</string>
+    <string name="settings_tv_calibrate_vertical">Yukarı veya aşağı kaydır</string>
+    <string name="settings_tv_calibrate_size">Ger veya küçült</string>
+    <string name="settings_tv_calibrate_centre">Orta</string>
+    <string name="settings_tv_calibrate_plus">+%1$d</string>
+    <string name="settings_tv_calibrate_minus">−%1$d</string>
+    <string name="settings_tv_calibrate_reset">Sıfırla</string>
+    <string name="settings_tv_calibrate_done">Bitti</string>
+    <string name="settings_tv_calibrate_marks">Ekranı kalibre etmek için köşe işaretleri</string>
+</resources>

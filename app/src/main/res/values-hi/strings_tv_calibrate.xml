@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_tv_calibrate">स्क्रीन कैलिब्रेट करें</string>
+    <string name="settings_tv_calibrate_summary">चित्र को इतना सरकाएँ और फैलाएँ कि कोने टीवी के ठीक अंदर रहें</string>
+    <string name="settings_tv_calibrate_hint">हर कोने के निशान देखें। नीचे के नियंत्रणों से चित्र को सरकाएँ या फैलाएँ जब तक हर निशान टीवी के किनारे के ठीक अंदर न हो। अगर निशान कट रहा हो तो सिकोड़ें; निशान के बाहर खाली जगह दिखे तो फैलाएँ। रीसेट डिफ़ॉल्ट वापस लाता है।</string>
+    <string name="settings_tv_calibrate_horizontal">बाएँ या दाएँ सरकाएँ</string>
+    <string name="settings_tv_calibrate_vertical">ऊपर या नीचे सरकाएँ</string>
+    <string name="settings_tv_calibrate_size">फैलाएँ या सिकोड़ें</string>
+    <string name="settings_tv_calibrate_centre">मध्य</string>
+    <string name="settings_tv_calibrate_plus">+%1$d</string>
+    <string name="settings_tv_calibrate_minus">−%1$d</string>
+    <string name="settings_tv_calibrate_reset">रीसेट</string>
+    <string name="settings_tv_calibrate_done">हो गया</string>
+    <string name="settings_tv_calibrate_marks">स्क्रीन कैलिब्रेट करने के लिए कोने के निशान</string>
+</resources>

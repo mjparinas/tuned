@@ -1,5 +1,6 @@
 package com.tunedplayer.app.ui
 
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.composable
 import androidx.navigation.toRoute
@@ -13,6 +14,8 @@ import com.tunedplayer.app.ui.settings.RegionSettingsScreen
 import com.tunedplayer.app.ui.settings.SettingsPage
 import com.tunedplayer.app.ui.settings.SettingsPageScreen
 import com.tunedplayer.app.ui.settings.SettingsScreen
+import com.tunedplayer.app.ui.settings.SettingsViewModel
+import com.tunedplayer.app.ui.settings.TvScreenCalibrateScreen
 import kotlinx.serialization.Serializable
 
 @Serializable data object SettingsRoute
@@ -36,6 +39,9 @@ import kotlinx.serialization.Serializable
 
 /** Settings › Updates and advanced › Logs. */
 @Serializable data object DeveloperLogRoute
+
+/** Settings › Appearance › Calibrate screen (Android TV). */
+@Serializable data object TvScreenCalibrateRoute
 
 /** Settings, its pages and the screens they open. */
 fun NavGraphBuilder.settingsScreens(app: AppNav) {
@@ -71,4 +77,12 @@ fun NavGraphBuilder.settingsScreens(app: AppNav) {
     composable<FavouriteOrderRoute> { FavouriteOrderScreen(onBack = { app.nav.popBackStack() }) }
     composable<ManageListsRoute> { ManageListsScreen(onBack = { app.nav.popBackStack() }) }
     composable<DeveloperLogRoute> { DeveloperLogScreen(onBack = { app.nav.popBackStack() }) }
+    composable<TvScreenCalibrateRoute> {
+        val vm: SettingsViewModel = viewModel()
+        TvScreenCalibrateScreen(
+            settings = app.settings,
+            onBack = { app.nav.popBackStack() },
+            onChange = { change -> vm.update(change) },
+        )
+    }
 }

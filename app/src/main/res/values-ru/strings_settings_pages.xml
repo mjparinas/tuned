@@ -11,7 +11,7 @@
     <string name="settings_page_playback_summary">Аудио, продолжение, пропуск заставки, перемотка и управление плеером</string>
     <string name="settings_page_reliability">Когда канал не работает</string>
     <string name="settings_page_reliability_summary">Переподключение, резервные копии, автонастройка и состояние каналов</string>
-    <string name="settings_page_appearance_summary">Тема, цвета и чисто чёрный</string>
+    <string name="settings_page_appearance_summary">Тема, цвета, чисто чёрный и калибровка ТВ</string>
     <string name="settings_page_about">Обновления и дополнительно</string>
     <string name="settings_page_about_summary">Обновления, user agent и журналы</string>
     <string name="settings_header_hidden">Что скрыто</string>

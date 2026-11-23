@@ -11,7 +11,7 @@
     <string name="settings_page_playback_summary">Audio, ripresa, salta intro, riavvolgimento e i controlli del player</string>
     <string name="settings_page_reliability">Quando un canale non funziona</string>
     <string name="settings_page_reliability_summary">Riconnessione, copie di riserva, sintonizzazione automatica e stato dei canali</string>
-    <string name="settings_page_appearance_summary">Tema, colori e nero puro</string>
+    <string name="settings_page_appearance_summary">Tema, colori, nero puro e calibrazione TV</string>
     <string name="settings_page_about">Aggiornamenti e avanzate</string>
     <string name="settings_page_about_summary">Aggiornamenti, user agent e log</string>
     <string name="settings_header_hidden">Cosa è nascosto</string>

@@ -460,7 +460,7 @@ private fun SettingsPageContent(
         SettingsPage.GUIDE -> GuidePage(settings, vm)
         SettingsPage.PLAYBACK -> PlaybackPage(settings, vm)
         SettingsPage.RELIABILITY -> ReliabilityPage(settings, vm, onOpen)
-        SettingsPage.APPEARANCE -> AppearancePage(settings, vm)
+        SettingsPage.APPEARANCE -> AppearancePage(settings, vm, onOpen)
         SettingsPage.ABOUT -> AboutPage(settings, vm, onOpen)
     }
 }
