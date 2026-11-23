@@ -127,7 +127,45 @@ class LiveQuickFilterTest {
     @Test
     fun theFiltersOfferOnlyCountriesOnShow() = runTest {
         db.items().insertAll(channels)
-        val regions = db.liveFilters().liveRegions(listOf("UK"), adult = false).first()
+        val regions =
+            db
+                .liveFilters()
+                .liveRegions(visible = listOf("CA", "FR", "US"), hiddenGroups = listOf(""), hidden = emptyList(), adult = false)
+                .first()
+        assertEquals(mapOf("CA" to 2, "FR" to 2, "US" to 5), regions.associate { it.region to it.count })
+    }
+
+    @Test
+    fun theFiltersLookUpOnlyTheCountriesStillOn() = runTest {
+        db.items().insertAll(channels)
+        // Keeping only US and Canada: seek those two tags, never walk UK and FR (Melvin, 2026-11-22: country took tens of seconds).
+        val regions =
+            db
+                .liveFilters()
+                .liveRegions(visible = listOf("CA", "US"), hiddenGroups = listOf(""), hidden = emptyList(), adult = false)
+                .first()
+        assertEquals(mapOf("CA" to 2, "US" to 5), regions.associate { it.region to it.count })
+    }
+
+    @Test
+    fun aHiddenGroupLeavesItsCountryCountLower() = runTest {
+        db.items().insertAll(channels)
+        val regions =
+            db
+                .liveFilters()
+                .liveRegions(
+                    visible = listOf("US"),
+                    hiddenGroups = listOf("g:0:US| Entertainment"),
+                    hidden = emptyList(),
+                    adult = false,
+                ).first()
+        assertEquals(mapOf("US" to 4), regions.associate { it.region to it.count })
+    }
+
+    @Test
+    fun withoutSeenCountriesTheFallbackDropsHiddenTags() = runTest {
+        db.items().insertAll(channels)
+        val regions = db.liveFilters().liveRegionsFallback(hidden = listOf("UK"), adult = false).first()
         assertEquals(mapOf("CA" to 2, "FR" to 2, "US" to 5), regions.associate { it.region to it.count })
     }
 
