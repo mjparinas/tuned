@@ -427,7 +427,7 @@ class PlayerActivity : FragmentActivity() {
                     },
                 subtitleOffsetMs = { subtitleTiming.offsetMs },
                 onTvChanged = ::castChanged,
-                resolve = container.stalker::resolve,
+                resolve = container::resolveStreamAsync,
             ).also { c -> if (ServerFlags.now.value.cast) tools.addButton(c.button) } // the admin's `cast` switch
         tools.addButton(recorder.button)
     }
@@ -597,7 +597,7 @@ class PlayerActivity : FragmentActivity() {
                 agent,
                 headers = { uri -> uri.host?.let(streamHeaders::get).orEmpty() },
                 network = { network -> if (live) timeshift.factory(network) else network },
-                portal = container.stalker::resolveNow,
+                portal = container::resolveStream,
             )
         // Decoder fallback, and the sound delay from Settings › Player (lip sync); see [TunedRenderersFactory].
         val renderers = TunedRenderersFactory(this) { settings.audioDelayMs }

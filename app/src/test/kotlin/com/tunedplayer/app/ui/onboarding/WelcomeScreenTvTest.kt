@@ -48,6 +48,9 @@ class WelcomeScreenTvTest {
             R.string.restore_account,
             R.string.login_privacy,
         ).forEach(::assertWhollyOnScreen)
+        // Media server is the last kind: with the phone card included it may need a scroll on Melvin's short TV.
+        compose.onNodeWithText(text(R.string.kind_media)).performScrollTo()
+        assertWhollyOnScreen(R.string.kind_media)
     }
 
     /** Text larger than the layout planned for (a TV's font size setting) scrolls, and the last card can still be reached whole. */
@@ -57,8 +60,8 @@ class WelcomeScreenTvTest {
         compose.setContent {
             MaterialTheme { TvSafeArea { WelcomeScreen(firstRun = true, onPick = {}, onBack = {}, onPhone = {}) } }
         }
-        compose.onNodeWithText(text(R.string.kind_stalker)).performScrollTo()
-        assertWhollyOnScreen(R.string.kind_stalker)
+        compose.onNodeWithText(text(R.string.kind_media)).performScrollTo()
+        assertWhollyOnScreen(R.string.kind_media)
     }
 
     /** The node's full bounds (unclipped by a scrolling column) sit inside the TV's overscan margin. */

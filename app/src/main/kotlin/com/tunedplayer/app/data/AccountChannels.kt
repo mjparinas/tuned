@@ -34,7 +34,7 @@ class AccountChannels(
         if (!account.signedIn.value) return false
         val c = login() ?: return false
         // A portal's links need a session the copy can't carry, so portals aren't kept there (SharedChannels).
-        if (c.kind == Credentials.Kind.Stalker) return false
+        if (c.kind == Credentials.Kind.Stalker || c.kind.isMediaServer) return false
         val id = ChannelShare.playlistId(c.server, c.username, c.playlistUrl)
         val text = attempt(TAG, "Couldn't fetch the account's channel list") { account.channelList(id) }.getOrNull() ?: return false
         val copy = attempt(TAG, "Couldn't read the account's channel list") { read(text, c.username, c.password) }.getOrNull()

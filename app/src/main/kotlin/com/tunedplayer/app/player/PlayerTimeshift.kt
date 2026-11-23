@@ -17,5 +17,5 @@ internal fun ComponentActivity.playerTimeshift(settings: () -> AppSettings): Liv
     userAgent = { settings().playerAgent() },
     // Pause and rewind live TV is Premium (docs/decisions/premium.md).
     keepMinutes = { if (container.premium.unlocked.value) settings().liveRewindMinutes else 0 },
-    resolve = container.stalker::resolveNow,
+    resolve = container::resolveStream,
 )

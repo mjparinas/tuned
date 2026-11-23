@@ -38,6 +38,7 @@ import com.tunedplayer.app.core.CastCodecs
 import com.tunedplayer.app.core.CastHls
 import com.tunedplayer.app.core.CastMedia
 import com.tunedplayer.app.core.FileServer
+import com.tunedplayer.app.core.MediaServer
 import com.tunedplayer.app.core.Stalker
 import com.tunedplayer.app.core.StreamLink
 import com.tunedplayer.app.data.db.ItemEntity
@@ -423,11 +424,11 @@ class CastControl(
         val from = positionMs.coerceAtLeast(0)
         // A saved film or episode plays from the phone, never the provider ("saved before streamed").
         val saved = savedFile(item.id)
-        if (saved == null && Stalker.isLink(item.url)) {
-            // The TV opens the stream itself, so it gets the portal's real link rather than the stored one.
+        if (saved == null && (Stalker.isLink(item.url) || MediaServer.isLink(item.url))) {
+            // The TV opens the stream itself, so it gets the real link rather than the stored one.
             preparing =
                 activity.lifecycleScope.launchSafely(TAG) {
-                    val url = attempt(TAG, "The portal gave no stream to cast") { resolve(item.url) }.getOrNull() ?: return@launchSafely
+                    val url = attempt(TAG, "No stream to cast") { resolve(item.url) }.getOrNull() ?: return@launchSafely
                     lastLoad = null
                     load(item.copy(url = url), live, positionMs)
                 }

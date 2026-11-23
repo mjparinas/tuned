@@ -56,6 +56,15 @@ class PhoneSignIn(
                     login.takeIf { it.server.isNotBlank() && it.username.isNotBlank() }
                 }
 
+                // A media server comes from the phone app or the account page, already shaped.
+                login.kind.isMediaServer -> {
+                    login.takeIf {
+                        it.server.isNotBlank() &&
+                            it.password.isNotBlank() &&
+                            (it.kind == Credentials.Kind.Plex || it.username.isNotBlank())
+                    }
+                }
+
                 else -> {
                     when (val link = PlaylistLink.parse(login.playlistUrl)) {
                         null -> {

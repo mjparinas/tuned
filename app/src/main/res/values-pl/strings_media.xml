@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kind_media">Serwer mediów</string>
+    <string name="kind_media_summary">Plex, Jellyfin lub Emby w Twojej sieci</string>
+    <string name="kind_plex">Plex</string>
+    <string name="kind_plex_summary">Adres serwera i Twój X-Plex-Token</string>
+    <string name="kind_jellyfin">Jellyfin</string>
+    <string name="kind_jellyfin_summary">Adres serwera, nazwa użytkownika i hasło</string>
+    <string name="kind_emby">Emby</string>
+    <string name="kind_emby_summary">Adres serwera, nazwa użytkownika i hasło</string>
+    <string name="add_media_pick">Który serwer mediów?</string>
+    <string name="add_plex_hint">Podaj adres serwera Plex i token. Znajdziesz go na plex.tv/account lub w nagłówkach istniejącego klienta Plex.</string>
+    <string name="add_jellyfin_hint">Podaj adres serwera Jellyfin oraz nazwę użytkownika i hasło używane w aplikacji Jellyfin.</string>
+    <string name="add_emby_hint">Podaj adres serwera Emby oraz nazwę użytkownika i hasło używane w aplikacji Emby.</string>
+    <string name="login_token">Token</string>
+    <string name="add_token_help">Twój X-Plex-Token z plex.tv/account</string>
+    <string name="login_media_refused">Serwer nie zaakceptował tego logowania.</string>
+    <string name="add_media_server_help">Jak http://192.168.1.10:8096</string>
+    <string name="add_plex_server_help">Jak http://192.168.1.10:32400</string>
+</resources>

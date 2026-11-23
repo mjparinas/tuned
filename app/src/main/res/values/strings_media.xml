@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Plex, Jellyfin and Emby as playlist sources (docs/decisions/onboarding.md). -->
+    <string name="kind_media">Media server</string>
+    <string name="kind_media_summary">Plex, Jellyfin or Emby on your network</string>
+    <string name="kind_plex">Plex</string>
+    <string name="kind_plex_summary">Server address and your X-Plex-Token</string>
+    <string name="kind_jellyfin">Jellyfin</string>
+    <string name="kind_jellyfin_summary">Server address, username and password</string>
+    <string name="kind_emby">Emby</string>
+    <string name="kind_emby_summary">Server address, username and password</string>
+    <string name="add_media_pick">Which media server?</string>
+    <string name="add_plex_hint">Enter your Plex server address and token. Find the token in plex.tv/account, or from an existing Plex client\'s request headers.</string>
+    <string name="add_jellyfin_hint">Enter your Jellyfin server address and the username and password you use in the Jellyfin app.</string>
+    <string name="add_emby_hint">Enter your Emby server address and the username and password you use in the Emby app.</string>
+    <string name="login_token">Token</string>
+    <string name="add_token_help">Your X-Plex-Token from plex.tv/account</string>
+    <string name="login_media_refused">The server didn\'t accept that login.</string>
+    <string name="add_media_server_help">Like http://192.168.1.10:8096</string>
+    <string name="add_plex_server_help">Like http://192.168.1.10:32400</string>
+</resources>

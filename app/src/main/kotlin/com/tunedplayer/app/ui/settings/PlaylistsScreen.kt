@@ -20,6 +20,7 @@ import androidx.compose.material.icons.filled.Dns
 import androidx.compose.material.icons.filled.FolderOpen
 import androidx.compose.material.icons.filled.Link
 import androidx.compose.material.icons.filled.Router
+import androidx.compose.material.icons.filled.Storage
 import androidx.compose.material.icons.filled.Tv
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
@@ -265,6 +266,7 @@ private fun PlaylistRow(
                     Credentials.Kind.Link -> Icons.Filled.Link
                     Credentials.Kind.File -> Icons.Filled.FolderOpen
                     Credentials.Kind.Stalker -> Icons.Filled.Router
+                    Credentials.Kind.Plex, Credentials.Kind.Jellyfin, Credentials.Kind.Emby -> Icons.Filled.Storage
                 },
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -278,6 +280,9 @@ private fun PlaylistRow(
                             Credentials.Kind.Link -> R.string.kind_link
                             Credentials.Kind.File -> R.string.kind_file
                             Credentials.Kind.Stalker -> R.string.kind_stalker
+                            Credentials.Kind.Plex -> R.string.kind_plex
+                            Credentials.Kind.Jellyfin -> R.string.kind_jellyfin
+                            Credentials.Kind.Emby -> R.string.kind_emby
                         },
                     )
                 Text(
