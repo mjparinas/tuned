@@ -76,19 +76,6 @@ data class ItemUrl(
     val url: String,
 )
 
-/**
- * The lean columns Trakt history import needs to match a film or episode against Trakt's watched list ([com.tunedplayer.app.core.Trakt]).
- * [showName] is null for films; [season] and [episode] are set for episodes.
- */
-data class TraktMatchRow(
-    val id: Long,
-    val name: String,
-    val showName: String?,
-    val year: Int?,
-    val season: Int?,
-    val episode: Int?,
-)
-
 /** A live channel as the website's Channels and guide page gets it ([com.tunedplayer.app.data.SharedChannels]). */
 data class SharedChannelRow(
     val id: Long,

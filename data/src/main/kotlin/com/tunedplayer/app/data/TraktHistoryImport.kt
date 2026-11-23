@@ -1,9 +1,12 @@
 package com.tunedplayer.app.data
 
+import android.database.Cursor
+import com.tunedplayer.app.core.ContentKind
 import com.tunedplayer.app.core.Trakt
 import com.tunedplayer.app.data.db.TunedDatabase
 import com.tunedplayer.app.data.db.offMain
 import com.tunedplayer.app.diagnostics.AppLog
+import com.tunedplayer.app.diagnostics.attempt
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -57,59 +60,42 @@ class TraktHistoryImport(
         }
         progressFlow.value = Progress.Starting
         try {
-            progressFlow.value = Progress.ReadingPlaylist
-            val filmsLocal =
-                offMain {
-                    db.items().traktFilmRows().map { Trakt.localFilm(it.id, it.name, it.year) }
-                }
-            val episodesLocal =
-                offMain {
-                    db.items().traktEpisodeRows().mapNotNull { row ->
-                        val show = row.showName ?: return@mapNotNull null
-                        val season = row.season ?: return@mapNotNull null
-                        val number = row.episode ?: return@mapNotNull null
-                        Trakt.localEpisode(row.id, show, row.year, season, number)
+            val ended =
+                attempt(TAG, "Trakt history import failed") {
+                    progressFlow.value = Progress.ReadingPlaylist
+                    val filmsLocal = playlistFilms()
+                    val episodesLocal = playlistEpisodes()
+                    progressFlow.value = Progress.FetchingFilms
+                    val watchedFilms = account.watchedFilms() ?: return@attempt Progress.Failed
+                    progressFlow.value = Progress.FetchingShows
+                    val watchedEpisodes = account.watchedEpisodes() ?: return@attempt Progress.Failed
+                    val filmMatches = Trakt.matchFilms(filmsLocal, watchedFilms)
+                    val episodeMatches = Trakt.matchEpisodes(episodesLocal, watchedEpisodes)
+                    val all = filmMatches + episodeMatches
+                    if (all.isEmpty()) {
+                        AppLog.i(TAG) {
+                            "Trakt import matched nothing (${watchedFilms.size} films, ${watchedEpisodes.size} episodes on Trakt)"
+                        }
+                        return@attempt Progress.Done(0, 0)
                     }
-                }
-            progressFlow.value = Progress.FetchingFilms
-            val watchedFilms =
-                account.watchedFilms() ?: run {
-                    progressFlow.value = Progress.Failed
-                    return@withLock
-                }
-            progressFlow.value = Progress.FetchingShows
-            val watchedEpisodes =
-                account.watchedEpisodes() ?: run {
-                    progressFlow.value = Progress.Failed
-                    return@withLock
-                }
-            val filmMatches = Trakt.matchFilms(filmsLocal, watchedFilms)
-            val episodeMatches = Trakt.matchEpisodes(episodesLocal, watchedEpisodes)
-            val all = filmMatches + episodeMatches
-            if (all.isEmpty()) {
-                AppLog.i(TAG) { "Trakt import matched nothing (${watchedFilms.size} films, ${watchedEpisodes.size} episodes on Trakt)" }
-                progressFlow.value = Progress.Done(0, 0)
-                return@withLock
-            }
-            val startedAt = System.currentTimeMillis()
-            progressFlow.value = Progress.Marking(0, all.size, startedAt)
-            // Chunk so the row can show how far marking has got on a large import.
-            var done = 0
-            for (chunk in all.chunked(MARK_CHUNK)) {
-                offMain { db.library().markWatchedFromTrakt(chunk) }
-                done += chunk.size
-                progressFlow.value = Progress.Marking(done, all.size, startedAt)
-            }
-            val filmMarked = filmMatches.map { it.itemId }.toHashSet().size
-            val episodeMarked = episodeMatches.map { it.itemId }.toHashSet().size
-            AppLog.i(TAG) { "Trakt import marked $filmMarked films and $episodeMarked episodes watched" }
-            progressFlow.value = Progress.Done(filmMarked, episodeMarked)
+                    val startedAt = System.currentTimeMillis()
+                    progressFlow.value = Progress.Marking(0, all.size, startedAt)
+                    // Chunk so the row can show how far marking has got on a large import.
+                    var done = 0
+                    for (chunk in all.chunked(MARK_CHUNK)) {
+                        offMain { db.library().markWatchedFromTrakt(chunk) }
+                        done += chunk.size
+                        progressFlow.value = Progress.Marking(done, all.size, startedAt)
+                    }
+                    val filmMarked = filmMatches.map { it.itemId }.toHashSet().size
+                    val episodeMarked = episodeMatches.map { it.itemId }.toHashSet().size
+                    AppLog.i(TAG) { "Trakt import marked $filmMarked films and $episodeMarked episodes watched" }
+                    Progress.Done(filmMarked, episodeMarked)
+                }.getOrElse { Progress.Failed }
+            progressFlow.value = ended
         } catch (e: CancellationException) {
             progressFlow.value = null
             throw e
-        } catch (e: Exception) {
-            AppLog.w(TAG, "Trakt history import failed", e)
-            progressFlow.value = Progress.Failed
         }
     }
 
@@ -121,8 +107,40 @@ class TraktHistoryImport(
         }
     }
 
+    /** Films in the playlist as Trakt matching rows (openHelper so ItemDao stays under detekt's function limit). */
+    private suspend fun playlistFilms(): List<Trakt.LocalFilm> = offMain {
+        db.openHelper.readableDatabase.query(FILMS_SQL).use { c ->
+            buildList {
+                while (c.moveToNext()) {
+                    attempt(TAG, "Skipping a film row for Trakt import") {
+                        add(Trakt.localFilm(c.getLong(0), c.getString(1), c.intOrNull(2)))
+                    }
+                }
+            }
+        }
+    }
+
+    /** Episodes with a show name, season and number, as Trakt matching rows. */
+    private suspend fun playlistEpisodes(): List<Trakt.LocalEpisode> = offMain {
+        db.openHelper.readableDatabase.query(EPISODES_SQL).use { c ->
+            buildList {
+                while (c.moveToNext()) {
+                    attempt(TAG, "Skipping an episode row for Trakt import") {
+                        add(Trakt.localEpisode(c.getLong(0), c.getString(1), c.intOrNull(2), c.getInt(3), c.getInt(4)))
+                    }
+                }
+            }
+        }
+    }
+
+    private fun Cursor.intOrNull(index: Int): Int? = if (isNull(index)) null else getInt(index)
+
     private companion object {
         const val TAG = "TraktImport"
         const val MARK_CHUNK = 100
+        val FILMS_SQL = "SELECT id, name, year FROM items WHERE kind = ${ContentKind.MOVIE.code}"
+        val EPISODES_SQL =
+            "SELECT id, showName, year, season, episode FROM items WHERE kind = ${ContentKind.SERIES.code} " +
+                "AND showName IS NOT NULL AND season IS NOT NULL AND episode IS NOT NULL"
     }
 }
