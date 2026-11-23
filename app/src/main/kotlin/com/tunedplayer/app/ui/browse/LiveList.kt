@@ -198,6 +198,8 @@ private fun ChannelRow(
     modifier: Modifier = Modifier,
 ) {
     var menu by remember { mutableStateOf(false) }
+    // A TV never opens a long-press menu: favourite and guide are on the row, add to list on the channel page.
+    val longPress = !isTelevision()
     // Each channel is a rounded card, like a row on a modern website.
     Box(Modifier.clip(MaterialTheme.shapes.medium).background(MaterialTheme.colorScheme.surfaceContainerLow)) {
         Row(
@@ -207,8 +209,8 @@ private fun ChannelRow(
                 .combinedClickable(
                     onClickLabel = stringResource(R.string.a11y_play),
                     onClick = onPlay,
-                    onLongClickLabel = stringResource(R.string.a11y_more_options),
-                    onLongClick = { menu = true },
+                    onLongClickLabel = if (longPress) stringResource(R.string.a11y_more_options) else null,
+                    onLongClick = if (longPress) ({ menu = true }) else null,
                 ).padding(start = 10.dp, end = 4.dp, top = 10.dp, bottom = 10.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
@@ -266,46 +268,48 @@ private fun ChannelRow(
                 Icon(Icons.AutoMirrored.Filled.List, contentDescription = stringResource(R.string.a11y_guide_for, channel.name))
             }
         }
-        DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
-            DropdownMenuItem(
-                text = { Text(stringResource(if (favourite) R.string.favourite_remove else R.string.favourite_add)) },
-                onClick = {
-                    menu = false
-                    onToggleFavourite()
-                },
-            )
-            DropdownMenuItem(
-                text = { Text(stringResource(R.string.list_add)) },
-                onClick = {
-                    menu = false
-                    onAddToList()
-                },
-            )
-            if (onRename != null) {
+        if (longPress) {
+            DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
                 DropdownMenuItem(
-                    text = { Text(stringResource(R.string.channel_rename)) },
+                    text = { Text(stringResource(if (favourite) R.string.favourite_remove else R.string.favourite_add)) },
                     onClick = {
                         menu = false
-                        onRename()
+                        onToggleFavourite()
+                    },
+                )
+                DropdownMenuItem(
+                    text = { Text(stringResource(R.string.list_add)) },
+                    onClick = {
+                        menu = false
+                        onAddToList()
+                    },
+                )
+                if (onRename != null) {
+                    DropdownMenuItem(
+                        text = { Text(stringResource(R.string.channel_rename)) },
+                        onClick = {
+                            menu = false
+                            onRename()
+                        },
+                    )
+                }
+                if (onChangeLogo != null) {
+                    DropdownMenuItem(
+                        text = { Text(stringResource(R.string.channel_change_logo)) },
+                        onClick = {
+                            menu = false
+                            onChangeLogo()
+                        },
+                    )
+                }
+                DropdownMenuItem(
+                    text = { Text(stringResource(R.string.guide_open)) },
+                    onClick = {
+                        menu = false
+                        onGuide()
                     },
                 )
             }
-            if (onChangeLogo != null) {
-                DropdownMenuItem(
-                    text = { Text(stringResource(R.string.channel_change_logo)) },
-                    onClick = {
-                        menu = false
-                        onChangeLogo()
-                    },
-                )
-            }
-            DropdownMenuItem(
-                text = { Text(stringResource(R.string.guide_open)) },
-                onClick = {
-                    menu = false
-                    onGuide()
-                },
-            )
         }
     }
 }

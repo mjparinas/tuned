@@ -91,6 +91,7 @@ import com.tunedplayer.app.ui.common.LocalTvMargin
 import com.tunedplayer.app.ui.common.TunedDialog
 import com.tunedplayer.app.ui.common.bleedIntoTvMargin
 import com.tunedplayer.app.ui.common.focusRing
+import com.tunedplayer.app.ui.common.isTelevision
 import com.tunedplayer.app.ui.common.rememberStartFocus
 import com.tunedplayer.app.ui.common.startFocus
 import com.tunedplayer.app.ui.theme.swatch
@@ -222,7 +223,9 @@ fun ProfilesScreen(
     val list = profiles ?: return
     val kidsNow = current?.kids == true
     val context = LocalContext.current
-    var managing by remember { mutableStateOf(!atStart && list.size == 1) }
+    // Adding and renaming profiles needs typing; on a TV that stays on the phone or website.
+    val tv = isTelevision()
+    var managing by remember { mutableStateOf(!atStart && list.size == 1 && !tv) }
     var ask by remember { mutableStateOf<PinAsk?>(null) }
     var editing by remember { mutableStateOf<ProfileEntity?>(null) }
     val scope = rememberCoroutineScope()
@@ -280,15 +283,15 @@ fun ProfilesScreen(
                 }
                 ProfileRow(list, current?.id, managing, onPick = pick) {
                     // Hidden at the cap, so the picker never crowds (docs/decisions/profiles.md).
-                    if (!kidsNow && managing && ProfileRules.canAdd(list.size)) {
+                    if (!tv && !kidsNow && managing && ProfileRules.canAdd(list.size)) {
                         AddTile(onClick = {
                             // A second profile is Premium (docs/decisions/premium.md).
                             if (list.isEmpty() || context.container.premium.allow(context)) editing = newProfile(list.size)
                         })
                     }
                 }
-                // A kids profile can pick, but never add, change or remove profiles.
-                if (!kidsNow) {
+                // A kids profile can pick, but never add, change or remove profiles. A TV never manages here.
+                if (!kidsNow && !tv) {
                     Spacer(Modifier.height(40.dp))
                     if (managing) {
                         Button(onClick = manageToggle) { Text(stringResource(R.string.profiles_done)) }
@@ -299,6 +302,16 @@ fun ProfilesScreen(
                             Text(stringResource(R.string.profiles_manage))
                         }
                     }
+                }
+                if (tv && !kidsNow) {
+                    Spacer(Modifier.height(24.dp))
+                    Text(
+                        stringResource(R.string.tv_profiles_manage_hint),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.widthIn(max = 480.dp),
+                    )
                 }
                 if (managing && list.size > 1) {
                     Spacer(Modifier.height(16.dp))

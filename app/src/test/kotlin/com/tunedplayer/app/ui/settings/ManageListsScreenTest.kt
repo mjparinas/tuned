@@ -32,9 +32,9 @@ class ManageListsScreenTest {
     fun theFirstListStartsFocused() {
         content()
 
-        // A rename dialog with a text field never goes idle under Robolectric on a TV qualifier, so this only
-        // checks the remote lands on the first list (OK would open rename).
+        // Rename stays off a TV (typing on phone/web); OK on the first row opens delete confirm instead.
         compose.onNodeWithText("Weekend").assertIsFocused()
+        compose.onNodeWithContentDescription(context.getString(R.string.list_rename)).assertDoesNotExist()
     }
 
     @Test

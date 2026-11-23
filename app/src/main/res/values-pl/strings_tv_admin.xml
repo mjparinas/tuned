@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="tv_playlists_admin_hint">Zmień nazwę lub edytuj playlistę na telefonie albo na tunedplayer.com. Tutaj nadal możesz przełączyć lub usunąć.</string>
+    <string name="tv_lists_rename_hint">Zmień nazwę listy na telefonie albo na tunedplayer.com. Tutaj nadal możesz ją usunąć.</string>
+    <string name="tv_profiles_manage_hint">Dodawaj lub zmieniaj nazwy profili na telefonie albo na tunedplayer.com</string>
+    <string name="tv_events_follow_hint">Obserwuj drużynę lub ligę na telefonie albo na tunedplayer.com</string>
+</resources>

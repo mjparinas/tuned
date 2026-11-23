@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="tv_playlists_admin_hint">Benennen oder bearbeiten Sie eine Playlist auf dem Telefon oder unter tunedplayer.com. Hier können Sie weiterhin wechseln oder entfernen.</string>
+    <string name="tv_lists_rename_hint">Benennen Sie eine Liste auf dem Telefon oder unter tunedplayer.com um. Hier können Sie weiterhin eine löschen.</string>
+    <string name="tv_profiles_manage_hint">Profile auf dem Telefon oder unter tunedplayer.com hinzufügen oder umbenennen</string>
+    <string name="tv_events_follow_hint">Folgen Sie einem Team oder einer Liga auf dem Telefon oder unter tunedplayer.com</string>
+</resources>
