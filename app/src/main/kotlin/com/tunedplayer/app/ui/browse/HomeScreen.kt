@@ -555,9 +555,9 @@ private fun CategoryChips(
     onHidden: (ContentKind, String, String) -> Unit,
     /** Live events, first in Live TV's row (it used to be an icon beside search). Null elsewhere. */
     onOpenEvents: (() -> Unit)?,
+    modifier: Modifier = Modifier,
     /** On a TV's Movies and Shows: groups down a column. Live TV keeps the horizontal row. */
     vertical: Boolean = false,
-    modifier: Modifier = Modifier,
 ) {
     val groups by vm.groups(kind).collectAsStateWithLifecycle()
     val lists by vm.lists(kind).collectAsStateWithLifecycle()
