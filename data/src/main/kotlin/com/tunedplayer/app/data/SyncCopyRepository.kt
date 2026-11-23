@@ -26,8 +26,8 @@ import kotlinx.serialization.json.putJsonArray
  * The copy that sync between devices shares ([CloudSyncRepository]): everything the person set up (Melvin, 2026-11-19:
  * "It should save All possible settings"). The saved playlists with their logins, every setting, the "Who's watching"
  * profiles with their avatars, PINs (as hashes) and everything each keeps, channel renames and logos, guide fixes,
- * learned intros, and the Trakt and OpenSubtitles accounts. The playlist and guide aren't in it: they download again
- * from the synced logins. (Backup files were removed, Melvin, 2026-11-18.)
+ * learned intros, and the Trakt, Simkl and OpenSubtitles accounts. The playlist and guide aren't in it: they download
+ * again from the synced logins. (Backup files were removed, Melvin, 2026-11-18.)
  */
 class SyncCopyRepository(
     private val credentials: CredentialStore,
@@ -35,6 +35,7 @@ class SyncCopyRepository(
     private val db: TunedDatabase,
     private val profiles: ProfileRepository,
     private val trakt: TraktAccount,
+    private val simkl: SimklAccount,
     private val intros: IntroStore,
 ) {
     /** What taking a copy changed here. */
@@ -76,6 +77,9 @@ class SyncCopyRepository(
         /** The Trakt sign-in, taken when newer than a device's own ([TraktAccount.adopt]). */
         val trakt: TraktAccount.Session? = null,
         val traktScrobble: Boolean? = null,
+        /** The Simkl sign-in, taken when newer than a device's own ([SimklAccount.adopt]). */
+        val simkl: SimklAccount.Session? = null,
+        val simklScrobble: Boolean? = null,
         /** The OpenSubtitles account, for downloading subtitles. */
         val subtitles: SubtitleLogin? = null,
     )
@@ -231,6 +235,8 @@ class SyncCopyRepository(
                 intros = intros.all().toSortedMap(),
                 trakt = trakt.session.value,
                 traktScrobble = trakt.session.value?.let { trakt.scrobbleOn.value },
+                simkl = simkl.session.value,
+                simklScrobble = simkl.session.value?.let { simkl.scrobbleOn.value },
                 subtitles = credentials.subtitleAccount()?.let { SubtitleLogin(it.username, it.password) },
             )
         json.encodeToString(Contents.serializer(), contents).toByteArray()
@@ -278,6 +284,8 @@ class SyncCopyRepository(
         contents.intros?.let { intros.replaceAll(it) }
         contents.trakt?.let { trakt.adopt(it) }
         contents.traktScrobble?.let { trakt.setScrobble(it) }
+        contents.simkl?.let { simkl.adopt(it) }
+        contents.simklScrobble?.let { simkl.setScrobble(it) }
         contents.subtitles?.let { credentials.saveSubtitleAccount(SubtitleAccount(it.username, it.password)) }
         val refreshAsked = refreshAsked(before = refreshBefore, after = settings.snapshot()[REFRESH_KEY])
         val playlists = applyPlaylists(contents.playlists.map { it.toCredentials() })

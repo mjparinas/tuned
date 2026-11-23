@@ -15,7 +15,7 @@ This file keeps the decisions that don't belong to one area yet: what Tuned will
 
 Each line names Melvin's words and date. Move it into the topic's file when it merges.
 
-Everything else that was listed has merged and is recorded in its topic: the app's side of the admin, with usage stats, flags and Send to Tuned ([admin](admin.md)); seats per account and extra seats in Play ([accounts](accounts.md)); never hiding sports and event channels ([channel scan](channel-scan.md)); Downloads by show with space left, offline mode and cache first ([offline](offline.md)); real episode names everywhere ([player](player.md)); actor pages ([people](people.md)); Live Events ([events](events.md)); the full grid guide ([playlist](playlist.md)); profiles with a PIN ([profiles](profiles.md)); phone and TV sync ([sync](sync.md)); Trakt ([Trakt](trakt.md)).
+Everything else that was listed has merged and is recorded in its topic: the app's side of the admin, with usage stats, flags and Send to Tuned ([admin](admin.md)); seats per account and extra seats in Play ([accounts](accounts.md)); never hiding sports and event channels ([channel scan](channel-scan.md)); Downloads by show with space left, offline mode and cache first ([offline](offline.md)); real episode names everywhere ([player](player.md)); actor pages ([people](people.md)); Live Events ([events](events.md)); the full grid guide ([playlist](playlist.md)); profiles with a PIN ([profiles](profiles.md)); phone and TV sync ([sync](sync.md)); Trakt ([Trakt](trakt.md)); Simkl ([Simkl](simkl.md)).
 
 ## Paused
 

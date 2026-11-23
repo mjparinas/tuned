@@ -90,7 +90,7 @@
     <string name="settings_sign_out">Wyloguj się</string>
     <string name="settings_sign_out_summary">Przywróć Tuned do stanu po instalacji</string>
     <string name="settings_sign_out_title">Wylogować się?</string>
-    <string name="settings_sign_out_confirm">Tuned wraca do stanu po instalacji. Wszystkie playlisty i dane logowania, kanały i program, profile, ulubione, ustawienia i kody PIN zostaną usunięte, a Trakt i konto Tuned zostaną wylogowane na tym urządzeniu. Kopia zapasowa zostaje na Twoim koncie Tuned.</string>
+    <string name="settings_sign_out_confirm">Tuned wraca do stanu po instalacji. Wszystkie playlisty i dane logowania, kanały i program, profile, ulubione, ustawienia i kody PIN zostaną usunięte, a Trakt, Simkl i konto Tuned zostaną wylogowane na tym urządzeniu. Kopia zapasowa zostaje na Twoim koncie Tuned.</string>
     <plurals name="settings_sign_out_downloads">
         <item quantity="one">Usunąć też %1$d pobrany plik (%2$s)?</item>
         <item quantity="few">Usunąć też %1$d pobrane pliki (%2$s)?</item>

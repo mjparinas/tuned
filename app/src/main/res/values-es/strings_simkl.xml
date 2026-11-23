@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="simkl_sign_in">Conectar Simkl</string>
+    <string name="simkl_sign_in_summary">Añade las películas y episodios que ves a tu historial de Simkl</string>
+    <string name="simkl_signed_in">Conectado como %1$s</string>
+    <string name="simkl_account_unnamed">tu cuenta de Simkl</string>
+    <string name="simkl_sign_out">Toca para desconectar</string>
+    <string name="simkl_scrobble">Registrar lo que ves (scrobble)</string>
+    <string name="simkl_scrobble_summary">Avisa a Simkl cuando una película o episodio empieza, se pausa y termina. La TV en directo no se envía.</string>
+    <string name="simkl_asking">Pidiendo un código a Simkl…</string>
+    <string name="simkl_enter_code">En cualquier móvil u ordenador, ve a %1$s e introduce este código:</string>
+    <string name="simkl_waiting">Esperando a que introduzcas el código…</string>
+    <string name="simkl_open_site">Abrir Simkl</string>
+    <string name="simkl_done">Conectado. Lo que veas ahora se añade a tu historial de Simkl.</string>
+    <string name="simkl_expired">El código caducó antes de introducirse.</string>
+    <string name="simkl_failed">No se pudo conectar con Simkl. Revisa la conexión y vuelve a intentarlo.</string>
+    <string name="simkl_try_again">Reintentar</string>
+</resources>

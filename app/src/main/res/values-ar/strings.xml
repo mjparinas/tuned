@@ -96,7 +96,7 @@
     <string name="settings_sign_out">تسجيل الخروج</string>
     <string name="settings_sign_out_summary">إعادة Tuned إلى حالته عند التثبيت</string>
     <string name="settings_sign_out_title">تسجيل الخروج؟</string>
-    <string name="settings_sign_out_confirm">يعود Tuned إلى حالته عند التثبيت. تُحذف كل قوائم التشغيل وبيانات الدخول والقنوات والدليل والملفات الشخصية والمفضّلة والإعدادات وأرقام PIN، ويُسجَّل الخروج من Trakt ومن حسابك في Tuned على هذا الجهاز. تبقى نسختك الاحتياطية في حسابك في Tuned.</string>
+    <string name="settings_sign_out_confirm">يعود Tuned إلى حالته عند التثبيت. تُحذف كل قوائم التشغيل وبيانات الدخول والقنوات والدليل والملفات الشخصية والمفضّلة والإعدادات وأرقام PIN، ويُسجَّل الخروج من Trakt وSimkl ومن حسابك في Tuned على هذا الجهاز. تبقى نسختك الاحتياطية في حسابك في Tuned.</string>
     <plurals name="settings_sign_out_downloads">
         <item quantity="zero">هل تريد أيضًا حذف %1$d تنزيل (%2$s)؟</item>
         <item quantity="one">هل تريد أيضًا حذف %1$d تنزيل (%2$s)؟</item>

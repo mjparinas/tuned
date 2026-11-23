@@ -51,6 +51,7 @@ export const EVENTS = {
             "pip",
             "subtitle_search",
             "trakt",
+            "simkl",
             "catch_up",
             "profiles",
             "own_list",

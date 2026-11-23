@@ -27,6 +27,7 @@ import com.tunedplayer.app.data.SavedArtwork
 import com.tunedplayer.app.data.ServerFlags
 import com.tunedplayer.app.data.SettingsRepository
 import com.tunedplayer.app.data.SharedChannels
+import com.tunedplayer.app.data.SimklAccount
 import com.tunedplayer.app.data.SortDetails
 import com.tunedplayer.app.data.StalkerLinks
 import com.tunedplayer.app.data.SubtitleRepository
@@ -93,7 +94,9 @@ class AppContainer(
     val scheduler = SyncScheduler(context) { quietStart.openNow() }
     val guideFixes by lazy { GuideFixRepository(db, sync, scheduler, credentials) }
     val updates by lazy { GitHubUpdates(context, http, scope = appScope) }
-    val syncCopy by lazy { SyncCopyRepository(credentials, settings, db, profiles, trakt, IntroStore(context)) }
+    val trakt by lazy { TraktAccount(context, http) }
+    val simkl by lazy { SimklAccount(context, http) }
+    val syncCopy by lazy { SyncCopyRepository(credentials, settings, db, profiles, trakt, simkl, IntroStore(context)) }
     val tunedAccount by lazy { TunedAccount(context, http) { tvSignInUrl } }
     val cloudSync by lazy {
         CloudSyncRepository(
@@ -126,7 +129,6 @@ class AppContainer(
     val metadata by lazy { MetadataRepository(http, BuildConfig.TMDB_API_KEY, db.metadata(), appScope, ::tmdbReachable) }
     val titleRatings by lazy { TitleRatings(db, metadata) }
     val savedArtwork by lazy { SavedArtwork(context, db, metadata) }
-    val trakt by lazy { TraktAccount(context, http) }
     val people by lazy { PeopleRepository(http, BuildConfig.TMDB_API_KEY, db.metadata(), ::tmdbReachable) }
     val profiles by lazy { ProfileRepository(db, settings, browseFilters) }
 
