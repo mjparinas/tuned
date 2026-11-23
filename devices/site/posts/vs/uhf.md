@@ -12,17 +12,17 @@ UHF, from Short Wavelength Applications, is a polished player for iPhone, iPad a
 |                                | UHF                                                               | Tuned                                                                                    |
 | ------------------------------ | ----------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
 | Where it runs                  | iPhone, iPad, Apple TV, Mac and Vision Pro                        | Android phones, tablets, Chromebooks, Android TV and Google TV                           |
-| Playlist types                 | M3U8, Xtream Codes, and Jellyfin, Plex and Emby                   | Xtream Codes login, M3U link, M3U file, MAC portal (live TV and guide)                   |
+| Playlist types                 | M3U8, Xtream Codes, and Jellyfin, Plex and Emby                   | Xtream Codes, M3U link or file, MAC portal, Plex, Jellyfin and Emby                      |
 | TV guide                       | A guide built for touch screens, with alerts                      | XMLTV guide as a list or a full grid, with reminders                                     |
 | Catch-up                       | Yes                                                               | Yes, on Xtream servers that keep recordings                                              |
-| Recording                      | Yes, through its free UHF Server on a computer                    | Yes, the channel you are watching (Premium)                                              |
+| Recording                      | Yes, through its free UHF Server on a computer                    | Yes, live and from the guide (Premium)                                                   |
 | Pause and rewind live TV       | Yes, through the live buffer                                      | Yes, up to an hour kept on the device (Premium)                                          |
 | Several channels at once       | Yes                                                               | No, on purpose: one stream connection at a time                                          |
-| Casting to a TV                | AirPlay and Chromecast                                            | Chromecast                                                                               |
+| Casting to a TV                | AirPlay and Chromecast                                            | Chromecast and DLNA, phone as remote                                                     |
 | Picture-in-picture             | Yes                                                               | Yes                                                                                      |
 | Offline downloads              | Yes                                                               | Films and episodes, whole seasons too (more than 3 at a time is Premium)                 |
 | Profiles and parental controls | PIN locks on folders                                              | Up to 6 profiles, kids profiles and PINs (Premium); adult categories locked behind a PIN |
-| Trakt                          | Yes                                                               | Yes, scrobbles films and episodes (Premium)                                              |
+| Trakt                          | Yes                                                               | Trakt and Simkl; Trakt can import watched history (Premium)                              |
 | Film and show details          | Not stated by the developer                                       | TMDB ratings, trailers, cast and actor pages, saved on the device                        |
 | Subtitles                      | OpenSubtitles search                                              | Full caption styling, timing fix, and subtitle search for films and episodes             |
 | Ads                            | None in the free version                                          | None, ever                                                                               |

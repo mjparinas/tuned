@@ -14,7 +14,7 @@ export const SITE = {
     },
     // The posts in "From the blog" on the landing page, for someone new to Tuned rather than release notes (Melvin,
     // 2026-11-20). A path missing from posts/ is skipped, and the newest guides fill any gap.
-    homePosts: ["roundups/best-iptv-player-android-tv.md", "roundups/tivimate-alternatives.md", "guides/add-xtream-codes-playlist.md"],
+    homePosts: ["roundups/best-iptv-player-android-tv.md", "guides/add-media-server.md", "guides/add-xtream-codes-playlist.md"],
     // Built from docs/privacy.md by devices/build-site.mjs.
     privacy: "/privacy/",
 };
