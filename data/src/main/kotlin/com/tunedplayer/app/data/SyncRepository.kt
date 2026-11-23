@@ -129,17 +129,11 @@ class SyncRepository(
             val programmes = attempt(TAG_SYNC, "Guide refresh failed") { refreshGuideLocked(plan::report) }.getOrElse { 0 } // not fatal
             // A portal's or media server's films and shows come last: Live TV and the guide are ready first.
             when (currentLogin()?.kind) {
-                Credentials.Kind.Stalker -> {
+                Credentials.Kind.Stalker ->
                     attempt(TAG_SYNC, "The portal's films and shows failed") { refreshPortalLibrary(plan::report) }
-                }
-
-                Credentials.Kind.Plex, Credentials.Kind.Jellyfin, Credentials.Kind.Emby -> {
+                Credentials.Kind.Plex, Credentials.Kind.Jellyfin, Credentials.Kind.Emby ->
                     attempt(TAG_SYNC, "The media server's films and shows failed") { mediaSync.refreshLibrary(plan::report) }
-                }
-
-                else -> {
-                    Unit
-                }
+                else -> {}
             }
             Result(items, programmes)
         }
