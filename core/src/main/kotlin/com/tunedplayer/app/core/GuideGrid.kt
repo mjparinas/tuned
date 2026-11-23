@@ -63,16 +63,20 @@ object GuideGrid {
     ): List<T> = all.filter { stop(it) > from && start(it) < to }.sortedBy(start)
 
     /**
-     * The start of the view that brings a programme starting at [start] into sight, or [viewStart] if it already is:
-     * a remote moving onto a programme off the right edge scrolls just far enough to show its start.
+     * The start of the view that brings a programme into sight, or [viewStart] if it already overlaps the view. A
+     * remote moving onto a programme off the right edge scrolls just far enough to show its start; one wholly past
+     * the left edge scrolls to its start. A show that started earlier but is still on leaves the timeline alone —
+     * its title stays sticky at the left — so scrolling channels with the remote does not drag time left.
      */
     fun reveal(
         start: Long,
+        stop: Long,
         viewStart: Long,
         visible: Long,
     ): Long = when {
-        start < viewStart -> slotStart(start)
         start >= viewStart + visible - SLOT -> slotStart(start) - visible / 2
+        stop > viewStart && start < viewStart + visible -> viewStart
+        start < viewStart -> slotStart(start)
         else -> viewStart
     }
 }

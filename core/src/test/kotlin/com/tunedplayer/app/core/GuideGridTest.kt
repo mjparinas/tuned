@@ -63,8 +63,13 @@ class GuideGridTest {
     fun revealsAProgrammeOffEitherEdge() {
         val view = noon
         val visible = 2 * hour
-        assertEquals(noon, GuideGrid.reveal(noon + 30 * minute, view, visible))
-        assertEquals(noon - hour, GuideGrid.reveal(noon - 50 * minute, view, visible))
-        assertEquals(noon + 2 * hour - hour, GuideGrid.reveal(noon + 2 * hour, view, visible))
+        // Already in view: leave the timeline alone.
+        assertEquals(noon, GuideGrid.reveal(noon + 30 * minute, noon + 90 * minute, view, visible))
+        // Still on, but started before the view: leave alone, so scrolling channels does not drag time left.
+        assertEquals(noon, GuideGrid.reveal(noon - 50 * minute, noon + 10 * minute, view, visible))
+        // Wholly past the left edge: scroll to its start.
+        assertEquals(noon - hour, GuideGrid.reveal(noon - 50 * minute, noon - 10 * minute, view, visible))
+        // Off the right edge: scroll to show its start.
+        assertEquals(noon + hour, GuideGrid.reveal(noon + 2 * hour, noon + 3 * hour, view, visible))
     }
 }
