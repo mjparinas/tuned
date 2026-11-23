@@ -147,8 +147,10 @@ class OwnListsTest {
             )
         val old = helper.writableDatabase
         TunedDatabase.MIGRATION_17_18.migrate(old)
-        // Speculative warm indexes on list_items (Room 24).
-        TunedDatabase.MIGRATION_23_24.migrate(old)
+        // Speculative warm index on list_items only (Room 24); this fixture has no favourites table.
+        old.execSQL(
+            "CREATE INDEX IF NOT EXISTS `index_list_items_listId_position` ON `list_items` (`listId`, `position`)",
+        )
         val fresh = db.openHelper.writableDatabase
         for (table in listOf("lists", "list_items")) assertEquals(shape(fresh, table), shape(old, table), table)
         helper.close()
