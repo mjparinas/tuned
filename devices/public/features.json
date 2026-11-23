@@ -127,6 +127,11 @@
           "title": "Trakt",
           "body": "Your history and up next on Trakt, from every device.",
           "premium": true
+        },
+        {
+          "title": "Simkl",
+          "body": "Your history and watching now on Simkl, from every device.",
+          "premium": true
         }
       ]
     },
