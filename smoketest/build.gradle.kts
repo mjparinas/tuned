@@ -35,12 +35,7 @@ android {
             apiLevel = 34
             systemImageSource = "aosp-atd"
         }
-        // Android TV remote journey (docs/decisions/tv.md, diagnostics.md): same smoke on a leanback image.
-        create("tv1080Api34") {
-            device = "Television (1080p)"
-            apiLevel = 34
-            systemImageSource = "android-tv"
-        }
+        // Gradle Managed Devices do not support android-tv images; TV coverage stays in Robolectric and a real box.
     }
 }
 

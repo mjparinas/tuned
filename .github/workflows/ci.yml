@@ -284,7 +284,7 @@ jobs:
     needs: changes
     if: needs.changes.outputs.mobile == 'true'
     runs-on: ubuntu-latest
-    timeout-minutes: 70
+    timeout-minutes: 40
     # The Gradle cache entry this job reads, shared with "Gradle cache for the smoke test", which writes it.
     env: &device-cache
       GRADLE_BUILD_ACTION_CACHE_KEY_JOB: device
@@ -305,11 +305,9 @@ jobs:
           path: |
             /usr/local/lib/android/sdk/emulator
             /usr/local/lib/android/sdk/system-images/android-34/aosp_atd
-            /usr/local/lib/android/sdk/system-images/android-34/android-tv
-          key: gmd-android-34-aosp-atd-android-tv-emulator
+          key: gmd-android-34-aosp-atd-emulator
       - run: >
-          ./gradlew :smoketest:pixel6Api34GithubDebugAndroidTest
-          :smoketest:tv1080Api34GithubDebugAndroidTest --no-configuration-cache
+          ./gradlew :smoketest:pixel6Api34GithubDebugAndroidTest --no-configuration-cache
           -Pandroid.testoptions.manageddevices.emulator.gpu=swiftshader_indirect
       - uses: actions/upload-artifact@v7
         if: failure()

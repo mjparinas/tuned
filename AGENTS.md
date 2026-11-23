@@ -11,7 +11,7 @@ Tuned is a native Android IPTV player. It signs in to an Xtream Codes-style serv
 ./gradlew spotlessApply               # format Kotlin (ktlint); CI runs spotlessCheck
 ./gradlew detekt :app:lintGithubDebug # static analysis and Android Lint; any finding fails
 ./gradlew :app:generateGithubReleaseBaselineProfile  # baseline profile on an emulator (Baseline profile workflow does it in CI)
-./gradlew :smoketest:pixel6Api34GithubDebugAndroidTest :smoketest:tv1080Api34GithubDebugAndroidTest  # device smoke on phone and TV emulators (CI runs both on every pull request)
+./gradlew :smoketest:pixel6Api34GithubDebugAndroidTest  # device smoke test on an emulator (CI runs it on every pull request)
 ./gradlew :app:testGithubDebugUnitTest -Pscreenshots  # every screen drawn on the JVM with sample data, PNGs in app/build/outputs/roborazzi
 npm ci && npm run format              # Prettier for YAML, JSON and Markdown; CI runs format:check
 node devices/a11y-check.mjs            # the website against WCAG 2.2 AA (axe, light and dark, 320px, focus); CI runs it

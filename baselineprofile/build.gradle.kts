@@ -38,12 +38,7 @@ android {
             apiLevel = 34
             systemImageSource = "aosp"
         }
-        // Cold-start numbers on a leanback image (docs/decisions/speed.md); profile generation stays on Pixel 6.
-        create("tv1080Api34") {
-            device = "Television (1080p)"
-            apiLevel = 34
-            systemImageSource = "android-tv"
-        }
+        // Gradle Managed Devices do not support android-tv images; cold-start numbers stay on Pixel 6.
     }
 }
 

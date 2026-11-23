@@ -62,14 +62,17 @@
     <string name="sync_size_so_far">%1$s jusqu\'ici</string>
     <plurals name="progress_seconds_left">
         <item quantity="one">environ %d s restantes</item>
+        <item quantity="many">environ %d s restantes</item>
         <item quantity="other">environ %d s restantes</item>
     </plurals>
     <plurals name="progress_minutes_left">
         <item quantity="one">environ %d min restante</item>
+        <item quantity="many">environ %d min restantes</item>
         <item quantity="other">environ %d min restantes</item>
     </plurals>
     <plurals name="progress_hours_left">
         <item quantity="one">environ %d h restante</item>
+        <item quantity="many">environ %d h restantes</item>
         <item quantity="other">environ %d h restantes</item>
     </plurals>
     <string name="sync_step_done">Terminé</string>
