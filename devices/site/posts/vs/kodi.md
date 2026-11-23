@@ -12,17 +12,17 @@ Kodi is the free, open-source media centre, and its PVR IPTV Simple Client add-o
 |                                | Kodi                                                       | Tuned                                                                                    |
 | ------------------------------ | ---------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
 | Where it runs                  | Wherever Kodi runs (Android, Windows, Mac, Linux and more) | Android phones, tablets, Chromebooks, Android TV and Google TV                           |
-| Playlist types                 | M3U file or link; Xtream catch-up links                    | Xtream Codes login, M3U link, M3U file, MAC portal (live TV and guide)                   |
+| Playlist types                 | M3U file or link; Xtream catch-up links                    | Xtream Codes, M3U link or file, MAC portal, Plex, Jellyfin and Emby                      |
 | TV guide                       | XMLTV (gzip and XZ too)                                    | XMLTV guide as a list or a full grid, with reminders                                     |
 | Catch-up                       | Yes, several catch-up formats                              | Yes, on Xtream servers that keep recordings                                              |
-| Recording                      | Not stated by the developer                                | Yes, the channel you are watching (Premium)                                              |
+| Recording                      | Not stated by the developer                                | Yes, live and from the guide (Premium)                                                   |
 | Pause and rewind live TV       | Depends on the input stream add-on                         | Yes, up to an hour kept on the device (Premium)                                          |
 | Several channels at once       | Not stated by the developer                                | No, on purpose: one stream connection at a time                                          |
-| Casting to a TV                | Not stated by the developer                                | Chromecast                                                                               |
+| Casting to a TV                | Not stated by the developer                                | Chromecast and DLNA, phone as remote                                                     |
 | Picture-in-picture             | Not stated by the developer                                | Yes                                                                                      |
 | Offline downloads              | Not stated by the developer                                | Films and episodes, whole seasons too (more than 3 at a time is Premium)                 |
 | Profiles and parental controls | Kodi's own profiles                                        | Up to 6 profiles, kids profiles and PINs (Premium); adult categories locked behind a PIN |
-| Trakt                          | Through separate Kodi add-ons                              | Yes, scrobbles films and episodes (Premium)                                              |
+| Trakt                          | Through separate Kodi add-ons                              | Trakt and Simkl; Trakt can import watched history (Premium)                              |
 | Film and show details          | Through Kodi's library, not the IPTV add-on                | TMDB ratings, trailers, cast and actor pages, saved on the device                        |
 | Subtitles                      | Not stated by the developer                                | Full caption styling, timing fix, and subtitle search for films and episodes             |
 | Ads                            | None                                                       | None, ever                                                                               |

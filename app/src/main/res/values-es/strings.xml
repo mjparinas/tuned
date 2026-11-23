@@ -87,7 +87,7 @@
     <string name="settings_sign_out">Cerrar sesión</string>
     <string name="settings_sign_out_summary">Deja Tuned como recién instalado</string>
     <string name="settings_sign_out_title">¿Cerrar sesión?</string>
-    <string name="settings_sign_out_confirm">Tuned vuelve a estar como recién instalado. Se borran todas las listas y datos de acceso, los canales y la guía, los perfiles, favoritos, ajustes y PIN, y Trakt y tu cuenta de Tuned se cierran en este dispositivo. Tu copia de seguridad sigue en tu cuenta de Tuned.</string>
+    <string name="settings_sign_out_confirm">Tuned vuelve a estar como recién instalado. Se borran todas las listas y datos de acceso, los canales y la guía, los perfiles, favoritos, ajustes y PIN, y Trakt, Simkl y tu cuenta de Tuned se cierran en este dispositivo. Tu copia de seguridad sigue en tu cuenta de Tuned.</string>
     <plurals name="settings_sign_out_downloads">
         <item quantity="one">¿Borrar también %1$d descarga (%2$s)?</item>
         <item quantity="many">¿Borrar también %1$d descargas (%2$s)?</item>

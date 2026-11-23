@@ -80,6 +80,7 @@ class AppReset(
                     step("the playlist files") { c.session.playlistFiles.deleteRecursively() },
                     step("the account status") { c.account.clear() },
                     step("Trakt") { c.trakt.disconnect() },
+                    step("Simkl") { c.simkl.disconnect() },
                     step("Tuned account") { c.cloudSync.disconnect() },
                     // A fresh install gets a new id, so the stats never tie the time before signing out to the time after.
                     step("the usage stats") { c.usage.forget() },

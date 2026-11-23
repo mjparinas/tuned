@@ -7,6 +7,7 @@ import com.tunedplayer.app.core.EpisodeInfo
 import com.tunedplayer.app.core.Episodes
 import com.tunedplayer.app.core.GuideFixes
 import com.tunedplayer.app.core.M3uParser
+import com.tunedplayer.app.core.MediaServer
 import com.tunedplayer.app.core.PlaylistEntry
 import com.tunedplayer.app.core.PlaylistLink
 import com.tunedplayer.app.core.Programme
@@ -75,11 +76,38 @@ class SyncRepository(
     private val dir: File,
     /** The signed-in Stalker portal, shared with the player so its token is reused. */
     private val stalker: StalkerLinks = StalkerLinks(http, currentLogin),
+    /** Plex, Jellyfin or Emby, shared with the player so the session token is reused. */
+    private val media: MediaServerLinks = MediaServerLinks(http, currentLogin),
 ) {
     private val lock = Mutex()
     private val downloader = Downloader(http)
     private val reads = ReadProgress()
     private val memo = PlaylistMemo(File(dir, "playlist.fingerprint"), BuildConfig.VERSION_CODE.toString())
+    private val mediaHost =
+        object : MediaServerSyncHost {
+            override fun forgetMemo() = memo.forget()
+
+            override suspend fun importPlaylist(
+                progress: (SyncProgress) -> Unit,
+                scope: String?,
+                read: SyncProgress.Step,
+                save: SyncProgress.Step,
+                block: suspend (suspend (PlaylistEntry) -> Unit) -> Unit,
+            ): Int = this@SyncRepository.importPlaylist(progress, scope, read, save, block)
+
+            override suspend fun guideFile(
+                url: String,
+                progress: (SyncProgress) -> Unit,
+                read: suspend (java.io.InputStream) -> Unit,
+            ) {
+                this@SyncRepository.guideFile(url, progress, read)
+            }
+
+            override fun toRow(entry: PlaylistEntry) = entry.toRow()
+
+            override fun toEntry(item: ItemEntity) = item.toEntry()
+        }
+    private val mediaSync by lazy { MediaServerSync(db, media, currentLogin, settings, reads, mediaHost) }
 
     /** Set by a refresh that read an Xtream server's M3U, which lacks what the sorts need ([XtreamDetails]). */
     private var filmDetailsDue = false
@@ -99,9 +127,17 @@ class SyncRepository(
             // A plain playlist's header names its guide, or doesn't: the steps now say which.
             plan.steps = SyncProgress.planFor(currentLogin(), headerGuide.exists())
             val programmes = attempt(TAG_SYNC, "Guide refresh failed") { refreshGuideLocked(plan::report) }.getOrElse { 0 } // not fatal
-            // A portal's films and shows come last: they take many small calls, and Live TV and the guide are ready first.
-            if (currentLogin()?.kind == Credentials.Kind.Stalker) {
-                attempt(TAG_SYNC, "The portal's films and shows failed") { refreshPortalLibrary(plan::report) }
+            // A portal's or media server's films and shows come last: Live TV and the guide are ready first.
+            when (currentLogin()?.kind) {
+                Credentials.Kind.Stalker -> {
+                    attempt(TAG_SYNC, "The portal's films and shows failed") { refreshPortalLibrary(plan::report) }
+                }
+
+                Credentials.Kind.Plex, Credentials.Kind.Jellyfin, Credentials.Kind.Emby -> {
+                    attempt(TAG_SYNC, "The media server's films and shows failed") { mediaSync.refreshLibrary(plan::report) }
+                }
+
+                else -> {}
             }
             Result(items, programmes)
         }
@@ -211,7 +247,7 @@ class SyncRepository(
     ): Int {
         filmDetailsDue = false
         showDetailsDue = false
-        if (login.kind == Credentials.Kind.Stalker) return importPortal(login, progress)
+        specialImport(login, progress)?.let { return it }
         val xtream = login.playlistUrl.isBlank()
         val url = login.playlistUrl.ifBlank { XtreamUrls.playlist(login.server, login.username, login.password) }
         val api = XtreamImport(http, login, userAgent())
@@ -305,6 +341,16 @@ class SyncRepository(
         }
     }
 
+    /** A portal or media server, which has no M3U file: null for every other kind. */
+    private suspend fun specialImport(
+        login: Credentials,
+        progress: (SyncProgress) -> Unit,
+    ): Int? = when {
+        login.kind == Credentials.Kind.Stalker -> importPortal(login, progress)
+        login.kind.isMediaServer -> mediaSync.importLive(login, progress)
+        else -> null
+    }
+
     /**
      * A portal's films and shows (Melvin, 2026-11-20: "add films and shows for mac portals"). Portals list them about
      * fourteen at a time, so a big library is hundreds of small calls: they run after Live TV and the guide are in,
@@ -352,16 +398,6 @@ class SyncRepository(
             }
             for ((category, items) in shows) items.forEach { show(Stalker.SERIES, category, it) }
         }
-    }
-
-    /**
-     * Like [runCatching] for I/O only: anything else (a bug, a cancellation) still throws. `kotlin.Result` in full,
-     * because this class has its own Result (a refresh's counts).
-     */
-    private inline fun <T> runCatchingIo(block: () -> T): kotlin.Result<T> = try {
-        kotlin.Result.success(block())
-    } catch (e: IOException) {
-        kotlin.Result.failure(e)
     }
 
     /** Which live channels keep recordings (Xtream only), and the server's time zone that catch-up links use. */
@@ -448,8 +484,9 @@ class SyncRepository(
 
     private suspend fun refreshGuideLocked(progress: (SyncProgress) -> Unit): Int {
         val login = currentLogin() ?: throw IOException("Not signed in")
-        // A portal's own guide, unless a guide link was given for it.
+        // A portal's or media server's own guide, unless a guide link was given for it.
         if (login.kind == Credentials.Kind.Stalker && login.guideUrl.isBlank()) return refreshPortalGuide(login, progress)
+        if (login.kind.isMediaServer && login.guideUrl.isBlank()) return mediaSync.refreshGuide(login, progress)
         // A plain playlist's guide is the one its header names; without one only the extra guide links are read.
         val main =
             login.guideUrl.ifBlank {
@@ -689,6 +726,7 @@ class SyncRepository(
     suspend fun loadShow(showKey: String) {
         val rows = db.items().episodesNow(showKey)
         rows.firstOrNull { Stalker.standIn(it.url) != null }?.let { return loadPortalShow(showKey, it) }
+        rows.firstOrNull { MediaServer.standIn(it.url) != null }?.let { return mediaSync.loadShow(showKey, it) }
         val standIn = rows.firstOrNull { XtreamApi.standInId(it.url) != null } ?: return
         val login = currentLogin() ?: return
         val api = XtreamImport(http, login, userAgent())
@@ -778,6 +816,16 @@ class SyncRepository(
 }
 
 private const val TAG_SYNC = "Sync"
+
+/**
+ * Like [runCatching] for I/O only: anything else (a bug, a cancellation) still throws. Kept outside [SyncRepository]
+ * so that class stays under detekt's function cap; `kotlin.Result` in full, because SyncRepository has its own Result.
+ */
+private inline fun <T> runCatchingIo(block: () -> T): kotlin.Result<T> = try {
+    kotlin.Result.success(block())
+} catch (e: IOException) {
+    kotlin.Result.failure(e)
+}
 
 /** A playlist entry as the row the cache keeps. */
 private fun PlaylistEntry.toRow(): ItemEntity {

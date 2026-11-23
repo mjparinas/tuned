@@ -9,7 +9,7 @@ Tuned is free, with no ads, ever. Premium unlocks the power features. Here's exa
 
 ## Free, for everyone
 
-- One playlist (Xtream Codes, M3U link or file, or MAC portal) with its TV guide
+- One playlist (Xtream Codes, M3U link or file, MAC portal, or a Plex, Jellyfin or Emby server) with its TV guide
 - Live TV, Movies, Shows, search, favourites and Continue Watching
 - The whole player: captions and subtitle search, sound tracks, picture-in-picture, background play and casting
 - The grid guide, channel numbers and flip back
@@ -27,8 +27,8 @@ Tuned is free, with no ads, ever. Premium unlocks the power features. Here's exa
 - **Recording** the channel you're watching
 - **More than three downloads** at a time
 - **Following events** and their alerts
-- **A Tuned account** that backs up your playlists, settings and profiles and keeps your devices the same
-- **Trakt** scrobbling
+- **A Tuned account** that backs up your playlists, settings and profiles and keeps your devices the same, plus the website's Channels and guide and Watch pages
+- **Trakt and Simkl** scrobbling (and importing Trakt's watched history into Tuned)
 - **Themes and accent colours** other than the default
 
 ## What it costs

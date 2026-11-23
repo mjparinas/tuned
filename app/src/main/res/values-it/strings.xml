@@ -87,7 +87,7 @@
     <string name="settings_sign_out">Esci</string>
     <string name="settings_sign_out_summary">Riporta Tuned com\'era appena installato</string>
     <string name="settings_sign_out_title">Uscire?</string>
-    <string name="settings_sign_out_confirm">Tuned torna com\'era appena installato. Tutte le playlist e i dati di accesso, i canali e la guida, i profili, i preferiti, le impostazioni e i PIN vengono rimossi, e Trakt e il tuo account Tuned vengono disconnessi su questo dispositivo. Il tuo backup resta nel tuo account Tuned.</string>
+    <string name="settings_sign_out_confirm">Tuned torna com\'era appena installato. Tutte le playlist e i dati di accesso, i canali e la guida, i profili, i preferiti, le impostazioni e i PIN vengono rimossi, e Trakt, Simkl e il tuo account Tuned vengono disconnessi su questo dispositivo. Il tuo backup resta nel tuo account Tuned.</string>
     <plurals name="settings_sign_out_downloads">
         <item quantity="one">Eliminare anche %1$d download (%2$s)?</item>
         <item quantity="many">Eliminare anche %1$d download (%2$s)?</item>

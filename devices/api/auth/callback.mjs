@@ -47,7 +47,9 @@ async function finish(origin, done) {
               ? `/account?tv=${done.after.tv}`
               : done.after.then === "check"
                 ? "/check"
-                : "/account";
+                : done.after.then === "watch"
+                  ? "/watch"
+                  : "/account";
     return redirect(`${origin}${page}`, await newSession(done.account));
 }
 

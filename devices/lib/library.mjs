@@ -11,6 +11,8 @@ export { WEB_SETTINGS };
 
 /** The app's mark for a MAC portal in place of a playlist link (core/Stalker.MARKER). */
 const STALKER = "stalker:";
+/** Markers for Plex / Jellyfin / Emby (core/MediaServer.Product.marker). */
+const MEDIA = { "plex:": "plex", "jellyfin:": "jellyfin", "emby:": "emby" };
 const XTREAM_PATHS = new Set(["get.php", "player_api.php", "xmltv.php", "panel_api.php"]);
 const MAX_PLAYLISTS = 50;
 const MAX_TEXT = 2048;
@@ -24,6 +26,7 @@ export function kindOf(p) {
     if (!url) return "xtream";
     if (url.startsWith("file:")) return "file";
     if (url === STALKER) return "stalker";
+    if (MEDIA[url]) return MEDIA[url];
     return "link";
 }
 
@@ -51,20 +54,20 @@ const hostOf = (url) => {
 export function playlistView(p) {
     const kind = kindOf(p);
     const detail =
-        kind === "xtream"
+        kind === "xtream" || kind === "jellyfin" || kind === "emby"
             ? `${p.username} @ ${hostOf(p.server)}`
             : kind === "link"
               ? hostOf(p.playlistUrl)
-              : kind === "stalker"
-                ? `${p.username} @ ${hostOf(p.server)}`
+              : kind === "stalker" || kind === "plex"
+                ? hostOf(p.server)
                 : "";
     return {
         id: playlistId(p),
         kind,
         name: p.name ?? "",
         detail,
-        server: kind === "xtream" || kind === "stalker" ? p.server : "",
-        username: kind === "xtream" ? p.username : "",
+        server: ["xtream", "stalker", "plex", "jellyfin", "emby"].includes(kind) ? p.server : "",
+        username: kind === "xtream" || kind === "jellyfin" || kind === "emby" ? p.username : "",
         mac: kind === "stalker" ? p.username : "",
         guide: Boolean(p.guideUrl),
         guideHost: p.guideUrl ? hostOf(p.guideUrl) : "",
@@ -281,6 +284,29 @@ export function buildPlaylist(input, existing = null) {
             const mac = normalizeMac(input.mac);
             if (!mac) return { error: "bad mac", field: "mac" };
             return done({ server, username: mac, password: "", playlistUrl: STALKER });
+        }
+        case "plex": {
+            const typed = text(input.server);
+            if (!typed) return { error: "server needed", field: "server" };
+            const server = normalizeServer(typed);
+            if (!isWebLink(server) || !parseLink(server)) return { error: "bad server", field: "server" };
+            const password =
+                typeof input.password === "string" && input.password !== "" ? input.password : sameKind ? existing.password : "";
+            if (!password) return { error: "password needed", field: "password" };
+            return done({ server, username: "", password, playlistUrl: "plex:" });
+        }
+        case "jellyfin":
+        case "emby": {
+            const typed = text(input.server);
+            if (!typed) return { error: "server needed", field: "server" };
+            const server = normalizeServer(typed);
+            if (!isWebLink(server) || !parseLink(server)) return { error: "bad server", field: "server" };
+            const username = text(input.username);
+            if (!username) return { error: "username needed", field: "username" };
+            const password =
+                typeof input.password === "string" && input.password !== "" ? input.password : sameKind ? existing.password : "";
+            if (!password) return { error: "password needed", field: "password" };
+            return done({ server, username, password, playlistUrl: `${input.kind}:` });
         }
         default:
             return { error: "bad request" };

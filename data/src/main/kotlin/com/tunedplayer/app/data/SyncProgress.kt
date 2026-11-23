@@ -45,8 +45,8 @@ data class SyncProgress(
     companion object {
         /**
          * The steps a refresh takes. A file picked from the device isn't downloaded; only an Xtream login has catch-up
-         * and film details to fetch; only a portal has a separate library of films and shows; and [guide] is false when
-         * there is no guide to read.
+         * and film details to fetch; a portal or media server has a separate library of films and shows; and [guide] is
+         * false when there is no guide to read.
          */
         fun plan(
             fromFile: Boolean,
@@ -64,7 +64,8 @@ data class SyncProgress(
 
         /**
          * The steps a full refresh of [login] takes. It has a guide to read from the same sources the refresh reads: a
-         * portal's own, an Xtream server's, a guide link, or the one a plain playlist's header named ([headerGuide]).
+         * portal's own, a media server's, an Xtream server's, a guide link, or the one a plain playlist's header named
+         * ([headerGuide]).
          */
         fun planFor(
             login: Credentials?,
@@ -72,7 +73,7 @@ data class SyncProgress(
         ): List<Step> = plan(
             fromFile = login?.kind == Credentials.Kind.File,
             xtream = login?.kind == Credentials.Kind.Xtream,
-            portal = login?.kind == Credentials.Kind.Stalker,
+            portal = login?.kind == Credentials.Kind.Stalker || login?.kind?.isMediaServer == true,
             guide = login != null && hasGuide(login, headerGuide),
         )
 
@@ -81,6 +82,7 @@ data class SyncProgress(
             headerGuide: Boolean,
         ): Boolean = when (login.kind) {
             Credentials.Kind.Stalker, Credentials.Kind.Xtream -> true
+            Credentials.Kind.Plex, Credentials.Kind.Jellyfin, Credentials.Kind.Emby -> true
             else -> login.guideUrl.isNotBlank() || login.extraGuides.isNotEmpty() || headerGuide
         }
 

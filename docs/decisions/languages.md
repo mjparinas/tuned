@@ -6,7 +6,7 @@
 
 **What stays as it is**:
 
-- The name **Tuned** is never translated, and neither are other names: Premium, Trakt, OpenSubtitles, TMDB, Google Play, Xtream Codes, the Tuned website's own "Pair a TV".
+- The name **Tuned** is never translated, and neither are other names: Premium, Trakt, Simkl, OpenSubtitles, TMDB, Google Play, Xtream Codes, the Tuned website's own "Pair a TV".
 - Strings that are only a format (`%1$s · %2$s`, `%1$s/10`) or a technical label (4K, FHD, HD, SD, 5.1, REC, FPS) are `translatable="false"` in `values/`, so every language uses them.
 - What comes from the provider or TMDB (channel, group, film and episode names, the guide) is shown as the provider sent it.
 - A raw technical error a server returns (such as "HTTP 401") inside a message stays as it came.

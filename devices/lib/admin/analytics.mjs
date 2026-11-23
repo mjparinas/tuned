@@ -12,7 +12,7 @@ const int = (min, max) => (v) => (Number.isInteger(v) && v >= min && v <= max ? 
 const bool = (v) => (typeof v === "boolean" ? v : undefined);
 
 const KIND = oneOf("phone", "tablet", "tv");
-const PLAYLIST = oneOf("xtream", "link", "file", "portal");
+const PLAYLIST = oneOf("xtream", "link", "file", "portal", "plex", "jellyfin", "emby");
 const SECTION = oneOf("live", "movies", "shows", "downloads", "events", "search", "guide");
 
 /** About the device, sent with every batch and kept on its install row. */
@@ -51,6 +51,7 @@ export const EVENTS = {
             "pip",
             "subtitle_search",
             "trakt",
+            "simkl",
             "catch_up",
             "profiles",
             "own_list",

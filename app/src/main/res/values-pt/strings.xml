@@ -87,7 +87,7 @@
     <string name="settings_sign_out">Sair</string>
     <string name="settings_sign_out_summary">Deixa o Tuned como recém-instalado</string>
     <string name="settings_sign_out_title">Sair?</string>
-    <string name="settings_sign_out_confirm">O Tuned volta a ficar como recém-instalado. Todas as listas e logins, os canais e o guia, perfis, favoritos, configurações e PINs são removidos, e o Trakt e sua conta Tuned são desconectados neste dispositivo. Seu backup continua na sua conta Tuned.</string>
+    <string name="settings_sign_out_confirm">O Tuned volta a ficar como recém-instalado. Todas as listas e logins, os canais e o guia, perfis, favoritos, configurações e PINs são removidos, e o Trakt, o Simkl e sua conta Tuned são desconectados neste dispositivo. Seu backup continua na sua conta Tuned.</string>
     <plurals name="settings_sign_out_downloads">
         <item quantity="one">Apagar também %1$d download (%2$s)?</item>
         <item quantity="many">Apagar também %1$d downloads (%2$s)?</item>

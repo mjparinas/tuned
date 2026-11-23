@@ -64,6 +64,18 @@ test("each kind of playlist is saved as the app saves it", () => {
         password: "",
         playlistUrl: "stalker:",
     });
+    assert.deepEqual(buildPlaylist({ kind: "plex", server: "192.168.1.10:32400", password: "tok" }).playlist, {
+        server: "http://192.168.1.10:32400",
+        username: "",
+        password: "tok",
+        playlistUrl: "plex:",
+    });
+    assert.deepEqual(buildPlaylist({ kind: "jellyfin", server: "192.168.1.10:8096", username: "me", password: "secret" }).playlist, {
+        server: "http://192.168.1.10:8096",
+        username: "me",
+        password: "secret",
+        playlistUrl: "jellyfin:",
+    });
     // A pasted Xtream link in the link form signs in properly.
     assert.deepEqual(buildPlaylist({ kind: "link", link: "http://a.example:8080/get.php?username=me&password=secret" }).playlist, xtream);
 });

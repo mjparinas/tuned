@@ -19,4 +19,21 @@
     <string name="trakt_denied">Trakt said no to the connection.</string>
     <string name="trakt_failed">Couldn\'t reach Trakt. Check the connection and try again.</string>
     <string name="trakt_try_again">Try again</string>
+    <string name="trakt_import">Import watched history</string>
+    <string name="trakt_import_summary">Mark films and episodes watched that you already saw in another app</string>
+    <string name="trakt_import_reading">Reading your playlist…</string>
+    <string name="trakt_import_films">Fetching films from Trakt…</string>
+    <string name="trakt_import_shows">Fetching shows from Trakt…</string>
+    <string name="trakt_import_marking">Marking watched… %1$d of %2$d</string>
+    <string name="trakt_import_done">Marked %1$s and %2$s watched</string>
+    <string name="trakt_import_none">Nothing in your playlist matched Trakt\'s history</string>
+    <string name="trakt_import_failed">Couldn\'t import from Trakt. Tap to try again.</string>
+    <plurals name="trakt_import_films_count">
+        <item quantity="one">%d film</item>
+        <item quantity="other">%d films</item>
+    </plurals>
+    <plurals name="trakt_import_episodes_count">
+        <item quantity="one">%d episode</item>
+        <item quantity="other">%d episodes</item>
+    </plurals>
 </resources>

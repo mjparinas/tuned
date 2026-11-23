@@ -218,11 +218,11 @@ fun GuideGridView(
                     scope.launch { scroll.animateScrollBy((offset.floatValue - minutesOf(clamped)) * pxPerMinute) }
                 }
             }
-        val reveal: (Long) -> Unit =
+        val reveal: (Long, Long) -> Unit =
             remember(scrollTo) {
-                { start ->
+                { start, stop ->
                     val viewStart = viewStartOf()
-                    val target = GuideGrid.reveal(start, viewStart, visible)
+                    val target = GuideGrid.reveal(start, stop, viewStart, visible)
                     if (target != viewStart) scrollTo(target)
                 }
             }
@@ -366,7 +366,7 @@ private fun ProgrammeRow(
     pxPerMinute: Float,
     onPlay: () -> Unit,
     onOpenGuide: () -> Unit,
-    onFocus: (Long) -> Unit,
+    onFocus: (Long, Long) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val tvgId = channel.tvgId
@@ -417,7 +417,7 @@ private fun ProgrammeRow(
                     width = widthDp,
                     x = { xOf(p.start) },
                     onClick = { if (p.start <= now && p.stop > now) onPlay() else onOpenGuide() },
-                    onFocus = { onFocus(p.start) },
+                    onFocus = { onFocus(p.start, p.stop) },
                 )
             }
         }

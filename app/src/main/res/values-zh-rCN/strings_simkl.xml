@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="simkl_sign_in">连接 Simkl</string>
+    <string name="simkl_sign_in_summary">将你观看的电影和剧集添加到 Simkl 观看记录</string>
+    <string name="simkl_signed_in">已连接为 %1$s</string>
+    <string name="simkl_account_unnamed">你的 Simkl 账号</string>
+    <string name="simkl_sign_out">点按断开连接</string>
+    <string name="simkl_scrobble">同步观看内容</string>
+    <string name="simkl_scrobble_summary">在电影或剧集开始、暂停和结束时通知 Simkl。不会发送直播内容。</string>
+    <string name="simkl_asking">正在向 Simkl 获取代码…</string>
+    <string name="simkl_enter_code">在任意手机或电脑上前往 %1$s 并输入此代码：</string>
+    <string name="simkl_waiting">等待你输入代码…</string>
+    <string name="simkl_open_site">打开 Simkl</string>
+    <string name="simkl_done">已连接。你现在观看的内容会记录到 Simkl。</string>
+    <string name="simkl_expired">代码在输入前已过期。</string>
+    <string name="simkl_failed">无法连接 Simkl。请检查网络连接后重试。</string>
+    <string name="simkl_try_again">重试</string>
+</resources>

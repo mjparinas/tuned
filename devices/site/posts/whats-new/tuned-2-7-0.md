@@ -1,12 +1,12 @@
 ---
 title: What's new in Tuned 2.7.0
-description: "Tuned 2.7.0, the IPTV player for Android and Android TV, is out. Manage lists in Settings; drop rename/delete chips on browse."
+description: "Tuned 2.7.0, the IPTV player for Android and Android TV, is out. Calibrate overscan, cinematic TV show pages, and manage lists in Settings."
 date: 2026-11-22
 kind: release
 version: 2.7.0
 ---
 
-Tuned 2.7.0 is out: 5 new, 8 fixed.
+Tuned 2.7.0 is built around Android TV: calibrate the overscan margin, open shows full screen with season tabs, and use Movies and Shows layouts made for the remote. Lists are managed in Settings, and the website's Channels page can rename channels and edit lists too.
 
 ## New
 
@@ -24,5 +24,3 @@ Tuned 2.7.0 is out: 5 new, 8 fixed.
 - TV search uses Tuned keyboard and inline voice
 - Soften Who's watching focus ring on TV
 - Streamline Android TV for remote-first watching
-- Drop unsupported TV GMD and add missing plurals
-- Format ParentalPin for spotless and detekt

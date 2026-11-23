@@ -11,8 +11,10 @@ import com.tunedplayer.app.container
 import com.tunedplayer.app.core.ChannelQuality
 import com.tunedplayer.app.core.ContentKind
 import com.tunedplayer.app.core.HiddenGroups
+import com.tunedplayer.app.core.KidsContent
 import com.tunedplayer.app.core.PinnedGroups
 import com.tunedplayer.app.core.ProgrammeGenre
+import com.tunedplayer.app.core.Regions
 import com.tunedplayer.app.core.Search
 import com.tunedplayer.app.core.TitleSort
 import com.tunedplayer.app.data.AppSettings
@@ -32,6 +34,7 @@ import com.tunedplayer.app.data.db.SortFields
 import com.tunedplayer.app.data.db.sortedItems
 import com.tunedplayer.app.data.db.sortedShows
 import com.tunedplayer.app.data.db.sortedShowsTab
+import com.tunedplayer.app.data.hiddenCountries
 import com.tunedplayer.app.data.hiddenKeys
 import com.tunedplayer.app.diagnostics.attempt
 import com.tunedplayer.app.diagnostics.launchSafely
@@ -42,6 +45,8 @@ import com.tunedplayer.app.ui.settings.toPinResult
 import com.tunedplayer.app.work.TvHome
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -57,6 +62,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.mapLatest
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
@@ -86,6 +92,15 @@ private data class Query(
     val filter: Filter,
     val search: String,
     val now: Long,
+)
+
+/** What [BrowseViewModel.liveRegions] reads from Settings, so the Flow only restarts when one of them changes. */
+private data class LiveRegionsQuery(
+    val visible: List<String>,
+    val groups: List<String>,
+    val kids: List<String>,
+    val keys: List<String>,
+    val adult: Boolean,
 )
 
 /** One per section. Lists are paged straight from Room, so 50,000 movies scroll as fast as 50. */
@@ -218,28 +233,65 @@ class BrowseViewModel(
         }
 
     /**
-     * Which of the quick filters by quality, programme on now, guide, catch-up and watching would find anything. Read
-     * once each time the sheet opens, off the screen thread; a failure offers none of them rather than stopping the sheet.
+     * Which of the quick filters by quality, programme on now, guide, catch-up and watching would find anything. Kept
+     * warm while Live TV is on screen (the Filters chip collects it), so the sheet does not wait on the database; the
+     * probes run side by side. A failure offers none of them rather than stopping the sheet. Re-reads with the guide's
+     * "now" clock so On now and Has guide stay true.
      */
-    suspend fun liveOffers(): LiveOffers = attempt("BrowseViewModel", "Couldn't read which filters apply") {
+    val liveOffers: StateFlow<LiveOffers> =
+        clock
+            .mapLatest { now -> readLiveOffers(now) }
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), LiveOffers())
+
+    private suspend fun readLiveOffers(now: Long): LiveOffers = attempt("BrowseViewModel", "Couldn't read which filters apply") {
         val dao = container.db.liveFilters()
-        val now = System.currentTimeMillis()
-        LiveOffers(
-            qualities = ChannelQuality.entries.filterTo(mutableSetOf()) { dao.hasNamed(it.fullText) },
-            onNow = dao.genresOnNow(now).mapNotNullTo(mutableSetOf()) { ProgrammeGenre.fromCode(it) },
-            guide = dao.hasGuide(now),
-            catchUp = dao.hasCatchUp(),
-            watched = dao.hasWatchedChannels(),
-        )
+        coroutineScope {
+            val qualityHits =
+                ChannelQuality.entries.map { q ->
+                    async { if (dao.hasNamed(q.fullText)) q else null }
+                }
+            val onNow = async { dao.genresOnNow(now).mapNotNullTo(mutableSetOf()) { ProgrammeGenre.fromCode(it) } }
+            val guide = async { dao.hasGuide(now) }
+            val catchUp = async { dao.hasCatchUp() }
+            val watched = async { dao.hasWatchedChannels() }
+            LiveOffers(
+                qualities = qualityHits.mapNotNull { it.await() }.toSet(),
+                onNow = onNow.await(),
+                guide = guide.await(),
+                catchUp = catchUp.await(),
+                watched = watched.await(),
+            )
+        }
     }.getOrNull() ?: LiveOffers()
 
-    /** The countries the quick filters can offer: those among the live channels on show. Read only while the sheet is open. */
+    /**
+     * The countries the quick filters can offer: those among the live channels on show. Kept warm while Live TV is on
+     * screen. Looks up only the countries still on in Settings (US and Canada, say) through the region index, so a big
+     * playlist with most countries hidden does not take tens of seconds.
+     */
     val liveRegions: StateFlow<List<RegionCount>> =
         settings
-            .map { it?.hiddenKeys().orEmpty() to (it?.showAdult ?: false) }
-            .distinctUntilChanged()
-            .flatMapLatest { (hidden, adult) -> container.db.liveFilters().liveRegions(hidden, adult) }
-            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+            .map { s ->
+                val hidden = s?.hiddenCountries().orEmpty()
+                val visible = (s?.seenRegions.orEmpty() - hidden).filter { it != Regions.NONE }.sorted()
+                val groups =
+                    s
+                        ?.hiddenGroups
+                        .orEmpty()
+                        .sorted()
+                        .toList()
+                val kids = listOfNotNull(KidsContent.HIDDEN_KEY.takeIf { s?.kidsProfile == true })
+                val keys = s?.hiddenKeys().orEmpty()
+                LiveRegionsQuery(visible, groups, kids, keys, s?.showAdult ?: false)
+            }.distinctUntilChanged()
+            .flatMapLatest { q ->
+                val dao = container.db.liveFilters()
+                if (q.visible.isNotEmpty()) {
+                    dao.liveRegions(q.visible, q.groups.ifEmpty { listOf("") }, q.kids, q.adult)
+                } else {
+                    dao.liveRegionsFallback(q.keys, q.adult)
+                }
+            }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
     val channels: Flow<PagingData<ChannelWithNow>> =
         combine(

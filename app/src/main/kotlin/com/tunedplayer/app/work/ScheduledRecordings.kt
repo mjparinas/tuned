@@ -17,6 +17,7 @@ import androidx.work.WorkerParameters
 import androidx.work.workDataOf
 import com.tunedplayer.app.R
 import com.tunedplayer.app.container
+import com.tunedplayer.app.core.MediaServer
 import com.tunedplayer.app.core.RecordingWindow
 import com.tunedplayer.app.core.Stalker
 import com.tunedplayer.app.core.StreamLink
@@ -148,7 +149,8 @@ class RecordWorker(
                 )
             val link = StreamLink.split(item.url)
             val portal = Stalker.isLink(link.url)
-            val url = if (portal) c.stalker.resolve(link.url) else link.url
+            val deferred = portal || MediaServer.isLink(link.url)
+            val url = if (deferred) c.resolveStreamAsync(link.url) else link.url
             val agent =
                 if (portal) {
                     Stalker.USER_AGENT

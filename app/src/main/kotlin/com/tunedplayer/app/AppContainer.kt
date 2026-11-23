@@ -1,6 +1,8 @@
 package com.tunedplayer.app
 
 import android.content.Context
+import com.tunedplayer.app.core.MediaServer
+import com.tunedplayer.app.core.Stalker
 import com.tunedplayer.app.data.AccountChannels
 import com.tunedplayer.app.data.AccountRepository
 import com.tunedplayer.app.data.AppReset
@@ -13,6 +15,7 @@ import com.tunedplayer.app.data.CredentialStore
 import com.tunedplayer.app.data.EventsRepository
 import com.tunedplayer.app.data.GuideFixRepository
 import com.tunedplayer.app.data.IntroStore
+import com.tunedplayer.app.data.MediaServerLinks
 import com.tunedplayer.app.data.MetadataRepository
 import com.tunedplayer.app.data.Offline
 import com.tunedplayer.app.data.OwnLists
@@ -27,6 +30,7 @@ import com.tunedplayer.app.data.SavedArtwork
 import com.tunedplayer.app.data.ServerFlags
 import com.tunedplayer.app.data.SettingsRepository
 import com.tunedplayer.app.data.SharedChannels
+import com.tunedplayer.app.data.SimklAccount
 import com.tunedplayer.app.data.SortDetails
 import com.tunedplayer.app.data.StalkerLinks
 import com.tunedplayer.app.data.SubtitleRepository
@@ -34,6 +38,7 @@ import com.tunedplayer.app.data.SyncCopyRepository
 import com.tunedplayer.app.data.SyncRepository
 import com.tunedplayer.app.data.TitleRatings
 import com.tunedplayer.app.data.TraktAccount
+import com.tunedplayer.app.data.TraktHistoryImport
 import com.tunedplayer.app.data.TuneRepository
 import com.tunedplayer.app.data.TunedAccount
 import com.tunedplayer.app.data.TvRelay
@@ -84,7 +89,26 @@ class AppContainer(
 
     /** The signed-in Stalker portal, and turning its channels into streams for the player, scans and casting. */
     val stalker by lazy { StalkerLinks(http, credentials::load) }
-    val sync by lazy { SyncRepository(db, http, credentials::load, settings, context.noBackupFilesDir.resolve("sync"), stalker) }
+
+    /** Plex, Jellyfin or Emby: session token and play-time stream resolve. */
+    val media by lazy { MediaServerLinks(http, credentials::load) }
+    val sync by lazy {
+        SyncRepository(db, http, credentials::load, settings, context.noBackupFilesDir.resolve("sync"), stalker, media)
+    }
+
+    /** A stored portal or media-server link turned into the HTTP(S) stream to open. */
+    fun resolveStream(url: String): String = when {
+        Stalker.isLink(url) -> stalker.resolveNow(url)
+        MediaServer.isLink(url) -> media.resolveNow(url)
+        else -> url
+    }
+
+    suspend fun resolveStreamAsync(url: String): String = when {
+        Stalker.isLink(url) -> stalker.resolve(url)
+        MediaServer.isLink(url) -> media.resolve(url)
+        else -> url
+    }
+
     val sortDetails by lazy { SortDetails(db, http, credentials::load, settings) }
     val tune by lazy { TuneRepository(db, settings) }
 
@@ -93,7 +117,9 @@ class AppContainer(
     val scheduler = SyncScheduler(context) { quietStart.openNow() }
     val guideFixes by lazy { GuideFixRepository(db, sync, scheduler, credentials) }
     val updates by lazy { GitHubUpdates(context, http, scope = appScope) }
-    val syncCopy by lazy { SyncCopyRepository(credentials, settings, db, profiles, trakt, IntroStore(context)) }
+    val trakt by lazy { TraktAccount(context, http) }
+    val simkl by lazy { SimklAccount(context, http) }
+    val syncCopy by lazy { SyncCopyRepository(credentials, settings, db, profiles, trakt, simkl, IntroStore(context)) }
     val tunedAccount by lazy { TunedAccount(context, http) { tvSignInUrl } }
     val cloudSync by lazy {
         CloudSyncRepository(
@@ -126,7 +152,7 @@ class AppContainer(
     val metadata by lazy { MetadataRepository(http, BuildConfig.TMDB_API_KEY, db.metadata(), appScope, ::tmdbReachable) }
     val titleRatings by lazy { TitleRatings(db, metadata) }
     val savedArtwork by lazy { SavedArtwork(context, db, metadata) }
-    val trakt by lazy { TraktAccount(context, http) }
+    val traktImport by lazy { TraktHistoryImport(trakt, db) }
     val people by lazy { PeopleRepository(http, BuildConfig.TMDB_API_KEY, db.metadata(), ::tmdbReachable) }
     val profiles by lazy { ProfileRepository(db, settings, browseFilters) }
 
@@ -159,7 +185,7 @@ class AppContainer(
             .stateIn(appScope, SharingStarted.Eagerly, false)
     }
     val account by lazy { AccountRepository(http, credentials::load, settings, streamBusy) }
-    val channelScan by lazy { ChannelScanner(context, db, http, credentials, settings, streamBusy, stalker::resolve) }
+    val channelScan by lazy { ChannelScanner(context, db, http, credentials, settings, streamBusy, ::resolveStreamAsync) }
     val scanControl by lazy { ScanWorker.Control(context) { quietStart.openNow() } }
 
     /** Adding, switching, removing and signing out of playlists. */

@@ -57,6 +57,7 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.tunedplayer.app.R
 import com.tunedplayer.app.container
+import com.tunedplayer.app.core.MediaServer
 import com.tunedplayer.app.core.PlaylistLink
 import com.tunedplayer.app.core.Stalker
 import com.tunedplayer.app.core.Streams
@@ -196,6 +197,45 @@ class AddPlaylistViewModel(
                 stalker(Credentials.stalker(Stalker.normalizePortal(draft.server), mac, guide, name))
             }
 
+            Credentials.Kind.Plex -> {
+                media(
+                    Credentials.mediaServer(
+                        MediaServer.Product.Plex,
+                        draft.server,
+                        "",
+                        draft.password.trim(),
+                        guide,
+                        name,
+                    ),
+                )
+            }
+
+            Credentials.Kind.Jellyfin -> {
+                media(
+                    Credentials.mediaServer(
+                        MediaServer.Product.Jellyfin,
+                        draft.server,
+                        draft.username.trim(),
+                        draft.password,
+                        guide,
+                        name,
+                    ),
+                )
+            }
+
+            Credentials.Kind.Emby -> {
+                media(
+                    Credentials.mediaServer(
+                        MediaServer.Product.Emby,
+                        draft.server,
+                        draft.username.trim(),
+                        draft.password,
+                        guide,
+                        name,
+                    ),
+                )
+            }
+
             Credentials.Kind.File -> {
                 val url =
                     when {
@@ -234,6 +274,29 @@ class AddPlaylistViewModel(
                 XtreamUrls.redact(e.message ?: e.javaClass.simpleName, login.username, login.password)
             } catch (e: IllegalArgumentException) {
                 AppLog.w("Login", "Not a portal address", e)
+                app.getString(R.string.login_bad_server)
+            }
+        return if (error == null) Built.Ok(login) else Built.Error(error)
+    }
+
+    /** A Plex, Jellyfin or Emby server checks the login before the playlist is saved. */
+    private suspend fun media(login: Credentials): Built {
+        val error =
+            try {
+                val accepted =
+                    withContext(Dispatchers.IO) {
+                        when (login.kind) {
+                            Credentials.Kind.Plex -> container.media.plex(login).signIn()
+                            Credentials.Kind.Jellyfin, Credentials.Kind.Emby -> container.media.emby(login).signIn()
+                            else -> false
+                        }
+                    }
+                if (accepted) null else app.getString(R.string.login_media_refused)
+            } catch (e: IOException) {
+                AppLog.w("Login", "Couldn't reach the media server", e)
+                XtreamUrls.redact(e.message ?: e.javaClass.simpleName, login.username, login.password)
+            } catch (e: IllegalArgumentException) {
+                AppLog.w("Login", "Not a media server address", e)
                 app.getString(R.string.login_bad_server)
             }
         return if (error == null) Built.Ok(login) else Built.Error(error)
@@ -344,13 +407,25 @@ fun AddPlaylistScreen(
     var server by rememberSaveable {
         mutableStateOf(
             when (kind) {
-                Credentials.Kind.Xtream, Credentials.Kind.Stalker -> editing?.server.orEmpty()
+                Credentials.Kind.Xtream, Credentials.Kind.Stalker,
+                Credentials.Kind.Plex, Credentials.Kind.Jellyfin, Credentials.Kind.Emby,
+                -> editing?.server.orEmpty()
+
                 else -> ""
             },
         )
     }
     var mac by rememberSaveable { mutableStateOf(editing?.username?.takeIf { kind == Credentials.Kind.Stalker }.orEmpty()) }
-    var username by rememberSaveable { mutableStateOf(editing?.username?.takeIf { kind == Credentials.Kind.Xtream }.orEmpty()) }
+    var username by rememberSaveable {
+        mutableStateOf(
+            editing
+                ?.username
+                ?.takeIf {
+                    kind == Credentials.Kind.Xtream || kind == Credentials.Kind.Jellyfin ||
+                        kind == Credentials.Kind.Emby
+                }.orEmpty(),
+        )
+    }
     var password by rememberSaveable { mutableStateOf(editing?.password.orEmpty()) }
     var link by rememberSaveable { mutableStateOf(if (kind == Credentials.Kind.Link) editing?.playlistUrl.orEmpty() else "") }
     var guide by rememberSaveable { mutableStateOf(editing?.guideUrl.orEmpty()) }
@@ -372,10 +447,25 @@ fun AddPlaylistScreen(
     val canSubmit =
         !state.busy &&
             when (kind) {
-                Credentials.Kind.Xtream -> server.isNotBlank() && username.isNotBlank() && password.isNotBlank()
-                Credentials.Kind.Link -> linkKind != null
-                Credentials.Kind.File -> file != null || editing != null
-                Credentials.Kind.Stalker -> server.isNotBlank() && Stalker.normalizeMac(mac) != null
+                Credentials.Kind.Xtream, Credentials.Kind.Jellyfin, Credentials.Kind.Emby -> {
+                    server.isNotBlank() && username.isNotBlank() && password.isNotBlank()
+                }
+
+                Credentials.Kind.Plex -> {
+                    server.isNotBlank() && password.isNotBlank()
+                }
+
+                Credentials.Kind.Link -> {
+                    linkKind != null
+                }
+
+                Credentials.Kind.File -> {
+                    file != null || editing != null
+                }
+
+                Credentials.Kind.Stalker -> {
+                    server.isNotBlank() && Stalker.normalizeMac(mac) != null
+                }
             }
     val submit = {
         if (canSubmit) vm.save(PlaylistDraft(kind, name, server, username, password, link, guide, mac), file, editing, onDone)
@@ -399,6 +489,9 @@ fun AddPlaylistScreen(
                 Credentials.Kind.Link -> R.string.kind_link
                 Credentials.Kind.File -> R.string.kind_file
                 Credentials.Kind.Stalker -> R.string.kind_stalker
+                Credentials.Kind.Plex -> R.string.kind_plex
+                Credentials.Kind.Jellyfin -> R.string.kind_jellyfin
+                Credentials.Kind.Emby -> R.string.kind_emby
             },
         )
     Scaffold(topBar = { BackTopBar(title, onBack) }) { padding ->
@@ -508,6 +601,89 @@ fun AddPlaylistScreen(
                     )
                 }
 
+                Credentials.Kind.Plex -> {
+                    Hint(R.string.add_plex_hint)
+                    OutlinedTextField(
+                        value = server,
+                        onValueChange = { server = it },
+                        label = { Text(stringResource(R.string.login_server)) },
+                        supportingText = { Text(stringResource(R.string.add_plex_server_help)) },
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri, imeAction = ImeAction.Next),
+                        modifier = field,
+                    )
+                    OutlinedTextField(
+                        value = password,
+                        onValueChange = { password = it },
+                        label = { Text(stringResource(R.string.login_token)) },
+                        supportingText = { Text(stringResource(R.string.add_token_help)) },
+                        singleLine = true,
+                        visualTransformation = if (showPassword) VisualTransformation.None else PasswordVisualTransformation(),
+                        keyboardOptions =
+                            KeyboardOptions(
+                                keyboardType = if (showPassword) KeyboardType.Ascii else KeyboardType.Password,
+                                autoCorrectEnabled = false,
+                                imeAction = ImeAction.Next,
+                            ),
+                        trailingIcon = {
+                            IconButton(onClick = { showPassword = !showPassword }) {
+                                Icon(
+                                    if (showPassword) Icons.Filled.VisibilityOff else Icons.Filled.Visibility,
+                                    contentDescription =
+                                        stringResource(if (showPassword) R.string.login_hide_password else R.string.login_show_password),
+                                )
+                            }
+                        },
+                        modifier = field,
+                    )
+                    if (tv) ShowPasswordRow(showPassword, field) { showPassword = it }
+                }
+
+                Credentials.Kind.Jellyfin, Credentials.Kind.Emby -> {
+                    Hint(if (kind == Credentials.Kind.Jellyfin) R.string.add_jellyfin_hint else R.string.add_emby_hint)
+                    OutlinedTextField(
+                        value = server,
+                        onValueChange = { server = it },
+                        label = { Text(stringResource(R.string.login_server)) },
+                        supportingText = { Text(stringResource(R.string.add_media_server_help)) },
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri, imeAction = ImeAction.Next),
+                        modifier = field,
+                    )
+                    OutlinedTextField(
+                        value = username,
+                        onValueChange = { username = it },
+                        label = { Text(stringResource(R.string.login_username)) },
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+                        modifier = field,
+                    )
+                    OutlinedTextField(
+                        value = password,
+                        onValueChange = { password = it },
+                        label = { Text(stringResource(R.string.login_password)) },
+                        singleLine = true,
+                        visualTransformation = if (showPassword) VisualTransformation.None else PasswordVisualTransformation(),
+                        keyboardOptions =
+                            KeyboardOptions(
+                                keyboardType = if (showPassword) KeyboardType.Ascii else KeyboardType.Password,
+                                autoCorrectEnabled = false,
+                                imeAction = ImeAction.Next,
+                            ),
+                        trailingIcon = {
+                            IconButton(onClick = { showPassword = !showPassword }) {
+                                Icon(
+                                    if (showPassword) Icons.Filled.VisibilityOff else Icons.Filled.Visibility,
+                                    contentDescription =
+                                        stringResource(if (showPassword) R.string.login_hide_password else R.string.login_show_password),
+                                )
+                            }
+                        },
+                        modifier = field,
+                    )
+                    if (tv) ShowPasswordRow(showPassword, field) { showPassword = it }
+                }
+
                 Credentials.Kind.File -> {
                     Hint(R.string.add_file_hint)
                     OutlinedButton(onClick = { pick.launch(arrayOf("*/*")) }, modifier = field.heightIn(min = 52.dp)) {
@@ -553,7 +729,11 @@ fun AddPlaylistScreen(
                     Text(stringResource(if (editing != null) R.string.add_save else R.string.add_submit))
                 }
             }
-            val checks = kind == Credentials.Kind.Xtream || kind == Credentials.Kind.Stalker || linkKind is PlaylistLink.Xtream
+            val checks =
+                kind == Credentials.Kind.Xtream ||
+                    kind == Credentials.Kind.Stalker ||
+                    kind.isMediaServer ||
+                    linkKind is PlaylistLink.Xtream
             if (state.busy && kind != Credentials.Kind.File && checks) {
                 Text(
                     stringResource(R.string.login_checking),

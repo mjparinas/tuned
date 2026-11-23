@@ -91,6 +91,7 @@ jobs:
           OPENSUBTITLES_API_KEY: ${{ secrets.OPENSUBTITLES_API_KEY }}
           TMDB_API_KEY: ${{ secrets.TMDB_API_KEY }}
           TRAKT_CLIENT_ID: ${{ secrets.TRAKT_CLIENT_ID }}
+          SIMKL_CLIENT_ID: ${{ secrets.SIMKL_CLIENT_ID }}
           # The Premium device list's address, a repository variable since it is in the app for anyone to see.
           PREMIUM_DEVICES_URL: ${{ vars.PREMIUM_DEVICES_URL }}
           VERSION_CODE: ${{ needs.version.outputs.code }}

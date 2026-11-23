@@ -23,6 +23,7 @@ android {
         buildConfigField("int", "VERSION_CODE", (System.getenv("VERSION_CODE") ?: "1").toInt().toString())
         buildConfigField("String", "OPENSUBTITLES_API_KEY", "\"${System.getenv("OPENSUBTITLES_API_KEY").orEmpty().trim()}\"")
         buildConfigField("String", "TRAKT_CLIENT_ID", "\"${System.getenv("TRAKT_CLIENT_ID").orEmpty()}\"")
+        buildConfigField("String", "SIMKL_CLIENT_ID", "\"${System.getenv("SIMKL_CLIENT_ID").orEmpty()}\"")
     }
 
     compileOptions {

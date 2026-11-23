@@ -26,7 +26,6 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -49,6 +48,7 @@ import com.tunedplayer.app.core.LiveTopic
 import com.tunedplayer.app.core.ProgrammeGenre
 import com.tunedplayer.app.core.RegionLanguages
 import com.tunedplayer.app.core.Regions
+import com.tunedplayer.app.data.db.RegionCount
 import com.tunedplayer.app.ui.common.TunedSheet
 import com.tunedplayer.app.ui.common.focusRing
 import com.tunedplayer.app.ui.common.regionName
@@ -156,6 +156,9 @@ data class LiveOffers(
 @Composable
 internal fun LiveQuickChip(vm: BrowseViewModel) {
     val quick by vm.liveQuick.collectAsStateWithLifecycle()
+    // Warm quality, show-only and country while Live TV is on screen, so Filters opens at once (Melvin, 2026-11-22).
+    val offers by vm.liveOffers.collectAsStateWithLifecycle()
+    val regions by vm.liveRegions.collectAsStateWithLifecycle()
     var open by rememberSaveable { mutableStateOf(false) }
     val clearLabel = stringResource(R.string.live_filters_clear)
     val clear = { vm.liveQuick.value = LiveQuick() }
@@ -185,7 +188,7 @@ internal fun LiveQuickChip(vm: BrowseViewModel) {
                 { Icon(Icons.Filled.Close, contentDescription = clearLabel, modifier = Modifier.size(18.dp).clickable(onClick = clear)) }
             },
     )
-    if (open) LiveFiltersSheet(vm, quick) { open = false }
+    if (open) LiveFiltersSheet(vm, quick, offers, regions) { open = false }
 }
 
 /** What the Filters chip says: the first two filters chosen, then how many more ("Sports · 4K +2"). */
@@ -246,14 +249,13 @@ private fun placeName(place: LivePlace): String = when (place) {
 private fun LiveFiltersSheet(
     vm: BrowseViewModel,
     quick: LiveQuick,
+    offers: LiveOffers,
+    regions: List<RegionCount>,
     onDismiss: () -> Unit,
 ) {
-    val regions by vm.liveRegions.collectAsStateWithLifecycle()
     val languages = remember(regions) { RegionLanguages.group(regions.map { it.region }) }
     val countries = remember(regions) { Regions.sortedByName(regions) { it.region } }
     val set = { q: LiveQuick -> vm.liveQuick.value = q }
-    // Read once as the sheet opens; until then (a moment) only what is already chosen shows.
-    val offers by produceState(LiveOffers()) { value = vm.liveOffers() }
     // On a TV the remote shows where it is with an outline on each chip, and starts on the first type.
     val ring = Modifier.focusRing(MaterialTheme.shapes.small, MaterialTheme.colorScheme.primary)
     val start = rememberStartFocus()

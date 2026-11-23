@@ -246,13 +246,11 @@ class PlayerActivity : FragmentActivity() {
         )
     }
 
-    private val trakt by lazy {
-        TraktScrobbler(
-            container.trakt,
-            container.appScope,
-            current = { player?.let { queue.getOrNull(it.currentMediaItemIndex) } },
-            elsewhere = { cast?.tvPosition() },
-        )
+    // One line so Simkl beside Trakt does not push this activity over detekt's LargeClass limit.
+    private val scrobblers by lazy {
+        WatchScrobblers(container.trakt, container.simkl, container.appScope, {
+            player?.let { queue.getOrNull(it.currentMediaItemIndex) }
+        }, { cast?.tvPosition() })
     }
 
     private val frameRate by lazy { FrameRateMatch(this) { settings.matchFrameRate && cast?.casting != true } }
@@ -427,7 +425,7 @@ class PlayerActivity : FragmentActivity() {
                     },
                 subtitleOffsetMs = { subtitleTiming.offsetMs },
                 onTvChanged = ::castChanged,
-                resolve = container.stalker::resolve,
+                resolve = container::resolveStreamAsync,
             ).also { c -> if (ServerFlags.now.value.cast) tools.addButton(c.button) } // the admin's `cast` switch
         tools.addButton(recorder.button)
     }
@@ -529,7 +527,7 @@ class PlayerActivity : FragmentActivity() {
         val live = kind == ContentKind.LIVE
         val exo = buildPlayer(live)
         player = exo
-        trakt.attach(exo)
+        scrobblers.attach(exo)
         val shown = ViewPlayer(exo, { cast?.tv }, { statusView.visibility = View.GONE }, ::pauseLive, ::live)
         playerView.player = shown
         // Media buttons and the Assistant act through the same player as the on-screen controls.
@@ -597,7 +595,7 @@ class PlayerActivity : FragmentActivity() {
                 agent,
                 headers = { uri -> uri.host?.let(streamHeaders::get).orEmpty() },
                 network = { network -> if (live) timeshift.factory(network) else network },
-                portal = container.stalker::resolveNow,
+                portal = container::resolveStream,
             )
         // Decoder fallback, and the sound delay from Settings › Player (lip sync); see [TunedRenderersFactory].
         val renderers = TunedRenderersFactory(this) { settings.audioDelayMs }
@@ -853,7 +851,7 @@ class PlayerActivity : FragmentActivity() {
 
     override fun onDestroy() {
         progressJob?.cancel()
-        trakt.release()
+        scrobblers.release()
         autoTune?.release()
         backups.release()
         recorder.release()

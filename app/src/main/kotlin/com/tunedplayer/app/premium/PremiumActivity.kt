@@ -195,5 +195,6 @@ private val FEATURES =
         R.string.premium_feature_events,
         R.string.premium_feature_sync,
         R.string.premium_feature_trakt,
+        R.string.premium_feature_simkl,
         R.string.premium_feature_colours,
     )

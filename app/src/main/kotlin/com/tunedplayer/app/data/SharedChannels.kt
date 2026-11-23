@@ -38,7 +38,7 @@ class SharedChannels(
     suspend fun run(now: Long = System.currentTimeMillis()) = lock.withLock {
         if (!account.signedIn.value) return@withLock
         val c = login() ?: return@withLock
-        if (c.kind == Credentials.Kind.Stalker) return@withLock
+        if (c.kind == Credentials.Kind.Stalker || c.kind.isMediaServer) return@withLock
         withContext(Dispatchers.IO) {
             val id = ChannelShare.playlistId(c.server, c.username, c.playlistUrl)
             val channels =

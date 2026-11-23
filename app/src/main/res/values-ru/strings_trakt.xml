@@ -18,4 +18,25 @@
     <string name="trakt_denied">Trakt отклонил подключение.</string>
     <string name="trakt_failed">Не удалось связаться с Trakt. Проверьте подключение и попробуйте снова.</string>
     <string name="trakt_try_again">Повторить</string>
+    <string name="trakt_import">Импортировать просмотренное</string>
+    <string name="trakt_import_summary">Отметить просмотренными фильмы и серии, которые вы уже смотрели в другом приложении</string>
+    <string name="trakt_import_reading">Чтение плейлиста…</string>
+    <string name="trakt_import_films">Загрузка фильмов из Trakt…</string>
+    <string name="trakt_import_shows">Загрузка сериалов из Trakt…</string>
+    <string name="trakt_import_marking">Отметка просмотренных… %1$d из %2$d</string>
+    <string name="trakt_import_done">Отмечено как просмотренные: %1$s и %2$s</string>
+    <string name="trakt_import_none">В плейлисте ничего не совпало с историей Trakt</string>
+    <string name="trakt_import_failed">Не удалось импортировать из Trakt. Нажмите, чтобы повторить.</string>
+    <plurals name="trakt_import_films_count">
+        <item quantity="one">%d фильм</item>
+        <item quantity="few">%d фильма</item>
+        <item quantity="many">%d фильмов</item>
+        <item quantity="other">%d фильма</item>
+    </plurals>
+    <plurals name="trakt_import_episodes_count">
+        <item quantity="one">%d серия</item>
+        <item quantity="few">%d серии</item>
+        <item quantity="many">%d серий</item>
+        <item quantity="other">%d серии</item>
+    </plurals>
 </resources>

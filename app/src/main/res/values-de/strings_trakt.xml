@@ -18,4 +18,21 @@
     <string name="trakt_denied">Trakt hat die Verbindung abgelehnt.</string>
     <string name="trakt_failed">Trakt ist nicht erreichbar. Prüfe die Verbindung und versuche es erneut.</string>
     <string name="trakt_try_again">Erneut versuchen</string>
+    <string name="trakt_import">Gesehene Titel importieren</string>
+    <string name="trakt_import_summary">Filme und Folgen als gesehen markieren, die du schon in einer anderen App gesehen hast</string>
+    <string name="trakt_import_reading">Playlist wird gelesen…</string>
+    <string name="trakt_import_films">Filme von Trakt werden geladen…</string>
+    <string name="trakt_import_shows">Serien von Trakt werden geladen…</string>
+    <string name="trakt_import_marking">Als gesehen markieren… %1$d von %2$d</string>
+    <string name="trakt_import_done">%1$s und %2$s als gesehen markiert</string>
+    <string name="trakt_import_none">Nichts in deiner Playlist passte zu Trakts Verlauf</string>
+    <string name="trakt_import_failed">Import von Trakt fehlgeschlagen. Tippen zum erneuten Versuch.</string>
+    <plurals name="trakt_import_films_count">
+        <item quantity="one">%d Film</item>
+        <item quantity="other">%d Filme</item>
+    </plurals>
+    <plurals name="trakt_import_episodes_count">
+        <item quantity="one">%d Folge</item>
+        <item quantity="other">%d Folgen</item>
+    </plurals>
 </resources>

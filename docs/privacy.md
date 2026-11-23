@@ -1,6 +1,6 @@
 # Tuned privacy policy
 
-Last updated: November 19, 2026
+Last updated: November 22, 2026
 
 Tuned is an IPTV player for Android and Android TV. This policy explains what Tuned stores, what it sends and to whom. A Tuned account is optional. Tuned has no ads and no third-party analytics; its own usage stats are described below.
 
@@ -19,6 +19,7 @@ Tuned connects to these services only to do what you ask:
 - **The Movie Database (TMDB)**, for posters, ratings, episode names and cast. Tuned sends titles and TMDB IDs, never your login.
 - **OpenSubtitles**, only when you search for subtitles, and with your OpenSubtitles account only if you sign in to one.
 - **Trakt**, only if you sign in to Trakt, to record what you watch to your Trakt account.
+- **Simkl**, only if you sign in to Simkl, to record what you watch to your Simkl account.
 - **YouTube**, only when you open a trailer.
 - **The host of Tuned's download**, in the version from www.tunedplayer.com, to check for and download updates.
 - **Google Play**, in the version from Google Play, for purchases. Google handles payment, and Tuned never sees your payment details.
@@ -31,7 +32,7 @@ When you sign in on a TV with your phone, the TV makes a one-time key and shows 
 
 An account is optional: watching never needs one. If you sign in with Google or Apple on the Tuned website or in the app, Tuned's service stores your email address and name from that provider, the devices you sign in (the name Android gives them, such as "Pixel 8", the kind of device, a scrambled device ID and when each was last used), and what you bought. Payments on the website are handled by Stripe, and Tuned never sees your card.
 
-If you turn on backup, the service keeps your saved playlists (including their logins), settings, profiles, favourites, lists and watch later, so a new device can restore them. The backup isn't encrypted by Tuned. It is reachable only by devices signed in to your account, and the last 5 versions are kept. While you're signed in, the app also keeps a copy of the live channel list (with each channel's country) and the next day of guide of the playlist it is using in your account, without the playlist's password, so the website's Channels and guide page can show them and a new device can start from them; it goes with the backup when you delete it. When the website's Channels and guide page shows a channel logo that your provider keeps on an insecure (http) address, Tuned's service fetches that picture for your browser; it fetches pictures only and keeps none of them. Streams never pass through Tuned's service.
+If you turn on backup, the service keeps your saved playlists (including their logins), settings, profiles, favourites, lists and watch later, so a new device can restore them. The backup isn't encrypted by Tuned. It is reachable only by devices signed in to your account, and the last 5 versions are kept. While you're signed in, the app also keeps a copy of the live channel list (with each channel's country) and the next day of guide of the playlist it is using in your account, without the playlist's password, so the website's Channels and guide page and its Watch page can show them and a new device can start from them; it goes with the backup when you delete it. When the website shows a channel logo that your provider keeps on an insecure (http) address, Tuned's service fetches that picture for your browser; it fetches pictures only and keeps none of them. Streams never pass through Tuned's service: Watch plays them straight from your provider in your browser, and only one browser on your account plays at a time.
 
 You can remove a device, delete your backup, or delete your whole account on the account page at any time. Deleting the account deletes all of this and cancels a yearly plan bought on the website.
 

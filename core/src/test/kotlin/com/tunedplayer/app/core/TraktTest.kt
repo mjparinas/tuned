@@ -82,4 +82,48 @@ class TraktTest {
         }
         assertEquals("refresh_token", Trakt.refreshBody("id", "refresh")["grant_type"])
     }
+
+    @Test
+    fun importMatchesFilmsByCleanedTitleAndYear() {
+        val local =
+            listOf(
+                Trakt.localFilm(1, "EN - Inception (2010) [4K]", 2010),
+                Trakt.localFilm(2, "Inception", null),
+                Trakt.localFilm(3, "Other Film (2010)", 2010),
+            )
+        val watched = listOf(Trakt.WatchedFilm("Inception", 2010, watchedAtMs = 100))
+        assertEquals(
+            listOf(Trakt.Match(1, 100), Trakt.Match(2, 100)),
+            Trakt.matchFilms(local, watched),
+        )
+    }
+
+    @Test
+    fun importSkipsFilmsWhenYearsDisagree() {
+        val local = listOf(Trakt.localFilm(1, "Inception", 2010))
+        val watched = listOf(Trakt.WatchedFilm("Inception", 1999, watchedAtMs = 1))
+        assertEquals(emptyList(), Trakt.matchFilms(local, watched))
+    }
+
+    @Test
+    fun importMatchesEpisodesByShowSeasonAndNumber() {
+        val local =
+            listOf(
+                Trakt.localEpisode(10, "Breaking Bad (2008)", 2008, 2, 5),
+                Trakt.localEpisode(11, "Breaking Bad", null, 2, 5),
+                Trakt.localEpisode(12, "Breaking Bad", 2008, 2, 6),
+            )
+        val watched = listOf(Trakt.WatchedEpisode("Breaking Bad", 2008, 2, 5, watchedAtMs = 50))
+        assertEquals(
+            listOf(Trakt.Match(10, 50), Trakt.Match(11, 50)),
+            Trakt.matchEpisodes(local, watched),
+        )
+    }
+
+    @Test
+    fun watchedAtParsesTraktTimestamps() {
+        assertEquals(1_397_262_624_000L, Trakt.watchedAtMs("2014-04-12T00:30:24.000Z", fallbackMs = 0))
+        assertEquals(99L, Trakt.watchedAtMs(null, fallbackMs = 99))
+        assertEquals(99L, Trakt.watchedAtMs("not-a-date", fallbackMs = 99))
+    }
 }

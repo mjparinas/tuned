@@ -22,6 +22,7 @@ import androidx.compose.material.icons.filled.FolderOpen
 import androidx.compose.material.icons.filled.Link
 import androidx.compose.material.icons.filled.PhoneAndroid
 import androidx.compose.material.icons.filled.Router
+import androidx.compose.material.icons.filled.Storage
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedCard
@@ -44,8 +45,8 @@ import com.tunedplayer.app.ui.common.focusRing
 
 /**
  * The first thing a new install shows, and Settings › Playlists › Add: one question, "what kind of playlist?", with
- * the kinds providers hand out (an Xtream login, a link, a file or a MAC portal). The form for the chosen kind comes
- * next ([AddPlaylistScreen]), so nobody faces a server, username, password and two links at once. On
+ * the kinds people hand Tuned (an Xtream login, a link, a file, a MAC portal, or a media server). The form for the
+ * chosen kind comes next ([AddPlaylistScreen]), so nobody faces a server, username, password and two links at once. On
  * a TV, signing in with a phone ([TvSignInScreen]) comes first.
  */
 @Composable
@@ -54,6 +55,8 @@ fun WelcomeScreen(
     onPick: (Credentials.Kind) -> Unit,
     onBack: () -> Unit,
     onPhone: (() -> Unit)? = null,
+    /** Opens the Plex / Jellyfin / Emby chooser so the welcome list stays one card per family. */
+    onMediaServer: () -> Unit = {},
     /** First run: Restore from your Tuned account brought everything back ([RestoreFromAccount]). */
     onRestored: (askProfile: Boolean) -> Unit = {},
 ) {
@@ -62,7 +65,7 @@ fun WelcomeScreen(
             // The GitHub build checks for a newer release on every start, signed in or not, so a first install that is
             // already out of date offers the update here, before a playlist is added.
             if (firstRun) UpdateBanner(Modifier.widthIn(max = 560.dp).fillMaxWidth().padding(start = 24.dp, end = 24.dp, top = 12.dp))
-            WelcomeBody(firstRun, onPick, onRestored, onPhone)
+            WelcomeBody(firstRun, onPick, onRestored, onPhone, onMediaServer)
         }
     }
 }
@@ -73,6 +76,7 @@ private fun WelcomeBody(
     onPick: (Credentials.Kind) -> Unit,
     onRestored: (askProfile: Boolean) -> Unit,
     onPhone: (() -> Unit)?,
+    onMediaServer: () -> Unit,
 ) {
     BoxWithConstraints(Modifier.fillMaxSize()) {
         // A TV (960 by 540 dp, less its overscan margin) or a phone held sideways is too short for the logo, the
@@ -109,7 +113,7 @@ private fun WelcomeBody(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
-                    Kinds(onPick, onPhone, compact = true)
+                    Kinds(onPick, onPhone, onMediaServer, compact = true)
                 }
             }
         } else {
@@ -132,7 +136,7 @@ private fun WelcomeBody(
                         modifier = Modifier.widthIn(max = 560.dp).fillMaxWidth(),
                     )
                 }
-                Kinds(onPick, onPhone)
+                Kinds(onPick, onPhone, onMediaServer)
                 if (firstRun) RestoreFromAccount(onRestored)
                 if (firstRun) {
                     Spacer(Modifier.height(4.dp))
@@ -166,6 +170,7 @@ private fun Welcome(logoSize: Dp) {
 private fun Kinds(
     onPick: (Credentials.Kind) -> Unit,
     onPhone: (() -> Unit)?,
+    onMediaServer: () -> Unit,
     compact: Boolean = false,
 ) {
     // On a TV, typing a login with the remote is the hard part, so the phone comes first (onboarding.md).
@@ -174,6 +179,7 @@ private fun Kinds(
     KindCard(Icons.Filled.Link, R.string.kind_link, R.string.kind_link_summary, compact) { onPick(Credentials.Kind.Link) }
     KindCard(Icons.Filled.FolderOpen, R.string.kind_file, R.string.kind_file_summary, compact) { onPick(Credentials.Kind.File) }
     KindCard(Icons.Filled.Router, R.string.kind_stalker, R.string.kind_stalker_summary, compact) { onPick(Credentials.Kind.Stalker) }
+    KindCard(Icons.Filled.Storage, R.string.kind_media, R.string.kind_media_summary, compact, onMediaServer)
 }
 
 @Composable

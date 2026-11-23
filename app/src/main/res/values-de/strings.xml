@@ -84,7 +84,7 @@
     <string name="settings_sign_out">Abmelden</string>
     <string name="settings_sign_out_summary">Tuned auf den Zustand nach der Installation zurücksetzen</string>
     <string name="settings_sign_out_title">Abmelden?</string>
-    <string name="settings_sign_out_confirm">Tuned wird auf den Zustand nach der Installation zurückgesetzt. Alle Playlists und Anmeldedaten, Sender und Programm, Profile, Favoriten, Einstellungen und PINs werden entfernt, und Trakt und dein Tuned-Konto werden auf diesem Gerät abgemeldet. Deine Sicherung bleibt in deinem Tuned-Konto.</string>
+    <string name="settings_sign_out_confirm">Tuned wird auf den Zustand nach der Installation zurückgesetzt. Alle Playlists und Anmeldedaten, Sender und Programm, Profile, Favoriten, Einstellungen und PINs werden entfernt, und Trakt, Simkl und dein Tuned-Konto werden auf diesem Gerät abgemeldet. Deine Sicherung bleibt in deinem Tuned-Konto.</string>
     <plurals name="settings_sign_out_downloads">
         <item quantity="one">Auch %1$d Download (%2$s) löschen?</item>
         <item quantity="other">Auch %1$d Downloads (%2$s) löschen?</item>

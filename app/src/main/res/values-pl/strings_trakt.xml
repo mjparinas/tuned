@@ -18,4 +18,25 @@
     <string name="trakt_denied">Trakt odrzucił połączenie.</string>
     <string name="trakt_failed">Nie udało się połączyć z Trakt. Sprawdź połączenie i spróbuj ponownie.</string>
     <string name="trakt_try_again">Spróbuj ponownie</string>
+    <string name="trakt_import">Importuj historię obejrzanych</string>
+    <string name="trakt_import_summary">Oznacz jako obejrzane filmy i odcinki, które widziałeś już w innej aplikacji</string>
+    <string name="trakt_import_reading">Odczytywanie playlisty…</string>
+    <string name="trakt_import_films">Pobieranie filmów z Trakt…</string>
+    <string name="trakt_import_shows">Pobieranie seriali z Trakt…</string>
+    <string name="trakt_import_marking">Oznaczanie jako obejrzane… %1$d z %2$d</string>
+    <string name="trakt_import_done">Oznaczono jako obejrzane: %1$s i %2$s</string>
+    <string name="trakt_import_none">Nic z playlisty nie pasuje do historii Trakt</string>
+    <string name="trakt_import_failed">Nie udało się zaimportować z Trakt. Dotknij, by spróbować ponownie.</string>
+    <plurals name="trakt_import_films_count">
+        <item quantity="one">%d film</item>
+        <item quantity="few">%d filmy</item>
+        <item quantity="many">%d filmów</item>
+        <item quantity="other">%d filmu</item>
+    </plurals>
+    <plurals name="trakt_import_episodes_count">
+        <item quantity="one">%d odcinek</item>
+        <item quantity="few">%d odcinki</item>
+        <item quantity="many">%d odcinków</item>
+        <item quantity="other">%d odcinka</item>
+    </plurals>
 </resources>

@@ -84,7 +84,7 @@
     <string name="settings_sign_out">साइन आउट करें</string>
     <string name="settings_sign_out_summary">Tuned को इंस्टॉल होने की स्थिति में वापस लाएं</string>
     <string name="settings_sign_out_title">साइन आउट करें?</string>
-    <string name="settings_sign_out_confirm">Tuned इंस्टॉल होने की स्थिति में लौट जाता है। हर प्लेलिस्ट और लॉगिन, चैनल और गाइड, प्रोफ़ाइल, पसंदीदा, सेटिंग और PIN हटा दिए जाते हैं, और इस डिवाइस पर Trakt और आपके Tuned खाते से साइन आउट हो जाता है। आपका बैकअप आपके Tuned खाते में रहता है।</string>
+    <string name="settings_sign_out_confirm">Tuned इंस्टॉल होने की स्थिति में लौट जाता है। हर प्लेलिस्ट और लॉगिन, चैनल और गाइड, प्रोफ़ाइल, पसंदीदा, सेटिंग और PIN हटा दिए जाते हैं, और इस डिवाइस पर Trakt, Simkl और आपके Tuned खाते से साइन आउट हो जाता है। आपका बैकअप आपके Tuned खाते में रहता है।</string>
     <plurals name="settings_sign_out_downloads">
         <item quantity="one">%1$d डाउनलोड (%2$s) भी हटाएं?</item>
         <item quantity="other">%1$d डाउनलोड (%2$s) भी हटाएं?</item>

@@ -60,6 +60,7 @@ class UsageRulesTest {
                 mapOf(
                     "tmdb" to false,
                     "trakt" to "false",
+                    "simkl" to "false",
                     "cast" to false,
                     "web_player" to true,
                     "usage_batch_minutes" to 30,
@@ -69,6 +70,7 @@ class UsageRulesTest {
             )
         assertFalse(f.tmdb)
         assertTrue(f.trakt)
+        assertTrue(f.simkl)
         assertFalse(f.cast)
         assertTrue(f.webPlayer)
         assertFalse(RemoteFlags().webPlayer)
