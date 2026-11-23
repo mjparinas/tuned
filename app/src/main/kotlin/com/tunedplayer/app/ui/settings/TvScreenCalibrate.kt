@@ -24,7 +24,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -103,12 +102,14 @@ fun TvScreenCalibrateScreen(
             )
             Spacer(Modifier.height(24.dp))
             val centre = stringResource(R.string.settings_tv_calibrate_centre)
-            val resources = LocalContext.current.resources
+            // Templates from stringResource stay configuration-aware; formatting the value is not a Composable call.
+            val plus = stringResource(R.string.settings_tv_calibrate_plus)
+            val minus = stringResource(R.string.settings_tv_calibrate_minus)
 
             fun offsetLabel(dp: Int): String = when {
                 dp == 0 -> centre
-                dp > 0 -> resources.getString(R.string.settings_tv_calibrate_plus, dp)
-                else -> resources.getString(R.string.settings_tv_calibrate_minus, -dp)
+                dp > 0 -> plus.format(dp)
+                else -> minus.format(-dp)
             }
             CompositionLocalProvider(LocalRowStartFocus provides start.takeIf { it.enabled }) {
                 SliderRow(
