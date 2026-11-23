@@ -24,7 +24,9 @@ export async function GET(request) {
                   ? `/account?tv=${done.after.tv}`
                   : done.after.then === "check"
                     ? "/check"
-                    : "/account";
+                    : done.after.then === "watch"
+                      ? "/watch"
+                      : "/account";
         return redirect(`${url.origin}${page}`, await newSession(done.account));
     } catch (error) {
         console.error(error);

@@ -146,4 +146,7 @@ private fun usageKind(kind: Credentials.Kind) = when (kind) {
     Credentials.Kind.Link -> "link"
     Credentials.Kind.File -> "file"
     Credentials.Kind.Stalker -> "portal"
+    Credentials.Kind.Plex -> "plex"
+    Credentials.Kind.Jellyfin -> "jellyfin"
+    Credentials.Kind.Emby -> "emby"
 }

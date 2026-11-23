@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kind_media">خادم وسائط</string>
+    <string name="kind_media_summary">Plex أو Jellyfin أو Emby على شبكتك</string>
+    <string name="kind_plex">Plex</string>
+    <string name="kind_plex_summary">عنوان الخادم ورمز X-Plex-Token</string>
+    <string name="kind_jellyfin">Jellyfin</string>
+    <string name="kind_jellyfin_summary">عنوان الخادم واسم المستخدم وكلمة المرور</string>
+    <string name="kind_emby">Emby</string>
+    <string name="kind_emby_summary">عنوان الخادم واسم المستخدم وكلمة المرور</string>
+    <string name="add_media_pick">أي خادم وسائط؟</string>
+    <string name="add_plex_hint">أدخل عنوان خادم Plex والرمز. تجده في plex.tv/account أو من ترويسات عميل Plex موجود.</string>
+    <string name="add_jellyfin_hint">أدخل عنوان خادم Jellyfin واسم المستخدم وكلمة المرور اللذين تستعملهما في تطبيق Jellyfin.</string>
+    <string name="add_emby_hint">أدخل عنوان خادم Emby واسم المستخدم وكلمة المرور اللذين تستعملهما في تطبيق Emby.</string>
+    <string name="login_token">الرمز</string>
+    <string name="add_token_help">رمز X-Plex-Token من plex.tv/account</string>
+    <string name="login_media_refused">الخادم لم يقبل هذا تسجيل الدخول.</string>
+    <string name="add_media_server_help">مثل http://192.168.1.10:8096</string>
+    <string name="add_plex_server_help">مثل http://192.168.1.10:32400</string>
+</resources>

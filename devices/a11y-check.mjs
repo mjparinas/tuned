@@ -142,6 +142,14 @@ function serve(port, { signedIn }) {
                 res.writeHead(404, { "Content-Type": "application/json" });
                 return res.end(JSON.stringify({ status: "none" }));
             }
+            if (path === "/api/account/watch" && signedIn) {
+                res.writeHead(200, { "Content-Type": "application/json" });
+                return res.end(JSON.stringify({ status: "ok", premium: "yearly", holder: null, yours: true, leaseSeconds: 45 }));
+            }
+            if (path === "/api/flags") {
+                res.writeHead(200, { "Content-Type": "application/json" });
+                return res.end(JSON.stringify({ flags: { web_player: true } }));
+            }
             if (path.startsWith("/api/")) {
                 res.writeHead(200, { "Content-Type": "application/json" });
                 return res.end(JSON.stringify({ status: "signed out" }));

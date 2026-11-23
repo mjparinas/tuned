@@ -80,7 +80,15 @@ edits = wireEdits({
     redraw: () => draw(),
 });
 
-const kindNames = { xtream: "Xtream login", link: "M3U link", stalker: "MAC portal", file: "File" };
+const kindNames = {
+    xtream: "Xtream login",
+    link: "M3U link",
+    stalker: "MAC portal",
+    plex: "Plex",
+    jellyfin: "Jellyfin",
+    emby: "Emby",
+    file: "File",
+};
 
 function tell(id, text, tone = "error") {
     const line = $(id);

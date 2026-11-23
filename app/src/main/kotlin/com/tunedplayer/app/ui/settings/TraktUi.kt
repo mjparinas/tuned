@@ -12,6 +12,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
@@ -23,13 +24,16 @@ import com.tunedplayer.app.R
 import com.tunedplayer.app.container
 import com.tunedplayer.app.core.Trakt
 import com.tunedplayer.app.data.TraktAccount
+import com.tunedplayer.app.data.TraktHistoryImport
 import com.tunedplayer.app.diagnostics.launchSafely
 import com.tunedplayer.app.diagnostics.startActivitySafely
 import com.tunedplayer.app.premium.LockedRow
 import com.tunedplayer.app.premium.premiumUnlocked
+import com.tunedplayer.app.ui.ProgressEta
 import com.tunedplayer.app.ui.common.TunedDialog
 import com.tunedplayer.app.ui.common.unbreakable
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -38,9 +42,11 @@ class TraktViewModel(
     app: Application,
 ) : AndroidViewModel(app) {
     private val account = app.container.trakt
+    private val historyImport = app.container.traktImport
     val available = account.available
     val session = account.session
     val scrobble = account.scrobbleOn
+    val importProgress = historyImport.progress
 
     /** Signing in: the code on screen, then how it ended. */
     sealed interface SignIn {
@@ -58,6 +64,7 @@ class TraktViewModel(
     private val signInFlow = MutableStateFlow<SignIn?>(null)
     val signIn: StateFlow<SignIn?> = signInFlow.asStateFlow()
     private var job: Job? = null
+    private var importJob: Job? = null
 
     fun startSignIn() {
         job?.cancel()
@@ -85,14 +92,27 @@ class TraktViewModel(
 
     fun setScrobble(on: Boolean) = account.setScrobble(on)
 
+    fun importHistory() {
+        if (importJob?.isActive == true) return
+        importJob =
+            viewModelScope.launchSafely(TAG, onError = { /* progress already Failed or cleared */ }) {
+                historyImport.run()
+                // Leave Done or Failed on the row for a moment, then idle again (like Back up now).
+                delay(RESULT_SHOWN_MS)
+                historyImport.clearResult()
+            }
+    }
+
     private companion object {
         const val TAG = "TraktSettings"
+        const val RESULT_SHOWN_MS = 60_000L
     }
 }
 
 /**
  * Settings › Trakt (from the app audit, item 14): sign in with a code, see the account, choose whether films and
- * episodes are scrobbled, sign out. Hidden in builds without Trakt's app keys.
+ * episodes are scrobbled, import Trakt's watched history into Tuned's, sign out. Hidden in builds without Trakt's app
+ * keys.
  */
 @Composable
 fun TraktRows(vm: TraktViewModel = viewModel()) {
@@ -100,6 +120,7 @@ fun TraktRows(vm: TraktViewModel = viewModel()) {
     val session by vm.session.collectAsStateWithLifecycle()
     val scrobble by vm.scrobble.collectAsStateWithLifecycle()
     val signIn by vm.signIn.collectAsStateWithLifecycle()
+    val importProgress by vm.importProgress.collectAsStateWithLifecycle()
     SectionHeader(stringResource(R.string.trakt))
     val signedIn = session
     if (signedIn == null) {
@@ -113,8 +134,71 @@ fun TraktRows(vm: TraktViewModel = viewModel()) {
         val name = signedIn.username ?: stringResource(R.string.trakt_account_unnamed)
         SettingRow(stringResource(R.string.trakt_signed_in, name), stringResource(R.string.trakt_sign_out), onClick = vm::signOut)
         SwitchRow(stringResource(R.string.trakt_scrobble), scrobble, stringResource(R.string.trakt_scrobble_summary), vm::setScrobble)
+        ImportHistoryRow(importProgress, onImport = vm::importHistory)
     }
     signIn?.let { SignInDialog(it, onRetry = vm::startSignIn, onClose = vm::closeSignIn) }
+}
+
+@Composable
+private fun ImportHistoryRow(
+    progress: TraktHistoryImport.Progress?,
+    onImport: () -> Unit,
+) {
+    val context = LocalContext.current
+    val busy =
+        progress != null &&
+            progress !is TraktHistoryImport.Progress.Done &&
+            progress !is TraktHistoryImport.Progress.Failed
+    val summary =
+        when (progress) {
+            null -> {
+                stringResource(R.string.trakt_import_summary)
+            }
+
+            TraktHistoryImport.Progress.Starting, TraktHistoryImport.Progress.ReadingPlaylist -> {
+                stringResource(R.string.trakt_import_reading)
+            }
+
+            TraktHistoryImport.Progress.FetchingFilms -> {
+                stringResource(R.string.trakt_import_films)
+            }
+
+            TraktHistoryImport.Progress.FetchingShows -> {
+                stringResource(R.string.trakt_import_shows)
+            }
+
+            is TraktHistoryImport.Progress.Marking -> {
+                ProgressEta.withEta(
+                    context,
+                    stringResource(R.string.trakt_import_marking, progress.done, progress.total),
+                    progress.done.toLong(),
+                    progress.total.toLong(),
+                    progress.startedAt,
+                )
+            }
+
+            is TraktHistoryImport.Progress.Done -> {
+                if (progress.films == 0 && progress.episodes == 0) {
+                    stringResource(R.string.trakt_import_none)
+                } else {
+                    stringResource(
+                        R.string.trakt_import_done,
+                        pluralStringResource(R.plurals.trakt_import_films_count, progress.films, progress.films),
+                        pluralStringResource(R.plurals.trakt_import_episodes_count, progress.episodes, progress.episodes),
+                    )
+                }
+            }
+
+            TraktHistoryImport.Progress.Failed -> {
+                stringResource(R.string.trakt_import_failed)
+            }
+        }
+    SettingRow(
+        stringResource(R.string.trakt_import),
+        summary,
+        onClick = if (busy) null else onImport,
+        trailing = if (busy) ({ RowSpinner() }) else null,
+    )
 }
 
 @Composable

@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kind_media">Медиасервер</string>
+    <string name="kind_media_summary">Plex, Jellyfin или Emby в вашей сети</string>
+    <string name="kind_plex">Plex</string>
+    <string name="kind_plex_summary">Адрес сервера и ваш X-Plex-Token</string>
+    <string name="kind_jellyfin">Jellyfin</string>
+    <string name="kind_jellyfin_summary">Адрес сервера, имя пользователя и пароль</string>
+    <string name="kind_emby">Emby</string>
+    <string name="kind_emby_summary">Адрес сервера, имя пользователя и пароль</string>
+    <string name="add_media_pick">Какой медиасервер?</string>
+    <string name="add_plex_hint">Введите адрес сервера Plex и токен. Его можно найти на plex.tv/account или в заголовках существующего клиента Plex.</string>
+    <string name="add_jellyfin_hint">Введите адрес сервера Jellyfin и имя пользователя с паролем, которые вы используете в приложении Jellyfin.</string>
+    <string name="add_emby_hint">Введите адрес сервера Emby и имя пользователя с паролем, которые вы используете в приложении Emby.</string>
+    <string name="login_token">Токен</string>
+    <string name="add_token_help">Ваш X-Plex-Token с plex.tv/account</string>
+    <string name="login_media_refused">Сервер не принял этот вход.</string>
+    <string name="add_media_server_help">Как http://192.168.1.10:8096</string>
+    <string name="add_plex_server_help">Как http://192.168.1.10:32400</string>
+</resources>

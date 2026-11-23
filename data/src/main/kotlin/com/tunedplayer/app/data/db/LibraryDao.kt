@@ -4,6 +4,7 @@ import androidx.room.Dao
 import androidx.room.Query
 import androidx.room.Transaction
 import androidx.room.Upsert
+import com.tunedplayer.app.core.Trakt
 import kotlinx.coroutines.flow.Flow
 
 /** The person's own lists, each for the profile in use ([ME]): writes stamp it, reads and deletes keep to it. */
@@ -79,6 +80,34 @@ interface LibraryDao {
         for (id in ids) {
             val length = progress(id)?.durationMs?.takeIf { it > 0 } ?: 1
             saveProgress(HistoryEntity(id, positionMs = length, durationMs = length, watchedAt = now))
+        }
+    }
+
+    /**
+     * Marks each match watched at Trakt's time. Skips an id that is already finished and watched more recently than
+     * Trakt says, so a newer play in Tuned isn't pushed back. Uses a finished entry of length 1 when there was no
+     * progress yet (the watched check only needs position at the end).
+     */
+    @Transaction
+    suspend fun markWatchedFromTrakt(matches: List<Trakt.Match>) {
+        if (matches.isEmpty()) return
+        // Same id can match more than once (duplicate groups); keep the latest Trakt time.
+        val byId = LinkedHashMap<Long, Long>(matches.size)
+        for (match in matches) {
+            val was = byId[match.itemId]
+            if (was == null || match.watchedAtMs > was) byId[match.itemId] = match.watchedAtMs
+        }
+        for ((id, at) in byId) {
+            val existing = progress(id)
+            if (existing != null &&
+                existing.durationMs > 0 &&
+                existing.positionMs >= existing.durationMs * 92 / 100 &&
+                existing.watchedAt >= at
+            ) {
+                continue
+            }
+            val length = existing?.durationMs?.takeIf { it > 0 } ?: 1
+            saveProgress(HistoryEntity(id, positionMs = length, durationMs = length, watchedAt = at))
         }
     }
 

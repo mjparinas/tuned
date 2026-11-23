@@ -32,11 +32,22 @@ const refusals = {
     "signed out": "You're signed out. Sign in again on your account page.",
     unavailable: "Something went wrong on our side. Try again in a moment.",
 };
-const kindNames = { xtream: "Xtream login", link: "M3U link", stalker: "MAC portal", file: "File" };
+const kindNames = {
+    xtream: "Xtream login",
+    link: "M3U link",
+    stalker: "MAC portal",
+    plex: "Plex",
+    jellyfin: "Jellyfin",
+    emby: "Emby",
+    file: "File",
+};
 const kindLines = {
     xtream: "The server, username and password from your provider.",
     link: "A link to an M3U playlist, or an Xtream get.php link.",
     stalker: "A Stalker or Ministra portal, signed in with a MAC address, as a MAG box does.",
+    plex: "Your Plex server address and X-Plex-Token.",
+    jellyfin: "Your Jellyfin server address, username and password.",
+    emby: "Your Emby server address, username and password.",
 };
 
 /** A message in the card it belongs to, red for an error and teal for done, with the field it's about outlined. */
@@ -213,7 +224,15 @@ function showKind() {
     const k = kind();
     document.querySelectorAll("[data-kind]").forEach((part) => (part.hidden = !part.dataset.kind.split(" ").includes(k)));
     $("server-label").textContent = k === "stalker" ? "Portal address" : "Server";
-    $("server").placeholder = k === "stalker" ? "http://portal.example/c/" : "http://provider.example:8080";
+    $("server").placeholder =
+        k === "stalker"
+            ? "http://portal.example/c/"
+            : k === "plex"
+              ? "http://192.168.1.10:32400"
+              : k === "jellyfin" || k === "emby"
+                ? "http://192.168.1.10:8096"
+                : "http://provider.example:8080";
+    $("password-label").textContent = k === "plex" ? "Token" : "Password";
     $("kind-line").textContent = kindLines[k];
     const same = editing && editing.kind === k;
     $("password-hint").hidden = !same;
@@ -252,15 +271,17 @@ async function save(event) {
     event.preventDefault();
     const k = kind();
     const playlist = { kind: k, name: $("name").value, guide: $("guide").value, clearGuide: $("clear-guide").checked };
-    if (k === "xtream")
+    if (k === "xtream" || k === "jellyfin" || k === "emby")
         Object.assign(playlist, { server: $("server").value, username: $("username").value, password: $("password").value });
+    if (k === "plex") Object.assign(playlist, { server: $("server").value, password: $("password").value });
     if (k === "link") playlist.link = $("link").value;
     if (k === "stalker") Object.assign(playlist, { server: $("server").value, mac: $("mac").value });
     // The same checks the server makes, so a typo says so at once.
-    if ((k === "xtream" || k === "stalker") && !playlist.server.trim())
-        return tell("editor-message", refusals[k === "xtream" ? "server needed" : "portal needed"], "error", "server");
-    if (k === "xtream" && !playlist.username.trim()) return tell("editor-message", refusals["username needed"], "error", "username");
-    if (k === "xtream" && !playlist.password && editing?.kind !== "xtream")
+    if ((k === "xtream" || k === "stalker" || k === "plex" || k === "jellyfin" || k === "emby") && !playlist.server?.trim())
+        return tell("editor-message", refusals[k === "stalker" ? "portal needed" : "server needed"], "error", "server");
+    if ((k === "xtream" || k === "jellyfin" || k === "emby") && !playlist.username.trim())
+        return tell("editor-message", refusals["username needed"], "error", "username");
+    if ((k === "xtream" || k === "plex" || k === "jellyfin" || k === "emby") && !playlist.password && editing?.kind !== k)
         return tell("editor-message", refusals["password needed"], "error", "password");
     if (k === "link" && !playlist.link.trim() && editing?.kind !== "link")
         return tell("editor-message", refusals["link needed"], "error", "link");

@@ -1,5 +1,9 @@
 package com.tunedplayer.app.core
 
+import java.time.Instant
+import java.time.format.DateTimeParseException
+import java.util.Locale
+
 /**
  * Trakt (from the app audit, item 14): what Tuned tells Trakt while a film or episode plays, so it lands in the person's
  * history and "up next" on every app they use. Nothing here touches the network.
@@ -25,6 +29,144 @@ object Trakt {
             val number: Int,
         ) : Target
     }
+
+    /** A film from Trakt's watched list, for importing into Tuned's own history. */
+    data class WatchedFilm(
+        val title: String,
+        val year: Int?,
+        val watchedAtMs: Long,
+    )
+
+    /** An episode from Trakt's watched shows (with season progress), for importing into Tuned's own history. */
+    data class WatchedEpisode(
+        val show: String,
+        val year: Int?,
+        val season: Int,
+        val number: Int,
+        val watchedAtMs: Long,
+    )
+
+    /** A film in the playlist, cleaned the same way scrobbling cleans names. */
+    data class LocalFilm(
+        val id: Long,
+        val title: String,
+        val year: Int?,
+    )
+
+    /** An episode in the playlist, cleaned the same way scrobbling cleans show names. */
+    data class LocalEpisode(
+        val id: Long,
+        val show: String,
+        val year: Int?,
+        val season: Int,
+        val number: Int,
+    )
+
+    /** A playlist item id and when Trakt last counted it watched. */
+    data class Match(
+        val itemId: Long,
+        val watchedAtMs: Long,
+    )
+
+    /** A film row from the playlist, ready to match against Trakt. */
+    fun localFilm(
+        id: Long,
+        name: String,
+        year: Int?,
+    ): LocalFilm {
+        val query = Tmdb.query(name)
+        return LocalFilm(id, cleanKey(query.title), year ?: query.year)
+    }
+
+    /** An episode row from the playlist, ready to match against Trakt. */
+    fun localEpisode(
+        id: Long,
+        showName: String,
+        year: Int?,
+        season: Int,
+        number: Int,
+    ): LocalEpisode {
+        val query = Tmdb.query(showName)
+        return LocalEpisode(id, cleanKey(query.title), year ?: query.year, season, number)
+    }
+
+    /**
+     * Playlist films that match [watched]: same cleaned title, and the same year when both sides have one. Every
+     * matching copy is kept (a film can sit in more than one group).
+     */
+    fun matchFilms(
+        local: List<LocalFilm>,
+        watched: List<WatchedFilm>,
+    ): List<Match> {
+        if (local.isEmpty() || watched.isEmpty()) return emptyList()
+        val byTitle = local.groupBy { it.title }
+        return buildList {
+            for (film in watched) {
+                val key = cleanKey(film.title)
+                val candidates = byTitle[key] ?: continue
+                for (row in candidates) {
+                    if (yearsMatch(row.year, film.year)) add(Match(row.id, film.watchedAtMs))
+                }
+            }
+        }
+    }
+
+    /**
+     * Playlist episodes that match [watched]: same cleaned show title, season and number, and the same year when both
+     * sides have one. Every matching copy is kept.
+     */
+    fun matchEpisodes(
+        local: List<LocalEpisode>,
+        watched: List<WatchedEpisode>,
+    ): List<Match> {
+        if (local.isEmpty() || watched.isEmpty()) return emptyList()
+        val byKey = local.groupBy { episodeKey(it.show, it.season, it.number) }
+        return buildList {
+            for (episode in watched) {
+                val key = episodeKey(cleanKey(episode.show), episode.season, episode.number)
+                val candidates = byKey[key] ?: continue
+                for (row in candidates) {
+                    if (yearsMatch(row.year, episode.year)) add(Match(row.id, episode.watchedAtMs))
+                }
+            }
+        }
+    }
+
+    /** Years agree when either side left it out (providers often do) or both say the same year. */
+    fun yearsMatch(
+        a: Int?,
+        b: Int?,
+    ): Boolean = a == null || b == null || a == b
+
+    /**
+     * Trakt's `last_watched_at` (ISO-8601) as epoch millis, or [fallbackMs] when missing or unreadable so a match still
+     * lands in the history.
+     */
+    fun watchedAtMs(
+        text: String?,
+        fallbackMs: Long,
+    ): Long {
+        if (text.isNullOrBlank()) return fallbackMs
+        return try {
+            Instant.parse(text).toEpochMilli()
+        } catch (_: DateTimeParseException) {
+            fallbackMs
+        }
+    }
+
+    /** Films page size for `/sync/watched/movies` (Trakt's usual maximum). */
+    const val WATCHED_PAGE = 250
+
+    /** Shows page size for `/sync/watched/shows?extended=progress` (Trakt caps progress pages at 100). */
+    const val WATCHED_PROGRESS_PAGE = 100
+
+    private fun cleanKey(title: String): String = title.trim().lowercase(Locale.ROOT)
+
+    private fun episodeKey(
+        show: String,
+        season: Int,
+        number: Int,
+    ): String = "$show\t$season\t$number"
 
     /**
      * The film or episode behind an item, or null when Trakt can't match it: a live channel, or an episode without a

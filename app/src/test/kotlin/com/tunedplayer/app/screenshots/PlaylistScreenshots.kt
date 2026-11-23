@@ -39,6 +39,10 @@ class PlaylistScreenshots : Screenshots() {
     @Test
     fun addPortal() = shot("playlist-add-portal", AddPlaylistRoute(Credentials.Kind.Stalker.name), wait = text(R.string.login_mac))
 
+    @Test
+    fun addJellyfin() =
+        shot("playlist-add-jellyfin", AddPlaylistRoute(Credentials.Kind.Jellyfin.name), wait = text(R.string.add_media_server_help))
+
     /** The TV's QR code and code, from a stand-in relay that hands out a made-up code and keeps the TV waiting. */
     @Test
     @Config(qualifiers = TV)

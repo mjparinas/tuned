@@ -9,6 +9,7 @@ import androidx.media3.datasource.DataSource
 import androidx.media3.datasource.DefaultDataSource
 import androidx.media3.datasource.ResolvingDataSource
 import androidx.media3.datasource.okhttp.OkHttpDataSource
+import com.tunedplayer.app.core.MediaServer
 import com.tunedplayer.app.core.Stalker
 import okhttp3.OkHttpClient
 
@@ -33,9 +34,9 @@ object PlayerSources {
         /** Wraps the network source, for the live rewind copy ([LiveTimeshift.factory]). */
         network: (DataSource.Factory) -> DataSource.Factory = { it },
         /**
-         * A Stalker portal's channel turned into the stream to open (`data/StalkerLinks`), asked for on the loader thread
-         * each time the channel opens, since the portal's links expire. The live rewind copy sees the stored link, which
-         * stays the same across reconnects where the real one doesn't.
+         * A Stalker portal or media-server item turned into the stream to open (`data/StalkerLinks`,
+         * `data/MediaServerLinks`), asked for on the loader thread each time it opens, since those links expire. The
+         * live rewind copy sees the stored link, which stays the same across reconnects where the real one doesn't.
          */
         portal: (String) -> String = { it },
     ): DataSource.Factory {
@@ -47,11 +48,20 @@ object PlayerSources {
             }
         val fromPortal =
             ResolvingDataSource.Factory(withHeaders) { spec ->
-                if (!Stalker.isLink(spec.uri.toString())) {
-                    spec
-                } else {
-                    // Portals' stream servers often serve only what says it is a MAG box.
-                    spec.withUri(portal(spec.uri.toString()).toUri()).withAdditionalHeaders(mapOf("User-Agent" to Stalker.USER_AGENT))
+                val url = spec.uri.toString()
+                when {
+                    Stalker.isLink(url) -> {
+                        // Portals' stream servers often serve only what says it is a MAG box.
+                        spec.withUri(portal(url).toUri()).withAdditionalHeaders(mapOf("User-Agent" to Stalker.USER_AGENT))
+                    }
+
+                    MediaServer.isLink(url) -> {
+                        spec.withUri(portal(url).toUri())
+                    }
+
+                    else -> {
+                        spec
+                    }
                 }
             }
         return DefaultDataSource.Factory(context, network(fromPortal))

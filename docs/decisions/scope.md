@@ -19,7 +19,7 @@ Everything else that was listed has merged and is recorded in its topic: the app
 
 ## Paused
 
-- **The web player** (Melvin, 2026-11-19: "ok lets do it", then after running the provider check on his own provider the same evening: "provider blocks web players"). Phase 0 was the go or no-go, so the player at `/watch` and `:core` as Kotlin Multiplatform are not being built. The provider check stays at `/check` behind the `web_player` flag ([web](web.md)). The way forward, when Melvin wants it, is a helper on the person's own computer, which he called a future feature.
+- **A local web helper** that relays streams only on the person's own computer (Stremio-style at `127.0.0.1`), for providers that block browsers. Melvin, 2026-11-19: "i don't want to support relaying right now. that's a future feature". The browser player at `/watch` is built ([web](web.md)); this helper is not.
 
 ## Offered, not decided
 

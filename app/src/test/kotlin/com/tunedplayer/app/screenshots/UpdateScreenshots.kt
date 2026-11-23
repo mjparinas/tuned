@@ -91,5 +91,9 @@ private fun BusyRows() {
             SyncText.describe(context, SyncProgress(SyncProgress.Step.DownloadPlaylist, 6_200_000, 18_500_000)),
         ) { RowSpinner() }
         SettingRow(stringResource(R.string.settings_clear_history), stringResource(R.string.settings_history_cleared))
+        SettingRow(stringResource(R.string.trakt_import), stringResource(R.string.trakt_import_films)) { RowSpinner() }
+        SettingRow(stringResource(R.string.trakt_import), stringResource(R.string.trakt_import_marking, 42, 318)) { RowSpinner() }
+        SettingRow(stringResource(R.string.trakt_import), stringResource(R.string.trakt_import_none))
+        SettingRow(stringResource(R.string.trakt_import), stringResource(R.string.trakt_import_failed))
     }
 }
