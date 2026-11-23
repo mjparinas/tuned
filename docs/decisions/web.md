@@ -2,9 +2,9 @@
 
 Melvin, 2026-11-19: "is it possible to stream through a web ui, that could be a feature that is unlocked with pro", and the hard rule: **"i dont want any relaying"**. The plan is `tuned/tuned-web-player-plan.md` in the project files. He approved it the same day ("ok lets do it", then "try phase 0, put it behind a feature flag", yes to decisions 2 to 6).
 
-## Status: paused
+## Status: built (browser player; local helper still later)
 
-Melvin ran the provider check on his own provider the evening of 2026-11-19: "provider blocks web players" (no CORS). Phase 0 was the go or no-go, so the web player itself isn't being built. The check stays at `/check`, off by default behind `web_player`, and everything below records what was decided for when it comes back, most likely with the local helper.
+Melvin ran the provider check on his own provider the evening of 2026-11-19: "provider blocks web players" (no CORS). Phase 0 was the go or no-go. On 2026-11-22 he asked to build web playback at `/watch` anyway: the page plays in the browser when the provider (or the browser's own `<video>`) allows it, uses the app's channel copy for the list so CORS isn't needed to browse, and falls back to Open in VLC when the stream won't play. A helper on the person's own computer that relays only when needed stays a future feature ("i don't want to support relaying right now").
 
 ## What was decided
 
@@ -16,7 +16,16 @@ Melvin ran the provider check on his own provider the evening of 2026-11-19: "pr
 - **v1 only reads the backup.** Favourites and progress changed on the web stay in that browser; writing back to the account comes later.
 - **Later:** a phone pauses its downloads while the same account watches on the web, so the one-connection rule holds across devices.
 - **One stream at a time** in the page: the old loader is destroyed before the next opens, nothing prefetches, one tab plays.
-- Code is shared with the parked Samsung TV plan (KMP `:core` compiled to JavaScript, the same web UI), in a `web/` folder.
+- Code for the player lives under `devices/public/watch/` (and reuses the check's vendored hls.js / mpegts.js). Sharing with a parked Samsung TV plan via KMP `:core` is not built.
+
+## Built: the web player at `/watch` (Melvin, 2026-11-22)
+
+`/watch` on the website (`devices/public/watch/`), behind the admin flag **`web_player`** (off by default; preview deployments and localhost always). Premium only (bought in Play or on the website; the github build's unlocked app doesn't count). Sign-in comes back with `?then=watch`.
+
+- **Channels** come from the app's copy in the account (same as Channels and guide), with the playlist login from `GET /api/account/check` filled into stream links. No list is fetched from the provider on this page, so providers that block CORS still show channels when the app has backed them up.
+- **Play** is one stream at a time (`public/watch/player.mjs`, tested): https twin first when the link is http, then the browser's own player, then hls.js or mpegts.js. The old loader is destroyed before the next opens. Nothing prefetches. Failures say so and offer Open in VLC (and a link to the full guide).
+- **One browser per account:** `GET`/`POST`/`DELETE /api/account/watch` (`api/account/watch.mjs`, lease rules in `lib/watch-lease.mjs`, tested) holds a short Redis lease (45 s, heartbeat every 15 s). A second browser takes over; the first stops on its next heartbeat. Does not take a device seat.
+- **On the account pages:** "Watch" in the side menu while the flag is on (`flagOn` in `public/account/nav.js`).
 
 ## Built: the provider check (Phase 0)
 
@@ -32,7 +41,7 @@ Melvin ran the provider check on his own provider the evening of 2026-11-19: "pr
 "if you're logged in, /check should just let you choose the playlist to try", and "check should show up in the account page somewhere".
 
 - **Signed in, `/check` opens on Your playlists:** the account's playlists from the backup (the same list as `/account/playlists`), one picked, and Check. MAC portals and files are listed but can't be picked (a browser can't use them). Typing an address stays, behind "Type an address instead". Signed out, the form shows with a Sign in link that comes back to `/check` (`/api/auth/google?then=check`).
-- **The login comes to the browser only for the check:** `GET /api/account/check?id=<playlist id>` (`devices/api/account/check.mjs`, `checkLogin` in `lib/library.mjs`, tested) answers one Xtream login or M3U link (with its guide links, which the web channel list uses too), only to the person's own signed-in browser, only for a fetch from our own page (`Sec-Fetch-Site: same-origin`), only while `web_player` is on (preview deployments always), at most 60 an hour. It is kept in memory like a typed login; the check still talks to the provider from the browser and Tuned's server never contacts the provider. The Playlists page itself still never gets passwords or links.
+- **The login comes to the browser for Channels and guide, the check, and Watch:** `GET /api/account/check?id=<playlist id>` (`devices/api/account/check.mjs`, `checkLogin` in `lib/library.mjs`, tested) answers one Xtream login or M3U link (with its guide links), only to the person's own signed-in browser, only for a fetch from our own page (`Sec-Fetch-Site: same-origin`), at most 60 an hour. Always on so Channels and guide can fill VLC links even when `web_player` is off; `/check` and `/watch` stay behind that flag on their own pages. It is kept in memory; the browser talks to the provider and Tuned's server never contacts it. The Playlists page itself still never gets passwords or links.
 - **On the account pages:** "Check my provider" in the side menu, and a Check button on each Xtream or link playlist on `/account/playlists` (it opens `/check?playlist=<id>` and starts the check). Both only while `web_player` is on (`flagOn` in `public/account/nav.js`).
 
 ### Try playing anyway (Melvin, 2026-11-20)

@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en-CA">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>Watch · Tuned</title>
+        <meta name="robots" content="noindex, nofollow" />
+        <meta name="referrer" content="no-referrer" />
+        <meta name="theme-color" content="#fcfaff" media="(prefers-color-scheme: light)" />
+        <meta name="theme-color" content="#121018" media="(prefers-color-scheme: dark)" />
+        <link rel="icon" href="/favicon.ico" sizes="48x48" />
+        <link rel="icon" href="/icon.svg" type="image/svg+xml" />
+        <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+        <link rel="stylesheet" href="/site.css" />
+        <link rel="stylesheet" href="/select.css" />
+        <link rel="stylesheet" href="/web.css" />
+        <link rel="stylesheet" href="/account/account.css" />
+        <link rel="stylesheet" href="/watch/watch.css" />
+        <script src="/check/vendor/hls.light.min.js" defer></script>
+        <script src="/check/vendor/mpegts.min.js" defer></script>
+        <script type="module" src="/watch/watch.js"></script>
+        <script src="/beacon.js" defer></script>
+    </head>
+    <body>
+        <script src="/chrome.js" data-part="header"></script>
+        <main class="wide account watch-page">
+            <div class="account-head">
+                <p class="back"><a href="/account">‹ Your Tuned account</a></p>
+                <h1>Watch</h1>
+                <p class="small">
+                    Live TV from your Tuned account, played in this browser. Streams go straight from your provider to here: nothing
+                    passes through Tuned. Premium, and only one browser at a time.
+                </p>
+                <p id="status" role="status" aria-live="polite"></p>
+            </div>
+            <nav class="account-nav" id="account-nav" aria-label="Your account" hidden></nav>
+
+            <div class="account-body">
+                <section id="off" class="card" hidden>
+                    <h2>Not available yet</h2>
+                    <p>The web player isn't switched on yet. Your channels are in the Tuned app, and on Channels and guide.</p>
+                    <div class="actions"><a class="button" href="/account/channels">Channels and guide</a></div>
+                </section>
+
+                <section id="signed-out" class="card" hidden>
+                    <h2>Sign in first</h2>
+                    <p>Sign in to your Tuned account to watch in the browser.</p>
+                    <div class="actions"><a class="button" href="/api/auth/google?then=watch">Sign in with Google</a></div>
+                </section>
+
+                <section id="need-premium" class="card" hidden>
+                    <h2>Tuned Premium</h2>
+                    <p>Watching in the browser is part of Tuned Premium. Get Premium on your account page, then come back here.</p>
+                    <div class="actions"><a class="button" href="/account#premium">Get Premium</a></div>
+                </section>
+
+                <div id="signed-in" hidden>
+                    <section class="card span watch-shell" aria-labelledby="watch-title">
+                        <h2 id="watch-title" class="visually-hidden">Live TV player</h2>
+                        <div class="watch-bar">
+                            <div class="field">
+                                <label for="playlist">Playlist</label>
+                                <select id="playlist"></select>
+                            </div>
+                            <div class="field grow">
+                                <label for="search">Search channels</label>
+                                <input id="search" type="search" autocomplete="off" spellcheck="false" placeholder="CBC, sports…" />
+                            </div>
+                        </div>
+                        <p id="source" class="message" role="status" aria-live="polite" data-tone="ok"></p>
+                        <p id="lease" class="message" role="status" aria-live="polite" hidden></p>
+
+                        <div class="watch-layout">
+                            <div class="watch-stage">
+                                <div class="video-wrap" id="video-wrap">
+                                    <video id="video" playsinline controls></video>
+                                    <p id="empty-stage" class="empty-stage">Pick a channel to play</p>
+                                </div>
+                                <div class="now-playing">
+                                    <p id="playing-name" class="playing-name"></p>
+                                    <p id="playing-show" class="playing-show small"></p>
+                                    <p id="play-status" class="message" role="status" aria-live="polite"></p>
+                                    <div class="actions watch-actions">
+                                        <button type="button" class="quiet" id="stop" hidden>Stop</button>
+                                        <button type="button" class="quiet" id="vlc" hidden>Open in VLC</button>
+                                        <a class="button quiet" id="channels-link" href="/account/channels">Full guide</a>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="watch-list" id="list-wrap">
+                                <p id="count" class="small"></p>
+                                <ul id="list" class="channel-list" aria-label="Channels"></ul>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+            </div>
+        </main>
+        <script src="/chrome.js" data-part="footer"></script>
+    </body>
+</html>

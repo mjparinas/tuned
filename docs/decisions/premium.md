@@ -22,7 +22,7 @@ Play's rules cover "any content your app displays or links to", and pay-TV compa
 
 Free: one playlist with its guide; Live TV, Movies, Shows, search, favourites, Continue Watching; the whole player (captions, audio, picture-in-picture, casting); the grid guide, channel numbers and flip back; TMDB details; backup copies; auto-tune and the Live Events page; Android TV.
 
-Premium: more than one playlist; your own lists beside Favourites, and renaming channels and changing their logos ([lists](lists.md)); more than one profile (with kids profiles and PINs); the Premium profile pictures ([profiles](profiles.md)); pause and rewind live TV; recording; more than 3 downloads at a time; following events and their alerts; the backup in a Tuned account that keeps devices the same ([accounts](accounts.md)); Trakt; themes and accent colours other than the default.
+Premium: more than one playlist; your own lists beside Favourites, and renaming channels and changing their logos ([lists](lists.md)); more than one profile (with kids profiles and PINs); the Premium profile pictures ([profiles](profiles.md)); pause and rewind live TV; recording; more than 3 downloads at a time; following events and their alerts; the backup in a Tuned account that keeps devices the same ([accounts](accounts.md)); Trakt; themes and accent colours other than the default; the website's Watch page (Live TV in the browser, behind the `web_player` flag; [web](web.md)).
 
 How the locks work (`premium/`):
 
