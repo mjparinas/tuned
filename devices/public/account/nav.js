@@ -21,8 +21,8 @@ const SECTIONS = [
 ];
 
 /**
- * Draws the menu into `nav`. `page` is "account", "playlists" or "channels"; on the playlists page its own entry is the page and
- * `subsections` ([id, label]) list what's on it.
+ * Draws the menu into `nav`. `page` is "account", "playlists", "channels", "watch" or "check"; on the playlists page its
+ * own entry is the page and `subsections` ([id, label]) list what's on it.
  */
 export function drawNav(nav, page, subsections = []) {
     const list = document.createElement("ul");

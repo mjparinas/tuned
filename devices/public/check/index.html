@@ -3,11 +3,17 @@
     <head>
         <meta charset="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <title>Check your provider</title>
+        <title>Check your provider · Tuned</title>
         <meta name="robots" content="noindex, nofollow" />
+        <meta name="theme-color" content="#fcfaff" media="(prefers-color-scheme: light)" />
+        <meta name="theme-color" content="#121018" media="(prefers-color-scheme: dark)" />
+        <link rel="icon" href="/favicon.ico" sizes="48x48" />
+        <link rel="icon" href="/icon.svg" type="image/svg+xml" />
+        <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
         <link rel="stylesheet" href="/site.css" />
         <link rel="stylesheet" href="/select.css" />
         <link rel="stylesheet" href="/web.css" />
+        <link rel="stylesheet" href="/account/account.css" />
         <link rel="stylesheet" href="/check/check.css" />
         <script src="/check/vendor/hls.light.min.js" defer></script>
         <script src="/check/vendor/mpegts.min.js" defer></script>
@@ -16,128 +22,134 @@
     </head>
     <body>
         <script src="/chrome.js" data-part="header"></script>
-        <main>
-            <h1>Does your provider work in a browser?</h1>
-            <p>
-                Tuned's web player plays your provider's streams straight into this browser, with nothing in between. Some providers don't
-                allow that. This check finds out in a few seconds.
-            </p>
-            <p class="small" id="privacy-line">
-                It runs only in this browser. Tuned's server never sees your provider's address or your login, and nothing is saved. Tuned
-                includes no content; you need your own playlist.
-            </p>
+        <main class="wide account check-page">
+            <div class="account-head">
+                <p class="back"><a href="/account">‹ Your Tuned account</a></p>
+                <h1>Does your provider work in a browser?</h1>
+                <p>
+                    Tuned's web player plays your provider's streams straight into this browser, with nothing in between. Some providers
+                    don't allow that. This check finds out in a few seconds.
+                </p>
+                <p class="small" id="privacy-line">
+                    It runs only in this browser. Tuned's server never sees your provider's address or your login, and nothing is saved.
+                    Tuned includes no content; you need your own playlist.
+                </p>
+            </div>
+            <nav class="account-nav" id="account-nav" aria-label="Your account" hidden></nav>
 
-            <section id="off" class="card" hidden>
-                <h2>Not available yet</h2>
-                <p>The provider check and the web player aren't open yet.</p>
-            </section>
+            <div class="account-body">
+                <section id="off" class="card" hidden>
+                    <h2>Not available yet</h2>
+                    <p>The provider check and the web player aren't open yet.</p>
+                </section>
 
-            <section id="saved-card" class="card" hidden aria-labelledby="saved-title">
-                <h2 id="saved-title">Your playlists</h2>
-                <p class="small">Pick one from your Tuned account.</p>
-                <form id="saved" autocomplete="off">
-                    <fieldset>
-                        <legend class="visually-hidden">Playlist to check</legend>
-                        <div id="saved-list" class="saved-list"></div>
-                    </fieldset>
-                    <p class="message" id="saved-message" role="status" aria-live="polite"></p>
-                    <div class="row">
-                        <button type="submit" class="primary" id="saved-check">Check</button>
-                        <button type="button" class="quiet" id="type-instead" aria-expanded="false" aria-controls="form-card">
-                            Type an address instead
-                        </button>
+                <section id="saved-card" class="card" hidden aria-labelledby="saved-title">
+                    <h2 id="saved-title">Your playlists</h2>
+                    <p class="small">Pick one from your Tuned account.</p>
+                    <form id="saved" autocomplete="off">
+                        <fieldset>
+                            <legend class="visually-hidden">Playlist to check</legend>
+                            <div id="saved-list" class="saved-list"></div>
+                        </fieldset>
+                        <p class="message" id="saved-message" role="status" aria-live="polite"></p>
+                        <div class="row">
+                            <button type="submit" class="primary" id="saved-check">Check</button>
+                            <button type="button" class="quiet" id="type-instead" aria-expanded="false" aria-controls="form-card">
+                                Type an address instead
+                            </button>
+                        </div>
+                    </form>
+                </section>
+
+                <section id="form-card" class="card" hidden>
+                    <p class="small" id="sign-in-line" hidden>
+                        Have a Tuned account? <a href="/api/auth/google?then=check">Sign in with Google</a> or
+                        <a href="/api/auth/apple?then=check">Apple</a> to pick one of your saved playlists.
+                    </p>
+                    <div class="tabs" role="tablist" aria-label="Playlist kind">
+                        <button type="button" role="tab" id="tab-xtream" aria-selected="true" aria-controls="xtream">Xtream login</button>
+                        <button type="button" role="tab" id="tab-link" aria-selected="false" aria-controls="link">Playlist link</button>
                     </div>
-                </form>
-            </section>
+                    <form id="xtream" aria-labelledby="tab-xtream" autocomplete="off">
+                        <label for="server">Server address</label>
+                        <input id="server" type="text" inputmode="url" placeholder="http://example.com:8080" required spellcheck="false" />
+                        <label for="username">Username</label>
+                        <input id="username" type="text" required spellcheck="false" autocapitalize="off" />
+                        <label for="password">Password</label>
+                        <input id="password" type="password" required />
+                        <button type="submit" class="primary">Check</button>
+                    </form>
+                    <form id="link" aria-labelledby="tab-link" autocomplete="off" hidden>
+                        <label for="playlist">M3U link</label>
+                        <input
+                            id="playlist"
+                            type="text"
+                            inputmode="url"
+                            placeholder="http://example.com/get.php?…"
+                            required
+                            spellcheck="false"
+                        />
+                        <button type="submit" class="primary">Check</button>
+                    </form>
+                </section>
 
-            <section id="form-card" class="card" hidden>
-                <p class="small" id="sign-in-line" hidden>
-                    Have a Tuned account? <a href="/api/auth/google?then=check">Sign in with Google</a> or
-                    <a href="/api/auth/apple?then=check">Apple</a> to pick one of your saved playlists.
-                </p>
-                <div class="tabs" role="tablist" aria-label="Playlist kind">
-                    <button type="button" role="tab" id="tab-xtream" aria-selected="true" aria-controls="xtream">Xtream login</button>
-                    <button type="button" role="tab" id="tab-link" aria-selected="false" aria-controls="link">Playlist link</button>
-                </div>
-                <form id="xtream" aria-labelledby="tab-xtream" autocomplete="off">
-                    <label for="server">Server address</label>
-                    <input id="server" type="text" inputmode="url" placeholder="http://example.com:8080" required spellcheck="false" />
-                    <label for="username">Username</label>
-                    <input id="username" type="text" required spellcheck="false" autocapitalize="off" />
-                    <label for="password">Password</label>
-                    <input id="password" type="password" required />
-                    <button type="submit" class="primary">Check</button>
-                </form>
-                <form id="link" aria-labelledby="tab-link" autocomplete="off" hidden>
-                    <label for="playlist">M3U link</label>
-                    <input
-                        id="playlist"
-                        type="text"
-                        inputmode="url"
-                        placeholder="http://example.com/get.php?…"
-                        required
-                        spellcheck="false"
-                    />
-                    <button type="submit" class="primary">Check</button>
-                </form>
-            </section>
+                <section id="steps-card" class="card" hidden aria-live="polite">
+                    <h2>What we found</h2>
+                    <ol id="steps" class="steps"></ol>
+                    <div id="answer" class="answer" hidden></div>
+                </section>
 
-            <section id="steps-card" class="card" hidden aria-live="polite">
-                <h2>What we found</h2>
-                <ol id="steps" class="steps"></ol>
-                <div id="answer" class="answer" hidden></div>
-            </section>
+                <section id="anyway-card" class="card" hidden aria-labelledby="anyway-title">
+                    <h2 id="anyway-title">Try playing anyway</h2>
+                    <p class="small">
+                        The check couldn't read your lists from this browser, but the browser's own player can sometimes still play a
+                        stream. It opens one stream at a time and closes it before the next, with nothing in between.
+                    </p>
+                    <form id="anyway" autocomplete="off">
+                        <label for="anyway-input" id="anyway-label">Stream link</label>
+                        <input id="anyway-input" type="text" inputmode="url" required spellcheck="false" aria-describedby="anyway-hint" />
+                        <p class="small" id="anyway-hint"></p>
+                        <div class="row">
+                            <button type="submit" class="primary" id="anyway-play">Try playing</button>
+                            <button type="button" id="anyway-stop">Stop</button>
+                        </div>
+                    </form>
+                    <video id="anyway-video" controls playsinline muted></video>
+                    <ol id="anyway-steps" class="steps" aria-live="polite"></ol>
+                </section>
 
-            <section id="anyway-card" class="card" hidden aria-labelledby="anyway-title">
-                <h2 id="anyway-title">Try playing anyway</h2>
-                <p class="small">
-                    The check couldn't read your lists from this browser, but the browser's own player can sometimes still play a stream. It
-                    opens one stream at a time and closes it before the next, with nothing in between.
-                </p>
-                <form id="anyway" autocomplete="off">
-                    <label for="anyway-input" id="anyway-label">Stream link</label>
-                    <input id="anyway-input" type="text" inputmode="url" required spellcheck="false" aria-describedby="anyway-hint" />
-                    <p class="small" id="anyway-hint"></p>
+                <section id="play-card" class="card" hidden>
+                    <h2>Try one channel and one film</h2>
+                    <p class="small">
+                        Each test opens one stream and closes it before the next, so it never uses more than one of your connections. Stop
+                        anything playing on this account first.
+                    </p>
+                    <label for="live">Live channel</label>
+                    <select id="live"></select>
                     <div class="row">
-                        <button type="submit" class="primary" id="anyway-play">Try playing</button>
-                        <button type="button" id="anyway-stop">Stop</button>
+                        <button type="button" id="play-hls">Play (.m3u8)</button>
+                        <button type="button" id="play-ts">Play (.ts)</button>
                     </div>
-                </form>
-                <video id="anyway-video" controls playsinline muted></video>
-                <ol id="anyway-steps" class="steps" aria-live="polite"></ol>
-            </section>
+                    <label for="film">Film</label>
+                    <select id="film"></select>
+                    <div class="row">
+                        <button type="button" id="play-film">Play film</button>
+                    </div>
+                    <video id="video" controls playsinline muted></video>
+                    <div class="row">
+                        <button type="button" id="stop">Stop</button>
+                        <button type="button" id="sound">Turn sound on</button>
+                    </div>
+                    <ol id="play-steps" class="steps" aria-live="polite"></ol>
+                </section>
 
-            <section id="play-card" class="card" hidden>
-                <h2>Try one channel and one film</h2>
-                <p class="small">
-                    Each test opens one stream and closes it before the next, so it never uses more than one of your connections. Stop
-                    anything playing on this account first.
-                </p>
-                <label for="live">Live channel</label>
-                <select id="live"></select>
-                <div class="row">
-                    <button type="button" id="play-hls">Play (.m3u8)</button>
-                    <button type="button" id="play-ts">Play (.ts)</button>
-                </div>
-                <label for="film">Film</label>
-                <select id="film"></select>
-                <div class="row">
-                    <button type="button" id="play-film">Play film</button>
-                </div>
-                <video id="video" controls playsinline muted></video>
-                <div class="row">
-                    <button type="button" id="stop">Stop</button>
-                    <button type="button" id="sound">Turn sound on</button>
-                </div>
-                <ol id="play-steps" class="steps" aria-live="polite"></ol>
-            </section>
-
-            <section id="copy-card" class="card" hidden>
-                <h2>Share the result</h2>
-                <p class="small">A summary without your address or login, for sending to Tuned.</p>
-                <textarea id="summary" readonly rows="8" aria-label="Summary"></textarea>
-                <button type="button" id="copy">Copy</button>
-            </section>
+                <section id="copy-card" class="card" hidden>
+                    <h2>Share the result</h2>
+                    <p class="small">A summary without your address or login, for sending to Tuned.</p>
+                    <textarea id="summary" readonly rows="8" aria-label="Summary"></textarea>
+                    <button type="button" id="copy">Copy</button>
+                </section>
+            </div>
         </main>
         <script src="/chrome.js" data-part="footer"></script>
     </body>

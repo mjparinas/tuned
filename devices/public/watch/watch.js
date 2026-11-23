@@ -297,12 +297,14 @@ function showGate(which) {
 }
 
 async function start() {
-    drawNav($("account-nav"), "watch");
-    $("account-nav").hidden = false;
     if (!(await enabled())) return showGate("off");
 
     const me = await getJson("/api/account/me");
     if (me.status === "signed out" || me.http === 401) return showGate("signed-out");
+    // Same account chrome as Channels and Check: left menu on a desktop once signed in.
+    document.querySelector("main").classList.add("signed-in");
+    drawNav($("account-nav"), "watch");
+    $("account-nav").hidden = false;
     if (!me.premium) return showGate("need-premium");
 
     const library = await getJson("/api/account/library");
