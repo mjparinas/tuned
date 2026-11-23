@@ -25,6 +25,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
@@ -37,6 +38,7 @@ import com.tunedplayer.app.R
 import com.tunedplayer.app.core.ContentKind
 import com.tunedplayer.app.core.TitleSort
 import com.tunedplayer.app.data.TitleRatings
+import com.tunedplayer.app.ui.ProgressEta
 import java.text.NumberFormat
 
 /**
@@ -98,16 +100,25 @@ internal fun sortName(order: TitleSort.Order): Int = when (order) {
 }
 
 /**
- * Above a grid sorted Top rated while its ratings are being looked up ([TitleRatings]): how many of how many, and a
- * bar, so the list re-sorting under it is no mystery. Gone once they're in.
+ * Above a grid sorted Top rated while its ratings are being looked up ([TitleRatings]): how many of how many, how much
+ * longer at the current rate, and a bar, so the list re-sorting under it is no mystery. Gone once they're in.
  */
 internal fun LazyGridScope.ratingProgress(progress: TitleRatings.Progress?) {
     if (progress == null || progress.total <= 0) return
     item(key = "rating-progress", span = { GridItemSpan(maxLineSpan) }, contentType = "rating-progress") {
         val numbers = NumberFormat.getIntegerInstance()
+        val context = LocalContext.current
+        val line =
+            ProgressEta.withEta(
+                context,
+                stringResource(R.string.sort_rating_progress, numbers.format(progress.done), numbers.format(progress.total)),
+                progress.done.toLong(),
+                progress.total.toLong(),
+                progress.startedAt,
+            )
         Column(Modifier.fillMaxWidth().padding(bottom = 4.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Text(
-                stringResource(R.string.sort_rating_progress, numbers.format(progress.done), numbers.format(progress.total)),
+                line,
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )

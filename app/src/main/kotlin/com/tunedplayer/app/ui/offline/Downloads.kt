@@ -86,6 +86,7 @@ import com.tunedplayer.app.data.db.ItemEntity
 import com.tunedplayer.app.diagnostics.launchSafely
 import com.tunedplayer.app.player.PlayerActivity
 import com.tunedplayer.app.premium.Premium
+import com.tunedplayer.app.ui.ProgressEta
 import com.tunedplayer.app.ui.browse.Poster
 import com.tunedplayer.app.ui.common.BackTopBar
 import com.tunedplayer.app.ui.common.focusRing
@@ -638,13 +639,21 @@ private fun DownloadRowItem(
 @Composable
 private fun status(d: DownloadEntity): String {
     val context = LocalContext.current
+    // Clock starts when this row first shows as downloading; it resets if the row leaves and comes back.
+    val startedAt = remember(d.itemId) { System.currentTimeMillis() }
     val sizes =
         if (d.total > 0) {
-            stringResource(
-                R.string.download_progress,
-                Formatter.formatShortFileSize(context, d.bytes),
-                Formatter.formatShortFileSize(context, d.total),
-            )
+            val amount =
+                stringResource(
+                    R.string.download_progress,
+                    Formatter.formatShortFileSize(context, d.bytes),
+                    Formatter.formatShortFileSize(context, d.total),
+                )
+            if (d.state != DownloadEntity.DONE && d.state != DownloadEntity.PAUSED && d.state != DownloadEntity.FAILED) {
+                ProgressEta.withEta(context, amount, d.bytes, d.total, startedAt)
+            } else {
+                amount
+            }
         } else {
             null
         }

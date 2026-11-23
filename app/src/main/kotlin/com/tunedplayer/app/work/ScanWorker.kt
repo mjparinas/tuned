@@ -8,6 +8,7 @@ import android.os.SystemClock
 import androidx.core.app.NotificationCompat
 import androidx.work.Constraints
 import androidx.work.CoroutineWorker
+import androidx.work.Data
 import androidx.work.ExistingWorkPolicy
 import androidx.work.ForegroundInfo
 import androidx.work.NetworkType
@@ -21,6 +22,7 @@ import com.tunedplayer.app.container
 import com.tunedplayer.app.data.ServerFlags
 import com.tunedplayer.app.diagnostics.attempt
 import com.tunedplayer.app.diagnostics.logFailures
+import com.tunedplayer.app.ui.ProgressEta
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
@@ -33,13 +35,14 @@ class ScanWorker(
     params: WorkerParameters,
 ) : CoroutineWorker(context, params) {
     private var lastReport = 0L
+    private var startedAt = 0L
 
     override suspend fun doWork(): Result = logFailures("Scan", failed = { Result.failure() }) {
         val container = applicationContext.container
         container.quietStart.await()
         if (container.credentials.load() == null) return@logFailures Result.success()
         // Android 12+ may refuse from the background; it runs anyway.
-        attempt("Scan", "Couldn't run as a foreground service") { setForeground(foregroundInfo(0, 0)) }
+        attempt("Scan", "Couldn't run as a foreground service") { setForeground(foregroundInfo(Progress(0, 0, 0))) }
         container.channelScan.scan { done, total -> report(done, total) }
         Result.success()
     }
@@ -51,17 +54,16 @@ class ScanWorker(
         val now = SystemClock.elapsedRealtime()
         if (done < total && now - lastReport < REPORT_EVERY_MS) return
         lastReport = now
-        setProgressAsync(workDataOf(KEY_DONE to done, KEY_TOTAL to total))
-        setForegroundAsync(foregroundInfo(done, total))
+        if (startedAt == 0L) startedAt = System.currentTimeMillis()
+        val progress = Progress(done, total, startedAt)
+        setProgressAsync(progress.toData())
+        setForegroundAsync(foregroundInfo(progress))
     }
 
-    override suspend fun getForegroundInfo(): ForegroundInfo = foregroundInfo(0, 0)
+    override suspend fun getForegroundInfo(): ForegroundInfo = foregroundInfo(Progress(0, 0, 0))
 
-    private fun foregroundInfo(
-        done: Int,
-        total: Int,
-    ): ForegroundInfo {
-        val notification = notification(done, total)
+    private fun foregroundInfo(progress: Progress): ForegroundInfo {
+        val notification = notification(progress)
         return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             ForegroundInfo(NOTIFICATION_ID, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC)
         } else {
@@ -69,18 +71,27 @@ class ScanWorker(
         }
     }
 
-    private fun notification(
-        done: Int,
-        total: Int,
-    ): Notification {
+    private fun notification(progress: Progress): Notification {
         val context = applicationContext
         NotificationChannels.ensure(context)
+        val text =
+            if (progress.total > 0) {
+                ProgressEta.withEta(
+                    context,
+                    context.resources.getQuantityString(R.plurals.scan_progress, progress.total, progress.done, progress.total),
+                    progress.done.toLong(),
+                    progress.total.toLong(),
+                    progress.startedAt,
+                )
+            } else {
+                null
+            }
         return NotificationCompat
             .Builder(context, CHANNEL)
             .setSmallIcon(R.drawable.ic_stat_tuned)
             .setContentTitle(context.getString(R.string.scan_running))
-            .apply { if (total > 0) setContentText(context.resources.getQuantityString(R.plurals.scan_progress, total, done, total)) }
-            .setProgress(total, done, total == 0)
+            .apply { text?.let(::setContentText) }
+            .setProgress(progress.total, progress.done, progress.total == 0)
             .setOngoing(true)
             .setSilent(true)
             .setOnlyAlertOnce(true)
@@ -110,12 +121,25 @@ class ScanWorker(
             work.cancelUniqueWork(NAME)
         }
 
-        /** How far a running scan has got (done to total), or null when none runs. */
-        val progress: Flow<Pair<Int, Int>?> =
+        /** How far a running scan has got, or null when none runs. */
+        val progress: Flow<Progress?> =
             work.getWorkInfosForUniqueWorkFlow(NAME).map { infos ->
                 val running = infos.firstOrNull { it.state == WorkInfo.State.RUNNING || it.state == WorkInfo.State.ENQUEUED }
-                running?.let { it.progress.getInt(KEY_DONE, 0) to it.progress.getInt(KEY_TOTAL, 0) }
+                running?.let { Progress.of(it.progress) }
             }
+    }
+
+    /** How far a scan has got: [done] of [total], with [startedAt] for the time left. */
+    data class Progress(
+        val done: Int,
+        val total: Int,
+        val startedAt: Long = 0,
+    ) {
+        fun toData() = workDataOf(KEY_DONE to done, KEY_TOTAL to total, KEY_STARTED to startedAt)
+
+        companion object {
+            fun of(data: Data) = Progress(data.getInt(KEY_DONE, 0), data.getInt(KEY_TOTAL, 0), data.getLong(KEY_STARTED, 0))
+        }
     }
 
     private companion object {
@@ -124,6 +148,7 @@ class ScanWorker(
         const val NOTIFICATION_ID = 11
         const val KEY_DONE = "done"
         const val KEY_TOTAL = "total"
+        const val KEY_STARTED = "startedAt"
         const val REPORT_EVERY_MS = 1_000L
     }
 }

@@ -60,6 +60,18 @@
     <string name="sync_step_library">Obtendo filmes e séries</string>
     <string name="sync_waiting_server">Aguardando o servidor…</string>
     <string name="sync_size_so_far">%1$s até agora</string>
+    <plurals name="progress_seconds_left">
+        <item quantity="one">cerca de %d s restantes</item>
+        <item quantity="other">cerca de %d s restantes</item>
+    </plurals>
+    <plurals name="progress_minutes_left">
+        <item quantity="one">cerca de %d min restante</item>
+        <item quantity="other">cerca de %d min restantes</item>
+    </plurals>
+    <plurals name="progress_hours_left">
+        <item quantity="one">cerca de %d h restante</item>
+        <item quantity="other">cerca de %d h restantes</item>
+    </plurals>
     <string name="sync_step_done">Concluído</string>
     <string name="sync_step_now">Em andamento</string>
     <string name="sync_step_waiting">Não iniciado</string>

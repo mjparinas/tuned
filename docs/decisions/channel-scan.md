@@ -4,7 +4,7 @@ Melvin, 2026-11-17: "is it possible to scan through all the channels kinda like 
 
 ## What it does
 
-Settings › Channel health › **Scan channels** looks at every live channel that isn't already hidden by country or group, one at a time, in list order. Each look opens the stream, reads the first 16 KB (or, for an HLS playlist, the first segment or variant it points at) within 10 seconds, and closes it. Channels are 0.75 s apart, so a scan never hammers the server. It runs as a foreground job with a progress notification and can be stopped at any time. A scan of a few thousand channels takes a while, which is why it only runs when started by hand.
+Settings › Channel health › **Scan channels** looks at every live channel that isn't already hidden by country or group, one at a time, in list order. Each look opens the stream, reads the first 16 KB (or, for an HLS playlist, the first segment or variant it points at) within 10 seconds, and closes it. Channels are 0.75 s apart, so a scan never hammers the server. It runs as a foreground job with a progress notification and can be stopped at any time. The screen and the notification show how many of how many, and about how much longer at the current rate once the scan has been moving long enough to guess (Melvin, 2026-11-22). A scan of a few thousand channels takes a while, which is why it only runs when started by hand.
 
 ## Not blaming channels wrongly
 

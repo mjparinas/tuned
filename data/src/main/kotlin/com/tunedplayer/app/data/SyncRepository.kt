@@ -121,13 +121,26 @@ class SyncRepository(
         private val sink: (SyncProgress) -> Unit,
     ) {
         @Volatile var steps: List<SyncProgress.Step> = emptyList()
+        private var stepStarted: SyncProgress.Step? = null
+        private var stepStartedAt = 0L
 
         /** The first step, before anything is downloaded, so the screens show the steps at once. */
         fun start() = steps.firstOrNull()?.let { report(SyncProgress(it)) }
 
         /** A report that fails to reach the screens is logged; the refresh itself carries on. */
         fun report(progress: SyncProgress) {
-            attempt(TAG_SYNC, "Couldn't report progress") { sink(progress.copy(steps = steps)) }
+            attempt(TAG_SYNC, "Couldn't report progress") {
+                val started =
+                    if (progress.step == stepStarted && stepStartedAt > 0L) {
+                        stepStartedAt
+                    } else {
+                        System.currentTimeMillis().also {
+                            stepStarted = progress.step
+                            stepStartedAt = it
+                        }
+                    }
+                sink(progress.copy(steps = steps, startedAt = started))
+            }
         }
     }
 
