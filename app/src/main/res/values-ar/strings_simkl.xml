@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="simkl_sign_in">ربط Simkl</string>
+    <string name="simkl_sign_in_summary">أضف الأفلام والحلقات التي تشاهدها إلى سجلك في Simkl</string>
+    <string name="simkl_signed_in">مرتبط باسم %1$s</string>
+    <string name="simkl_account_unnamed">حسابك في Simkl</string>
+    <string name="simkl_sign_out">انقر لإلغاء الربط</string>
+    <string name="simkl_scrobble">تسجيل ما تشاهده</string>
+    <string name="simkl_scrobble_summary">أخبر Simkl عندما يبدأ فيلم أو حلقة ويتوقف مؤقتًا وينتهي. لا يُرسَل البث المباشر.</string>
+    <string name="simkl_asking">جارٍ طلب رمز من Simkl…</string>
+    <string name="simkl_enter_code">على أي هاتف أو كمبيوتر، اذهب إلى %1$s وأدخل هذا الرمز:</string>
+    <string name="simkl_waiting">في انتظار إدخالك الرمز…</string>
+    <string name="simkl_open_site">فتح Simkl</string>
+    <string name="simkl_done">تم الربط. ما تشاهده الآن يُضاف إلى سجلك في Simkl.</string>
+    <string name="simkl_expired">انتهت صلاحية الرمز قبل إدخاله.</string>
+    <string name="simkl_failed">تعذّر الوصول إلى Simkl. تحقّق من الاتصال وحاول مرة أخرى.</string>
+    <string name="simkl_try_again">إعادة المحاولة</string>
+</resources>

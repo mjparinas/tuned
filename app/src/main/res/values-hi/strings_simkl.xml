@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="simkl_sign_in">Simkl कनेक्ट करें</string>
+    <string name="simkl_sign_in_summary">आप जो फ़िल्में और एपिसोड देखते हैं उन्हें अपने Simkl इतिहास में जोड़ें</string>
+    <string name="simkl_signed_in">%1$s के रूप में कनेक्ट है</string>
+    <string name="simkl_account_unnamed">आपका Simkl खाता</string>
+    <string name="simkl_sign_out">डिस्कनेक्ट करने के लिए टैप करें</string>
+    <string name="simkl_scrobble">जो देखते हैं उसे स्क्रॉबल करें</string>
+    <string name="simkl_scrobble_summary">कोई फ़िल्म या एपिसोड शुरू होने, रुकने और खत्म होने पर Simkl को बताएं। लाइव टीवी नहीं भेजा जाता।</string>
+    <string name="simkl_asking">Simkl से कोड मांगा जा रहा है…</string>
+    <string name="simkl_enter_code">किसी भी फ़ोन या कंप्यूटर पर %1$s पर जाएं और यह कोड डालें:</string>
+    <string name="simkl_waiting">आपके कोड डालने का इंतज़ार…</string>
+    <string name="simkl_open_site">Simkl खोलें</string>
+    <string name="simkl_done">कनेक्ट हो गया। अब आप जो देखते हैं वह आपके Simkl इतिहास में जाता है।</string>
+    <string name="simkl_expired">कोड डालने से पहले ही उसकी अवधि खत्म हो गई।</string>
+    <string name="simkl_failed">Simkl तक नहीं पहुंच सके। कनेक्शन जांचें और फिर से कोशिश करें।</string>
+    <string name="simkl_try_again">फिर से कोशिश करें</string>
+</resources>

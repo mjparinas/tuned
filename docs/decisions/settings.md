@@ -6,7 +6,7 @@ Melvin: "go through settings and figure out how to improve and reduce the comple
 
 The first Settings screen is a short list of pages, each with an icon and a line saying what's inside, so a person finds a setting by its area instead of scrolling past sixty rows:
 
-- **Playlists and account**: playlists, the account's status, Trakt (only in builds with its key: sign in, scrobble, import watched history; [trakt](trakt.md)), the Tuned account and its backup ([accounts](accounts.md)), sign out.
+- **Playlists and account**: playlists, the account's status, Trakt (only in builds with its key: sign in, scrobble, import watched history; [trakt](trakt.md)) and Simkl (only in builds with its key; [simkl](simkl.md)), the Tuned account and its backup ([accounts](accounts.md)), sign out.
 - **Profiles and parental controls**: profiles, adult categories and the parental PIN.
 - **Channels and lists**: start screen, starting on the last channel, the guide in the list, the grid guide, channel numbers, always showing the scroll bar, favourite order, managing (renaming and deleting) the current profile's own lists, and what's hidden (countries, groups, 24/7 channels).
 - **Guide and refresh**: refresh now, when the playlist and guide download, pull to refresh (phones and tablets only; a TV uses Refresh now), Wi-Fi only, instant playlist switching ([onboarding](onboarding.md)), guide days, guide fixes (extra guide URLs on phones and tablets only; a TV keeps the time-offset picker), the time zone guide and event times show in (the phone's own by default; Melvin, 2026-11-18), reminders, and Notifications, which opens Android's page for Tuned's notifications and the dot on the app icon ([playlist](playlist.md)).

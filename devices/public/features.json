@@ -18,13 +18,25 @@
           "body": "Sign in to a Stalker portal with the MAC address your provider registered."
         },
         {
+          "title": "Plex, Jellyfin and Emby",
+          "body": "Add a home media server for Live TV, films and shows, with the server's own guide when it has one."
+        },
+        {
           "title": "Several playlists",
           "body": "Keep as many playlists as you like and switch between them.",
           "premium": true
         },
         {
+          "title": "Switch back instantly",
+          "body": "Jump to a recent playlist without waiting on a full download again."
+        },
+        {
           "title": "Kept fresh in the background",
           "body": "Channels and the guide refresh on a schedule, on Wi-Fi only if you like."
+        },
+        {
+          "title": "Real progress while it loads",
+          "body": "Numbered steps, bytes when the size is known, and about how much longer once Tuned can tell."
         },
         {
           "title": "Countries and languages",
@@ -33,6 +45,11 @@
         {
           "title": "Guide fixes",
           "body": "Move a channel's times, add extra guide links, or pick a channel's guide entry."
+        },
+        {
+          "title": "Playlists and settings on the web",
+          "body": "Manage them at tunedplayer.com from a browser; the app joins the backup with its own.",
+          "premium": true
         }
       ]
     },
@@ -50,8 +67,12 @@
           "body": "A full TV guide, with what's on now on every channel row."
         },
         {
-          "title": "Quick filters",
-          "body": "Sports, PPV, News, Kids, Movie channels, Music, Documentaries, country and language."
+          "title": "Search the whole guide",
+          "body": "Find a show or team across every channel's programmes."
+        },
+        {
+          "title": "Quick filters that stick",
+          "body": "Sports, PPV, News, Kids, quality, on now, guide, catch-up and watched — kept per profile until you change them."
         },
         {
           "title": "Channel numbers and flip back",
@@ -77,6 +98,11 @@
           "premium": true
         },
         {
+          "title": "Record from the guide",
+          "body": "Schedule a programme from its row before it starts.",
+          "premium": true
+        },
+        {
           "title": "Backup copies",
           "body": "When a channel dies, Tuned switches to another copy of it."
         },
@@ -87,6 +113,16 @@
         {
           "title": "Guide reminders",
           "body": "A reminder before a programme starts."
+        },
+        {
+          "title": "Channels and guide on the web",
+          "body": "The same Live TV guide in your browser: filters, logos, and a click that opens VLC or copies the link.",
+          "premium": true
+        },
+        {
+          "title": "Watch in the browser",
+          "body": "Premium Live TV at tunedplayer.com/watch from your app's channel copy, one stream at a time.",
+          "premium": true
         }
       ]
     },
@@ -102,6 +138,10 @@
         {
           "title": "Real episode names",
           "body": "Episode names and pictures instead of S1 E1."
+        },
+        {
+          "title": "Sort your way",
+          "body": "Newest, year, rating as the poster shows it, or A to Z."
         },
         {
           "title": "Actor pages",
@@ -121,11 +161,16 @@
         },
         {
           "title": "Downloads",
-          "body": "Save films, episodes or a whole season and watch without a connection."
+          "body": "Save films, episodes or a whole season on a phone or tablet and watch without a connection."
         },
         {
           "title": "Trakt",
-          "body": "Your history and up next on Trakt, from every device.",
+          "body": "Scrobble films and episodes, and import your watched history into Tuned.",
+          "premium": true
+        },
+        {
+          "title": "Simkl",
+          "body": "Your history and watching now on Simkl, from every device.",
           "premium": true
         }
       ]
@@ -148,12 +193,16 @@
           "body": "Pick the language, and line the sound up with the picture."
         },
         {
-          "title": "Cast to your TV",
-          "body": "Chromecast and DLNA TVs, with the phone as the remote."
+          "title": "Dolby and DTS where the device can't",
+          "body": "Surround sound plays on phones and boxes that lack those decoders."
         },
         {
-          "title": "Picture-in-picture and background play",
-          "body": "Keep watching in a small window, or keep listening with the screen off."
+          "title": "Cast to your TV",
+          "body": "Chromecast and DLNA TVs, with the phone as the remote while it plays."
+        },
+        {
+          "title": "Mini player, picture-in-picture and background play",
+          "body": "Back shrinks live TV, films and episodes so you can browse; leave the app for a small window, or keep listening with the screen off."
         },
         {
           "title": "Gestures",
@@ -184,7 +233,23 @@
       "items": [
         {
           "title": "Android TV and Google TV",
-          "body": "Made for the remote, with clear focus and a row on the TV's home screen."
+          "body": "Made for the remote: clear focus, Tuned's logo up top, dark by default, and layouts that use the big screen."
+        },
+        {
+          "title": "Calibrate the TV screen",
+          "body": "Move and stretch the overscan margin so nothing is cropped on your set."
+        },
+        {
+          "title": "Cinematic show pages on TV",
+          "body": "Full-screen hero, season tabs and episode stills — not a narrow side pane."
+        },
+        {
+          "title": "Movies and Shows beside the list",
+          "body": "On a TV, posters in the middle and details of the title under the remote beside them."
+        },
+        {
+          "title": "Search with the remote",
+          "body": "Tuned's own D-pad keyboard and inline voice, with no \"use a keyboard on your device\" strip."
         },
         {
           "title": "Sign in on the TV with your phone",
@@ -225,18 +290,22 @@
         },
         {
           "title": "Favourites and your own lists",
-          "body": "Favourites in one tap, and your own lists beside it.",
+          "body": "Favourites in one tap, and your own lists managed in Settings or on the website.",
           "premium": true
         },
         {
           "title": "Rename channels",
-          "body": "Give a channel a better name or logo.",
+          "body": "Give a channel a better name or logo on a phone, tablet or the website.",
           "premium": true
         },
         {
           "title": "Themes and accent colours",
           "body": "Light, dark and pure black, with your choice of accent colour.",
           "premium": true
+        },
+        {
+          "title": "Eleven languages",
+          "body": "Spanish, Portuguese, French, German, Italian, Turkish, Russian, Polish, Arabic, Hindi and Chinese, from the device's language."
         }
       ]
     },
@@ -259,7 +328,7 @@
         },
         {
           "title": "Tuned account",
-          "body": "Sign in with Google and every device keeps the same playlists and settings.",
+          "body": "Sign in with Google and every device keeps the same playlists and settings. If a first download fails, Live TV can fill from the account's copy.",
           "premium": true
         },
         {
@@ -268,7 +337,7 @@
         },
         {
           "title": "Updates itself",
-          "body": "Tuned offers each new version and shows what's new."
+          "body": "Tuned offers each new version, with real progress while it downloads and installs."
         },
         {
           "title": "Accessible",

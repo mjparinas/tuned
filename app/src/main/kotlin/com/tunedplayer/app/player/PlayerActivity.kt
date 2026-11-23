@@ -246,9 +246,10 @@ class PlayerActivity : FragmentActivity() {
         )
     }
 
-    private val trakt by lazy {
-        TraktScrobbler(
+    private val scrobblers by lazy {
+        WatchScrobblers(
             container.trakt,
+            container.simkl,
             container.appScope,
             current = { player?.let { queue.getOrNull(it.currentMediaItemIndex) } },
             elsewhere = { cast?.tvPosition() },
@@ -529,7 +530,7 @@ class PlayerActivity : FragmentActivity() {
         val live = kind == ContentKind.LIVE
         val exo = buildPlayer(live)
         player = exo
-        trakt.attach(exo)
+        scrobblers.attach(exo)
         val shown = ViewPlayer(exo, { cast?.tv }, { statusView.visibility = View.GONE }, ::pauseLive, ::live)
         playerView.player = shown
         // Media buttons and the Assistant act through the same player as the on-screen controls.
@@ -853,7 +854,7 @@ class PlayerActivity : FragmentActivity() {
 
     override fun onDestroy() {
         progressJob?.cancel()
-        trakt.release()
+        scrobblers.release()
         autoTune?.release()
         backups.release()
         recorder.release()

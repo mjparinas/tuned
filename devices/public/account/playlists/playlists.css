@@ -148,8 +148,8 @@ input.switch:disabled {
 }
 
 /*
- * On a desktop (account.css) the form opens beside the list instead of under it, and the settings cards fill two
- * columns top to bottom, so a short group never leaves a hole beside a long one and Tab order follows each column.
+ * On a desktop (account.css) the form opens beside the list instead of under it. Settings groups stack in one
+ * column so each can be the section in view in the side menu (two-up left Player stuck as current over Profiles).
  */
 @media (min-width: 960px) {
     main.account #signed-in:has(> #editor:not([hidden])) > #playlists {
@@ -157,11 +157,10 @@ input.switch:disabled {
     }
     main.account #settings {
         grid-column: 1 / -1;
-        columns: 2;
-        column-gap: 16px;
+        display: grid;
+        gap: 16px;
     }
     main.account #settings > .card {
-        margin: 0 0 16px;
-        break-inside: avoid;
+        margin: 0;
     }
 }

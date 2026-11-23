@@ -12,17 +12,17 @@ Perfect Player, from Niklabs, is a light "set-top box style" player that has bee
 |                                | Perfect Player                                        | Tuned                                                                                    |
 | ------------------------------ | ----------------------------------------------------- | ---------------------------------------------------------------------------------------- |
 | Where it runs                  | Android TVs, tablets and phones                       | Android phones, tablets, Chromebooks, Android TV and Google TV                           |
-| Playlist types                 | M3U, XSPF                                             | Xtream Codes login, M3U link, M3U file, MAC portal (live TV and guide)                   |
+| Playlist types                 | M3U, XSPF                                             | Xtream Codes, M3U link or file, MAC portal, Plex, Jellyfin and Emby                      |
 | TV guide                       | XMLTV and JTV, with channel groups and logos          | XMLTV guide as a list or a full grid, with reminders                                     |
 | Catch-up                       | Archive playback with seeking                         | Yes, on Xtream servers that keep recordings                                              |
-| Recording                      | Not stated by the developer                           | Yes, the channel you are watching (Premium)                                              |
+| Recording                      | Not stated by the developer                           | Yes, live and from the guide (Premium)                                                   |
 | Pause and rewind live TV       | Not stated by the developer                           | Yes, up to an hour kept on the device (Premium)                                          |
 | Several channels at once       | Not stated by the developer                           | No, on purpose: one stream connection at a time                                          |
-| Casting to a TV                | Works with the Perfect Cast remote app                | Chromecast                                                                               |
+| Casting to a TV                | Works with the Perfect Cast remote app                | Chromecast and DLNA, phone as remote                                                     |
 | Picture-in-picture             | Not stated by the developer                           | Yes                                                                                      |
 | Offline downloads              | Not stated by the developer                           | Films and episodes, whole seasons too (more than 3 at a time is Premium)                 |
 | Profiles and parental controls | Not stated by the developer                           | Up to 6 profiles, kids profiles and PINs (Premium); adult categories locked behind a PIN |
-| Trakt                          | Not stated by the developer                           | Yes, scrobbles films and episodes (Premium)                                              |
+| Trakt                          | Not stated by the developer                           | Trakt and Simkl; Trakt can import watched history (Premium)                              |
 | Film and show details          | Not stated by the developer                           | TMDB ratings, trailers, cast and actor pages, saved on the device                        |
 | Subtitles                      | TXT subtitles                                         | Full caption styling, timing fix, and subtitle search for films and episodes             |
 | Ads                            | Yes, removed by the full version                      | None, ever                                                                               |
