@@ -38,11 +38,9 @@ import kotlinx.coroutines.channels.trySendBlocking
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
-import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.buffer
 import kotlinx.coroutines.flow.channelFlow
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
@@ -85,6 +83,31 @@ class SyncRepository(
     private val downloader = Downloader(http)
     private val reads = ReadProgress()
     private val memo = PlaylistMemo(File(dir, "playlist.fingerprint"), BuildConfig.VERSION_CODE.toString())
+    private val mediaHost =
+        object : MediaServerSyncHost {
+            override fun forgetMemo() = memo.forget()
+
+            override suspend fun importPlaylist(
+                progress: (SyncProgress) -> Unit,
+                scope: String?,
+                read: SyncProgress.Step,
+                save: SyncProgress.Step,
+                block: suspend (suspend (PlaylistEntry) -> Unit) -> Unit,
+            ): Int = this@SyncRepository.importPlaylist(progress, scope, read, save, block)
+
+            override suspend fun guideFile(
+                url: String,
+                progress: (SyncProgress) -> Unit,
+                read: suspend (java.io.InputStream) -> Unit,
+            ) {
+                this@SyncRepository.guideFile(url, progress, read)
+            }
+
+            override fun toRow(entry: PlaylistEntry) = entry.toRow()
+
+            override fun toEntry(item: ItemEntity) = item.toEntry()
+        }
+    private val mediaSync by lazy { MediaServerSync(db, media, currentLogin, settings, reads, mediaHost) }
 
     /** Set by a refresh that read an Xtream server's M3U, which lacks what the sorts need ([XtreamDetails]). */
     private var filmDetailsDue = false
@@ -111,7 +134,7 @@ class SyncRepository(
                 }
 
                 Credentials.Kind.Plex, Credentials.Kind.Jellyfin, Credentials.Kind.Emby -> {
-                    attempt(TAG_SYNC, "The media server's films and shows failed") { refreshMediaLibrary(plan::report) }
+                    attempt(TAG_SYNC, "The media server's films and shows failed") { mediaSync.refreshLibrary(plan::report) }
                 }
 
                 else -> {
@@ -226,8 +249,7 @@ class SyncRepository(
     ): Int {
         filmDetailsDue = false
         showDetailsDue = false
-        if (login.kind == Credentials.Kind.Stalker) return importPortal(login, progress)
-        if (login.kind.isMediaServer) return importMediaServer(login, progress)
+        specialImport(login, progress)?.let { return it }
         val xtream = login.playlistUrl.isBlank()
         val url = login.playlistUrl.ifBlank { XtreamUrls.playlist(login.server, login.username, login.password) }
         val api = XtreamImport(http, login, userAgent())
@@ -321,29 +343,14 @@ class SyncRepository(
         }
     }
 
-    /** A Plex, Jellyfin or Emby server's Live TV channels (films and shows follow in [refreshMediaLibrary]). */
-    private suspend fun importMediaServer(
+    /** A portal or media server, which has no M3U file: null for every other kind. */
+    private suspend fun specialImport(
         login: Credentials,
         progress: (SyncProgress) -> Unit,
-    ): Int {
-        memo.forget()
-        progress(SyncProgress(SyncProgress.Step.DownloadPlaylist))
-        val product = MediaServer.Product.ofMarker(login.playlistUrl) ?: return 0
-        val channels =
-            withContext(Dispatchers.IO) {
-                when (product) {
-                    MediaServer.Product.Plex -> {
-                        media.plex(login).also { it.signIn() }.channels()
-                    }
-
-                    MediaServer.Product.Jellyfin, MediaServer.Product.Emby -> {
-                        media.emby(login).also { if (!it.signIn()) throw IOException("Login refused") }.channels()
-                    }
-                }
-            }
-        return importPlaylist(progress, scope = "kind = 0") { add ->
-            channels.forEachIndexed { order, channel -> add(MediaServer.live(product, channel, order)) }
-        }
+    ): Int? = when {
+        login.kind == Credentials.Kind.Stalker -> importPortal(login, progress)
+        login.kind.isMediaServer -> mediaSync.importLive(login, progress)
+        else -> null
     }
 
     /**
@@ -393,54 +400,6 @@ class SyncRepository(
             }
             for ((category, items) in shows) items.forEach { show(Stalker.SERIES, category, it) }
         }
-    }
-
-    /**
-     * A media server's films and shows, after Live TV and the guide. Shows are one stand-in each until opened
-     * ([loadShow]); an opened show keeps its episodes on the next refresh.
-     */
-    private suspend fun refreshMediaLibrary(progress: (SyncProgress) -> Unit) {
-        val login = currentLogin()?.takeIf { it.kind.isMediaServer } ?: return
-        val product = MediaServer.Product.ofMarker(login.playlistUrl) ?: return
-        val fetched = db.shows().fetchedEpisodes().groupBy { it.showKey }
-        var order = db.items().count()
-        val library = SyncProgress.Step.Library
-        progress(SyncProgress(library))
-        val (films, shows) =
-            withContext(Dispatchers.IO) {
-                when (product) {
-                    MediaServer.Product.Plex -> {
-                        val server = media.plex(login)
-                        server.movies() to server.shows()
-                    }
-
-                    MediaServer.Product.Jellyfin, MediaServer.Product.Emby -> {
-                        val server = media.emby(login)
-                        server.movies() to server.shows()
-                    }
-                }
-            }
-        importPlaylist(progress, scope = "kind != 0", read = library, save = library) { add ->
-            for (item in films) add(MediaServer.movie(product, item, order++))
-            for (item in shows) {
-                val kept = fetched[Episodes.showKey(item.name)]
-                if (kept.isNullOrEmpty()) {
-                    add(MediaServer.showStandIn(product, item, order++))
-                } else {
-                    kept.forEach { add(it.toEntry()) }
-                }
-            }
-        }
-    }
-
-    /**
-     * Like [runCatching] for I/O only: anything else (a bug, a cancellation) still throws. `kotlin.Result` in full,
-     * because this class has its own Result (a refresh's counts).
-     */
-    private inline fun <T> runCatchingIo(block: () -> T): kotlin.Result<T> = try {
-        kotlin.Result.success(block())
-    } catch (e: IOException) {
-        kotlin.Result.failure(e)
     }
 
     /** Which live channels keep recordings (Xtream only), and the server's time zone that catch-up links use. */
@@ -529,7 +488,7 @@ class SyncRepository(
         val login = currentLogin() ?: throw IOException("Not signed in")
         // A portal's or media server's own guide, unless a guide link was given for it.
         if (login.kind == Credentials.Kind.Stalker && login.guideUrl.isBlank()) return refreshPortalGuide(login, progress)
-        if (login.kind.isMediaServer && login.guideUrl.isBlank()) return refreshMediaGuide(login, progress)
+        if (login.kind.isMediaServer && login.guideUrl.isBlank()) return mediaSync.refreshGuide(login, progress)
         // A plain playlist's guide is the one its header names; without one only the extra guide links are read.
         val main =
             login.guideUrl.ifBlank {
@@ -589,47 +548,6 @@ class SyncRepository(
                     channelFlow {
                         withContext(Dispatchers.IO) { portal.guide(hours) { p -> trySendBlocking(p) } }
                     }.buffer(BATCH).mapNotNull { p -> guideIds[p.channelId]?.let { p.copy(channelId = it) } }
-                import.read(programmes, saved)
-                for (extra in login.extraGuides) {
-                    attempt(TAG_SYNC, "An extra guide failed") { guideFile(extra, progress) { input -> import.read(input, saved) } }
-                }
-                progress(SyncProgress(SyncProgress.Step.SaveGuide))
-                import.commit()
-            } finally {
-                import.discard()
-            }
-        settings.update { it.copy(lastGuideSync = System.currentTimeMillis()) }
-        return count
-    }
-
-    /** A Plex, Jellyfin or Emby Live TV guide from its API, filed under each channel's guide id. */
-    private suspend fun refreshMediaGuide(
-        login: Credentials,
-        progress: (SyncProgress) -> Unit,
-    ): Int {
-        val product = MediaServer.Product.ofMarker(login.playlistUrl) ?: return 0
-        val s = settings.settings.first()
-        val import = GuideImport(db, s.guideDays, s.guideOffsetMinutes)
-        val saved = { rows: Int -> progress(reads.at(SyncProgress.Step.ReadGuide, rows)) }
-        val guideIds =
-            db
-                .items()
-                .liveLinks()
-                .mapNotNull { link -> MediaServer.parse(link.url)?.let { it.id to link.tvgId } }
-                .toMap()
-        val hours = (s.guideDays * HOURS_A_DAY).coerceIn(HOURS_A_DAY, MAX_PORTAL_GUIDE_HOURS)
-        val count =
-            try {
-                if (!import.begin()) return 0
-                progress(SyncProgress(SyncProgress.Step.DownloadGuide))
-                val programmes =
-                    withContext(Dispatchers.IO) {
-                        when (product) {
-                            MediaServer.Product.Plex -> media.plex(login).guide(hours)
-                            MediaServer.Product.Jellyfin, MediaServer.Product.Emby -> media.emby(login).guide(hours)
-                        }
-                    }.asFlow()
-                        .map { p -> guideIds[p.channelId]?.let { p.copy(channelId = it) } ?: p }
                 import.read(programmes, saved)
                 for (extra in login.extraGuides) {
                     attempt(TAG_SYNC, "An extra guide failed") { guideFile(extra, progress) { input -> import.read(input, saved) } }
@@ -810,7 +728,7 @@ class SyncRepository(
     suspend fun loadShow(showKey: String) {
         val rows = db.items().episodesNow(showKey)
         rows.firstOrNull { Stalker.standIn(it.url) != null }?.let { return loadPortalShow(showKey, it) }
-        rows.firstOrNull { MediaServer.standIn(it.url) != null }?.let { return loadMediaShow(showKey, it) }
+        rows.firstOrNull { MediaServer.standIn(it.url) != null }?.let { return mediaSync.loadShow(showKey, it) }
         val standIn = rows.firstOrNull { XtreamApi.standInId(it.url) != null } ?: return
         val login = currentLogin() ?: return
         val api = XtreamImport(http, login, userAgent())
@@ -827,28 +745,6 @@ class SyncRepository(
         // The stand-in carried the show's cover; its episodes carry their own screenshots instead.
         standIn.logo?.takeIf { it.isNotBlank() }?.let { db.shows().saveCovers(listOf(ShowCoverEntity(showKey, it))) }
         db.shows().replaceStandIn(standIn.id, episodes)
-        ShowGroups.rebuild(db)
-    }
-
-    /** A media server show's episodes, fetched when it's first opened and swapped in for its stand-in. */
-    private suspend fun loadMediaShow(
-        showKey: String,
-        standIn: ItemEntity,
-    ) {
-        val show = MediaServer.standIn(standIn.url) ?: return
-        val login = currentLogin()?.takeIf { it.kind.isMediaServer } ?: return
-        val name = standIn.showName ?: standIn.name
-        var order = standIn.sortOrder
-        val episodes =
-            withContext(Dispatchers.IO) {
-                when (show.product) {
-                    MediaServer.Product.Plex -> media.plex(login).episodes(show.id)
-                    MediaServer.Product.Jellyfin, MediaServer.Product.Emby -> media.emby(login).episodes(show.id)
-                }
-            }.map { ep -> MediaServer.episode(show.product, name, standIn.groupName, standIn.logo, ep, order++) }
-        if (episodes.isEmpty()) return
-        standIn.logo?.takeIf { it.isNotBlank() }?.let { db.shows().saveCovers(listOf(ShowCoverEntity(showKey, it))) }
-        db.shows().replaceStandIn(standIn.id, episodes.map { it.toRow() })
         ShowGroups.rebuild(db)
     }
 
@@ -922,6 +818,16 @@ class SyncRepository(
 }
 
 private const val TAG_SYNC = "Sync"
+
+/**
+ * Like [runCatching] for I/O only: anything else (a bug, a cancellation) still throws. Kept outside [SyncRepository]
+ * so that class stays under detekt's function cap; `kotlin.Result` in full, because SyncRepository has its own Result.
+ */
+private inline fun <T> runCatchingIo(block: () -> T): kotlin.Result<T> = try {
+    kotlin.Result.success(block())
+} catch (e: IOException) {
+    kotlin.Result.failure(e)
+}
 
 /** A playlist entry as the row the cache keeps. */
 private fun PlaylistEntry.toRow(): ItemEntity {

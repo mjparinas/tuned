@@ -100,15 +100,20 @@ class PlexServer(
 
     /** Direct play URL for a library item. */
     fun streamFor(id: String): String {
-        val root = get("/library/metadata/$id") as? JsonObject ?: throw IOException("Item not found")
+        val key =
+            partKey(id) ?: throw IOException("No playable part for $id")
+        return "${base()}$key?X-Plex-Token=${enc(token)}"
+    }
+
+    private fun partKey(id: String): String? {
+        val root = get("/library/metadata/$id") as? JsonObject ?: return null
         val media = (root["MediaContainer"] as? JsonObject) ?: root
-        val item = (media["Metadata"] as? JsonArray)?.firstOrNull() as? JsonObject ?: throw IOException("Item not found")
+        val item = (media["Metadata"] as? JsonArray)?.firstOrNull() as? JsonObject ?: return null
         val part =
             ((item["Media"] as? JsonArray)?.firstOrNull() as? JsonObject)
                 ?.let { (it["Part"] as? JsonArray)?.firstOrNull() as? JsonObject }
-                ?: throw IOException("No playable part")
-        val key = part.text("key") ?: throw IOException("No playable part")
-        return "${base()}$key?X-Plex-Token=${enc(token)}"
+                ?: return null
+        return part.text("key")
     }
 
     private fun sectionItems(type: String): List<MediaServer.Item> {
