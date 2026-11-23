@@ -130,124 +130,76 @@
         ],
         "primaryKey": {
           "autoGenerate": false,
-          "columnNames": [
-            "id"
-          ]
+          "columnNames": ["id"]
         },
         "indices": [
           {
             "name": "index_items_kind_sortOrder",
             "unique": false,
-            "columnNames": [
-              "kind",
-              "sortOrder"
-            ],
+            "columnNames": ["kind", "sortOrder"],
             "orders": [],
             "createSql": "CREATE INDEX IF NOT EXISTS `index_items_kind_sortOrder` ON `${TABLE_NAME}` (`kind`, `sortOrder`)"
           },
           {
             "name": "index_items_kind_groupName",
             "unique": false,
-            "columnNames": [
-              "kind",
-              "groupName"
-            ],
+            "columnNames": ["kind", "groupName"],
             "orders": [],
             "createSql": "CREATE INDEX IF NOT EXISTS `index_items_kind_groupName` ON `${TABLE_NAME}` (`kind`, `groupName`)"
           },
           {
             "name": "index_items_kind_showKey_season_episode",
             "unique": false,
-            "columnNames": [
-              "kind",
-              "showKey",
-              "season",
-              "episode"
-            ],
+            "columnNames": ["kind", "showKey", "season", "episode"],
             "orders": [],
             "createSql": "CREATE INDEX IF NOT EXISTS `index_items_kind_showKey_season_episode` ON `${TABLE_NAME}` (`kind`, `showKey`, `season`, `episode`)"
           },
           {
             "name": "index_items_tvgId",
             "unique": false,
-            "columnNames": [
-              "tvgId"
-            ],
+            "columnNames": ["tvgId"],
             "orders": [],
             "createSql": "CREATE INDEX IF NOT EXISTS `index_items_tvgId` ON `${TABLE_NAME}` (`tvgId`)"
           },
           {
             "name": "index_items_region",
             "unique": false,
-            "columnNames": [
-              "region"
-            ],
+            "columnNames": ["region"],
             "orders": [],
             "createSql": "CREATE INDEX IF NOT EXISTS `index_items_region` ON `${TABLE_NAME}` (`region`)"
           },
           {
             "name": "index_items_kind_number",
             "unique": false,
-            "columnNames": [
-              "kind",
-              "number"
-            ],
+            "columnNames": ["kind", "number"],
             "orders": [],
             "createSql": "CREATE INDEX IF NOT EXISTS `index_items_kind_number` ON `${TABLE_NAME}` (`kind`, `number`)"
           },
           {
             "name": "index_items_kind_added_sortOrder",
             "unique": false,
-            "columnNames": [
-              "kind",
-              "added",
-              "sortOrder"
-            ],
-            "orders": [
-              "ASC",
-              "DESC",
-              "ASC"
-            ],
+            "columnNames": ["kind", "added", "sortOrder"],
+            "orders": ["ASC", "DESC", "ASC"],
             "createSql": "CREATE INDEX IF NOT EXISTS `index_items_kind_added_sortOrder` ON `${TABLE_NAME}` (`kind` ASC, `added` DESC, `sortOrder` ASC)"
           },
           {
             "name": "index_items_kind_year_sortOrder",
             "unique": false,
-            "columnNames": [
-              "kind",
-              "year",
-              "sortOrder"
-            ],
-            "orders": [
-              "ASC",
-              "DESC",
-              "ASC"
-            ],
+            "columnNames": ["kind", "year", "sortOrder"],
+            "orders": ["ASC", "DESC", "ASC"],
             "createSql": "CREATE INDEX IF NOT EXISTS `index_items_kind_year_sortOrder` ON `${TABLE_NAME}` (`kind` ASC, `year` DESC, `sortOrder` ASC)"
           },
           {
             "name": "index_items_kind_topRating_sortOrder",
             "unique": false,
-            "columnNames": [
-              "kind",
-              "topRating",
-              "sortOrder"
-            ],
-            "orders": [
-              "ASC",
-              "DESC",
-              "ASC"
-            ],
+            "columnNames": ["kind", "topRating", "sortOrder"],
+            "orders": ["ASC", "DESC", "ASC"],
             "createSql": "CREATE INDEX IF NOT EXISTS `index_items_kind_topRating_sortOrder` ON `${TABLE_NAME}` (`kind` ASC, `topRating` DESC, `sortOrder` ASC)"
           },
           {
             "name": "index_items_kind_sortTitle_sortOrder",
             "unique": false,
-            "columnNames": [
-              "kind",
-              "sortTitle",
-              "sortOrder"
-            ],
+            "columnNames": ["kind", "sortTitle", "sortOrder"],
             "orders": [],
             "createSql": "CREATE INDEX IF NOT EXISTS `index_items_kind_sortTitle_sortOrder` ON `${TABLE_NAME}` (`kind`, `sortTitle`, `sortOrder`)"
           }
@@ -302,36 +254,27 @@
         ],
         "primaryKey": {
           "autoGenerate": true,
-          "columnNames": [
-            "rowId"
-          ]
+          "columnNames": ["rowId"]
         },
         "indices": [
           {
             "name": "index_programmes_channelId_start",
             "unique": false,
-            "columnNames": [
-              "channelId",
-              "start"
-            ],
+            "columnNames": ["channelId", "start"],
             "orders": [],
             "createSql": "CREATE INDEX IF NOT EXISTS `index_programmes_channelId_start` ON `${TABLE_NAME}` (`channelId`, `start`)"
           },
           {
             "name": "index_programmes_stop",
             "unique": false,
-            "columnNames": [
-              "stop"
-            ],
+            "columnNames": ["stop"],
             "orders": [],
             "createSql": "CREATE INDEX IF NOT EXISTS `index_programmes_stop` ON `${TABLE_NAME}` (`stop`)"
           },
           {
             "name": "index_programmes_start",
             "unique": false,
-            "columnNames": [
-              "start"
-            ],
+            "columnNames": ["start"],
             "orders": [],
             "createSql": "CREATE INDEX IF NOT EXISTS `index_programmes_start` ON `${TABLE_NAME}` (`start`)"
           }
@@ -370,19 +313,13 @@
         ],
         "primaryKey": {
           "autoGenerate": false,
-          "columnNames": [
-            "profileId",
-            "itemId"
-          ]
+          "columnNames": ["profileId", "itemId"]
         },
         "indices": [
           {
             "name": "index_favourites_profileId_position",
             "unique": false,
-            "columnNames": [
-              "profileId",
-              "position"
-            ],
+            "columnNames": ["profileId", "position"],
             "orders": [],
             "createSql": "CREATE INDEX IF NOT EXISTS `index_favourites_profileId_position` ON `${TABLE_NAME}` (`profileId`, `position`)"
           }
@@ -426,28 +363,20 @@
         ],
         "primaryKey": {
           "autoGenerate": false,
-          "columnNames": [
-            "profileId",
-            "itemId"
-          ]
+          "columnNames": ["profileId", "itemId"]
         },
         "indices": [
           {
             "name": "index_history_watchedAt",
             "unique": false,
-            "columnNames": [
-              "watchedAt"
-            ],
+            "columnNames": ["watchedAt"],
             "orders": [],
             "createSql": "CREATE INDEX IF NOT EXISTS `index_history_watchedAt` ON `${TABLE_NAME}` (`watchedAt`)"
           },
           {
             "name": "index_history_profileId_watchedAt",
             "unique": false,
-            "columnNames": [
-              "profileId",
-              "watchedAt"
-            ],
+            "columnNames": ["profileId", "watchedAt"],
             "orders": [],
             "createSql": "CREATE INDEX IF NOT EXISTS `index_history_profileId_watchedAt` ON `${TABLE_NAME}` (`profileId`, `watchedAt`)"
           }
@@ -484,9 +413,7 @@
         ],
         "primaryKey": {
           "autoGenerate": false,
-          "columnNames": [
-            "itemId"
-          ]
+          "columnNames": ["itemId"]
         }
       },
       {
@@ -513,9 +440,7 @@
         ],
         "primaryKey": {
           "autoGenerate": false,
-          "columnNames": [
-            "streamId"
-          ]
+          "columnNames": ["streamId"]
         }
       },
       {
@@ -608,9 +533,7 @@
         ],
         "primaryKey": {
           "autoGenerate": false,
-          "columnNames": [
-            "cacheKey"
-          ]
+          "columnNames": ["cacheKey"]
         }
       },
       {
@@ -668,9 +591,7 @@
         ],
         "primaryKey": {
           "autoGenerate": false,
-          "columnNames": [
-            "itemId"
-          ]
+          "columnNames": ["itemId"]
         }
       },
       {
@@ -720,10 +641,7 @@
         ],
         "primaryKey": {
           "autoGenerate": false,
-          "columnNames": [
-            "profileId",
-            "key"
-          ]
+          "columnNames": ["profileId", "key"]
         }
       },
       {
@@ -752,18 +670,13 @@
         ],
         "primaryKey": {
           "autoGenerate": false,
-          "columnNames": [
-            "profileId",
-            "itemId"
-          ]
+          "columnNames": ["profileId", "itemId"]
         },
         "indices": [
           {
             "name": "index_seen_episodes_showKey",
             "unique": false,
-            "columnNames": [
-              "showKey"
-            ],
+            "columnNames": ["showKey"],
             "orders": [],
             "createSql": "CREATE INDEX IF NOT EXISTS `index_seen_episodes_showKey` ON `${TABLE_NAME}` (`showKey`)"
           }
@@ -823,17 +736,13 @@
         ],
         "primaryKey": {
           "autoGenerate": false,
-          "columnNames": [
-            "itemId"
-          ]
+          "columnNames": ["itemId"]
         },
         "indices": [
           {
             "name": "index_channel_scan_hidden",
             "unique": false,
-            "columnNames": [
-              "hidden"
-            ],
+            "columnNames": ["hidden"],
             "orders": [],
             "createSql": "CREATE INDEX IF NOT EXISTS `index_channel_scan_hidden` ON `${TABLE_NAME}` (`hidden`)"
           }
@@ -955,66 +864,48 @@
         ],
         "primaryKey": {
           "autoGenerate": true,
-          "columnNames": [
-            "rowId"
-          ]
+          "columnNames": ["rowId"]
         },
         "indices": [
           {
             "name": "index_show_groups_showKey",
             "unique": false,
-            "columnNames": [
-              "showKey"
-            ],
+            "columnNames": ["showKey"],
             "orders": [],
             "createSql": "CREATE INDEX IF NOT EXISTS `index_show_groups_showKey` ON `${TABLE_NAME}` (`showKey`)"
           },
           {
             "name": "index_show_groups_sortOrder",
             "unique": false,
-            "columnNames": [
-              "sortOrder"
-            ],
+            "columnNames": ["sortOrder"],
             "orders": [],
             "createSql": "CREATE INDEX IF NOT EXISTS `index_show_groups_sortOrder` ON `${TABLE_NAME}` (`sortOrder`)"
           },
           {
             "name": "index_show_groups_added_sortOrder",
             "unique": false,
-            "columnNames": [
-              "added",
-              "sortOrder"
-            ],
+            "columnNames": ["added", "sortOrder"],
             "orders": [],
             "createSql": "CREATE INDEX IF NOT EXISTS `index_show_groups_added_sortOrder` ON `${TABLE_NAME}` (`added`, `sortOrder`)"
           },
           {
             "name": "index_show_groups_year_sortOrder",
             "unique": false,
-            "columnNames": [
-              "year",
-              "sortOrder"
-            ],
+            "columnNames": ["year", "sortOrder"],
             "orders": [],
             "createSql": "CREATE INDEX IF NOT EXISTS `index_show_groups_year_sortOrder` ON `${TABLE_NAME}` (`year`, `sortOrder`)"
           },
           {
             "name": "index_show_groups_rating_sortOrder",
             "unique": false,
-            "columnNames": [
-              "rating",
-              "sortOrder"
-            ],
+            "columnNames": ["rating", "sortOrder"],
             "orders": [],
             "createSql": "CREATE INDEX IF NOT EXISTS `index_show_groups_rating_sortOrder` ON `${TABLE_NAME}` (`rating`, `sortOrder`)"
           },
           {
             "name": "index_show_groups_sortTitle_sortOrder",
             "unique": false,
-            "columnNames": [
-              "sortTitle",
-              "sortOrder"
-            ],
+            "columnNames": ["sortTitle", "sortOrder"],
             "orders": [],
             "createSql": "CREATE INDEX IF NOT EXISTS `index_show_groups_sortTitle_sortOrder` ON `${TABLE_NAME}` (`sortTitle`, `sortOrder`)"
           }
@@ -1051,9 +942,7 @@
         ],
         "primaryKey": {
           "autoGenerate": false,
-          "columnNames": [
-            "cacheKey"
-          ]
+          "columnNames": ["cacheKey"]
         }
       },
       {
@@ -1103,9 +992,7 @@
         ],
         "primaryKey": {
           "autoGenerate": true,
-          "columnNames": [
-            "id"
-          ]
+          "columnNames": ["id"]
         }
       },
       {
@@ -1127,9 +1014,7 @@
         ],
         "primaryKey": {
           "autoGenerate": false,
-          "columnNames": [
-            "slot"
-          ]
+          "columnNames": ["slot"]
         }
       },
       {
@@ -1161,9 +1046,7 @@
         ],
         "primaryKey": {
           "autoGenerate": false,
-          "columnNames": [
-            "itemId"
-          ]
+          "columnNames": ["itemId"]
         }
       },
       {
@@ -1185,9 +1068,7 @@
         ],
         "primaryKey": {
           "autoGenerate": false,
-          "columnNames": [
-            "id"
-          ]
+          "columnNames": ["id"]
         }
       },
       {
@@ -1228,18 +1109,13 @@
         ],
         "primaryKey": {
           "autoGenerate": false,
-          "columnNames": [
-            "id"
-          ]
+          "columnNames": ["id"]
         },
         "indices": [
           {
             "name": "index_lists_profileId_position",
             "unique": false,
-            "columnNames": [
-              "profileId",
-              "position"
-            ],
+            "columnNames": ["profileId", "position"],
             "orders": [],
             "createSql": "CREATE INDEX IF NOT EXISTS `index_lists_profileId_position` ON `${TABLE_NAME}` (`profileId`, `position`)"
           }
@@ -1276,19 +1152,13 @@
         ],
         "primaryKey": {
           "autoGenerate": false,
-          "columnNames": [
-            "listId",
-            "itemId"
-          ]
+          "columnNames": ["listId", "itemId"]
         },
         "indices": [
           {
             "name": "index_list_items_listId_position",
             "unique": false,
-            "columnNames": [
-              "listId",
-              "position"
-            ],
+            "columnNames": ["listId", "position"],
             "orders": [],
             "createSql": "CREATE INDEX IF NOT EXISTS `index_list_items_listId_position` ON `${TABLE_NAME}` (`listId`, `position`)"
           }
@@ -1328,9 +1198,7 @@
         ],
         "primaryKey": {
           "autoGenerate": false,
-          "columnNames": [
-            "itemId"
-          ]
+          "columnNames": ["itemId"]
         }
       },
       {
@@ -1352,9 +1220,7 @@
         ],
         "primaryKey": {
           "autoGenerate": false,
-          "columnNames": [
-            "showKey"
-          ]
+          "columnNames": ["showKey"]
         }
       },
       {
@@ -1370,9 +1236,7 @@
         ],
         "primaryKey": {
           "autoGenerate": false,
-          "columnNames": [
-            "itemId"
-          ]
+          "columnNames": ["itemId"]
         }
       },
       {
@@ -1404,9 +1268,7 @@
         ],
         "primaryKey": {
           "autoGenerate": false,
-          "columnNames": [
-            "showKey"
-          ]
+          "columnNames": ["showKey"]
         }
       }
     ],
