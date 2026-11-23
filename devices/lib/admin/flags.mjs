@@ -7,6 +7,7 @@ export const FLAGS = [
     { key: "tmdb", label: "Posters, ratings and episode names from TMDB", group: "Services", type: "bool", default: true },
     { key: "subtitle_search", label: "Subtitle search (OpenSubtitles)", group: "Services", type: "bool", default: true },
     { key: "trakt", label: "Trakt sign-in and scrobbling", group: "Services", type: "bool", default: true },
+    { key: "simkl", label: "Simkl sign-in and scrobbling", group: "Services", type: "bool", default: true },
     { key: "tv_sign_in", label: "Sign in on a TV with your phone", group: "Services", type: "bool", default: true },
     { key: "account_backup", label: "Account backups", group: "Services", type: "bool", default: true },
     { key: "auto_tune", label: "Auto-tune for live events", group: "Features", type: "bool", default: true },

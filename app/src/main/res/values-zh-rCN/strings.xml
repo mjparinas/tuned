@@ -81,7 +81,7 @@
     <string name="settings_sign_out">退出登录</string>
     <string name="settings_sign_out_summary">将 Tuned 恢复到刚安装时的状态</string>
     <string name="settings_sign_out_title">退出登录？</string>
-    <string name="settings_sign_out_confirm">Tuned 将恢复到刚安装时的状态。所有播放列表和登录信息、频道和节目单、个人资料、收藏、设置和 PIN 都会被移除，并在此设备上退出 Trakt 和你的 Tuned 账号。你的备份仍保留在 Tuned 账号中。</string>
+    <string name="settings_sign_out_confirm">Tuned 将恢复到刚安装时的状态。所有播放列表和登录信息、频道和节目单、个人资料、收藏、设置和 PIN 都会被移除，并在此设备上退出 Trakt、Simkl 和你的 Tuned 账号。你的备份仍保留在 Tuned 账号中。</string>
     <plurals name="settings_sign_out_downloads">
         <item quantity="other">同时删除 %1$d 个下载内容 (%2$s)？</item>
     </plurals>

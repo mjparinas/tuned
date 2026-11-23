@@ -52,6 +52,7 @@ export const FEATURE_GROUPS = [
             { title: "Skip intro", body: "A button that learns each show's intro." },
             { title: "Downloads", body: "Save films, episodes or a whole season and watch without a connection." },
             { title: "Trakt", body: "Your history and up next on Trakt, from every device.", premium: true },
+            { title: "Simkl", body: "Your history and watching now on Simkl, from every device.", premium: true },
         ],
     },
     {

@@ -87,7 +87,7 @@
     <string name="settings_sign_out">Se déconnecter</string>
     <string name="settings_sign_out_summary">Remettre Tuned dans son état d\'installation</string>
     <string name="settings_sign_out_title">Se déconnecter ?</string>
-    <string name="settings_sign_out_confirm">Tuned revient à son état d\'installation. Toutes les playlists et identifiants, les chaînes et le guide, les profils, favoris, paramètres et codes PIN sont supprimés, et Trakt et votre compte Tuned sont déconnectés sur cet appareil. Votre sauvegarde reste dans votre compte Tuned.</string>
+    <string name="settings_sign_out_confirm">Tuned revient à son état d\'installation. Toutes les playlists et identifiants, les chaînes et le guide, les profils, favoris, paramètres et codes PIN sont supprimés, et Trakt, Simkl et votre compte Tuned sont déconnectés sur cet appareil. Votre sauvegarde reste dans votre compte Tuned.</string>
     <plurals name="settings_sign_out_downloads">
         <item quantity="one">Supprimer aussi %1$d téléchargement (%2$s) ?</item>
         <item quantity="many">Supprimer aussi %1$d téléchargements (%2$s) ?</item>

@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="simkl_sign_in">Подключить Simkl</string>
+    <string name="simkl_sign_in_summary">Добавлять просмотренные фильмы и серии в историю Simkl</string>
+    <string name="simkl_signed_in">Подключено как %1$s</string>
+    <string name="simkl_account_unnamed">ваш аккаунт Simkl</string>
+    <string name="simkl_sign_out">Нажмите, чтобы отключить</string>
+    <string name="simkl_scrobble">Отмечать просмотренное (scrobble)</string>
+    <string name="simkl_scrobble_summary">Сообщать Simkl, когда фильм или серия начинается, ставится на паузу и заканчивается. ТВ в эфире не отправляется.</string>
+    <string name="simkl_asking">Запрашиваем код у Simkl…</string>
+    <string name="simkl_enter_code">На любом телефоне или компьютере откройте %1$s и введите этот код:</string>
+    <string name="simkl_waiting">Ждём, когда вы введёте код…</string>
+    <string name="simkl_open_site">Открыть Simkl</string>
+    <string name="simkl_done">Подключено. Теперь всё, что вы смотрите, попадает в историю Simkl.</string>
+    <string name="simkl_expired">Срок действия кода истёк до ввода.</string>
+    <string name="simkl_failed">Не удалось связаться с Simkl. Проверьте подключение и попробуйте снова.</string>
+    <string name="simkl_try_again">Повторить</string>
+</resources>

@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="simkl_sign_in">Simkl\'ı bağla</string>
+    <string name="simkl_sign_in_summary">İzlediğin filmleri ve bölümleri Simkl geçmişine ekle</string>
+    <string name="simkl_signed_in">%1$s olarak bağlandı</string>
+    <string name="simkl_account_unnamed">Simkl hesabın</string>
+    <string name="simkl_sign_out">Bağlantıyı kesmek için dokun</string>
+    <string name="simkl_scrobble">İzlediklerini scrobble et</string>
+    <string name="simkl_scrobble_summary">Bir film veya bölüm başladığında, duraklatıldığında ve bittiğinde Simkl\'a bildir. Canlı TV gönderilmez.</string>
+    <string name="simkl_asking">Simkl\'tan kod isteniyor…</string>
+    <string name="simkl_enter_code">Herhangi bir telefon veya bilgisayarda %1$s adresine git ve bu kodu gir:</string>
+    <string name="simkl_waiting">Kodu girmen bekleniyor…</string>
+    <string name="simkl_open_site">Simkl\'ı aç</string>
+    <string name="simkl_done">Bağlandı. Artık izlediklerin Simkl geçmişine gidiyor.</string>
+    <string name="simkl_expired">Kod girilmeden süresi doldu.</string>
+    <string name="simkl_failed">Simkl\'a ulaşılamadı. Bağlantıyı kontrol edip tekrar dene.</string>
+    <string name="simkl_try_again">Tekrar dene</string>
+</resources>
