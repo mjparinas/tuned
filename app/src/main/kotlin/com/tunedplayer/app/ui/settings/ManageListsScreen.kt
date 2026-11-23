@@ -34,6 +34,7 @@ import com.tunedplayer.app.diagnostics.launchSafely
 import com.tunedplayer.app.ui.browse.ListNameDialog
 import com.tunedplayer.app.ui.common.BackTopBar
 import com.tunedplayer.app.ui.common.TunedDialog
+import com.tunedplayer.app.ui.common.isTelevision
 import com.tunedplayer.app.ui.common.rememberStartFocus
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -88,17 +89,31 @@ internal fun ManageListsContent(
     onDelete: (Long) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val tv = isTelevision()
     var renaming by remember { mutableStateOf<ListEntity?>(null) }
     var deleting by remember { mutableStateOf<ListEntity?>(null) }
     LazyColumn(modifier) {
+        if (tv) {
+            item {
+                Text(
+                    stringResource(R.string.tv_lists_rename_hint),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                )
+            }
+        }
         items(lists, key = { it.id }) { list ->
             SettingRow(
                 title = list.name,
                 summary = stringResource(R.string.lists_manage_row_summary),
-                onClick = { renaming = list },
+                // Rename needs typing; on a TV OK opens delete confirm instead, and the edit icon stays off.
+                onClick = { if (tv) deleting = list else renaming = list },
                 trailing = {
-                    IconButton(onClick = { renaming = list }) {
-                        Icon(Icons.Filled.Edit, contentDescription = stringResource(R.string.list_rename))
+                    if (!tv) {
+                        IconButton(onClick = { renaming = list }) {
+                            Icon(Icons.Filled.Edit, contentDescription = stringResource(R.string.list_rename))
+                        }
                     }
                     IconButton(onClick = { deleting = list }) {
                         Icon(Icons.Filled.Delete, contentDescription = stringResource(R.string.list_delete))

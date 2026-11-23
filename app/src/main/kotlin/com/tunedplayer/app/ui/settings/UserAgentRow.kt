@@ -31,6 +31,7 @@ import com.tunedplayer.app.R
 import com.tunedplayer.app.core.UserAgents
 import com.tunedplayer.app.ui.common.TunedDialog
 import com.tunedplayer.app.ui.common.focusRing
+import com.tunedplayer.app.ui.common.isTelevision
 
 /**
  * Settings › About › User agent: a picklist of what common players and set-top boxes send, Tuned first and the
@@ -42,6 +43,7 @@ internal fun UserAgentRow(
     onChange: (String) -> Unit,
 ) {
     val preset = UserAgents.presetFor(stored)
+    val tv = isTelevision()
     var picking by remember { mutableStateOf(false) }
     var typing by remember { mutableStateOf(false) }
     SettingRow(
@@ -56,6 +58,8 @@ internal fun UserAgentRow(
     if (picking) {
         UserAgentPicker(
             selected = preset,
+            // Custom… needs typing; on a TV the presets alone stay, and a custom value already set can only switch away.
+            allowCustom = !tv,
             onPick = { picked ->
                 picking = false
                 if (picked == null) typing = true else onChange(picked.value)
@@ -63,7 +67,7 @@ internal fun UserAgentRow(
             onDismiss = { picking = false },
         )
     }
-    if (typing) {
+    if (typing && !tv) {
         CustomUserAgentDialog(initial = if (preset == null) stored.trim() else "", onDismiss = { typing = false }) { ua ->
             onChange(ua.trim())
         }
@@ -74,6 +78,7 @@ internal fun UserAgentRow(
 @Composable
 private fun UserAgentPicker(
     selected: UserAgents.Preset?,
+    allowCustom: Boolean,
     onPick: (UserAgents.Preset?) -> Unit,
     onDismiss: () -> Unit,
 ) {
@@ -87,7 +92,9 @@ private fun UserAgentPicker(
                     val name = if (p == UserAgents.TUNED) stringResource(R.string.settings_user_agent_default) else p.label
                     Choice(name, p.value.ifBlank { tunedOwn }, on = p == selected) { onPick(p) }
                 }
-                Choice(stringResource(R.string.settings_user_agent_custom), null, on = selected == null) { onPick(null) }
+                if (allowCustom) {
+                    Choice(stringResource(R.string.settings_user_agent_custom), null, on = selected == null) { onPick(null) }
+                }
             }
         },
         confirmButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) } },

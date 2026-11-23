@@ -35,7 +35,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.InputChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -68,8 +67,6 @@ import com.tunedplayer.app.ui.common.BackTopBar
 import com.tunedplayer.app.ui.common.focusRing
 import com.tunedplayer.app.ui.common.isTelevision
 import com.tunedplayer.app.ui.common.rememberTimeLabels
-import com.tunedplayer.app.ui.common.remoteButtonRing
-import com.tunedplayer.app.ui.common.remoteTextInput
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -342,24 +339,30 @@ private fun FollowRow(
         text = ""
     }
     Column(Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
-        // On a TV the Add button sits beside the box, where the remote can reach it with Right.
         val tv = isTelevision()
-        val addButton: @Composable (Modifier) -> Unit = { modifier ->
-            IconButton(onClick = add, modifier = modifier) { Icon(Icons.Filled.Add, stringResource(R.string.events_follow)) }
-        }
-        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            OutlinedTextField(
-                value = text,
-                onValueChange = { text = it },
-                label = { Text(stringResource(R.string.events_follow_hint)) },
-                readOnly = tv,
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-                keyboardActions = KeyboardActions(onDone = { add() }),
-                trailingIcon = if (!tv && text.isNotBlank()) ({ addButton(Modifier) }) else null,
-                modifier = Modifier.remoteTextInput(OutlinedTextFieldDefaults.shape, text) { text = it }.weight(1f),
+        if (tv) {
+            // Typing a follow stays on the phone or website; chips already followed can still be removed here.
+            Text(
+                stringResource(R.string.tv_events_follow_hint),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-            if (tv && text.isNotBlank()) addButton(Modifier.remoteButtonRing())
+        } else {
+            val addButton: @Composable (Modifier) -> Unit = { modifier ->
+                IconButton(onClick = add, modifier = modifier) { Icon(Icons.Filled.Add, stringResource(R.string.events_follow)) }
+            }
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                OutlinedTextField(
+                    value = text,
+                    onValueChange = { text = it },
+                    label = { Text(stringResource(R.string.events_follow_hint)) },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                    keyboardActions = KeyboardActions(onDone = { add() }),
+                    trailingIcon = if (text.isNotBlank()) ({ addButton(Modifier) }) else null,
+                    modifier = Modifier.weight(1f),
+                )
+            }
         }
         if (followed.isNotEmpty()) {
             LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 8.dp)) {

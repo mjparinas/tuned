@@ -50,6 +50,7 @@ import com.tunedplayer.app.diagnostics.launchSafely
 import com.tunedplayer.app.ui.common.BackTopBar
 import com.tunedplayer.app.ui.common.TunedDialog
 import com.tunedplayer.app.ui.common.focusRing
+import com.tunedplayer.app.ui.common.isTelevision
 import kotlinx.coroutines.flow.MutableStateFlow
 
 class PlaylistsViewModel(
@@ -146,6 +147,7 @@ fun PlaylistsScreen(
     val saved by vm.saved.collectAsStateWithLifecycle()
     val current by vm.current.collectAsStateWithLifecycle()
     val switching by vm.switching.collectAsStateWithLifecycle()
+    val tv = isTelevision()
     var renaming by remember { mutableStateOf<Credentials?>(null) }
     var removing by remember { mutableStateOf<Credentials?>(null) }
     LaunchedEffect(Unit) { vm.reload() }
@@ -165,7 +167,7 @@ fun PlaylistsScreen(
         LazyColumn(Modifier.padding(padding).fillMaxSize(), contentPadding = PaddingValues(bottom = 88.dp)) {
             item {
                 Text(
-                    stringResource(R.string.playlists_help),
+                    stringResource(if (tv) R.string.tv_playlists_admin_hint else R.string.playlists_help),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
@@ -176,8 +178,9 @@ fun PlaylistsScreen(
                     login = login,
                     active = current?.samePlaylist(login) == true,
                     onSwitch = { vm.switchTo(login, onSwitched) },
-                    onRename = { renaming = login },
-                    onEdit = { onEdit(index, login.kind) },
+                    // Rename and Edit need typing; on a TV those stay on the phone or website.
+                    onRename = if (tv) null else ({ renaming = login }),
+                    onEdit = if (tv) null else ({ onEdit(index, login.kind) }),
                     onRemove = { removing = login },
                 )
             }
@@ -241,12 +244,12 @@ private fun PlaylistRow(
     login: Credentials,
     active: Boolean,
     onSwitch: () -> Unit,
-    onRename: () -> Unit,
-    onEdit: () -> Unit,
+    onRename: (() -> Unit)?,
+    onEdit: (() -> Unit)?,
     onRemove: () -> Unit,
 ) {
     // Rename, Edit and Remove are buttons under the playlist, in sight and one press away, rather than in a three-dot
-    // menu (Melvin, 2026-11-19: "avoid 3 dot drop downs").
+    // menu (Melvin, 2026-11-19: "avoid 3 dot drop downs"). A TV leaves Rename and Edit out (typing stays on phone/web).
     Column(Modifier.fillMaxWidth()) {
         Row(
             Modifier
@@ -295,8 +298,8 @@ private fun PlaylistRow(
             }
         }
         Row(Modifier.padding(start = 56.dp, bottom = 4.dp)) {
-            TextButton(onClick = onRename) { Text(stringResource(R.string.playlists_rename)) }
-            TextButton(onClick = onEdit) { Text(stringResource(R.string.playlists_edit)) }
+            onRename?.let { rename -> TextButton(onClick = rename) { Text(stringResource(R.string.playlists_rename)) } }
+            onEdit?.let { edit -> TextButton(onClick = edit) { Text(stringResource(R.string.playlists_edit)) } }
             TextButton(onClick = onRemove) { Text(stringResource(R.string.playlists_remove)) }
         }
     }

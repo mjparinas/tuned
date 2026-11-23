@@ -39,7 +39,8 @@ jobs:
         run: ./gradlew :app:generateBaselineProfile $GMD --no-configuration-cache
       - name: Measure cold start without and with it
         run: >
-          ./gradlew :baselineprofile:pixel6Api34GithubBenchmarkReleaseAndroidTest $GMD --no-configuration-cache
+          ./gradlew :baselineprofile:pixel6Api34GithubBenchmarkReleaseAndroidTest
+          :baselineprofile:tv1080Api34GithubBenchmarkReleaseAndroidTest $GMD --no-configuration-cache
           -Pandroid.testInstrumentationRunnerArguments.androidx.benchmark.enabledRules=Macrobenchmark
       - name: Print failing tests
         if: failure()

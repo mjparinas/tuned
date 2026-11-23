@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="tv_playlists_admin_hint">Переименуйте или измените плейлист на телефоне или на tunedplayer.com. Здесь по-прежнему можно переключиться или удалить.</string>
+    <string name="tv_lists_rename_hint">Переименуйте список на телефоне или на tunedplayer.com. Здесь по-прежнему можно удалить.</string>
+    <string name="tv_profiles_manage_hint">Добавляйте или переименовывайте профили на телефоне или на tunedplayer.com</string>
+    <string name="tv_events_follow_hint">Подписывайтесь на команду или лигу на телефоне или на tunedplayer.com</string>
+</resources>

@@ -275,6 +275,13 @@ fun HomeScreen(
                 topBar = {
                     // Downloads has its own title bar.
                     if (downloads) return@Scaffold
+                    // On a TV, Search is on the rail (mic-first); the per-tab box would only duplicate typing.
+                    if (tv) {
+                        if (tab.kind == ContentKind.LIVE) {
+                            TvLiveTopBar(grid = settings.liveGrid, onToggleGrid = { vm.setLiveGrid(!settings.liveGrid) })
+                        }
+                        return@Scaffold
+                    }
                     val search = vm.search(tab.kind)
                     val text by search.collectAsStateWithLifecycle()
                     SearchBarRow(
@@ -283,9 +290,8 @@ fun HomeScreen(
                         onChange = { search.value = it },
                         grid = if (tab.kind == ContentKind.LIVE) settings.liveGrid else null,
                         onToggleGrid = { vm.setLiveGrid(!settings.liveGrid) },
-                        // The words typed on the tab carry over, so the search isn't typed twice. A TV has it on the rail.
-                        onOpenSearch = { onOpenSearch(text.trim()) }.takeUnless { tv },
-                        profile = profile.takeIf { settings.profileCount > 1 && !tv },
+                        onOpenSearch = { onOpenSearch(text.trim()) },
+                        profile = profile.takeIf { settings.profileCount > 1 },
                         onOpenProfiles = onOpenProfiles,
                     )
                 },
@@ -722,6 +728,26 @@ private val TV_INFO_MAX_WIDTH = 260.dp
 /** The profile button beside the search box: its height (56dp, a Material text field's) and the picture inside it. */
 private val PROFILE_BUTTON = 56.dp
 private val PROFILE_BADGE = 48.dp
+
+/** On a TV, Live TV keeps only the guide-grid toggle in the top bar; Search is on the rail. */
+@Composable
+private fun TvLiveTopBar(
+    grid: Boolean,
+    onToggleGrid: () -> Unit,
+) {
+    Surface(color = MaterialTheme.colorScheme.surface) {
+        Row(
+            Modifier
+                .fillMaxWidth()
+                .statusBarsPadding()
+                .padding(start = 12.dp, end = 4.dp, top = 8.dp, bottom = 4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.End,
+        ) {
+            GridToggleButton(grid, onToggleGrid)
+        }
+    }
+}
 
 /**
  * Live TV: the list or the guide grid, one press away beside search instead of in a menu. A TV has room for its words;

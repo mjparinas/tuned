@@ -36,11 +36,14 @@ internal fun GuidePage(
     ChoiceRow(stringResource(R.string.settings_guide_refresh), hours, settings.guideRefreshHours, hoursLabel) { h ->
         vm.update { it.copy(guideRefreshHours = h) }
     }
-    SwitchRow(
-        stringResource(R.string.settings_pull_to_refresh),
-        settings.pullToRefresh,
-        stringResource(R.string.settings_pull_to_refresh_summary),
-    ) { on -> vm.update { it.copy(pullToRefresh = on) } }
+    // Pull to refresh needs a finger; a TV refreshes from Refresh now or the scheduled hours.
+    if (!isTelevision()) {
+        SwitchRow(
+            stringResource(R.string.settings_pull_to_refresh),
+            settings.pullToRefresh,
+            stringResource(R.string.settings_pull_to_refresh_summary),
+        ) { on -> vm.update { it.copy(pullToRefresh = on) } }
+    }
     SwitchRow(
         stringResource(R.string.settings_unmetered),
         settings.unmeteredOnly,
