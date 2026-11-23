@@ -65,6 +65,7 @@ import com.tunedplayer.app.ui.common.SearchBoxVoiceBefore
 import com.tunedplayer.app.ui.common.SearchStartFocus
 import com.tunedplayer.app.ui.common.TimeLabels
 import com.tunedplayer.app.ui.common.focusRing
+import com.tunedplayer.app.ui.common.isTelevision
 import com.tunedplayer.app.ui.common.rememberTimeLabels
 import com.tunedplayer.app.ui.common.remoteTextInput
 import com.tunedplayer.app.ui.common.searchBoxTrailing
@@ -178,6 +179,7 @@ fun SearchScreen(
                         onValueChange = { vm.query.value = it },
                         placeholder = { Text(stringResource(R.string.search_everything)) },
                         trailingIcon = searchBoxTrailing(text, { vm.query.value = it }),
+                        readOnly = isTelevision(),
                         singleLine = true,
                         shape = SearchBoxShape,
                         colors =
@@ -187,7 +189,7 @@ fun SearchScreen(
                             ),
                         modifier =
                             Modifier
-                                .remoteTextInput(SearchBoxShape)
+                                .remoteTextInput(SearchBoxShape, text) { vm.query.value = it }
                                 .weight(1f)
                                 .heightIn(min = 52.dp)
                                 .focusRequester(focus),

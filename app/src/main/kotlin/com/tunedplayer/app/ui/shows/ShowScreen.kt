@@ -544,9 +544,9 @@ private fun EpisodeRow(
             )
         }
         EpisodeStill(
-            info?.still ?: episode.logo,
-            history.takeIf { !watched },
-            Modifier.width(STILL_WIDTH),
+            still = info?.still ?: episode.logo,
+            started = history.takeIf { !watched },
+            modifier = Modifier.width(STILL_WIDTH),
         )
         Spacer(Modifier.width(12.dp))
         Column(Modifier.weight(1f)) {

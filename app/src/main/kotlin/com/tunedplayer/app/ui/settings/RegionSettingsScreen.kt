@@ -41,6 +41,7 @@ import com.tunedplayer.app.data.db.RegionCount
 import com.tunedplayer.app.diagnostics.launchSafely
 import com.tunedplayer.app.ui.common.BackTopBar
 import com.tunedplayer.app.ui.common.SearchBoxButtonsBeside
+import com.tunedplayer.app.ui.common.isTelevision
 import com.tunedplayer.app.ui.common.regionName
 import com.tunedplayer.app.ui.common.remoteTextInput
 import com.tunedplayer.app.ui.common.searchBoxTrailing
@@ -133,8 +134,9 @@ private fun RegionSearchField(
             placeholder = { Text(stringResource(R.string.regions_search)) },
             leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
             trailingIcon = searchBoxTrailing(query, onChange, voice = false),
+            readOnly = isTelevision(),
             singleLine = true,
-            modifier = Modifier.remoteTextInput(OutlinedTextFieldDefaults.shape).weight(1f),
+            modifier = Modifier.remoteTextInput(OutlinedTextFieldDefaults.shape, query, onChange).weight(1f),
         )
         SearchBoxButtonsBeside(query, onChange)
     }
