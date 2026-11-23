@@ -3,7 +3,19 @@
 // website sign-in into a device sign-in.
 import { createHash, randomBytes } from "node:crypto";
 import { command } from "./redis.mjs";
-import { cookie, googleClaims, newToken, sameSite, sha, stateCookie, stateMatches, validChallenge } from "./accounts.mjs";
+import {
+    appleClaims,
+    appleClientSecret,
+    appleUserName,
+    cookie,
+    googleClaims,
+    newToken,
+    sameSite,
+    sha,
+    stateCookie,
+    stateMatches,
+    validChallenge,
+} from "./accounts.mjs";
 import { accountFor, deviceFor } from "./account-store.mjs";
 
 export const SESSION_COOKIE = "tuned_session";
@@ -100,7 +112,18 @@ const googleConfig = () => {
     return id && secret ? { id, secret } : null;
 };
 
+const appleConfig = () => {
+    const id = process.env.APPLE_CLIENT_ID;
+    const teamId = process.env.APPLE_TEAM_ID;
+    const keyId = process.env.APPLE_KEY_ID;
+    const privateKey = process.env.APPLE_PRIVATE_KEY;
+    if (!id || !teamId || !keyId || !privateKey) return null;
+    const secret = appleClientSecret({ teamId, clientId: id, keyId, privateKey });
+    return secret ? { id, secret } : null;
+};
+
 export const signInReady = () => googleConfig() !== null && Boolean(process.env.DATABASE_URL);
+export const appleSignInReady = () => appleConfig() !== null && Boolean(process.env.DATABASE_URL);
 
 /**
  * Sends the browser to sign in with Google. `after` says what happens once signed in: `{ to: "web", tv }` opens
@@ -119,7 +142,7 @@ export async function googleStart(origin, after) {
     const nonce = newToken();
     const verifier = randomBytes(32).toString("base64url");
     const challenge = createHash("sha256").update(verifier).digest("base64url");
-    await command("SET", `oauth:${sha(state)}`, JSON.stringify({ verifier, nonce, after }), "EX", STATE_SECONDS);
+    await command("SET", `oauth:${sha(state)}`, JSON.stringify({ verifier, nonce, after, provider: "google" }), "EX", STATE_SECONDS);
     const query = new URLSearchParams({
         client_id: google.id,
         redirect_uri: `${origin}/api/auth/callback`,
@@ -148,7 +171,8 @@ export async function googleFinish(origin, state, code, cookieHeader) {
     if (!stateMatches(cookieHeader, state)) return null;
     const raw = await command("GETDEL", `oauth:${sha(state)}`);
     if (!raw) return null;
-    const { verifier, nonce, after } = JSON.parse(raw);
+    const { verifier, nonce, after, provider } = JSON.parse(raw);
+    if (provider && provider !== "google") return null;
     const response = await fetch("https://oauth2.googleapis.com/token", {
         method: "POST",
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
@@ -164,7 +188,70 @@ export async function googleFinish(origin, state, code, cookieHeader) {
     if (!response.ok) return null;
     const claims = googleClaims((await response.json()).id_token, google.id, nonce, Math.floor(Date.now() / 1000));
     if (!claims) return null;
-    return { account: await accountFor(claims), after };
+    const account = await accountFor({ provider: "google", ...claims });
+    return account ? { account, after } : null;
+}
+
+/**
+ * Sends the browser to Sign in with Apple. Same `after` shapes as Google. Apple posts back to the callback
+ * (`response_mode=form_post`), so the state cookie isn't checked on the way back (SameSite=Lax isn't sent on a
+ * cross-site POST); the one-time Redis state is the CSRF check instead.
+ */
+export async function appleRedirect(origin, after) {
+    const { url, state } = await appleStart(origin, after);
+    return new Response(null, { status: 302, headers: { Location: url, "Set-Cookie": stateCookie(state, STATE_SECONDS) } });
+}
+
+export async function appleStart(origin, after) {
+    const apple = appleConfig();
+    const state = newToken();
+    const nonce = newToken();
+    const verifier = randomBytes(32).toString("base64url");
+    const challenge = createHash("sha256").update(verifier).digest("base64url");
+    await command("SET", `oauth:${sha(state)}`, JSON.stringify({ verifier, nonce, after, provider: "apple" }), "EX", STATE_SECONDS);
+    const query = new URLSearchParams({
+        client_id: apple.id,
+        redirect_uri: `${origin}/api/auth/callback`,
+        response_type: "code",
+        response_mode: "form_post",
+        scope: "name email",
+        state,
+        nonce,
+        code_challenge: challenge,
+        code_challenge_method: "S256",
+    });
+    return { url: `https://appleid.apple.com/auth/authorize?${query}`, state };
+}
+
+/**
+ * Apple posting the browser back (`form_post`): the account and what was asked for after, or null. `userField` is
+ * Apple's optional `user` form value with the name on the first sign-in only.
+ */
+export async function appleFinish(origin, state, code, userField) {
+    const apple = appleConfig();
+    if (!apple || typeof state !== "string" || typeof code !== "string") return null;
+    const raw = await command("GETDEL", `oauth:${sha(state)}`);
+    if (!raw) return null;
+    const { verifier, nonce, after, provider } = JSON.parse(raw);
+    if (provider !== "apple") return null;
+    const response = await fetch("https://appleid.apple.com/auth/token", {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: new URLSearchParams({
+            code,
+            client_id: apple.id,
+            client_secret: apple.secret,
+            redirect_uri: `${origin}/api/auth/callback`,
+            grant_type: "authorization_code",
+            code_verifier: verifier,
+        }),
+    });
+    if (!response.ok) return null;
+    const claims = appleClaims((await response.json()).id_token, apple.id, nonce, Math.floor(Date.now() / 1000));
+    if (!claims) return null;
+    const name = appleUserName(userField) || claims.name;
+    const account = await accountFor({ provider: "apple", subject: claims.subject, email: claims.email, name });
+    return account ? { account, after } : null;
 }
 
 export { validChallenge };

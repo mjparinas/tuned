@@ -37,9 +37,9 @@ Your phone locks the login with a one-time key that only your TV holds. Tuned's 
 
 ## If you make a Tuned account
 
-The account is optional. If you sign in with Google, Tuned's service keeps:
+The account is optional. If you sign in with Google or Apple, Tuned's service keeps:
 
-- your **email address and name** from Google,
+- your **email address and name** from that provider,
 - your **devices**: the name Android gives them (like "Pixel 8"), the kind of device, a scrambled device ID and when each was last used,
 - **what you bought**,
 - and, if you use it, **your backup**: saved playlists (including their logins), settings, profiles, favourites, lists and watch later. The last 5 versions are kept.

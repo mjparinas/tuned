@@ -111,7 +111,11 @@ export const FEATURE_GROUPS = [
             { title: "Your login stays encrypted", body: "Kept encrypted on the device until you sign out, and never logged." },
             { title: "One stream at a time", body: "Tuned never opens a second connection, so your provider's limit is safe." },
             { title: "Watching comes first", body: "Downloads and scans wait while anything plays." },
-            { title: "Tuned account", body: "Sign in with Google and every device keeps the same playlists and settings.", premium: true },
+            {
+                title: "Tuned account",
+                body: "Sign in with Google or Apple and every device keeps the same playlists and settings.",
+                premium: true,
+            },
             { title: "No ads", body: "No ads, ever." },
             { title: "Updates itself", body: "Tuned offers each new version and shows what's new." },
             { title: "Accessible", body: "Works with TalkBack and large text." },

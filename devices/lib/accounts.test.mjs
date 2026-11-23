@@ -2,6 +2,9 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import {
+    appleClaims,
+    appleClientSecret,
+    appleUserName,
     baseVersion,
     checkoutAllowed,
     cookie,
@@ -14,6 +17,7 @@ import {
     stateCookie,
     stateMatches,
 } from "./accounts.mjs";
+import { generateKeyPairSync } from "node:crypto";
 
 const now = 1_800_000_000_000;
 const DAY = 86_400_000;
@@ -93,6 +97,66 @@ test("a Google ID token is taken only for our client, unexpired, with our nonce 
     assert.equal(googleClaims(token({ ...good, email_verified: false }), "client", "n", 1000), null);
     assert.equal(googleClaims(token({ ...good, iss: "evil" }), "client", "n", 1000), null);
     assert.equal(googleClaims("nonsense", "client", "n", 1000), null);
+});
+
+const appleGood = {
+    iss: "https://appleid.apple.com",
+    aud: "com.tuned.web",
+    exp: 2000,
+    nonce: "n",
+    email_verified: "true",
+    sub: "001234.abcd",
+    email: "a@privaterelay.appleid.com",
+};
+
+test("an Apple ID token needs Apple's issuer, our client, our nonce and a verified email", () => {
+    assert.deepEqual(appleClaims(token(appleGood), "com.tuned.web", "n", 1000), {
+        subject: "001234.abcd",
+        email: "a@privaterelay.appleid.com",
+        name: "",
+    });
+    assert.deepEqual(appleClaims(token({ ...appleGood, email_verified: true }), "com.tuned.web", "n", 1000), {
+        subject: "001234.abcd",
+        email: "a@privaterelay.appleid.com",
+        name: "",
+    });
+    assert.equal(appleClaims(token({ ...appleGood, aud: "other" }), "com.tuned.web", "n", 1000), null);
+    assert.equal(appleClaims(token(appleGood), "com.tuned.web", "n", 3000), null);
+    assert.equal(appleClaims(token({ ...appleGood, nonce: "m" }), "com.tuned.web", "n", 1000), null);
+    assert.equal(appleClaims(token({ ...appleGood, email_verified: false }), "com.tuned.web", "n", 1000), null);
+    assert.equal(appleClaims(token({ ...appleGood, iss: "https://evil.example" }), "com.tuned.web", "n", 1000), null);
+    assert.equal(appleClaims("nonsense", "com.tuned.web", "n", 1000), null);
+});
+
+test("Apple's user form field carries the name only on the first sign-in", () => {
+    assert.equal(appleUserName(JSON.stringify({ name: { firstName: "Jane", lastName: "Doe" } })), "Jane Doe");
+    assert.equal(appleUserName(JSON.stringify({ name: { firstName: "Jane" } })), "Jane");
+    assert.equal(appleUserName(""), "");
+    assert.equal(appleUserName("not-json"), "");
+    assert.equal(appleUserName(null), "");
+});
+
+test("Apple's client secret is an ES256 JWT for our Services ID", () => {
+    const { privateKey } = generateKeyPairSync("ec", { namedCurve: "P-256" });
+    const pem = privateKey.export({ type: "pkcs8", format: "pem" });
+    const secret = appleClientSecret({
+        teamId: "TEAM123456",
+        clientId: "com.tuned.web",
+        keyId: "KEY1234567",
+        privateKey: pem,
+        nowSeconds: 1_000,
+    });
+    assert.ok(secret);
+    const [header, payload] = secret.split(".");
+    assert.deepEqual(JSON.parse(Buffer.from(header, "base64url").toString()), { alg: "ES256", kid: "KEY1234567" });
+    assert.deepEqual(JSON.parse(Buffer.from(payload, "base64url").toString()), {
+        iss: "TEAM123456",
+        iat: 1_000,
+        exp: 1_000 + 86_400,
+        aud: "https://appleid.apple.com",
+        sub: "com.tuned.web",
+    });
+    assert.equal(appleClientSecret({ teamId: "", clientId: "x", keyId: "y", privateKey: pem }), null);
 });
 
 test("a device needs a hashed id; the rest has safe defaults", () => {

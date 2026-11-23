@@ -1,6 +1,6 @@
 // The rules of accounts that need no database or network, so they are tested on their own (accounts.test.mjs).
 // See docs/decisions/accounts.md.
-import { createHash, randomBytes, timingSafeEqual } from "node:crypto";
+import { createHash, createPrivateKey, randomBytes, sign, timingSafeEqual } from "node:crypto";
 
 /** Seats that come with Premium, and the most an account can have with extra seats. */
 export const INCLUDED_SEATS = 3;
@@ -89,6 +89,70 @@ export function googleClaims(idToken, clientId, nonce, nowSeconds) {
     if (!issuer || claims.aud !== clientId || !(claims.exp > nowSeconds) || claims.nonce !== nonce) return null;
     if (claims.email_verified !== true || typeof claims.sub !== "string" || typeof claims.email !== "string") return null;
     return { subject: claims.sub, email: claims.email, name: typeof claims.name === "string" ? claims.name.slice(0, 100) : "" };
+}
+
+/**
+ * The claims of an Apple ID token from Apple's token endpoint over TLS (same trust model as Google). Apple may send
+ * `email_verified` as the string "true", and the person's name is not in the token: it arrives only once, in the
+ * authorize form's `user` field, and is passed in separately.
+ */
+export function appleClaims(idToken, clientId, nonce, nowSeconds) {
+    const parts = String(idToken ?? "").split(".");
+    if (parts.length !== 3) return null;
+    let claims;
+    try {
+        claims = JSON.parse(Buffer.from(parts[1], "base64url").toString("utf8"));
+    } catch {
+        return null;
+    }
+    if (claims.iss !== "https://appleid.apple.com" || claims.aud !== clientId || !(claims.exp > nowSeconds)) return null;
+    if (claims.nonce !== nonce || typeof claims.sub !== "string") return null;
+    const verified = claims.email_verified === true || claims.email_verified === "true";
+    if (!verified || typeof claims.email !== "string" || !claims.email) return null;
+    return { subject: claims.sub, email: claims.email, name: "" };
+}
+
+/**
+ * The display name Apple sends only on the first authorize (`user` form field as JSON). Empty when Apple omits it
+ * (every later sign-in) or when the JSON is unreadable.
+ */
+export function appleUserName(userField) {
+    if (typeof userField !== "string" || !userField) return "";
+    try {
+        const user = JSON.parse(userField);
+        const first = typeof user?.name?.firstName === "string" ? user.name.firstName : "";
+        const last = typeof user?.name?.lastName === "string" ? user.name.lastName : "";
+        return `${first} ${last}`.trim().slice(0, 100);
+    } catch {
+        return "";
+    }
+}
+
+/**
+ * Apple's client secret is a short-lived ES256 JWT we mint from the Sign in with Apple key (Team ID, Key ID, .p8).
+ * Max lifetime Apple allows is six months; we mint for a day so a rotated key is picked up quickly.
+ */
+export function appleClientSecret({ teamId, clientId, keyId, privateKey, nowSeconds = Math.floor(Date.now() / 1000) }) {
+    const pem = String(privateKey ?? "").includes("\\n") ? String(privateKey).replace(/\\n/g, "\n") : String(privateKey ?? "");
+    if (!teamId || !clientId || !keyId || !pem.includes("BEGIN")) return null;
+    const header = Buffer.from(JSON.stringify({ alg: "ES256", kid: keyId })).toString("base64url");
+    const payload = Buffer.from(
+        JSON.stringify({
+            iss: teamId,
+            iat: nowSeconds,
+            exp: nowSeconds + 86_400,
+            aud: "https://appleid.apple.com",
+            sub: clientId,
+        }),
+    ).toString("base64url");
+    const data = `${header}.${payload}`;
+    try {
+        const key = createPrivateKey(pem);
+        const sig = sign("SHA256", Buffer.from(data), { key, dsaEncoding: "ieee-p1363" });
+        return `${data}.${sig.toString("base64url")}`;
+    } catch {
+        return null;
+    }
 }
 
 /** A device signing in: its hashed Android id (as for Premium seats), a name, its kind and which build it is. */
