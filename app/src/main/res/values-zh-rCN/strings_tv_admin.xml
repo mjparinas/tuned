@@ -4,4 +4,6 @@
     <string name="tv_lists_rename_hint">请在手机或 tunedplayer.com 上重命名列表。此处仍可删除。</string>
     <string name="tv_profiles_manage_hint">请在手机或 tunedplayer.com 上添加或重命名个人资料</string>
     <string name="tv_events_follow_hint">请在手机或 tunedplayer.com 上关注球队或联赛</string>
+    <string name="tv_list_new_hint">请在手机或 tunedplayer.com 上新建列表</string>
+    <string name="tv_pin_forgot_hint">忘记 PIN？请在手机或 tunedplayer.com 上重置</string>
 </resources>

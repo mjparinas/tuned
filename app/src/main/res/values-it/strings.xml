@@ -62,14 +62,17 @@
     <string name="sync_size_so_far">%1$s finora</string>
     <plurals name="progress_seconds_left">
         <item quantity="one">circa %d s rimanenti</item>
+        <item quantity="many">circa %d s rimanenti</item>
         <item quantity="other">circa %d s rimanenti</item>
     </plurals>
     <plurals name="progress_minutes_left">
         <item quantity="one">circa %d min rimanente</item>
+        <item quantity="many">circa %d min rimanenti</item>
         <item quantity="other">circa %d min rimanenti</item>
     </plurals>
     <plurals name="progress_hours_left">
         <item quantity="one">circa %d h rimanente</item>
+        <item quantity="many">circa %d h rimanenti</item>
         <item quantity="other">circa %d h rimanenti</item>
     </plurals>
     <string name="sync_step_done">Fatto</string>

@@ -60,4 +60,17 @@ class SettingsPhoneOnlyTvTest {
         compose.onNodeWithText(app.getString(R.string.settings_media_buttons)).assertExists()
         compose.onNodeWithText(app.getString(R.string.settings_refresh_now)).assertExists()
     }
+
+    @Test
+    fun settingsSearchBoxIsAbsentOnTv() {
+        val vm = SettingsViewModel(app)
+        compose.setContent {
+            TunedTheme(mode = ThemeMode.DARK) {
+                SettingsScreen(AppSettings(), onBack = {}, onOpen = {}, onSignedOut = {}, vm = vm)
+            }
+        }
+        compose.waitForIdle()
+        compose.onNodeWithText(app.getString(R.string.settings_search)).assertDoesNotExist()
+        compose.onNodeWithText(app.getString(R.string.settings_page_playlists)).assertExists()
+    }
 }
