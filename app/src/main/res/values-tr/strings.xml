@@ -60,6 +60,18 @@
     <string name="sync_step_library">Filmler ve diziler alınıyor</string>
     <string name="sync_waiting_server">Sunucu bekleniyor…</string>
     <string name="sync_size_so_far">Şimdiye kadar %1$s</string>
+    <plurals name="progress_seconds_left">
+        <item quantity="one">yaklaşık %d sn kaldı</item>
+        <item quantity="other">yaklaşık %d sn kaldı</item>
+    </plurals>
+    <plurals name="progress_minutes_left">
+        <item quantity="one">yaklaşık %d dk kaldı</item>
+        <item quantity="other">yaklaşık %d dk kaldı</item>
+    </plurals>
+    <plurals name="progress_hours_left">
+        <item quantity="one">yaklaşık %d sa kaldı</item>
+        <item quantity="other">yaklaşık %d sa kaldı</item>
+    </plurals>
     <string name="sync_step_done">Tamamlandı</string>
     <string name="sync_step_now">Devam ediyor</string>
     <string name="sync_step_waiting">Başlamadı</string>

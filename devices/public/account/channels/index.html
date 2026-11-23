@@ -124,6 +124,23 @@
                         <div class="actions"><a class="button quiet" href="/check">Check my provider</a></div>
                     </section>
 
+                    <section class="card span" id="lists-card" aria-labelledby="lists-title">
+                        <div class="card-head">
+                            <h2 id="lists-title">Your lists</h2>
+                            <button type="button" class="quiet" id="list-add">Add a list</button>
+                        </div>
+                        <p class="small" id="lists-line">
+                            Favourites and your own lists sync with the Tuned app. Rename and delete them here; on Android TV, rename lives
+                            in Settings › Manage lists.
+                        </p>
+                        <div class="field" id="profile-field" hidden>
+                            <label for="profile">Profile</label>
+                            <select id="profile"></select>
+                        </div>
+                        <div id="lists" class="lists"></div>
+                        <p class="message" id="lists-message" role="status" aria-live="polite"></p>
+                    </section>
+
                     <section class="card span" id="whole-card" aria-labelledby="whole-title">
                         <h2 id="whole-title">The whole playlist in VLC</h2>
                         <p class="small">VLC reads every channel itself, without the guide.</p>
@@ -149,6 +166,21 @@
                 <div class="actions" id="show-actions"></div>
                 <p class="message" id="show-message" role="status" aria-live="polite"></p>
                 <form method="dialog" class="actions"><button class="quiet" value="close">Close</button></form>
+            </dialog>
+            <dialog class="show-dialog" id="edit-dialog" aria-labelledby="edit-title">
+                <h2 id="edit-title">Rename channel</h2>
+                <form id="edit-form" class="edit-form">
+                    <div class="field">
+                        <label for="edit-value" id="edit-label">Name</label>
+                        <input id="edit-value" name="value" autocomplete="off" spellcheck="false" />
+                    </div>
+                    <p class="message" id="edit-message" role="status" aria-live="polite"></p>
+                    <div class="actions">
+                        <button type="submit" id="edit-save">Save</button>
+                        <button type="button" class="quiet" id="edit-original" hidden>Use original</button>
+                        <button type="button" class="quiet" value="cancel" formmethod="dialog">Cancel</button>
+                    </div>
+                </form>
             </dialog>
             <p class="message toast" id="toast" role="status" aria-live="polite" hidden></p>
         </main>

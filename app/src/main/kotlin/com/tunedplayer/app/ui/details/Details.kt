@@ -153,7 +153,7 @@ fun MovieScreen(
                 .verticalScroll(rememberScrollState())
                 .navigationBarsPadding(),
         ) {
-            Backdrop(details?.backdrop ?: details?.poster ?: item?.logo, onBack)
+            DetailsBackdrop(details?.backdrop ?: details?.poster ?: item?.logo, onBack)
             Row(Modifier.padding(horizontal = 20.dp).offset(y = (-72).dp)) {
                 AsyncImage(
                     model = details?.poster ?: item?.logo,
@@ -213,9 +213,9 @@ fun MovieScreen(
     }
 }
 
-/** The wide picture at the top, fading into the page, with Back over it. */
+/** The wide picture at the top, fading into the page, with Back over it. Shared by films and TV shows. */
 @Composable
-private fun Backdrop(
+fun DetailsBackdrop(
     image: String?,
     onBack: () -> Unit,
 ) {

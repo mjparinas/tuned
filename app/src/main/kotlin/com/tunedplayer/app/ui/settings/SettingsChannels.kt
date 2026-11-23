@@ -15,6 +15,7 @@ import com.tunedplayer.app.data.StartTab
 import com.tunedplayer.app.diagnostics.attempt
 import com.tunedplayer.app.ui.FavouriteOrderRoute
 import com.tunedplayer.app.ui.HiddenGroupsRoute
+import com.tunedplayer.app.ui.ManageListsRoute
 import com.tunedplayer.app.ui.RegionSettingsRoute
 import com.tunedplayer.app.widget.AppShortcuts
 import com.tunedplayer.app.work.TvHome
@@ -62,6 +63,12 @@ internal fun ChannelsPage(
         stringResource(R.string.settings_favourite_order),
         stringResource(R.string.settings_favourite_order_summary),
         onClick = { onOpen(FavouriteOrderRoute) },
+        trailing = { Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null) },
+    )
+    SettingRow(
+        stringResource(R.string.lists_manage),
+        stringResource(R.string.lists_manage_summary),
+        onClick = { onOpen(ManageListsRoute) },
         trailing = { Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null) },
     )
     SectionHeader(stringResource(R.string.settings_header_hidden))

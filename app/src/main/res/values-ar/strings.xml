@@ -60,6 +60,30 @@
     <string name="sync_step_library">جارٍ جلب الأفلام والمسلسلات</string>
     <string name="sync_waiting_server">في انتظار الخادم…</string>
     <string name="sync_size_so_far">%1$s حتى الآن</string>
+    <plurals name="progress_seconds_left">
+        <item quantity="zero">يتبقى نحو %d ث</item>
+        <item quantity="one">يتبقى نحو %d ث</item>
+        <item quantity="two">يتبقى نحو %d ث</item>
+        <item quantity="few">يتبقى نحو %d ث</item>
+        <item quantity="many">يتبقى نحو %d ث</item>
+        <item quantity="other">يتبقى نحو %d ث</item>
+    </plurals>
+    <plurals name="progress_minutes_left">
+        <item quantity="zero">يتبقى نحو %d د</item>
+        <item quantity="one">يتبقى نحو %d د</item>
+        <item quantity="two">يتبقى نحو %d د</item>
+        <item quantity="few">يتبقى نحو %d د</item>
+        <item quantity="many">يتبقى نحو %d د</item>
+        <item quantity="other">يتبقى نحو %d د</item>
+    </plurals>
+    <plurals name="progress_hours_left">
+        <item quantity="zero">يتبقى نحو %d س</item>
+        <item quantity="one">يتبقى نحو %d س</item>
+        <item quantity="two">يتبقى نحو %d س</item>
+        <item quantity="few">يتبقى نحو %d س</item>
+        <item quantity="many">يتبقى نحو %d س</item>
+        <item quantity="other">يتبقى نحو %d س</item>
+    </plurals>
     <string name="sync_step_done">تم</string>
     <string name="sync_step_now">قيد التنفيذ</string>
     <string name="sync_step_waiting">لم يبدأ</string>

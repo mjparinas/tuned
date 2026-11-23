@@ -26,6 +26,18 @@ class SyncTextTest {
     }
 
     @Test
+    fun aKnownSizeAddsHowMuchLongerWhenItHasBeenMoving() {
+        // 12.4 of 48 MB in 10s → about 29s left at that rate → "about 30 sec left".
+        val line =
+            SyncText.describe(
+                context,
+                SyncProgress(Step.DownloadPlaylist, 12_400_000, 48_000_000, steps = steps, startedAt = 1_000),
+                now = 11_000,
+            )
+        assertEquals("Step 1 of 7 · Downloading channels · 12 MB of 48 MB · about 30 sec left", line)
+    }
+
+    @Test
     fun anUnknownSizeShowsWhatHasArrived() {
         val line = SyncText.describe(context, SyncProgress(Step.DownloadGuide, 3_100_000, steps = steps))
         assertEquals("Step 5 of 7 · Downloading the guide · 3.1 MB so far", line)

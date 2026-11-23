@@ -91,6 +91,18 @@ data class AppSettings(
     val pureBlack: Boolean = false,
     val accent: Accent = Accent.VIOLET,
     val lighterMode: LighterMode = LighterMode.AUTO,
+    /**
+     * Android TV overscan calibration (Settings › Appearance › Calibrate screen). Shifts the safe area left or right
+     * in dp; positive is right. Backed up with the Tuned account so a reinstall keeps it.
+     */
+    val tvOffsetX: Int = 0,
+    /** Same for up and down; positive is down. */
+    val tvOffsetY: Int = 0,
+    /**
+     * How large the safe area is against the default margins: 1 is the default, above 1 stretches toward the edges
+     * (less padding), below 1 shrinks (more padding). Only used on a TV.
+     */
+    val tvZoom: Float = 1f,
     val startTab: StartTab = StartTab.LIVE,
     val lastTab: Int = 0,
     val hiddenRegions: Set<String> = emptySet(),

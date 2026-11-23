@@ -1,9 +1,7 @@
 // GET /api/account/logo?u=<http logo> (docs/decisions/web.md › Logos): a channel's logo for the website's Channels
 // and guide page, which as an https page can't show an http picture itself. Only for a signed-in browser on our own
-// page, behind the web_player flag. Pictures only (lib/logo-relay.mjs): never a stream, a playlist or a login.
+// page (same gate as Channels and guide — always on). Pictures only (lib/logo-relay.mjs): never a stream, a playlist or a login.
 import { guarded, json, webAccount } from "../../lib/auth.mjs";
-import { flagRows } from "../../lib/admin/data.mjs";
-import { flagsFor } from "../../lib/admin/flags.mjs";
 import { fromOurPage } from "../../lib/library.mjs";
 import { fetchLogo } from "../../lib/logo-relay.mjs";
 import { command } from "../../lib/redis.mjs";
@@ -12,17 +10,11 @@ import { command } from "../../lib/redis.mjs";
 const LOGOS_PER_HOUR = 6000;
 const WEEK = 7 * 86_400;
 
-async function on() {
-    if (process.env.VERCEL_ENV && process.env.VERCEL_ENV !== "production") return true;
-    return flagsFor(await flagRows(), null).web_player === true;
-}
-
 export function GET(request) {
     return guarded(async () => {
         if (!fromOurPage(request.headers)) return json({ status: "signed out" }, 401);
         const account = await webAccount(request);
         if (!account) return json({ status: "signed out" }, 401);
-        if (!(await on())) return json({ status: "off" }, 404);
         const key = `rl:logo:${account}`;
         const count = await command("INCR", key);
         if (count === 1) await command("EXPIRE", key, 3600);

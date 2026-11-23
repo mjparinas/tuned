@@ -32,6 +32,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.tunedplayer.app.R
 import com.tunedplayer.app.container
+import com.tunedplayer.app.ui.ProgressEta
 import com.tunedplayer.app.updates.GitHubUpdates
 import com.tunedplayer.app.updates.GitHubUpdates.InstallProblem
 import com.tunedplayer.app.updates.GitHubUpdates.InstallStep
@@ -194,10 +195,16 @@ object UpdateText {
         state: GitHubUpdates.State.Installing,
     ): String? = when {
         state.step == InstallStep.DOWNLOAD && state.total > 0 -> {
-            context.getString(
-                R.string.sync_size_of,
-                Formatter.formatShortFileSize(context, state.done),
-                Formatter.formatShortFileSize(context, state.total),
+            ProgressEta.withEta(
+                context,
+                context.getString(
+                    R.string.sync_size_of,
+                    Formatter.formatShortFileSize(context, state.done),
+                    Formatter.formatShortFileSize(context, state.total),
+                ),
+                state.done,
+                state.total,
+                state.startedAt,
             )
         }
 
@@ -206,7 +213,12 @@ object UpdateText {
         }
 
         else -> {
-            state.fraction?.let { NumberFormat.getPercentInstance().format(it.toDouble()) }
+            val percent = state.fraction?.let { NumberFormat.getPercentInstance().format(it.toDouble()) } ?: return null
+            if (state.total > 0) {
+                ProgressEta.withEta(context, percent, state.done, state.total, state.startedAt)
+            } else {
+                percent
+            }
         }
     }
 }

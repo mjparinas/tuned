@@ -240,3 +240,34 @@ test("a saved login is only handed to a fetch from our own page", () => {
     for (const site of ["cross-site", "same-site", "none"]) assert.equal(fromOurPage(new Headers({ "sec-fetch-site": site })), false);
     assert.equal(fromOurPage(new Headers()), false);
 });
+
+test("channel rename and logo edits land in the backup", () => {
+    const start = stored([xtream]);
+    const named = applyChange(start, { op: "channel_edit", itemId: 7, name: "CBC" }).stored;
+    assert.deepEqual(named.copy.channelEdits, [{ itemId: 7, name: "CBC", logo: null }]);
+    assert.deepEqual(libraryView(named).channelEdits, { 7: { name: "CBC", logo: null } });
+    const logoed = applyChange(named, { op: "channel_edit", itemId: 7, logo: "https://i.example/cbc.png" }).stored;
+    assert.deepEqual(logoed.copy.channelEdits, [{ itemId: 7, name: "CBC", logo: "https://i.example/cbc.png" }]);
+    assert.equal(applyChange(start, { op: "channel_edit", itemId: 7, logo: "ftp://x" }).error, "bad logo");
+    const cleared = applyChange(logoed, { op: "channel_edit", itemId: 7, name: "", logo: "" }).stored;
+    assert.deepEqual(cleared.copy.channelEdits, []);
+});
+
+test("favourites and lists are edited per profile", () => {
+    const start = stored([xtream]);
+    const fav = applyChange(start, { op: "favourite", itemId: 3, on: true }, 10).stored;
+    assert.equal(fav.copy.profiles.length, 1);
+    assert.deepEqual(fav.copy.profiles[0].favourites, [{ itemId: 3, addedAt: 10, position: 1 }]);
+    assert.equal(libraryView(fav).profiles[0].favourites[0], 3);
+    const listed = applyChange(fav, { op: "list_add", name: "Weekend" }, 11).stored;
+    const listId = listed.copy.profiles[0].lists[0].id;
+    assert.equal(listed.copy.profiles[0].lists[0].name, "Weekend");
+    const withItem = applyChange(listed, { op: "list_item", listId, itemId: 3, on: true }, 12).stored;
+    assert.deepEqual(withItem.copy.profiles[0].lists[0].items, [{ itemId: 3, addedAt: 12, position: 1 }]);
+    const renamed = applyChange(withItem, { op: "list_rename", listId, name: "Sport" }).stored;
+    assert.equal(renamed.copy.profiles[0].lists[0].name, "Sport");
+    const gone = applyChange(renamed, { op: "list_delete", listId }).stored;
+    assert.deepEqual(gone.copy.profiles[0].lists, []);
+    const off = applyChange(gone, { op: "favourite", itemId: 3, on: false }).stored;
+    assert.deepEqual(off.copy.profiles[0].favourites, []);
+});

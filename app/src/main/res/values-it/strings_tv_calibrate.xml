@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_tv_calibrate">Calibra schermo</string>
+    <string name="settings_tv_calibrate_summary">Sposta e allunga l\'immagine così gli angoli restano appena dentro la TV</string>
+    <string name="settings_tv_calibrate_hint">Guarda i segni in ogni angolo. Usa i controlli sotto per spostare o allungare l’immagine finché ogni segno resta appena dentro il bordo della TV. Se un segno è tagliato, riduci; se vedi spazio vuoto fuori da un segno, allunga. Reimposta ripristina i valori predefiniti.</string>
+    <string name="settings_tv_calibrate_horizontal">Sposta a sinistra o a destra</string>
+    <string name="settings_tv_calibrate_vertical">Sposta in alto o in basso</string>
+    <string name="settings_tv_calibrate_size">Allunga o riduci</string>
+    <string name="settings_tv_calibrate_centre">Centro</string>
+    <string name="settings_tv_calibrate_plus">+%1$d</string>
+    <string name="settings_tv_calibrate_minus">−%1$d</string>
+    <string name="settings_tv_calibrate_reset">Reimposta</string>
+    <string name="settings_tv_calibrate_done">Fatto</string>
+    <string name="settings_tv_calibrate_marks">Segni agli angoli per calibrare lo schermo</string>
+</resources>

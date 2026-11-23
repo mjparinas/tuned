@@ -1,15 +1,16 @@
 // The channels and guide (docs/decisions/web.md › The channel list; Melvin, 2026-11-20: "show me all the channels and
 // have a link that allows me to open up vlc or some other player? include an epg"; 2026-11-21: "basically the epg
 // clone of the app itself", "with logos and everything", "when i click on a channel, that should open up in vlc
-// automatically"). Behind the web_player flag. The channels and guide come from the copy the Tuned app keeps in the
-// account (api/account/channels); only a playlist without one is read straight from the provider, as the provider
+// automatically"). Always on for signed-in accounts (watch-first admin: rename, lists and favourites on the website
+// without the web_player flag; Melvin, 2026-11-22). The channels and guide come from the copy the Tuned app keeps in
+// the account (api/account/channels); only a playlist without one is read straight from the provider, as the provider
 // check does. A channel opens in VLC or another player on this device, which connects to the provider itself: this
 // page never plays or fetches a stream. Links are never shown on the page (they carry the login); they're only
 // handed to the player or copied.
 
 import { drawNav } from "/account/nav.js";
 import { enhanceSelect } from "/select.js";
-import { access, httpsVariant, isMixed, isPreviewHost, parseServer } from "/check/verdict.mjs";
+import { access, httpsVariant, isMixed, parseServer } from "/check/verdict.mjs";
 import {
     ago,
     applyFilters,
@@ -41,6 +42,7 @@ import {
     xtreamGuideUrl,
     xtreamPlaylistUrl,
 } from "/account/channels/core.mjs";
+import { wireEdits } from "/account/channels/edits.js";
 
 const $ = (id) => document.getElementById(id);
 const LIST_TIMEOUT_MS = 30_000;
@@ -66,7 +68,17 @@ const state = {
     loadId: 0,
     abort: null,
     click: "vlc", // what a click does: "vlc" (open VLC where it can, and copy) or "copy" (copy only)
+    profiles: [],
+    profileId: 1,
+    channelEdits: {},
 };
+
+let edits;
+edits = wireEdits({
+    getState: () => state,
+    onLibrary: (library) => edits.takeLibrary(library),
+    redraw: () => draw(),
+});
 
 const kindNames = { xtream: "Xtream login", link: "M3U link", stalker: "MAC portal", file: "File" };
 
@@ -76,18 +88,7 @@ function tell(id, text, tone = "error") {
     line.dataset.tone = tone;
 }
 
-// ---------- the flag and the account ----------
-
-/** Production follows the admin's web_player flag; preview deployments and localhost always show the page. */
-async function enabled() {
-    if (isPreviewHost(location.hostname)) return true;
-    try {
-        const res = await fetch("/api/flags", { cache: "no-store" });
-        return (await res.json())?.flags?.web_player === true;
-    } catch {
-        return false;
-    }
-}
+// ---------- the account ----------
 
 async function getJson(url) {
     try {
@@ -451,7 +452,8 @@ function channelLabel(c) {
 }
 
 /** A programme's details, and what to do with its channel. */
-function showDetails(c, p) {
+function showDetails(raw, p) {
+    const c = edits.display(raw);
     const now = Date.now();
     $("show-logo").replaceChildren(logo(c));
     $("show-channel").textContent = c.number ? `${c.number}  ${c.name}` : c.name;
@@ -480,10 +482,11 @@ function showDetails(c, p) {
     link.textContent = "Copy link";
     link.setAttribute("aria-label", `Copy link for ${c.name}`);
     link.onclick = () => copy(c.url, "show-message", `${c.name}'s link`);
-    $("show-actions").replaceChildren(open, file, link);
+    $("show-actions").replaceChildren(open, file, link, ...edits.channelButtons(raw));
     $("show").showModal();
     open.focus();
 }
+edits.setShowDetailsRefresh((raw) => showDetails(raw, null));
 
 // ----- the guide: channels down the side, time across, as the app's Live TV guide -----
 
@@ -666,7 +669,7 @@ function listRow(c, now) {
 
 function draw() {
     const now = Date.now();
-    state.items = applyFilters(state.channels, state.filters, nowOf);
+    state.items = applyFilters(state.channels.map(edits.display), state.filters, nowOf);
     const total = state.channels.length;
     const n = state.items.length;
     $("count").textContent =
@@ -1031,13 +1034,9 @@ setInterval(() => {
 }, 60_000);
 
 async function start() {
-    const [on, library] = await Promise.all([enabled(), getJson("/api/account/library")]);
+    const library = await getJson("/api/account/library");
     if (library.status === "signed out" || library.http === 401) {
         $("signed-out").hidden = false;
-        return;
-    }
-    if (!on) {
-        $("off").hidden = false;
         return;
     }
     if (library.status !== "ok") {
@@ -1048,6 +1047,8 @@ async function start() {
     $("account-nav").hidden = false;
     drawNav($("account-nav"), "channels");
     $("signed-in").hidden = false;
+    edits.takeLibrary(library);
+    enhanceSelect($("profile"));
     state.playlists = library.playlists ?? [];
     if (!state.playlists.length) {
         tell("status", "Your account has no playlists yet. Add one on the Playlists page or in the Tuned app.", "ok");

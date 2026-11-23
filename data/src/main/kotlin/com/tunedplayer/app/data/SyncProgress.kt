@@ -15,6 +15,8 @@ data class SyncProgress(
     val rows: Long = -1,
     /** Every step this refresh takes, in order; [step] is one of them. */
     val steps: List<Step> = listOf(step),
+    /** When this [step] began ([System.currentTimeMillis]), for estimating how much longer it has left; 0 when unknown. */
+    val startedAt: Long = 0,
 ) {
     /** In the order a refresh runs them. Names are only passed between the worker and the screens, never stored. */
     enum class Step {

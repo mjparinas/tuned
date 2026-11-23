@@ -2,9 +2,11 @@ package com.tunedplayer.app.ui.common
 
 import android.content.Context
 import android.content.Intent
-import android.content.pm.ActivityInfo
+import android.content.pm.ApplicationInfo
 import android.content.pm.ResolveInfo
-import android.speech.RecognizerIntent
+import android.content.pm.ServiceInfo
+import android.speech.RecognitionService
+import android.speech.SpeechRecognizer
 import androidx.compose.foundation.layout.Row
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -19,13 +21,15 @@ import androidx.compose.ui.focus.FocusManager
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.input.key.Key
-import androidx.compose.ui.platform.SoftwareKeyboardController
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertIsFocused
+import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performKeyInput
 import androidx.compose.ui.test.pressKey
 import androidx.test.core.app.ApplicationProvider
@@ -37,14 +41,16 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 import android.view.KeyEvent as AndroidKeyEvent
 import androidx.compose.ui.input.key.KeyEvent as ComposeKeyEvent
 
 /**
  * A search box driven by a TV remote (Melvin, 2026-11-21: "there is a speaker icon. When I click right ... I can't
- * access that speaker icon"): the mic sits before the box and has the remote first, Right from the box reaches Clear,
- * and OK opens the on-screen keyboard.
+ * access that speaker icon"; 2026-11-22: Tuned's keyboard and inline voice, not the system phone-keyboard strip or a
+ * second recogniser activity): the mic sits before the box and has the remote first, Right from the box reaches Clear,
+ * and OK opens Tuned's D-pad keyboard.
  */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [35], qualifiers = "w960dp-h540dp-land-television-xhdpi")
@@ -55,43 +61,48 @@ class RemoteTextInputTest {
     private fun text(id: Int): String = ApplicationProvider.getApplicationContext<Context>().getString(id)
 
     private fun addRecogniser() {
-        // A device with a speech recogniser, as on a Shield or any Google TV.
+        // A RecognitionService, which is what SpeechRecognizer.isRecognitionAvailable looks for on a TV.
         val context = ApplicationProvider.getApplicationContext<Context>()
-        val recogniser =
+        val service =
             ResolveInfo().apply {
-                activityInfo =
-                    ActivityInfo().apply {
+                serviceInfo =
+                    ServiceInfo().apply {
                         packageName = "com.google.android.katniss"
-                        name = "Recogniser"
+                        name = "FakeRecognitionService"
+                        applicationInfo = ApplicationInfo().apply { packageName = "com.google.android.katniss" }
                     }
             }
-        shadowOf(context.packageManager).addResolveInfoForIntent(Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH), recogniser)
+        shadowOf(context.packageManager).addResolveInfoForIntent(Intent(RecognitionService.SERVICE_INTERFACE), service)
+        assertTrue(SpeechRecognizer.isRecognitionAvailable(context))
     }
 
     /** A search box laid out as the search screens do, opening with the remote where [SearchStartFocus] puts it. */
     private fun box(initial: String) {
         compose.setContent {
             MaterialTheme {
-                var value by remember { mutableStateOf(initial) }
-                val boxFocus = remember { FocusRequester() }
-                val micFocus = remember { FocusRequester() }
-                SearchStartFocus(box = boxFocus, mic = micFocus)
-                Row {
-                    SearchBoxVoiceBefore({ value = it }, Modifier.focusRequester(micFocus))
-                    TextField(
-                        value = value,
-                        onValueChange = { value = it },
-                        placeholder = { Text("Search") },
-                        trailingIcon = searchBoxTrailing(value, { value = it }),
-                        singleLine = true,
-                        modifier =
-                            Modifier
-                                .remoteTextInput(SearchBoxShape)
-                                .weight(1f)
-                                .testTag("box")
-                                .focusRequester(boxFocus),
-                    )
-                    SearchBoxButtonsBeside(value, { value = it })
+                TvKeyboardHost {
+                    var value by remember { mutableStateOf(initial) }
+                    val boxFocus = remember { FocusRequester() }
+                    val micFocus = remember { FocusRequester() }
+                    SearchStartFocus(box = boxFocus, mic = micFocus)
+                    Row {
+                        SearchBoxVoiceBefore({ value = it }, Modifier.focusRequester(micFocus))
+                        TextField(
+                            value = value,
+                            onValueChange = { value = it },
+                            placeholder = { Text("Search") },
+                            trailingIcon = searchBoxTrailing(value, { value = it }),
+                            readOnly = true,
+                            singleLine = true,
+                            modifier =
+                                Modifier
+                                    .remoteTextInput(SearchBoxShape, value) { value = it }
+                                    .weight(1f)
+                                    .testTag("box")
+                                    .focusRequester(boxFocus),
+                        )
+                        SearchBoxButtonsBeside(value, { value = it })
+                    }
                 }
             }
         }
@@ -137,14 +148,20 @@ class RemoteTextInputTest {
         compose.onNodeWithContentDescription(text(R.string.search_clear)).assertIsFocused()
     }
 
-    private class FakeKeyboard : SoftwareKeyboardController {
-        var shown = 0
-
-        override fun show() {
-            shown++
-        }
-
-        override fun hide() = Unit
+    @Test
+    fun okOpensTunedsKeyboardAndAKeyTypesIntoTheBox() {
+        box("ho")
+        compose.onNodeWithTag("box").assertIsFocused()
+        compose.onNodeWithTag("box").performKeyInput { pressKey(Key.DirectionCenter) }
+        compose.waitForIdle()
+        compose.onNodeWithTag(TV_KEYBOARD_DONE_TAG).assertExists()
+        compose.onNodeWithTag("${TV_KEYBOARD_KEY_TAG}c").performClick()
+        compose.waitForIdle()
+        compose.onNodeWithTag(TV_KEYBOARD_TITLE_TAG).assertTextEquals("hoc")
+        compose.onNodeWithTag(TV_KEYBOARD_DONE_TAG).performClick()
+        compose.waitForIdle()
+        compose.onNodeWithTag(TV_KEYBOARD_DONE_TAG).assertDoesNotExist()
+        compose.onNodeWithText("hoc").assertExists()
     }
 
     private class FakeFocus : FocusManager {
@@ -173,20 +190,30 @@ class RemoteTextInputTest {
                 AndroidKeyEvent.KEYCODE_BUTTON_A,
             )
         for (code in codes) {
-            val keyboard = FakeKeyboard()
+            var opened = 0
             val focus = FakeFocus()
-            assertTrue(RemoteKeys.handle(key(AndroidKeyEvent.ACTION_DOWN, code), keyboard, focus))
-            assertEquals(0, keyboard.shown, "opens on release, not press ($code)")
-            assertTrue(RemoteKeys.handle(key(AndroidKeyEvent.ACTION_UP, code), keyboard, focus))
-            assertEquals(1, keyboard.shown, "keycode $code")
+            assertTrue(RemoteKeys.handle(key(AndroidKeyEvent.ACTION_DOWN, code), { opened++ }, focus))
+            assertEquals(0, opened, "opens on release, not press ($code)")
+            assertTrue(RemoteKeys.handle(key(AndroidKeyEvent.ACTION_UP, code), { opened++ }, focus))
+            assertEquals(1, opened, "keycode $code")
         }
     }
 
     @Test
     fun leftAndRightLeaveTheBox() {
         val focus = FakeFocus()
-        RemoteKeys.handle(key(AndroidKeyEvent.ACTION_DOWN, AndroidKeyEvent.KEYCODE_DPAD_RIGHT), FakeKeyboard(), focus)
-        RemoteKeys.handle(key(AndroidKeyEvent.ACTION_DOWN, AndroidKeyEvent.KEYCODE_DPAD_LEFT), FakeKeyboard(), focus)
+        var opened = 0
+        RemoteKeys.handle(key(AndroidKeyEvent.ACTION_DOWN, AndroidKeyEvent.KEYCODE_DPAD_RIGHT), { opened++ }, focus)
+        RemoteKeys.handle(key(AndroidKeyEvent.ACTION_DOWN, AndroidKeyEvent.KEYCODE_DPAD_LEFT), { opened++ }, focus)
         assertEquals(listOf(FocusDirection.Right, FocusDirection.Left), focus.moves)
+        assertEquals(0, opened)
+    }
+
+    @Test
+    fun voiceSearchOnATvNeedsTheRecognitionServiceNotTheActivity() {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        assertFalse(voiceSearchAvailable(context, television = true))
+        addRecogniser()
+        assertTrue(voiceSearchAvailable(context, television = true))
     }
 }

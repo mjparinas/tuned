@@ -555,12 +555,13 @@ export function fromAppCopy(copy, login) {
     const channels = [];
     for (const c of copy.channels) {
         if (!Array.isArray(c)) continue;
-        const [name, group, logo, epgId, number, link, region, adult] = c;
+        const [name, group, logo, epgId, number, link, region, adult, id] = c;
         // Adult channels stay in the app, where they sit behind the parental PIN.
         if (adult === 1) continue;
         const url = fillLogin(link, login);
         if (!url) continue;
         channels.push({
+            id: Number.isFinite(Number(id)) && Number(id) > 0 ? Number(id) : 0,
             region: typeof region === "string" ? region.toUpperCase() : "",
             name: String(name ?? "").trim() || "Channel",
             group: String(group ?? ""),

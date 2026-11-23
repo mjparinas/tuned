@@ -103,6 +103,10 @@ val SETTING_FIELDS: List<SettingField<*, *>> =
         choice("accent", { accent }) { copy(accent = it) },
         // Whether a device is weak is the device's own business, so this stays on it rather than syncing.
         choice("lighter_mode", { lighterMode }) { copy(lighterMode = it) }.notBackedUp(),
+        // TV overscan: backed up so a reinstall or another TV of the same account keeps the calibration.
+        int("tv_offset_x", { tvOffsetX }) { copy(tvOffsetX = it) },
+        int("tv_offset_y", { tvOffsetY }) { copy(tvOffsetY = it) },
+        float("tv_zoom", { tvZoom }) { copy(tvZoom = it) },
         // Start and lists
         choice("start_tab", { startTab }) { copy(startTab = it) },
         int("last_tab", { lastTab }) { copy(lastTab = it) }.notBackedUp(),

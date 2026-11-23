@@ -28,8 +28,6 @@ import androidx.compose.ui.input.key.nativeKeyCode
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.platform.LocalFocusManager
-import androidx.compose.ui.platform.LocalSoftwareKeyboardController
-import androidx.compose.ui.platform.SoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.tunedplayer.app.R
@@ -39,22 +37,27 @@ import com.tunedplayer.app.diagnostics.attempt
  * Makes a text field work with a TV remote (Melvin, 2026-11-21: on TV search "it asks me to use my keyboard. I don't
  * know how to do that ... there is a speaker icon. When I click right ... I can't access that speaker icon"):
  *
- * - OK (the centre of the D-pad, Enter, or a game pad's A) opens the on-screen keyboard every time. Compose only does
- *   this for the centre key from a physical D-pad, so Enter, A and the phone remote app's keys did nothing.
+ * - OK (the centre of the D-pad, Enter, or a game pad's A) opens Tuned's D-pad keyboard every time, never the system
+ *   input method that asks to type on a phone. Compose only opens an IME for the centre key from a physical D-pad, so
+ *   Enter, A and the phone remote app's keys did nothing.
  * - Left and Right leave the field for the button beside it, such as the mic, instead of moving a cursor no one sees.
  *   The keyboard has its own arrows for that.
  * - A ring in the theme's colour shows while the remote is on it.
  *
  * Put it first in the field's modifier. On phones and tablets it changes nothing.
  */
-fun Modifier.remoteTextInput(shape: Shape): Modifier = composed {
+fun Modifier.remoteTextInput(
+    shape: Shape,
+    text: String,
+    onChange: (String) -> Unit,
+): Modifier = composed {
     if (!isTelevision()) return@composed this
-    val keyboard = LocalSoftwareKeyboardController.current
     val focus = LocalFocusManager.current
+    val openKeyboard = rememberTvKeyboardOpener(text, onChange)
     val ring = MaterialTheme.colorScheme.primary
     this
         .focusRing(shape, ring)
-        .onPreviewKeyEvent { event -> RemoteKeys.handle(event, keyboard, focus) }
+        .onPreviewKeyEvent { event -> RemoteKeys.handle(event, openKeyboard, focus) }
 }
 
 /** What [remoteTextInput] does with each key, apart from Compose, so a test can drive it without a TV. */
@@ -63,7 +66,7 @@ internal object RemoteKeys {
 
     fun handle(
         event: KeyEvent,
-        keyboard: SoftwareKeyboardController?,
+        openKeyboard: () -> Unit,
         focus: FocusManager,
     ): Boolean {
         val code = event.key.nativeKeyCode
@@ -71,7 +74,7 @@ internal object RemoteKeys {
         return when {
             code in ok -> {
                 // Opened on release, as a button acts, and the press is taken too so nothing else acts on it.
-                if (event.type == KeyEventType.KeyUp) keyboard?.show()
+                if (event.type == KeyEventType.KeyUp) openKeyboard()
                 true
             }
 

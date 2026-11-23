@@ -32,7 +32,9 @@ import com.tunedplayer.app.data.ThemeMode
 import com.tunedplayer.app.ui.AppNav
 import com.tunedplayer.app.ui.browseScreens
 import com.tunedplayer.app.ui.common.LocalTimeZone
+import com.tunedplayer.app.ui.common.LocalTvCalibration
 import com.tunedplayer.app.ui.common.TvSafeArea
+import com.tunedplayer.app.ui.common.tvCalibration
 import com.tunedplayer.app.ui.playlistScreens
 import com.tunedplayer.app.ui.settingsScreens
 import com.tunedplayer.app.ui.theme.TunedTheme
@@ -96,7 +98,10 @@ abstract class Screenshots {
         runBlocking(Dispatchers.IO) { app.container.settings.update { settings } }
         compose.setContent {
             TunedTheme(mode = settings.theme, pureBlack = settings.pureBlack, accent = settings.accent) {
-                CompositionLocalProvider(LocalTimeZone provides TimeZones.resolve(settings.timeZone)) {
+                CompositionLocalProvider(
+                    LocalTimeZone provides TimeZones.resolve(settings.timeZone),
+                    LocalTvCalibration provides settings.tvCalibration(),
+                ) {
                     TvSafeArea {
                         val nav = rememberNavController()
                         val appNav = AppNav(nav, settings, play = {}, tune = {}, openPerson = {}, openHome = {}, openWelcome = {})

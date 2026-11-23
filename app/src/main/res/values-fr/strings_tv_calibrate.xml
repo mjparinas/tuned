@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_tv_calibrate">Calibrer l\'écran</string>
+    <string name="settings_tv_calibrate_summary">Déplacez et étirez l\'image pour que les coins restent juste à l\'intérieur du téléviseur</string>
+    <string name="settings_tv_calibrate_hint">Regardez les marques dans chaque coin. Utilisez les commandes ci-dessous pour déplacer ou étirer l’image jusqu’à ce que chaque marque soit juste à l’intérieur du bord du téléviseur. Si une marque est coupée, réduisez ; s’il y a de l’espace vide à l’extérieur d’une marque, étirez. Réinitialiser rétablit les valeurs par défaut.</string>
+    <string name="settings_tv_calibrate_horizontal">Déplacer à gauche ou à droite</string>
+    <string name="settings_tv_calibrate_vertical">Déplacer en haut ou en bas</string>
+    <string name="settings_tv_calibrate_size">Étirer ou réduire</string>
+    <string name="settings_tv_calibrate_centre">Centre</string>
+    <string name="settings_tv_calibrate_plus">+%1$d</string>
+    <string name="settings_tv_calibrate_minus">−%1$d</string>
+    <string name="settings_tv_calibrate_reset">Réinitialiser</string>
+    <string name="settings_tv_calibrate_done">Terminé</string>
+    <string name="settings_tv_calibrate_marks">Marques des coins pour calibrer l\'écran</string>
+</resources>

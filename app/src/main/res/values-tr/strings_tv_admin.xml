@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="tv_playlists_admin_hint">Bir oynatma listesini telefonunuzda veya tunedplayer.com üzerinde yeniden adlandırın ya da düzenleyin. Burada yine de değiştirebilir veya kaldırabilirsiniz.</string>
+    <string name="tv_lists_rename_hint">Bir listeyi telefonunuzda veya tunedplayer.com üzerinde yeniden adlandırın. Burada yine de silebilirsiniz.</string>
+    <string name="tv_profiles_manage_hint">Profilleri telefonunuzda veya tunedplayer.com üzerinde ekleyin ya da yeniden adlandırın</string>
+    <string name="tv_events_follow_hint">Bir takımı veya ligi telefonunuzda veya tunedplayer.com üzerinde takip edin</string>
+    <string name="tv_list_new_hint">Yeni bir listeyi telefonda veya tunedplayer.com’da oluşturun</string>
+    <string name="tv_pin_forgot_hint">PIN’inizi mi unuttunuz? Telefonda veya tunedplayer.com’da sıfırlayın</string>
+</resources>

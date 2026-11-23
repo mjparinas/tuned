@@ -46,6 +46,7 @@ import com.tunedplayer.app.container
 import com.tunedplayer.app.core.PosterArt
 import com.tunedplayer.app.diagnostics.attempt
 import com.tunedplayer.app.ui.common.focusRing
+import com.tunedplayer.app.ui.common.isTelevision
 import com.tunedplayer.app.ui.common.skeleton
 
 /**
@@ -150,7 +151,9 @@ fun Poster(
     show: Boolean = false,
 ) {
     var menu by remember { mutableStateOf(false) }
-    val hasMenu = onToggleFavourite != null || onPlayNow != null || extraMenu.isNotEmpty()
+    // A TV never opens a long-press menu: OK opens the film or show page, where every action already sits.
+    val hasMenu =
+        !isTelevision() && (onToggleFavourite != null || onPlayNow != null || extraMenu.isNotEmpty())
     Column(
         modifier
             .clip(RoundedCornerShape(10.dp))

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_tv_calibrate">معايرة الشاشة</string>
+    <string name="settings_tv_calibrate_summary">حرّك الصورة وتمدّدها حتى تبقى الزوايا داخل حدود التلفاز مباشرة</string>
+    <string name="settings_tv_calibrate_hint">انظر إلى العلامات في كل زاوية. استخدم عناصر التحكم أدناه لتحريك الصورة أو تمديدها حتى تبقى كل علامة داخل حافة التلفاز مباشرة. إذا قُطعت علامة، قلّص؛ وإذا رأيت مساحة فارغة خارج علامة، مدّد. إعادة التعيين تعيد القيم الافتراضية.</string>
+    <string name="settings_tv_calibrate_horizontal">تحريك يسارًا أو يمينًا</string>
+    <string name="settings_tv_calibrate_vertical">تحريك أعلى أو أسفل</string>
+    <string name="settings_tv_calibrate_size">تمديد أو تقليص</string>
+    <string name="settings_tv_calibrate_centre">الوسط</string>
+    <string name="settings_tv_calibrate_plus">+%1$d</string>
+    <string name="settings_tv_calibrate_minus">−%1$d</string>
+    <string name="settings_tv_calibrate_reset">إعادة التعيين</string>
+    <string name="settings_tv_calibrate_done">تم</string>
+    <string name="settings_tv_calibrate_marks">علامات الزوايا لمعايرة الشاشة</string>
+</resources>

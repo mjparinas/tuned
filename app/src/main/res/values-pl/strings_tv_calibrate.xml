@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_tv_calibrate">Kalibracja ekranu</string>
+    <string name="settings_tv_calibrate_summary">Przesuń i rozciągnij obraz, aby rogi były tuż wewnątrz telewizora</string>
+    <string name="settings_tv_calibrate_hint">Spójrz na znaczniki w każdym rogu. Użyj suwaków poniżej, aby przesunąć lub rozciągnąć obraz, aż każdy znacznik będzie tuż wewnątrz krawędzi telewizora. Jeśli znacznik jest ucięty, zmniejsz; jeśli widać pustą przestrzeń poza znacznikiem, rozciągnij. Resetuj przywraca ustawienia domyślne.</string>
+    <string name="settings_tv_calibrate_horizontal">Przesuń w lewo lub w prawo</string>
+    <string name="settings_tv_calibrate_vertical">Przesuń w górę lub w dół</string>
+    <string name="settings_tv_calibrate_size">Rozciągnij lub zmniejsz</string>
+    <string name="settings_tv_calibrate_centre">Środek</string>
+    <string name="settings_tv_calibrate_plus">+%1$d</string>
+    <string name="settings_tv_calibrate_minus">−%1$d</string>
+    <string name="settings_tv_calibrate_reset">Resetuj</string>
+    <string name="settings_tv_calibrate_done">Gotowe</string>
+    <string name="settings_tv_calibrate_marks">Znaczniki w rogach do kalibracji ekranu</string>
+</resources>

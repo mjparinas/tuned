@@ -78,6 +78,7 @@ data class ItemUrl(
 
 /** A live channel as the website's Channels and guide page gets it ([com.tunedplayer.app.data.SharedChannels]). */
 data class SharedChannelRow(
+    val id: Long,
     val name: String,
     val groupName: String,
     val logo: String?,

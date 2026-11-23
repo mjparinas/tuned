@@ -60,6 +60,15 @@
     <string name="sync_step_library">正在获取电影和剧集</string>
     <string name="sync_waiting_server">正在等待服务器…</string>
     <string name="sync_size_so_far">已下载 %1$s</string>
+    <plurals name="progress_seconds_left">
+        <item quantity="other">大约还剩 %d 秒</item>
+    </plurals>
+    <plurals name="progress_minutes_left">
+        <item quantity="other">大约还剩 %d 分钟</item>
+    </plurals>
+    <plurals name="progress_hours_left">
+        <item quantity="other">大约还剩 %d 小时</item>
+    </plurals>
     <string name="sync_step_done">已完成</string>
     <string name="sync_step_now">进行中</string>
     <string name="sync_step_waiting">未开始</string>

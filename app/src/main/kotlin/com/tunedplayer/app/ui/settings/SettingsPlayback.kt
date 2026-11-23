@@ -11,6 +11,7 @@ import com.tunedplayer.app.data.AppSettings
 import com.tunedplayer.app.data.BufferMode
 import com.tunedplayer.app.premium.LockedRow
 import com.tunedplayer.app.premium.premiumUnlocked
+import com.tunedplayer.app.ui.common.isTelevision
 import com.tunedplayer.app.work.TvHome
 
 @Composable
@@ -81,27 +82,30 @@ internal fun PlaybackPage(
         vm.update { it.copy(buffer = b) }
     }
     SectionHeader(stringResource(R.string.settings_header_screen))
-    SwitchRow(
-        stringResource(R.string.settings_landscape),
-        settings.landscapePlayback,
-    ) { on -> vm.update { it.copy(landscapePlayback = on) } }
-    SwitchRow(
-        stringResource(R.string.settings_pip),
-        settings.pictureInPicture,
-        stringResource(R.string.settings_pip_summary),
-    ) { on ->
-        vm.update { it.copy(pictureInPicture = on) }
+    // Landscape, PiP, the mini player, background play and gestures are phone concepts; a TV remote never uses them.
+    if (!isTelevision()) {
+        SwitchRow(
+            stringResource(R.string.settings_landscape),
+            settings.landscapePlayback,
+        ) { on -> vm.update { it.copy(landscapePlayback = on) } }
+        SwitchRow(
+            stringResource(R.string.settings_pip),
+            settings.pictureInPicture,
+            stringResource(R.string.settings_pip_summary),
+        ) { on ->
+            vm.update { it.copy(pictureInPicture = on) }
+        }
+        SwitchRow(
+            stringResource(R.string.settings_mini_player),
+            settings.miniPlayer,
+            stringResource(R.string.settings_mini_player_summary),
+        ) { on -> vm.update { it.copy(miniPlayer = on) } }
+        SwitchRow(
+            stringResource(R.string.settings_background_play),
+            settings.backgroundPlay,
+            stringResource(R.string.settings_background_play_summary),
+        ) { on -> vm.update { it.copy(backgroundPlay = on) } }
     }
-    SwitchRow(
-        stringResource(R.string.settings_mini_player),
-        settings.miniPlayer,
-        stringResource(R.string.settings_mini_player_summary),
-    ) { on -> vm.update { it.copy(miniPlayer = on) } }
-    SwitchRow(
-        stringResource(R.string.settings_background_play),
-        settings.backgroundPlay,
-        stringResource(R.string.settings_background_play_summary),
-    ) { on -> vm.update { it.copy(backgroundPlay = on) } }
     SwitchRow(
         stringResource(R.string.settings_media_buttons),
         settings.mediaButtons,
@@ -126,11 +130,13 @@ internal fun PlaybackPage(
             stringResource(R.string.settings_tunneled_playback_summary),
         ) { on -> vm.update { it.copy(tunneledPlayback = on) } }
     }
-    SwitchRow(
-        stringResource(R.string.settings_gestures),
-        settings.playerGestures,
-        stringResource(R.string.settings_gestures_summary),
-    ) { on -> vm.update { it.copy(playerGestures = on) } }
+    if (!isTelevision()) {
+        SwitchRow(
+            stringResource(R.string.settings_gestures),
+            settings.playerGestures,
+            stringResource(R.string.settings_gestures_summary),
+        ) { on -> vm.update { it.copy(playerGestures = on) } }
+    }
     ChoiceRow(
         stringResource(R.string.settings_controls_timeout),
         listOf(2_000, 3_000, 5_000, 8_000),

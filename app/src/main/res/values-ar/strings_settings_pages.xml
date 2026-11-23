@@ -11,7 +11,7 @@
     <string name="settings_page_playback_summary">الصوت والمتابعة وتخطي المقدمة والإرجاع وعناصر تحكم المشغّل</string>
     <string name="settings_page_reliability">عند فشل قناة</string>
     <string name="settings_page_reliability_summary">إعادة الاتصال والنسخ الاحتياطية والضبط التلقائي وحالة القنوات</string>
-    <string name="settings_page_appearance_summary">السمة والألوان والأسود الخالص</string>
+    <string name="settings_page_appearance_summary">السمة والألوان والأسود الخالص ومعايرة شاشة التلفاز</string>
     <string name="settings_page_about">التحديثات والخيارات المتقدمة</string>
     <string name="settings_page_about_summary">التحديثات ووكيل المستخدم والسجلات</string>
     <string name="settings_header_hidden">ما هو مخفي</string>

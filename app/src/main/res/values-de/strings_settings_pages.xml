@@ -11,7 +11,7 @@
     <string name="settings_page_playback_summary">Audio, Fortsetzen, Intro überspringen, Zurückspulen und die Player-Steuerung</string>
     <string name="settings_page_reliability">Wenn ein Sender ausfällt</string>
     <string name="settings_page_reliability_summary">Neu verbinden, Ersatzkopien, Sendersuche und Senderzustand</string>
-    <string name="settings_page_appearance_summary">Design, Farben und reines Schwarz</string>
+    <string name="settings_page_appearance_summary">Design, Farben, reines Schwarz und TV-Kalibrierung</string>
     <string name="settings_page_about">Updates und Erweitert</string>
     <string name="settings_page_about_summary">Updates, User-Agent und Protokolle</string>
     <string name="settings_header_hidden">Was ausgeblendet ist</string>

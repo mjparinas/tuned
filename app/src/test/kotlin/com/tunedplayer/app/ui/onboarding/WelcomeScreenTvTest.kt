@@ -64,7 +64,11 @@ class WelcomeScreenTvTest {
     /** The node's full bounds (unclipped by a scrolling column) sit inside the TV's overscan margin. */
     private fun assertWhollyOnScreen(id: Int) {
         val screen = compose.onRoot().fetchSemanticsNode().boundsInRoot
-        val margin = with(compose.density) { 27.dp.toPx() }
+        val margin =
+            with(compose.density) {
+                com.tunedplayer.app.ui.common.TV_VERTICAL_MARGIN
+                    .toPx()
+            }
         val node = compose.onNodeWithText(text(id))
         node.assertIsDisplayed()
         val semantics = node.fetchSemanticsNode()
