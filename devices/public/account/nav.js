@@ -10,8 +10,9 @@ const SECTIONS = [
     ["premium", "Premium"],
     ["playlists", "Playlists and settings"],
     // Channels and guide is always on so phone/TV watch-first admin can rename channels and lists on the website.
-    // Check my provider stays behind web_player (preview deployments and localhost always).
+    // Watch and Check my provider stay behind web_player (preview deployments and localhost always).
     ["channels", "Channels and guide", { href: "/account/channels" }],
+    ["watch", "Watch", { href: "/watch", flag: "web_player" }],
     ["check", "Check my provider", { href: "/check", flag: "web_player" }],
     ["pair", "Pair a TV"],
     ["backup", "Backup"],
