@@ -58,9 +58,10 @@ internal fun <T : Any> WarmVisibleArt(
                 start to end
             }.distinctUntilChanged()
             .collect { (start, end) ->
-                if (end < start) return@collect
+                if (items.itemCount == 0 || end < start) return@collect
                 val urls =
                     (start..end).mapNotNull { i ->
+                        if (i !in 0 until items.itemCount) return@mapNotNull null
                         items.peek(i)?.let(logo)?.takeIf { it.isNotBlank() }
                     }
                 warm.enqueueArt(urls)

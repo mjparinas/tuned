@@ -495,8 +495,8 @@ internal fun ProfileTile(
     selected: Boolean,
     managing: Boolean,
     onClick: () -> Unit,
-    onFocused: () -> Unit = {},
     modifier: Modifier = Modifier,
+    onFocused: () -> Unit = {},
 ) {
     val shape = RoundedCornerShape(20.dp)
     val avatarShape = RoundedCornerShape(TILE_AVATAR * 0.28f)

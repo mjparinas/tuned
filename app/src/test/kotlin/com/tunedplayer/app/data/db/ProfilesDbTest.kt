@@ -112,6 +112,8 @@ class ProfilesDbTest {
         TunedDatabase.MIGRATION_12_13.migrate(old)
         // 13 to 16 leave these tables alone; 17 adds the avatar.
         TunedDatabase.MIGRATION_16_17.migrate(old)
+        // Speculative warm indexes on favourites and history (Room 24).
+        TunedDatabase.MIGRATION_23_24.migrate(old)
 
         assertEquals(listOf("7|500|3|1"), rows(old, "SELECT itemId, addedAt, position, profileId FROM favourites"))
         assertEquals(listOf("8|1000|2000|50|1"), rows(old, "SELECT itemId, positionMs, durationMs, watchedAt, profileId FROM history"))

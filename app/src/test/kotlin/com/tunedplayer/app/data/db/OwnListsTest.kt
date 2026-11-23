@@ -147,6 +147,8 @@ class OwnListsTest {
             )
         val old = helper.writableDatabase
         TunedDatabase.MIGRATION_17_18.migrate(old)
+        // Speculative warm indexes on list_items (Room 24).
+        TunedDatabase.MIGRATION_23_24.migrate(old)
         val fresh = db.openHelper.writableDatabase
         for (table in listOf("lists", "list_items")) assertEquals(shape(fresh, table), shape(old, table), table)
         helper.close()
