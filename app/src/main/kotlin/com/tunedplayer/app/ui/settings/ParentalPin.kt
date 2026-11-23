@@ -36,12 +36,11 @@ enum class PinMode { Create, Unlock, Forgot }
 
 enum class PinResult { Ok, Wrong, TooMany }
 
-fun PinThrottle.Result.toPinResult(): PinResult =
-    when (this) {
-        PinThrottle.Result.OK -> PinResult.Ok
-        PinThrottle.Result.WRONG -> PinResult.Wrong
-        PinThrottle.Result.TOO_MANY -> PinResult.TooMany
-    }
+fun PinThrottle.Result.toPinResult(): PinResult = when (this) {
+    PinThrottle.Result.OK -> PinResult.Ok
+    PinThrottle.Result.WRONG -> PinResult.Wrong
+    PinThrottle.Result.TOO_MANY -> PinResult.TooMany
+}
 
 /** What a PIN dialog does with what's typed: the parental PIN in Settings, or a profile's own PIN. */
 interface PinActions {
@@ -219,7 +218,10 @@ private fun SecretField(
         visualTransformation = PasswordVisualTransformation(),
         keyboardOptions = KeyboardOptions(keyboardType = if (digits) KeyboardType.NumberPassword else KeyboardType.Password),
         // Digits stay on Tuned's keyboard on a TV so Android never asks for a phone keyboard.
-        modifier = Modifier.fillMaxWidth().then(if (tv) Modifier.remoteTextInput(OutlinedTextFieldDefaults.shape, value, accept) else Modifier),
+        modifier =
+            Modifier.fillMaxWidth().then(
+                if (tv) Modifier.remoteTextInput(OutlinedTextFieldDefaults.shape, value, accept) else Modifier,
+            ),
     )
 }
 
