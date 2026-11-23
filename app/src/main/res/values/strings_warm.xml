@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Speculative warm of the next browse screens (docs/decisions/speed.md). -->
+    <string name="settings_warm_next">Warm next screens</string>
+    <string name="settings_warm_next_summary">Load the next lists and posters in the background so tab switches feel instant</string>
+</resources>

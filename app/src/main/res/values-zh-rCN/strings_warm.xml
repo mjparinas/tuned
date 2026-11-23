@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_warm_next">预加载下一屏</string>
+    <string name="settings_warm_next_summary">在后台加载接下来的列表和海报，让切换标签感觉更即时</string>
+</resources>

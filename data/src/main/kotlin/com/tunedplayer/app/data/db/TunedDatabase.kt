@@ -34,11 +34,13 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         CatchUpItemEntity::class,
         ShowDetailsEntity::class,
     ],
-    version = 23,
+    version = 24,
     exportSchema = true,
 )
 abstract class TunedDatabase : RoomDatabase() {
     abstract fun items(): ItemDao
+
+    abstract fun browseWarm(): BrowseWarmDao
 
     abstract fun programmes(): ProgrammeDao
 
@@ -105,6 +107,7 @@ abstract class TunedDatabase : RoomDatabase() {
                 MIGRATION_20_21,
                 MIGRATION_21_22,
                 MIGRATION_22_23,
+                MIGRATION_23_24,
             ).addCallback(FirstProfile)
             // Going back to an older release (installing an older APK) can't keep a newer database: start it afresh
             // rather than crash on every launch. Upgrades always migrate, above.
@@ -391,6 +394,45 @@ abstract class TunedDatabase : RoomDatabase() {
                     db.execSQL(
                         "CREATE INDEX IF NOT EXISTS `index_items_kind_topRating_sortOrder` " +
                             "ON `items` (`kind` ASC, `topRating` DESC, `sortOrder` ASC)",
+                    )
+                }
+            }
+
+        /**
+         * Browse warm indexes: favourites and list order, history by profile, dead-channel filter, and show_groups
+         * sort columns (docs/decisions/speed.md › Speculative warm).
+         */
+        val MIGRATION_23_24 =
+            object : Migration(23, 24) {
+                override fun migrate(db: SupportSQLiteDatabase) {
+                    db.execSQL(
+                        "CREATE INDEX IF NOT EXISTS `index_favourites_profileId_position` " +
+                            "ON `favourites` (`profileId`, `position`)",
+                    )
+                    db.execSQL(
+                        "CREATE INDEX IF NOT EXISTS `index_list_items_listId_position` " +
+                            "ON `list_items` (`listId`, `position`)",
+                    )
+                    db.execSQL(
+                        "CREATE INDEX IF NOT EXISTS `index_history_profileId_watchedAt` " +
+                            "ON `history` (`profileId`, `watchedAt`)",
+                    )
+                    db.execSQL("CREATE INDEX IF NOT EXISTS `index_channel_scan_hidden` ON `channel_scan` (`hidden`)")
+                    db.execSQL(
+                        "CREATE INDEX IF NOT EXISTS `index_show_groups_added_sortOrder` " +
+                            "ON `show_groups` (`added`, `sortOrder`)",
+                    )
+                    db.execSQL(
+                        "CREATE INDEX IF NOT EXISTS `index_show_groups_year_sortOrder` " +
+                            "ON `show_groups` (`year`, `sortOrder`)",
+                    )
+                    db.execSQL(
+                        "CREATE INDEX IF NOT EXISTS `index_show_groups_rating_sortOrder` " +
+                            "ON `show_groups` (`rating`, `sortOrder`)",
+                    )
+                    db.execSQL(
+                        "CREATE INDEX IF NOT EXISTS `index_show_groups_sortTitle_sortOrder` " +
+                            "ON `show_groups` (`sortTitle`, `sortOrder`)",
                     )
                 }
             }

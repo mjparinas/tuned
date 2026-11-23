@@ -11,7 +11,7 @@
     <string name="settings_page_playback_summary">Dźwięk, wznawianie, pomijanie czołówki, przewijanie i przyciski odtwarzacza</string>
     <string name="settings_page_reliability">Gdy kanał zawodzi</string>
     <string name="settings_page_reliability_summary">Ponowne łączenie, kopie zapasowe, auto-strojenie i stan kanałów</string>
-    <string name="settings_page_appearance_summary">Motyw, kolory, czysta czerń i kalibracja TV</string>
+    <string name="settings_page_appearance_summary">Motyw, kolory, czysta czerń, przygotuj kolejne ekrany i kalibracja TV</string>
     <string name="settings_page_about">Aktualizacje i zaawansowane</string>
     <string name="settings_page_about_summary">Aktualizacje, user agent i dzienniki</string>
     <string name="settings_header_hidden">Co jest ukryte</string>

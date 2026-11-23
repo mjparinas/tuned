@@ -11,7 +11,7 @@
     <string name="settings_page_playback_summary">音频、继续播放、跳过片头、回看和播放器控件</string>
     <string name="settings_page_reliability">频道失败时</string>
     <string name="settings_page_reliability_summary">重新连接、备用源、自动调台和频道状态</string>
-    <string name="settings_page_appearance_summary">主题、颜色、纯黑和电视屏幕校准</string>
+    <string name="settings_page_appearance_summary">主题、颜色、纯黑、预加载下一屏和电视屏幕校准</string>
     <string name="settings_page_about">更新和高级</string>
     <string name="settings_page_about_summary">更新、用户代理和日志</string>
     <string name="settings_header_hidden">已隐藏的内容</string>

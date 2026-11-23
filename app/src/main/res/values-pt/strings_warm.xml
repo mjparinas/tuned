@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_warm_next">Preparar próximas telas</string>
+    <string name="settings_warm_next_summary">Carrega as próximas listas e posters em segundo plano para que mudar de aba pareça instantâneo</string>
+</resources>

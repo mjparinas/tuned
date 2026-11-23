@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_warm_next">अगली स्क्रीन तैयार रखें</string>
+    <string name="settings_warm_next_summary">अगली सूचियाँ और पोस्टर पृष्ठभूमि में लोड करता है ताकि टैब बदलना तुरंत लगे</string>
+</resources>

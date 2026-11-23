@@ -143,6 +143,7 @@ private val KNOWN_KEYS =
         "pure_black",
         "accent",
         "lighter_mode",
+        "warm_next_screens",
         "tv_offset_x",
         "tv_offset_y",
         "tv_zoom",
