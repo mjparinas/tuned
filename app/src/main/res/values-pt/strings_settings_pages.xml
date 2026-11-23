@@ -11,7 +11,7 @@
     <string name="settings_page_playback_summary">Áudio, continuar, pular abertura, voltar e os controles do player</string>
     <string name="settings_page_reliability">Quando um canal falha</string>
     <string name="settings_page_reliability_summary">Reconexão, cópias reserva, sintonia automática e saúde dos canais</string>
-    <string name="settings_page_appearance_summary">Tema, cores e preto puro</string>
+    <string name="settings_page_appearance_summary">Tema, cores, preto puro e calibração da TV</string>
     <string name="settings_page_about">Atualizações e avançado</string>
     <string name="settings_page_about_summary">Atualizações, user agent e registros</string>
     <string name="settings_header_hidden">O que está oculto</string>

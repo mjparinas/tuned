@@ -6,6 +6,10 @@
     <string name="list_name">الاسم</string>
     <string name="list_save">حفظ</string>
     <string name="list_done">تم</string>
+    <string name="lists_manage">إدارة القوائم</string>
+    <string name="lists_manage_summary">أعد تسمية قوائمك أو احذفها</string>
+    <string name="lists_manage_empty">ليس لديك قوائم بعد. أضف واحدة من قناة أو فيلم.</string>
+    <string name="lists_manage_row_summary">اختر لإعادة التسمية</string>
     <string name="list_rename">إعادة تسمية القائمة</string>
     <string name="list_delete">حذف القائمة</string>
     <string name="list_delete_title">حذف “%s”؟</string>

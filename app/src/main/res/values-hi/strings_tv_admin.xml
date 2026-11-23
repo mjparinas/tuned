@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="tv_playlists_admin_hint">प्लेलिस्ट का नाम बदलें या संपादित करें अपने फ़ोन पर या tunedplayer.com पर। यहाँ आप फिर भी बदल या हटा सकते हैं।</string>
+    <string name="tv_lists_rename_hint">सूची का नाम अपने फ़ोन पर या tunedplayer.com पर बदलें। यहाँ आप फिर भी हटा सकते हैं।</string>
+    <string name="tv_profiles_manage_hint">प्रोफ़ाइल जोड़ें या नाम बदलें अपने फ़ोन पर या tunedplayer.com पर</string>
+    <string name="tv_events_follow_hint">किसी टीम या लीग को अपने फ़ोन पर या tunedplayer.com पर फ़ॉलो करें</string>
+    <string name="tv_list_new_hint">फ़ोन या tunedplayer.com पर नई सूची बनाएँ</string>
+    <string name="tv_pin_forgot_hint">PIN भूल गए? फ़ोन या tunedplayer.com पर रीसेट करें</string>
+</resources>

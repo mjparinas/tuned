@@ -60,6 +60,24 @@
     <string name="sync_step_library">Получение фильмов и сериалов</string>
     <string name="sync_waiting_server">Ожидание ответа сервера…</string>
     <string name="sync_size_so_far">Пока %1$s</string>
+    <plurals name="progress_seconds_left">
+        <item quantity="one">осталась около %d с</item>
+        <item quantity="few">осталось около %d с</item>
+        <item quantity="many">осталось около %d с</item>
+        <item quantity="other">осталось около %d с</item>
+    </plurals>
+    <plurals name="progress_minutes_left">
+        <item quantity="one">осталась около %d мин</item>
+        <item quantity="few">осталось около %d мин</item>
+        <item quantity="many">осталось около %d мин</item>
+        <item quantity="other">осталось около %d мин</item>
+    </plurals>
+    <plurals name="progress_hours_left">
+        <item quantity="one">остался около %d ч</item>
+        <item quantity="few">осталось около %d ч</item>
+        <item quantity="many">осталось около %d ч</item>
+        <item quantity="other">осталось около %d ч</item>
+    </plurals>
     <string name="sync_step_done">Готово</string>
     <string name="sync_step_now">Выполняется</string>
     <string name="sync_step_waiting">Не начато</string>

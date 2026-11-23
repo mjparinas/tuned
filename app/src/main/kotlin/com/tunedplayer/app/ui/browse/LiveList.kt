@@ -56,6 +56,7 @@ import com.tunedplayer.app.ui.common.FastScrollbar
 import com.tunedplayer.app.ui.common.SKELETON_ROWS
 import com.tunedplayer.app.ui.common.firstLoad
 import com.tunedplayer.app.ui.common.focusRing
+import com.tunedplayer.app.ui.common.isTelevision
 import com.tunedplayer.app.ui.common.peekOrNull
 import com.tunedplayer.app.ui.common.rememberFastScroll
 import com.tunedplayer.app.ui.common.rememberTvFocus
@@ -115,6 +116,7 @@ private fun LiveList(
     val favourites by vm.favouriteIds.collectAsStateWithLifecycle()
     val picker = rememberListPicker()
     val editPicker = rememberChannelEditPicker()
+    val canEditChannel = !isTelevision()
     val state = rememberLazyListState()
     val focus = rememberTvFocus(focusReturn)
     Box(Modifier.fillMaxSize()) {
@@ -150,8 +152,8 @@ private fun LiveList(
                         onGuide = { onOpenGuide(channel.id) },
                         onToggleFavourite = { vm.toggleFavourite(channel.id, favourite) },
                         onAddToList = { picker.open(channel.id) },
-                        onRename = { editPicker.rename(channel.id) },
-                        onChangeLogo = { editPicker.changeLogo(channel.id) },
+                        onRename = if (canEditChannel) ({ editPicker.rename(channel.id) }) else null,
+                        onChangeLogo = if (canEditChannel) ({ editPicker.changeLogo(channel.id) }) else null,
                     )
                 }
             }
@@ -190,12 +192,14 @@ private fun ChannelRow(
     onGuide: () -> Unit,
     onToggleFavourite: () -> Unit,
     onAddToList: () -> Unit,
-    onRename: () -> Unit,
-    onChangeLogo: () -> Unit,
+    onRename: (() -> Unit)?,
+    onChangeLogo: (() -> Unit)?,
     /** On a TV, where the remote's focus comes back to ([tvFocusItem]). */
     modifier: Modifier = Modifier,
 ) {
     var menu by remember { mutableStateOf(false) }
+    // A TV never opens a long-press menu: favourite and guide are on the row, add to list on the channel page.
+    val longPress = !isTelevision()
     // Each channel is a rounded card, like a row on a modern website.
     Box(Modifier.clip(MaterialTheme.shapes.medium).background(MaterialTheme.colorScheme.surfaceContainerLow)) {
         Row(
@@ -205,8 +209,8 @@ private fun ChannelRow(
                 .combinedClickable(
                     onClickLabel = stringResource(R.string.a11y_play),
                     onClick = onPlay,
-                    onLongClickLabel = stringResource(R.string.a11y_more_options),
-                    onLongClick = { menu = true },
+                    onLongClickLabel = if (longPress) stringResource(R.string.a11y_more_options) else null,
+                    onLongClick = if (longPress) ({ menu = true }) else null,
                 ).padding(start = 10.dp, end = 4.dp, top = 10.dp, bottom = 10.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
@@ -257,49 +261,55 @@ private fun ChannelRow(
                 }
             }
             FavouriteButton(favourite, onToggleFavourite)
-            // Every channel has its page (its guide, with add to list, rename and change logo as buttons), so what the long
-            // press offers is also one press away on a remote, guide or not.
+            // Every channel has its page (its guide, with add to list and, on phones, rename and change logo), so what the
+            // long press offers is also one press away on a remote, guide or not.
             IconButton(onClick = onGuide) {
                 // Named with the channel, so a screen reader's list of buttons doesn't read "Guide" a hundred times.
                 Icon(Icons.AutoMirrored.Filled.List, contentDescription = stringResource(R.string.a11y_guide_for, channel.name))
             }
         }
-        DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
-            DropdownMenuItem(
-                text = { Text(stringResource(if (favourite) R.string.favourite_remove else R.string.favourite_add)) },
-                onClick = {
-                    menu = false
-                    onToggleFavourite()
-                },
-            )
-            DropdownMenuItem(
-                text = { Text(stringResource(R.string.list_add)) },
-                onClick = {
-                    menu = false
-                    onAddToList()
-                },
-            )
-            DropdownMenuItem(
-                text = { Text(stringResource(R.string.channel_rename)) },
-                onClick = {
-                    menu = false
-                    onRename()
-                },
-            )
-            DropdownMenuItem(
-                text = { Text(stringResource(R.string.channel_change_logo)) },
-                onClick = {
-                    menu = false
-                    onChangeLogo()
-                },
-            )
-            DropdownMenuItem(
-                text = { Text(stringResource(R.string.guide_open)) },
-                onClick = {
-                    menu = false
-                    onGuide()
-                },
-            )
+        if (longPress) {
+            DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
+                DropdownMenuItem(
+                    text = { Text(stringResource(if (favourite) R.string.favourite_remove else R.string.favourite_add)) },
+                    onClick = {
+                        menu = false
+                        onToggleFavourite()
+                    },
+                )
+                DropdownMenuItem(
+                    text = { Text(stringResource(R.string.list_add)) },
+                    onClick = {
+                        menu = false
+                        onAddToList()
+                    },
+                )
+                if (onRename != null) {
+                    DropdownMenuItem(
+                        text = { Text(stringResource(R.string.channel_rename)) },
+                        onClick = {
+                            menu = false
+                            onRename()
+                        },
+                    )
+                }
+                if (onChangeLogo != null) {
+                    DropdownMenuItem(
+                        text = { Text(stringResource(R.string.channel_change_logo)) },
+                        onClick = {
+                            menu = false
+                            onChangeLogo()
+                        },
+                    )
+                }
+                DropdownMenuItem(
+                    text = { Text(stringResource(R.string.guide_open)) },
+                    onClick = {
+                        menu = false
+                        onGuide()
+                    },
+                )
+            }
         }
     }
 }

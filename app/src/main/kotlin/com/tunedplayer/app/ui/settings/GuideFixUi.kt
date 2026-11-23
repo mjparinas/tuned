@@ -37,6 +37,7 @@ import com.tunedplayer.app.core.GuideFixes
 import com.tunedplayer.app.data.AppSettings
 import com.tunedplayer.app.diagnostics.launchSafely
 import com.tunedplayer.app.ui.common.TunedDialog
+import com.tunedplayer.app.ui.common.isTelevision
 
 class GuideFixSettingsViewModel(
     app: Application,
@@ -65,23 +66,27 @@ fun GuideFixRows(
         label = { m -> if (m == 0) stringResource(R.string.guide_fix_no_offset) else GuideFixes.label(m) },
         onSelect = vm::setOffset,
     )
+    // Extra guide URLs need typing; on a TV they stay on the phone or website.
+    val tv = isTelevision()
     var editing by rememberSaveable { mutableStateOf(false) }
     var count by remember { mutableStateOf(vm.extraGuides().size) }
-    SettingRow(
-        title = stringResource(R.string.settings_extra_guides),
-        summary =
-            if (count == 0) {
-                stringResource(R.string.settings_extra_guides_none)
-            } else {
-                pluralStringResource(R.plurals.settings_extra_guides_count, count, count)
-            },
-        onClick = { editing = true },
-    )
-    if (editing) {
-        ExtraGuidesDialog(vm.extraGuides(), onDismiss = { editing = false }) { links ->
-            vm.setExtraGuides(links)
-            count = links.size
-            editing = false
+    if (!tv) {
+        SettingRow(
+            title = stringResource(R.string.settings_extra_guides),
+            summary =
+                if (count == 0) {
+                    stringResource(R.string.settings_extra_guides_none)
+                } else {
+                    pluralStringResource(R.plurals.settings_extra_guides_count, count, count)
+                },
+            onClick = { editing = true },
+        )
+        if (editing) {
+            ExtraGuidesDialog(vm.extraGuides(), onDismiss = { editing = false }) { links ->
+                vm.setExtraGuides(links)
+                count = links.size
+                editing = false
+            }
         }
     }
 }

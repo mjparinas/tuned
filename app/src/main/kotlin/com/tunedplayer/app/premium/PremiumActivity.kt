@@ -25,6 +25,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -41,7 +42,9 @@ import com.tunedplayer.app.R
 import com.tunedplayer.app.container
 import com.tunedplayer.app.diagnostics.launchSafely
 import com.tunedplayer.app.ui.common.BackTopBar
+import com.tunedplayer.app.ui.common.LocalTvCalibration
 import com.tunedplayer.app.ui.common.TvSafeArea
+import com.tunedplayer.app.ui.common.tvCalibration
 import com.tunedplayer.app.ui.theme.TunedTheme
 
 /**
@@ -60,7 +63,9 @@ class PremiumActivity : ComponentActivity() {
                 pureBlack = current.pureBlack,
                 accent = current.accent,
             ) {
-                TvSafeArea { PremiumScreen(this, onBack = ::finish) }
+                CompositionLocalProvider(LocalTvCalibration provides current.tvCalibration()) {
+                    TvSafeArea { PremiumScreen(this, onBack = ::finish) }
+                }
             }
         }
     }

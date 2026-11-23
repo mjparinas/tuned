@@ -154,7 +154,15 @@ class BrowseScreenshots : Screenshots() {
 
     @Test fun movies() = shot("browse-movies", HomeRoute, wait = "Glass Harbour", settings = DARK.copy(startTab = StartTab.MOVIES))
 
+    @Test
+    @Config(qualifiers = TV)
+    fun moviesOnTv() = shot("browse-movies-tv", HomeRoute, wait = "Northern Lights", settings = DARK.copy(startTab = StartTab.MOVIES))
+
     @Test fun shows() = shot("browse-shows", HomeRoute, wait = "Snowline", settings = DARK.copy(startTab = StartTab.SHOWS))
+
+    @Test
+    @Config(qualifiers = TV)
+    fun showsOnTv() = shot("browse-shows-tv", HomeRoute, wait = "Snowline", settings = DARK.copy(startTab = StartTab.SHOWS))
 
     /** Movies' sort, open: the order in use ticked (Melvin, 2026-11-20: "sort by newest first or sort by the rating"). */
     @Test
@@ -220,6 +228,11 @@ class BrowseScreenshots : Screenshots() {
     fun liveTvTablet() = shot("browse-live-tv-tablet", HomeRoute, wait = "Maple News 24")
 
     @Test fun show() = shot("browse-show", ShowRoute(Episodes.showKey("Harbour Town"), "Harbour Town"), wait = "Harbour Town")
+
+    /** A TV show opens full screen with a cinematic hero, season tabs and an episode thumbnail grid. */
+    @Test
+    @Config(qualifiers = TV)
+    fun showOnTv() = shot("browse-show-tv", ShowRoute(Episodes.showKey("Harbour Town"), "Harbour Town"), wait = "Season 1")
 
     @Test fun movie() = shot("browse-movie", MovieRoute(SampleData.MOVIE_IDS), wait = "Northern Lights")
 

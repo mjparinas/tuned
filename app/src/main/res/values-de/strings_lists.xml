@@ -6,6 +6,10 @@
     <string name="list_name">Name</string>
     <string name="list_save">Speichern</string>
     <string name="list_done">Fertig</string>
+    <string name="lists_manage">Listen verwalten</string>
+    <string name="lists_manage_summary">Eigene Listen umbenennen oder löschen</string>
+    <string name="lists_manage_empty">Du hast noch keine Listen. Füge eine über einen Sender oder Film hinzu.</string>
+    <string name="lists_manage_row_summary">Zum Umbenennen auswählen</string>
     <string name="list_rename">Liste umbenennen</string>
     <string name="list_delete">Liste löschen</string>
     <string name="list_delete_title">„%s“ löschen?</string>

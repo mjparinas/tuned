@@ -60,6 +60,18 @@
     <string name="sync_step_library">फ़िल्में और शो लिए जा रहे हैं</string>
     <string name="sync_waiting_server">सर्वर का इंतज़ार…</string>
     <string name="sync_size_so_far">अब तक %1$s</string>
+    <plurals name="progress_seconds_left">
+        <item quantity="one">लगभग %d सेकंड बाकी</item>
+        <item quantity="other">लगभग %d सेकंड बाकी</item>
+    </plurals>
+    <plurals name="progress_minutes_left">
+        <item quantity="one">लगभग %d मिनट बाकी</item>
+        <item quantity="other">लगभग %d मिनट बाकी</item>
+    </plurals>
+    <plurals name="progress_hours_left">
+        <item quantity="one">लगभग %d घंटा बाकी</item>
+        <item quantity="other">लगभग %d घंटे बाकी</item>
+    </plurals>
     <string name="sync_step_done">हो गया</string>
     <string name="sync_step_now">चल रहा है</string>
     <string name="sync_step_waiting">शुरू नहीं हुआ</string>

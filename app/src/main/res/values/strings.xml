@@ -67,6 +67,19 @@
     <string name="sync_step_library">Getting films and shows</string>
     <string name="sync_waiting_server">Waiting for the server…</string>
     <string name="sync_size_so_far">%1$s so far</string>
+    <!-- How much longer a countable job has left, after the count or size (Melvin, 2026-11-22). -->
+    <plurals name="progress_seconds_left">
+        <item quantity="one">about %d sec left</item>
+        <item quantity="other">about %d sec left</item>
+    </plurals>
+    <plurals name="progress_minutes_left">
+        <item quantity="one">about %d min left</item>
+        <item quantity="other">about %d min left</item>
+    </plurals>
+    <plurals name="progress_hours_left">
+        <item quantity="one">about %d hr left</item>
+        <item quantity="other">about %d hr left</item>
+    </plurals>
     <string name="sync_step_done">Done</string>
     <string name="sync_step_now">In progress</string>
     <string name="sync_step_waiting">Not started</string>

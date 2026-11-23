@@ -9,8 +9,9 @@ const SECTIONS = [
     ["devices", "Devices"],
     ["premium", "Premium"],
     ["playlists", "Playlists and settings"],
-    // Entries with a flag show only while that admin flag is on (preview deployments and localhost always).
-    ["channels", "Channels and guide", { href: "/account/channels", flag: "web_player" }],
+    // Channels and guide is always on so phone/TV watch-first admin can rename channels and lists on the website.
+    // Check my provider stays behind web_player (preview deployments and localhost always).
+    ["channels", "Channels and guide", { href: "/account/channels" }],
     ["check", "Check my provider", { href: "/check", flag: "web_player" }],
     ["pair", "Pair a TV"],
     ["backup", "Backup"],

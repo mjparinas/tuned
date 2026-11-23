@@ -1,9 +1,7 @@
 package com.tunedplayer.app.ui.browse
 
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -18,9 +16,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.PlaylistPlay
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
@@ -50,6 +45,7 @@ import com.tunedplayer.app.diagnostics.launchSafely
 import com.tunedplayer.app.premium.Premium
 import com.tunedplayer.app.ui.common.TunedDialog
 import com.tunedplayer.app.ui.common.focusRing
+import com.tunedplayer.app.ui.common.isTelevision
 
 /** Opens "Add to list" for a channel or film, or the Premium screen while lists are locked (docs/decisions/premium.md). */
 @Stable
@@ -86,8 +82,9 @@ private fun AddToListDialog(
     val all by lists.all.collectAsStateWithLifecycle(emptyList())
     val holding by remember(itemId) { lists.holding(itemId) }.collectAsStateWithLifecycle(emptyList())
     val scope = rememberCoroutineScope()
+    val tv = isTelevision()
     var naming by remember { mutableStateOf(false) }
-    if (naming) {
+    if (naming && !tv) {
         ListNameDialog(R.string.list_new, "", onDismiss = { naming = false }) { name ->
             naming = false
             scope.launchSafely(TAG) { lists.create(name, itemId) }
@@ -116,17 +113,26 @@ private fun AddToListDialog(
                         Text(list.name, style = MaterialTheme.typography.bodyLarge)
                     }
                 }
-                Row(
-                    Modifier
-                        .fillMaxWidth()
-                        .heightIn(min = 48.dp)
-                        .focusRing(RoundedCornerShape(8.dp), MaterialTheme.colorScheme.primary)
-                        .clickable { naming = true },
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Icon(Icons.Filled.Add, contentDescription = null, modifier = Modifier.padding(horizontal = 2.dp))
-                    Spacer(Modifier.width(12.dp))
-                    Text(stringResource(R.string.list_new), style = MaterialTheme.typography.bodyLarge)
+                if (tv) {
+                    Text(
+                        stringResource(R.string.tv_list_new_hint),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(top = 8.dp),
+                    )
+                } else {
+                    Row(
+                        Modifier
+                            .fillMaxWidth()
+                            .heightIn(min = 48.dp)
+                            .focusRing(RoundedCornerShape(8.dp), MaterialTheme.colorScheme.primary)
+                            .clickable { naming = true },
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Icon(Icons.Filled.Add, contentDescription = null, modifier = Modifier.padding(horizontal = 2.dp))
+                        Spacer(Modifier.width(12.dp))
+                        Text(stringResource(R.string.list_new), style = MaterialTheme.typography.bodyLarge)
+                    }
                 }
             }
         },
@@ -162,62 +168,21 @@ internal fun ListNameDialog(
 }
 
 /**
- * A list's chip in the row above Live TV or Movies. While it is chosen, Rename and Delete sit beside it as chips of their
- * own, full-size and one press away, rather than in a small menu inside it (Melvin, 2026-11-19: "avoid 3 dot drop downs").
+ * A list's chip in the row above Live TV or Movies. Filters only: rename and delete live in Settings › Manage lists
+ * (Melvin, 2026-11-22: "Remove rename list and delete list on the chips on live tv", then the same for Movies).
  */
 @Composable
 internal fun OwnListChip(
     list: ListEntity,
     selected: Boolean,
     onSelect: () -> Unit,
-    onRename: (String) -> Unit,
-    onDelete: () -> Unit,
 ) {
-    var renaming by remember { mutableStateOf(false) }
-    var deleting by remember { mutableStateOf(false) }
-    val renameLabel = stringResource(R.string.list_rename)
-    val deleteLabel = stringResource(R.string.list_delete)
-    // A flow row, so in a TV's narrow column of groups Rename and Delete wrap under the list rather than off the edge.
-    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), itemVerticalAlignment = Alignment.CenterVertically) {
-        FilterChip(
-            selected = selected,
-            onClick = onSelect,
-            leadingIcon = { Icon(Icons.AutoMirrored.Filled.PlaylistPlay, contentDescription = null, modifier = Modifier.size(16.dp)) },
-            label = { Text(list.name) },
-        )
-        if (selected) {
-            AssistChip(
-                onClick = { renaming = true },
-                leadingIcon = { Icon(Icons.Filled.Edit, contentDescription = null, modifier = Modifier.size(16.dp)) },
-                label = { Text(renameLabel) },
-            )
-            AssistChip(
-                onClick = { deleting = true },
-                leadingIcon = { Icon(Icons.Filled.Delete, contentDescription = null, modifier = Modifier.size(16.dp)) },
-                label = { Text(deleteLabel) },
-            )
-        }
-    }
-    if (renaming) {
-        ListNameDialog(R.string.list_rename, list.name, onDismiss = { renaming = false }) { name ->
-            renaming = false
-            onRename(name)
-        }
-    }
-    if (deleting) {
-        TunedDialog(
-            onDismissRequest = { deleting = false },
-            title = { Text(stringResource(R.string.list_delete_title, list.name)) },
-            text = { Text(stringResource(R.string.list_delete_body)) },
-            confirmButton = {
-                TextButton(onClick = {
-                    deleting = false
-                    onDelete()
-                }) { Text(deleteLabel) }
-            },
-            dismissButton = { TextButton(onClick = { deleting = false }) { Text(stringResource(R.string.cancel)) } },
-        )
-    }
+    FilterChip(
+        selected = selected,
+        onClick = onSelect,
+        leadingIcon = { Icon(Icons.AutoMirrored.Filled.PlaylistPlay, contentDescription = null, modifier = Modifier.size(16.dp)) },
+        label = { Text(list.name) },
+    )
 }
 
 private const val TAG = "OwnLists"

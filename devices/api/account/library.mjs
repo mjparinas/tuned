@@ -1,9 +1,10 @@
 // /api/account/library (docs/decisions/accounts.md, "Playlists and settings on the website"): the playlists and
 // settings in the account's backup, for the website's Playlists page.
 //   GET                           a signed-in browser or device: the playlists (never their passwords or links) and settings
-//   POST { op, ... }              a signed-in browser: add, edit or remove a playlist, change settings, or ask every
-//                                 device to refresh (lib/library.mjs applyChange). Saved as a new backup version on top
-//                                 of the newest, tried again if a device saved at the same moment.
+//   POST { op, ... }              a signed-in browser: add, edit or remove a playlist, change settings, ask every
+//                                 device to refresh, or edit channel names/logos, favourites and lists
+//                                 (lib/library.mjs applyChange). Saved as a new backup version on top of the newest,
+//                                 tried again if a device saved at the same moment.
 // The website never connects to a provider; each device checks the login when it next refreshes.
 import { gunzipSync, gzipSync } from "node:zlib";
 import { MAX_BACKUP_BYTES } from "../../lib/accounts.mjs";

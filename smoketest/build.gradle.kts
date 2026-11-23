@@ -35,6 +35,7 @@ android {
             apiLevel = 34
             systemImageSource = "aosp-atd"
         }
+        // Gradle Managed Devices do not support android-tv images; TV coverage stays in Robolectric and a real box.
     }
 }
 

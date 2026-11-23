@@ -70,6 +70,7 @@ import com.tunedplayer.app.ui.SettingsPageRoute
 import com.tunedplayer.app.ui.common.BackTopBar
 import com.tunedplayer.app.ui.common.StartFocus
 import com.tunedplayer.app.ui.common.focusRing
+import com.tunedplayer.app.ui.common.isTelevision
 import com.tunedplayer.app.ui.common.rememberStartFocus
 import com.tunedplayer.app.ui.common.startFocus
 import com.tunedplayer.app.ui.common.windowWidthDp
@@ -247,11 +248,12 @@ fun SettingsScreen(
     vm: SettingsViewModel = viewModel(),
 ) {
     var query by rememberSaveable { mutableStateOf("") }
-    // On a TV the remote starts on the page shown beside the list (or the first page), not the search box above it.
+    val tv = isTelevision()
+    // On a TV there is no Settings search box (typing); the remote starts on the first page row.
     val start = rememberStartFocus()
     val pages: @Composable (open: (route: Any) -> Unit, shown: SettingsPage?) -> Unit = { open, shown ->
-        SettingsSearchField(query) { query = it }
-        val words = remember(query) { settingsWords(query) }
+        if (!tv) SettingsSearchField(query) { query = it }
+        val words = remember(query, tv) { if (tv) emptyList() else settingsWords(query) }
         if (words.isNotEmpty()) {
             SettingsResults(words, settings, vm, open, onSignedOut)
         } else {
@@ -460,7 +462,7 @@ private fun SettingsPageContent(
         SettingsPage.GUIDE -> GuidePage(settings, vm)
         SettingsPage.PLAYBACK -> PlaybackPage(settings, vm)
         SettingsPage.RELIABILITY -> ReliabilityPage(settings, vm, onOpen)
-        SettingsPage.APPEARANCE -> AppearancePage(settings, vm)
+        SettingsPage.APPEARANCE -> AppearancePage(settings, vm, onOpen)
         SettingsPage.ABOUT -> AboutPage(settings, vm, onOpen)
     }
 }

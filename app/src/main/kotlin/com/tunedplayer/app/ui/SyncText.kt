@@ -10,15 +10,27 @@ import java.text.NumberFormat
 
 /** The words for a running refresh: its steps for the first download, and one line for the lists and the notification. */
 object SyncText {
-    /** One line: "Step 2 of 6 · Processing channels · 45% · 12,345 items". */
+    /**
+     * One line: "Step 2 of 6 · Processing channels · 45% · 12,345 items · about 3 min left". The time left is only
+     * added when this step has a known size and has been moving long enough to guess ([ProgressEta]).
+     */
     fun describe(
         context: Context,
         progress: SyncProgress,
-    ): String = listOfNotNull(
-        context.getString(R.string.sync_step_of, progress.number, progress.count),
-        context.getString(name(progress.step)),
-        detail(context, progress),
-    ).joinToString(" · ")
+        now: Long = System.currentTimeMillis(),
+    ): String {
+        val line =
+            listOfNotNull(
+                context.getString(R.string.sync_step_of, progress.number, progress.count),
+                context.getString(name(progress.step)),
+                detail(context, progress),
+            ).joinToString(" · ")
+        return if (progress.total > 0) {
+            ProgressEta.withEta(context, line, progress.done, progress.total, progress.startedAt, now)
+        } else {
+            line
+        }
+    }
 
     /** What a step is called, such as "Downloading channels". */
     @StringRes

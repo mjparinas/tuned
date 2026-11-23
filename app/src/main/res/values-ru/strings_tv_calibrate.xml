@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_tv_calibrate">Калибровка экрана</string>
+    <string name="settings_tv_calibrate_summary">Сдвиньте и растяните картинку, чтобы углы оставались чуть внутри телевизора</string>
+    <string name="settings_tv_calibrate_hint">Смотрите на метки в каждом углу. Сдвигайте или растягивайте картинку регуляторами ниже, пока каждая метка не окажется чуть внутри края телевизора. Если метку обрезает — уменьшите; если за меткой пустое поле — растяните. «Сбросить» возвращает значения по умолчанию.</string>
+    <string name="settings_tv_calibrate_horizontal">Влево или вправо</string>
+    <string name="settings_tv_calibrate_vertical">Вверх или вниз</string>
+    <string name="settings_tv_calibrate_size">Растянуть или уменьшить</string>
+    <string name="settings_tv_calibrate_centre">Центр</string>
+    <string name="settings_tv_calibrate_plus">+%1$d</string>
+    <string name="settings_tv_calibrate_minus">−%1$d</string>
+    <string name="settings_tv_calibrate_reset">Сбросить</string>
+    <string name="settings_tv_calibrate_done">Готово</string>
+    <string name="settings_tv_calibrate_marks">Угловые метки для калибровки экрана</string>
+</resources>

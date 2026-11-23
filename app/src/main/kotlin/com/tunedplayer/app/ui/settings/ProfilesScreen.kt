@@ -91,6 +91,7 @@ import com.tunedplayer.app.ui.common.LocalTvMargin
 import com.tunedplayer.app.ui.common.TunedDialog
 import com.tunedplayer.app.ui.common.bleedIntoTvMargin
 import com.tunedplayer.app.ui.common.focusRing
+import com.tunedplayer.app.ui.common.isTelevision
 import com.tunedplayer.app.ui.common.rememberStartFocus
 import com.tunedplayer.app.ui.common.startFocus
 import com.tunedplayer.app.ui.theme.swatch
@@ -222,7 +223,9 @@ fun ProfilesScreen(
     val list = profiles ?: return
     val kidsNow = current?.kids == true
     val context = LocalContext.current
-    var managing by remember { mutableStateOf(!atStart && list.size == 1) }
+    // Adding and renaming profiles needs typing; on a TV that stays on the phone or website.
+    val tv = isTelevision()
+    var managing by remember { mutableStateOf(!atStart && list.size == 1 && !tv) }
     var ask by remember { mutableStateOf<PinAsk?>(null) }
     var editing by remember { mutableStateOf<ProfileEntity?>(null) }
     val scope = rememberCoroutineScope()
@@ -280,15 +283,15 @@ fun ProfilesScreen(
                 }
                 ProfileRow(list, current?.id, managing, onPick = pick) {
                     // Hidden at the cap, so the picker never crowds (docs/decisions/profiles.md).
-                    if (!kidsNow && managing && ProfileRules.canAdd(list.size)) {
+                    if (!tv && !kidsNow && managing && ProfileRules.canAdd(list.size)) {
                         AddTile(onClick = {
                             // A second profile is Premium (docs/decisions/premium.md).
                             if (list.isEmpty() || context.container.premium.allow(context)) editing = newProfile(list.size)
                         })
                     }
                 }
-                // A kids profile can pick, but never add, change or remove profiles.
-                if (!kidsNow) {
+                // A kids profile can pick, but never add, change or remove profiles. A TV never manages here.
+                if (!kidsNow && !tv) {
                     Spacer(Modifier.height(40.dp))
                     if (managing) {
                         Button(onClick = manageToggle) { Text(stringResource(R.string.profiles_done)) }
@@ -299,6 +302,16 @@ fun ProfilesScreen(
                             Text(stringResource(R.string.profiles_manage))
                         }
                     }
+                }
+                if (tv && !kidsNow) {
+                    Spacer(Modifier.height(24.dp))
+                    Text(
+                        stringResource(R.string.tv_profiles_manage_hint),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.widthIn(max = 480.dp),
+                    )
                 }
                 if (managing && list.size > 1) {
                     Spacer(Modifier.height(16.dp))
@@ -459,6 +472,10 @@ private fun BrandBar() {
 /**
  * One profile on the picker. Its name and lock are coloured onBackground here rather than left to the surrounding
  * content colour, which falls back to black wherever nothing sets it (the names were once near-black on the dark theme).
+ *
+ * Focus and "in use" share one accent ring on the picture (the same 3 dp the phone uses for the current profile). A
+ * tile-wide [focusRing] used to frame the name too and stack on the selected ring, which read as a heavy double box
+ * from the sofa (Melvin, 2026-11-22). The press/focus bounce still answers the remote.
  */
 @Composable
 internal fun ProfileTile(
@@ -470,6 +487,7 @@ internal fun ProfileTile(
 ) {
     val shape = RoundedCornerShape(20.dp)
     val avatarShape = RoundedCornerShape(TILE_AVATAR * 0.28f)
+    val avatarRingShape = RoundedCornerShape((TILE_AVATAR + 12.dp) * 0.28f)
     val interaction = remember { MutableInteractionSource() }
     val pressed by interaction.collectIsPressedAsState()
     val focused by interaction.collectIsFocusedAsState()
@@ -486,10 +504,11 @@ internal fun ProfileTile(
     val current = stringResource(R.string.a11y_current_profile)
     val edit = stringResource(R.string.a11y_edit)
     val ring = MaterialTheme.colorScheme.primary
+    // One ring for focus or for the profile in use — never both — so a focused current profile stays as light as the phone.
+    val showAvatarRing = focused || (selected && !managing)
     Column(
         modifier
             .width(TILE_WIDTH)
-            .focusRing(shape, MaterialTheme.colorScheme.primary)
             .clip(shape)
             .clickable(
                 interactionSource = interaction,
@@ -506,13 +525,7 @@ internal fun ProfileTile(
                     scaleX = scale
                     scaleY = scale
                 }.size(TILE_AVATAR + 12.dp)
-                .then(
-                    if (selected && !managing) {
-                        Modifier.border(3.dp, ring, RoundedCornerShape((TILE_AVATAR + 12.dp) * 0.28f))
-                    } else {
-                        Modifier
-                    },
-                ),
+                .then(if (showAvatarRing) Modifier.border(AVATAR_RING, ring, avatarRingShape) else Modifier),
             contentAlignment = Alignment.Center,
         ) {
             Box(Modifier.shadow(10.dp, avatarShape, clip = false)) {
@@ -565,16 +578,24 @@ internal fun ProfileTile(
 private fun AddTile(onClick: () -> Unit) {
     val shape = RoundedCornerShape(20.dp)
     val avatarShape = RoundedCornerShape(TILE_AVATAR * 0.28f)
+    val avatarRingShape = RoundedCornerShape((TILE_AVATAR + 12.dp) * 0.28f)
+    val interaction = remember { MutableInteractionSource() }
+    val focused by interaction.collectIsFocusedAsState()
+    val ring = MaterialTheme.colorScheme.primary
     Column(
         Modifier
             .width(TILE_WIDTH)
-            .focusRing(shape, MaterialTheme.colorScheme.primary)
             .clip(shape)
-            .clickable(onClick = onClick)
+            .clickable(interactionSource = interaction, indication = LocalIndication.current, onClick = onClick)
             .padding(vertical = 8.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Box(Modifier.size(TILE_AVATAR + 12.dp), contentAlignment = Alignment.Center) {
+        Box(
+            Modifier
+                .size(TILE_AVATAR + 12.dp)
+                .then(if (focused) Modifier.border(AVATAR_RING, ring, avatarRingShape) else Modifier),
+            contentAlignment = Alignment.Center,
+        ) {
             Box(
                 Modifier
                     .size(TILE_AVATAR)
@@ -746,3 +767,6 @@ private fun ProfileEditor(
 private const val MAX_NAME = 24
 private val TILE_AVATAR = 104.dp
 private val TILE_WIDTH = 136.dp
+
+/** Matches the phone's selected ring so a TV remote highlight stays obvious without a heavy frame. */
+private val AVATAR_RING = 3.dp

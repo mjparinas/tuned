@@ -159,10 +159,11 @@ object SampleData {
                     tmdbId = 900L + i,
                     title = show,
                     year = "2024",
-                    overview = null,
-                    rating = null,
+                    overview = SHOW_OVERVIEWS[show],
+                    rating = 4.2 + (i % 5) * 0.3,
                     poster = poster(show),
-                    backdrop = null,
+                    // A drawn banner so the TV show's cinematic hero has a backdrop like a film.
+                    backdrop = still(show),
                     genres = "",
                     runtime = null,
                     cast = "",
@@ -244,6 +245,17 @@ object SampleData {
             Triple("Backyard Science", "Kids", 2),
             Triple("Kitchen Rules", "Reality", 1),
             Triple("Signal & Noise", "Sci-fi", 2),
+        )
+
+    /** Short blurbs for the show details page and the TV cinematic hero. */
+    private val SHOW_OVERVIEWS =
+        mapOf(
+            "Harbour Town" to "A coastal town where every ferry brings a new secret.",
+            "The Night Desk" to "Night-shift reporters chasing stories the day shift missed.",
+            "Snowline" to "A mountain rescue team working the coldest ridge in the province.",
+            "Backyard Science" to "Kids invent, build and test in a suburban garage.",
+            "Kitchen Rules" to "Home cooks trade kitchens and judge each other's weeknight dinners.",
+            "Signal & Noise" to "Engineers race to decode a signal that should not exist.",
         )
 
     val schedule =

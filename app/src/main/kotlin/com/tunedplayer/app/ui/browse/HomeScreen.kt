@@ -177,6 +177,7 @@ fun HomeScreen(
     val rail = tv || ScreenLayout.rail(widthDp)
     val panes = ScreenLayout.panes(widthDp)
     // On a wide screen a film, show or guide opens beside the list; on anything narrower it opens full screen.
+    // A TV show is the exception: its cinematic page needs the whole width for seasons and episode thumbnails.
     var detail by rememberSaveable(stateSaver = Detail.saver) { mutableStateOf<Detail?>(null) }
     // Home is up: background work may start a moment later (docs/decisions/speed.md › Quiet start).
     LaunchedEffect(Unit) { vm.homeShown() }
@@ -192,8 +193,13 @@ fun HomeScreen(
             }
         }
     }
-    // The channel under the remote's focus in Live TV on a TV, for the details beside the list.
+    // The channel or title under the remote's focus on a TV, for the details beside the list or grid.
     var focusedChannel by remember { mutableStateOf<ChannelWithNow?>(null) }
+    var focusedPoster by remember { mutableStateOf<PosterFocus?>(null) }
+    LaunchedEffect(tab.kind) {
+        focusedChannel = null
+        focusedPoster = null
+    }
     // On a TV, closing the pane puts the remote's focus back on the item that opened it (ui/common/TvFocus).
     var focusReturn by remember { mutableIntStateOf(0) }
     val closeDetail: () -> Unit = {
@@ -201,15 +207,19 @@ fun HomeScreen(
         focusReturn += 1
     }
     BackHandler(enabled = detail != null, onBack = closeDetail)
-    val openShow: (String, String) -> Unit = if (panes) { key, title -> detail = Detail.show(key, title) } else onOpenShow
+    // Melvin, 2026-11-22: no right-hand slide-out for a TV show; open full screen like a film's cinematic page.
+    val openShow: (String, String) -> Unit =
+        if (panes && !tv) { key, title -> detail = Detail.show(key, title) } else onOpenShow
     val openMovie: (Long) -> Unit = if (panes) { id -> detail = Detail.movie(id) } else onOpenMovie
     val openGuide: (Long) -> Unit = if (panes) { id -> detail = Detail.guide(id) } else onOpenGuide
     // Downloads is a section of Home like the three tabs, so the bar stays under it; back returns to the tab before.
-    var downloads by rememberSaveable { mutableStateOf(false) }
-    BackHandler(enabled = downloads) { downloads = false }
-    val openDownloads = { downloads = true }
+    var downloadsRequested by rememberSaveable { mutableStateOf(false) }
+    // A saved Home state from an older app version must not restore the Downloads page on a TV.
+    val downloads = downloadsRequested && !tv
+    BackHandler(enabled = downloads) { downloadsRequested = false }
+    val openDownloads = { downloadsRequested = true }
     val select: (Int) -> Unit = { index ->
-        downloads = false
+        downloadsRequested = false
         selected = index
         vm.rememberTab(index)
     }
@@ -271,6 +281,13 @@ fun HomeScreen(
                 topBar = {
                     // Downloads has its own title bar.
                     if (downloads) return@Scaffold
+                    // On a TV, Search is on the rail (mic-first); the per-tab box would only duplicate typing.
+                    if (tv) {
+                        if (tab.kind == ContentKind.LIVE) {
+                            TvLiveTopBar(grid = settings.liveGrid, onToggleGrid = { vm.setLiveGrid(!settings.liveGrid) })
+                        }
+                        return@Scaffold
+                    }
                     val search = vm.search(tab.kind)
                     val text by search.collectAsStateWithLifecycle()
                     SearchBarRow(
@@ -279,9 +296,8 @@ fun HomeScreen(
                         onChange = { search.value = it },
                         grid = if (tab.kind == ContentKind.LIVE) settings.liveGrid else null,
                         onToggleGrid = { vm.setLiveGrid(!settings.liveGrid) },
-                        // The words typed on the tab carry over, so the search isn't typed twice. A TV has it on the rail.
-                        onOpenSearch = { onOpenSearch(text.trim()) }.takeUnless { tv },
-                        profile = profile.takeIf { settings.profileCount > 1 && !tv },
+                        onOpenSearch = { onOpenSearch(text.trim()) },
+                        profile = profile.takeIf { settings.profileCount > 1 },
                         onOpenProfiles = onOpenProfiles,
                     )
                 },
@@ -349,11 +365,13 @@ fun HomeScreen(
                         requestedPending == true -> RefreshStarting()
                     }
                     UpdateBanner(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp))
-                    // Live TV's channel list on a TV uses the room (Melvin, 2026-11-19: "use the big screen"): the groups down
-                    // the left, the channels in the middle and what the focused channel is showing on the right.
-                    val tvColumns = tv && tab.kind == ContentKind.LIVE && !settings.liveGrid
+                    // Live TV keeps groups horizontal (Melvin, 2026-11-22) with details beside the list; Movies and Shows
+                    // put groups down the left with a focus details pane (Melvin, 2026-11-19: "use the big screen").
+                    val tvPosterColumns = tv && (tab.kind == ContentKind.MOVIE || tab.kind == ContentKind.SERIES)
+                    val tvLiveInfo = tv && tab.kind == ContentKind.LIVE && !settings.liveGrid
+                    val tvColumns = tvPosterColumns || tvLiveInfo
                     val events = onOpenEvents.takeIf { tab.kind == ContentKind.LIVE }
-                    if (!tvColumns) CategoryChips(vm, tab.kind, onGroupHidden, events)
+                    if (!tvPosterColumns) CategoryChips(vm, tab.kind, onGroupHidden, events)
                     val lists: @Composable () -> Unit = {
                         when (tab.kind) {
                             ContentKind.LIVE -> {
@@ -369,11 +387,27 @@ fun HomeScreen(
                             }
 
                             ContentKind.MOVIE -> {
-                                MovieGrid(vm, onPlay, openMovie, settings.alwaysShowScrollbar, onOpenSearch, focusReturn)
+                                MovieGrid(
+                                    vm,
+                                    onPlay,
+                                    openMovie,
+                                    settings.alwaysShowScrollbar,
+                                    onOpenSearch,
+                                    focusReturn,
+                                    onFocusMovie = if (tvColumns) ({ focusedPoster = PosterFocus.Movie(it) }) else null,
+                                )
                             }
 
                             ContentKind.SERIES -> {
-                                ShowGrid(vm, openShow, onPlay, settings.alwaysShowScrollbar, onOpenSearch, focusReturn)
+                                ShowGrid(
+                                    vm,
+                                    openShow,
+                                    onPlay,
+                                    settings.alwaysShowScrollbar,
+                                    onOpenSearch,
+                                    focusReturn,
+                                    onFocusShow = if (tvColumns) ({ focusedPoster = PosterFocus.Show(it) }) else null,
+                                )
                             }
                         }
                     }
@@ -393,24 +427,30 @@ fun HomeScreen(
                     }
                     if (tvColumns) {
                         BoxWithConstraints(Modifier.fillMaxSize()) {
-                            // The details take what the groups and a readable channel list leave, up to a limit, and are
-                            // left out on a TV too narrow for them (a pane open beside the list, say).
-                            val info = (maxWidth - TV_GROUPS_WIDTH - TV_LIST_MIN_WIDTH).coerceAtMost(TV_INFO_MAX_WIDTH)
+                            // The details take what the middle column leaves, up to a limit, and are left out on a TV too
+                            // narrow for them (a pane open beside the list, say). Movies/Shows also reserve the groups column.
+                            val reserved = if (tvPosterColumns) TV_GROUPS_WIDTH + TV_LIST_MIN_WIDTH else TV_LIST_MIN_WIDTH
+                            val info = (maxWidth - reserved).coerceAtMost(TV_INFO_MAX_WIDTH)
                             Row(Modifier.fillMaxSize()) {
-                                CategoryChips(
-                                    vm,
-                                    tab.kind,
-                                    onGroupHidden,
-                                    events,
-                                    vertical = true,
-                                    modifier = Modifier.width(TV_GROUPS_WIDTH).fillMaxHeight(),
-                                )
+                                if (tvPosterColumns) {
+                                    CategoryChips(
+                                        vm,
+                                        tab.kind,
+                                        onGroupHidden,
+                                        events,
+                                        vertical = true,
+                                        modifier = Modifier.width(TV_GROUPS_WIDTH).fillMaxHeight(),
+                                    )
+                                }
                                 Box(Modifier.weight(1f)) { body() }
                                 if (info >= TV_INFO_MIN_WIDTH) {
-                                    ChannelInfoPane(
-                                        focusedChannel,
-                                        Modifier.width(info).fillMaxHeight().padding(start = 4.dp, end = 12.dp, top = 4.dp, bottom = 16.dp),
-                                    )
+                                    val paneMod =
+                                        Modifier.width(info).fillMaxHeight().padding(start = 4.dp, end = 12.dp, top = 4.dp, bottom = 16.dp)
+                                    if (tab.kind == ContentKind.LIVE) {
+                                        ChannelInfoPane(focusedChannel, paneMod)
+                                    } else {
+                                        PosterInfoPane(focusedPoster, paneMod)
+                                    }
                                 }
                             }
                         }
@@ -468,6 +508,9 @@ internal fun SearchBarRow(
                     }
                 },
                 trailingIcon = searchBoxTrailing(text, onChange),
+                // TV types through Tuned's D-pad keyboard, so the system IME (and its "use the keyboard on your device"
+                // strip) never opens.
+                readOnly = isTelevision(),
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
                 keyboardActions = KeyboardActions(onSearch = { onOpenSearch?.invoke() }),
@@ -477,7 +520,7 @@ internal fun SearchBarRow(
                         focusedIndicatorColor = Color.Transparent,
                         unfocusedIndicatorColor = Color.Transparent,
                     ),
-                modifier = Modifier.remoteTextInput(SearchBoxShape).weight(1f).heightIn(min = 52.dp),
+                modifier = Modifier.remoteTextInput(SearchBoxShape, text, onChange).weight(1f).heightIn(min = 52.dp),
             )
             SearchBoxButtonsBeside(text, onChange)
             // Each button does one thing, in one press: the guide grid on Live TV, and the profile badge opening Who's
@@ -513,7 +556,7 @@ private fun CategoryChips(
     /** Live events, first in Live TV's row (it used to be an icon beside search). Null elsewhere. */
     onOpenEvents: (() -> Unit)?,
     modifier: Modifier = Modifier,
-    /** Down the left of Live TV on a TV, instead of a row across the top (Melvin, 2026-11-19: "use the big screen"). */
+    /** On a TV's Movies and Shows: groups down a column. Live TV keeps the horizontal row. */
     vertical: Boolean = false,
 ) {
     val groups by vm.groups(kind).collectAsStateWithLifecycle()
@@ -555,8 +598,6 @@ private fun CategoryChips(
                 list = list,
                 selected = on,
                 onSelect = { filterFlow.value = if (on) Filter.All else Filter.OwnList(list.id) },
-                onRename = { vm.renameList(list.id, it) },
-                onDelete = { vm.deleteList(list.id) },
             )
         }
         if (kind == ContentKind.LIVE) {
@@ -581,7 +622,7 @@ private fun CategoryChips(
             val pinned = PinnedGroups.isPinned(pins, kind.code, g.groupName)
             val pinLabel = stringResource(if (pinned) R.string.group_unpin else R.string.group_pin)
             val pin = { vm.togglePin(kind, g.groupName) }
-            // A flow row, so in a TV's narrow column Pin and Hide wrap under the group rather than off the edge.
+            // A flow row lets Pin and Hide sit beside the selected group without shrinking their tap targets.
             FlowRow(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 itemVerticalAlignment = Alignment.CenterVertically,
@@ -626,7 +667,7 @@ private fun CategoryChips(
             }
         }
     }
-    // A TV's column: one group under the next, so the arrows go straight down the groups and right into the channels.
+    // A TV's Movies/Shows column: one group under the next, so the arrows go straight down and right into the grid.
     if (vertical) {
         LazyColumn(
             modifier,
@@ -727,17 +768,37 @@ internal fun DownloadsIcon(downloads: DownloadsViewModel = viewModel()) {
 }
 
 /**
- * Live TV on a TV: the column of groups and the focused channel's details either side of the channels. The list keeps
- * room for a channel's name beside its buttons; the details are left out before the names get cut short.
+ * On a TV, Movies and Shows reserve a groups column; Live TV, Movies and Shows all reserve a readable middle column
+ * and a focus details pane that is left out before names get cut short.
  */
-private val TV_GROUPS_WIDTH = 160.dp
-private val TV_LIST_MIN_WIDTH = 340.dp
-private val TV_INFO_MIN_WIDTH = 180.dp
-private val TV_INFO_MAX_WIDTH = 260.dp
+internal val TV_GROUPS_WIDTH = 160.dp
+internal val TV_LIST_MIN_WIDTH = 340.dp
+internal val TV_INFO_MIN_WIDTH = 180.dp
+internal val TV_INFO_MAX_WIDTH = 260.dp
 
 /** The profile button beside the search box: its height (56dp, a Material text field's) and the picture inside it. */
 private val PROFILE_BUTTON = 56.dp
 private val PROFILE_BADGE = 48.dp
+
+/** On a TV, Live TV keeps only the guide-grid toggle in the top bar; Search is on the rail. */
+@Composable
+private fun TvLiveTopBar(
+    grid: Boolean,
+    onToggleGrid: () -> Unit,
+) {
+    Surface(color = MaterialTheme.colorScheme.surface) {
+        Row(
+            Modifier
+                .fillMaxWidth()
+                .statusBarsPadding()
+                .padding(start = 12.dp, end = 4.dp, top = 8.dp, bottom = 4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.End,
+        ) {
+            GridToggleButton(grid, onToggleGrid)
+        }
+    }
+}
 
 /**
  * Live TV: the list or the guide grid, one press away beside search instead of in a menu. A TV has room for its words;

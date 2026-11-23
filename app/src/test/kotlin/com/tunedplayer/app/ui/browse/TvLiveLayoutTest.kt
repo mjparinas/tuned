@@ -27,9 +27,9 @@ import org.robolectric.annotation.GraphicsMode
 import kotlin.test.assertEquals
 
 /**
- * Live TV on a TV uses the big screen (Melvin, 2026-11-19): the groups down the left instead of a row across the top,
- * and what the focused channel is showing beside the list. The remote starts on the first channel, so its details show
- * at once.
+ * Live TV on a TV keeps the groups in a horizontal row in both list and guide views (Melvin, 2026-11-22), and shows
+ * what the focused channel is playing beside the list. The remote starts on the first channel, so its details show at
+ * once.
  */
 @RunWith(RobolectricTestRunner::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE) // text measured as on a device, as the screenshots are, so rows lay out
@@ -50,7 +50,7 @@ class TvLiveLayoutTest {
     }
 
     @Test
-    fun groupsRunDownTheLeftWithTheDetailsBesideTheList() {
+    fun groupsRunAcrossTheTopWithTheDetailsBesideTheList() {
         compose.setContent {
             HomeScreen(
                 settings = AppSettings(),
@@ -74,7 +74,7 @@ class TvLiveLayoutTest {
                 ).fetchSemanticsNodes()
                 .isNotEmpty()
         }
-        // The groups' column holds All above Favourites, one under the other.
+        // The same horizontal chip bar is used by the TV's list and guide views.
         val all =
             compose
                 .onAllNodes(hasText(app.getString(R.string.filter_all)))
@@ -87,7 +87,7 @@ class TvLiveLayoutTest {
                 .onFirst()
                 .fetchSemanticsNode()
                 .boundsInRoot
-        assertEquals(true, favourites.top > all.top && favourites.left == all.left)
+        assertEquals(true, favourites.left > all.left && favourites.top == all.top)
         // The details pane sits beside the list, waiting for the remote to land on a channel.
         compose.onAllNodes(hasText(app.getString(R.string.tv_live_pick))).onFirst().assertExists()
     }

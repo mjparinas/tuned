@@ -52,6 +52,7 @@ class SharedChannels(
                         url = ChannelShare.hideLogin(it.url, c.username, c.password),
                         region = it.region,
                         adult = it.adult,
+                        id = it.id,
                     )
                 }
             if (channels.isEmpty()) return@withContext

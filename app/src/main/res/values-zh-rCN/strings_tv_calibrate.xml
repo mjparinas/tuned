@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_tv_calibrate">校准屏幕</string>
+    <string name="settings_tv_calibrate_summary">移动并拉伸画面，使四角刚好落在电视画面内侧</string>
+    <string name="settings_tv_calibrate_hint">查看每个角落的标记。用下方控件移动或拉伸画面，直到每个标记刚好落在电视边缘内侧。若标记被裁切，请缩小；若标记外有空白，请拉伸。重置可恢复默认值。</string>
+    <string name="settings_tv_calibrate_horizontal">左右移动</string>
+    <string name="settings_tv_calibrate_vertical">上下移动</string>
+    <string name="settings_tv_calibrate_size">拉伸或缩小</string>
+    <string name="settings_tv_calibrate_centre">居中</string>
+    <string name="settings_tv_calibrate_plus">+%1$d</string>
+    <string name="settings_tv_calibrate_minus">−%1$d</string>
+    <string name="settings_tv_calibrate_reset">重置</string>
+    <string name="settings_tv_calibrate_done">完成</string>
+    <string name="settings_tv_calibrate_marks">用于校准屏幕的角落标记</string>
+</resources>

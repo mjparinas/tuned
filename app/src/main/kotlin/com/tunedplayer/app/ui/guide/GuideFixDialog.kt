@@ -18,6 +18,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -46,6 +47,8 @@ import com.tunedplayer.app.data.db.ItemEntity
 import com.tunedplayer.app.diagnostics.launchSafely
 import com.tunedplayer.app.ui.common.TunedDialog
 import com.tunedplayer.app.ui.common.focusRing
+import com.tunedplayer.app.ui.common.isTelevision
+import com.tunedplayer.app.ui.common.remoteTextInput
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -225,16 +228,22 @@ private fun GuideEntryPicker(
 ) {
     var query by rememberSaveable { mutableStateOf("") }
     val results by vm.results.collectAsStateWithLifecycle()
+    val tv = isTelevision()
+    val onQuery: (String) -> Unit = {
+        query = it
+        vm.search(it)
+    }
     Column {
         OutlinedTextField(
             value = query,
-            onValueChange = {
-                query = it
-                vm.search(it)
-            },
+            onValueChange = onQuery,
             label = { Text(stringResource(R.string.guide_fix_search)) },
             singleLine = true,
-            modifier = Modifier.fillMaxWidth(),
+            readOnly = tv,
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .then(if (tv) Modifier.remoteTextInput(OutlinedTextFieldDefaults.shape, query, onQuery) else Modifier),
         )
         if (query.isNotBlank() && results.isEmpty()) {
             Text(

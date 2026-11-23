@@ -38,6 +38,7 @@ android {
             apiLevel = 34
             systemImageSource = "aosp"
         }
+        // Gradle Managed Devices do not support android-tv images; cold-start numbers stay on Pixel 6.
     }
 }
 

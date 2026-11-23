@@ -25,6 +25,8 @@ import org.junit.runner.RunWith
 class SmokeTest {
     private val instrumentation = InstrumentationRegistry.getInstrumentation()
     private val device = UiDevice.getInstance(instrumentation)
+    private val television =
+        instrumentation.targetContext.packageManager.hasSystemFeature(PackageManager.FEATURE_LEANBACK)
 
     @Before
     fun freshInstall() {
@@ -36,10 +38,8 @@ class SmokeTest {
     @Test
     fun signInPlayChangeChannelAndGoBack() {
         launch()
-        device.wait(Until.findObject(By.text("Playlist link")), SCREEN_MS).click()
-        device.wait(Until.findObject(By.clazz("android.widget.EditText")), SCREEN_MS).text = FakeProvider.PLAYLIST_URL
-        device.findObject(By.text("Add playlist")).click()
-        val first = device.wait(Until.findObject(By.text(FakeProvider.FIRST_CHANNEL)), SIGN_IN_MS)
+        signIn()
+        val first = device.wait(Until.findObject(By.text(FakeProvider.FIRST_CHANNEL)), SCREEN_MS)
         checkNotNull(first) { "Live TV never listed the channels" }
 
         first.click()
@@ -65,6 +65,7 @@ class SmokeTest {
      */
     @Test
     fun aDownloadWaitsWhileAChannelPlays() {
+        assumeTrue("downloads stay off Android TV", !television)
         launch()
         signIn()
         device.wait(Until.findObject(By.text("Movies")), SCREEN_MS).click()
@@ -99,6 +100,7 @@ class SmokeTest {
      */
     @Test
     fun liveTvKeepsPlayingInTheMiniPlayerAndHangsUpForTheNextPick() {
+        assumeTrue("mini player stays off Android TV", !television)
         val pm = instrumentation.targetContext.packageManager
         assumeTrue("no picture-in-picture on this emulator", pm.hasSystemFeature(PackageManager.FEATURE_PICTURE_IN_PICTURE))
         launch()
@@ -148,6 +150,10 @@ class SmokeTest {
     }
 
     private fun signIn() {
+        // A TV leads with "Sign in with your phone"; if that screen is open, go back to the typed cards.
+        if (television) {
+            device.findObject(By.text("Type it on the TV instead"))?.click()
+        }
         device.wait(Until.findObject(By.text("Playlist link")), SCREEN_MS).click()
         device.wait(Until.findObject(By.clazz("android.widget.EditText")), SCREEN_MS).text = FakeProvider.PLAYLIST_URL
         device.findObject(By.text("Add playlist")).click()

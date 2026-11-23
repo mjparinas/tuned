@@ -27,11 +27,15 @@ class TitleRatings(
     private val db: TunedDatabase,
     private val metadata: MetadataRepository,
 ) {
-    /** How far a lookup has got: [done] of [total] titles, for Shows when [tv]. */
+    /**
+     * How far a lookup has got: [done] of [total] titles, for Shows when [tv]. [startedAt] is when this fill began, so
+     * the screen can estimate how much longer it will take.
+     */
     data class Progress(
         val tv: Boolean,
         val done: Int,
         val total: Int,
+        val startedAt: Long = 0,
     )
 
     private val running = MutableStateFlow<Progress?>(null)
@@ -61,8 +65,9 @@ class TitleRatings(
     ) {
         var done = 0
         var failedInARow = 0
-        var applied = System.currentTimeMillis()
-        running.value = Progress(tv, 0, names.size)
+        val startedAt = System.currentTimeMillis()
+        var applied = startedAt
+        running.value = Progress(tv, 0, names.size, startedAt)
         for (chunk in names.chunked(AT_ONCE)) {
             val answered =
                 coroutineScope {
@@ -75,7 +80,7 @@ class TitleRatings(
                         }.awaitAll()
                 }.count { it }
             done += chunk.size
-            running.value = Progress(tv, done, names.size)
+            running.value = Progress(tv, done, names.size, startedAt)
             if (answered == 0) {
                 // Offline, or TMDB busy: wait a little, and stop after a few tries rather than spin.
                 failedInARow++

@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Movies and Shows on a TV: the details pane beside the poster grid. -->
+    <string name="tv_browse_pick">Move to a title to see its details.</string>
+</resources>

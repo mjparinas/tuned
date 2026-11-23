@@ -37,6 +37,7 @@ import androidx.compose.runtime.produceState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
@@ -81,6 +82,8 @@ internal fun MovieGrid(
     onSearchEverything: (String) -> Unit,
     /** Changes when focus should come back to the grid on a TV, such as the pane beside it closing. */
     focusReturn: Int = 0,
+    /** On a TV, the film the remote moves onto, for the details beside the grid. */
+    onFocusMovie: ((ItemEntity) -> Unit)? = null,
 ) {
     val movies = vm.movies.collectAsLazyPagingItems()
     val favourites by vm.favouriteIds.collectAsStateWithLifecycle()
@@ -115,7 +118,14 @@ internal fun MovieGrid(
                     val done = movie.id in watched
                     val saved = WatchLaterEntity.movieKey(movie.id) in later
                     Poster(
-                        modifier = Modifier.tvFocusItem(focus, movie.id, first = index == 0),
+                        modifier =
+                            Modifier.tvFocusItem(focus, movie.id, first = index == 0).then(
+                                if (onFocusMovie == null) {
+                                    Modifier
+                                } else {
+                                    Modifier.onFocusChanged { if (it.hasFocus) onFocusMovie(movie) }
+                                },
+                            ),
                         title = Titles.display(movie.name),
                         image = movie.logo,
                         favourite = favourite,
@@ -152,6 +162,8 @@ internal fun ShowGrid(
     onSearchEverything: (String) -> Unit,
     /** Changes when focus should come back to the grid on a TV, such as the pane beside it closing. */
     focusReturn: Int = 0,
+    /** On a TV, the show the remote moves onto, for the details beside the grid. */
+    onFocusShow: ((ShowSummary) -> Unit)? = null,
 ) {
     val shows = vm.shows.collectAsLazyPagingItems()
     val library: LibraryViewModel = viewModel()
@@ -180,7 +192,14 @@ internal fun ShowGrid(
                     // The show's own cover, TMDB's poster first, rather than an episode's still.
                     val art = rememberShowArt(show.showName, show.logo)
                     Poster(
-                        modifier = Modifier.tvFocusItem(focus, show.showKey, first = index == 0),
+                        modifier =
+                            Modifier.tvFocusItem(focus, show.showKey, first = index == 0).then(
+                                if (onFocusShow == null) {
+                                    Modifier
+                                } else {
+                                    Modifier.onFocusChanged { if (it.hasFocus) onFocusShow(show) }
+                                },
+                            ),
                         title = Titles.display(show.showName),
                         image = art.image,
                         rating = art.rating,

@@ -21,6 +21,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
@@ -37,7 +38,9 @@ import com.tunedplayer.app.data.AppSettings
 import com.tunedplayer.app.data.ChannelScanner
 import com.tunedplayer.app.data.db.ScanReportRow
 import com.tunedplayer.app.diagnostics.launchSafely
+import com.tunedplayer.app.ui.ProgressEta
 import com.tunedplayer.app.ui.common.BackTopBar
+import com.tunedplayer.app.work.ScanWorker
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
@@ -50,7 +53,7 @@ class ChannelHealthViewModel(
     val summary: StateFlow<ChannelScanner.Summary?> =
         container.channelScan.summary.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
-    val progress: StateFlow<Pair<Int, Int>?> =
+    val progress: StateFlow<ScanWorker.Progress?> =
         container.scanControl.progress.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
     val report: StateFlow<List<ScanReportRow>> =
@@ -137,7 +140,7 @@ fun ChannelHealthScreen(
 @Composable
 private fun ScanCard(
     summary: ChannelScanner.Summary?,
-    progress: Pair<Int, Int>?,
+    progress: ScanWorker.Progress?,
     onStart: () -> Unit,
     onStop: () -> Unit,
 ) {
@@ -148,15 +151,21 @@ private fun ScanCard(
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         if (progress != null) {
-            val (done, total) = progress
-            Text(
+            val done = progress.done
+            val total = progress.total
+            val line =
                 if (total > 0) {
-                    pluralStringResource(R.plurals.scan_progress, total, done, total)
+                    ProgressEta.withEta(
+                        LocalContext.current,
+                        pluralStringResource(R.plurals.scan_progress, total, done, total),
+                        done.toLong(),
+                        total.toLong(),
+                        progress.startedAt,
+                    )
                 } else {
                     stringResource(R.string.health_starting)
-                },
-                style = MaterialTheme.typography.titleSmall,
-            )
+                }
+            Text(line, style = MaterialTheme.typography.titleSmall)
             if (total > 0) {
                 LinearProgressIndicator(progress = { done.toFloat() / total }, modifier = Modifier.fillMaxWidth())
             } else {

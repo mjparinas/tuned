@@ -47,8 +47,26 @@ class ChannelShareTest {
         val now = 1_795_201_200_000L
         val channels =
             listOf(
-                ChannelShare.Channel("CBC \"East\"", "Canada", "http://i/cbc.png", "cbc.ca", 1, "http://p/live/{login}/1.ts", "ca"),
-                ChannelShare.Channel("CP24", "News", null, null, 2, "http://p/live/{login}/2.ts", adult = true),
+                ChannelShare.Channel(
+                    "CBC \"East\"",
+                    "Canada",
+                    "http://i/cbc.png",
+                    "cbc.ca",
+                    1,
+                    "http://p/live/{login}/1.ts",
+                    "ca",
+                    id = 11,
+                ),
+                ChannelShare.Channel(
+                    "CP24",
+                    "News",
+                    null,
+                    null,
+                    2,
+                    "http://p/live/{login}/2.ts",
+                    adult = true,
+                    id = 12,
+                ),
             )
         val hour = 3_600_000L
         val shows =
@@ -64,8 +82,8 @@ class ChannelShareTest {
         val json = ChannelShare.payload("abc", channels, shows, now)
         assertEquals(
             "{\"v\":1,\"playlist\":\"abc\",\"savedAt\":$now,\"channels\":[" +
-                "[\"CBC \\\"East\\\"\",\"Canada\",\"http://i/cbc.png\",\"cbc.ca\",1,\"http://p/live/{login}/1.ts\",\"ca\",0]," +
-                "[\"CP24\",\"News\",\"\",\"\",2,\"http://p/live/{login}/2.ts\",\"\",1]]," +
+                "[\"CBC \\\"East\\\"\",\"Canada\",\"http://i/cbc.png\",\"cbc.ca\",1,\"http://p/live/{login}/1.ts\",\"ca\",0,11]," +
+                "[\"CP24\",\"News\",\"\",\"\",2,\"http://p/live/{login}/2.ts\",\"\",1,12]]," +
                 "\"guide\":{\"cbc.ca\":[[${(now - hour / 2) / 1000},${(now + hour) / 1000},\"Now\\non\",0]," +
                 "[${(now + hour) / 1000},${(now + 2 * hour) / 1000},\"Later\",1]," +
                 "[${(now + 13 * hour) / 1000},${(now + 14 * hour) / 1000},\"Tonight\",0]]}}",

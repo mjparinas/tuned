@@ -87,6 +87,8 @@ class GitHubUpdates(
             val step: InstallStep,
             val done: Long = 0,
             val total: Long = -1,
+            /** When this [step] began, for estimating how much longer it has left; 0 when unknown. */
+            val startedAt: Long = 0,
         ) : State {
             /** 0 to 1 while there is something to count, otherwise null (a moving bar). */
             val fraction: Float? get() = if (total > 0) (done.toFloat() / total).coerceIn(0f, 1f) else null
@@ -381,7 +383,20 @@ class GitHubUpdates(
     ) = withContext(Dispatchers.IO) {
         val apk = ready.apk
         val size = if (ready.size > 0) ready.size else apk.length()
-        val step = { s: InstallStep, done: Long -> _state.value = State.Installing(ready, s, done, size) }
+        var stepStarted: InstallStep? = null
+        var stepStartedAt = 0L
+        val step = { s: InstallStep, done: Long ->
+            val started =
+                if (s == stepStarted && stepStartedAt > 0L) {
+                    stepStartedAt
+                } else {
+                    System.currentTimeMillis().also {
+                        stepStarted = s
+                        stepStartedAt = it
+                    }
+                }
+            _state.value = State.Installing(ready, s, done, size, started)
+        }
         val good = apk.exists() && apk.length() == size && matches(apk, ready.digest) { step(InstallStep.CHECK, it) }
         if (!good) {
             // Android cleared the cache, or the copy was damaged: download it again rather than give up.
@@ -414,8 +429,11 @@ class GitHubUpdates(
         }
         // Handed over: the installer answers through InstallResultReceiver, usually with its confirm window. It can
         // answer before this line runs, so only a step still preparing moves on.
-        val handed = State.Installing(ready, InstallStep.OPEN_INSTALLER)
-        _state.compareAndSet(State.Installing(ready, InstallStep.PREPARE, size, size), handed)
+        val handed = State.Installing(ready, InstallStep.OPEN_INSTALLER, startedAt = System.currentTimeMillis())
+        val preparing = _state.value
+        if (preparing is State.Installing && preparing.step == InstallStep.PREPARE) {
+            _state.compareAndSet(preparing, handed)
+        }
         AppLog.i(TAG) { "Handed the update to Android's installer; waiting for its answer" }
         // Some devices never answer at all: rather than "Opening Android's installer" for ever, say it didn't open.
         delay(installerTimeoutMs)

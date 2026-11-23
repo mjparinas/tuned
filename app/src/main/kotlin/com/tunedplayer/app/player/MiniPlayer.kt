@@ -40,7 +40,8 @@ import kotlinx.coroutines.withTimeoutOrNull
  * One stream, ever: anything else picked while the window shows (a channel, a film, an episode, catch-up, a recording
  * or an event to tune) closes the window first, waits until its stream has hung up, and only then opens ([open]).
  * Back on the app's first screen closes the window too ([closeOnBack]), which is a remote's way to stop it on a TV,
- * where the window never takes the remote's focus.
+ * where the window never takes the remote's focus. When playback ends in the small window (a finished film or episode),
+ * the window closes so it does not linger black ([shouldCloseWhenEnded]).
  */
 object MiniPlayer {
     private const val TAG = "MiniPlayer"
@@ -157,6 +158,15 @@ object MiniPlayer {
     /** A playlist item may shrink; the sentinel is shared by one-off catch-up programmes and recordings. */
     internal fun regularContent(id: Long?): Boolean = id != null && id != CatchUpLinks.ID
 
+    /**
+     * A finished film or episode in picture-in-picture leaves a black window unless the player closes. Only
+     * [Player.STATE_ENDED] while small: a pause keeps the window, and ending full screen leaves the player as before.
+     */
+    internal fun shouldCloseWhenEnded(
+        inPictureInPicture: Boolean,
+        playbackState: Int,
+    ): Boolean = inPictureInPicture && playbackState == Player.STATE_ENDED
+
     /** Back on the app's own screens, once nothing else wants it, closes the mini player before it leaves the app. */
     fun closeOnBack(activity: ComponentActivity) {
         val callback =
@@ -184,6 +194,9 @@ object MiniPlayer {
     ) {
         private val close: () -> Unit = { activity.finish() }
 
+        /** Watches for a finished film or episode while small; cleared when the window goes. */
+        private var endWhilePip: Player.Listener? = null
+
         /** Back: the mini player when it can, otherwise what Back always did (close the player). */
         private val back =
             object : OnBackPressedCallback(true) {
@@ -198,9 +211,22 @@ object MiniPlayer {
         init {
             activity.onBackPressedDispatcher.addCallback(activity, back)
             activity.addOnPictureInPictureModeChangedListener { change ->
-                if (change.isInPictureInPictureMode) shown(PlayRequest.of(activity.intent), close) else gone(close)
+                if (change.isInPictureInPictureMode) {
+                    shown(PlayRequest.of(activity.intent), close)
+                    watchEnd()
+                } else {
+                    unwatchEnd()
+                    gone(close)
+                }
             }
-            activity.lifecycle.addObserver(LifecycleEventObserver { _, event -> if (event == Lifecycle.Event.ON_DESTROY) gone(close) })
+            activity.lifecycle.addObserver(
+                LifecycleEventObserver { _, event ->
+                    if (event == Lifecycle.Event.ON_DESTROY) {
+                        unwatchEnd()
+                        gone(close)
+                    }
+                },
+            )
         }
 
         private fun shrink(): Boolean {
@@ -221,6 +247,33 @@ object MiniPlayer {
                     activity.enterPictureInPictureMode(pipParams(player(), view(), settings().pictureInPicture))
                 }
             return entered.getOrDefault(false)
+        }
+
+        /** Close the black window when a film or episode finishes while picture-in-picture. */
+        private fun watchEnd() {
+            unwatchEnd()
+            val p = player() ?: return
+            val listener =
+                object : Player.Listener {
+                    override fun onPlaybackStateChanged(playbackState: Int) {
+                        if (shouldCloseWhenEnded(true, playbackState)) {
+                            AppLog.i(TAG) { "Playback ended in the mini player; closing" }
+                            close()
+                        }
+                    }
+                }
+            endWhilePip = listener
+            p.addListener(listener)
+            if (shouldCloseWhenEnded(true, p.playbackState)) {
+                AppLog.i(TAG) { "Playback already ended in the mini player; closing" }
+                close()
+            }
+        }
+
+        private fun unwatchEnd() {
+            val listener = endWhilePip ?: return
+            endWhilePip = null
+            attempt(TAG, "Couldn't stop watching for the end in the mini player") { player()?.removeListener(listener) }
         }
 
         /** The app's lists are open in a task of their own or under the player. */

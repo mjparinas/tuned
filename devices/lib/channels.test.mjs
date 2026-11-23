@@ -246,6 +246,7 @@ test("the app's copy becomes channels and a guide, with the login put back", () 
         ["http://p:8080/live/me%40x/a%2Fb/1.ts", "http://p/play?username=me%40x&password=a%2Fb", "http://other/stream.m3u8"],
     );
     assert.deepEqual(read.channels[0], {
+        id: 0,
         region: "",
         name: "CBC",
         group: "Canada",
@@ -254,6 +255,8 @@ test("the app's copy becomes channels and a guide, with the login put back", () 
         number: "1",
         url: "http://p:8080/live/me%40x/a%2Fb/1.ts",
     });
+    // A newer app's row carries the stable id the website edits with.
+    assert.equal(fromAppCopy({ v: 1, channels: [["CBC", "", "", "", 1, "http://a", "CA", 0, 42]], guide: {} }, null).channels[0].id, 42);
     assert.equal(read.channels[1].number, "");
     assert.deepEqual(
         read.guide.get("cbc.ca").map((p) => [p.title, p.start]),
