@@ -1,10 +1,11 @@
 package com.tunedplayer.app.ui.browse
 
 import androidx.compose.ui.test.assertCountEquals
-import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onFirst
+import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
 import androidx.test.core.app.ApplicationProvider
 import androidx.work.Configuration
 import androidx.work.testing.SynchronousExecutor
@@ -44,7 +45,8 @@ class TvBrowseLayoutTest {
         WorkManagerTestInitHelper.initializeTestWorkManager(app, Configuration.Builder().setExecutor(SynchronousExecutor()).build())
         runBlocking(Dispatchers.IO) {
             SampleData.seed(app.container.db)
-            app.container.settings.update { AppSettings() }
+            // As the screenshots do: Home reads some of its settings from the store as well as its parameter.
+            app.container.settings.update { AppSettings(startTab = StartTab.MOVIES) }
         }
     }
 
@@ -66,13 +68,11 @@ class TvBrowseLayoutTest {
                 onOpenPlaylists = {},
             )
         }
+        // rememberSaveable can keep a prior test's Live tab; land on Movies so the three-column layout is up.
+        compose.onNodeWithText(app.getString(R.string.tab_movies)).performClick()
+        // The empty details pane is unique to Movies/Shows on a TV; it appears once past First run.
         compose.waitUntil(WAIT_MS) {
-            compose
-                .onAllNodes(
-                    hasText("Glass Harbour", substring = true) or hasContentDescription("Glass Harbour", substring = true) or
-                        hasText("Northern Lights", substring = true),
-                ).fetchSemanticsNodes()
-                .isNotEmpty()
+            compose.onAllNodes(hasText(app.getString(R.string.tv_browse_pick))).fetchSemanticsNodes().isNotEmpty()
         }
         val all =
             compose
@@ -87,7 +87,6 @@ class TvBrowseLayoutTest {
                 .fetchSemanticsNode()
                 .boundsInRoot
         assertEquals(true, favourites.top > all.top && favourites.left == all.left)
-        compose.onAllNodes(hasText(app.getString(R.string.tv_browse_pick))).onFirst().assertExists()
     }
 
     /** The details pane for a show: title and episode count from the device, empty until the remote lands on one. */
