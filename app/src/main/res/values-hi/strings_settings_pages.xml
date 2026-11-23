@@ -11,7 +11,7 @@
     <string name="settings_page_playback_summary">ऑडियो, जारी रखना, इंट्रो छोड़ना, रिवाइंड और प्लेयर कंट्रोल</string>
     <string name="settings_page_reliability">जब कोई चैनल विफल हो</string>
     <string name="settings_page_reliability_summary">फिर से कनेक्ट करना, बैकअप कॉपी, ऑटो-ट्यून और चैनल की स्थिति</string>
-    <string name="settings_page_appearance_summary">थीम, रंग और पूरा काला</string>
+    <string name="settings_page_appearance_summary">थीम, रंग, पूरा काला और टीवी स्क्रीन कैलिब्रेशन</string>
     <string name="settings_page_about">अपडेट और उन्नत</string>
     <string name="settings_page_about_summary">अपडेट, यूज़र एजेंट और लॉग</string>
     <string name="settings_header_hidden">क्या छिपा है</string>

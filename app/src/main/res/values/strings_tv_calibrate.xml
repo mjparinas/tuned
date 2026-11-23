@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_tv_calibrate">Calibrate screen</string>
+    <string name="settings_tv_calibrate_summary">Move and stretch the picture so the corners sit just inside your TV</string>
+    <string name="settings_tv_calibrate_hint">Look at the marks in each corner. Use the controls below to move or stretch the picture until every mark sits just inside the edge of your TV. If a mark is cut off, shrink; if you see empty space outside a mark, stretch. Reset puts the defaults back.</string>
+    <string name="settings_tv_calibrate_horizontal">Move left or right</string>
+    <string name="settings_tv_calibrate_vertical">Move up or down</string>
+    <string name="settings_tv_calibrate_size">Stretch or shrink</string>
+    <string name="settings_tv_calibrate_centre">Centre</string>
+    <string name="settings_tv_calibrate_plus">+%1$d</string>
+    <string name="settings_tv_calibrate_minus">−%1$d</string>
+    <string name="settings_tv_calibrate_reset">Reset</string>
+    <string name="settings_tv_calibrate_done">Done</string>
+    <string name="settings_tv_calibrate_marks">Corner marks for calibrating the screen</string>
+</resources>

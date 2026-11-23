@@ -54,9 +54,10 @@ class TvBackdropBleedTest {
         }
         compose.waitForIdle()
         val bitmap = compose.onRoot().captureToImage().asAndroidBitmap()
-        // The bar is 64 dp tall from the top margin (27 dp); its right end holds no text. Just below it is the glow.
+        // The bar is 64 dp tall from the top margin; its right end holds no text. Just below it is the glow.
+        val top = TV_VERTICAL_MARGIN.value.toInt()
         val x = bitmap.width - 60
-        assertClose(bitmap, x, 27 + 32, x, 27 + 64 + 4, "$mode title bar")
+        assertClose(bitmap, x, top + 32, x, top + 64 + 4, "$mode title bar")
     }
 
     private fun assertNoFrame(mode: ThemeMode) {
@@ -67,11 +68,13 @@ class TvBackdropBleedTest {
         }
         compose.waitForIdle()
         val bitmap = compose.onRoot().captureToImage().asAndroidBitmap()
-        // mdpi: 1 dp is 1 px. The top margin is 27 dp and the sides 24 dp; the glow is strongest at the top centre.
+        // mdpi: 1 dp is 1 px. The glow is strongest at the top centre; a pixel in the margin matches one just inside.
         val midX = bitmap.width / 2
         val midY = bitmap.height / 2
-        assertClose(bitmap, midX, 2, midX, 30, "$mode top")
-        assertClose(bitmap, 2, midY, 26, midY, "$mode side")
+        val side = TV_SIDE_MARGIN.value.toInt()
+        val top = TV_VERTICAL_MARGIN.value.toInt()
+        assertClose(bitmap, midX, 2, midX, top + 4, "$mode top")
+        assertClose(bitmap, 2, midY, side + 2, midY, "$mode side")
     }
 
     private fun assertClose(

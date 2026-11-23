@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_tv_calibrate">Bildschirm kalibrieren</string>
+    <string name="settings_tv_calibrate_summary">Bild verschieben und dehnen, bis die Ecken genau im Fernsehbild liegen</string>
+    <string name="settings_tv_calibrate_hint">Schau dir die Markierungen in jeder Ecke an. Verschiebe oder dehne das Bild mit den Reglern unten, bis jede Markierung knapp innerhalb des Fernsehbildrands liegt. Wird eine Markierung abgeschnitten, verkleinern; siehst du leeren Rand außerhalb einer Markierung, dehnen. Zurücksetzen stellt die Standardwerte wieder her.</string>
+    <string name="settings_tv_calibrate_horizontal">Nach links oder rechts verschieben</string>
+    <string name="settings_tv_calibrate_vertical">Nach oben oder unten verschieben</string>
+    <string name="settings_tv_calibrate_size">Dehnen oder verkleinern</string>
+    <string name="settings_tv_calibrate_centre">Mitte</string>
+    <string name="settings_tv_calibrate_plus">+%1$d</string>
+    <string name="settings_tv_calibrate_minus">−%1$d</string>
+    <string name="settings_tv_calibrate_reset">Zurücksetzen</string>
+    <string name="settings_tv_calibrate_done">Fertig</string>
+    <string name="settings_tv_calibrate_marks">Eckmarkierungen zur Bildschirmkalibrierung</string>
+</resources>

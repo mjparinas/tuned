@@ -39,13 +39,16 @@ import com.tunedplayer.app.data.AppSettings
 import com.tunedplayer.app.data.LighterMode
 import com.tunedplayer.app.data.ThemeMode
 import com.tunedplayer.app.diagnostics.Lighter
+import com.tunedplayer.app.ui.TvScreenCalibrateRoute
 import com.tunedplayer.app.ui.common.focusRing
+import com.tunedplayer.app.ui.common.isTelevision
 import com.tunedplayer.app.ui.theme.swatch
 
 @Composable
 internal fun AppearancePage(
     settings: AppSettings,
     vm: SettingsViewModel,
+    onOpen: (route: Any) -> Unit = {},
 ) {
     ChoiceRow(
         stringResource(R.string.settings_theme),
@@ -85,6 +88,13 @@ internal fun AppearancePage(
         label = { stringResource(lighterLabel(it, lighterNow)) },
     ) { m ->
         vm.update { it.copy(lighterMode = m) }
+    }
+    // Overscan differs by TV, so calibration only shows there; phones and tablets have no crop to fix.
+    if (isTelevision()) {
+        SettingRow(
+            stringResource(R.string.settings_tv_calibrate),
+            stringResource(R.string.settings_tv_calibrate_summary),
+        ) { onOpen(TvScreenCalibrateRoute) }
     }
 }
 

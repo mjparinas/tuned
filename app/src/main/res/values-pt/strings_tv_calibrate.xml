@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_tv_calibrate">Calibrar tela</string>
+    <string name="settings_tv_calibrate_summary">Mova e estique a imagem para que os cantos fiquem logo dentro da TV</string>
+    <string name="settings_tv_calibrate_hint">Olhe as marcas em cada canto. Use os controles abaixo para mover ou esticar a imagem até cada marca ficar logo dentro da borda da TV. Se uma marca for cortada, reduza; se houver espaço vazio fora de uma marca, estique. Repor volta aos padrões.</string>
+    <string name="settings_tv_calibrate_horizontal">Mover para a esquerda ou direita</string>
+    <string name="settings_tv_calibrate_vertical">Mover para cima ou para baixo</string>
+    <string name="settings_tv_calibrate_size">Esticar ou reduzir</string>
+    <string name="settings_tv_calibrate_centre">Centro</string>
+    <string name="settings_tv_calibrate_plus">+%1$d</string>
+    <string name="settings_tv_calibrate_minus">−%1$d</string>
+    <string name="settings_tv_calibrate_reset">Repor</string>
+    <string name="settings_tv_calibrate_done">Concluído</string>
+    <string name="settings_tv_calibrate_marks">Marcas dos cantos para calibrar a tela</string>
+</resources>
