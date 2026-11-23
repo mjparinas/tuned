@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_warm_next">Preparar pantallas siguientes</string>
+    <string name="settings_warm_next_summary">Carga las siguientes listas y pósteres en segundo plano para que cambiar de pestaña se sienta al instante</string>
+</resources>

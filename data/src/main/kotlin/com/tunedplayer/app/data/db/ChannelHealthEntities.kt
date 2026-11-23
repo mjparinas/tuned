@@ -1,6 +1,7 @@
 package com.tunedplayer.app.data.db
 
 import androidx.room.Entity
+import androidx.room.Index
 import androidx.room.PrimaryKey
 
 /** What auto-tune learned about a live channel: when it last played or failed, and how sharp it was. */
@@ -31,7 +32,7 @@ data class TuneRow(
  * What channel scans found for a live channel ([com.tunedplayer.app.core.ChannelScan.Record]). [hidden] is stored, not worked
  * out, so the lists can leave hidden channels out in SQL.
  */
-@Entity(tableName = "channel_scan")
+@Entity(tableName = "channel_scan", indices = [Index(value = ["hidden"])])
 data class ChannelScanEntity(
     @PrimaryKey val itemId: Long,
     val failures: Int,

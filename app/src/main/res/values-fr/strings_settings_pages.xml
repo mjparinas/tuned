@@ -11,7 +11,7 @@
     <string name="settings_page_playback_summary">Audio, reprise, passer l\'intro, retour en arrière et les commandes du lecteur</string>
     <string name="settings_page_reliability">Quand une chaîne échoue</string>
     <string name="settings_page_reliability_summary">Reconnexion, copies de secours, syntonisation auto et état des chaînes</string>
-    <string name="settings_page_appearance_summary">Thème, couleurs, noir pur et calibrage de la TV</string>
+    <string name="settings_page_appearance_summary">Thème, couleurs, noir pur, préparer les écrans suivants et calibrage de la TV</string>
     <string name="settings_page_about">Mises à jour et avancé</string>
     <string name="settings_page_about_summary">Mises à jour, user-agent et journaux</string>
     <string name="settings_header_hidden">Ce qui est masqué</string>

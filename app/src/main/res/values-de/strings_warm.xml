@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_warm_next">Nächste Bildschirme vorbereiten</string>
+    <string name="settings_warm_next_summary">Lädt die nächsten Listen und Poster im Hintergrund, damit Tab-Wechsel sofort wirken</string>
+</resources>

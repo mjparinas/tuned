@@ -89,6 +89,13 @@ internal fun AppearancePage(
     ) { m ->
         vm.update { it.copy(lighterMode = m) }
     }
+    SwitchRow(
+        stringResource(R.string.settings_warm_next),
+        settings.warmNextScreens,
+        stringResource(R.string.settings_warm_next_summary),
+    ) { on ->
+        vm.update { it.copy(warmNextScreens = on) }
+    }
     // Overscan differs by TV, so calibration only shows there; phones and tablets have no crop to fix.
     if (isTelevision()) {
         SettingRow(

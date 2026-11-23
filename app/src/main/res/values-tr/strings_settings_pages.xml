@@ -11,7 +11,7 @@
     <string name="settings_page_playback_summary">Ses, devam etme, giriş atlama, geri sarma ve oynatıcı kontrolleri</string>
     <string name="settings_page_reliability">Bir kanal çalışmadığında</string>
     <string name="settings_page_reliability_summary">Yeniden bağlanma, yedek kopyalar, otomatik ayar ve kanal sağlığı</string>
-    <string name="settings_page_appearance_summary">Tema, renkler, saf siyah ve TV ekran kalibrasyonu</string>
+    <string name="settings_page_appearance_summary">Tema, renkler, saf siyah, sonraki ekranları hazırla ve TV ekran kalibrasyonu</string>
     <string name="settings_page_about">Güncellemeler ve gelişmiş</string>
     <string name="settings_page_about_summary">Güncellemeler, kullanıcı aracısı ve günlükler</string>
     <string name="settings_header_hidden">Gizlenenler</string>
