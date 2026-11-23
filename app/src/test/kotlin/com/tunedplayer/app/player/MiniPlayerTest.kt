@@ -3,6 +3,7 @@ package com.tunedplayer.app.player
 import android.content.Context
 import android.content.res.Configuration
 import androidx.activity.ComponentActivity
+import androidx.media3.common.Player
 import androidx.test.core.app.ApplicationProvider
 import com.tunedplayer.app.data.AppSettings
 import kotlinx.coroutines.Dispatchers
@@ -174,6 +175,15 @@ class MiniPlayerTest {
         assertFalse(shrinks(casting = true), "closing the player ends the cast")
         assertFalse(shrinks(playing = false), "paused")
         assertFalse(shrinks(appOpen = false), "opened from a widget, with no lists to browse")
+    }
+
+    @Test
+    fun `a finished film or episode closes the mini player only while it is small`() {
+        assertTrue(MiniPlayer.shouldCloseWhenEnded(true, Player.STATE_ENDED))
+        assertFalse(MiniPlayer.shouldCloseWhenEnded(false, Player.STATE_ENDED), "full screen keeps the player")
+        assertFalse(MiniPlayer.shouldCloseWhenEnded(true, Player.STATE_READY), "still playing or paused")
+        assertFalse(MiniPlayer.shouldCloseWhenEnded(true, Player.STATE_BUFFERING))
+        assertFalse(MiniPlayer.shouldCloseWhenEnded(true, Player.STATE_IDLE))
     }
 
     private fun shrinks(
