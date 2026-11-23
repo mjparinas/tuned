@@ -103,6 +103,7 @@ class HomeRailSettingsTest {
     fun aTvHasNoMenu() {
         var opened = 0
         home { opened++ }
+        compose.onNode(hasText(app.getString(R.string.downloads)) and isSelectable()).assertDoesNotExist()
         compose.onNode(hasText(app.getString(R.string.rail_search)) and isSelectable()).assertExists()
         compose.onNode(hasText(app.getString(R.string.settings)) and isSelectable()).performClick()
         assertEquals(1, opened)
