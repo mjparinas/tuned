@@ -297,12 +297,14 @@ function showGate(which) {
 }
 
 async function start() {
-    drawNav($("account-nav"), "watch");
-    $("account-nav").hidden = false;
     if (!(await enabled())) return showGate("off");
 
     const me = await getJson("/api/account/me");
     if (me.status === "signed out" || me.http === 401) return showGate("signed-out");
+    // Same as Channels and the account page: the side menu only lays out beside the page once main.signed-in is set.
+    document.querySelector("main").classList.add("signed-in");
+    drawNav($("account-nav"), "watch");
+    $("account-nav").hidden = false;
     if (!me.premium) return showGate("need-premium");
 
     const library = await getJson("/api/account/library");
