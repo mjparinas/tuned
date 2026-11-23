@@ -18,4 +18,21 @@
     <string name="trakt_denied">Trakt ने कनेक्शन से मना कर दिया।</string>
     <string name="trakt_failed">Trakt तक नहीं पहुंच सके। कनेक्शन जांचें और फिर से कोशिश करें।</string>
     <string name="trakt_try_again">फिर से कोशिश करें</string>
+    <string name="trakt_import">देखी गई इतिहास आयात करें</string>
+    <string name="trakt_import_summary">दूसरे ऐप में पहले देखे फ़िल्म और एपिसोड को देखा हुआ चिह्नित करें</string>
+    <string name="trakt_import_reading">आपकी प्लेलिस्ट पढ़ी जा रही है…</string>
+    <string name="trakt_import_films">Trakt से फ़िल्में लाई जा रही हैं…</string>
+    <string name="trakt_import_shows">Trakt से शो लाए जा रहे हैं…</string>
+    <string name="trakt_import_marking">देखा हुआ चिह्नित किया जा रहा है… %2$d में से %1$d</string>
+    <string name="trakt_import_done">%1$s और %2$s को देखा हुआ चिह्नित किया गया</string>
+    <string name="trakt_import_none">आपकी प्लेलिस्ट में Trakt इतिहास से कुछ मेल नहीं खाया</string>
+    <string name="trakt_import_failed">Trakt से आयात नहीं हो सका। फिर कोशिश के लिए टैप करें।</string>
+    <plurals name="trakt_import_films_count">
+        <item quantity="one">%d फ़िल्म</item>
+        <item quantity="other">%d फ़िल्में</item>
+    </plurals>
+    <plurals name="trakt_import_episodes_count">
+        <item quantity="one">%d एपिसोड</item>
+        <item quantity="other">%d एपिसोड</item>
+    </plurals>
 </resources>
