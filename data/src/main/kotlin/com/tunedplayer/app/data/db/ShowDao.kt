@@ -97,7 +97,10 @@ interface ShowDao {
      * every episode with a real link.
      * A refresh keeps them in place of the show's stand-in row, so an opened show doesn't fold back to one row.
      */
-    @Query("SELECT * FROM items WHERE kind = 2 AND url NOT LIKE 'xtream-series:%' AND url NOT LIKE 'stalker-show:%'")
+    @Query(
+        "SELECT * FROM items WHERE kind = 2 AND url NOT LIKE 'xtream-series:%' AND url NOT LIKE 'stalker-show:%' " +
+            "AND url NOT LIKE 'plex-show:%' AND url NOT LIKE 'jellyfin-show:%' AND url NOT LIKE 'emby-show:%'",
+    )
     suspend fun fetchedEpisodes(): List<ItemEntity>
 
     /** Swaps a show's stand-in row for its episodes, in one go so the show page never sees neither. */

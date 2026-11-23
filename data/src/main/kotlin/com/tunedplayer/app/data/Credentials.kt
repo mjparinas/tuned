@@ -5,6 +5,7 @@ import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyProperties
 import android.util.Base64
 import androidx.core.content.edit
+import com.tunedplayer.app.core.MediaServer
 import com.tunedplayer.app.core.Stalker
 import com.tunedplayer.app.diagnostics.AppLog
 import com.tunedplayer.app.diagnostics.attempt
@@ -15,9 +16,9 @@ import javax.crypto.SecretKey
 import javax.crypto.spec.GCMParameterSpec
 
 data class Credentials(
-    /** The Xtream server, or a Stalker portal's address. */
+    /** The Xtream server, a Stalker portal, or a Plex / Jellyfin / Emby address. */
     val server: String,
-    /** The Xtream username, or a Stalker portal's MAC address. */
+    /** The Xtream / Jellyfin / Emby username, a Stalker MAC, or blank for Plex (token in [password]). */
     val username: String,
     val password: String,
     /** Optional overrides for plain M3U providers (no Xtream login). Blank means "use the Xtream URL". */
@@ -28,7 +29,20 @@ data class Credentials(
     /** The name the person gave it ("Living room", "Sports"). Blank shows [detail] instead. */
     val name: String = "",
 ) {
-    enum class Kind { Xtream, Link, File, Stalker }
+    enum class Kind {
+        Xtream,
+        Link,
+        File,
+        Stalker,
+        Plex,
+        Jellyfin,
+        Emby,
+        ;
+
+        /** Home media servers that talk JSON and resolve streams at play time. */
+        val isMediaServer: Boolean
+            get() = this == Plex || this == Jellyfin || this == Emby
+    }
 
     val kind: Kind
         get() =
@@ -36,6 +50,9 @@ data class Credentials(
                 playlistUrl.isBlank() -> Kind.Xtream
                 playlistUrl.startsWith(FILE_SCHEME) -> Kind.File
                 playlistUrl == Stalker.MARKER -> Kind.Stalker
+                playlistUrl == MediaServer.Product.Plex.marker -> Kind.Plex
+                playlistUrl == MediaServer.Product.Jellyfin.marker -> Kind.Jellyfin
+                playlistUrl == MediaServer.Product.Emby.marker -> Kind.Emby
                 else -> Kind.Link
             }
 
@@ -46,10 +63,10 @@ data class Credentials(
     val detail: String
         get() =
             when (kind) {
-                Kind.Xtream -> "$username @ ${server.substringAfter("://")}"
+                Kind.Xtream, Kind.Jellyfin, Kind.Emby -> "$username @ ${server.substringAfter("://")}"
                 Kind.Link -> playlistUrl.substringAfter("://").substringBefore('/').substringBefore('?')
                 Kind.File -> name.ifBlank { playlistUrl.substringAfterLast('/') }
-                Kind.Stalker -> server.substringAfter("://").substringBefore('/')
+                Kind.Stalker, Kind.Plex -> server.substringAfter("://").substringBefore('/')
             }
 
     /** How the playlist is listed: its name, or where it comes from. */
@@ -67,6 +84,16 @@ data class Credentials(
             guideUrl: String = "",
             name: String = "",
         ) = Credentials(portal, mac, "", Stalker.MARKER, guideUrl, name = name)
+
+        /** A Plex, Jellyfin or Emby server. Plex keeps its token in [password] and leaves [username] blank. */
+        fun mediaServer(
+            product: MediaServer.Product,
+            server: String,
+            username: String,
+            password: String,
+            guideUrl: String = "",
+            name: String = "",
+        ) = Credentials(MediaServer.normalizeServer(server), username, password, product.marker, guideUrl, name = name)
     }
 }
 
@@ -103,9 +130,13 @@ class CredentialStore(
         maskInLogs(credentials)
     }
 
-    // A portal's marker isn't a secret, and masking it would hide every channel link in the log.
-    private fun maskInLogs(c: Credentials) =
-        AppLog.setSecrets(c.password, c.username, c.playlistUrl.takeUnless { c.kind == Credentials.Kind.Stalker }.orEmpty(), c.guideUrl)
+    // A portal or media-server marker isn't a secret, and masking it would hide every channel link in the log.
+    private fun maskInLogs(c: Credentials) = AppLog.setSecrets(
+        c.password,
+        c.username,
+        c.playlistUrl.takeUnless { c.kind == Credentials.Kind.Stalker || c.kind.isMediaServer }.orEmpty(),
+        c.guideUrl,
+    )
 
     /** Signing out forgets every saved playlist too. */
     fun clear() {

@@ -11,6 +11,19 @@ class CredentialsTest {
         assertEquals(Credentials.Kind.Xtream, Credentials("http://h.com", "u", "p").kind)
         assertEquals(Credentials.Kind.Link, Credentials("", "", "", "https://h.com/list.m3u").kind)
         assertEquals(Credentials.Kind.File, Credentials("", "", "", "file:/data/x/playlists/a.m3u").kind)
+        assertEquals(
+            Credentials.Kind.Plex,
+            Credentials.mediaServer(com.tunedplayer.app.core.MediaServer.Product.Plex, "http://h", "", "tok").kind,
+        )
+        assertEquals(
+            Credentials.Kind.Jellyfin,
+            Credentials.mediaServer(com.tunedplayer.app.core.MediaServer.Product.Jellyfin, "http://h", "u", "p").kind,
+        )
+        assertEquals(
+            Credentials.Kind.Emby,
+            Credentials.mediaServer(com.tunedplayer.app.core.MediaServer.Product.Emby, "http://h", "u", "p").kind,
+        )
+        assertTrue(Credentials.Kind.Jellyfin.isMediaServer)
     }
 
     @Test

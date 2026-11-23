@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kind_media">Medya sunucusu</string>
+    <string name="kind_media_summary">Ağınızdaki Plex, Jellyfin veya Emby</string>
+    <string name="kind_plex">Plex</string>
+    <string name="kind_plex_summary">Sunucu adresi ve X-Plex-Token</string>
+    <string name="kind_jellyfin">Jellyfin</string>
+    <string name="kind_jellyfin_summary">Sunucu adresi, kullanıcı adı ve parola</string>
+    <string name="kind_emby">Emby</string>
+    <string name="kind_emby_summary">Sunucu adresi, kullanıcı adı ve parola</string>
+    <string name="add_media_pick">Hangi medya sunucusu?</string>
+    <string name="add_plex_hint">Plex sunucu adresinizi ve jetonunuzu girin. Jetonu plex.tv/account sayfasında veya mevcut bir Plex istemcisinin istek başlıklarında bulabilirsiniz.</string>
+    <string name="add_jellyfin_hint">Jellyfin sunucu adresinizi ve Jellyfin uygulamasında kullandığınız kullanıcı adı ile parolayı girin.</string>
+    <string name="add_emby_hint">Emby sunucu adresinizi ve Emby uygulamasında kullandığınız kullanıcı adı ile parolayı girin.</string>
+    <string name="login_token">Jeton</string>
+    <string name="add_token_help">plex.tv/account adresindeki X-Plex-Token</string>
+    <string name="login_media_refused">Sunucu bu oturum açmayı kabul etmedi.</string>
+    <string name="add_media_server_help">Örneğin http://192.168.1.10:8096</string>
+    <string name="add_plex_server_help">Örneğin http://192.168.1.10:32400</string>
+</resources>

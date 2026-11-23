@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kind_media">媒体服务器</string>
+    <string name="kind_media_summary">网络上的 Plex、Jellyfin 或 Emby</string>
+    <string name="kind_plex">Plex</string>
+    <string name="kind_plex_summary">服务器地址和你的 X-Plex-Token</string>
+    <string name="kind_jellyfin">Jellyfin</string>
+    <string name="kind_jellyfin_summary">服务器地址、用户名和密码</string>
+    <string name="kind_emby">Emby</string>
+    <string name="kind_emby_summary">服务器地址、用户名和密码</string>
+    <string name="add_media_pick">哪个媒体服务器？</string>
+    <string name="add_plex_hint">输入你的 Plex 服务器地址和令牌。可在 plex.tv/account 或现有 Plex 客户端的请求头中找到。</string>
+    <string name="add_jellyfin_hint">输入你的 Jellyfin 服务器地址，以及你在 Jellyfin 应用中使用的用户名和密码。</string>
+    <string name="add_emby_hint">输入你的 Emby 服务器地址，以及你在 Emby 应用中使用的用户名和密码。</string>
+    <string name="login_token">令牌</string>
+    <string name="add_token_help">来自 plex.tv/account 的 X-Plex-Token</string>
+    <string name="login_media_refused">服务器未接受该登录。</string>
+    <string name="add_media_server_help">例如 http://192.168.1.10:8096</string>
+    <string name="add_plex_server_help">例如 http://192.168.1.10:32400</string>
+</resources>

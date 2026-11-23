@@ -8,6 +8,7 @@ import androidx.navigation.toRoute
 import com.tunedplayer.app.container
 import com.tunedplayer.app.data.Credentials
 import com.tunedplayer.app.ui.onboarding.AddPlaylistScreen
+import com.tunedplayer.app.ui.onboarding.ChooseMediaServerScreen
 import com.tunedplayer.app.ui.onboarding.SendToTvScreen
 import com.tunedplayer.app.ui.onboarding.TvSignInScreen
 import com.tunedplayer.app.ui.onboarding.WelcomeScreen
@@ -20,6 +21,9 @@ import kotlinx.serialization.Serializable
 
 /** Settings › Playlists › Add: the same question as [WelcomeRoute], with a back arrow. */
 @Serializable data object ChoosePlaylistRoute
+
+/** Plex, Jellyfin or Emby: one step after the welcome's Media server card. */
+@Serializable data object ChooseMediaServerRoute
 
 /** The form for one kind of playlist ([com.tunedplayer.app.data.Credentials.Kind] by name); [editIndex] edits a saved one. */
 @Serializable data class AddPlaylistRoute(
@@ -46,6 +50,7 @@ fun NavGraphBuilder.playlistScreens(app: AppNav) {
             onPick = { kind -> app.nav.navigate(AddPlaylistRoute(kind.name)) },
             onBack = {},
             onPhone = phoneSignIn(app),
+            onMediaServer = { app.nav.navigate(ChooseMediaServerRoute) },
             onRestored = { askProfile ->
                 if (askProfile) app.nav.navigate(ProfilesRoute(atStart = true)) { popUpTo(0) { inclusive = true } } else app.openHome()
             },
@@ -57,6 +62,13 @@ fun NavGraphBuilder.playlistScreens(app: AppNav) {
             onPick = { kind -> app.nav.navigate(AddPlaylistRoute(kind.name)) },
             onBack = { app.nav.popBackStack() },
             onPhone = phoneSignIn(app),
+            onMediaServer = { app.nav.navigate(ChooseMediaServerRoute) },
+        )
+    }
+    composable<ChooseMediaServerRoute> {
+        ChooseMediaServerScreen(
+            onPick = { kind -> app.nav.navigate(AddPlaylistRoute(kind.name)) },
+            onBack = { app.nav.popBackStack() },
         )
     }
     composable<TvSignInRoute> {

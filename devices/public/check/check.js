@@ -119,7 +119,15 @@ function why(how) {
 // playlists come from the backup (/api/account/library, never their logins); the one picked has its login fetched
 // from /api/account/check and kept in memory here, like a typed one. Tuned's server still never contacts the provider.
 
-const KIND_NAMES = { xtream: "Xtream login", link: "Playlist link", stalker: "MAC portal", file: "File" };
+const KIND_NAMES = {
+    xtream: "Xtream login",
+    link: "Playlist link",
+    stalker: "MAC portal",
+    plex: "Plex",
+    jellyfin: "Jellyfin",
+    emby: "Emby",
+    file: "File",
+};
 
 /** Draws the account's playlists, or says how to sign in. True when there is one this browser can check. */
 async function loadSaved() {

@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kind_media">मीडिया सर्वर</string>
+    <string name="kind_media_summary">आपके नेटवर्क पर Plex, Jellyfin या Emby</string>
+    <string name="kind_plex">Plex</string>
+    <string name="kind_plex_summary">सर्वर पता और आपका X-Plex-Token</string>
+    <string name="kind_jellyfin">Jellyfin</string>
+    <string name="kind_jellyfin_summary">सर्वर पता, उपयोगकर्ता नाम और पासवर्ड</string>
+    <string name="kind_emby">Emby</string>
+    <string name="kind_emby_summary">सर्वर पता, उपयोगकर्ता नाम और पासवर्ड</string>
+    <string name="add_media_pick">कौन सा मीडिया सर्वर?</string>
+    <string name="add_plex_hint">अपने Plex सर्वर का पता और टोकन दर्ज करें। टोकन plex.tv/account पर मिलता है, या किसी मौजूदा Plex क्लाइंट के अनुरोध हेडर में।</string>
+    <string name="add_jellyfin_hint">अपने Jellyfin सर्वर का पता और Jellyfin ऐप में इस्तेमाल होने वाला उपयोगकर्ता नाम व पासवर्ड दर्ज करें।</string>
+    <string name="add_emby_hint">अपने Emby सर्वर का पता और Emby ऐप में इस्तेमाल होने वाला उपयोगकर्ता नाम व पासवर्ड दर्ज करें।</string>
+    <string name="login_token">टोकन</string>
+    <string name="add_token_help">plex.tv/account से आपका X-Plex-Token</string>
+    <string name="login_media_refused">सर्वर ने उस लॉगिन को स्वीकार नहीं किया।</string>
+    <string name="add_media_server_help">जैसे http://192.168.1.10:8096</string>
+    <string name="add_plex_server_help">जैसे http://192.168.1.10:32400</string>
+</resources>
