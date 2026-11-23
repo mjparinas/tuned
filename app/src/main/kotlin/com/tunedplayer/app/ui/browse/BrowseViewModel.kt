@@ -434,7 +434,7 @@ class BrowseViewModel(
             .map { it?.hiddenKeys().orEmpty() to (it?.showAdult ?: false) }
             .distinctUntilChanged()
             .flatMapLatest { (hidden, adult) -> items.continueWatching(kind.code, hidden, adult) }
-            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+            .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
     }
 
     private val episodeNames = MutableStateFlow<Map<Long, String>>(emptyMap())
@@ -468,7 +468,8 @@ class BrowseViewModel(
                     items.groups(kind.code, hidden, adult)
                 }
             }.combine(pins) { groups, pinned -> PinnedGroups.order(groups, pinned, kind.code) { it.groupName } }
-            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+            // Eagerly once Home warms siblings; WhileSubscribed alone dropped inactive tabs after 5s.
+            .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
     }
 
     /** Pins a group to the front of its tab's chips, or unpins it (Melvin, 2026-11-19: "your own quick chips"). */
@@ -508,7 +509,35 @@ class BrowseViewModel(
     fun refresh() = container.scheduler.refreshNow()
 
     /** Home has drawn: the work held for a quiet start can begin ([com.tunedplayer.app.work.QuietStart]). */
-    fun homeShown() = container.quietStart.homeShown()
+    fun homeShown() {
+        container.quietStart.homeShown()
+        // Speculative warm of Movies/Shows (and Live) while the person is still on the first tab.
+        container.browseWarm.warmHome()
+        warmSiblingCollectors()
+    }
+
+    /**
+     * Touch group chips, own lists, Continue watching and Live filter probes for every tab while Home is up, so a tab
+     * switch does not wait on the first Room answer (docs/decisions/speed.md › Speculative warm).
+     */
+    private fun warmSiblingCollectors() {
+        viewModelScope.launchSafely("BrowseViewModel") {
+            if (!container.settings.settings
+                    .first()
+                    .warmNextScreens
+            ) {
+                return@launchSafely
+            }
+            ContentKind.entries.forEach { kind ->
+                groups(kind)
+                if (kind != ContentKind.LIVE) continueWatching(kind)
+                if (kind != ContentKind.SERIES) lists(kind)
+            }
+            // WhileSubscribed probes: keep a collector so Filters opens at once even before the Live chip is open.
+            launchSafely("BrowseViewModel") { liveOffers.collect { } }
+            launchSafely("BrowseViewModel") { liveRegions.collect { } }
+        }
+    }
 
     /** A first download is queued or running; null until known, which counts as yes so the spinner shows first. */
     val requestedPending: StateFlow<Boolean?> =
@@ -539,7 +568,7 @@ class BrowseViewModel(
 
     /** The person's own lists with something of [kind] in them, for the chips (Live TV and Movies). */
     fun lists(kind: ContentKind): StateFlow<List<ListEntity>> = listFlows.getOrPut(kind) {
-        container.lists.withKind(kind).stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+        container.lists.withKind(kind).stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
     }
 
     /** Hides a group from its section everywhere; Settings › Hidden groups brings it back. */

@@ -62,3 +62,13 @@ Measured on a copy the size of a big playlist (40,000 channels, 90,000 films, 35
 - **Upkeep.** `PRAGMA optimize` after each refresh keeps SQLite's index choices current. No scheduled VACUUM: each refresh's side tables reuse the free pages the last one left, so the file doesn't keep growing, and a VACUUM would hold the database for seconds.
 - **Perceived speed.** Lists show pulsing grey rows and posters while their first page loads, instead of a blank. Favourite and Watch later taps show at once.
 - **Guard rails.** Debug builds turn on StrictMode, logging any disk or network work on the main thread.
+
+## Speculative warm (Melvin, 2026-11-23)
+
+Melvin: while typing a password on Facebook the home feed is already loading; on Instagram a photo uploads while you write the caption — "can we follow similar things" on TV and phone: as a profile is focused or picked, warm Live TV (and then Movies and Shows); after Home draws, warm sibling tabs and posters so navigation does not wait on IO. **Never prefetch streams** ([scope](scope.md)).
+
+- **`BrowseWarm`** (`work/BrowseWarm.kt`): on profile focus/PIN, Room-only warm of Live TV's first page and chips; on pick and after Home, Movies and Shows first pages too; Coil disk enqueue for playlist logos and TMDB posters already in `metadata`; after Quiet start, a bounded TMDB fill for those same first-page titles (capped, low concurrency), paused while watching and skipped under Lighter mode. Settings › Appearance › **Warm next screens** (on by default; device-only) turns the anticipation off.
+- **Home collectors.** After Home draws, group chips, Continue watching, own lists and Live filter probes stay hot for every tab so a switch does not wait on the first Room answer.
+- **Scroll ahead.** Visible logos plus a page ahead are enqueued into Coil while lists scroll.
+- **Login form.** While server and username (or an equivalent) are filled and the password is still being typed, the lazy database and HTTP client are touched so Connect does not pay cold init — still no provider call until submit.
+- **Indexes (Room 24).** `favourites(profileId, position)`, `list_items(listId, position)`, `history(profileId, watchedAt)`, `channel_scan(hidden)`, and `show_groups` sort helpers on added/year/rating/sortTitle.

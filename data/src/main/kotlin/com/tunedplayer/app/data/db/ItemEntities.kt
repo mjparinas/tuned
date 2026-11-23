@@ -115,6 +115,20 @@ data class GroupCount(
     val count: Int,
 )
 
+/** Logo and title from a first-page Room warm ([ItemDao.warmArt]), for Coil enqueue without a full list row. */
+data class WarmArtRow(
+    val id: Long,
+    val name: String,
+    val logo: String?,
+)
+
+/** Show card art from [ShowDao.warmArt]. */
+data class WarmShowArtRow(
+    val showKey: String,
+    val showName: String,
+    val logo: String?,
+)
+
 data class RegionCount(
     val region: String,
     val count: Int,
@@ -125,7 +139,17 @@ data class RegionCount(
  * playlist refresh ([ShowGroups]). The Shows tab groups these few thousand rows instead of every episode, which on a
  * big playlist took a phone seconds per page.
  */
-@Entity(tableName = "show_groups", indices = [Index("showKey"), Index("sortOrder")])
+@Entity(
+    tableName = "show_groups",
+    indices = [
+        Index("showKey"),
+        Index("sortOrder"),
+        Index(value = ["added", "sortOrder"]),
+        Index(value = ["year", "sortOrder"]),
+        Index(value = ["rating", "sortOrder"]),
+        Index(value = ["sortTitle", "sortOrder"]),
+    ],
+)
 data class ShowGroupEntity(
     @PrimaryKey(autoGenerate = true) val rowId: Long = 0,
     val showKey: String,

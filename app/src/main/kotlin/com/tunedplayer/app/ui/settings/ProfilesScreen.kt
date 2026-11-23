@@ -47,6 +47,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
@@ -230,6 +231,7 @@ fun ProfilesScreen(
     var editing by remember { mutableStateOf<ProfileEntity?>(null) }
     val scope = rememberCoroutineScope()
 
+    val warm = remember { context.container.browseWarm }
     val pick: (ProfileEntity) -> Unit = { p ->
         scope.launchSafely("Profiles") {
             if (managing) {
@@ -238,16 +240,23 @@ fun ProfilesScreen(
             } else {
                 when (val lock = vm.lockFor(p)) {
                     ProfileLock.NONE -> {
+                        warm.warmPick(p.id)
                         vm.switchTo(p.id)
                         onPicked()
                     }
 
                     else -> {
+                        // PIN dialog is about to open: warm Live TV while they type.
+                        warm.warmFocus(p.id)
                         ask = PinAsk(p, lock, AfterPin.Switch)
                     }
                 }
             }
         }
+    }
+    LaunchedEffect(ask?.profile?.id, ask?.then) {
+        val pending = ask
+        if (pending?.then == AfterPin.Switch) warm.warmFocus(pending.profile.id)
     }
 
     val manageToggle: () -> Unit = { managing = !managing }
@@ -281,7 +290,7 @@ fun ProfilesScreen(
                     )
                     Spacer(Modifier.height(40.dp))
                 }
-                ProfileRow(list, current?.id, managing, onPick = pick) {
+                ProfileRow(list, current?.id, managing, onPick = pick, onFocused = { warm.warmFocus(it) }) {
                     // Hidden at the cap, so the picker never crowds (docs/decisions/profiles.md).
                     if (!tv && !kidsNow && managing && ProfileRules.canAdd(list.size)) {
                         AddTile(onClick = {
@@ -347,6 +356,7 @@ fun ProfilesScreen(
 
                     AfterPin.Switch -> {
                         scope.launchSafely("Profiles") {
+                            warm.warmPick(a.profile.id)
                             vm.switchTo(a.profile.id)
                             onPicked()
                         }
@@ -376,6 +386,7 @@ internal fun ProfileRow(
     currentId: Long?,
     managing: Boolean,
     onPick: (ProfileEntity) -> Unit,
+    onFocused: (Long) -> Unit = {},
     trailing: @Composable () -> Unit = {},
 ) {
     // Remembered once the profiles have loaded, so the moment it may take focus starts when the tiles appear.
@@ -392,6 +403,7 @@ internal fun ProfileRow(
                     selected = p.id == currentId,
                     managing = managing,
                     onClick = { onPick(p) },
+                    onFocused = { onFocused(p.id) },
                     modifier = if (i == 0) Modifier.startFocus(startFocus) else Modifier,
                 )
             }
@@ -484,6 +496,7 @@ internal fun ProfileTile(
     managing: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    onFocused: () -> Unit = {},
 ) {
     val shape = RoundedCornerShape(20.dp)
     val avatarShape = RoundedCornerShape(TILE_AVATAR * 0.28f)
@@ -491,6 +504,10 @@ internal fun ProfileTile(
     val interaction = remember { MutableInteractionSource() }
     val pressed by interaction.collectIsPressedAsState()
     val focused by interaction.collectIsFocusedAsState()
+    // While the remote sits on a profile, warm that profile's Live TV so Home is ready after OK.
+    LaunchedEffect(focused, profile.id) {
+        if (focused && !managing) onFocused()
+    }
     // A press sinks the picture a little and a remote's focus lifts it, so a tap and a D-pad both feel answered.
     val scale by animateFloatAsState(
         when {

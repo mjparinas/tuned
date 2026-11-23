@@ -11,7 +11,11 @@ import com.tunedplayer.app.data.AppSettings
  * Favourites and watch history survive refreshes because they hold the stable id, not a row. Each profile keeps its
  * own ([profileId]); the DAOs fill it in with the profile in use, so callers leave it out.
  */
-@Entity(tableName = "favourites", primaryKeys = ["profileId", "itemId"])
+@Entity(
+    tableName = "favourites",
+    primaryKeys = ["profileId", "itemId"],
+    indices = [Index(value = ["profileId", "position"])],
+)
 data class FavouriteEntity(
     val itemId: Long,
     val addedAt: Long,
@@ -34,7 +38,11 @@ data class FavouriteRow(
         PlayGate.allowed(adult, groupName, name, live = true, showAdult = settings.showAdult, kidsProfile = settings.kidsProfile)
 }
 
-@Entity(tableName = "history", primaryKeys = ["profileId", "itemId"], indices = [Index(value = ["watchedAt"])])
+@Entity(
+    tableName = "history",
+    primaryKeys = ["profileId", "itemId"],
+    indices = [Index(value = ["watchedAt"]), Index(value = ["profileId", "watchedAt"])],
+)
 data class HistoryEntity(
     val itemId: Long,
     val positionMs: Long,
@@ -108,7 +116,7 @@ data class ListEntity(
 )
 
 /** A channel or film in one of the person's lists, by its stable id, so it survives refreshes like a favourite does. */
-@Entity(tableName = "list_items", primaryKeys = ["listId", "itemId"])
+@Entity(tableName = "list_items", primaryKeys = ["listId", "itemId"], indices = [Index(value = ["listId", "position"])])
 data class ListItemEntity(
     val listId: Long,
     val itemId: Long,

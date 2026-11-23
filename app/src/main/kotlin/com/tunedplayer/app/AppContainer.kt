@@ -50,6 +50,7 @@ import com.tunedplayer.app.player.TvCasting
 import com.tunedplayer.app.premium.DeviceSeatsClient
 import com.tunedplayer.app.premium.Premium
 import com.tunedplayer.app.updates.GitHubUpdates
+import com.tunedplayer.app.work.BrowseWarm
 import com.tunedplayer.app.work.OfflineWorker
 import com.tunedplayer.app.work.QuietStart
 import com.tunedplayer.app.work.Reminders
@@ -114,6 +115,27 @@ class AppContainer(
 
     /** Holds background work until the first screen is up (docs/decisions/speed.md › Quiet start). */
     val quietStart = QuietStart(appScope)
+
+    /**
+     * Speculative warm of the next browse screens (Room, Coil, bounded TMDB) while the person picks a profile or sits
+     * on Home (docs/decisions/speed.md › Speculative warm).
+     */
+    val browseWarm by lazy {
+        BrowseWarm(
+            context,
+            appScope,
+            BrowseWarm.Deps(
+                db = { db },
+                settings,
+                browseFilters = { browseFilters },
+                metadata = { metadata },
+                quietStart,
+                watching = { watching() },
+                online = { connectivity.onlineNow() },
+                touchHttp = { http },
+            ),
+        )
+    }
     val scheduler = SyncScheduler(context) { quietStart.openNow() }
     val guideFixes by lazy { GuideFixRepository(db, sync, scheduler, credentials) }
     val updates by lazy { GitHubUpdates(context, http, scope = appScope) }

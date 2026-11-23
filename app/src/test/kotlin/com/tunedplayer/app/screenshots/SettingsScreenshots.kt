@@ -72,6 +72,16 @@ class SettingsScreenshots : Screenshots() {
         settings = DARK.copy(lighterMode = LighterMode.ON),
     )
 
+    /** Warm next screens on Appearance (docs/decisions/speed.md › Speculative warm). */
+    @Test
+    fun warmNextScreens() = shot(
+        "settings-warm-next",
+        SettingsPageRoute(SettingsPage.APPEARANCE.name),
+        wait = text(R.string.settings_warm_next),
+        settings = DARK.copy(warmNextScreens = true),
+        then = { compose.onNodeWithText(text(R.string.settings_warm_next)).performScrollTo() },
+    )
+
     /** Calibrate screen on a TV: corner marks and the move / stretch sliders (Melvin, 2026-11-22). */
     @Test
     @Config(qualifiers = TV)

@@ -92,6 +92,11 @@ data class AppSettings(
     val accent: Accent = Accent.VIOLET,
     val lighterMode: LighterMode = LighterMode.AUTO,
     /**
+     * Warm the next browse screens while idle (Room first pages, Coil disk, bounded TMDB). Off turns the anticipation
+     * off; indexes still apply (docs/decisions/speed.md › Speculative warm).
+     */
+    val warmNextScreens: Boolean = true,
+    /**
      * Android TV overscan calibration (Settings › Appearance › Calibrate screen). Shifts the safe area left or right
      * in dp; positive is right. Backed up with the Tuned account so a reinstall keeps it.
      */

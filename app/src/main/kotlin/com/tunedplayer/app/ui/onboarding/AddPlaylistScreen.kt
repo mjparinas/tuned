@@ -36,6 +36,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -43,6 +44,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.input.ImeAction
@@ -443,6 +445,30 @@ fun AddPlaylistScreen(
             }
         }
     val linkKind = PlaylistLink.parse(link)
+    val context = LocalContext.current
+    // While the person is still typing the password (or finishing the form), open the DB and HTTP client so Connect
+    // does not pay cold init (docs/decisions/speed.md › Speculative warm). Never probes the provider until submit.
+    LaunchedEffect(server, username, kind, link, mac) {
+        val typing =
+            when (kind) {
+                Credentials.Kind.Xtream, Credentials.Kind.Jellyfin, Credentials.Kind.Emby -> {
+                    server.isNotBlank() && username.isNotBlank()
+                }
+
+                Credentials.Kind.Plex, Credentials.Kind.Stalker -> {
+                    server.isNotBlank()
+                }
+
+                Credentials.Kind.Link -> {
+                    link.isNotBlank()
+                }
+
+                Credentials.Kind.File -> {
+                    false
+                }
+            }
+        if (typing) context.container.browseWarm.touchClients()
+    }
 
     val canSubmit =
         !state.busy &&

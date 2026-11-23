@@ -94,6 +94,7 @@ internal fun MovieGrid(
     val ratings by vm.ratingProgress.collectAsStateWithLifecycle()
     val state = rememberLazyGridState()
     val focus = rememberTvFocus(focusReturn)
+    WarmVisibleArt(movies, gridState = state) { it.logo }
     Box(Modifier.fillMaxSize()) {
         LazyVerticalGrid(
             columns = GridCells.Adaptive(minSize = ScreenLayout.posterMinDp(windowWidthDp()).dp),
@@ -171,6 +172,7 @@ internal fun ShowGrid(
     val ratings by vm.ratingProgress.collectAsStateWithLifecycle()
     val state = rememberLazyGridState()
     val focus = rememberTvFocus(focusReturn)
+    WarmVisibleArt(shows, gridState = state) { it.logo }
     Box(Modifier.fillMaxSize()) {
         LazyVerticalGrid(
             columns = GridCells.Adaptive(minSize = ScreenLayout.posterMinDp(windowWidthDp()).dp),

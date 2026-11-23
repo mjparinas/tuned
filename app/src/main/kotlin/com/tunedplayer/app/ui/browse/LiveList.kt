@@ -119,6 +119,7 @@ private fun LiveList(
     val canEditChannel = !isTelevision()
     val state = rememberLazyListState()
     val focus = rememberTvFocus(focusReturn)
+    WarmVisibleArt(channels, listState = state) { it.logo }
     Box(Modifier.fillMaxSize()) {
         LazyColumn(
             state = state,
