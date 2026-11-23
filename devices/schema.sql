@@ -9,7 +9,8 @@ CREATE TABLE IF NOT EXISTS accounts (
     created_at timestamptz NOT NULL DEFAULT now()
 );
 
--- A Google account signing in. `subject` is Google's id for the person, which never changes, unlike the email.
+-- A Google or Apple account signing in. `provider` is `google` or `apple`; `subject` is that provider's id for the
+-- person, which never changes, unlike the email. The same email on both providers joins to one Tuned account.
 CREATE TABLE IF NOT EXISTS identities (
     provider text NOT NULL,
     subject text NOT NULL,

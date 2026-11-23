@@ -71,7 +71,10 @@ function render() {
     $("tv").hidden = !(me && tv);
     $("tv-code").textContent = tv ?? "";
     if (!me) {
-        if (tv) $("sign-in").href = `/api/auth/google?tv=${encodeURIComponent(tv)}`;
+        if (tv) {
+            $("sign-in").href = `/api/auth/google?tv=${encodeURIComponent(tv)}`;
+            $("sign-in-apple").href = `/api/auth/apple?tv=${encodeURIComponent(tv)}`;
+        }
         return;
     }
     $("who").textContent = me.name || me.email;

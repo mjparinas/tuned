@@ -186,7 +186,7 @@ export const FEATURE_GROUPS = [
             { title: "Watching comes first", body: "Downloads and scans wait while anything plays." },
             {
                 title: "Tuned account",
-                body: "Sign in with Google and every device keeps the same playlists and settings. If a first download fails, Live TV can fill from the account's copy.",
+                body: "Sign in with Google or Apple and every device keeps the same playlists and settings. If a first download fails, Live TV can fill from the account's copy.",
                 premium: true,
             },
             { title: "No ads", body: "No ads, ever." },

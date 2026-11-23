@@ -64,7 +64,7 @@ One-time and yearly can't be mixed: lifetime Premium takes one-time seats, yearl
 
 ## The Tuned account
 
-An account is optional; watching never needs one. You sign in with Google, on the website or in the app (on a TV, with your phone). It:
+An account is optional; watching never needs one. You sign in with Google or Apple, on the website or in the app (on a TV, with your phone). It:
 
 - **backs up** your playlists, settings, profiles, favourites, lists and watch later, so a new phone or TV restores them in one step,
 - **holds your seats**, wherever you bought Premium,
