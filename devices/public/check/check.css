@@ -1,70 +1,25 @@
+/* The provider check at /check (docs/decisions/web.md). On top of site.css and account.css: when signed in it
+ * keeps the account side menu; signed out it stays a readable column. Check-only colours for step ticks. */
 :root {
-    --bg: #fafafa;
-    --card: #ffffff;
-    --text: #16181d;
-    --muted: #5b616e;
-    --line: #e3e5ea;
-    --accent: #3a5bd9;
-    --on-accent: #ffffff;
+    --accent: var(--primary);
+    --on-accent: var(--on-primary);
     --good: #18794e;
     --warn: #9a5b00;
-    --danger: #b42318;
 }
 @media (prefers-color-scheme: dark) {
     :root {
-        --bg: #0f1115;
-        --card: #181b21;
-        --text: #eceef2;
-        --muted: #a2a8b5;
-        --line: #2a2e37;
-        --accent: #8ea6ff;
-        --on-accent: #0f1115;
         --good: #6fd3a1;
         --warn: #f5b759;
-        --danger: #ff8a80;
     }
 }
-* {
-    box-sizing: border-box;
-}
-body {
-    margin: 0;
-    background: var(--bg);
-    color: var(--text);
-    font:
-        16px/1.5 system-ui,
-        -apple-system,
-        "Segoe UI",
-        Roboto,
-        sans-serif;
-}
-main {
-    max-width: 640px;
-    margin: 0 auto;
-    padding: 48px 16px;
-}
-h1 {
-    font-size: 1.6rem;
-    margin: 0 0 8px;
-}
-h2 {
-    font-size: 1.15rem;
-    margin: 0 0 12px;
-}
-p {
-    color: var(--muted);
-    margin: 0 0 16px;
-}
-.small {
-    font-size: 0.9rem;
-}
-.card {
-    background: var(--card);
-    border: 1px solid var(--line);
-    border-radius: 14px;
-    padding: 20px;
+
+.check-page .account-body > .card {
     margin-top: 20px;
 }
+.check-page .account-body > .card:first-child {
+    margin-top: 0;
+}
+
 label {
     display: block;
     font-weight: 600;
@@ -86,7 +41,7 @@ textarea {
     font-family: ui-monospace, monospace;
     font-size: 0.85rem;
 }
-button {
+.check-page button {
     min-height: 48px;
     padding: 10px 16px;
     margin-top: 12px;
@@ -98,18 +53,18 @@ button {
     border-radius: 10px;
     cursor: pointer;
 }
-button.primary {
+.check-page button.primary {
     color: var(--on-accent);
     background: var(--accent);
     border-color: var(--accent);
     width: 100%;
 }
-button:disabled {
+.check-page button:disabled {
     opacity: 0.5;
     cursor: default;
 }
 /* site.css's settings rows and web.css's landing-page steps share these class names: put the check's own back. */
-.row {
+.check-page .row {
     display: flex;
     flex-wrap: wrap;
     align-items: stretch;
@@ -181,7 +136,7 @@ button:disabled {
     padding-left: 20px;
     color: var(--muted);
 }
-video {
+.check-page video {
     width: 100%;
     margin-top: 16px;
     background: #000;
@@ -248,7 +203,7 @@ fieldset {
     color: var(--muted);
     overflow-wrap: anywhere;
 }
-.row button.primary {
+.check-page .row button.primary {
     width: auto;
     flex: 1 1 10rem;
 }
@@ -267,7 +222,7 @@ fieldset {
 }
 
 /* The dropdowns (select.js) fill the card's width and look like the check's other fields. */
-.tselect {
+.check-page .tselect {
     display: flex;
     --ts-field: var(--bg);
     --ts-field-open: var(--bg);

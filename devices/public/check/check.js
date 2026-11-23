@@ -1,5 +1,7 @@
 // The provider check (docs/decisions/web.md): Phase 0 of the web player. Everything runs in this browser; the
 // address and login stay in memory and are never sent to Tuned. One stream at a time, closed before the next opens.
+// Signed in, it keeps the account side menu (Melvin, 2026-11-23).
+import { drawNav } from "/account/nav.js";
 import { enhanceSelect } from "/select.js";
 import {
     access,
@@ -139,6 +141,12 @@ async function loadSaved() {
         answer = null;
     }
     if (answer?.status === "signed out") $("sign-in-line").hidden = false;
+    // Melvin, 2026-11-23: signed in, keep the account left side navigation on /check.
+    if (answer?.status === "ok") {
+        document.querySelector("main").classList.add("signed-in");
+        drawNav($("account-nav"), "check");
+        $("account-nav").hidden = false;
+    }
     const playlists = answer?.status === "ok" ? answer.playlists : [];
     if (!playlists.length) return false;
     const wanted = new URLSearchParams(location.search).get("playlist");
