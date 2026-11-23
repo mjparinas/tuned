@@ -352,11 +352,12 @@ private fun FollowRow(
                 value = text,
                 onValueChange = { text = it },
                 label = { Text(stringResource(R.string.events_follow_hint)) },
+                readOnly = tv,
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
                 keyboardActions = KeyboardActions(onDone = { add() }),
                 trailingIcon = if (!tv && text.isNotBlank()) ({ addButton(Modifier) }) else null,
-                modifier = Modifier.remoteTextInput(OutlinedTextFieldDefaults.shape).weight(1f),
+                modifier = Modifier.remoteTextInput(OutlinedTextFieldDefaults.shape, text) { text = it }.weight(1f),
             )
             if (tv && text.isNotBlank()) addButton(Modifier.remoteButtonRing())
         }

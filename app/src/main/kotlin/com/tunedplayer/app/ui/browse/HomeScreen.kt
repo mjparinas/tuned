@@ -473,6 +473,9 @@ internal fun SearchBarRow(
                     }
                 },
                 trailingIcon = searchBoxTrailing(text, onChange),
+                // TV types through Tuned's D-pad keyboard, so the system IME (and its "use the keyboard on your device"
+                // strip) never opens.
+                readOnly = isTelevision(),
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
                 keyboardActions = KeyboardActions(onSearch = { onOpenSearch?.invoke() }),
@@ -482,7 +485,7 @@ internal fun SearchBarRow(
                         focusedIndicatorColor = Color.Transparent,
                         unfocusedIndicatorColor = Color.Transparent,
                     ),
-                modifier = Modifier.remoteTextInput(SearchBoxShape).weight(1f).heightIn(min = 52.dp),
+                modifier = Modifier.remoteTextInput(SearchBoxShape, text, onChange).weight(1f).heightIn(min = 52.dp),
             )
             SearchBoxButtonsBeside(text, onChange)
             // Each button does one thing, in one press: the guide grid on Live TV, and the profile badge opening Who's

@@ -19,6 +19,8 @@
     <!-- Finding DLNA TVs: the search is a multicast on the local network. -->
     <uses-permission android:name="android.permission.CHANGE_WIFI_MULTICAST_STATE" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- Inline voice search on a TV; unlike the recogniser activity, it does not draw a second search box. -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <!-- Expedited refreshes run as a short foreground service on Android 11 and older. -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
