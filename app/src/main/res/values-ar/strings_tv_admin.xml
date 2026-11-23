@@ -4,4 +4,6 @@
     <string name="tv_lists_rename_hint">أعد تسمية قائمة على هاتفك أو على tunedplayer.com. ما زال بإمكانك الحذف هنا.</string>
     <string name="tv_profiles_manage_hint">أضف أو أعد تسمية الملفات الشخصية على هاتفك أو على tunedplayer.com</string>
     <string name="tv_events_follow_hint">تابع فريقاً أو دورياً على هاتفك أو على tunedplayer.com</string>
+    <string name="tv_list_new_hint">أنشئ قائمة جديدة على هاتفك أو على tunedplayer.com</string>
+    <string name="tv_pin_forgot_hint">نسيت رمز PIN؟ أعد تعيينه على هاتفك أو على tunedplayer.com</string>
 </resources>

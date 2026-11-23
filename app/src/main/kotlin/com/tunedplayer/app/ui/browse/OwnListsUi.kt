@@ -45,6 +45,7 @@ import com.tunedplayer.app.diagnostics.launchSafely
 import com.tunedplayer.app.premium.Premium
 import com.tunedplayer.app.ui.common.TunedDialog
 import com.tunedplayer.app.ui.common.focusRing
+import com.tunedplayer.app.ui.common.isTelevision
 
 /** Opens "Add to list" for a channel or film, or the Premium screen while lists are locked (docs/decisions/premium.md). */
 @Stable
@@ -81,8 +82,9 @@ private fun AddToListDialog(
     val all by lists.all.collectAsStateWithLifecycle(emptyList())
     val holding by remember(itemId) { lists.holding(itemId) }.collectAsStateWithLifecycle(emptyList())
     val scope = rememberCoroutineScope()
+    val tv = isTelevision()
     var naming by remember { mutableStateOf(false) }
-    if (naming) {
+    if (naming && !tv) {
         ListNameDialog(R.string.list_new, "", onDismiss = { naming = false }) { name ->
             naming = false
             scope.launchSafely(TAG) { lists.create(name, itemId) }
@@ -111,17 +113,26 @@ private fun AddToListDialog(
                         Text(list.name, style = MaterialTheme.typography.bodyLarge)
                     }
                 }
-                Row(
-                    Modifier
-                        .fillMaxWidth()
-                        .heightIn(min = 48.dp)
-                        .focusRing(RoundedCornerShape(8.dp), MaterialTheme.colorScheme.primary)
-                        .clickable { naming = true },
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Icon(Icons.Filled.Add, contentDescription = null, modifier = Modifier.padding(horizontal = 2.dp))
-                    Spacer(Modifier.width(12.dp))
-                    Text(stringResource(R.string.list_new), style = MaterialTheme.typography.bodyLarge)
+                if (tv) {
+                    Text(
+                        stringResource(R.string.tv_list_new_hint),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(top = 8.dp),
+                    )
+                } else {
+                    Row(
+                        Modifier
+                            .fillMaxWidth()
+                            .heightIn(min = 48.dp)
+                            .focusRing(RoundedCornerShape(8.dp), MaterialTheme.colorScheme.primary)
+                            .clickable { naming = true },
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Icon(Icons.Filled.Add, contentDescription = null, modifier = Modifier.padding(horizontal = 2.dp))
+                        Spacer(Modifier.width(12.dp))
+                        Text(stringResource(R.string.list_new), style = MaterialTheme.typography.bodyLarge)
+                    }
                 }
             }
         },

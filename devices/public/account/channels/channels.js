@@ -1,15 +1,16 @@
 // The channels and guide (docs/decisions/web.md › The channel list; Melvin, 2026-11-20: "show me all the channels and
 // have a link that allows me to open up vlc or some other player? include an epg"; 2026-11-21: "basically the epg
 // clone of the app itself", "with logos and everything", "when i click on a channel, that should open up in vlc
-// automatically"). Behind the web_player flag. The channels and guide come from the copy the Tuned app keeps in the
-// account (api/account/channels); only a playlist without one is read straight from the provider, as the provider
+// automatically"). Always on for signed-in accounts (watch-first admin: rename, lists and favourites on the website
+// without the web_player flag; Melvin, 2026-11-22). The channels and guide come from the copy the Tuned app keeps in
+// the account (api/account/channels); only a playlist without one is read straight from the provider, as the provider
 // check does. A channel opens in VLC or another player on this device, which connects to the provider itself: this
 // page never plays or fetches a stream. Links are never shown on the page (they carry the login); they're only
 // handed to the player or copied.
 
 import { drawNav } from "/account/nav.js";
 import { enhanceSelect } from "/select.js";
-import { access, httpsVariant, isMixed, isPreviewHost, parseServer } from "/check/verdict.mjs";
+import { access, httpsVariant, isMixed, parseServer } from "/check/verdict.mjs";
 import {
     ago,
     applyFilters,
@@ -87,18 +88,7 @@ function tell(id, text, tone = "error") {
     line.dataset.tone = tone;
 }
 
-// ---------- the flag and the account ----------
-
-/** Production follows the admin's web_player flag; preview deployments and localhost always show the page. */
-async function enabled() {
-    if (isPreviewHost(location.hostname)) return true;
-    try {
-        const res = await fetch("/api/flags", { cache: "no-store" });
-        return (await res.json())?.flags?.web_player === true;
-    } catch {
-        return false;
-    }
-}
+// ---------- the account ----------
 
 async function getJson(url) {
     try {
@@ -1044,13 +1034,9 @@ setInterval(() => {
 }, 60_000);
 
 async function start() {
-    const [on, library] = await Promise.all([enabled(), getJson("/api/account/library")]);
+    const library = await getJson("/api/account/library");
     if (library.status === "signed out" || library.http === 401) {
         $("signed-out").hidden = false;
-        return;
-    }
-    if (!on) {
-        $("off").hidden = false;
         return;
     }
     if (library.status !== "ok") {

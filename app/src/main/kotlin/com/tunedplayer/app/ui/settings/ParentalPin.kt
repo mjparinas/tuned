@@ -2,10 +2,12 @@ package com.tunedplayer.app.ui.settings
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -25,6 +27,8 @@ import com.tunedplayer.app.core.PinThrottle
 import com.tunedplayer.app.data.CredentialStore
 import com.tunedplayer.app.diagnostics.launchSafely
 import com.tunedplayer.app.ui.common.TunedDialog
+import com.tunedplayer.app.ui.common.isTelevision
+import com.tunedplayer.app.ui.common.remoteTextInput
 import java.security.MessageDigest
 
 /** What the PIN dialog is for. */
@@ -32,11 +36,12 @@ enum class PinMode { Create, Unlock, Forgot }
 
 enum class PinResult { Ok, Wrong, TooMany }
 
-fun PinThrottle.Result.toPinResult(): PinResult = when (this) {
-    PinThrottle.Result.OK -> PinResult.Ok
-    PinThrottle.Result.WRONG -> PinResult.Wrong
-    PinThrottle.Result.TOO_MANY -> PinResult.TooMany
-}
+fun PinThrottle.Result.toPinResult(): PinResult =
+    when (this) {
+        PinThrottle.Result.OK -> PinResult.Ok
+        PinThrottle.Result.WRONG -> PinResult.Wrong
+        PinThrottle.Result.TOO_MANY -> PinResult.TooMany
+    }
 
 /** What a PIN dialog does with what's typed: the parental PIN in Settings, or a profile's own PIN. */
 interface PinActions {
@@ -57,7 +62,8 @@ fun CredentialStore.matches(secret: String): Boolean {
 /**
  * A PIN dialog. Create asks twice; Unlock asks once and offers "Forgot PIN", which takes the account password (or
  * playlist link) instead, then asks for a new PIN ([forgotResets]) or lets them straight in. [onDone] runs when it
- * closes either way; [onSuccess] only after a PIN was set or matched.
+ * closes either way; [onSuccess] only after a PIN was set or matched. On a TV, Forgot PIN stays on the phone or website
+ * (typing a password), and digit PIN entry uses Tuned's keyboard.
  */
 @Composable
 fun PinDialog(
@@ -68,7 +74,9 @@ fun PinDialog(
     unlockTitle: String? = null,
     forgotResets: Boolean = true,
 ) {
-    var mode by remember { mutableStateOf(start) }
+    val tv = isTelevision()
+    // Typing the account password for Forgot PIN stays on the phone or website on a TV.
+    var mode by remember { mutableStateOf(if (tv && start == PinMode.Forgot) PinMode.Unlock else start) }
     var first by remember(mode) { mutableStateOf("") }
     var second by remember(mode) { mutableStateOf("") }
     var error by remember(mode) { mutableStateOf<Int?>(null) }
@@ -154,12 +162,14 @@ fun PinDialog(
                     )
                     Spacer(Modifier.height(12.dp))
                 }
-                SecretField(
-                    value = first,
-                    onChange = { first = it },
-                    label = stringResource(if (mode == PinMode.Forgot) R.string.pin_forgot_field else R.string.pin_field),
-                    digits = mode != PinMode.Forgot,
-                )
+                if (mode != PinMode.Forgot || !tv) {
+                    SecretField(
+                        value = first,
+                        onChange = { first = it },
+                        label = stringResource(if (mode == PinMode.Forgot) R.string.pin_forgot_field else R.string.pin_field),
+                        digits = mode != PinMode.Forgot,
+                    )
+                }
                 if (mode == PinMode.Create) {
                     Spacer(Modifier.height(8.dp))
                     SecretField(value = second, onChange = { second = it }, label = stringResource(R.string.pin_confirm), digits = true)
@@ -169,11 +179,24 @@ fun PinDialog(
                     Text(stringResource(it), color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
                 }
                 if (mode == PinMode.Unlock) {
-                    TextButton(onClick = { mode = PinMode.Forgot }) { Text(stringResource(R.string.pin_forgot)) }
+                    if (tv) {
+                        Spacer(Modifier.height(8.dp))
+                        Text(
+                            stringResource(R.string.tv_pin_forgot_hint),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    } else {
+                        TextButton(onClick = { mode = PinMode.Forgot }) { Text(stringResource(R.string.pin_forgot)) }
+                    }
                 }
             }
         },
-        confirmButton = { TextButton(onClick = submit) { Text(stringResource(R.string.ok)) } },
+        confirmButton = {
+            if (mode != PinMode.Forgot || !tv) {
+                TextButton(onClick = submit) { Text(stringResource(R.string.ok)) }
+            }
+        },
         dismissButton = { TextButton(onClick = onDone) { Text(stringResource(R.string.cancel)) } },
     )
 }
@@ -185,13 +208,18 @@ private fun SecretField(
     label: String,
     digits: Boolean,
 ) {
+    val tv = isTelevision()
+    val accept: (String) -> Unit = { v -> onChange(if (digits) v.filter(Char::isDigit).take(MAX_PIN) else v) }
     OutlinedTextField(
         value = value,
-        onValueChange = { v -> onChange(if (digits) v.filter(Char::isDigit).take(MAX_PIN) else v) },
+        onValueChange = accept,
         label = { Text(label) },
         singleLine = true,
+        readOnly = tv,
         visualTransformation = PasswordVisualTransformation(),
         keyboardOptions = KeyboardOptions(keyboardType = if (digits) KeyboardType.NumberPassword else KeyboardType.Password),
+        // Digits stay on Tuned's keyboard on a TV so Android never asks for a phone keyboard.
+        modifier = Modifier.fillMaxWidth().then(if (tv) Modifier.remoteTextInput(OutlinedTextFieldDefaults.shape, value, accept) else Modifier),
     )
 }
 

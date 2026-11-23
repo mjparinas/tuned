@@ -4,4 +4,6 @@
     <string name="tv_lists_rename_hint">Renommez une liste sur votre téléphone ou sur tunedplayer.com. Vous pouvez toujours en supprimer une ici.</string>
     <string name="tv_profiles_manage_hint">Ajoutez ou renommez des profils sur votre téléphone ou sur tunedplayer.com</string>
     <string name="tv_events_follow_hint">Suivez une équipe ou une ligue sur votre téléphone ou sur tunedplayer.com</string>
+    <string name="tv_list_new_hint">Créez une nouvelle liste sur le téléphone ou sur tunedplayer.com</string>
+    <string name="tv_pin_forgot_hint">PIN oublié? Réinitialisez-le sur le téléphone ou sur tunedplayer.com</string>
 </resources>

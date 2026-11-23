@@ -24,6 +24,7 @@ import com.tunedplayer.app.data.AppSettings
 import com.tunedplayer.app.data.ServerFlags
 import com.tunedplayer.app.data.SubtitleAccount
 import com.tunedplayer.app.ui.common.TunedDialog
+import com.tunedplayer.app.ui.common.isTelevision
 
 /**
  * Settings › Playback › Subtitles, only in builds with the OpenSubtitles.com key (OPENSUBTITLES_API_KEY): whether a video with no
@@ -43,6 +44,8 @@ fun SubtitleSettings(
         settings.autoSubtitles,
         stringResource(R.string.settings_auto_subtitles_summary),
     ) { on -> update { it.copy(autoSubtitles = on) } }
+    // OpenSubtitles username/password needs typing; on a TV that stays on the phone (the saved account still works).
+    if (isTelevision()) return
     val store = LocalContext.current.container.credentials
     var account by remember { mutableStateOf(store.subtitleAccount()) }
     var editAccount by remember { mutableStateOf(false) }
