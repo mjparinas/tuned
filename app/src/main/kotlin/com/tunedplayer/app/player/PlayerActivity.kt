@@ -246,14 +246,11 @@ class PlayerActivity : FragmentActivity() {
         )
     }
 
+    // One line so Simkl beside Trakt does not push this activity over detekt's LargeClass limit.
     private val scrobblers by lazy {
-        WatchScrobblers(
-            container.trakt,
-            container.simkl,
-            container.appScope,
-            current = { player?.let { queue.getOrNull(it.currentMediaItemIndex) } },
-            elsewhere = { cast?.tvPosition() },
-        )
+        WatchScrobblers(container.trakt, container.simkl, container.appScope, {
+            player?.let { queue.getOrNull(it.currentMediaItemIndex) }
+        }, { cast?.tvPosition() })
     }
 
     private val frameRate by lazy { FrameRateMatch(this) { settings.matchFrameRate && cast?.casting != true } }
