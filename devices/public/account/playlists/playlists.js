@@ -196,10 +196,16 @@ function render() {
             return card;
         }),
     );
+    drawAccountNav();
 }
 
 const groupId = (name) => `settings-${name.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`;
-let navDrawn = false;
+let linkedSectionShown = false;
+
+function drawAccountNav() {
+    if (!library) return;
+    drawNav($("account-nav"), "playlists", [["playlists", "Playlists"], ...library.settings.map((g) => [groupId(g.group), g.group])]);
+}
 
 const kind = () => document.querySelector('input[name="kind"]:checked').value;
 
@@ -329,9 +335,8 @@ async function load() {
     else if (answer.status === "signed out") library = null;
     else $("status").textContent = refusals.unavailable;
     render();
-    if (library && !navDrawn) {
-        navDrawn = true;
-        drawNav($("account-nav"), "playlists", [["playlists", "Playlists"], ...library.settings.map((g) => [groupId(g.group), g.group])]);
+    if (library && !linkedSectionShown) {
+        linkedSectionShown = true;
         showLinkedSection();
     }
     if (library?.refreshAskedAt) $("refresh").title = `Last asked ${when(library.refreshAskedAt)}`;

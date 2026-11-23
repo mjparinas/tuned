@@ -75,29 +75,93 @@ export function flagOn(key) {
 }
 
 let observer = null;
+let stopWatch = null;
 
-/** Marks the link of the section nearest the top of the window, as a reader scrolls. */
+/**
+ * Marks the link of the section nearest the top of the window, as a reader scrolls.
+ * When two cards share a row (same top), the first in page order used to always win — a click or
+ * #hash now picks that card and keeps it while its row is in view; scrolling alone still marks
+ * the first in a shared row.
+ */
 function watch(nav) {
+    stopWatch?.();
+    stopWatch = null;
     observer?.disconnect();
+    observer = null;
+
     const links = [...nav.querySelectorAll("a[data-section]")];
     const sections = links.map((l) => document.getElementById(l.dataset.section)).filter(Boolean);
-    if (!sections.length || !("IntersectionObserver" in window)) return;
+    if (!sections.length) return;
+
     const visible = new Set();
-    const mark = () => {
-        const first = sections.find((s) => visible.has(s) && !s.hidden);
+    let picked = hashSectionId(links);
+
+    const apply = (id) => {
         for (const link of links) {
-            if (first && link.dataset.section === first.id) link.setAttribute("aria-current", "location");
+            if (id && link.dataset.section === id) link.setAttribute("aria-current", "location");
             else link.removeAttribute("aria-current");
         }
     };
-    observer = new IntersectionObserver(
-        (entries) => {
-            for (const e of entries) e.isIntersecting ? visible.add(e.target) : visible.delete(e.target);
-            mark();
-        },
-        { rootMargin: "-96px 0px -55% 0px" },
-    );
-    sections.forEach((s) => observer.observe(s));
+
+    const mark = () => {
+        const candidates = sections.filter((s) => visible.has(s) && !s.hidden);
+        if (!candidates.length) return;
+        // The topmost row in the spy band; tops within 32px count as side-by-side.
+        let topY = Infinity;
+        const tops = new Map();
+        for (const s of candidates) {
+            const y = s.getBoundingClientRect().top;
+            tops.set(s, y);
+            if (y < topY) topY = y;
+        }
+        const row = candidates.filter((s) => tops.get(s) - topY <= 32);
+        const hash = hashSectionId(links);
+        // Keep a click/#hash choice while that card shares the top row; never overwrite it from scroll.
+        const active = row.find((s) => s.id === picked) ?? row.find((s) => s.id === hash) ?? row[0];
+        apply(active.id);
+    };
+
+    const onClick = (event) => {
+        const link = event.target.closest("a[data-section]");
+        if (!link || !nav.contains(link)) return;
+        picked = link.dataset.section;
+        apply(picked);
+    };
+
+    const onHash = () => {
+        const id = hashSectionId(links);
+        if (!id) return;
+        picked = id;
+        apply(id);
+    };
+
+    nav.addEventListener("click", onClick);
+    window.addEventListener("hashchange", onHash);
+
+    if ("IntersectionObserver" in window) {
+        observer = new IntersectionObserver(
+            (entries) => {
+                for (const e of entries) e.isIntersecting ? visible.add(e.target) : visible.delete(e.target);
+                mark();
+            },
+            { rootMargin: "-96px 0px -55% 0px" },
+        );
+        sections.forEach((s) => observer.observe(s));
+    }
+
+    onHash();
+
+    stopWatch = () => {
+        nav.removeEventListener("click", onClick);
+        window.removeEventListener("hashchange", onHash);
+        observer?.disconnect();
+        observer = null;
+    };
+}
+
+function hashSectionId(links) {
+    const id = decodeURIComponent(location.hash.slice(1));
+    return id && links.some((l) => l.dataset.section === id) ? id : null;
 }
 
 /** A page opened at /account#devices draws its cards after loading, so it scrolls there once they exist. */
