@@ -432,4 +432,15 @@ interface ItemDao {
     /** Each region and its stream count; streams with no region count under [com.tunedplayer.app.core.Regions.NONE]. */
     @Query("SELECT COALESCE(region, 'none') AS region, COUNT(*) AS count FROM items GROUP BY region ORDER BY count DESC")
     fun regions(): Flow<List<RegionCount>>
+
+    /** Films for matching Trakt's watched history: id, name and year only. */
+    @Query("SELECT id, name, showName, year, season, episode FROM items WHERE kind = 1")
+    suspend fun traktFilmRows(): List<TraktMatchRow>
+
+    /** Episodes with a season and number, for matching Trakt's watched history. */
+    @Query(
+        "SELECT id, name, showName, year, season, episode FROM items " +
+            "WHERE kind = 2 AND showName IS NOT NULL AND season IS NOT NULL AND episode IS NOT NULL",
+    )
+    suspend fun traktEpisodeRows(): List<TraktMatchRow>
 }

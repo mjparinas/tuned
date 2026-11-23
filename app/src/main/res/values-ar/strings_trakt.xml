@@ -18,4 +18,29 @@
     <string name="trakt_denied">رفض Trakt الربط.</string>
     <string name="trakt_failed">تعذّر الوصول إلى Trakt. تحقّق من الاتصال وحاول مرة أخرى.</string>
     <string name="trakt_try_again">إعادة المحاولة</string>
+    <string name="trakt_import">استيراد سجل المشاهدة</string>
+    <string name="trakt_import_summary">علّم الأفلام والحلقات التي شاهدتها في تطبيق آخر كمشاهَدة</string>
+    <string name="trakt_import_reading">جارٍ قراءة قائمتك…</string>
+    <string name="trakt_import_films">جارٍ جلب الأفلام من Trakt…</string>
+    <string name="trakt_import_shows">جارٍ جلب المسلسلات من Trakt…</string>
+    <string name="trakt_import_marking">جارٍ التعليم كمشاهَد… %1$d من %2$d</string>
+    <string name="trakt_import_done">تم تعليم %1$s و%2$s كمشاهَدة</string>
+    <string name="trakt_import_none">لا شيء في قائمتك يطابق سجل Trakt</string>
+    <string name="trakt_import_failed">تعذّر الاستيراد من Trakt. المس للمحاولة مرة أخرى.</string>
+    <plurals name="trakt_import_films_count">
+        <item quantity="zero">%d فيلم</item>
+        <item quantity="one">%d فيلم</item>
+        <item quantity="two">%d فيلمان</item>
+        <item quantity="few">%d أفلام</item>
+        <item quantity="many">%d فيلمًا</item>
+        <item quantity="other">%d فيلم</item>
+    </plurals>
+    <plurals name="trakt_import_episodes_count">
+        <item quantity="zero">%d حلقة</item>
+        <item quantity="one">%d حلقة</item>
+        <item quantity="two">%d حلقتان</item>
+        <item quantity="few">%d حلقات</item>
+        <item quantity="many">%d حلقة</item>
+        <item quantity="other">%d حلقة</item>
+    </plurals>
 </resources>

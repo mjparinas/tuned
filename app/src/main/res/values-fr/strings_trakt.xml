@@ -18,4 +18,23 @@
     <string name="trakt_denied">Trakt a refusé la connexion.</string>
     <string name="trakt_failed">Impossible de joindre Trakt. Vérifiez la connexion et réessayez.</string>
     <string name="trakt_try_again">Réessayer</string>
+    <string name="trakt_import">Importer l\'historique regardé</string>
+    <string name="trakt_import_summary">Marquer comme vus les films et épisodes déjà vus dans une autre app</string>
+    <string name="trakt_import_reading">Lecture de votre liste…</string>
+    <string name="trakt_import_films">Récupération des films depuis Trakt…</string>
+    <string name="trakt_import_shows">Récupération des séries depuis Trakt…</string>
+    <string name="trakt_import_marking">Marquage comme vus… %1$d sur %2$d</string>
+    <string name="trakt_import_done">%1$s et %2$s marqués comme vus</string>
+    <string name="trakt_import_none">Rien dans votre liste ne correspond à l\'historique Trakt</string>
+    <string name="trakt_import_failed">Impossible d\'importer depuis Trakt. Touchez pour réessayer.</string>
+    <plurals name="trakt_import_films_count">
+        <item quantity="one">%d film</item>
+        <item quantity="many">%d films</item>
+        <item quantity="other">%d films</item>
+    </plurals>
+    <plurals name="trakt_import_episodes_count">
+        <item quantity="one">%d épisode</item>
+        <item quantity="many">%d épisodes</item>
+        <item quantity="other">%d épisodes</item>
+    </plurals>
 </resources>

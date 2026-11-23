@@ -15,6 +15,7 @@ import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
@@ -62,6 +63,37 @@ class TraktAccount(
         @SerialName("refresh_token") val refresh: String,
         @SerialName("expires_in") val expiresIn: Long,
         @SerialName("created_at") val createdAt: Long,
+    )
+
+    @Serializable
+    private data class WatchedMovieRow(
+        @SerialName("last_watched_at") val lastWatchedAt: String? = null,
+        val movie: TitleYear,
+    )
+
+    @Serializable
+    private data class WatchedShowRow(
+        @SerialName("last_watched_at") val lastWatchedAt: String? = null,
+        val show: TitleYear,
+        val seasons: List<WatchedSeason> = emptyList(),
+    )
+
+    @Serializable
+    private data class TitleYear(
+        val title: String,
+        val year: Int? = null,
+    )
+
+    @Serializable
+    private data class WatchedSeason(
+        val number: Int,
+        val episodes: List<WatchedSeasonEpisode> = emptyList(),
+    )
+
+    @Serializable
+    private data class WatchedSeasonEpisode(
+        val number: Int,
+        @SerialName("last_watched_at") val lastWatchedAt: String? = null,
     )
 
     private val prefs = context.getSharedPreferences("tuned.trakt", Context.MODE_PRIVATE)
@@ -141,6 +173,77 @@ class TraktAccount(
         val s = sessionFlow.value ?: return
         clear()
         post("/oauth/revoke", jsonBody(Trakt.revokeBody(BuildConfig.TRAKT_CLIENT_ID, s.access)), token = null)
+    }
+
+    /**
+     * Every film Trakt has marked watched for this account, page by page (`/sync/watched/movies`). Null when signed out
+     * or Trakt couldn't be reached; an empty list when there are none.
+     */
+    suspend fun watchedFilms(): List<Trakt.WatchedFilm>? {
+        val token = token() ?: return null
+        val now = System.currentTimeMillis()
+        val out = ArrayList<Trakt.WatchedFilm>()
+        var page = 1
+        while (true) {
+            val answer = get("/sync/watched/movies?page=$page&limit=${Trakt.WATCHED_PAGE}", token) ?: return null
+            if (answer.first != HTTP_OK) {
+                AppLog.w(TAG, "Trakt watched films failed (HTTP ${answer.first}): ${answer.second.take(MAX_ERROR)}")
+                return null
+            }
+            val rows =
+                attempt(TAG, "Couldn't read Trakt's watched films") {
+                    json.decodeFromString(ListSerializer(WatchedMovieRow.serializer()), answer.second)
+                }.getOrNull() ?: return null
+            if (rows.isEmpty()) break
+            for (row in rows) {
+                out += Trakt.WatchedFilm(row.movie.title, row.movie.year, Trakt.watchedAtMs(row.lastWatchedAt, now))
+            }
+            if (rows.size < Trakt.WATCHED_PAGE) break
+            page++
+        }
+        return out
+    }
+
+    /**
+     * Every watched episode Trakt has for this account, from `/sync/watched/shows?extended=progress` (season and number
+     * per show). Null when signed out or Trakt couldn't be reached; an empty list when there are none.
+     */
+    suspend fun watchedEpisodes(): List<Trakt.WatchedEpisode>? {
+        val token = token() ?: return null
+        val now = System.currentTimeMillis()
+        val out = ArrayList<Trakt.WatchedEpisode>()
+        var page = 1
+        while (true) {
+            val answer =
+                get("/sync/watched/shows?extended=progress&page=$page&limit=${Trakt.WATCHED_PROGRESS_PAGE}", token)
+                    ?: return null
+            if (answer.first != HTTP_OK) {
+                AppLog.w(TAG, "Trakt watched shows failed (HTTP ${answer.first}): ${answer.second.take(MAX_ERROR)}")
+                return null
+            }
+            val rows =
+                attempt(TAG, "Couldn't read Trakt's watched shows") {
+                    json.decodeFromString(ListSerializer(WatchedShowRow.serializer()), answer.second)
+                }.getOrNull() ?: return null
+            if (rows.isEmpty()) break
+            for (row in rows) {
+                for (season in row.seasons) {
+                    for (episode in season.episodes) {
+                        out +=
+                            Trakt.WatchedEpisode(
+                                row.show.title,
+                                row.show.year,
+                                season.number,
+                                episode.number,
+                                Trakt.watchedAtMs(episode.lastWatchedAt ?: row.lastWatchedAt, now),
+                            )
+                    }
+                }
+            }
+            if (rows.size < Trakt.WATCHED_PROGRESS_PAGE) break
+            page++
+        }
+        return out
     }
 
     /**
