@@ -12,17 +12,17 @@ OTT Navigator, from Scillarium Studio, is a deep, highly configurable player tha
 |                                | OTT Navigator                                                    | Tuned                                                                                    |
 | ------------------------------ | ---------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
 | Where it runs                  | Android phones, tablets, TVs and TV boxes                        | Android phones, tablets, Chromebooks, Android TV and Google TV                           |
-| Playlist types                 | Provider playlists (types not listed on the pages we read)       | Xtream Codes login, M3U link, M3U file, MAC portal (live TV and guide)                   |
+| Playlist types                 | Provider playlists (types not listed on the pages we read)       | Xtream Codes, M3U link or file, MAC portal, Plex, Jellyfin and Emby                      |
 | TV guide                       | Several guide sources, including your own; several guide layouts | XMLTV guide as a list or a full grid, with reminders                                     |
 | Catch-up                       | Yes, with filters                                                | Yes, on Xtream servers that keep recordings                                              |
-| Recording                      | Not stated by the developer                                      | Yes, the channel you are watching (Premium)                                              |
+| Recording                      | Not stated by the developer                                      | Yes, live and from the guide (Premium)                                                   |
 | Pause and rewind live TV       | Yes, when the provider keeps an archive                          | Yes, up to an hour kept on the device (Premium)                                          |
 | Several channels at once       | Yes, a multi-window "studio" mode                                | No, on purpose: one stream connection at a time                                          |
-| Casting to a TV                | Chromecast                                                       | Chromecast                                                                               |
+| Casting to a TV                | Chromecast                                                       | Chromecast and DLNA, phone as remote                                                     |
 | Picture-in-picture             | Yes                                                              | Yes                                                                                      |
 | Offline downloads              | Not stated by the developer                                      | Films and episodes, whole seasons too (more than 3 at a time is Premium)                 |
 | Profiles and parental controls | User profiles                                                    | Up to 6 profiles, kids profiles and PINs (Premium); adult categories locked behind a PIN |
-| Trakt                          | Not stated by the developer                                      | Yes, scrobbles films and episodes (Premium)                                              |
+| Trakt                          | Not stated by the developer                                      | Trakt and Simkl; Trakt can import watched history (Premium)                              |
 | Film and show details          | Not stated by the developer                                      | TMDB ratings, trailers, cast and actor pages, saved on the device                        |
 | Subtitles                      | Not stated by the developer                                      | Full caption styling, timing fix, and subtitle search for films and episodes             |
 | Ads                            | Not stated by the developer                                      | None, ever                                                                               |

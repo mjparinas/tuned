@@ -333,7 +333,7 @@ export const siteFooter = (site) => `<footer class="foot">
 <div class="wrap foot-grid">
 <div>
 <a class="logo" href="/"><img src="/icon.svg" alt="" width="32" height="32" /><span>${site.name}</span></a>
-<p>A fast, quiet IPTV player for Android. Tuned doesn't sell or include any channels: bring the playlist from your own TV provider.</p>
+<p>A fast, quiet IPTV player for Android. Tuned doesn't sell or include any channels: bring a playlist from your TV provider or a Plex, Jellyfin or Emby server.</p>
 </div>
 <nav aria-label="Tuned"><h2>Tuned</h2><a href="/#features">Features</a><a href="/blog/whats-new/">What's new</a><a href="${site.apk}">Download for Android</a></nav>
 <nav aria-label="Help"><h2>Help</h2><a href="/blog/guides/">Guides</a><a href="/blog/vs/">Compare IPTV players</a><a href="/blog/">Blog</a><a href="/account">Your Tuned account</a><a href="/devices">Lost your devices?</a><a href="${site.privacy}" rel="noopener">Privacy</a></nav>
@@ -606,7 +606,7 @@ ${g.items.map((f) => `<li><span class="tick">${icon("check", 18)}</span><span><b
         .replaceAll("<!-- @latest-posts -->", latest)
         .replaceAll("<!-- @cta -->", ctaCard(site, "home"));
     const description =
-        "Tuned is a fast, quiet IPTV player for Android phones, tablets and Android TV. Xtream Codes, M3U and MAC portals, a full TV guide, catch-up, downloads and casting. No ads.";
+        "Tuned is a fast, quiet IPTV player for Android phones, tablets and Android TV. Xtream Codes, M3U, MAC portals, Plex, Jellyfin and Emby, a full TV guide, catch-up, downloads and casting. No ads.";
     return layout(site, {
         title: "Tuned: a fast IPTV player for Android and Android TV",
         fullTitle: true,

@@ -19,6 +19,8 @@ IPTV set-up comes with a lot of jargon. Here's what each term means, and where i
 
 **MAC portal (Stalker, Ministra).** A server made for MAG set-top boxes. Instead of a password, your provider registers your device's MAC address. See [adding a MAC portal](/blog/guides/add-mac-portal/).
 
+**Plex, Jellyfin and Emby.** Home media servers. Tuned can add one as a playlist for Live TV, films and shows from your own library. See [adding a media server](/blog/guides/add-media-server/).
+
 **MAC address.** A hardware ID written as six pairs of characters, like `00:1A:79:12:34:56`. For a MAC portal, it's the one your provider registered.
 
 **Connections.** How many streams your account may play at once. Tuned always uses one.

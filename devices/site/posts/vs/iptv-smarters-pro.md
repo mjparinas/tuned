@@ -12,17 +12,17 @@ IPTV Smarters Pro, from WHMCS Smarters, is on almost every platform: Android, Fi
 |                                | IPTV Smarters Pro                                                 | Tuned                                                                                    |
 | ------------------------------ | ----------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
 | Where it runs                  | Android phones and boxes, Fire TV, Samsung TVs, and more          | Android phones, tablets, Chromebooks, Android TV and Google TV                           |
-| Playlist types                 | Xtream Codes, M3U file and link                                   | Xtream Codes login, M3U link, M3U file, MAC portal (live TV and guide)                   |
+| Playlist types                 | Xtream Codes, M3U file and link                                   | Xtream Codes, M3U link or file, MAC portal, Plex, Jellyfin and Emby                      |
 | TV guide                       | EPG                                                               | XMLTV guide as a list or a full grid, with reminders                                     |
 | Catch-up                       | Yes                                                               | Yes, on Xtream servers that keep recordings                                              |
-| Recording                      | Listed on the Android version                                     | Yes, the channel you are watching (Premium)                                              |
+| Recording                      | Listed on the Android version                                     | Yes, live and from the guide (Premium)                                                   |
 | Pause and rewind live TV       | Not stated by the developer                                       | Yes, up to an hour kept on the device (Premium)                                          |
 | Several channels at once       | Multi-screen listed on the Android version                        | No, on purpose: one stream connection at a time                                          |
-| Casting to a TV                | Chromecast                                                        | Chromecast                                                                               |
+| Casting to a TV                | Chromecast                                                        | Chromecast and DLNA, phone as remote                                                     |
 | Picture-in-picture             | Yes, on Android                                                   | Yes                                                                                      |
 | Offline downloads              | Not stated by the developer                                       | Films and episodes, whole seasons too (more than 3 at a time is Premium)                 |
 | Profiles and parental controls | Parental control; several logins in one app                       | Up to 6 profiles, kids profiles and PINs (Premium); adult categories locked behind a PIN |
-| Trakt                          | Not stated by the developer                                       | Yes, scrobbles films and episodes (Premium)                                              |
+| Trakt                          | Not stated by the developer                                       | Trakt and Simkl; Trakt can import watched history (Premium)                              |
 | Film and show details          | Film and cast info                                                | TMDB ratings, trailers, cast and actor pages, saved on the device                        |
 | Subtitles                      | Not stated by the developer                                       | Full caption styling, timing fix, and subtitle search for films and episodes             |
 | Ads                            | Not stated by the developer                                       | None, ever                                                                               |

@@ -12,17 +12,17 @@ GSE Smart IPTV, from droidvision, has been around for years on both Apple device
 |                                | GSE Smart IPTV                                                | Tuned                                                                                    |
 | ------------------------------ | ------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
 | Where it runs                  | iPhone, iPad, Apple TV, Mac and Android                       | Android phones, tablets, Chromebooks, Android TV and Google TV                           |
-| Playlist types                 | M3U, Xtream Codes, JSON playlists                             | Xtream Codes login, M3U link, M3U file, MAC portal (live TV and guide)                   |
+| Playlist types                 | M3U, Xtream Codes, JSON playlists                             | Xtream Codes, M3U link or file, MAC portal, Plex, Jellyfin and Emby                      |
 | TV guide                       | XMLTV (local or remote, zipped or not), timeline guide on iOS | XMLTV guide as a list or a full grid, with reminders                                     |
 | Catch-up                       | Not stated by the developer                                   | Yes, on Xtream servers that keep recordings                                              |
-| Recording                      | Record live TV (iOS)                                          | Yes, the channel you are watching (Premium)                                              |
+| Recording                      | Record live TV (iOS)                                          | Yes, live and from the guide (Premium)                                                   |
 | Pause and rewind live TV       | Not stated by the developer                                   | Yes, up to an hour kept on the device (Premium)                                          |
 | Several channels at once       | Not stated by the developer                                   | No, on purpose: one stream connection at a time                                          |
-| Casting to a TV                | Chromecast and AirPlay                                        | Chromecast                                                                               |
+| Casting to a TV                | Chromecast and AirPlay                                        | Chromecast and DLNA, phone as remote                                                     |
 | Picture-in-picture             | Not stated by the developer                                   | Yes                                                                                      |
 | Offline downloads              | Not stated by the developer                                   | Films and episodes, whole seasons too (more than 3 at a time is Premium)                 |
 | Profiles and parental controls | Parental control                                              | Up to 6 profiles, kids profiles and PINs (Premium); adult categories locked behind a PIN |
-| Trakt                          | Not stated by the developer                                   | Yes, scrobbles films and episodes (Premium)                                              |
+| Trakt                          | Not stated by the developer                                   | Trakt and Simkl; Trakt can import watched history (Premium)                              |
 | Film and show details          | Film info from Xtream servers                                 | TMDB ratings, trailers, cast and actor pages, saved on the device                        |
 | Subtitles                      | Embedded and external SRT                                     | Full caption styling, timing fix, and subtitle search for films and episodes             |
 | Ads                            | Yes, on the free Android version                              | None, ever                                                                               |

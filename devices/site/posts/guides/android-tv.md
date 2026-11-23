@@ -24,11 +24,11 @@ On the TV, Tuned's first card is **Sign in with your phone**. Scan the QR code a
 
 ## Live TV made for the big screen
 
-On a TV, the groups (Live events, Filters, Favourites, your lists, Recent and your provider's groups) run down a column on the left, so reaching one is a few presses. Beside the channels, the details of the one you're on: its logo, number, what's on now with the time and description, and what's next. These are words and pictures from the guide, never a live preview, so there's still only one stream.
+On a TV, Live TV's groups (Live events, Filters, Favourites, your lists, Recent and your provider's groups) run horizontally across the top. Beside the channels, the details of the one you're on: its logo, number, what's on now with the time and description, and what's next. These are words and pictures from the guide, never a live preview, so there's still only one stream. Movies and Shows put posters in the middle and the title's details beside them. A show opens full screen with a cinematic hero and season tabs.
 
-<img src="/blog/img/guides/live-tv-tv.webp" alt="Tuned's Live TV on a TV, with the side rail, groups down the left, the channel list and a details panel" width="640" height="360" loading="lazy">
+<img src="/blog/img/guides/live-tv-tv.webp" alt="Tuned's Live TV on a TV, with the side rail, channel chips across the top, the channel list and a details panel" width="640" height="360" loading="lazy">
 
-The side rail has Live TV, Movies, Shows, Downloads, Search, Profile and Settings, and Live TV has a button beside search for the [grid guide](/blog/guides/tv-guide-epg/). There are no three-dot menus: every action is a button the remote can reach.
+The side rail has Live TV, Movies, Shows, Search, Settings and your profile (no Downloads on a TV). Live TV has a button for the [grid guide](/blog/guides/tv-guide-epg/). There are no three-dot menus: every action is a button the remote can reach. Settings › Appearance › **Calibrate screen** moves and stretches the overscan margin so nothing is cropped on your set.
 
 ## The remote in the player
 

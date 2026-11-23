@@ -21,7 +21,7 @@ Tuned includes no channels or content of its own. You need a playlist from your 
 3. Give it a **Name** if you like, such as "Living room" or "Sports". It's optional.
 4. Tap **Add playlist**.
 
-<img src="/blog/img/guides/welcome.webp" alt="Tuned's welcome screen with four ways to add a playlist: Xtream Codes login, Playlist link, Playlist file and MAC portal" width="270" height="586" loading="lazy">
+<img src="/blog/img/guides/welcome.webp" alt="Tuned's welcome screen with ways to add a playlist: Xtream Codes login, Playlist link, Playlist file, MAC portal and Media server" width="270" height="586" loading="lazy">
 
 Tuned checks the login with your server first, which takes a second, then opens straight away. The first download of channels and the guide runs with a progress bar, and the lists fill in as it arrives, so you can start browsing before it finishes.
 
