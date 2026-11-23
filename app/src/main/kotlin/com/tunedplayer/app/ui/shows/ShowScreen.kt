@@ -543,7 +543,11 @@ private fun EpisodeRow(
                 tint = if (watched) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.outline,
             )
         }
-        EpisodeStill(info?.still ?: episode.logo, history.takeIf { !watched })
+        EpisodeStill(
+            still = info?.still ?: episode.logo,
+            started = history.takeIf { !watched },
+            modifier = Modifier.width(STILL_WIDTH),
+        )
         Spacer(Modifier.width(12.dp))
         Column(Modifier.weight(1f)) {
             val number = episode.episode ?: 1
@@ -605,7 +609,7 @@ private fun EpisodeRow(
 private fun EpisodeStill(
     still: String?,
     started: HistoryEntity?,
-    modifier: Modifier = Modifier.width(STILL_WIDTH),
+    modifier: Modifier = Modifier,
 ) {
     Box(
         modifier
