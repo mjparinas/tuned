@@ -97,17 +97,42 @@ class MetadataRepository(
         tv: Boolean,
     ): Metadata? = dao.get(cacheKey(name, tv))?.takeIf { it.found }?.toMetadata()
 
+    /**
+     * Asks TMDB about one title for Top rated ([TitleRatings]): whether an answer is now on the device, TMDB said to
+     * slow down (429), or the ask failed with nothing cached. Screens that only need a poster still use [summary].
+     */
+    suspend fun ask(
+        name: String,
+        tv: Boolean,
+    ): RatingAsk {
+        if (answered(name, tv)) return RatingAsk.ANSWERED
+        return try {
+            lookup(name, tv, full = false)
+            if (answered(name, tv)) RatingAsk.ANSWERED else RatingAsk.FAILED
+        } catch (_: TooManyRequests) {
+            RatingAsk.RATE_LIMITED
+        }
+    }
+
     /** Rating, summary and artwork: one search, cached. Enough for a poster's rating badge. */
     suspend fun summary(
         name: String,
         tv: Boolean,
-    ): Metadata? = lookup(name, tv, full = false)
+    ): Metadata? = try {
+        lookup(name, tv, full = false)
+    } catch (_: TooManyRequests) {
+        null
+    }
 
     /** Everything for the details page: the summary plus genres, runtime, cast and trailer, cached. */
     suspend fun details(
         name: String,
         tv: Boolean,
-    ): Metadata? = lookup(name, tv, full = true)
+    ): Metadata? = try {
+        lookup(name, tv, full = true)
+    } catch (_: TooManyRequests) {
+        null
+    }
 
     private suspend fun lookup(
         name: String,
@@ -170,6 +195,8 @@ class MetadataRepository(
         val row =
             try {
                 withContext(Dispatchers.IO) { download(cacheKey, Tmdb.query(name), tv, full, apiKey) }
+            } catch (e: TooManyRequests) {
+                throw e
             } catch (_: IOException) {
                 null
             } catch (_: SerializationException) {
@@ -370,14 +397,22 @@ class MetadataRepository(
                 .apply { if (Tmdb.isToken(key)) header("Authorization", "Bearer $key") }
                 .build()
         http.newCall(request).execute().use { response ->
-            if (response.code == HTTP_NOT_FOUND) throw NotFound()
-            if (!response.isSuccessful) throw IOException("TMDB answered ${response.code}")
+            val error =
+                when (response.code) {
+                    HTTP_NOT_FOUND -> NotFound()
+                    HTTP_TOO_MANY -> TooManyRequests()
+                    else -> if (!response.isSuccessful) IOException("TMDB answered ${response.code}") else null
+                }
+            if (error != null) throw error
             return json.decodeFromString(response.body.string())
         }
     }
 
     /** TMDB has nothing at that link: an answer, not a failure. */
     private class NotFound : IOException("TMDB answered 404")
+
+    /** TMDB said to slow down: [TitleRatings] waits and resumes rather than giving up. */
+    private class TooManyRequests : IOException("TMDB answered 429")
 
     @Serializable
     private data class Season(
@@ -455,5 +490,18 @@ class MetadataRepository(
         /** A season still airing gains episodes, so its answer is kept fresh for a week. */
         const val KEEP_SEASON_MS = 7L * 24 * 3_600_000
         const val HTTP_NOT_FOUND = 404
+        const val HTTP_TOO_MANY = 429
     }
+}
+
+/** How asking TMDB about one title for Top rated went ([MetadataRepository.ask]). */
+enum class RatingAsk {
+    /** An answer is on the device (found or not). */
+    ANSWERED,
+
+    /** TMDB answered 429; wait and try again. */
+    RATE_LIMITED,
+
+    /** Offline or another failure; nothing cached. */
+    FAILED,
 }
