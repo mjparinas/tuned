@@ -3,26 +3,66 @@
 import { EXPIRY_DAYS, BACKUP_VERSIONS, sha } from "./accounts.mjs";
 import { query, time, transaction } from "./db.mjs";
 
-/** The account for a Google sign-in, made the first time. */
-export async function accountFor({ subject, email, name }) {
+/**
+ * The account for a Google or Apple sign-in, made the first time. `provider` is `google` or `apple`. A later Apple
+ * sign-in may omit the name (Apple only sends it once); empty email/name leave the stored values alone. When the
+ * email already belongs to an account (same person signing in with the other provider), the new identity is joined
+ * to that account instead of making a second one.
+ */
+export async function accountFor({ provider, subject, email, name }) {
+    if (provider !== "google" && provider !== "apple") return null;
+    const mail = typeof email === "string" ? email : "";
+    const label = typeof name === "string" ? name.slice(0, 100) : "";
     const found = await query(
-        `UPDATE accounts SET email = $2, name = $3 FROM identities i
-         WHERE i.provider = 'google' AND i.subject = $1 AND i.account_id = accounts.id RETURNING accounts.id`,
-        [subject, email, name],
+        `UPDATE accounts SET
+            email = CASE WHEN $3 <> '' THEN $3 ELSE email END,
+            name = CASE WHEN $4 <> '' THEN $4 ELSE name END
+         FROM identities i
+         WHERE i.provider = $1 AND i.subject = $2 AND i.account_id = accounts.id
+         RETURNING accounts.id`,
+        [provider, subject, mail, label],
     );
     if (found.length) return found[0].id;
+    const lock = `${provider}:${subject}`;
     const [, , made] = await transaction([
-        [`SELECT pg_advisory_xact_lock(hashtextextended($1, 0))`, [subject]],
+        [`SELECT pg_advisory_xact_lock(hashtextextended($1, 0))`, [lock]],
         [
-            `WITH a AS (INSERT INTO accounts (email, name)
-                SELECT $2, $3 WHERE NOT EXISTS (SELECT 1 FROM identities WHERE provider = 'google' AND subject = $1)
-                RETURNING id)
-             INSERT INTO identities (provider, subject, account_id) SELECT 'google', $1, id FROM a`,
-            [subject, email, name],
+            `WITH existing AS (
+                SELECT account_id FROM identities WHERE provider = $1 AND subject = $2
+             ), linked AS (
+                SELECT id AS account_id FROM accounts
+                WHERE $3 <> '' AND lower(email) = lower($3)
+                  AND NOT EXISTS (SELECT 1 FROM existing)
+                ORDER BY created_at ASC
+                LIMIT 1
+             ), a AS (
+                INSERT INTO accounts (email, name)
+                SELECT $3, $4
+                WHERE $3 <> ''
+                  AND NOT EXISTS (SELECT 1 FROM existing)
+                  AND NOT EXISTS (SELECT 1 FROM linked)
+                RETURNING id AS account_id
+             ), pick AS (
+                SELECT account_id FROM existing
+                UNION ALL SELECT account_id FROM linked
+                UNION ALL SELECT account_id FROM a
+             )
+             INSERT INTO identities (provider, subject, account_id)
+             SELECT $1, $2, account_id FROM pick
+             ON CONFLICT DO NOTHING`,
+            [provider, subject, mail, label],
         ],
-        [`SELECT account_id AS id FROM identities WHERE provider = 'google' AND subject = $1`, [subject]],
+        [
+            `UPDATE accounts SET
+                email = CASE WHEN $3 <> '' THEN $3 ELSE email END,
+                name = CASE WHEN $4 <> '' THEN $4 ELSE name END
+             FROM identities i
+             WHERE i.provider = $1 AND i.subject = $2 AND i.account_id = accounts.id
+             RETURNING accounts.id`,
+            [provider, subject, mail, label],
+        ],
     ]);
-    return made[0].id;
+    return made[0]?.id ?? null;
 }
 
 /** Signs a device in to an account: a new token, replacing any the same device had. Returns the token. */
