@@ -154,7 +154,15 @@ class BrowseScreenshots : Screenshots() {
 
     @Test fun movies() = shot("browse-movies", HomeRoute, wait = "Glass Harbour", settings = DARK.copy(startTab = StartTab.MOVIES))
 
+    @Test
+    @Config(qualifiers = TV)
+    fun moviesOnTv() = shot("browse-movies-tv", HomeRoute, wait = "Northern Lights", settings = DARK.copy(startTab = StartTab.MOVIES))
+
     @Test fun shows() = shot("browse-shows", HomeRoute, wait = "Snowline", settings = DARK.copy(startTab = StartTab.SHOWS))
+
+    @Test
+    @Config(qualifiers = TV)
+    fun showsOnTv() = shot("browse-shows-tv", HomeRoute, wait = "Snowline", settings = DARK.copy(startTab = StartTab.SHOWS))
 
     /** Movies' sort, open: the order in use ticked (Melvin, 2026-11-20: "sort by newest first or sort by the rating"). */
     @Test

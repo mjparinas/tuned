@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -192,8 +193,13 @@ fun HomeScreen(
             }
         }
     }
-    // The channel under the remote's focus in Live TV on a TV, for the details beside the list.
+    // The channel or title under the remote's focus on a TV, for the details beside the list or grid.
     var focusedChannel by remember { mutableStateOf<ChannelWithNow?>(null) }
+    var focusedPoster by remember { mutableStateOf<PosterFocus?>(null) }
+    LaunchedEffect(tab.kind) {
+        focusedChannel = null
+        focusedPoster = null
+    }
     // On a TV, closing the pane puts the remote's focus back on the item that opened it (ui/common/TvFocus).
     var focusReturn by remember { mutableIntStateOf(0) }
     val closeDetail: () -> Unit = {
@@ -359,11 +365,13 @@ fun HomeScreen(
                         requestedPending == true -> RefreshStarting()
                     }
                     UpdateBanner(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp))
-                    // Live TV's channel list on a TV uses the room for what the focused channel is showing beside the list.
-                    // Its groups stay in the same horizontal row as the guide grid (Melvin, 2026-11-22).
-                    val tvColumns = tv && tab.kind == ContentKind.LIVE && !settings.liveGrid
+                    // Live TV keeps groups horizontal (Melvin, 2026-11-22) with details beside the list; Movies and Shows
+                    // put groups down the left with a focus details pane (Melvin, 2026-11-19: "use the big screen").
+                    val tvPosterColumns = tv && (tab.kind == ContentKind.MOVIE || tab.kind == ContentKind.SERIES)
+                    val tvLiveInfo = tv && tab.kind == ContentKind.LIVE && !settings.liveGrid
+                    val tvColumns = tvPosterColumns || tvLiveInfo
                     val events = onOpenEvents.takeIf { tab.kind == ContentKind.LIVE }
-                    CategoryChips(vm, tab.kind, onGroupHidden, events)
+                    if (!tvPosterColumns) CategoryChips(vm, tab.kind, onGroupHidden, events)
                     val lists: @Composable () -> Unit = {
                         when (tab.kind) {
                             ContentKind.LIVE -> {
@@ -379,11 +387,27 @@ fun HomeScreen(
                             }
 
                             ContentKind.MOVIE -> {
-                                MovieGrid(vm, onPlay, openMovie, settings.alwaysShowScrollbar, onOpenSearch, focusReturn)
+                                MovieGrid(
+                                    vm,
+                                    onPlay,
+                                    openMovie,
+                                    settings.alwaysShowScrollbar,
+                                    onOpenSearch,
+                                    focusReturn,
+                                    onFocusMovie = if (tvColumns) ({ focusedPoster = PosterFocus.Movie(it) }) else null,
+                                )
                             }
 
                             ContentKind.SERIES -> {
-                                ShowGrid(vm, openShow, onPlay, settings.alwaysShowScrollbar, onOpenSearch, focusReturn)
+                                ShowGrid(
+                                    vm,
+                                    openShow,
+                                    onPlay,
+                                    settings.alwaysShowScrollbar,
+                                    onOpenSearch,
+                                    focusReturn,
+                                    onFocusShow = if (tvColumns) ({ focusedPoster = PosterFocus.Show(it) }) else null,
+                                )
                             }
                         }
                     }
@@ -403,16 +427,30 @@ fun HomeScreen(
                     }
                     if (tvColumns) {
                         BoxWithConstraints(Modifier.fillMaxSize()) {
-                            // The details take what a readable channel list leaves, up to a limit, and are left out on a TV
-                            // too narrow for them (a pane open beside the list, say).
-                            val info = (maxWidth - TV_LIST_MIN_WIDTH).coerceAtMost(TV_INFO_MAX_WIDTH)
+                            // The details take what the middle column leaves, up to a limit, and are left out on a TV too
+                            // narrow for them (a pane open beside the list, say). Movies/Shows also reserve the groups column.
+                            val reserved = if (tvPosterColumns) TV_GROUPS_WIDTH + TV_LIST_MIN_WIDTH else TV_LIST_MIN_WIDTH
+                            val info = (maxWidth - reserved).coerceAtMost(TV_INFO_MAX_WIDTH)
                             Row(Modifier.fillMaxSize()) {
+                                if (tvPosterColumns) {
+                                    CategoryChips(
+                                        vm,
+                                        tab.kind,
+                                        onGroupHidden,
+                                        events,
+                                        vertical = true,
+                                        modifier = Modifier.width(TV_GROUPS_WIDTH).fillMaxHeight(),
+                                    )
+                                }
                                 Box(Modifier.weight(1f)) { body() }
                                 if (info >= TV_INFO_MIN_WIDTH) {
-                                    ChannelInfoPane(
-                                        focusedChannel,
-                                        Modifier.width(info).fillMaxHeight().padding(start = 4.dp, end = 12.dp, top = 4.dp, bottom = 16.dp),
-                                    )
+                                    val paneMod =
+                                        Modifier.width(info).fillMaxHeight().padding(start = 4.dp, end = 12.dp, top = 4.dp, bottom = 16.dp)
+                                    if (tab.kind == ContentKind.LIVE) {
+                                        ChannelInfoPane(focusedChannel, paneMod)
+                                    } else {
+                                        PosterInfoPane(focusedPoster, paneMod)
+                                    }
                                 }
                             }
                         }
@@ -517,6 +555,8 @@ private fun CategoryChips(
     onHidden: (ContentKind, String, String) -> Unit,
     /** Live events, first in Live TV's row (it used to be an icon beside search). Null elsewhere. */
     onOpenEvents: (() -> Unit)?,
+    /** On a TV's Movies and Shows: groups down a column. Live TV keeps the horizontal row. */
+    vertical: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
     val groups by vm.groups(kind).collectAsStateWithLifecycle()
@@ -627,12 +667,22 @@ private fun CategoryChips(
             }
         }
     }
-    LazyRow(
-        modifier,
-        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        content = content,
-    )
+    // A TV's Movies/Shows column: one group under the next, so the arrows go straight down and right into the grid.
+    if (vertical) {
+        LazyColumn(
+            modifier,
+            contentPadding = PaddingValues(start = 12.dp, end = 8.dp, top = 6.dp, bottom = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(2.dp),
+            content = content,
+        )
+    } else {
+        LazyRow(
+            modifier,
+            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            content = content,
+        )
+    }
 }
 
 @Composable
@@ -718,12 +768,13 @@ internal fun DownloadsIcon(downloads: DownloadsViewModel = viewModel()) {
 }
 
 /**
- * Live TV on a TV: the focused channel's details sit beside the channels. The list keeps room for a channel's name
- * beside its buttons; the details are left out before the names get cut short.
+ * On a TV, Movies and Shows reserve a groups column; Live TV, Movies and Shows all reserve a readable middle column
+ * and a focus details pane that is left out before names get cut short.
  */
-private val TV_LIST_MIN_WIDTH = 340.dp
-private val TV_INFO_MIN_WIDTH = 180.dp
-private val TV_INFO_MAX_WIDTH = 260.dp
+internal val TV_GROUPS_WIDTH = 160.dp
+internal val TV_LIST_MIN_WIDTH = 340.dp
+internal val TV_INFO_MIN_WIDTH = 180.dp
+internal val TV_INFO_MAX_WIDTH = 260.dp
 
 /** The profile button beside the search box: its height (56dp, a Material text field's) and the picture inside it. */
 private val PROFILE_BUTTON = 56.dp
