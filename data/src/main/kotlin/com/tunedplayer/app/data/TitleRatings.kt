@@ -16,9 +16,8 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
 /**
- * The ratings Top rated sorts on (Melvin, 2026-11-21: "sorting by rating ... doesn't really seem to be doing anything").
- * The star on a poster is TMDB's, looked up as the poster scrolls into view, while the sort read only the provider's
- * rating, which most providers leave empty. So while Movies or Shows is sorted by rating, the titles TMDB hasn't been
+ * The ratings Top rated sorts on (Melvin, 2026-11-21: "sorting by rating ... doesn't really seem to be doing anything";
+ * 2026-11-23: TMDB only, never the provider's). While Movies or Shows is sorted by rating, the titles TMDB hasn't been
  * asked about yet are looked up in the background, a few at a time, and the list re-sorts as their ratings land
  * ([TitleRatingsSql]). Each answer is kept on the device ([MetadataRepository]), so this happens once per title; it
  * asks TMDB only, never the provider, so it never takes the stream connection. [progress] says how far it has got.
