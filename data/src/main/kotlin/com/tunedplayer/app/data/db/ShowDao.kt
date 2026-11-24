@@ -38,8 +38,11 @@ interface ShowDao {
         group: String?,
     ): PagingSource<Int, ShowSummary>
 
-    /** [showsTab], highest rated first, shows without a rating last. */
-    @Query("$SHOWS_TAB ORDER BY MAX(s.rating) DESC, MIN(s.sortOrder)")
+    /**
+     * [showsTab], highest rated first, shows without a rating last (Melvin, 2026-11-23: "without a rating need to go
+     * all the way to the bottom" / "highest scores first").
+     */
+    @Query("$SHOWS_TAB ORDER BY (MAX(s.rating) IS NULL), MAX(s.rating) DESC, MIN(s.sortOrder)")
     fun showsTabByRating(
         hidden: List<String>,
         adult: Boolean,
