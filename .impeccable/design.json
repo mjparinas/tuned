@@ -250,15 +250,51 @@
       "Material 3 structure; brand in colour, shape, and focus"
     ],
     "rules": [
-      { "name": "The Sparing Accent Rule", "body": "Primary violet/teal marks focus, primary actions, and brand moments — never wallpaper a whole browse screen in brand colour. Video and posters own the pixels.", "section": "colors" },
-      { "name": "The Contrast-Everywhere Rule", "body": "Accent and status colours must stay ≥4.5:1 on every surface/card in light, dark, and pure black (ThemeContrastTest). A new accent that fails does not ship.", "section": "colors" },
-      { "name": "The System Face Rule", "body": "Do not introduce a display webfont or custom typeface for product UI. Brand lives in colour and the channel-stack mark, not in a novelty font.", "section": "typography" },
-      { "name": "The Grow-With-Settings Rule", "body": "Type is in sp / relative sizes so system font scale works; text containers use minimum heights, never fixed heights that clip large text.", "section": "typography" },
-      { "name": "The Overscan Rule", "body": "On TV, interactive content stays inside TvSafeArea; only intentional backdrops bleed.", "section": "layout" },
-      { "name": "The Centred Dialog Rule", "body": "Pop-ups never stretch edge-to-edge; they sit centred with edge margin.", "section": "layout" },
-      { "name": "The Flat-App Rule", "body": "Do not invent Compose drop shadows for ordinary lists and settings; use surface containers.", "section": "elevation" },
-      { "name": "The Glow-Is-Atmosphere Rule", "body": "The violet page glow is background mood only — never a substitute for hierarchy or focus.", "section": "elevation" },
-      { "name": "The Pill Button Rule", "body": "Primary and quiet buttons are fully round; do not square them off for “dashboard” fashion.", "section": "shapes" }
+      {
+        "name": "The Sparing Accent Rule",
+        "body": "Primary violet/teal marks focus, primary actions, and brand moments — never wallpaper a whole browse screen in brand colour. Video and posters own the pixels.",
+        "section": "colors"
+      },
+      {
+        "name": "The Contrast-Everywhere Rule",
+        "body": "Accent and status colours must stay ≥4.5:1 on every surface/card in light, dark, and pure black (ThemeContrastTest). A new accent that fails does not ship.",
+        "section": "colors"
+      },
+      {
+        "name": "The System Face Rule",
+        "body": "Do not introduce a display webfont or custom typeface for product UI. Brand lives in colour and the channel-stack mark, not in a novelty font.",
+        "section": "typography"
+      },
+      {
+        "name": "The Grow-With-Settings Rule",
+        "body": "Type is in sp / relative sizes so system font scale works; text containers use minimum heights, never fixed heights that clip large text.",
+        "section": "typography"
+      },
+      {
+        "name": "The Overscan Rule",
+        "body": "On TV, interactive content stays inside TvSafeArea; only intentional backdrops bleed.",
+        "section": "layout"
+      },
+      {
+        "name": "The Centred Dialog Rule",
+        "body": "Pop-ups never stretch edge-to-edge; they sit centred with edge margin.",
+        "section": "layout"
+      },
+      {
+        "name": "The Flat-App Rule",
+        "body": "Do not invent Compose drop shadows for ordinary lists and settings; use surface containers.",
+        "section": "elevation"
+      },
+      {
+        "name": "The Glow-Is-Atmosphere Rule",
+        "body": "The violet page glow is background mood only — never a substitute for hierarchy or focus.",
+        "section": "elevation"
+      },
+      {
+        "name": "The Pill Button Rule",
+        "body": "Primary and quiet buttons are fully round; do not square them off for “dashboard” fashion.",
+        "section": "shapes"
+      }
     ],
     "dos": [
       "Do keep the UI quiet so browsing and watching feel effortless — chrome yields to video and posters.",

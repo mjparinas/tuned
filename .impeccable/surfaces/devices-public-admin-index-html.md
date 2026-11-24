@@ -2,7 +2,7 @@
 version: 1
 slug: "devices-public-admin-index-html"
 primary_target: "devices/public/admin/index.html"
-related_targets: ["devices/public/admin/admin.js","devices/public/admin/admin.css"]
+related_targets: ["devices/public/admin/admin.js", "devices/public/admin/admin.css"]
 ---
 
 # /admin

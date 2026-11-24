@@ -414,11 +414,7 @@ const SECTIONS = {
                           ),
                       ),
                   )
-                : h(
-                      "p",
-                      { class: "needs-empty" },
-                      "Nothing needs you right now. New reports and to-dos will land here first.",
-                  ),
+                : h("p", { class: "needs-empty" }, "Nothing needs you right now. New reports and to-dos will land here first."),
         );
         return h(
             "div",
