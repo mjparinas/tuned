@@ -6,10 +6,9 @@ export const SITE = {
     // pages never name where the file is hosted (Melvin, 2026-11-20: "dont mention the github app").
     apk: "/download",
     // The store listings: empty until each exists, and then its badge becomes a link instead of "Coming soon".
+    // No App Store or Mac App Store for now (Melvin, 2026-11-23); Sign in with Apple on the website stays.
     stores: {
         googlePlay: "",
-        appStore: "",
-        macAppStore: "",
         samsungTv: "",
     },
     // The posts in "From the blog" on the landing page, for someone new to Tuned rather than release notes (Melvin,
