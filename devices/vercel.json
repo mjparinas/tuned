@@ -42,6 +42,10 @@
     {
       "source": "/privacy",
       "destination": "/privacy/index.html"
+    },
+    {
+      "source": "/review/playlist.m3u",
+      "destination": "/api/review/playlist"
     }
   ],
   "headers": [
