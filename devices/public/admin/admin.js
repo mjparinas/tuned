@@ -414,11 +414,7 @@ const SECTIONS = {
                           ),
                       ),
                   )
-                : h(
-                      "p",
-                      { class: "needs-empty" },
-                      "Nothing needs you right now. New reports and to-dos will land here first.",
-                  ),
+                : h("p", { class: "needs-empty" }, "Nothing needs you right now. New reports and to-dos will land here first."),
         );
         return h(
             "div",
@@ -1788,18 +1784,19 @@ function drawCounts() {
 }
 
 function navButton(t) {
+    // Name comes from .nav-label (kept for AT when the icon rail clips it). Counts are visual-only so they
+    // don't break label-content-name-mismatch when a badge shows (axe /admin check in Formatting).
     return h(
         "button",
         {
             "data-tab": t.name,
             title: t.name,
-            "aria-label": t.name,
             "aria-current": state.tab === t.name ? "page" : null,
             onclick: () => go(t.name),
         },
         icon(t.icon),
         h("span", { class: "nav-label" }, t.name),
-        h("span", { class: "count", "data-count": t.name, hidden: true }),
+        h("span", { class: "count", "data-count": t.name, hidden: true, "aria-hidden": "true" }),
     );
 }
 
