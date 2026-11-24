@@ -6,6 +6,7 @@
   "scripts": {
     "format": "prettier --write .",
     "format:check": "prettier --check .",
+    "prepare": "git rev-parse --is-inside-work-tree >/dev/null 2>&1 && git config core.hooksPath scripts/git-hooks || true",
     "test": "node --test scripts/*.test.mjs devices/lib/*.test.mjs devices/lib/admin/*.test.mjs"
   },
   "devDependencies": {

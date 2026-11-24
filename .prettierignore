@@ -4,6 +4,8 @@
 node_modules/
 package-lock.json
 app/schemas/
+# Room's exported schemas in :data (same as app/schemas/: Room writes them, Prettier needn't).
+data/schemas/
 *.kt
 *.kts
 *.xml
