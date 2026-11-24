@@ -41,7 +41,7 @@ interface TitleSortDao {
     ): PagingSource<Int, ItemEntity>
 
     /**
-     * [ItemDao.items], highest rated first by the rating the poster shows ([TitleRatingsSql]), titles without one last
+     * [ItemDao.items], highest rated first by TMDB's rating ([TitleRatingsSql]), titles without one last
      * (Melvin, 2026-11-23: "without a rating need to go all the way to the bottom" / "highest scores first"):
      * read down its own index a page at a time ([ItemEntity]). DESC already puts nulls last in SQLite.
      */

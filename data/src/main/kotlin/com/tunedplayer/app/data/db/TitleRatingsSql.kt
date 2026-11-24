@@ -3,28 +3,24 @@ package com.tunedplayer.app.data.db
 import androidx.room.withTransaction
 
 /**
- * Top rated sorts on the rating a poster shows (Melvin, 2026-11-21: "it's not sorting based on rating"): TMDB's, kept
- * in [MetadataEntity] under the title's own name, and the provider's only while TMDB hasn't answered yet. Once TMDB has
- * answered (found or not), a title with no poster star sorts as none — last — rather than on a provider rating the
- * poster never shows (Melvin, 2026-11-23). Films keep it in [ItemEntity.topRating], indexed, so the list still reads
+ * Top rated sorts on TMDB's rating only (Melvin, 2026-11-23: "i dont care about the provider provided information, i
+ * only care about tmdb"): kept in [MetadataEntity] under the title's own name; none (and so last) until TMDB has found
+ * the title, or when too few have voted. Films keep it in [ItemEntity.topRating], indexed, so the list still reads
  * straight down an index a page at a time; shows in [ShowGroupEntity.rating], which [ShowGroups] rebuilds after each
  * refresh. Only rows whose value changes are written. A rating of 0 counts as none (same as
  * [com.tunedplayer.app.core.TitleSort.rating]), so unrated titles stay at the bottom when Top rated sorts highest first.
  */
 object TitleRatingsSql {
     /**
-     * The rating a film's poster shows: TMDB's once TMDB has answered (none when not found or too few have voted), else
-     * the provider's while TMDB hasn't been asked, for a row of `items`. Zero is stored as null so DESC puts it with the
-     * unrated.
+     * A film's TMDB rating once TMDB has found it (none when too few have voted, or TMDB hasn't answered), for a row
+     * of `items`. Zero is stored as null so DESC puts it with the unrated.
      */
     private const val FILM_RATING =
-        "NULLIF((SELECT CASE WHEN COUNT(*) = 0 THEN items.rating ELSE MAX(CASE WHEN m.found = 1 THEN m.rating END) END " +
-            "FROM metadata m WHERE m.cacheKey = 'movie|' || items.name), 0)"
+        "NULLIF((SELECT MAX(m.rating) FROM metadata m WHERE m.cacheKey = 'movie|' || items.name AND m.found = 1), 0)"
 
     /** The same for a show's card, for a row of `show_groups`. */
     private const val SHOW_RATING =
-        "NULLIF((SELECT CASE WHEN COUNT(*) = 0 THEN show_groups.rating ELSE MAX(CASE WHEN m.found = 1 THEN m.rating END) END " +
-            "FROM metadata m WHERE m.cacheKey = 'tv|' || show_groups.showName), 0)"
+        "NULLIF((SELECT MAX(m.rating) FROM metadata m WHERE m.cacheKey = 'tv|' || show_groups.showName AND m.found = 1), 0)"
 
     const val FILMS = "UPDATE items SET topRating = $FILM_RATING WHERE kind = 1 AND topRating IS NOT $FILM_RATING"
 
