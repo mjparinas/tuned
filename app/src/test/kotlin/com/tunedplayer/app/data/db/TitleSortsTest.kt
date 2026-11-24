@@ -245,11 +245,77 @@ class TitleSortsTest {
         )
     }
 
+    /**
+     * Melvin, 2026-11-23: titles without TMDB still sorted near the top on their provider rating, while the poster
+     * showed no star. Once TMDB has answered "not found", Top rated must treat them as unrated (last), same as the
+     * poster; the provider only stands in while TMDB hasn't been asked yet.
+     */
+    @Test
+    fun topRatedIgnoresProviderRatingOnceTmdbSaidNotFound() = runTest {
+        db.items().insertAll(
+            listOf(
+                film(1, "Unknown To Tmdb", rating = 9.9),
+                film(2, "Known", rating = 2.0),
+                film(3, "Still Waiting", rating = 7.0),
+            ),
+        )
+        tmdb("movie|Unknown To Tmdb", rating = null, found = false)
+        tmdb("movie|Known", 8.2)
+        TitleRatingsSql.applyAll(db)
+        assertEquals(null, db.items().get(1)?.topRating)
+        assertEquals(listOf("Known", "Still Waiting", "Unknown To Tmdb"), movies(Order.RATING))
+    }
+
+    @Test
+    fun showsTopRatedIgnoresProviderRatingOnceTmdbSaidNotFound() = runTest {
+        db.items().insertAll(
+            listOf(
+                episode(1, "Provider Hot", added = 1),
+                episode(2, "On Tmdb", added = 2),
+                episode(3, "Not Asked Yet", added = 3),
+            ),
+        )
+        db.shows().replaceDetails(
+            listOf(
+                ShowDetailsEntity("provider hot", added = 0, year = null, rating = 9.5),
+                ShowDetailsEntity("not asked yet", added = 0, year = null, rating = 6.0),
+            ),
+        )
+        tmdb("tv|Provider Hot", rating = null, found = false)
+        tmdb("tv|On Tmdb", 7.4)
+        ShowGroups.rebuild(db)
+        assertEquals(
+            listOf("On Tmdb", "Not Asked Yet", "Provider Hot"),
+            db.sortedShowsTab(Order.RATING, emptyList(), false, null).all().map { it.showName },
+        )
+        assertEquals(
+            listOf("On Tmdb", "Not Asked Yet", "Provider Hot"),
+            db.sortedShows(Order.RATING, emptyList(), false, null, false, "", "").all().map { it.showName },
+        )
+    }
+
     private suspend fun tmdb(
         key: String,
         rating: Double?,
+        found: Boolean = true,
     ) = db.metadata().upsert(
-        MetadataEntity(key, true, false, 1, key.substringAfter('|'), null, null, rating, null, null, "", null, "", null, 0),
+        MetadataEntity(
+            key,
+            found,
+            false,
+            if (found) 1 else 0,
+            key.substringAfter('|'),
+            null,
+            null,
+            rating,
+            null,
+            null,
+            "",
+            null,
+            "",
+            null,
+            0,
+        ),
     )
 
     @Test
