@@ -54,7 +54,7 @@ data class ItemEntity(
     /** What A to Z sorts on ([com.tunedplayer.app.core.TitleSort.title]); an episode's is its show's. Empty for live channels. */
     @ColumnInfo(defaultValue = "''") val sortTitle: String = "",
     /**
-     * What Top rated sorts a film on: the TMDB rating its poster shows, else the provider's [rating] ([TitleRatingsSql]).
+     * What Top rated sorts a film on: TMDB's rating only ([TitleRatingsSql]); none until TMDB has answered.
      * Worked out after each refresh and as TMDB answers; a refresh never writes it, so it isn't in [PlaylistWriter]'s columns.
      */
     val topRating: Double? = null,
@@ -163,6 +163,7 @@ data class ShowGroupEntity(
     /** The newest of the show's episodes, or the provider's "last modified" ([ShowDetailsEntity]); for newest first. */
     @ColumnInfo(defaultValue = "0") val added: Long = 0,
     val year: Int? = null,
+    /** What Top rated sorts on: TMDB's rating only ([TitleRatingsSql]); none until TMDB has answered. */
     val rating: Double? = null,
     @ColumnInfo(defaultValue = "''") val sortTitle: String = "",
 )

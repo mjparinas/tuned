@@ -45,11 +45,14 @@ class TitleSortsTest {
                 film(4, "Mondo", added = 0, rating = 6.0),
             ),
         )
+        tmdb("movie|EN - Zulu Dawn (1979)", 6.0)
+        tmdb("movie||FR| Élan", 8.5)
+        tmdb("movie|Mondo", 6.0)
         TitleRatingsSql.applyAll(db)
         assertEquals(listOf("EN - Zulu Dawn (1979)", "Avatar", "|FR| Élan", "Mondo"), movies(Order.PROVIDER))
         assertEquals(listOf("EN - Zulu Dawn (1979)", "|FR| Élan", "Avatar", "Mondo"), movies(Order.ADDED))
         assertEquals(listOf("|FR| Élan", "EN - Zulu Dawn (1979)", "Avatar", "Mondo"), movies(Order.YEAR))
-        // Two at 6.0 keep the playlist's order; the one without a rating goes last.
+        // Top rated is TMDB only: two at 6.0 keep the playlist's order; no TMDB rating goes last.
         assertEquals(listOf("|FR| Élan", "EN - Zulu Dawn (1979)", "Mondo", "Avatar"), movies(Order.RATING))
         // A to Z ignores "EN - " and "|FR| " and the accent.
         assertEquals(listOf("Avatar", "|FR| Élan", "Mondo", "EN - Zulu Dawn (1979)"), movies(Order.TITLE))
@@ -60,6 +63,8 @@ class TitleSortsTest {
         db.items().insertAll(
             listOf(film(1, "Dune", added = 1, rating = 7.0), film(2, "Dune Part Two", added = 2, rating = 8.0), film(3, "Heat")),
         )
+        tmdb("movie|Dune", 7.0)
+        tmdb("movie|Dune Part Two", 8.0)
         TitleRatingsSql.applyAll(db)
         val found = db.sortedItems(Order.RATING, 1, emptyList(), false, null, false, "dune", Search.match("dune"), 0).all()
         assertEquals(listOf("Dune Part Two", "Dune"), found.map { it.name })
@@ -94,13 +99,16 @@ class TitleSortsTest {
                 ShowDetailsEntity("harbour town", added = 0, year = 2001, rating = 7.0),
             ),
         )
+        // Top rated ignores the provider ratings above; TMDB decides.
+        tmdb("tv|Snowline", 9.0)
+        tmdb("tv|Harbour Town", 7.0)
         ShowGroups.rebuild(db)
 
         fun tab(order: Order) = db.sortedShowsTab(order, emptyList(), false, null)
         assertEquals(listOf("Snowline", "Harbour Town", "The Night Desk"), tab(Order.ADDED).all().map { it.showName })
         assertEquals(listOf("Snowline", "Harbour Town", "The Night Desk"), tab(Order.RATING).all().map { it.showName })
         assertEquals(listOf("Harbour Town", "Snowline", "The Night Desk"), tab(Order.TITLE).all().map { it.showName })
-        // A search reads the episodes, and sorts by the same details.
+        // A search reads the episodes, and sorts by the same TMDB ratings.
         val searched = db.sortedShows(Order.RATING, emptyList(), false, null, false, "", "").all()
         assertEquals(listOf("Snowline", "Harbour Town", "The Night Desk"), searched.map { it.showName })
     }
@@ -122,12 +130,12 @@ class TitleSortsTest {
     }
 
     /**
-     * Melvin, 2026-11-21: "sorting by rating ... doesn't really seem to be doing anything". The star on a poster is
-     * TMDB's, but Top rated sorted on the provider's rating, which his provider leaves out, so the list stayed in the
-     * playlist's order: 5.4, none, 5.8, 4.5, none, 7.9.
+     * Melvin, 2026-11-21: "sorting by rating ... doesn't really seem to be doing anything"; 2026-11-23: "i dont care
+     * about the provider provided information, i only care about tmdb". Top rated uses TMDB only; a provider rating
+     * alone does not lift a title, and titles without a TMDB rating sort last.
      */
     @Test
-    fun topRatedSortsOnTheRatingThePosterShowsWithUnratedLast() = runTest {
+    fun topRatedSortsOnTmdbOnlyWithUnratedLast() = runTest {
         db.items().insertAll(
             listOf(
                 film(1, "Outcome (2026)"),
@@ -143,34 +151,33 @@ class TitleSortsTest {
         tmdb("movie|Junk (2026)", null)
         tmdb("movie|Tiny Fugitives (2026)", 5.8)
         tmdb("movie|Livestream From Hell (2026)", 4.5)
-        // TMDB's rating goes over the provider's, as on the poster.
+        // Provider's 3.0 is ignored; TMDB's 7.9 decides.
         tmdb("movie|The Love Hypothesis (2026)", 7.9)
         TitleRatingsSql.applyAll(db)
         assertEquals(
             listOf(
                 "The Love Hypothesis (2026)",
-                // Not on TMDB yet: the provider's rating stands in.
-                "Provider Only",
                 "Tiny Fugitives (2026)",
                 "Outcome (2026)",
                 "Livestream From Hell (2026)",
-                // No rating anywhere: last, in playlist order.
+                // No TMDB rating (including provider-only): last, in playlist order.
                 "Junk (2026)",
                 "Never Looked Up",
+                "Provider Only",
             ),
             movies(Order.RATING),
         )
     }
 
     @Test
-    fun aRefreshKeepsThePostersRatingsInPlace() = runTest {
+    fun aRefreshKeepsTmdbRatingsInPlace() = runTest {
         db.items().insertAll(listOf(film(1, "Low", rating = 9.0), film(2, "High", rating = 2.0)))
         tmdb("movie|Low", 3.0)
         tmdb("movie|High", 8.0)
         TitleRatingsSql.applyAll(db)
         val writer = PlaylistWriter(db)
         writer.begin()
-        // The provider's ratings change, so both rows are rewritten; the posters' ratings still decide.
+        // The provider's ratings change, so both rows are rewritten; TMDB's ratings still decide.
         val next = listOf(film(1, "Low", rating = 9.5), film(2, "High", rating = 1.0))
         next.forEach { writer.accept(it.id) }
         writer.add(next)
@@ -180,18 +187,29 @@ class TitleSortsTest {
     }
 
     @Test
-    fun showsSortOnTheirCardsRatings() = runTest {
+    fun showsSortOnTmdbRatingsOnly() = runTest {
         db.items().insertAll(
-            listOf(episode(1, "Harbour Town", added = 1), episode(2, "Snowline", added = 2), episode(3, "The Night Desk", added = 3)),
+            listOf(
+                episode(1, "Harbour Town", added = 1),
+                episode(2, "Snowline", added = 2),
+                episode(3, "The Night Desk", added = 3),
+                episode(4, "Provider Only", added = 4),
+            ),
         )
-        db.shows().replaceDetails(listOf(ShowDetailsEntity("harbour town", added = 0, year = null, rating = 9.0)))
+        // Provider 9.0 would put Harbour Town first; TMDB 6.1 keeps it second. Provider Only has no TMDB.
+        db.shows().replaceDetails(
+            listOf(
+                ShowDetailsEntity("harbour town", added = 0, year = null, rating = 9.0),
+                ShowDetailsEntity("provider only", added = 0, year = null, rating = 9.5),
+            ),
+        )
         tmdb("tv|Harbour Town", 6.1)
         tmdb("tv|The Night Desk", 8.4)
         ShowGroups.rebuild(db)
         val tab = db.sortedShowsTab(Order.RATING, emptyList(), false, null).all().map { it.showName }
-        assertEquals(listOf("The Night Desk", "Harbour Town", "Snowline"), tab)
+        assertEquals(listOf("The Night Desk", "Harbour Town", "Snowline", "Provider Only"), tab)
         val searched = db.sortedShows(Order.RATING, emptyList(), false, null, false, "", "").all().map { it.showName }
-        assertEquals(listOf("The Night Desk", "Harbour Town", "Snowline"), searched)
+        assertEquals(listOf("The Night Desk", "Harbour Town", "Snowline", "Provider Only"), searched)
     }
 
     /**
@@ -209,6 +227,8 @@ class TitleSortsTest {
                 film(5, "Unrated Last"),
             ),
         )
+        tmdb("movie|Low", 4.2)
+        tmdb("movie|High", 9.1)
         // 0 from TMDB is none, as on the poster when too few have voted or the score is empty.
         tmdb("movie|Zero Provider", 0.0)
         TitleRatingsSql.applyAll(db)
@@ -232,6 +252,8 @@ class TitleSortsTest {
                 ShowDetailsEntity("great", added = 0, year = null, rating = 8.8),
             ),
         )
+        tmdb("tv|Okay", 5.5)
+        tmdb("tv|Great", 8.8)
         ShowGroups.rebuild(db)
         assertEquals(
             listOf("Great", "Okay", "No Score", "Also None"),
@@ -245,11 +267,76 @@ class TitleSortsTest {
         )
     }
 
+    /**
+     * Melvin, 2026-11-23: provider ratings must not lift titles Top rated; only TMDB scores count, so "not found"
+     * and "not asked yet" both sort last with the other unrated titles.
+     */
+    @Test
+    fun topRatedIgnoresProviderRatingOnceTmdbSaidNotFound() = runTest {
+        db.items().insertAll(
+            listOf(
+                film(1, "Unknown To Tmdb", rating = 9.9),
+                film(2, "Known", rating = 2.0),
+                film(3, "Still Waiting", rating = 7.0),
+            ),
+        )
+        tmdb("movie|Unknown To Tmdb", rating = null, found = false)
+        tmdb("movie|Known", 8.2)
+        TitleRatingsSql.applyAll(db)
+        assertEquals(null, db.items().get(1)?.topRating)
+        assertEquals(listOf("Known", "Unknown To Tmdb", "Still Waiting"), movies(Order.RATING))
+    }
+
+    @Test
+    fun showsTopRatedIgnoresProviderRatingOnceTmdbSaidNotFound() = runTest {
+        db.items().insertAll(
+            listOf(
+                episode(1, "Provider Hot", added = 1),
+                episode(2, "On Tmdb", added = 2),
+                episode(3, "Not Asked Yet", added = 3),
+            ),
+        )
+        db.shows().replaceDetails(
+            listOf(
+                ShowDetailsEntity("provider hot", added = 0, year = null, rating = 9.5),
+                ShowDetailsEntity("not asked yet", added = 0, year = null, rating = 6.0),
+            ),
+        )
+        tmdb("tv|Provider Hot", rating = null, found = false)
+        tmdb("tv|On Tmdb", 7.4)
+        ShowGroups.rebuild(db)
+        assertEquals(
+            listOf("On Tmdb", "Provider Hot", "Not Asked Yet"),
+            db.sortedShowsTab(Order.RATING, emptyList(), false, null).all().map { it.showName },
+        )
+        assertEquals(
+            listOf("On Tmdb", "Provider Hot", "Not Asked Yet"),
+            db.sortedShows(Order.RATING, emptyList(), false, null, false, "", "").all().map { it.showName },
+        )
+    }
+
     private suspend fun tmdb(
         key: String,
         rating: Double?,
+        found: Boolean = true,
     ) = db.metadata().upsert(
-        MetadataEntity(key, true, false, 1, key.substringAfter('|'), null, null, rating, null, null, "", null, "", null, 0),
+        MetadataEntity(
+            key,
+            found,
+            false,
+            if (found) 1 else 0,
+            key.substringAfter('|'),
+            null,
+            null,
+            rating,
+            null,
+            null,
+            "",
+            null,
+            "",
+            null,
+            0,
+        ),
     )
 
     @Test
