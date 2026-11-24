@@ -13,9 +13,11 @@ Tuned is a native Android IPTV player. It signs in to an Xtream Codes-style serv
 ./gradlew :app:generateGithubReleaseBaselineProfile  # baseline profile on an emulator (Baseline profile workflow does it in CI)
 ./gradlew :smoketest:pixel6Api34GithubDebugAndroidTest  # device smoke test on an emulator (CI runs it on every pull request)
 ./gradlew :app:testGithubDebugUnitTest -Pscreenshots  # every screen drawn on the JVM with sample data, PNGs in app/build/outputs/roborazzi
-npm ci && npm run format              # Prettier for YAML, JSON and Markdown; CI runs format:check
+npm ci && npm run format              # Prettier for YAML, JSON, Markdown and website HTML/JS/CSS; CI runs format:check
 node devices/a11y-check.mjs            # the website against WCAG 2.2 AA (axe, light and dark, 320px, focus); CI runs it
 ```
+
+`npm ci` also points Git at `scripts/git-hooks/` (prepare), so a **pre-commit** formats staged Prettier files before the commit. Cursor's `.cursor/hooks/` runs Prettier after an agent edits a matching file. Never commit with `--no-verify` to skip that.
 
 ## Stack (Melvin, 2026-11-17: "use all modern libraries as much as possible")
 
@@ -48,7 +50,7 @@ Kotlin, Jetpack Compose with Material 3, Navigation Compose (type-safe routes), 
 
 ## Code conventions
 
-- Formatting is ktlint's (`.editorconfig`, width 140) through Spotless, and Prettier's for YAML, JSON and Markdown. Don't hand-format.
+- Formatting is ktlint's (`.editorconfig`, width 140) through Spotless, and Prettier's for YAML, JSON, Markdown and the website's HTML/JS/CSS. Don't hand-format. Before every commit that touches those files, run `npm run format` (or rely on the pre-commit hook after `npm ci`); CI's Formatting job fails otherwise (Melvin, 2026-11-24: "can you fix prettier, it always fails").
 - detekt (`config/detekt/detekt.yml`) and Android Lint (`warningsAsErrors`) fail CI on any finding. Fix the cause; suppress only with a comment saying why.
 - Every string a person reads is in `res/values/strings.xml`; numbers that change a word use `<plurals>`. **The app is translated into 11 languages** ([languages](docs/decisions/languages.md); Melvin, 2026-11-20): a new or changed string gets its translation in every `values-xx` folder in the same pull request (Lint's `MissingTranslation` fails otherwise), "Tuned" is never translated, and the device's language picks the app's, with no picker in the app.
 - **Pop-ups are `TunedDialog`** (`ui/common/TunedDialog.kt`), never Material's `AlertDialog` directly (detekt enforces it), so every dialog keeps 24 dp off the screen's edges, stops at 560 dp (720 dp for a TV's sign-in code dialog, `DialogWideMaxWidth`) and sits in the centre (Melvin, 2026-11-19: "these pop ups shouldn't take the full width"; [branding](docs/decisions/branding.md)). A panel that slides up from the bottom is `TunedSheet` (`ui/common/TunedSheet.kt`), never Material's `ModalBottomSheet` directly (detekt enforces it): a bottom sheet on a phone, and on a TV a full-screen window inside the overscan margin that keeps the remote's focus inside it, with no drag handle and Back to close (Melvin, 2026-11-21: "Dragging handles shouldn't really be on the TV app"; [TV](docs/decisions/tv.md)). A code to type elsewhere is `OneLineCode`, which never wraps (Melvin, 2026-11-20: "I don't ever want to see the code text wrapped").
