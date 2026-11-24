@@ -41,8 +41,9 @@ interface TitleSortDao {
     ): PagingSource<Int, ItemEntity>
 
     /**
-     * [ItemDao.items], highest rated first by the rating the poster shows ([TitleRatingsSql]), titles without one last:
-     * read down its own index a page at a time ([ItemEntity]).
+     * [ItemDao.items], highest rated first by the rating the poster shows ([TitleRatingsSql]), titles without one last
+     * (Melvin, 2026-11-23: "without a rating need to go all the way to the bottom" / "highest scores first"):
+     * read down its own index a page at a time ([ItemEntity]). DESC already puts nulls last in SQLite.
      */
     @Query("SELECT * FROM items i $TITLE_FILTER ORDER BY i.topRating DESC, i.sortOrder")
     @Suppress("LongParameterList") // the filters of [ItemDao.items]
@@ -95,8 +96,11 @@ interface TitleSortDao {
         match: String,
     ): PagingSource<Int, ShowSummary>
 
-    /** [ItemDao.shows], highest rated first, by the show's details in [ShowGroupEntity]. */
-    @Query("$SHOW_SUMMARY $SHOW_FILTER ORDER BY $SHOW_RATING DESC, MIN(sortOrder)")
+    /**
+     * [ItemDao.shows], highest rated first, shows without a rating last (Melvin, 2026-11-23): by the show's details in
+     * [ShowGroupEntity]. The null check is explicit because this order is computed, not an index scan.
+     */
+    @Query("$SHOW_SUMMARY $SHOW_FILTER ORDER BY ($SHOW_RATING IS NULL), $SHOW_RATING DESC, MIN(sortOrder)")
     fun showsByRating(
         hidden: List<String>,
         adult: Boolean,
