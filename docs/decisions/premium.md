@@ -18,6 +18,8 @@ Play's rules cover "any content your app displays or links to", and pay-TV compa
 - The listing, screenshots and feature graphic name no channel, network, provider, league, team, fight or film. Screenshots come from a made-up demo playlist, never a real one.
 - The listing and sign-in say Tuned includes no content and needs the person's own playlist.
 
+**Play Console sign-in details** (Melvin, 2026-11-23: reviewers need a playlist without a real provider). Declare the app restricted (**Yes**), then point reviewers at the public review M3U at `https://www.tunedplayer.com/review/playlist.m3u` (`devices/api/review/playlist.mjs`, body in `devices/lib/review-playlist.mjs`): Welcome → Playlist link → that URL. It lists a few open demo clips only (Apple BipBop, Mux's test HLS, W3C's Sintel trailer, Tears of Steel), no login, not in the sitemap or robots, and never linked from the landing page. Premium still needs Play license testing (reviewers can't buy or use the trial).
+
 ## Free and Premium
 
 Free: one playlist with its guide; Live TV, Movies, Shows, search, favourites, Continue Watching; the whole player (captions, audio, picture-in-picture, casting); the grid guide, channel numbers and flip back; TMDB details; backup copies; auto-tune and the Live Events page; Android TV.
