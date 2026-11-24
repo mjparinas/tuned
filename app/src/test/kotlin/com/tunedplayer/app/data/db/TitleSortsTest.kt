@@ -194,6 +194,57 @@ class TitleSortsTest {
         assertEquals(listOf("The Night Desk", "Harbour Town", "Snowline"), searched)
     }
 
+    /**
+     * Melvin, 2026-11-23: "without a rating need to go all the way to the bottom" / "sorted in desc order, with the
+     * highest scores first". A stored 0 counts as none, same as the poster showing no star.
+     */
+    @Test
+    fun topRatedPutsZeroAndMissingRatingsLastHighestFirst() = runTest {
+        db.items().insertAll(
+            listOf(
+                film(1, "Unrated First"),
+                film(2, "Low", rating = 4.2),
+                film(3, "Zero Provider", rating = 0.0),
+                film(4, "High", rating = 9.1),
+                film(5, "Unrated Last"),
+            ),
+        )
+        // 0 from TMDB is none, as on the poster when too few have voted or the score is empty.
+        tmdb("movie|Zero Provider", 0.0)
+        TitleRatingsSql.applyAll(db)
+        assertEquals(null, db.items().get(3)?.topRating)
+        assertEquals(listOf("High", "Low", "Unrated First", "Zero Provider", "Unrated Last"), movies(Order.RATING))
+    }
+
+    @Test
+    fun showsTopRatedPutsUnratedLastHighestFirst() = runTest {
+        db.items().insertAll(
+            listOf(
+                episode(1, "No Score", added = 1),
+                episode(2, "Okay", added = 2),
+                episode(3, "Great", added = 3),
+                episode(4, "Also None", added = 4),
+            ),
+        )
+        db.shows().replaceDetails(
+            listOf(
+                ShowDetailsEntity("okay", added = 0, year = null, rating = 5.5),
+                ShowDetailsEntity("great", added = 0, year = null, rating = 8.8),
+            ),
+        )
+        ShowGroups.rebuild(db)
+        assertEquals(
+            listOf("Great", "Okay", "No Score", "Also None"),
+            db.sortedShowsTab(Order.RATING, emptyList(), false, null).all().map {
+                it.showName
+            },
+        )
+        assertEquals(
+            listOf("Great", "Okay", "No Score", "Also None"),
+            db.sortedShows(Order.RATING, emptyList(), false, null, false, "", "").all().map { it.showName },
+        )
+    }
+
     private suspend fun tmdb(
         key: String,
         rating: Double?,
