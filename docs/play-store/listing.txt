@@ -1,0 +1,37 @@
+App name (max 30)
+Tuned IPTV Player
+
+Short description (max 80)
+IPTV player for Android and Android TV. Add your playlist. Built for speed.
+
+Full description (max 4000)
+Tuned is a fast IPTV player for Android phones, tablets and Android TV. Add your own playlist and watch Live TV, movies and shows — clean UI, no ads, and nothing waits on the network when you open the app.
+
+Tuned includes no channels or programmes. You bring a playlist from your provider (Xtream Codes login, M3U link or file, MAC portal) or a home media server (Plex, Jellyfin or Emby).
+
+WHAT YOU GET
+• Live TV with a grid guide, search, filters, channel numbers and flip back
+• Movies and shows with posters, ratings, details and real episode names
+• Favourites, Continue watching and offline downloads
+• Casting, picture-in-picture and a player that stays out of the way
+• Profiles, including kids profiles (Premium)
+• Background refresh with real progress and time left when Tuned can tell
+
+PLAYLISTS
+• Xtream Codes (server, username, password)
+• M3U / M3U8 link or file, with an optional guide
+• MAC (Stalker) portals
+• Plex, Jellyfin or Emby
+• Instant switch back to a recent playlist
+
+PREMIUM (OPTIONAL)
+Unlock more playlists, profiles and PINs, pause and rewind live TV, recording, your own lists, Tuned account backup across devices, Trakt, Simkl and more. Buy yearly or once through Google Play. A free trial may be offered by Play.
+
+PRIVACY
+No ads. No third-party ad trackers. Playlist logins stay encrypted on the device until you sign out. Optional Tuned account and anonymous usage stats — details at https://www.tunedplayer.com/privacy
+
+SUPPORT
+https://www.tunedplayer.com
+Account & data deletion: https://www.tunedplayer.com/account
+
+Tuned is a player only. Availability of channels and programmes depends entirely on the playlist you add.
