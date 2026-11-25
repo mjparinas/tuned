@@ -114,7 +114,7 @@ One file per topic in `docs/decisions/`, A to Z. Add a line when you add a topic
 - [Screenshots](docs/decisions/screenshots.md): every screen drawn on the JVM with sample data, the on-demand Screenshots workflow, posting them for each feature.
 - [Security](docs/decisions/security.md): login storage, cleartext HTTP, Android backup off (backup files removed 2026-11-18).
 - [Settings](docs/decisions/settings.md): the pages of Settings and what goes where.
-- [Simkl](docs/decisions/simkl.md): signing in with a code, scrobbling films and episodes, the app's keys (alongside Trakt).
+- [Simkl](docs/decisions/simkl.md): signing in with a code, scrobbling films and episodes, importing watched history, the app's keys (alongside Trakt).
 - [Speed](docs/decisions/speed.md): what keeps the app fast, and the budget.
 - [Sync](docs/decisions/sync.md): removed. Google Drive sync, replaced by the backup in the Tuned account (2026-11-19).
 - [Trakt](docs/decisions/trakt.md): signing in with a code, scrobbling films and episodes, the app's keys.

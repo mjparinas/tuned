@@ -39,7 +39,7 @@ import java.io.IOException
 class TraktAccount(
     context: Context,
     private val http: OkHttpClient,
-) {
+) : WatchedHistoryImport.Source {
     @Serializable
     data class Session(
         val access: String,
@@ -106,6 +106,8 @@ class TraktAccount(
 
     private val sessionFlow = MutableStateFlow(load())
     val session: StateFlow<Session?> = sessionFlow.asStateFlow()
+
+    override val signedIn: Boolean get() = sessionFlow.value != null
 
     private val scrobbleFlow = MutableStateFlow(prefs.getBoolean(KEY_SCROBBLE, true))
 
@@ -179,7 +181,7 @@ class TraktAccount(
      * Every film Trakt has marked watched for this account, page by page (`/sync/watched/movies`). Null when signed out
      * or Trakt couldn't be reached; an empty list when there are none.
      */
-    suspend fun watchedFilms(): List<Trakt.WatchedFilm>? {
+    override suspend fun watchedFilms(): List<Trakt.WatchedFilm>? {
         val token = token() ?: return null
         val now = System.currentTimeMillis()
         val out = ArrayList<Trakt.WatchedFilm>()
@@ -208,7 +210,7 @@ class TraktAccount(
      * Every watched episode Trakt has for this account, from `/sync/watched/shows?extended=progress` (season and number
      * per show). Null when signed out or Trakt couldn't be reached; an empty list when there are none.
      */
-    suspend fun watchedEpisodes(): List<Trakt.WatchedEpisode>? {
+    override suspend fun watchedEpisodes(): List<Trakt.WatchedEpisode>? {
         val token = token() ?: return null
         val now = System.currentTimeMillis()
         val out = ArrayList<Trakt.WatchedEpisode>()

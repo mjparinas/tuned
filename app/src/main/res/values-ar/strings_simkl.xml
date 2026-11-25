@@ -15,4 +15,8 @@
     <string name="simkl_expired">انتهت صلاحية الرمز قبل إدخاله.</string>
     <string name="simkl_failed">تعذّر الوصول إلى Simkl. تحقّق من الاتصال وحاول مرة أخرى.</string>
     <string name="simkl_try_again">إعادة المحاولة</string>
+    <string name="simkl_import_films">جارٍ جلب الأفلام من Simkl…</string>
+    <string name="simkl_import_shows">جارٍ جلب المسلسلات من Simkl…</string>
+    <string name="simkl_import_none">لا شيء في قائمتك يطابق سجل Simkl</string>
+    <string name="simkl_import_failed">تعذّر الاستيراد من Simkl. المس للمحاولة مرة أخرى.</string>
 </resources>

@@ -16,4 +16,8 @@
     <string name="simkl_expired">The code ran out before it was entered.</string>
     <string name="simkl_failed">Couldn\'t reach Simkl. Check the connection and try again.</string>
     <string name="simkl_try_again">Try again</string>
+    <string name="simkl_import_films">Fetching films from Simkl…</string>
+    <string name="simkl_import_shows">Fetching shows from Simkl…</string>
+    <string name="simkl_import_none">Nothing in your playlist matched Simkl\'s history</string>
+    <string name="simkl_import_failed">Couldn\'t import from Simkl. Tap to try again.</string>
 </resources>

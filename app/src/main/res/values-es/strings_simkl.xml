@@ -15,4 +15,8 @@
     <string name="simkl_expired">El código caducó antes de introducirse.</string>
     <string name="simkl_failed">No se pudo conectar con Simkl. Revisa la conexión y vuelve a intentarlo.</string>
     <string name="simkl_try_again">Reintentar</string>
+    <string name="simkl_import_films">Obteniendo películas de Simkl…</string>
+    <string name="simkl_import_shows">Obteniendo series de Simkl…</string>
+    <string name="simkl_import_none">Nada de tu lista coincidió con el historial de Simkl</string>
+    <string name="simkl_import_failed">No se pudo importar desde Simkl. Toca para reintentar.</string>
 </resources>

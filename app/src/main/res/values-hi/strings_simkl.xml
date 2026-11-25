@@ -15,4 +15,8 @@
     <string name="simkl_expired">कोड डालने से पहले ही उसकी अवधि खत्म हो गई।</string>
     <string name="simkl_failed">Simkl तक नहीं पहुंच सके। कनेक्शन जांचें और फिर से कोशिश करें।</string>
     <string name="simkl_try_again">फिर से कोशिश करें</string>
+    <string name="simkl_import_films">Simkl से फ़िल्में लाई जा रही हैं…</string>
+    <string name="simkl_import_shows">Simkl से शो लाए जा रहे हैं…</string>
+    <string name="simkl_import_none">आपकी प्लेलिस्ट में Simkl इतिहास से कुछ मेल नहीं खाया</string>
+    <string name="simkl_import_failed">Simkl से आयात नहीं हो सका। फिर कोशिश के लिए टैप करें।</string>
 </resources>
