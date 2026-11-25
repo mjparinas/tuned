@@ -29,6 +29,33 @@ internal const val KIDS_ONLY_I =
         "i.searchName GLOB '*boomerang*'" +
         "))))"
 
+/**
+ * Live Events: sports and pay-per-view channels by name or category, a quick first cut that
+ * [com.tunedplayer.app.core.EventChannels] then decides on.
+ */
+internal const val SPORTY_I =
+    "AND (" +
+        "(lower(i.groupName) || ' ' || i.searchName) GLOB '*sport*' OR " +
+        "(lower(i.groupName) || ' ' || i.searchName) GLOB '*ppv*' OR " +
+        "(lower(i.groupName) || ' ' || i.searchName) GLOB '*event*' OR " +
+        "(lower(i.groupName) || ' ' || i.searchName) GLOB '*ufc*' OR " +
+        "(lower(i.groupName) || ' ' || i.searchName) GLOB '*espn*' OR " +
+        "(lower(i.groupName) || ' ' || i.searchName) GLOB '*dazn*' OR " +
+        "(lower(i.groupName) || ' ' || i.searchName) GLOB '*tsn*' OR " +
+        "(lower(i.groupName) || ' ' || i.searchName) GLOB '*bein*' OR " +
+        "(lower(i.groupName) || ' ' || i.searchName) GLOB '*nfl*' OR " +
+        "(lower(i.groupName) || ' ' || i.searchName) GLOB '*nba*' OR " +
+        "(lower(i.groupName) || ' ' || i.searchName) GLOB '*nhl*' OR " +
+        "(lower(i.groupName) || ' ' || i.searchName) GLOB '*mlb*' OR " +
+        "(lower(i.groupName) || ' ' || i.searchName) GLOB '*f1*' OR " +
+        "(lower(i.groupName) || ' ' || i.searchName) GLOB '*fight*' OR " +
+        "(lower(i.groupName) || ' ' || i.searchName) GLOB '*boxing*' OR " +
+        "(lower(i.groupName) || ' ' || i.searchName) GLOB '*wwe*' OR " +
+        "(lower(i.groupName) || ' ' || i.searchName) GLOB '*golf*' OR " +
+        "(lower(i.groupName) || ' ' || i.searchName) GLOB '*tennis*' OR " +
+        "(lower(i.groupName) || ' ' || i.searchName) GLOB '*cricket*' OR " +
+        "(lower(i.groupName) || ' ' || i.searchName) GLOB '*rugby*')"
+
 /** [KIDS_ONLY_I] for queries that don't name the table. */
 internal const val KIDS_ONLY =
     "AND NOT ('kids' IN (:hidden) AND NOT (" +

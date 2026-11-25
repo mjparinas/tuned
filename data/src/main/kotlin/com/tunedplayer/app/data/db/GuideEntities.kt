@@ -56,3 +56,9 @@ data class EventRow(
     val start: Long,
     val stop: Long,
 )
+
+/** A sports or pay-per-view channel, for Live Events read from channel names ([ItemDao.eventChannels]). */
+data class EventChannelRow(
+    val itemId: Long,
+    val name: String,
+)

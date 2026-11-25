@@ -20,10 +20,12 @@ import com.tunedplayer.app.R
 import com.tunedplayer.app.core.ContentKind
 import com.tunedplayer.app.core.Episodes
 import com.tunedplayer.app.core.PinnedGroups
+import com.tunedplayer.app.core.Search
 import com.tunedplayer.app.core.TitleSort
 import com.tunedplayer.app.data.StartTab
 import com.tunedplayer.app.data.SyncProgress
 import com.tunedplayer.app.data.db.CurrentProfileEntity
+import com.tunedplayer.app.data.db.ItemEntity
 import com.tunedplayer.app.data.db.ProfileEntity
 import com.tunedplayer.app.ui.DownloadsRoute
 import com.tunedplayer.app.ui.EventsRoute
@@ -42,6 +44,10 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
+import java.time.ZoneId
+import java.time.ZonedDateTime
+import java.time.format.DateTimeFormatter
+import java.util.Locale
 
 /** Home and its tabs, search, details, the guide, Live Events, Downloads and profiles. */
 @RunWith(RobolectricTestRunner::class)
@@ -250,6 +256,46 @@ class BrowseScreenshots : Screenshots() {
 
     @Test fun events() = shot("browse-events", EventsRoute, wait = text(R.string.events_title))
 
+    /** Pay-per-view slots with no guide: the events come from their names, one with a time and one without. */
+    @Test
+    fun eventsFromChannelNames() {
+        runBlocking(Dispatchers.IO) {
+            // Two hours from now, on the hour, written the way providers write it ("PPV 1: UFC 312 9PM ET").
+            val at = ZonedDateTime.now(ZoneId.of("America/Toronto")).plusHours(2)
+            val time = at.format(DateTimeFormatter.ofPattern("h a", Locale.US)).replace(" ", "")
+            val names =
+                listOf(
+                    "US| PPV 1: UFC 312 $time ET",
+                    "US| PPV 2: UFC 312 $time ET",
+                    "US| NHL 05: Leafs vs Canucks",
+                    "US| PPV 3",
+                    "US| NFL 01 -- No Event Streaming --",
+                )
+            app.container.db.items().insertAll(
+                names.mapIndexed { i, name ->
+                    ItemEntity(
+                        id = EVENT_IDS + i,
+                        kind = ContentKind.LIVE.code,
+                        name = name,
+                        searchName = Search.normalize(name),
+                        groupName = "US | PPV",
+                        region = "US",
+                        adult = false,
+                        logo = null,
+                        url = "http://example.invalid/ppv$i",
+                        tvgId = null,
+                        showKey = null,
+                        showName = null,
+                        season = null,
+                        episode = null,
+                        sortOrder = 100 + i,
+                    )
+                },
+            )
+        }
+        shot("browse-events-from-names", EventsRoute, wait = "UFC 312")
+    }
+
     @Test fun downloads() = shot("browse-downloads", DownloadsRoute, wait = text(R.string.downloads))
 
     /** Downloads from the bar on Home, which stays below it. */
@@ -349,3 +395,6 @@ private fun FirstRunSample() {
         onChangeLogin = {},
     )
 }
+
+/** Ids for the event channels [BrowseScreenshots.eventsFromChannelNames] adds, clear of the sample playlist's. */
+private const val EVENT_IDS = 9_000L

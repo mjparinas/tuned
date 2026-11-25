@@ -9,6 +9,7 @@
     <string name="events_later">Позже сегодня</string>
     <string name="events_tomorrow">Завтра</string>
     <string name="events_live">В эфире</string>
+    <string name="events_no_time">Без времени</string>
     <string name="events_empty">В телегиде нет матчей, боёв или pay-per-view на ближайшие полтора дня. Обновите телегид в настройках, если это похоже на ошибку.</string>
     <plurals name="events_channels">
         <item quantity="one">На %d канале</item>

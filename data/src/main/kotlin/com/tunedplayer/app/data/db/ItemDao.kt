@@ -393,28 +393,7 @@ interface ItemDao {
         FROM programmes p
         JOIN items i ON i.tvgId = p.channelId AND i.kind = 0
         WHERE p.stop > :from AND p.start < :to
-            AND (
-                (lower(i.groupName) || ' ' || i.searchName) GLOB '*sport*'
-                OR (lower(i.groupName) || ' ' || i.searchName) GLOB '*ppv*'
-                OR (lower(i.groupName) || ' ' || i.searchName) GLOB '*event*'
-                OR (lower(i.groupName) || ' ' || i.searchName) GLOB '*ufc*'
-                OR (lower(i.groupName) || ' ' || i.searchName) GLOB '*espn*'
-                OR (lower(i.groupName) || ' ' || i.searchName) GLOB '*dazn*'
-                OR (lower(i.groupName) || ' ' || i.searchName) GLOB '*tsn*'
-                OR (lower(i.groupName) || ' ' || i.searchName) GLOB '*bein*'
-                OR (lower(i.groupName) || ' ' || i.searchName) GLOB '*nfl*'
-                OR (lower(i.groupName) || ' ' || i.searchName) GLOB '*nba*'
-                OR (lower(i.groupName) || ' ' || i.searchName) GLOB '*nhl*'
-                OR (lower(i.groupName) || ' ' || i.searchName) GLOB '*mlb*'
-                OR (lower(i.groupName) || ' ' || i.searchName) GLOB '*f1*'
-                OR (lower(i.groupName) || ' ' || i.searchName) GLOB '*fight*'
-                OR (lower(i.groupName) || ' ' || i.searchName) GLOB '*boxing*'
-                OR (lower(i.groupName) || ' ' || i.searchName) GLOB '*wwe*'
-                OR (lower(i.groupName) || ' ' || i.searchName) GLOB '*golf*'
-                OR (lower(i.groupName) || ' ' || i.searchName) GLOB '*tennis*'
-                OR (lower(i.groupName) || ' ' || i.searchName) GLOB '*cricket*'
-                OR (lower(i.groupName) || ' ' || i.searchName) GLOB '*rugby*'
-            )
+            $SPORTY_I
             AND COALESCE(i.region, 'none') NOT IN (:hidden) AND ('g:' || i.kind || ':' || i.groupName) NOT IN (:hidden)
             AND (:adult OR i.adult = 0)
             $KIDS_ONLY_I
@@ -428,6 +407,27 @@ interface ItemDao {
         hidden: List<String>,
         adult: Boolean,
     ): List<EventRow>
+
+    /**
+     * Live Events from channel names: the sports and pay-per-view channels [eventProgrammes] looks at, with or without a
+     * guide, so [com.tunedplayer.app.core.ChannelEvents] can read an event from the name of one whose guide lists none.
+     */
+    @Query(
+        """
+        SELECT i.id AS itemId, i.name AS name FROM items i
+        WHERE i.kind = 0
+            $SPORTY_I
+            AND COALESCE(i.region, 'none') NOT IN (:hidden) AND ('g:' || i.kind || ':' || i.groupName) NOT IN (:hidden)
+            AND (:adult OR i.adult = 0)
+            $KIDS_ONLY_I
+        ORDER BY i.sortOrder
+        LIMIT 20000
+        """,
+    )
+    suspend fun eventChannels(
+        hidden: List<String>,
+        adult: Boolean,
+    ): List<EventChannelRow>
 
     /** Each region and its stream count; streams with no region count under [com.tunedplayer.app.core.Regions.NONE]. */
     @Query("SELECT COALESCE(region, 'none') AS region, COUNT(*) AS count FROM items GROUP BY region ORDER BY count DESC")
