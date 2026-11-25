@@ -306,8 +306,8 @@ export function ctaCard(site, place, version) {
 <div>
 <h2 id="cta-${place}">Get Tuned for Android</h2>
 <p>A fast, quiet IPTV player for phones, tablets and Android TV. Free, with no ads.${version ? ` The latest version is ${esc(version)}.` : ""}</p>
-<div class="actions">${downloadButton(site, place)}<a class="button ghost" href="/#features" data-cta="features-${place}">See every feature</a></div>
-<p class="fine">For Android phones, tablets and TVs. Google Play and Samsung TV are coming soon.</p>
+<div class="actions">${downloadButton(site, place)}</div>
+<p class="fine">Free APK · updates itself. On a TV, use the Downloader app — <a href="/blog/guides/android-tv/">Android TV guide</a>. Google Play and Samsung TV are coming soon.</p>
 </div>
 </section>`;
 }
@@ -321,6 +321,14 @@ export const siteHeader = (site) => `<header class="top">
 <a href="/blog/">Blog</a>
 <a href="/account">Account</a>
 </div>
+<details class="nav-menu">
+<summary>Menu</summary>
+<div class="nav-menu-panel">
+<a href="/#features">Features</a>
+<a href="/blog/">Blog</a>
+<a href="/account">Account</a>
+</div>
+</details>
 <a class="button small" href="${site.apk}" data-cta="apk-header">Download</a>
 </nav>
 </header>`;
@@ -579,17 +587,32 @@ ${ctaCard(site, "blog", latestVersion)}
     });
 }
 
+/** How many features each group shows before "Show more" (docs/decisions/website.md). */
+const FEATURE_PREVIEW = 4;
+
+const featureItem = (f) =>
+    `<li><span class="tick">${icon("check", 18)}</span><span><b>${esc(f.title)}</b>${f.premium ? ' <span class="pill">Premium</span>' : ""}<br /><span class="muted">${esc(f.body)}</span></span></li>`;
+
 /** The landing page: the template with the features, the badges and the newest posts filled in. */
 export function homePage(site, { template, groups, posts, latestVersion }) {
     const features = groups
-        .map(
-            (g) => `<section class="feature-group" aria-labelledby="fg-${g.id}">
+        .map((g) => {
+            const preview = g.items.slice(0, FEATURE_PREVIEW);
+            const rest = g.items.slice(FEATURE_PREVIEW);
+            const more =
+                rest.length === 0
+                    ? ""
+                    : `<details class="feature-more"><summary>Show ${rest.length} more</summary><ul>
+${rest.map(featureItem).join("\n")}
+</ul></details>`;
+            return `<section class="feature-group" aria-labelledby="fg-${g.id}">
 <h3 id="fg-${g.id}"><span class="fg-icon">${icon(g.icon)}</span>${esc(g.title)}</h3>
 <ul>
-${g.items.map((f) => `<li><span class="tick">${icon("check", 18)}</span><span><b>${esc(f.title)}</b>${f.premium ? ' <span class="pill">Premium</span>' : ""}<br /><span class="muted">${esc(f.body)}</span></span></li>`).join("\n")}
+${preview.map(featureItem).join("\n")}
 </ul>
-</section>`,
-        )
+${more}
+</section>`;
+        })
         .join("\n");
     const count = groups.reduce((n, g) => n + g.items.length, 0);
     const latest = homePosts(site, posts)
