@@ -107,8 +107,11 @@ textarea {
     overflow-y: auto;
     padding: 20px 12px;
     border-right: 1px solid var(--line);
-    background: color-mix(in srgb, var(--panel) 70%, transparent);
+    background: linear-gradient(180deg, var(--violet-soft), transparent 180px), color-mix(in srgb, var(--panel) 78%, transparent);
     backdrop-filter: blur(8px);
+    transition:
+        width 0.15s ease,
+        padding 0.15s ease;
 }
 .brand {
     display: flex;
@@ -123,6 +126,55 @@ textarea {
     width: 30px;
     height: 30px;
     border-radius: 8px;
+}
+/* Focus Overview: icon rail until you leave Overview. */
+.frame.focus-overview {
+    grid-template-columns: 72px 1fr;
+}
+.frame.focus-overview .rail {
+    padding: 16px 8px;
+}
+.frame.focus-overview .brand {
+    justify-content: center;
+    padding: 0 0 14px;
+}
+.frame.focus-overview .brand-text,
+.frame.focus-overview .brand .pill,
+.frame.focus-overview .nav-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+.frame.focus-overview .nav-group {
+    height: 3px;
+    margin: 12px 8px 6px;
+    padding: 0;
+    border-radius: 999px;
+    font-size: 0;
+    letter-spacing: 0;
+    color: transparent;
+}
+.frame.focus-overview .nav button {
+    justify-content: center;
+    padding: 0;
+    min-height: 42px;
+}
+.frame.focus-overview .nav .count {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    min-width: 18px;
+    padding: 0 4px;
+    font-size: 10px;
+}
+.frame.focus-overview .nav button {
+    position: relative;
 }
 .pill {
     display: inline-flex;
@@ -167,6 +219,36 @@ textarea {
     letter-spacing: 0.06em;
     text-transform: uppercase;
     color: var(--faint);
+}
+.nav-group[data-group="Needs you"] {
+    color: var(--amber);
+}
+.nav-group[data-group="Numbers"] {
+    color: var(--violet-ink);
+}
+.nav-group[data-group="Money"] {
+    color: var(--teal);
+}
+.nav-group[data-group="People"] {
+    color: var(--green);
+}
+.nav-group[data-group="Running it"] {
+    color: var(--faint);
+}
+.frame.focus-overview .nav-group[data-group="Needs you"] {
+    background: var(--amber);
+}
+.frame.focus-overview .nav-group[data-group="Numbers"] {
+    background: var(--violet-ink);
+}
+.frame.focus-overview .nav-group[data-group="Money"] {
+    background: var(--teal);
+}
+.frame.focus-overview .nav-group[data-group="People"] {
+    background: var(--green);
+}
+.frame.focus-overview .nav-group[data-group="Running it"] {
+    background: var(--faint);
 }
 .nav button {
     display: flex;
@@ -333,6 +415,77 @@ textarea {
     .cards {
         grid-template-columns: 1fr;
     }
+}
+
+/* Focus Overview Needs you band (signature: cascade + amber/teal lamps). */
+.needs-band {
+    margin: 0 0 18px;
+    padding: 16px 18px;
+    border: 1px solid color-mix(in srgb, var(--amber) 35%, var(--line));
+    border-radius: var(--radius);
+    background: linear-gradient(135deg, color-mix(in srgb, var(--amber) 10%, transparent), transparent 55%), var(--panel);
+    box-shadow: var(--shadow);
+}
+.needs-head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 4px;
+}
+.needs-head h2 {
+    margin: 0;
+    font-size: 17px;
+    font-weight: 700;
+    letter-spacing: -0.015em;
+}
+.needs-empty {
+    margin: 8px 0 0;
+    color: var(--muted);
+    font-size: 14px;
+}
+.needs-list .needs-item {
+    animation: needs-cascade 90ms steps(2) both;
+    animation-delay: calc(var(--cascade, 0) * 45ms);
+}
+@keyframes needs-cascade {
+    from {
+        opacity: 0;
+        transform: translateY(-6px);
+    }
+    to {
+        opacity: 1;
+        transform: none;
+    }
+}
+@media (prefers-reduced-motion: reduce) {
+    .needs-list .needs-item {
+        animation: none;
+    }
+}
+.lamp {
+    width: 10px;
+    height: 10px;
+    margin-top: 7px;
+    flex: none;
+    border-radius: 50%;
+    box-shadow: 0 0 0 3px color-mix(in srgb, currentColor 22%, transparent);
+}
+.lamp.amber {
+    background: var(--amber);
+    color: var(--amber);
+}
+.lamp.red {
+    background: var(--red);
+    color: var(--red);
+}
+.lamp.violet {
+    background: var(--violet);
+    color: var(--violet);
+}
+.lamp.teal {
+    background: var(--teal);
+    color: var(--teal);
 }
 
 /* Content */

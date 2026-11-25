@@ -2,7 +2,7 @@
     The landing page's content (docs/decisions/website.md). devices/build-site.mjs puts it inside the shared page and
     fills in the markers: @features (site/features.mjs), @badges-soon (the store badges, kept out of the hero so the
     one button that works stands alone),
-    @download-hero, @latest-posts (the three newest posts), @cta and @feature-count.
+    @download-hero, @latest-posts (the three newest posts), and @cta.
     Screenshots are the app's own screens drawn with sample data (docs/decisions/screenshots.md), in public/img/.
 -->
 <section class="wrap hero">
@@ -10,13 +10,17 @@
         <p class="eyebrow">IPTV player for Android</p>
         <h1>Your playlist, <span class="grad">tuned in.</span></h1>
         <p class="lede">
-            Tuned is a fast, quiet player for the TV you already pay for. Add your Xtream Codes login, M3U link, MAC portal or a Plex,
-            Jellyfin or Emby server, and your channels, guide, films and shows are ready in seconds, on your phone, tablet and Android TV.
+            Tuned is a fast, quiet player for the playlist you already have — it doesn't sell channels. Add an Xtream Codes login, an M3U
+            link, a MAC portal, or a Plex, Jellyfin or Emby server, and your channels, guide, films and shows are ready in seconds on your
+            phone, tablet and Android TV.
         </p>
         <div class="actions">
             <!-- @download-hero -->
-            <a class="button big ghost" href="#features" data-cta="features-hero">See the features</a>
         </div>
+        <p class="hero-install muted">
+            Free APK · updates itself. On Android TV, install with the free Downloader app —
+            <a href="/blog/guides/android-tv/">every step</a>.
+        </p>
         <ul class="checks">
             <li>
                 <svg
@@ -81,20 +85,20 @@
 <section class="facts" aria-label="Tuned at a glance">
     <dl class="wrap">
         <div>
-            <dt>ways to add a playlist</dt>
-            <dd>5</dd>
-        </div>
-        <div>
-            <dt>features, and counting</dt>
-            <dd><!-- @feature-count --></dd>
-        </div>
-        <div>
             <dt>stream at a time, so your provider's limit is safe</dt>
             <dd>1</dd>
         </div>
         <div>
             <dt>ads, ever</dt>
             <dd>0</dd>
+        </div>
+        <div>
+            <dt>ways to add a playlist</dt>
+            <dd>5</dd>
+        </div>
+        <div>
+            <dt>profiles on one device</dt>
+            <dd>6</dd>
         </div>
     </dl>
 </section>
@@ -131,10 +135,10 @@
     </div>
 </section>
 
-<section class="section" aria-labelledby="tour">
+<section class="section" aria-labelledby="look">
     <div class="wrap">
         <p class="eyebrow">A closer look</p>
-        <h2 id="tour" class="section-title">Clean, quick, and out of your way</h2>
+        <h2 id="look" class="section-title">Clean, quick, and out of your way</h2>
         <p class="lede">Every screen is made to get you watching. No pop-ups, no clutter, and nothing waits on the network.</p>
 
         <article class="showcase">
@@ -198,9 +202,6 @@
                 </ul>
             </div>
             <div class="shots">
-                <div class="phone">
-                    <img src="/img/live-tv.webp" alt="Live TV with favourites and filters" width="600" height="1301" loading="lazy" />
-                </div>
                 <div class="phone">
                     <img src="/img/guide.webp" alt="A channel's guide with reminders" width="600" height="1301" loading="lazy" />
                 </div>
@@ -452,25 +453,13 @@
         <p class="eyebrow">Features</p>
         <h2 id="all-features" class="section-title">Everything in Tuned</h2>
         <p class="lede">
-            All
-            <!-- @feature-count -->
-            features, in one place. Tuned is customizable too: most of what it does has a setting, with the common choice already picked.
+            A short list in each group; open Show more for the rest. Tuned is customizable too: most of what it does has a setting, with the
+            common choice already picked.
         </p>
         <div class="feature-grid">
             <!-- @features -->
         </div>
         <p class="premium-note muted"><span class="pill">Premium</span> marks what Tuned Premium unlocks.</p>
-    </div>
-</section>
-
-<section class="section" id="download" aria-labelledby="soon">
-    <div class="wrap">
-        <p class="eyebrow">Coming soon</p>
-        <h2 id="soon" class="section-title">Tuned is coming to more screens</h2>
-        <p class="lede">Tuned is on Android phones, tablets and Android TV today. Google Play and a Samsung TV app are on the way.</p>
-        <div class="soon-card">
-            <!-- @badges-soon -->
-        </div>
     </div>
 </section>
 
@@ -487,6 +476,15 @@
                 </p>
             </details>
             <details>
+                <summary>How do I install it?</summary>
+                <p class="muted">
+                    On a phone or tablet, tap Download for Android, open the file, and allow installs from your browser when Android asks.
+                    On Android TV or Google TV, install the free Downloader app from the TV's app store, type tunedplayer.com/download into
+                    it, and allow it to install apps. The <a href="/blog/guides/android-tv/">Android TV guide</a> has every step. After that
+                    Tuned offers each new version itself.
+                </p>
+            </details>
+            <details>
                 <summary>Is it free?</summary>
                 <p class="muted">
                     Yes. Tuned is free, with no ads. Tuned Premium is an optional upgrade for the extras marked Premium in the list above.
@@ -497,15 +495,6 @@
                 <p class="muted">
                     Android phones and tablets on Android 8.0 or later, and Android TV and Google TV. Google Play and a Samsung TV app are
                     coming soon.
-                </p>
-            </details>
-            <details>
-                <summary>How do I install it?</summary>
-                <p class="muted">
-                    On a phone or tablet, tap Download for Android, open the file, and allow installs from your browser when Android asks.
-                    On Android TV or Google TV, install the free Downloader app from the TV's app store, type tunedplayer.com/download into
-                    it, and allow it to install apps. The <a href="/blog/guides/android-tv/">Android TV guide</a> has every step. After that
-                    Tuned offers each new version itself.
                 </p>
             </details>
             <details>
@@ -522,6 +511,20 @@
                     downloads wait while you watch.
                 </p>
             </details>
+        </div>
+    </div>
+</section>
+
+<section class="section" id="coming-soon" aria-labelledby="soon">
+    <div class="wrap">
+        <p class="eyebrow">Coming soon</p>
+        <h2 id="soon" class="section-title">Also on the way</h2>
+        <p class="lede">
+            Tuned is ready on Android phones, tablets and Android TV today. Google Play and a Samsung TV app will follow — until then,
+            download the APK above.
+        </p>
+        <div class="soon-card">
+            <!-- @badges-soon -->
         </div>
     </div>
 </section>

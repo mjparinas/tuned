@@ -1,0 +1,316 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-11-24T22:48:32Z",
+  "title": "Design System: Tuned",
+  "extensions": {
+    "colorMeta": {
+      "tuned-violet": {
+        "role": "primary",
+        "displayName": "Tuned Violet",
+        "canonical": "#6D4AFF",
+        "tonalRamp": ["#1A0A4D", "#2B10A0", "#3B1FB8", "#5A35F0", "#6D4AFF", "#9B84FF", "#C9BEFF", "#E6DEFF"]
+      },
+      "primary-light": {
+        "role": "primary",
+        "displayName": "Primary Light",
+        "canonical": "#5A35F0",
+        "tonalRamp": ["#1C0A66", "#2B10A0", "#4325D6", "#5A35F0", "#6D4AFF", "#9B84FF", "#C9BEFF", "#E6DEFF"]
+      },
+      "primary-dark": {
+        "role": "primary",
+        "displayName": "Primary Dark",
+        "canonical": "#C9BEFF",
+        "tonalRamp": ["#2B10A0", "#4325D6", "#5A35F0", "#6D4AFF", "#9B84FF", "#C9BEFF", "#E6DEFF", "#F5F2FF"]
+      },
+      "violet-deep": {
+        "role": "primary",
+        "displayName": "Violet Deep",
+        "canonical": "#3B1FB8",
+        "tonalRamp": ["#14083A", "#1C0A66", "#2B10A0", "#3B1FB8", "#5A35F0", "#6D4AFF", "#9B84FF", "#C9BEFF"]
+      },
+      "signal-teal": {
+        "role": "secondary",
+        "displayName": "Signal Teal",
+        "canonical": "#00C2A8",
+        "tonalRamp": ["#00201B", "#00382F", "#005045", "#006B5C", "#00C2A8", "#5FDCC3", "#9FF2DF", "#D6FFF5"]
+      },
+      "teal-light": {
+        "role": "secondary",
+        "displayName": "Teal Light",
+        "canonical": "#006B5C",
+        "tonalRamp": ["#00201B", "#00382F", "#005045", "#006B5C", "#00A08A", "#5FDCC3", "#9FF2DF", "#D6FFF5"]
+      },
+      "teal-dark": {
+        "role": "secondary",
+        "displayName": "Teal Dark",
+        "canonical": "#5FDCC3",
+        "tonalRamp": ["#00382F", "#005045", "#006B5C", "#00C2A8", "#5FDCC3", "#9FF2DF", "#C5FFF0", "#E8FFF9"]
+      },
+      "living-room-ink": {
+        "role": "neutral",
+        "displayName": "Living-Room Ink",
+        "canonical": "#121018",
+        "tonalRamp": ["#0B0A10", "#0C0B11", "#121018", "#1A1820", "#1E1C25", "#29262F", "#34313A", "#48454F"]
+      },
+      "splash-ink": {
+        "role": "neutral",
+        "displayName": "Splash Ink",
+        "canonical": "#1A1726",
+        "tonalRamp": ["#0B0A10", "#121018", "#1A1726", "#26213A", "#34313A", "#48454F", "#79757F", "#CAC4D0"]
+      },
+      "soft-lavender-paper": {
+        "role": "neutral",
+        "displayName": "Soft Lavender Paper",
+        "canonical": "#FCFAFF",
+        "tonalRamp": ["#E4E0EB", "#EAE6F1", "#F0ECF6", "#F6F2FC", "#FCFAFF", "#FFFFFF", "#FFFFFF", "#FFFFFF"]
+      },
+      "on-surface-light": {
+        "role": "neutral",
+        "displayName": "On Surface Light",
+        "canonical": "#1B1A21",
+        "tonalRamp": ["#0B0A10", "#1B1A21", "#48454F", "#79757F", "#938F99", "#CAC4D0", "#E6E1EA", "#FCFAFF"]
+      },
+      "on-surface-dark": {
+        "role": "neutral",
+        "displayName": "On Surface Dark",
+        "canonical": "#E6E1EA",
+        "tonalRamp": ["#1B1A21", "#48454F", "#79757F", "#938F99", "#CAC4D0", "#E6E1EA", "#F0ECF6", "#FCFAFF"]
+      },
+      "muted-light": {
+        "role": "neutral",
+        "displayName": "Muted Light",
+        "canonical": "#48454F",
+        "tonalRamp": ["#1B1A21", "#34313A", "#48454F", "#79757F", "#938F99", "#CAC4D0", "#E6E0F0", "#FCFAFF"]
+      },
+      "muted-dark": {
+        "role": "neutral",
+        "displayName": "Muted Dark",
+        "canonical": "#CAC4D0",
+        "tonalRamp": ["#48454F", "#79757F", "#938F99", "#CAC4D0", "#E6E0F0", "#E6E1EA", "#F0ECF6", "#FCFAFF"]
+      },
+      "surface-container-dark": {
+        "role": "neutral",
+        "displayName": "Surface Container Dark",
+        "canonical": "#1E1C25",
+        "tonalRamp": ["#0C0B11", "#121018", "#1A1820", "#1E1C25", "#29262F", "#34313A", "#48454F", "#79757F"]
+      },
+      "surface-container-high-dark": {
+        "role": "neutral",
+        "displayName": "Surface Container High Dark",
+        "canonical": "#29262F",
+        "tonalRamp": ["#121018", "#1A1820", "#1E1C25", "#29262F", "#34313A", "#48454F", "#79757F", "#938F99"]
+      },
+      "outline-light": {
+        "role": "neutral",
+        "displayName": "Outline Light",
+        "canonical": "#79757F",
+        "tonalRamp": ["#48454F", "#79757F", "#938F99", "#CAC4D0", "#E4E0EB", "#E6E0F0", "#F0ECF6", "#FCFAFF"]
+      },
+      "outline-dark": {
+        "role": "neutral",
+        "displayName": "Outline Dark",
+        "canonical": "#938F99",
+        "tonalRamp": ["#48454F", "#79757F", "#938F99", "#CAC4D0", "#E4E0EB", "#E6E1EA", "#F0ECF6", "#FCFAFF"]
+      },
+      "danger-light": {
+        "role": "error",
+        "displayName": "Danger Light",
+        "canonical": "#BA1A1A",
+        "tonalRamp": ["#410007", "#680011", "#92001C", "#BA1A1A", "#FFB3B1", "#FFDAD9", "#FFEDEA", "#FFF8F7"]
+      },
+      "danger-dark": {
+        "role": "error",
+        "displayName": "Danger Dark",
+        "canonical": "#FFB4AB",
+        "tonalRamp": ["#680011", "#92001C", "#BB1A2C", "#FFB4AB", "#FFDAD9", "#FFEDEA", "#FFF8F7", "#FFFFFF"]
+      },
+      "primary-soft-light": {
+        "role": "primary",
+        "displayName": "Primary Soft Light",
+        "canonical": "#E6DEFF",
+        "tonalRamp": ["#4325D6", "#5A35F0", "#6D4AFF", "#9B84FF", "#C9BEFF", "#E6DEFF", "#F5F2FF", "#FCFAFF"]
+      },
+      "primary-soft-dark": {
+        "role": "primary",
+        "displayName": "Primary Soft Dark",
+        "canonical": "#4325D6",
+        "tonalRamp": ["#1C0A66", "#2B10A0", "#3B1FB8", "#4325D6", "#5A35F0", "#6D4AFF", "#9B84FF", "#C9BEFF"]
+      }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display", "purpose": "Hero and large screen titles; Material display roles / web h1." },
+      "headline": { "displayName": "Headline", "purpose": "Page titles; bold, slightly tight tracking on web." },
+      "title": { "displayName": "Title", "purpose": "Section and card titles; SemiBold override on Material titleLarge/Medium." },
+      "body": { "displayName": "Body", "purpose": "Primary reading copy; 16px/1.5 on web." },
+      "label": { "displayName": "Label", "purpose": "Buttons, chips, field labels; SemiBold with slight letter-spacing." }
+    },
+    "shadows": [
+      {
+        "name": "web-card-light",
+        "value": "0 1px 2px rgba(27, 26, 33, 0.05), 0 6px 20px rgba(27, 26, 33, 0.05)",
+        "purpose": "Soft ambient lift under website cards in light mode."
+      },
+      {
+        "name": "web-card-dark",
+        "value": "0 8px 24px rgba(0, 0, 0, 0.25)",
+        "purpose": "Soft ambient lift under website cards in dark mode."
+      },
+      {
+        "name": "brand-icon",
+        "value": "0 4px 14px rgba(11, 10, 16, 0.35)",
+        "purpose": "Channel-stack mark on the website brand row."
+      }
+    ],
+    "motion": [
+      {
+        "name": "web-control",
+        "value": "filter 0.15s, background-color 0.15s",
+        "purpose": "Short state transitions on website buttons."
+      }
+    ],
+    "breakpoints": [
+      { "name": "web-comfortable", "value": "720px" },
+      { "name": "web-content-max", "value": "560px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Filled pill primary action; 48px min height.",
+      "html": "<button class=\"ds-btn-primary\">Continue</button>",
+      "css": ".ds-btn-primary { display: inline-flex; align-items: center; justify-content: center; min-height: 48px; padding: 10px 24px; font: 600 16px/1.5 Roboto, system-ui, sans-serif; letter-spacing: 0.01em; border-radius: 999px; border: 1px solid #5A35F0; background: #5A35F0; color: #FFFFFF; cursor: pointer; transition: filter 0.15s, background-color 0.15s; } .ds-btn-primary:hover { filter: brightness(1.08); } .ds-btn-primary:focus-visible { outline: 3px solid #5A35F0; outline-offset: 2px; }"
+    },
+    {
+      "name": "Quiet Button",
+      "kind": "button",
+      "refersTo": "button-quiet",
+      "description": "Transparent pill secondary action.",
+      "html": "<button class=\"ds-btn-quiet\">Not now</button>",
+      "css": ".ds-btn-quiet { display: inline-flex; align-items: center; justify-content: center; min-height: 48px; padding: 10px 24px; font: 600 16px/1.5 Roboto, system-ui, sans-serif; border-radius: 999px; border: 1px solid #E4E0EB; background: transparent; color: #5A35F0; cursor: pointer; transition: background-color 0.15s; } .ds-btn-quiet:hover { background: #F0ECF6; } .ds-btn-quiet:focus-visible { outline: 3px solid #5A35F0; outline-offset: 2px; }"
+    },
+    {
+      "name": "Card",
+      "kind": "card",
+      "refersTo": "card",
+      "description": "Calm 20px rounded container with soft ambient shadow.",
+      "html": "<div class=\"ds-card\"><h2 class=\"ds-card-title\">Your devices</h2><p class=\"ds-card-body\">Manage seats and backups from your Tuned account.</p></div>",
+      "css": ".ds-card { background: #FFFFFF; border: 1px solid #E4E0EB; border-radius: 20px; padding: 20px; box-shadow: 0 1px 2px rgba(27,26,33,0.05), 0 6px 20px rgba(27,26,33,0.05); color: #1B1A21; font: 400 16px/1.5 Roboto, system-ui, sans-serif; } .ds-card-title { margin: 0 0 6px; font-size: 1.125rem; font-weight: 600; } .ds-card-body { margin: 0; color: #48454F; }"
+    },
+    {
+      "name": "Text Field",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "14px rounded field with 3:1 edge against the card.",
+      "html": "<label class=\"ds-label\">Server URL<input class=\"ds-input\" type=\"text\" placeholder=\"https://\" /></label>",
+      "css": ".ds-label { display: block; font: 600 0.9rem/1.4 Roboto, system-ui, sans-serif; color: #1B1A21; } .ds-input { display: block; width: 100%; margin-top: 6px; min-height: 52px; padding: 12px 16px; font: 400 16px/1.5 Roboto, system-ui, sans-serif; color: #1B1A21; background: #F0ECF6; border: 1px solid #79757F; border-radius: 14px; } .ds-input:focus { outline: none; border-color: #5A35F0; background: #FFFFFF; } .ds-input:focus-visible { outline: 3px solid #5A35F0; outline-offset: 2px; }"
+    },
+    {
+      "name": "Brand Nav",
+      "kind": "nav",
+      "refersTo": null,
+      "description": "Channel stack + Tuned name; website brand row.",
+      "html": "<a class=\"ds-brand\" href=\"#\"><span class=\"ds-brand-mark\" aria-hidden=\"true\"><span></span><span></span><span></span></span>Tuned</a>",
+      "css": ".ds-brand { display: inline-flex; align-items: center; gap: 12px; color: #1B1A21; text-decoration: none; font: 700 1.25rem/1 Roboto, system-ui, sans-serif; letter-spacing: -0.01em; } .ds-brand:focus-visible { outline: 3px solid #5A35F0; outline-offset: 2px; border-radius: 8px; } .ds-brand-mark { position: relative; width: 40px; height: 40px; border-radius: 11px; background: linear-gradient(160deg, #26213A, #0B0A10); box-shadow: 0 4px 14px rgba(11,10,16,0.35); } .ds-brand-mark span { position: absolute; width: 14px; height: 14px; border-radius: 4px; } .ds-brand-mark span:nth-child(1) { left: 8px; top: 14px; background: #6D4AFF; transform: rotate(-18deg); } .ds-brand-mark span:nth-child(2) { left: 13px; top: 13px; background: #00C2A8; transform: rotate(-6deg); } .ds-brand-mark span:nth-child(3) { left: 18px; top: 12px; background: #FFFFFF; }"
+    },
+    {
+      "name": "Filter Chip",
+      "kind": "chip",
+      "refersTo": null,
+      "description": "Pill chip for browse filters; selected uses primary soft.",
+      "html": "<div class=\"ds-chips\"><button class=\"ds-chip ds-chip-selected\" type=\"button\">Live TV</button><button class=\"ds-chip\" type=\"button\">Movies</button></div>",
+      "css": ".ds-chips { display: flex; gap: 8px; } .ds-chip { min-height: 40px; padding: 8px 16px; border-radius: 999px; border: 1px solid #CAC4D0; background: #F0ECF6; color: #1B1A21; font: 600 0.9rem/1 Roboto, system-ui, sans-serif; cursor: pointer; } .ds-chip-selected { background: #E6DEFF; color: #1C0A66; border-color: transparent; } .ds-chip:focus-visible { outline: 3px solid #5A35F0; outline-offset: 2px; }"
+    },
+    {
+      "name": "Dialog Card",
+      "kind": "custom",
+      "refersTo": "dialog",
+      "description": "Centred dialog surface; never full-bleed.",
+      "html": "<div class=\"ds-dialog\" role=\"dialog\" aria-labelledby=\"ds-dialog-title\"><h2 id=\"ds-dialog-title\">Sign out?</h2><p>This clears the playlist login on this device.</p><div class=\"ds-dialog-actions\"><button class=\"ds-btn-quiet\" type=\"button\">Cancel</button><button class=\"ds-btn-primary\" type=\"button\">Sign out</button></div></div>",
+      "css": ".ds-dialog { max-width: 560px; margin: 24px; padding: 24px; border-radius: 28px; background: #FFFFFF; color: #1B1A21; font: 400 16px/1.5 Roboto, system-ui, sans-serif; box-shadow: 0 8px 24px rgba(0,0,0,0.18); } .ds-dialog h2 { margin: 0 0 8px; font-size: 1.25rem; font-weight: 600; } .ds-dialog p { margin: 0 0 20px; color: #48454F; } .ds-dialog-actions { display: flex; justify-content: flex-end; gap: 8px; } .ds-btn-primary { display: inline-flex; align-items: center; justify-content: center; min-height: 48px; padding: 10px 24px; font: 600 16px/1.5 Roboto, system-ui, sans-serif; border-radius: 999px; border: 1px solid #5A35F0; background: #5A35F0; color: #FFF; } .ds-btn-quiet { display: inline-flex; align-items: center; justify-content: center; min-height: 48px; padding: 10px 24px; font: 600 16px/1.5 Roboto, system-ui, sans-serif; border-radius: 999px; border: 1px solid #E4E0EB; background: transparent; color: #5A35F0; }"
+    },
+    {
+      "name": "Focus Ring",
+      "kind": "custom",
+      "refersTo": "focus-ring",
+      "description": "3px accent outline for TV/remote and keyboard focus.",
+      "html": "<button class=\"ds-focus-demo\" type=\"button\">Focused row</button>",
+      "css": ".ds-focus-demo { display: block; width: 100%; text-align: left; min-height: 56px; padding: 12px 16px; border-radius: 20px; border: 1px solid #E4E0EB; background: #FFFFFF; color: #1B1A21; font: 600 16px/1.4 Roboto, system-ui, sans-serif; } .ds-focus-demo:focus-visible { outline: 3px solid #5A35F0; outline-offset: 2px; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Living-Room Remote",
+    "overview": "Tuned is designed for someone on the couch with a D-pad (and often a phone nearby): browse channels and titles quickly, start watching, and forget the chrome. The interface is quiet and fast — cache-first, video-first — and dark-room confident when the lights are down. Accent colour is sparing; the picture and the programme are the heroes.\n\nThe system is Material 3 throughout the Android app, with Tuned’s violet/teal brand expressed through colour roles, soft rounded shapes, and pill buttons. The companion website mirrors that same language (`devices/public/site.css`) so account and marketing surfaces feel like the app, not a separate product. Soft lavender paper in light mode and living-room ink in dark mode keep surfaces calm; a soft violet glow at the top of web pages is atmosphere, not decoration for its own sake.\n\nVisual anti-references (confirmed): no loud IPTV clutter; no second video inset or multi-view chrome; no full-bleed / edge-to-edge pop-ups.",
+    "keyCharacteristics": [
+      "Living-room remote first (TV D-pad), phone as peer",
+      "Quiet, fast, get-out-of-the-way",
+      "Dark-room confident; accent used sparingly",
+      "Pill-confident buttons; card-calm containers",
+      "Material 3 structure; brand in colour, shape, and focus"
+    ],
+    "rules": [
+      {
+        "name": "The Sparing Accent Rule",
+        "body": "Primary violet/teal marks focus, primary actions, and brand moments — never wallpaper a whole browse screen in brand colour. Video and posters own the pixels.",
+        "section": "colors"
+      },
+      {
+        "name": "The Contrast-Everywhere Rule",
+        "body": "Accent and status colours must stay ≥4.5:1 on every surface/card in light, dark, and pure black (ThemeContrastTest). A new accent that fails does not ship.",
+        "section": "colors"
+      },
+      {
+        "name": "The System Face Rule",
+        "body": "Do not introduce a display webfont or custom typeface for product UI. Brand lives in colour and the channel-stack mark, not in a novelty font.",
+        "section": "typography"
+      },
+      {
+        "name": "The Grow-With-Settings Rule",
+        "body": "Type is in sp / relative sizes so system font scale works; text containers use minimum heights, never fixed heights that clip large text.",
+        "section": "typography"
+      },
+      {
+        "name": "The Overscan Rule",
+        "body": "On TV, interactive content stays inside TvSafeArea; only intentional backdrops bleed.",
+        "section": "layout"
+      },
+      {
+        "name": "The Centred Dialog Rule",
+        "body": "Pop-ups never stretch edge-to-edge; they sit centred with edge margin.",
+        "section": "layout"
+      },
+      {
+        "name": "The Flat-App Rule",
+        "body": "Do not invent Compose drop shadows for ordinary lists and settings; use surface containers.",
+        "section": "elevation"
+      },
+      {
+        "name": "The Glow-Is-Atmosphere Rule",
+        "body": "The violet page glow is background mood only — never a substitute for hierarchy or focus.",
+        "section": "elevation"
+      },
+      {
+        "name": "The Pill Button Rule",
+        "body": "Primary and quiet buttons are fully round; do not square them off for “dashboard” fashion.",
+        "section": "shapes"
+      }
+    ],
+    "dos": [
+      "Do keep the UI quiet so browsing and watching feel effortless — chrome yields to video and posters.",
+      "Do use Material 3 roles and TunedShapes; express brand through violet/teal, the channel-stack mark, and focus rings.",
+      "Do keep dialogs centred with ≥24 dp edge margin and ≤560 dp (≤720 dp only for TV code dialogs).",
+      "Do honour TV overscan margins and bleed backdrops intentionally.",
+      "Do meet contrast in every theme/accent; give colour-only state a text/semantics twin.",
+      "Do match website surfaces to the app via site.css tokens (except admin, which keeps its own look)."
+    ],
+    "donts": [
+      "Don't build loud IPTV clutter (neon overload, dense ornamental chrome, competing status jewellery).",
+      "Don't add a second video inset, multi-view, or live preview chrome — one stream only.",
+      "Don't ship full-bleed / edge-to-edge pop-ups for ordinary dialogs.",
+      "Don't replace Roboto with a novelty display face or load third-party webfonts on the product site.",
+      "Don't put player tools behind a three-dot menu — top-row buttons only.",
+      "Don't invent Compose drop shadows where tonal surfaces already carry depth."
+    ]
+  }
+}

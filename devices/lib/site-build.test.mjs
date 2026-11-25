@@ -161,8 +161,16 @@ test("the landing page's hero has the one download button and no Coming soon bad
     const html = await readFile(new URL("../public/index.html", import.meta.url), "utf8");
     const hero = html.slice(html.indexOf('class="wrap hero"'), html.indexOf('class="facts"'));
     assert.ok(hero.includes('data-cta="apk-hero"'));
+    assert.equal((hero.match(/class="button/g) || []).length, 1, "hero has only the download button");
+    assert.ok(!hero.includes("features-hero"), "no secondary features CTA in the hero");
+    assert.ok(hero.includes("hero-install"), "sideload trust sits beside the download");
     assert.ok(!hero.includes("store-badge"), "no store badges in the hero");
     assert.equal(html.split('class="badges"').length - 1, 1, "the store badges appear once, in Coming soon");
+    assert.ok(html.includes('id="coming-soon"'), "Coming soon is not #download");
+    assert.ok(!html.includes('id="download"'), "no dead #download section");
+    assert.ok(!html.includes("See every feature"), "closing CTA is download-only");
+    assert.ok(html.includes("feature-more"), "feature groups progressive-disclose after a short list");
+    assert.ok(html.includes("nav-menu"), "narrow nav keeps Features, Blog and Account in a Menu");
 });
 
 test("From the blog shows the chosen posts, then the newest that aren't release notes", async () => {

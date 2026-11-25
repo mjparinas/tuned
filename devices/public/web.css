@@ -110,27 +110,80 @@ body.web {
     color: var(--text);
     background: var(--card-2);
 }
+/* Narrow phones: a Menu disclosure keeps Features, Blog and Account reachable (never display:none). */
+.nav-menu {
+    display: none;
+    position: relative;
+    margin-left: auto;
+}
+.nav-menu > summary {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    padding: 0 12px;
+    border-radius: 999px;
+    color: var(--muted);
+    font-weight: 600;
+    cursor: pointer;
+    list-style: none;
+}
+.nav-menu > summary::-webkit-details-marker {
+    display: none;
+}
+.nav-menu > summary:hover,
+.nav-menu[open] > summary {
+    color: var(--text);
+    background: var(--card-2);
+}
+.nav-menu-panel {
+    position: absolute;
+    right: 0;
+    top: calc(100% + 8px);
+    z-index: 6;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 180px;
+    padding: 8px;
+    border-radius: 16px;
+    border: 1px solid var(--line);
+    background: var(--card);
+    box-shadow: var(--shadow);
+}
+.nav-menu-panel a {
+    display: flex;
+    align-items: center;
+    min-height: 44px;
+    padding: 0 14px;
+    border-radius: 12px;
+    color: var(--text);
+    font-weight: 600;
+    text-decoration: none;
+}
+.nav-menu-panel a:hover {
+    background: var(--card-2);
+}
 @media (max-width: 560px) {
     .nav {
         gap: 8px;
     }
-    .nav .links a:nth-child(3) {
+    .nav .links {
         display: none;
+    }
+    .nav-menu {
+        display: block;
     }
 }
 @media (max-width: 400px) {
-    .nav .links a:first-child {
-        display: none;
-    }
-    .nav .links a {
-        padding: 0 8px;
-    }
     /* With a wider fallback font (no Roboto on the device) the header was 4 px too wide at 320 px (WCAG 1.4.10). */
     .nav {
         gap: 4px;
     }
     .nav .button.small {
         padding: 6px 14px;
+    }
+    .nav-menu > summary {
+        padding: 0 8px;
     }
 }
 .button.small {
@@ -206,6 +259,20 @@ body.web {
 .hero .actions {
     margin-top: 28px;
     gap: 12px;
+}
+.hero-install {
+    margin: 14px 0 0;
+    max-width: 36rem;
+    font-size: 0.95rem;
+    line-height: 1.45;
+}
+.hero-install a {
+    color: var(--primary);
+    font-weight: 600;
+    text-decoration: none;
+}
+.hero-install a:hover {
+    text-decoration: underline;
 }
 .checks {
     display: flex;
@@ -492,8 +559,33 @@ body.web {
     gap: 12px;
 }
 .feature-group li {
+    display: flex;
+    gap: 10px;
     font-size: 0.95rem;
     line-height: 1.45;
+}
+.feature-more {
+    margin-top: 12px;
+}
+.feature-more > summary {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    padding: 0 4px;
+    color: var(--primary);
+    font-weight: 700;
+    font-size: 0.95rem;
+    cursor: pointer;
+    list-style: none;
+}
+.feature-more > summary::-webkit-details-marker {
+    display: none;
+}
+.feature-more > summary:hover {
+    text-decoration: underline;
+}
+.feature-more ul {
+    margin-top: 12px;
 }
 .tick {
     flex: none;
@@ -580,18 +672,15 @@ body.web {
     text-transform: uppercase;
 }
 
-/* Coming soon */
+/* Coming soon — quiet card after the install path, not a second download theatre */
 .soon-card {
     display: grid;
     gap: 24px;
-    margin-top: 32px;
-    padding: 28px;
-    border-radius: 24px;
-    border: 1px solid transparent;
-    background:
-        linear-gradient(var(--card), var(--card)) padding-box,
-        linear-gradient(135deg, #8466ff, #5ff5da) border-box;
-    box-shadow: var(--shadow);
+    margin-top: 28px;
+    padding: 20px 22px;
+    border-radius: 18px;
+    border: 1px solid var(--line);
+    background: var(--card);
 }
 
 /* FAQ */
