@@ -145,16 +145,8 @@ export function longDate(iso) {
     return `${MONTHS[m - 1]} ${d}, ${y}`;
 }
 
-/** What each kind of post is called in the blog's sections, in the order they appear. */
+/** What each kind of post is called in the blog's sections, in the order they appear on the help-desk index. */
 export const KINDS = [
-    {
-        kind: "release",
-        title: "What's new",
-        blurb: "What changed in each release of Tuned, and when.",
-        pageTitle: "What's new in Tuned: release notes",
-        description:
-            "Every release of Tuned, the IPTV player for Android phones, tablets and Android TV: what's new, what's faster and what was fixed, with dates.",
-    },
     {
         kind: "guide",
         title: "Guides",
@@ -162,6 +154,14 @@ export const KINDS = [
         pageTitle: "IPTV player guides for Tuned: Xtream Codes, M3U, EPG and more",
         description:
             "Step-by-step guides for Tuned: add an Xtream Codes, M3U or MAC portal playlist, set up the TV guide (EPG), fix buffering, and set up Android TV.",
+    },
+    {
+        kind: "release",
+        title: "What's new",
+        blurb: "What changed in each release of Tuned, and when.",
+        pageTitle: "What's new in Tuned: release notes",
+        description:
+            "Every release of Tuned, the IPTV player for Android phones, tablets and Android TV: what's new, what's faster and what was fixed, with dates.",
     },
     {
         kind: "compare",
@@ -173,14 +173,76 @@ export const KINDS = [
     },
     {
         kind: "roundup",
-        title: "Roundups",
-        blurb: "Lists of apps and devices worth knowing.",
-        pageTitle: "IPTV player roundups: the best apps for Android TV",
+        title: "Best picks",
+        blurb: "The best IPTV players and alternatives, compared.",
+        pageTitle: "Best IPTV player picks for Android TV",
         description:
-            "Roundups of the best IPTV players for Android TV and the best TiviMate alternatives, each compared feature by feature.",
+            "The best IPTV players for Android TV and the best TiviMate alternatives, each compared feature by feature.",
     },
 ];
 const kindTitle = (kind) => KINDS.find((k) => k.kind === kind)?.title ?? kind.charAt(0).toUpperCase() + kind.slice(1);
+
+/**
+ * How many posts the blog index shows per kind, and which paths to prefer (popular / start-here) before date order.
+ * Folder pages still list every post.
+ */
+export const INDEX_PREVIEW = {
+    guide: {
+        limit: 3,
+        prefer: [
+            "guides/add-xtream-codes-playlist.md",
+            "guides/add-m3u-playlist.md",
+            "guides/add-mac-portal.md",
+            "guides/buffering.md",
+            "guides/sign-in-on-tv-with-phone.md",
+        ],
+    },
+    release: { limit: 3, prefer: [] },
+    compare: {
+        limit: 3,
+        prefer: [
+            "vs/tivimate.md",
+            "vs/iptv-smarters-pro.md",
+            "vs/ott-navigator.md",
+            "vs/kodi.md",
+            "vs/iptv-pro.md",
+            "vs/uhf.md",
+        ],
+    },
+    roundup: { limit: 2, prefer: [] },
+};
+
+/** Posts for one kind on the blog index: preferred paths first, then by date, capped. */
+export function indexPreview(list, kind) {
+    const conf = INDEX_PREVIEW[kind] ?? { limit: 3, prefer: [] };
+    const prefer = conf.prefer ?? [];
+    const rank = (p) => {
+        const i = prefer.indexOf(p.path);
+        return i === -1 ? prefer.length : i;
+    };
+    const sorted = [...list].sort((a, b) => rank(a) - rank(b) || byDate(a, b));
+    // Empty release blurbs stay off the front page when something with a real change exists.
+    if (kind === "release") {
+        const withChange = sorted.filter((p) => cardBlurb(p));
+        const pool = withChange.length ? withChange : sorted;
+        return pool.slice(0, conf.limit);
+    }
+    return sorted.slice(0, conf.limit);
+}
+
+const HOLLOW_RELEASE = /^Tuned [\d.]+, the IPTV player for Android and Android TV, is out\.?\s*$/i;
+const RELEASE_OPENER = /^Tuned [\d.]+, the IPTV player for Android and Android TV, is out\.\s*/i;
+const MAINTENANCE_RELEASE = /^A small release with no changes that affect watching\.?$/i;
+
+/** Card copy: strip the release SEO opener; empty when a release has nothing useful to say. */
+export function cardBlurb(p) {
+    if (p.kind !== "release") return p.description;
+    const stripped = String(p.description ?? "")
+        .replace(RELEASE_OPENER, "")
+        .trim();
+    if (!stripped || HOLLOW_RELEASE.test(p.description) || MAINTENANCE_RELEASE.test(stripped)) return "";
+    return stripped;
+}
 
 /** A post from its source path (relative to site/posts, like "whats-new/tuned-1-13.md") and text. */
 export function readPost(path, text) {
@@ -255,6 +317,10 @@ export function releaseDescription(version, lead, lines) {
         if (next.length > 158) break;
         d = next;
     }
+    // A release with no user-facing lines must still say so, never a hollow "is out." alone.
+    if (!lines.length && /is out\.$/.test(d)) {
+        d = `Tuned ${version}, the IPTV player for Android and Android TV, is out. A small release with no changes that affect watching.`;
+    }
     return d;
 }
 const firstSentence = (lead) => lead.split(/(?<=\.)\s/)[0];
@@ -312,18 +378,30 @@ export function ctaCard(site, place, version) {
 </section>`;
 }
 
+/** Whether a main-nav href is the page the person is on. */
+export const navIsCurrent = (href, path = "") => {
+    if (!path) return false;
+    if (href === "/blog/" || href === "/blog") return path === "/blog/" || path.startsWith("/blog/");
+    if (href === "/account") return path === "/account" || path.startsWith("/account/");
+    return false;
+};
+
 /** The header every page of the website shares: the landing page, the blog, and the account and sign-in pages. */
-export const siteHeader = (site) => `<header class="top">
+export const siteHeader = (site, path = "") => {
+    const link = (href, label) =>
+        `<a href="${href}"${navIsCurrent(href, path) ? ' aria-current="page"' : ""}>${label}</a>`;
+    return `<header class="top">
 <nav class="wrap nav" aria-label="Main">
 <a class="logo" href="/"><img src="/icon.svg" alt="" width="36" height="36" /><span>${site.name}</span></a>
 <div class="links">
-<a href="/#features">Features</a>
-<a href="/blog/">Blog</a>
-<a href="/account">Account</a>
+${link("/#features", "Features")}
+${link("/blog/", "Blog")}
+${link("/account", "Account")}
 </div>
 <a class="button small" href="${site.apk}" data-cta="apk-header">Download</a>
 </nav>
 </header>`;
+};
 
 /** The footer every page shares. */
 export const siteFooter = (site) => `<footer class="foot">
@@ -350,7 +428,21 @@ export function chromeScript(site) {
     const parts = ${JSON.stringify(parts)};
     const me = document.currentScript;
     const html = me && parts[me.dataset.part];
-    if (html) me.insertAdjacentHTML("afterend", html);
+    if (!html) return;
+    me.insertAdjacentHTML("afterend", html);
+    if (me.dataset.part !== "header") return;
+    const root = me.nextElementSibling;
+    if (!root) return;
+    const path = location.pathname;
+    for (const a of root.querySelectorAll(".links a[href]")) {
+        const href = a.getAttribute("href");
+        if ((href === "/blog/" || href === "/blog") && (path === "/blog/" || path.startsWith("/blog/"))) {
+            a.setAttribute("aria-current", "page");
+        }
+        if (href === "/account" && (path === "/account" || path.startsWith("/account/"))) {
+            a.setAttribute("aria-current", "page");
+        }
+    }
 })();
 `;
 }
@@ -437,7 +529,7 @@ ${ld}
 </head>
 <body class="web">
 <a class="skip" href="#main">Skip to the content</a>
-${siteHeader(site)}
+${siteHeader(site, path)}
 <main id="main">
 ${body}
 </main>
@@ -450,9 +542,13 @@ ${siteFooter(site)}
 
 /** A card linking to a post. */
 // `level` is the card's heading level: 3 under a section's h2, 2 straight under a folder page's h1, so headings never
-// skip a level (WCAG 1.3.1, 2026-11-20 audit).
-export const postCard = (p, level = 3) =>
-    `<li class="post-card"><a href="${p.url}"><span class="kind">${esc(kindTitle(p.kind))}</span><h${level}>${esc(p.title)}</h${level}><p>${esc(p.description)}</p><time datetime="${p.date}">${longDate(p.date)}</time></a></li>`;
+// skip a level (WCAG 1.3.1, 2026-11-20 audit). `showKind` is off inside a kind section (the h2 already names it).
+export const postCard = (p, level = 3, { showKind = true } = {}) => {
+    const blurb = cardBlurb(p);
+    const kind = showKind ? `<span class="kind">${esc(kindTitle(p.kind))}</span>` : "";
+    const body = blurb ? `<p>${esc(blurb)}</p>` : p.kind === "release" ? "" : `<p>${esc(p.description)}</p>`;
+    return `<li class="post-card"><a href="${p.url}">${kind}<h${level}>${esc(p.title)}</h${level}>${body}<time datetime="${p.date}">${longDate(p.date)}</time></a></li>`;
+};
 
 /** A post's own page. */
 export function postPage(site, post, { latestVersion, related = [] }) {
@@ -509,10 +605,18 @@ ${related.length ? `<section aria-labelledby="more"><h2 id="more" class="section
     });
 }
 
-/** The blog's front page (every post, by section) or one folder's page. */
+/** Jump links under the blog index lede: set up, changelog, compare, and the feed. */
+const blogIntents = () => `<nav class="blog-intents" aria-label="Browse the blog">
+<a href="#k-guide">Set up</a>
+<a href="#k-release">What's new</a>
+<a href="#k-compare">Compare</a>
+<a href="/blog/feed.xml">RSS</a>
+</nav>`;
+
+/** The blog's front page (help desk: guides first, curated previews) or one folder's page. */
 export function indexPage(site, { posts, folder, latestVersion }) {
     const sorted = [...posts].sort(byDate);
-    let title, description, pageTitle, metaDescription, sections;
+    let title, description, pageTitle, metaDescription, sections, intents = "";
     if (folder) {
         const kind = sorted[0]?.kind;
         const meta = KINDS.find((k) => k.kind === kind);
@@ -520,12 +624,13 @@ export function indexPage(site, { posts, folder, latestVersion }) {
         description = meta?.blurb ?? `${title} from the ${site.name} blog.`;
         pageTitle = meta?.pageTitle ?? `${title} · Blog`;
         metaDescription = meta?.description ?? description;
-        sections = `<ul class="post-grid">${sorted.map((p) => postCard(p, 2)).join("\n")}</ul>`;
+        sections = `<ul class="post-grid">${sorted.map((p) => postCard(p, 2, { showKind: false })).join("\n")}</ul>`;
     } else {
         title = "Blog";
-        description = `News, guides and what's new in each release of ${site.name}, the IPTV player for Android.`;
+        description = `Set up ${site.name}, compare IPTV players, and see what changed in each release.`;
         pageTitle = `${site.name} blog: IPTV player guides, comparisons and release notes`;
         metaDescription = `Guides to setting up IPTV on Android and Android TV, honest comparisons with 20 other IPTV players, and what's new in each release of ${site.name}.`;
+        intents = blogIntents();
         const kinds = [...KINDS.map((k) => k.kind), ...new Set(sorted.map((p) => p.kind))].filter((k, i, a) => a.indexOf(k) === i);
         sections = kinds
             .map((kind) => {
@@ -533,13 +638,13 @@ export function indexPage(site, { posts, folder, latestVersion }) {
                 if (!list.length) return "";
                 const meta = KINDS.find((k) => k.kind === kind);
                 const folderOf = list[0].folder;
+                const preview = indexPreview(list, kind);
                 const all =
                     folderOf && list.every((p) => p.folder === folderOf)
                         ? `<a class="more" href="/blog/${folderOf}/">All ${esc(kindTitle(kind).toLowerCase())} ›</a>`
                         : "";
-                return `<section aria-labelledby="k-${kind}"><div class="section-head"><h2 id="k-${kind}" class="section-title">${esc(kindTitle(kind))}</h2>${all}</div>${meta ? `<p class="lede">${esc(meta.blurb)}</p>` : ""}<ul class="post-grid">${list
-                    .slice(0, 6)
-                    .map((p) => postCard(p))
+                return `<section aria-labelledby="k-${kind}"><div class="section-head"><h2 id="k-${kind}" class="section-title">${esc(kindTitle(kind))}</h2>${all}</div>${meta ? `<p class="lede">${esc(meta.blurb)}</p>` : ""}<ul class="post-grid">${preview
+                    .map((p) => postCard(p, 3, { showKind: false }))
                     .join("\n")}</ul></section>`;
             })
             .join("\n");
@@ -550,6 +655,7 @@ export function indexPage(site, { posts, folder, latestVersion }) {
 ${crumbs}
 <h1>${esc(title)}</h1>
 <p class="lede">${esc(description)}</p>
+${intents}
 ${sections}
 ${ctaCard(site, "blog", latestVersion)}
 </div>`;
