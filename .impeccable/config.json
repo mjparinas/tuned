@@ -1,4 +1,5 @@
 {
+  "buildPath": "code",
   "detector": {
     "ignoreRules": [],
     "ignoreFiles": [],
@@ -6,9 +7,7 @@
       {
         "rule": "gradient-text",
         "value": "*",
-        "files": [
-          "devices/public/web.css"
-        ],
+        "files": ["devices/public/web.css"],
         "createdAt": "2026-11-25T01:07:15.090Z",
         "reason": "Tuned brand: .grad on landing hero 'tuned in.' is the committed site accent (branding/website decisions), not decorative AI gradient text"
       }

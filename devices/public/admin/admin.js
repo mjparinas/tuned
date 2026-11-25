@@ -376,28 +376,50 @@ const SECTIONS = {
         state.counts["To do"] = d.todoCount;
         state.counts.Reports = d.openReports;
         drawCounts();
-        const needs = d.needsYou?.length
-            ? card(
-                  "Needs you",
-                  h(
+        // Focus Overview: Needs you owns the first viewport; KPIs and charts wait below.
+        const needsRows = d.needsYou ?? [];
+        const needs = h(
+            "section",
+            {
+                class: "needs-band",
+                "aria-label": "Needs you",
+                "data-needs": String(needsRows.length),
+            },
+            h(
+                "header",
+                { class: "needs-head" },
+                h("h2", {}, "Needs you"),
+                needsRows.length
+                    ? h("span", { class: "pill amber", "aria-live": "polite" }, plural(needsRows.length, "item", "items"))
+                    : h("span", { class: "pill teal" }, "Clear"),
+                d.todoCount > 5 ? h("span", { class: "faint" }, `${d.todoCount} to-dos in all`) : null,
+            ),
+            needsRows.length
+                ? h(
                       "div",
-                      { class: "list" },
-                      d.needsYou.map((i) =>
+                      { class: "list needs-list" },
+                      needsRows.map((i, index) =>
                           h(
                               "div",
-                              { class: "item" },
-                              h("span", { class: `dot ${i.kind === "urgent" ? "red" : i.kind === "setup" ? "amber" : "violet"}` }),
+                              {
+                                  class: `item needs-item lamp-${i.kind === "urgent" ? "red" : i.kind === "setup" ? "amber" : "violet"}`,
+                                  style: `--cascade: ${index}`,
+                              },
+                              h("span", {
+                                  class: `lamp ${i.kind === "urgent" ? "red" : i.kind === "setup" ? "amber" : "violet"}`,
+                                  "aria-hidden": "true",
+                              }),
                               h("div", { class: "body" }, h("div", { class: "title" }, i.title), h("div", { class: "faint" }, i.detail)),
                               h("button", { class: "btn small", onclick: () => go(i.tab) }, "Open"),
                           ),
                       ),
-                  ),
-                  { wide: true, note: d.todoCount > 5 ? `${d.todoCount} in all` : null },
-              )
-            : null;
+                  )
+                : h("p", { class: "needs-empty" }, "Nothing needs you right now. New reports and to-dos will land here first."),
+        );
         return h(
             "div",
-            {},
+            { class: "overview-focus" },
+            needs,
             h(
                 "div",
                 { class: "tiles" },
@@ -411,7 +433,6 @@ const SECTIONS = {
             h(
                 "div",
                 { class: "cards" },
-                needs,
                 card("Installs a day", columns(d.installsByDay), { wide: true, iconName: "installs" }),
                 card("By build", bars(d.builds, { label: (r) => SOURCES[r.label] ?? r.label })),
             ),
@@ -1763,12 +1784,19 @@ function drawCounts() {
 }
 
 function navButton(t) {
+    // Name comes from .nav-label (kept for AT when the icon rail clips it). Counts are visual-only so they
+    // don't break label-content-name-mismatch when a badge shows (axe /admin check in Formatting).
     return h(
         "button",
-        { "aria-current": state.tab === t.name ? "page" : null, onclick: () => go(t.name) },
+        {
+            "data-tab": t.name,
+            title: t.name,
+            "aria-current": state.tab === t.name ? "page" : null,
+            onclick: () => go(t.name),
+        },
         icon(t.icon),
-        t.name,
-        h("span", { class: "count", "data-count": t.name, hidden: true }),
+        h("span", { class: "nav-label" }, t.name),
+        h("span", { class: "count", "data-count": t.name, hidden: true, "aria-hidden": "true" }),
     );
 }
 
@@ -1797,7 +1825,13 @@ function search() {
 function buildFrame() {
     const groups = [...new Set(TABS.map((t) => t.group))];
     const brand = () =>
-        h("div", { class: "brand" }, h("img", { src: "/admin/icon.svg", alt: "" }), "Tuned", h("span", { class: "pill" }, "Admin"));
+        h(
+            "div",
+            { class: "brand" },
+            h("img", { src: "/admin/icon.svg", alt: "" }),
+            h("span", { class: "brand-text" }, "Tuned"),
+            h("span", { class: "pill" }, "Admin"),
+        );
     const signOut = h(
         "button",
         {
@@ -1826,7 +1860,10 @@ function buildFrame() {
         h(
             "nav",
             { class: "nav", "aria-label": "Sections" },
-            groups.map((g) => [h("div", { class: "nav-group" }, g), TABS.filter((t) => t.group === g).map(navButton)]),
+            groups.map((g) => [
+                h("div", { class: "nav-group", "data-group": g, title: g }, g),
+                TABS.filter((t) => t.group === g).map(navButton),
+            ]),
         ),
     );
     frame = { el: h("div", { class: "frame" }, rail, main), content, top, signOut };
@@ -1838,8 +1875,12 @@ let renderToken = 0;
 async function render() {
     if (!state.me) return gate();
     if (!frame) buildFrame();
-    for (const b of frame.el.querySelectorAll("nav button"))
-        b.setAttribute("aria-current", b.textContent.replace(/\d+$/, "") === state.tab ? "page" : "false");
+    // Focus Overview: icon rail on Overview; full labels on every other tab.
+    frame.el.classList.toggle("focus-overview", state.tab === "Overview" && !state.open);
+    for (const b of frame.el.querySelectorAll("nav button[data-tab]")) {
+        if (b.dataset.tab === state.tab) b.setAttribute("aria-current", "page");
+        else b.removeAttribute("aria-current");
+    }
     const tab = TABS.find((t) => t.name === state.tab);
     put(
         frame.top,

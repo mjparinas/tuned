@@ -34,7 +34,7 @@ class XtreamDetails(
             if (batch.size >= CHUNK) flush(batch)
         }
         flush(batch)
-        // Top rated falls back on the provider's rating where TMDB has none.
+        // Top rated is TMDB only; put those ratings back after the provider rows were rewritten.
         TitleRatingsSql.applyFilms(db)
     }
 

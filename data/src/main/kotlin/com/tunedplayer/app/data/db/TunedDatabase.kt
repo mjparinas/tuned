@@ -383,7 +383,7 @@ abstract class TunedDatabase : RoomDatabase() {
             }
 
         /**
-         * Adds what Top rated sorts films on ([ItemEntity.topRating]: the poster's TMDB rating, else the provider's),
+         * Adds what Top rated sorts films on ([ItemEntity.topRating]: TMDB's rating only),
          * read down its own index instead of the provider's rating. It is filled in the background ([TitleRatingsSql]).
          */
         val MIGRATION_22_23 =

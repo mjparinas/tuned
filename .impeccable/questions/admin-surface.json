@@ -1,0 +1,87 @@
+{
+  "title": "Choose the /admin shell composition",
+  "question": "Three structures for Tuned admin. Lock one for the production redesign (Overview tells you what needs you in under 10 seconds).",
+  "options": [
+    {
+      "id": "focus-overview",
+      "label": "Focus Overview",
+      "kicker": "THE ROLL",
+      "thesis": "Overview owns the first viewport: Needs you fills the top, metrics wait below; the rail shrinks to icons until you leave Overview.",
+      "palette": ["#0E0C14", "#17141F", "#7350FF", "#FBBF24", "#3EE0C4"],
+      "materials": ["violet-tinted ink shell", "amber interrupt chips", "dense ops panels"],
+      "viewport": "Left: narrow violet-tinted icon rail. Main: Needs you band with open reports and to-dos first; KPI cards and charts only after you scroll past the triage.",
+      "risk": "Other tabs feel secondary if the collapsed rail is too quiet.",
+      "raised": [
+        {
+          "from": "split-flap concourse",
+          "raise": "Needs you rows cascade when counts change — amber lamps for snoozed, teal clear for done — without leaving table semantics."
+        },
+        {
+          "from": "acetate tab board",
+          "raise": "Rail group headers carry committed section hues (Needs you / Numbers / Money / People / Running it), not grey labels."
+        }
+      ],
+      "wireframe": {
+        "cols": 12,
+        "rows": 10,
+        "regions": [
+          { "label": "icon rail", "x": 0, "y": 0, "w": 1, "h": 10, "accent": true },
+          { "label": "Needs you", "x": 1, "y": 0, "w": 11, "h": 4, "accent": true },
+          { "label": "KPI strip", "x": 1, "y": 4, "w": 11, "h": 2 },
+          { "label": "charts / tables", "x": 1, "y": 6, "w": 11, "h": 4 }
+        ]
+      },
+      "comp": ".impeccable/mocks/decision/admin-focus-overview.webp"
+    },
+    {
+      "id": "agenda-daybook",
+      "label": "Agenda Daybook",
+      "kicker": "STRUCTURE",
+      "thesis": "Overview reads as today’s agenda: To do and Reports are the primary list; numbers sit as a side ledger you glance at, not the hero.",
+      "palette": ["#0E0C14", "#17141F", "#7350FF", "#FBBF24", "#3EE0C4"],
+      "materials": ["violet-tinted ink shell", "agenda rows", "side ledger"],
+      "viewport": "Full side rail with groups. Main: dated agenda list (report / refund / cron / custom tasks) with Open actions; right column: period KPIs and sparkline deltas.",
+      "risk": "Quiet days look empty unless empty states teach the next check.",
+      "wireframe": {
+        "cols": 12,
+        "rows": 10,
+        "regions": [
+          { "label": "nav rail", "x": 0, "y": 0, "w": 2, "h": 10, "accent": true },
+          { "label": "agenda list", "x": 2, "y": 0, "w": 6, "h": 10, "accent": true },
+          { "label": "KPI ledger", "x": 8, "y": 0, "w": 4, "h": 10 }
+        ]
+      },
+      "comp": ".impeccable/mocks/decision/admin-agenda-daybook.webp"
+    },
+    {
+      "id": "priority-feed",
+      "label": "Priority Feed",
+      "kicker": "STRUCTURE",
+      "thesis": "One vertical scan: numbered priorities (1 Needs you → 2 deltas → 3 charts), same on phone and desk — tables cardify under 768px as today.",
+      "palette": ["#0E0C14", "#17141F", "#7350FF", "#FBBF24", "#3EE0C4"],
+      "materials": ["violet-tinted ink shell", "numbered steps", "wrapping tab row"],
+      "viewport": "Top: wrapping section buttons. Body: step 1 Needs you cards, step 2 period deltas, step 3 charts — no competing columns above the fold.",
+      "risk": "Desktop may feel under-dense until you scroll into charts.",
+      "wireframe": {
+        "cols": 12,
+        "rows": 10,
+        "regions": [
+          { "label": "tab row", "x": 0, "y": 0, "w": 12, "h": 1, "accent": true },
+          { "label": "1 Needs you", "x": 0, "y": 1, "w": 12, "h": 3, "accent": true },
+          { "label": "2 deltas", "x": 0, "y": 4, "w": 12, "h": 2 },
+          { "label": "3 charts", "x": 0, "y": 6, "w": 12, "h": 4 }
+        ]
+      },
+      "comp": ".impeccable/mocks/decision/admin-priority-feed.webp"
+    }
+  ],
+  "reroll": {
+    "registers": ["safer", "bolder"]
+  },
+  "buildPath": {
+    "value": "code",
+    "toggle": true
+  },
+  "steer": true,
+  "canon": false
+}
