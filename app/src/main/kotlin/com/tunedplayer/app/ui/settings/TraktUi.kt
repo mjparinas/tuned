@@ -12,7 +12,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
@@ -24,12 +23,10 @@ import com.tunedplayer.app.R
 import com.tunedplayer.app.container
 import com.tunedplayer.app.core.Trakt
 import com.tunedplayer.app.data.TraktAccount
-import com.tunedplayer.app.data.TraktHistoryImport
 import com.tunedplayer.app.diagnostics.launchSafely
 import com.tunedplayer.app.diagnostics.startActivitySafely
 import com.tunedplayer.app.premium.LockedRow
 import com.tunedplayer.app.premium.premiumUnlocked
-import com.tunedplayer.app.ui.ProgressEta
 import com.tunedplayer.app.ui.common.TunedDialog
 import com.tunedplayer.app.ui.common.unbreakable
 import kotlinx.coroutines.Job
@@ -134,71 +131,9 @@ fun TraktRows(vm: TraktViewModel = viewModel()) {
         val name = signedIn.username ?: stringResource(R.string.trakt_account_unnamed)
         SettingRow(stringResource(R.string.trakt_signed_in, name), stringResource(R.string.trakt_sign_out), onClick = vm::signOut)
         SwitchRow(stringResource(R.string.trakt_scrobble), scrobble, stringResource(R.string.trakt_scrobble_summary), vm::setScrobble)
-        ImportHistoryRow(importProgress, onImport = vm::importHistory)
+        HistoryImportRow(importProgress, TRAKT_IMPORT_TEXTS, onImport = vm::importHistory)
     }
     signIn?.let { SignInDialog(it, onRetry = vm::startSignIn, onClose = vm::closeSignIn) }
-}
-
-@Composable
-private fun ImportHistoryRow(
-    progress: TraktHistoryImport.Progress?,
-    onImport: () -> Unit,
-) {
-    val context = LocalContext.current
-    val busy =
-        progress != null &&
-            progress !is TraktHistoryImport.Progress.Done &&
-            progress !is TraktHistoryImport.Progress.Failed
-    val summary =
-        when (progress) {
-            null -> {
-                stringResource(R.string.trakt_import_summary)
-            }
-
-            TraktHistoryImport.Progress.Starting, TraktHistoryImport.Progress.ReadingPlaylist -> {
-                stringResource(R.string.trakt_import_reading)
-            }
-
-            TraktHistoryImport.Progress.FetchingFilms -> {
-                stringResource(R.string.trakt_import_films)
-            }
-
-            TraktHistoryImport.Progress.FetchingShows -> {
-                stringResource(R.string.trakt_import_shows)
-            }
-
-            is TraktHistoryImport.Progress.Marking -> {
-                ProgressEta.withEta(
-                    context,
-                    stringResource(R.string.trakt_import_marking, progress.done, progress.total),
-                    progress.done.toLong(),
-                    progress.total.toLong(),
-                    progress.startedAt,
-                )
-            }
-
-            is TraktHistoryImport.Progress.Done -> {
-                if (progress.films == 0 && progress.episodes == 0) {
-                    stringResource(R.string.trakt_import_none)
-                } else {
-                    stringResource(
-                        R.string.trakt_import_done,
-                        pluralStringResource(R.plurals.trakt_import_films_count, progress.films, progress.films),
-                        pluralStringResource(R.plurals.trakt_import_episodes_count, progress.episodes, progress.episodes),
-                    )
-                }
-            }
-
-            TraktHistoryImport.Progress.Failed -> {
-                stringResource(R.string.trakt_import_failed)
-            }
-        }
-    SettingRow(
-        stringResource(R.string.trakt_import),
-        summary,
-        onClick = if (busy) null else onImport,
-        trailing = if (busy) ({ RowSpinner() }) else null,
-    )
 }
 
 @Composable

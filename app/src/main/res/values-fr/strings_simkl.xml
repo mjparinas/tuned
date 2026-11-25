@@ -15,4 +15,8 @@
     <string name="simkl_expired">Le code a expiré avant d\'être saisi.</string>
     <string name="simkl_failed">Impossible de joindre Simkl. Vérifiez la connexion et réessayez.</string>
     <string name="simkl_try_again">Réessayer</string>
+    <string name="simkl_import_films">Récupération des films depuis Simkl…</string>
+    <string name="simkl_import_shows">Récupération des séries depuis Simkl…</string>
+    <string name="simkl_import_none">Rien dans votre liste ne correspond à l\'historique Simkl</string>
+    <string name="simkl_import_failed">Impossible d\'importer depuis Simkl. Touchez pour réessayer.</string>
 </resources>

@@ -15,4 +15,8 @@
     <string name="simkl_expired">Срок действия кода истёк до ввода.</string>
     <string name="simkl_failed">Не удалось связаться с Simkl. Проверьте подключение и попробуйте снова.</string>
     <string name="simkl_try_again">Повторить</string>
+    <string name="simkl_import_films">Загрузка фильмов из Simkl…</string>
+    <string name="simkl_import_shows">Загрузка сериалов из Simkl…</string>
+    <string name="simkl_import_none">В плейлисте ничего не совпало с историей Simkl</string>
+    <string name="simkl_import_failed">Не удалось импортировать из Simkl. Нажмите, чтобы повторить.</string>
 </resources>

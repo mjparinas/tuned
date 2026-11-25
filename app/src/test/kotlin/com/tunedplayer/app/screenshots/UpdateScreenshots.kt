@@ -11,12 +11,16 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.tunedplayer.app.R
 import com.tunedplayer.app.data.SyncProgress
+import com.tunedplayer.app.data.WatchedHistoryImport
 import com.tunedplayer.app.ui.SyncText
 import com.tunedplayer.app.ui.browse.RefreshStarting
 import com.tunedplayer.app.ui.common.UpdateBannerContent
 import com.tunedplayer.app.ui.common.UpdateInstallButton
 import com.tunedplayer.app.ui.common.UpdateText
+import com.tunedplayer.app.ui.settings.HistoryImportRow
 import com.tunedplayer.app.ui.settings.RowSpinner
+import com.tunedplayer.app.ui.settings.SIMKL_IMPORT_TEXTS
+import com.tunedplayer.app.ui.settings.SectionHeader
 import com.tunedplayer.app.ui.settings.SettingRow
 import com.tunedplayer.app.updates.GitHubUpdates
 import com.tunedplayer.app.updates.GitHubUpdates.InstallProblem
@@ -43,8 +47,28 @@ class UpdateScreenshots : Screenshots() {
 
     @Test fun settingsRows() = part("settings-busy-rows", "Backing up") { BusyRows() }
 
+    /** Settings › Simkl › Import watched history, from the tap to how it ended. */
+    @Test fun simklImport() = part("settings-simkl-import", "Fetching shows from Simkl") { SimklImportRows() }
+
     /** Home's bar between asking for a refresh and its first report. */
     @Test fun refreshStarting() = part("browse-refresh-starting", "Starting the refresh") { Column { RefreshStarting() } }
+}
+
+@Composable
+private fun SimklImportRows() {
+    Column(Modifier.fillMaxWidth()) {
+        SectionHeader(stringResource(R.string.simkl))
+        listOf(
+            null,
+            WatchedHistoryImport.Progress.ReadingPlaylist,
+            WatchedHistoryImport.Progress.FetchingFilms,
+            WatchedHistoryImport.Progress.FetchingShows,
+            WatchedHistoryImport.Progress.Marking(140, 512, startedAt = System.currentTimeMillis() - 20_000),
+            WatchedHistoryImport.Progress.Done(films = 38, episodes = 474),
+            WatchedHistoryImport.Progress.Done(films = 0, episodes = 0),
+            WatchedHistoryImport.Progress.Failed,
+        ).forEach { HistoryImportRow(it, SIMKL_IMPORT_TEXTS, onImport = {}) }
+    }
 }
 
 private val READY = GitHubUpdates.State.Ready("2.5.0", File("tuned.apk"), size = 41_900_000)

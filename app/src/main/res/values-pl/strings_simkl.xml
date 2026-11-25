@@ -15,4 +15,8 @@
     <string name="simkl_expired">Kod wygasł, zanim został wpisany.</string>
     <string name="simkl_failed">Nie udało się połączyć z Simkl. Sprawdź połączenie i spróbuj ponownie.</string>
     <string name="simkl_try_again">Spróbuj ponownie</string>
+    <string name="simkl_import_films">Pobieranie filmów z Simkl…</string>
+    <string name="simkl_import_shows">Pobieranie seriali z Simkl…</string>
+    <string name="simkl_import_none">Nic z playlisty nie pasuje do historii Simkl</string>
+    <string name="simkl_import_failed">Nie udało się zaimportować z Simkl. Dotknij, by spróbować ponownie.</string>
 </resources>

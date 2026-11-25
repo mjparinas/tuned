@@ -15,4 +15,8 @@
     <string name="simkl_expired">Der Code ist abgelaufen, bevor er eingegeben wurde.</string>
     <string name="simkl_failed">Simkl ist nicht erreichbar. Prüfe die Verbindung und versuche es erneut.</string>
     <string name="simkl_try_again">Erneut versuchen</string>
+    <string name="simkl_import_films">Filme von Simkl werden geladen…</string>
+    <string name="simkl_import_shows">Serien von Simkl werden geladen…</string>
+    <string name="simkl_import_none">Nichts in deiner Playlist passte zu Simkls Verlauf</string>
+    <string name="simkl_import_failed">Import von Simkl fehlgeschlagen. Tippen zum erneuten Versuch.</string>
 </resources>

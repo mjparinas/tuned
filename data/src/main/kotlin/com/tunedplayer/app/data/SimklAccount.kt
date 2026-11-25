@@ -3,6 +3,7 @@ package com.tunedplayer.app.data
 import android.content.Context
 import androidx.core.content.edit
 import com.tunedplayer.app.core.Simkl
+import com.tunedplayer.app.core.Trakt
 import com.tunedplayer.app.diagnostics.AppLog
 import com.tunedplayer.app.diagnostics.attempt
 import kotlinx.coroutines.Dispatchers
@@ -39,7 +40,7 @@ import java.io.IOException
 class SimklAccount(
     context: Context,
     private val http: OkHttpClient,
-) {
+) : WatchedHistoryImport.Source {
     @Serializable
     data class Session(
         val access: String,
@@ -84,6 +85,8 @@ class SimklAccount(
 
     private val sessionFlow = MutableStateFlow(load())
     val session: StateFlow<Session?> = sessionFlow.asStateFlow()
+
+    override val signedIn: Boolean get() = sessionFlow.value != null
 
     private val scrobbleFlow = MutableStateFlow(prefs.getBoolean(KEY_SCROBBLE, true))
 
@@ -157,6 +160,51 @@ class SimklAccount(
         val s = sessionFlow.value ?: return
         clear()
         form("/oauth2/revoke", Simkl.revokeBody(BuildConfig.SIMKL_CLIENT_ID, s.refresh))
+    }
+
+    /**
+     * Every film Simkl has as completed for this account (`/sync/all-items/movies/completed`), for importing into
+     * Tuned's history. Null when signed out or Simkl couldn't be reached; an empty list when there are none.
+     */
+    override suspend fun watchedFilms(): List<Trakt.WatchedFilm>? {
+        val text = history("/sync/all-items/movies/completed", "films") ?: return null
+        return attempt(TAG, "Couldn't read Simkl's watched films") {
+            SimklHistory.films(text, System.currentTimeMillis())
+        }.getOrNull()
+    }
+
+    /**
+     * Every watched episode Simkl has for this account, shows and anime, any status (a dropped show still has episodes
+     * seen), from `/sync/all-items` with `extended=full` and each episode's `watched_at`. Anime uses its TVDB season
+     * and number when Simkl maps one, since playlists number anime that way. Null when signed out or Simkl couldn't be
+     * reached; an anime list that fails only logs, so the shows still import.
+     */
+    override suspend fun watchedEpisodes(): List<Trakt.WatchedEpisode>? {
+        val shows = history("/sync/all-items/shows?$EPISODE_PARAMS&extended=full", "shows") ?: return null
+        val now = System.currentTimeMillis()
+        val out =
+            attempt(TAG, "Couldn't read Simkl's watched shows") { SimklHistory.episodes(shows, now) }
+                .getOrNull()
+                ?.toMutableList() ?: return null
+        val anime = history("/sync/all-items/anime?$EPISODE_PARAMS&extended=full_anime_seasons", "anime")
+        if (anime != null) {
+            attempt(TAG, "Couldn't read Simkl's watched anime") { out += SimklHistory.episodes(anime, now) }
+        }
+        return out
+    }
+
+    /** One `/sync/all-items` read: the body when Simkl answered 200, else null with the answer logged. */
+    private suspend fun history(
+        path: String,
+        what: String,
+    ): String? {
+        val token = token() ?: return null
+        val answer = get(path, token) ?: return null
+        if (answer.first != HTTP_OK) {
+            AppLog.w(TAG, "Simkl watched $what failed (HTTP ${answer.first}): ${answer.second.take(MAX_ERROR)}")
+            return null
+        }
+        return answer.second
     }
 
     /**
@@ -326,6 +374,7 @@ class SimklAccount(
         const val KEY_SCROBBLE = "scrobble"
         const val MS = 1_000L
         const val SLOW_DOWN_MS = 5_000L
+        const val EPISODE_PARAMS = "episode_watched_at=yes&include_all_episodes=yes"
         const val HTTP_OK = 200
         const val HTTP_LAST_OK = 299
         const val HTTP_BAD_REQUEST = 400
