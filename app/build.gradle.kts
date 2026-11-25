@@ -8,7 +8,10 @@ plugins {
 
 android {
     namespace = "com.tunedplayer.app"
-    compileSdk = 37
+    // Compose 1.13 needs Android 37.1's APIs to compile against (minSdk and targetSdk are unchanged).
+    compileSdk {
+        version = release(37) { minorApiLevel = 1 }
+    }
 
     defaultConfig {
         applicationId = "com.tunedplayer.app"
