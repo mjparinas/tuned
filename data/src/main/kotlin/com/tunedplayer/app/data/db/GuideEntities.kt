@@ -47,7 +47,7 @@ data class CatchUpEntity(
     val source: String? = null,
 )
 
-/** A programme on a sports or pay-per-view channel, for Live Events ([ItemDao.eventProgrammes]). */
+/** A programme on a sports or pay-per-view channel, for Live Events ([EventDao.eventProgrammes]). */
 data class EventRow(
     val itemId: Long,
     val channelName: String,
@@ -55,4 +55,10 @@ data class EventRow(
     val title: String,
     val start: Long,
     val stop: Long,
+)
+
+/** A sports or pay-per-view channel, for Live Events read from channel names ([EventDao.eventChannels]). */
+data class EventChannelRow(
+    val itemId: Long,
+    val name: String,
 )

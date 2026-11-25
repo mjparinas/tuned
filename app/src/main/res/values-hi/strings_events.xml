@@ -9,6 +9,7 @@
     <string name="events_later">आज बाद में</string>
     <string name="events_tomorrow">कल</string>
     <string name="events_live">लाइव</string>
+    <string name="events_no_time">समय नहीं</string>
     <string name="events_empty">अगले डेढ़ दिन की गाइड में कोई मैच, फ़ाइट या पे-पर-व्यू नहीं है। अगर यह गलत लगे तो सेटिंग में गाइड रीफ़्रेश करें।</string>
     <plurals name="events_channels">
         <item quantity="one">%d चैनल पर</item>

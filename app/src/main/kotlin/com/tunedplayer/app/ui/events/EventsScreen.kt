@@ -264,10 +264,13 @@ private fun EventRow(
 ) {
     val times = rememberTimeLabels()
     val live = event.liveAt(row.now)
-    val tunable = live || event.start - row.now <= TUNE_BEFORE_MS
+    // A name that gives no time may be on now, so Tune stays on.
+    val tunable = live || !event.timeKnown || event.start - row.now <= TUNE_BEFORE_MS
     val time =
         if (live) {
             stringResource(R.string.events_live)
+        } else if (!event.timeKnown) {
+            stringResource(R.string.events_no_time)
         } else if (times.isToday(event.start, row.now)) {
             times.time(event.start)
         } else {

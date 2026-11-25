@@ -9,6 +9,7 @@
     <string name="events_later">Mais tarde hoje</string>
     <string name="events_tomorrow">Amanhã</string>
     <string name="events_live">Ao vivo</string>
+    <string name="events_no_time">Sem horário</string>
     <string name="events_empty">Nenhum jogo, luta ou pay-per-view no guia para o próximo dia e meio. Atualize o guia em Configurações se isso parecer errado.</string>
     <plurals name="events_channels">
         <item quantity="one">Em %d canal</item>

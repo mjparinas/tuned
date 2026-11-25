@@ -10,6 +10,8 @@
     <string name="events_later">Later today</string>
     <string name="events_tomorrow">Tomorrow</string>
     <string name="events_live">Live</string>
+    <!-- An event read from a channel's name that gives no time. Short: it sits where a time would. -->
+    <string name="events_no_time">No time</string>
     <string name="events_empty">No games, fights or pay-per-views in the guide for the next day and a half. Refresh the guide in Settings if this looks wrong.</string>
     <plurals name="events_channels">
         <item quantity="one">On %d channel</item>

@@ -25,8 +25,13 @@ object Events {
         val stop: Long,
         /** The channels showing it, in the order the guide listed them. */
         val channels: List<Long>,
+        /**
+         * False for an event read from a channel's name that gives no time ([ChannelEvents]): it is listed under today
+         * with [start] set to when the list was made, and Tune stays on, since it may be on now.
+         */
+        val timeKnown: Boolean = true,
     ) {
-        fun liveAt(now: Long): Boolean = start <= now && now < stop
+        fun liveAt(now: Long): Boolean = timeKnown && start <= now && now < stop
     }
 
     /** A title that names a match ("Leafs vs. Canucks", "Arsenal v Chelsea", "Lakers @ Celtics"). */
@@ -99,6 +104,35 @@ object Events {
             }
         }
         return events.sortedWith(compareByDescending<Event> { it.liveAt(now) }.thenBy { it.start })
+    }
+
+    /**
+     * Adds the events read from channel names ([ChannelEvents.find]) to the guide's [events]. One the guide already
+     * has (the same title, starting within [SAME_START_MS], or at any time when the name gives none) gains the channel;
+     * the rest become events of their own, lasting [ChannelEvents.LENGTH_MS]. Sorted as [group] sorts.
+     */
+    fun withNamed(
+        events: List<Event>,
+        named: List<Pair<Long, ChannelEvents.Named>>,
+        now: Long,
+    ): List<Event> {
+        if (named.isEmpty()) return events
+        val all = events.toMutableList()
+        for ((itemId, n) in named) {
+            val key = key(n.title)
+            val at =
+                all.indexOfFirst { e ->
+                    e.key == key && (n.start == null || !e.timeKnown || abs(e.start - n.start) <= SAME_START_MS)
+                }
+            if (at >= 0) {
+                val e = all[at]
+                if (itemId !in e.channels) all[at] = e.copy(channels = e.channels + itemId)
+            } else {
+                val start = n.start ?: now
+                all += Event(key, n.title, start, start + ChannelEvents.LENGTH_MS, listOf(itemId), timeKnown = n.start != null)
+            }
+        }
+        return all.sortedWith(compareByDescending<Event> { it.liveAt(now) }.thenBy { it.start })
     }
 
     /** Whether the event is about something the person follows ("UFC", "Canucks", "Premier League"). */
