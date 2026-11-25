@@ -34,22 +34,25 @@ object SimklHistory {
     fun episodes(
         text: String,
         nowMs: Long,
+    ): List<Trakt.WatchedEpisode> = items(text).flatMap { episodesOf(it, nowMs) }
+
+    private fun episodesOf(
+        item: JsonObject,
+        nowMs: Long,
     ): List<Trakt.WatchedEpisode> = buildList {
-        for (item in items(text)) {
-            val show = item.obj("show") ?: item.obj("anime") ?: continue
-            val title = show.string("title") ?: continue
-            val year = show.int("year")
-            val lastWatched = item.string("last_watched_at")
-            for (season in item.array("seasons")) {
-                val seasonObj = season as? JsonObject ?: continue
-                val seasonNumber = seasonObj.int("number")
-                for (episode in seasonObj.array("episodes")) {
-                    val e = episode as? JsonObject ?: continue
-                    val tvdb = e.obj("tvdb")
-                    val s = tvdb?.int("season") ?: seasonNumber ?: continue
-                    val n = tvdb?.int("episode") ?: e.int("number") ?: continue
-                    add(Trakt.WatchedEpisode(title, year, s, n, Trakt.watchedAtMs(e.string("watched_at") ?: lastWatched, nowMs)))
-                }
+        val show = item.obj("show") ?: item.obj("anime") ?: return@buildList
+        val title = show.string("title") ?: return@buildList
+        val year = show.int("year")
+        val lastWatched = item.string("last_watched_at")
+        for (season in item.array("seasons")) {
+            val seasonObj = season as? JsonObject ?: continue
+            val seasonNumber = seasonObj.int("number")
+            for (episode in seasonObj.array("episodes")) {
+                val e = episode as? JsonObject ?: continue
+                val tvdb = e.obj("tvdb")
+                val s = tvdb?.int("season") ?: seasonNumber ?: continue
+                val n = tvdb?.int("episode") ?: e.int("number") ?: continue
+                add(Trakt.WatchedEpisode(title, year, s, n, Trakt.watchedAtMs(e.string("watched_at") ?: lastWatched, nowMs)))
             }
         }
     }
