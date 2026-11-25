@@ -247,18 +247,13 @@
         <item quantity="other">%d rapporti di arresti e blocchi</item>
     </plurals>
     <string name="report_title">Segnala un problema</string>
-    <string name="report_summary">Invia la versione, questo dispositivo, l\'ultimo arresto o blocco e il log recente, senza dati di accesso, a Tuned o dove lo condividi.</string>
-    <string name="report_copied">Qui non c\'è niente per condividerlo, quindi il rapporto è stato copiato. Incollalo in un\'email o in un messaggio.</string>
-    <string name="report_failed">Impossibile condividere o copiare il rapporto. Log, qui sotto, ha gli stessi dettagli.</string>
-    <string name="report_subject">Rapporto di problema di Tuned %1$s</string>
-    <string name="report_dialog_text">Racconta cosa è successo. Versione, questo dispositivo, l\'ultimo arresto o blocco e il log recente vengono inclusi, senza dati di accesso.</string>
+    <string name="report_summary">Invia a Tuned cosa è successo, il registro recente, l\'ultimo arresto o blocco e i dettagli di questo dispositivo, come modello e versione di Android. Le credenziali sono escluse.</string>
+    <string name="report_dialog_text">Descrivi cosa è successo. Il registro recente, l\'ultimo arresto o blocco e i dettagli di questo dispositivo, come modello e versione di Android, vengono inviati insieme, senza le credenziali.</string>
     <string name="report_what">Cosa è successo?</string>
     <string name="report_contact">Email per una risposta (facoltativa)</string>
     <string name="report_send">Invia a Tuned</string>
     <string name="report_sending">Invio…</string>
-    <string name="report_share_instead">Condividi invece</string>
     <string name="report_sent">Inviato a Tuned. Grazie per la segnalazione.</string>
-    <string name="report_send_failed">Impossibile inviarlo. Controlla la connessione e riprova, oppure condividilo.</string>
     <string name="logs_report_summary">Invia questo registro e i dettagli di questo dispositivo, come modello e versione di Android, a Tuned. Niente da digitare e i dati di accesso sono esclusi.</string>
     <string name="logs_report_sending">Invio del registro e dei dettagli del dispositivo…</string>
     <string name="logs_report_failed">Invio non riuscito. Controlla la connessione, poi riprova.</string>

@@ -237,18 +237,13 @@
         <item quantity="other">%d 份崩溃和卡死报告</item>
     </plurals>
     <string name="report_title">报告问题</string>
-    <string name="report_summary">将版本、此设备、最近一次崩溃或卡死以及最近的日志（不含登录信息）发送给 Tuned 或你分享到的地方。</string>
-    <string name="report_copied">这里没有可用的分享方式，所以报告已复制。请粘贴到邮件或消息中。</string>
-    <string name="report_failed">无法分享或复制报告。下方的日志包含相同的信息。</string>
-    <string name="report_subject">Tuned %1$s 问题报告</string>
-    <string name="report_dialog_text">请描述发生了什么。版本、此设备、最近一次崩溃或卡死以及最近的日志会一并发送，登录信息已移除。</string>
+    <string name="report_summary">将问题描述、最近的日志、最近一次崩溃或卡死以及此设备的信息（如型号和 Android 版本）发送给 Tuned，不含登录信息。</string>
+    <string name="report_dialog_text">请描述发生了什么。最近的日志、最近一次崩溃或卡死以及此设备的信息（如型号和 Android 版本）会一并发送，登录信息已去除。</string>
     <string name="report_what">发生了什么？</string>
     <string name="report_contact">用于回复的邮箱（可选）</string>
     <string name="report_send">发送给 Tuned</string>
     <string name="report_sending">正在发送…</string>
-    <string name="report_share_instead">改为分享</string>
     <string name="report_sent">已发送给 Tuned。感谢你的反馈。</string>
-    <string name="report_send_failed">发送失败。请检查网络连接后重试，或改为分享。</string>
     <string name="logs_report_summary">将此日志和此设备的详细信息（如型号和 Android 版本）发送给 Tuned。无需输入，不包含登录信息。</string>
     <string name="logs_report_sending">正在发送此日志和设备详细信息…</string>
     <string name="logs_report_failed">无法发送。请检查网络连接，然后重试。</string>

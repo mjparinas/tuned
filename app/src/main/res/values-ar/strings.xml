@@ -262,18 +262,13 @@
         <item quantity="other">%d تقرير عطل أو تجمّد</item>
     </plurals>
     <string name="report_title">الإبلاغ عن مشكلة</string>
-    <string name="report_summary">يرسل الإصدار وهذا الجهاز وآخر عطل أو تجمّد والسجل الأخير، بلا بيانات دخول، إلى Tuned أو إلى أي مكان تشاركه فيه.</string>
-    <string name="report_copied">لا يوجد هنا ما يمكنه المشاركة، فنُسخ التقرير. الصقه في بريد إلكتروني أو رسالة.</string>
-    <string name="report_failed">تعذّرت مشاركة التقرير أو نسخه. قسم السجلات أدناه يحوي التفاصيل نفسها.</string>
-    <string name="report_subject">تقرير مشكلة في Tuned %1$s</string>
-    <string name="report_dialog_text">صِف ما حدث. يُرسَل معه الإصدار وهذا الجهاز وآخر عطل أو تجمّد والسجل الأخير، مع حذف بيانات الدخول.</string>
+    <string name="report_summary">يرسل إلى Tuned ما حدث والسجل الأخير وآخر تعطل أو تجمد وتفاصيل هذا الجهاز، مثل طرازه وإصدار Android. لا تُرسل بيانات تسجيل الدخول.</string>
+    <string name="report_dialog_text">صِف ما حدث. يُرسل معه السجل الأخير وآخر تعطل أو تجمد وتفاصيل هذا الجهاز، مثل طرازه وإصدار Android، بدون بيانات تسجيل الدخول.</string>
     <string name="report_what">ماذا حدث؟</string>
     <string name="report_contact">بريد إلكتروني للرد (اختياري)</string>
     <string name="report_send">إرسال إلى Tuned</string>
     <string name="report_sending">جارٍ الإرسال…</string>
-    <string name="report_share_instead">المشاركة بدلًا من ذلك</string>
     <string name="report_sent">أُرسل إلى Tuned. شكرًا لإخبارنا.</string>
-    <string name="report_send_failed">تعذّر الإرسال. تحقّق من الاتصال وحاول مرة أخرى، أو شاركه بدلًا من ذلك.</string>
     <string name="logs_report_summary">يرسل هذا السجل وتفاصيل هذا الجهاز، مثل طرازه وإصدار Android، إلى Tuned. لا حاجة إلى الكتابة، ولا تُرسَل بيانات تسجيل الدخول.</string>
     <string name="logs_report_sending">جارٍ إرسال هذا السجل وتفاصيل هذا الجهاز…</string>
     <string name="logs_report_failed">تعذّر الإرسال. تحقّق من الاتصال، ثم حاول مرة أخرى.</string>

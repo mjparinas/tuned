@@ -249,7 +249,9 @@ object DeviceDetails {
         val c = context.container
         val install = attempt(TAG, "Couldn't read the install id") { c.usage.idIfOn() }.getOrNull()
         return section("Account") {
-            add("Tuned account") { if (c.tunedAccount.signedIn.value) c.tunedAccount.email.value ?: "signed in" else "signed out" }
+            // Signed in or not, never the email: the report is non-identifying (Melvin, 2026-11-21); the person can give an
+            // email for a reply in Report a problem.
+            add("Tuned account") { if (c.tunedAccount.signedIn.value) "signed in" else "signed out" }
             add("Install id") { install ?: "usage stats off" }
         }
     }

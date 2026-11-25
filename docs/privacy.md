@@ -50,7 +50,7 @@ The app also reads a short list of switches from Tuned's service when it opens, 
 
 ## Problem reports
 
-Settings › Updates and advanced › Report a problem can send Tuned what you write, an email address if you give one for a reply, the latest crash or freeze report, the recent log (with logins removed) and the device's details. It is sent only when you press Send to Tuned, and Tuned keeps it to work on the problem. Share instead sends it nowhere but where you choose.
+Settings › Updates and advanced › Report a problem can send Tuned what you write, an email address if you give one for a reply, the latest crash or freeze report, the recent log (with logins removed) and the device's details. The device's details are things like its model, Android version, memory, storage and network type, never a login or your Tuned account's email. It is sent only when you press Send to Tuned, and Tuned keeps it to work on the problem.
 
 ## Sharing and selling
 

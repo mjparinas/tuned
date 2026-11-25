@@ -247,18 +247,13 @@
         <item quantity="other">%d rapports de plantages et de blocages</item>
     </plurals>
     <string name="report_title">Signaler un problème</string>
-    <string name="report_summary">Envoie la version, cet appareil, le dernier plantage ou blocage et le journal récent, sans identifiants, à Tuned ou là où vous le partagez.</string>
-    <string name="report_copied">Rien ici ne permet de le partager, le rapport a donc été copié. Collez-le dans un e-mail ou un message.</string>
-    <string name="report_failed">Impossible de partager ou de copier le rapport. Journaux, plus bas, contient les mêmes détails.</string>
-    <string name="report_subject">Rapport de problème Tuned %1$s</string>
-    <string name="report_dialog_text">Décrivez ce qui s\'est passé. La version, cet appareil, le dernier plantage ou blocage et le journal récent sont joints, sans les identifiants.</string>
+    <string name="report_summary">Envoie ce qui s\'est passé, le journal récent, le dernier plantage ou blocage et les détails de cet appareil, comme son modèle et sa version d\'Android, à Tuned. Les identifiants sont exclus.</string>
+    <string name="report_dialog_text">Décrivez ce qui s\'est passé. Le journal récent, le dernier plantage ou blocage et les détails de cet appareil, comme son modèle et sa version d\'Android, sont joints, sans les identifiants.</string>
     <string name="report_what">Que s\'est-il passé ?</string>
     <string name="report_contact">E-mail pour une réponse (facultatif)</string>
     <string name="report_send">Envoyer à Tuned</string>
     <string name="report_sending">Envoi…</string>
-    <string name="report_share_instead">Partager plutôt</string>
     <string name="report_sent">Envoyé à Tuned. Merci de nous l\'avoir signalé.</string>
-    <string name="report_send_failed">Envoi impossible. Vérifiez la connexion et réessayez, ou partagez-le plutôt.</string>
     <string name="logs_report_summary">Envoie ce journal et les détails de cet appareil, comme son modèle et sa version d\'Android, à Tuned. Rien à saisir, et les identifiants sont exclus.</string>
     <string name="logs_report_sending">Envoi du journal et des détails de l\'appareil…</string>
     <string name="logs_report_failed">Échec de l\'envoi. Vérifiez la connexion, puis réessayez.</string>
