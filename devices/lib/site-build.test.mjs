@@ -4,10 +4,14 @@ import { check } from "../build-site.mjs";
 import { SITE } from "../site/config.mjs";
 import {
     buildSite,
+    cardBlurb,
     faqJsonLd,
     homePosts,
+    indexPage,
+    indexPreview,
     inline,
     markdown,
+    navIsCurrent,
     noteLine,
     parseFrontmatter,
     postCard,
@@ -161,8 +165,16 @@ test("the landing page's hero has the one download button and no Coming soon bad
     const html = await readFile(new URL("../public/index.html", import.meta.url), "utf8");
     const hero = html.slice(html.indexOf('class="wrap hero"'), html.indexOf('class="facts"'));
     assert.ok(hero.includes('data-cta="apk-hero"'));
+    assert.equal((hero.match(/class="button/g) || []).length, 1, "hero has only the download button");
+    assert.ok(!hero.includes("features-hero"), "no secondary features CTA in the hero");
+    assert.ok(hero.includes("hero-install"), "sideload trust sits beside the download");
     assert.ok(!hero.includes("store-badge"), "no store badges in the hero");
     assert.equal(html.split('class="badges"').length - 1, 1, "the store badges appear once, in Coming soon");
+    assert.ok(html.includes('id="coming-soon"'), "Coming soon is not #download");
+    assert.ok(!html.includes('id="download"'), "no dead #download section");
+    assert.ok(!html.includes("See every feature"), "closing CTA is download-only");
+    assert.ok(html.includes("feature-more"), "feature groups progressive-disclose after a short list");
+    assert.ok(html.includes("nav-menu"), "narrow nav keeps Features, Blog and Account in a Menu");
 });
 
 test("From the blog shows the chosen posts, then the newest that aren't release notes", async () => {
@@ -255,4 +267,68 @@ test("More from the blog links to posts on the same subject, not the same newest
 test("a release's search description names what changed", () => {
     const d = releaseDescription("2.0.1", "Tuned 2.0.1 is out: 2 fixed.", [{ text: "Subtitle timing" }, { text: "The splash screen." }]);
     assert.equal(d, "Tuned 2.0.1, the IPTV player for Android and Android TV, is out. Subtitle timing. The splash screen.");
+    assert.match(releaseDescription("2.13.3", "Tuned 2.13.3 is out.", []), /no changes that affect watching/);
+});
+
+test("blog index is a help desk: guides first, curated previews, no kind on cards", () => {
+    const post = (path, kind, title, description = "A useful description for the card.") => ({
+        path,
+        url: `/blog/${path.replace(/\.md$/, "")}/`,
+        folder: path.split("/")[0],
+        kind,
+        title,
+        description,
+        date: "2026-11-19",
+        version: kind === "release" ? title.replace(/.* /, "") : undefined,
+    });
+    const posts = [
+        post(
+            "whats-new/tuned-2-0-0.md",
+            "release",
+            "What's new in Tuned 2.0.0",
+            "Tuned 2.0.0, the IPTV player for Android and Android TV, is out.",
+        ),
+        post(
+            "whats-new/tuned-2-1-0.md",
+            "release",
+            "What's new in Tuned 2.1.0",
+            "Tuned 2.1.0, the IPTV player for Android and Android TV, is out. Favourites on the home screen.",
+        ),
+        post("guides/add-xtream-codes-playlist.md", "guide", "Xtream"),
+        post("guides/casting.md", "guide", "Casting"),
+        post("guides/add-m3u-playlist.md", "guide", "M3U"),
+        post("vs/duplecast.md", "compare", "Tuned vs Duplecast"),
+        post("vs/tivimate.md", "compare", "Tuned vs TiviMate"),
+        post("roundups/best-iptv-player-android-tv.md", "roundup", "Best IPTV player"),
+    ];
+    assert.equal(cardBlurb(posts[0]), "");
+    assert.equal(cardBlurb(posts[1]), "Favourites on the home screen.");
+    assert.deepEqual(
+        indexPreview(
+            posts.filter((p) => p.kind === "compare"),
+            "compare",
+        ).map((p) => p.path),
+        ["vs/tivimate.md", "vs/duplecast.md"],
+    );
+    assert.deepEqual(
+        indexPreview(
+            posts.filter((p) => p.kind === "release"),
+            "release",
+        ).map((p) => p.path),
+        ["whats-new/tuned-2-1-0.md"],
+    );
+    assert.equal(navIsCurrent("/blog/", "/blog/whats-new/"), true);
+    assert.equal(navIsCurrent("/account", "/blog/"), false);
+    const html = indexPage(SITE, { posts, latestVersion: "2.1.0" });
+    assert.match(html, /aria-current="page">Blog<\/a>/);
+    assert.match(html, /class="blog-intents"/);
+    assert.match(html, /href="#k-guide">Set up/);
+    assert.match(html, /href="\/blog\/feed\.xml">RSS/);
+    // Guides section before What's new.
+    assert.ok(html.indexOf('id="k-guide"') < html.indexOf('id="k-release"'));
+    // TiviMate before Duplecast; no kind label inside a kind section.
+    const compare = html.slice(html.indexOf('id="k-compare"'));
+    assert.ok(compare.indexOf("TiviMate") < compare.indexOf("Duplecast"));
+    assert.doesNotMatch(compare.slice(0, compare.indexOf("</section>")), /class="kind"/);
+    assert.match(html, /Best picks/);
 });
