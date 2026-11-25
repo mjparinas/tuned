@@ -1,6 +1,6 @@
 ---
 title: What's new in Tuned 2.16.0
-description: "Tuned 2.16.0, the IPTV player for Android and Android TV, is out. Live events now show up even when your guide is empty, Simkl history imports in one tap, and Report a problem sends everything a fix needs."
+description: "Tuned 2.16.0, the IPTV player for Android and Android TV, is out. Live events from channel names when the guide is empty, Simkl history import, and a fuller Report a problem."
 date: 2026-11-25
 kind: release
 version: 2.16.0
