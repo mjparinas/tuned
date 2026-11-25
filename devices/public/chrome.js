@@ -3,5 +3,19 @@
     const parts = {"header":"<header class=\"top\">\n<nav class=\"wrap nav\" aria-label=\"Main\">\n<a class=\"logo\" href=\"/\"><img src=\"/icon.svg\" alt=\"\" width=\"36\" height=\"36\" /><span>Tuned</span></a>\n<div class=\"links\">\n<a href=\"/#features\">Features</a>\n<a href=\"/blog/\">Blog</a>\n<a href=\"/account\">Account</a>\n</div>\n<details class=\"nav-menu\">\n<summary>Menu</summary>\n<div class=\"nav-menu-panel\">\n<a href=\"/#features\">Features</a>\n<a href=\"/blog/\">Blog</a>\n<a href=\"/account\">Account</a>\n</div>\n</details>\n<a class=\"button small\" href=\"/download\" data-cta=\"apk-header\">Download</a>\n</nav>\n</header>","footer":"<footer class=\"foot\">\n<div class=\"wrap foot-grid\">\n<div>\n<a class=\"logo\" href=\"/\"><img src=\"/icon.svg\" alt=\"\" width=\"32\" height=\"32\" /><span>Tuned</span></a>\n<p>A fast, quiet IPTV player for Android. Tuned doesn't sell or include any channels: bring a playlist from your TV provider or a Plex, Jellyfin or Emby server.</p>\n</div>\n<nav aria-label=\"Tuned\"><h2>Tuned</h2><a href=\"/#features\">Features</a><a href=\"/blog/whats-new/\">What's new</a><a href=\"/download\">Download for Android</a></nav>\n<nav aria-label=\"Help\"><h2>Help</h2><a href=\"/blog/guides/\">Guides</a><a href=\"/blog/vs/\">Compare IPTV players</a><a href=\"/blog/\">Blog</a><a href=\"/account\">Your Tuned account</a><a href=\"/devices\">Lost your devices?</a><a href=\"/privacy/\" rel=\"noopener\">Privacy</a></nav>\n</div>\n<p class=\"wrap copy\">© 2026 Tuned. Android, Google Play and the Google Play logo are trademarks of Google LLC. Apple, the Apple logo, iPhone, iPad and Mac are trademarks of Apple Inc. Samsung is a trademark of Samsung Electronics.</p>\n</footer>"};
     const me = document.currentScript;
     const html = me && parts[me.dataset.part];
-    if (html) me.insertAdjacentHTML("afterend", html);
+    if (!html) return;
+    me.insertAdjacentHTML("afterend", html);
+    if (me.dataset.part !== "header") return;
+    const root = me.nextElementSibling;
+    if (!root) return;
+    const path = location.pathname;
+    for (const a of root.querySelectorAll(".links a[href], .nav-menu-panel a[href]")) {
+        const href = a.getAttribute("href");
+        if ((href === "/blog/" || href === "/blog") && (path === "/blog/" || path.startsWith("/blog/"))) {
+            a.setAttribute("aria-current", "page");
+        }
+        if (href === "/account" && (path === "/account" || path.startsWith("/account/"))) {
+            a.setAttribute("aria-current", "page");
+        }
+    }
 })();

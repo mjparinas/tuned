@@ -4,10 +4,14 @@ import { check } from "../build-site.mjs";
 import { SITE } from "../site/config.mjs";
 import {
     buildSite,
+    cardBlurb,
     faqJsonLd,
     homePosts,
+    indexPage,
+    indexPreview,
     inline,
     markdown,
+    navIsCurrent,
     noteLine,
     parseFrontmatter,
     postCard,
@@ -263,4 +267,68 @@ test("More from the blog links to posts on the same subject, not the same newest
 test("a release's search description names what changed", () => {
     const d = releaseDescription("2.0.1", "Tuned 2.0.1 is out: 2 fixed.", [{ text: "Subtitle timing" }, { text: "The splash screen." }]);
     assert.equal(d, "Tuned 2.0.1, the IPTV player for Android and Android TV, is out. Subtitle timing. The splash screen.");
+    assert.match(releaseDescription("2.13.3", "Tuned 2.13.3 is out.", []), /no changes that affect watching/);
+});
+
+test("blog index is a help desk: guides first, curated previews, no kind on cards", () => {
+    const post = (path, kind, title, description = "A useful description for the card.") => ({
+        path,
+        url: `/blog/${path.replace(/\.md$/, "")}/`,
+        folder: path.split("/")[0],
+        kind,
+        title,
+        description,
+        date: "2026-11-19",
+        version: kind === "release" ? title.replace(/.* /, "") : undefined,
+    });
+    const posts = [
+        post(
+            "whats-new/tuned-2-0-0.md",
+            "release",
+            "What's new in Tuned 2.0.0",
+            "Tuned 2.0.0, the IPTV player for Android and Android TV, is out.",
+        ),
+        post(
+            "whats-new/tuned-2-1-0.md",
+            "release",
+            "What's new in Tuned 2.1.0",
+            "Tuned 2.1.0, the IPTV player for Android and Android TV, is out. Favourites on the home screen.",
+        ),
+        post("guides/add-xtream-codes-playlist.md", "guide", "Xtream"),
+        post("guides/casting.md", "guide", "Casting"),
+        post("guides/add-m3u-playlist.md", "guide", "M3U"),
+        post("vs/duplecast.md", "compare", "Tuned vs Duplecast"),
+        post("vs/tivimate.md", "compare", "Tuned vs TiviMate"),
+        post("roundups/best-iptv-player-android-tv.md", "roundup", "Best IPTV player"),
+    ];
+    assert.equal(cardBlurb(posts[0]), "");
+    assert.equal(cardBlurb(posts[1]), "Favourites on the home screen.");
+    assert.deepEqual(
+        indexPreview(
+            posts.filter((p) => p.kind === "compare"),
+            "compare",
+        ).map((p) => p.path),
+        ["vs/tivimate.md", "vs/duplecast.md"],
+    );
+    assert.deepEqual(
+        indexPreview(
+            posts.filter((p) => p.kind === "release"),
+            "release",
+        ).map((p) => p.path),
+        ["whats-new/tuned-2-1-0.md"],
+    );
+    assert.equal(navIsCurrent("/blog/", "/blog/whats-new/"), true);
+    assert.equal(navIsCurrent("/account", "/blog/"), false);
+    const html = indexPage(SITE, { posts, latestVersion: "2.1.0" });
+    assert.match(html, /aria-current="page">Blog<\/a>/);
+    assert.match(html, /class="blog-intents"/);
+    assert.match(html, /href="#k-guide">Set up/);
+    assert.match(html, /href="\/blog\/feed\.xml">RSS/);
+    // Guides section before What's new.
+    assert.ok(html.indexOf('id="k-guide"') < html.indexOf('id="k-release"'));
+    // TiviMate before Duplecast; no kind label inside a kind section.
+    const compare = html.slice(html.indexOf('id="k-compare"'));
+    assert.ok(compare.indexOf("TiviMate") < compare.indexOf("Duplecast"));
+    assert.doesNotMatch(compare.slice(0, compare.indexOf("</section>")), /class="kind"/);
+    assert.match(html, /Best picks/);
 });
