@@ -25,11 +25,11 @@ class EventsRepository(
         val s = settings.settings.first()
         val rows =
             db
-                .items()
+                .events()
                 .eventProgrammes(now, now + AHEAD_MS, s.hiddenKeys(), s.showAdult)
         val channels =
             attempt(TAG, "Couldn't read event channel names") {
-                db.items().eventChannels(s.hiddenKeys(), s.showAdult)
+                db.events().eventChannels(s.hiddenKeys(), s.showAdult)
             }.getOrDefault(emptyList())
 
         // Thousands of guide rows through the title rules: off the main thread.
