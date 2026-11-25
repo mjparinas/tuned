@@ -28,6 +28,7 @@ import com.tunedplayer.app.ui.onboarding.QrModules
 import com.tunedplayer.app.ui.settings.AccountSignIn
 import com.tunedplayer.app.ui.settings.AccountSignInDialog
 import com.tunedplayer.app.ui.settings.LogReport
+import com.tunedplayer.app.ui.settings.ReportDialog
 import com.tunedplayer.app.ui.settings.ReportRow
 import com.tunedplayer.app.ui.settings.SettingsPage
 import com.tunedplayer.app.ui.settings.SignOutDialog
@@ -107,6 +108,33 @@ class SettingsScreenshots : Screenshots() {
         SettingsPageRoute(SettingsPage.ABOUT.name),
         wait = text(R.string.settings_user_agent),
         then = { compose.onNodeWithText(text(R.string.report_title)).performScrollTo() },
+    )
+
+    /** The Report a problem dialog, nearly the phone's width, with Send to Tuned and Cancel (no Share instead). */
+    @Test
+    fun reportDialog() = shot(
+        "settings-report-dialog",
+        SettingsPageRoute(SettingsPage.ABOUT.name),
+        wait = text(R.string.report_dialog_text),
+        overlay = { ReportDialog(busy = false, failed = false, onDismiss = {}, onSend = { _, _ -> }, startWhat = REPORT_WHAT) },
+    )
+
+    /** While it sends: a spinner and a line saying the log and the device's details are going. */
+    @Test
+    fun reportDialogSending() = shot(
+        "settings-report-dialog-sending",
+        SettingsPageRoute(SettingsPage.ABOUT.name),
+        wait = text(R.string.logs_report_sending),
+        overlay = { ReportDialog(busy = true, failed = false, onDismiss = {}, onSend = { _, _ -> }, startWhat = REPORT_WHAT) },
+    )
+
+    /** After a failed send: what was typed stays, with Try again. */
+    @Test
+    fun reportDialogFailed() = shot(
+        "settings-report-dialog-failed",
+        SettingsPageRoute(SettingsPage.ABOUT.name),
+        wait = text(R.string.logs_report_failed),
+        overlay = { ReportDialog(busy = false, failed = true, onDismiss = {}, onSend = { _, _ -> }, startWhat = REPORT_WHAT) },
     )
 
     /** On a TV, Troubleshooting has only Logs: there's no keyboard to say what happened. */
@@ -299,6 +327,7 @@ private val SAMPLE_CHANGES =
 
 private const val SIGN_IN_PAGE = "https://www.tunedplayer.com/account?tv=K7QF29MD"
 private val SIGN_IN_CODE = AccountSignIn.State.Code("K7QF-29MD", SIGN_IN_PAGE, QrModules.of(SIGN_IN_PAGE))
+private const val REPORT_WHAT = "The guide stopped loading after I switched playlists."
 
 /** Every page of Settings, so a new page or row shows up without anyone adding a line. */
 @RunWith(ParameterizedRobolectricTestRunner::class)

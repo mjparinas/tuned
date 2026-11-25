@@ -252,18 +252,13 @@
         <item quantity="other">%d raporty o awariach i zawieszeniach</item>
     </plurals>
     <string name="report_title">Zgłoś problem</string>
-    <string name="report_summary">Wysyła wersję, dane tego urządzenia, ostatnią awarię lub zawieszenie i ostatni dziennik, bez danych logowania, do Tuned lub tam, gdzie udostępnisz.</string>
-    <string name="report_copied">Nic tu nie może tego udostępnić, więc raport został skopiowany. Wklej go do e-maila lub wiadomości.</string>
-    <string name="report_failed">Nie udało się udostępnić ani skopiować raportu. Dzienniki poniżej mają te same szczegóły.</string>
-    <string name="report_subject">Raport o problemie z Tuned %1$s</string>
-    <string name="report_dialog_text">Opisz, co się stało. Wersja, dane tego urządzenia, ostatnia awaria lub zawieszenie i ostatni dziennik zostaną dołączone, bez danych logowania.</string>
+    <string name="report_summary">Wysyła do Tuned opis problemu, ostatni dziennik, ostatnią awarię lub zawieszenie oraz dane tego urządzenia, np. model i wersję Androida. Dane logowania są pomijane.</string>
+    <string name="report_dialog_text">Opisz, co się stało. Ostatni dziennik, ostatnia awaria lub zawieszenie oraz dane tego urządzenia, np. model i wersja Androida, zostaną dołączone, bez danych logowania.</string>
     <string name="report_what">Co się stało?</string>
     <string name="report_contact">E-mail do odpowiedzi (opcjonalnie)</string>
     <string name="report_send">Wyślij do Tuned</string>
     <string name="report_sending">Wysyłanie…</string>
-    <string name="report_share_instead">Udostępnij zamiast tego</string>
     <string name="report_sent">Wysłano do Tuned. Dziękujemy za zgłoszenie.</string>
-    <string name="report_send_failed">Nie udało się wysłać. Sprawdź połączenie i spróbuj ponownie lub udostępnij raport.</string>
     <string name="logs_report_summary">Wysyła ten dziennik i szczegóły tego urządzenia, takie jak model i wersja Androida, do Tuned. Nic nie trzeba wpisywać, a dane logowania są pomijane.</string>
     <string name="logs_report_sending">Wysyłanie dziennika i szczegółów urządzenia…</string>
     <string name="logs_report_failed">Nie udało się wysłać. Sprawdź połączenie i spróbuj ponownie.</string>

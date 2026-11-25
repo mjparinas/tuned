@@ -242,18 +242,13 @@
         <item quantity="other">%d çökme ve donma raporu</item>
     </plurals>
     <string name="report_title">Sorun bildir</string>
-    <string name="report_summary">Sürümü, bu cihazı, son çökme veya donmayı ve son günlüğü, giriş bilgileri olmadan Tuned\'a ya da paylaştığın yere gönderir.</string>
-    <string name="report_copied">Burada paylaşacak bir şey yok, bu yüzden rapor kopyalandı. Bir e-postaya veya mesaja yapıştır.</string>
-    <string name="report_failed">Rapor paylaşılamadı veya kopyalanamadı. Aşağıdaki Günlükler aynı ayrıntıları içerir.</string>
-    <string name="report_subject">Tuned %1$s sorun raporu</string>
-    <string name="report_dialog_text">Ne olduğunu anlat. Sürüm, bu cihaz, son çökme veya donma ve son günlük, giriş bilgileri çıkarılarak birlikte gönderilir.</string>
+    <string name="report_summary">Ne olduğunu, son günlüğü, son çökmeyi veya donmayı ve bu cihazın model ve Android sürümü gibi ayrıntılarını Tuned\'a gönderir. Giriş bilgileri dahil edilmez.</string>
+    <string name="report_dialog_text">Ne olduğunu yazın. Son günlük, son çökme veya donma ve bu cihazın model ve Android sürümü gibi ayrıntıları giriş bilgileri çıkarılarak birlikte gönderilir.</string>
     <string name="report_what">Ne oldu?</string>
     <string name="report_contact">Yanıt için e-posta (isteğe bağlı)</string>
     <string name="report_send">Tuned\'a gönder</string>
     <string name="report_sending">Gönderiliyor…</string>
-    <string name="report_share_instead">Bunun yerine paylaş</string>
     <string name="report_sent">Tuned\'a gönderildi. Bildirdiğin için teşekkürler.</string>
-    <string name="report_send_failed">Gönderilemedi. Bağlantıyı kontrol edip tekrar dene veya bunun yerine paylaş.</string>
     <string name="logs_report_summary">Bu günlüğü ve bu cihazın model ve Android sürümü gibi bilgilerini Tuned\'a gönderir. Bir şey yazmanız gerekmez, giriş bilgileri dahil edilmez.</string>
     <string name="logs_report_sending">Günlük ve cihaz bilgileri gönderiliyor…</string>
     <string name="logs_report_failed">Gönderilemedi. Bağlantıyı kontrol edip tekrar deneyin.</string>

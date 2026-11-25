@@ -1,9 +1,11 @@
 package com.tunedplayer.app.ui.settings
 
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
@@ -21,6 +23,7 @@ import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -35,6 +38,7 @@ import com.tunedplayer.app.diagnostics.ProblemReport
 import com.tunedplayer.app.diagnostics.launchSafely
 import com.tunedplayer.app.premium.PremiumRow
 import com.tunedplayer.app.ui.DeveloperLogRoute
+import com.tunedplayer.app.ui.common.DialogWideMaxWidth
 import com.tunedplayer.app.ui.common.TunedDialog
 import com.tunedplayer.app.ui.common.isTelevision
 import kotlinx.coroutines.Dispatchers
@@ -93,70 +97,80 @@ private fun UsageStatsRow(
 }
 
 /**
- * Report a problem (Melvin, 2026-11-19): gathers the version, device, latest crash or freeze and the recent log, with
- * no login. The person says what happened and sends it to Tuned (the admin's Reports), or shares it from the share
- * sheet so they pick where it goes ([ProblemReport]).
+ * Report a problem (Melvin, 2026-11-19): the person says what happened and Send to Tuned sends it to the admin's Reports
+ * with everything a fix needs, gathered on its own: the recent log, the latest crash or freeze and this device's details,
+ * with no login ([ProblemReport.sendToTuned]). Since 2026-11-21 (Melvin: "can you also get rid of the share instead?")
+ * there is no share sheet. The dialog stays open with a spinner while it sends; a failed send keeps what was typed and
+ * offers Try again, and a sent one closes and the row says so.
  */
 @Composable
 private fun ReportProblemRow() {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    var outcome by remember { mutableStateOf<Int?>(null) }
+    var sent by remember { mutableStateOf(false) }
     var asking by remember { mutableStateOf(false) }
     var busy by remember { mutableStateOf(false) }
+    var failed by remember { mutableStateOf(false) }
     SettingRow(
         stringResource(R.string.report_title),
-        stringResource(outcome ?: R.string.report_summary),
-        onClick = { if (!busy) asking = true },
+        stringResource(if (sent) R.string.report_sent else R.string.report_summary),
+        onClick = {
+            if (!busy) {
+                failed = false
+                asking = true
+            }
+        },
     )
     if (asking) {
         ReportDialog(
             busy = busy,
+            failed = failed,
             onDismiss = { if (!busy) asking = false },
-            onShare = {
-                asking = false
-                busy = true
-                scope.launchSafely("Report", onError = { busy = false }) {
-                    val report = withContext(Dispatchers.IO) { ProblemReport.build(context.applicationContext) }
-                    outcome =
-                        when (ProblemReport.send(context, report)) {
-                            ProblemReport.Outcome.COPIED -> R.string.report_copied
-                            ProblemReport.Outcome.FAILED -> R.string.report_failed
-                            ProblemReport.Outcome.SHARED -> null
-                        }
-                    busy = false
-                }
-            },
             onSend = { what, contact ->
                 busy = true
-                scope.launchSafely("Report", onError = { busy = false }) {
+                failed = false
+                scope.launchSafely(
+                    "Report",
+                    onError = {
+                        busy = false
+                        failed = true
+                    },
+                ) {
                     val app = context.applicationContext
                     val c = app.container
-                    val sent =
+                    val ok =
                         withContext(Dispatchers.IO) {
                             ProblemReport.sendToTuned(app, c.http, c.tvSignInUrl, what, contact, c.usage.idIfOn())
                         }
-                    outcome = if (sent) R.string.report_sent else R.string.report_send_failed
                     busy = false
-                    asking = false
+                    failed = !ok
+                    if (ok) {
+                        sent = true
+                        asking = false
+                    }
                 }
             },
         )
     }
 }
 
-/** What happened, an email for a reply if they want one, then Send to Tuned or Share instead. */
+/**
+ * What happened and an email for a reply if they want one, then Send to Tuned. Nearly the screen's width on a phone
+ * (Melvin, 2026-11-21: "Can you make this wider?"), up to [DialogWideMaxWidth] on a tablet.
+ */
 @Composable
-private fun ReportDialog(
+internal fun ReportDialog(
     busy: Boolean,
+    failed: Boolean,
     onDismiss: () -> Unit,
-    onShare: () -> Unit,
     onSend: (what: String, contact: String) -> Unit,
+    startWhat: String = "",
 ) {
-    var what by remember { mutableStateOf("") }
+    var what by remember { mutableStateOf(startWhat) }
     var contact by remember { mutableStateOf("") }
     TunedDialog(
         onDismissRequest = onDismiss,
+        maxWidth = DialogWideMaxWidth,
         title = { Text(stringResource(R.string.report_title)) },
         text = {
             Column(Modifier.verticalScroll(rememberScrollState())) {
@@ -167,6 +181,7 @@ private fun ReportDialog(
                     onValueChange = { what = it.take(WHAT_LIMIT) },
                     label = { Text(stringResource(R.string.report_what)) },
                     minLines = 3,
+                    enabled = !busy,
                     modifier = Modifier.fillMaxWidth(),
                 )
                 Spacer(Modifier.height(8.dp))
@@ -175,17 +190,40 @@ private fun ReportDialog(
                     onValueChange = { contact = it.take(CONTACT_LIMIT) },
                     label = { Text(stringResource(R.string.report_contact)) },
                     singleLine = true,
+                    enabled = !busy,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
                     modifier = Modifier.fillMaxWidth(),
                 )
+                if (busy || failed) {
+                    Spacer(Modifier.height(12.dp))
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        if (busy) {
+                            RowSpinner()
+                            Spacer(Modifier.width(12.dp))
+                        }
+                        Text(
+                            stringResource(if (busy) R.string.logs_report_sending else R.string.logs_report_failed),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = if (failed) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
             }
         },
         confirmButton = {
             TextButton(onClick = { onSend(what, contact) }, enabled = !busy && what.isNotBlank()) {
-                Text(stringResource(if (busy) R.string.report_sending else R.string.report_send))
+                Text(
+                    stringResource(
+                        when {
+                            busy -> R.string.report_sending
+                            failed -> R.string.retry
+                            else -> R.string.report_send
+                        },
+                    ),
+                )
             }
         },
-        dismissButton = { TextButton(onClick = onShare, enabled = !busy) { Text(stringResource(R.string.report_share_instead)) } },
+        dismissButton = { TextButton(onClick = onDismiss, enabled = !busy) { Text(stringResource(R.string.cancel)) } },
     )
 }
 

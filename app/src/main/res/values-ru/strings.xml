@@ -252,18 +252,13 @@
         <item quantity="other">%d отчёта о сбоях и зависаниях</item>
     </plurals>
     <string name="report_title">Сообщить о проблеме</string>
-    <string name="report_summary">Отправляет версию, данные об этом устройстве, последний сбой или зависание и недавний журнал, без данных для входа, в Tuned или туда, куда вы поделитесь.</string>
-    <string name="report_copied">Здесь нечем поделиться, поэтому отчёт скопирован. Вставьте его в письмо или сообщение.</string>
-    <string name="report_failed">Не удалось поделиться отчётом или скопировать его. В разделе «Журналы» ниже те же сведения.</string>
-    <string name="report_subject">Отчёт о проблеме Tuned %1$s</string>
-    <string name="report_dialog_text">Расскажите, что произошло. Версия, данные об устройстве, последний сбой или зависание и недавний журнал будут приложены, без данных для входа.</string>
+    <string name="report_summary">Отправляет в Tuned описание проблемы, недавний журнал, последний сбой или зависание и сведения об этом устройстве, например модель и версию Android. Данные для входа не включаются.</string>
+    <string name="report_dialog_text">Опишите, что произошло. Недавний журнал, последний сбой или зависание и сведения об этом устройстве, например модель и версия Android, будут отправлены вместе с описанием, без данных для входа.</string>
     <string name="report_what">Что произошло?</string>
     <string name="report_contact">Email для ответа (необязательно)</string>
     <string name="report_send">Отправить в Tuned</string>
     <string name="report_sending">Отправка…</string>
-    <string name="report_share_instead">Поделиться</string>
     <string name="report_sent">Отправлено в Tuned. Спасибо, что сообщили.</string>
-    <string name="report_send_failed">Не удалось отправить. Проверьте подключение и попробуйте снова или поделитесь отчётом.</string>
     <string name="logs_report_summary">Отправляет этот журнал и сведения об устройстве, например модель и версию Android, в Tuned. Ничего вводить не нужно, данные входа не передаются.</string>
     <string name="logs_report_sending">Отправка журнала и сведений об устройстве…</string>
     <string name="logs_report_failed">Не удалось отправить. Проверьте подключение и повторите попытку.</string>

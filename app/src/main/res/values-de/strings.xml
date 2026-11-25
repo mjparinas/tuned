@@ -242,18 +242,13 @@
         <item quantity="other">%d Absturz- und Hängerberichte</item>
     </plurals>
     <string name="report_title">Problem melden</string>
-    <string name="report_summary">Sendet die Version, dieses Gerät, den letzten Absturz oder Hänger und das aktuelle Protokoll ohne Anmeldedaten an Tuned oder dorthin, wo du es teilst.</string>
-    <string name="report_copied">Hier kann nichts teilen, deshalb wurde der Bericht kopiert. Füge ihn in eine E-Mail oder Nachricht ein.</string>
-    <string name="report_failed">Der Bericht konnte weder geteilt noch kopiert werden. Protokolle weiter unten enthält dieselben Details.</string>
-    <string name="report_subject">Tuned %1$s Problembericht</string>
-    <string name="report_dialog_text">Beschreibe, was passiert ist. Version, dieses Gerät, der letzte Absturz oder Hänger und das aktuelle Protokoll werden mitgeschickt, ohne Anmeldedaten.</string>
+    <string name="report_summary">Sendet, was passiert ist, das aktuelle Protokoll, den letzten Absturz oder Hänger und die Details dieses Geräts, etwa Modell und Android-Version, an Tuned. Anmeldedaten bleiben außen vor.</string>
+    <string name="report_dialog_text">Beschreibe, was passiert ist. Das aktuelle Protokoll, der letzte Absturz oder Hänger und die Details dieses Geräts, etwa Modell und Android-Version, werden mitgeschickt, ohne Anmeldedaten.</string>
     <string name="report_what">Was ist passiert?</string>
     <string name="report_contact">E-Mail für eine Antwort (optional)</string>
     <string name="report_send">An Tuned senden</string>
     <string name="report_sending">Wird gesendet…</string>
-    <string name="report_share_instead">Stattdessen teilen</string>
     <string name="report_sent">An Tuned gesendet. Danke für deine Meldung.</string>
-    <string name="report_send_failed">Senden fehlgeschlagen. Prüfe die Verbindung und versuche es erneut, oder teile es stattdessen.</string>
     <string name="logs_report_summary">Sendet dieses Protokoll und Details zu diesem Gerät, etwa Modell und Android-Version, an Tuned. Nichts zu tippen, und Anmeldedaten bleiben außen vor.</string>
     <string name="logs_report_sending">Protokoll und Gerätedetails werden gesendet…</string>
     <string name="logs_report_failed">Senden fehlgeschlagen. Prüfe die Verbindung und versuche es dann erneut.</string>

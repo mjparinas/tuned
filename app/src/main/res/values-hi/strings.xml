@@ -242,18 +242,13 @@
         <item quantity="other">%d क्रैश और फ़्रीज़ रिपोर्ट</item>
     </plurals>
     <string name="report_title">समस्या की रिपोर्ट करें</string>
-    <string name="report_summary">वर्ज़न, यह डिवाइस, सबसे हाल का क्रैश या फ़्रीज़ और हाल का लॉग, बिना लॉगिन के, Tuned को या जहां आप शेयर करें वहां भेजता है।</string>
-    <string name="report_copied">यहां कुछ भी इसे शेयर नहीं कर सकता, इसलिए रिपोर्ट कॉपी कर ली गई। इसे ईमेल या मैसेज में पेस्ट करें।</string>
-    <string name="report_failed">रिपोर्ट शेयर या कॉपी नहीं हो सकी। नीचे लॉग में वही जानकारी है।</string>
-    <string name="report_subject">Tuned %1$s समस्या रिपोर्ट</string>
-    <string name="report_dialog_text">बताएं कि क्या हुआ। वर्ज़न, यह डिवाइस, सबसे हाल का क्रैश या फ़्रीज़ और हाल का लॉग साथ जाते हैं, लॉगिन हटाकर।</string>
+    <string name="report_summary">क्या हुआ, हाल का लॉग, आख़िरी क्रैश या फ़्रीज़ और इस डिवाइस की जानकारी, जैसे उसका मॉडल और Android वर्शन, Tuned को भेजता है। लॉगिन जानकारी शामिल नहीं होती।</string>
+    <string name="report_dialog_text">बताएँ क्या हुआ। हाल का लॉग, आख़िरी क्रैश या फ़्रीज़ और इस डिवाइस की जानकारी, जैसे उसका मॉडल और Android वर्शन, लॉगिन जानकारी हटाकर साथ भेजे जाते हैं।</string>
     <string name="report_what">क्या हुआ?</string>
     <string name="report_contact">जवाब के लिए ईमेल (वैकल्पिक)</string>
     <string name="report_send">Tuned को भेजें</string>
     <string name="report_sending">भेजा जा रहा है…</string>
-    <string name="report_share_instead">इसके बजाय शेयर करें</string>
     <string name="report_sent">Tuned को भेज दिया गया। बताने के लिए धन्यवाद।</string>
-    <string name="report_send_failed">भेजा नहीं जा सका। कनेक्शन जांचें और फिर से कोशिश करें, या इसके बजाय शेयर करें।</string>
     <string name="logs_report_summary">यह लॉग और इस डिवाइस की जानकारी, जैसे मॉडल और Android वर्शन, Tuned को भेजता है। कुछ टाइप नहीं करना है, और लॉगिन शामिल नहीं होते।</string>
     <string name="logs_report_sending">यह लॉग और डिवाइस की जानकारी भेजी जा रही है…</string>
     <string name="logs_report_failed">भेजा नहीं जा सका। कनेक्शन जाँचें, फिर दोबारा कोशिश करें।</string>
