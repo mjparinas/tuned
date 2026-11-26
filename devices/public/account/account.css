@@ -294,6 +294,49 @@ form .field-row button {
     flex: 1 1 14rem;
 }
 
+/* The app's switches: the account page's Emails row and the Playlists and settings page. */
+input.switch {
+    appearance: none;
+    flex-shrink: 0;
+    width: 52px;
+    min-height: 32px;
+    height: 32px;
+    padding: 0;
+    border-radius: 999px;
+    background: var(--card-2);
+    border: 2px solid var(--muted);
+    position: relative;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+input.switch::before {
+    content: "";
+    position: absolute;
+    top: 6px;
+    left: 6px;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: var(--muted);
+    transition:
+        transform 0.15s,
+        width 0.15s;
+}
+input.switch:checked {
+    background: var(--primary);
+    border-color: var(--primary);
+}
+input.switch:checked::before {
+    background: var(--on-primary);
+    top: 2px;
+    width: 24px;
+    height: 24px;
+    transform: translateX(18px);
+}
+input.switch:disabled {
+    opacity: 0.5;
+}
+
 /* The playlists page's back link only shows where there's no side menu. */
 .account .back {
     margin: 16px 0 0;

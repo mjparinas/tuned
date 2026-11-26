@@ -34,6 +34,8 @@ An account is optional: watching never needs one. If you sign in with Google or 
 
 If you turn on backup, the service keeps your saved playlists (including their logins), settings, profiles, favourites, lists and watch later, so a new device can restore them. The backup isn't encrypted by Tuned. It is reachable only by devices signed in to your account, and the last 5 versions are kept. While you're signed in, the app also keeps a copy of the live channel list (with each channel's country) and the next day of guide of the playlist it is using in your account, without the playlist's password, so the website's Channels and guide page and its Watch page can show them and a new device can start from them; it goes with the backup when you delete it. When the website shows a channel logo that your provider keeps on an insecure (http) address, Tuned's service fetches that picture for your browser; it fetches pictures only and keeps none of them. Streams never pass through Tuned's service: Watch plays them straight from your provider in your browser, and only one browser on your account plays at a time.
 
+For its first few weeks, a new account gets one short email a day about something Tuned does, sent through Resend. Tuned keeps only which of those emails went out and whether you want them. Every email has a one-click unsubscribe link, and the account page has a switch for them.
+
 You can remove a device, delete your backup, or delete your whole account on the account page at any time. Deleting the account deletes all of this and cancels a yearly plan bought on the website.
 
 ## The website's visitor count

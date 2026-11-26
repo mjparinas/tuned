@@ -174,9 +174,32 @@ async function load() {
         drawNav($("account-nav"), "account");
         countPlaylists();
     }
+    if (me) showTips();
     await showFeatures();
     showLinkedSection();
 }
+
+/** The Daily tips by email switch (docs/decisions/emails.md): reads the account's choice, and saves a change at once. */
+async function showTips() {
+    const control = $("tips-switch");
+    const answer = await call("GET", "/api/account/email");
+    if (answer.status !== "ok") return;
+    control.checked = answer.tips;
+    control.disabled = false;
+}
+$("tips-switch").onchange = async () => {
+    const control = $("tips-switch");
+    const on = control.checked;
+    control.disabled = true;
+    tell("account-message", on ? "Turning daily tips on…" : "Turning daily tips off…", "ok");
+    const answer = await call("POST", "/api/account/email", { tips: on });
+    control.disabled = false;
+    if (answer.status === "ok") tell("account-message", on ? "Daily tips are on." : "Daily tips are off. No more of them.", "ok");
+    else {
+        control.checked = !on;
+        tell("account-message", refusals[answer.status] ?? refusals.unavailable);
+    }
+};
 let navDrawn = false;
 
 /** How many playlists the account keeps, for the Playlists tile. If it can't be read, the tile just says Manage. */

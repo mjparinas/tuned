@@ -42,6 +42,10 @@
                             Sign in with Apple
                         </a>
                     </div>
+                    <p class="small">
+                        New accounts get one short email a day for a few weeks, each about something Tuned does. Turn them off here or from
+                        any email.
+                    </p>
                 </section>
 
                 <section id="tv" class="card" hidden>
@@ -185,8 +189,25 @@
                     </section>
 
                     <section class="card span" id="account" aria-labelledby="account-title">
-                        <h2 id="account-title">Sign out or delete</h2>
+                        <h2 id="account-title">Emails, sign out or delete</h2>
                         <div class="setting-rows">
+                            <div class="row">
+                                <div>
+                                    <label for="tips-switch">Daily tips by email</label>
+                                    <p class="small" id="tips-line">
+                                        For your first few weeks, one short email a day about something Tuned does. Every email has an
+                                        unsubscribe link.
+                                    </p>
+                                </div>
+                                <input
+                                    type="checkbox"
+                                    class="switch"
+                                    role="switch"
+                                    id="tips-switch"
+                                    aria-describedby="tips-line"
+                                    disabled
+                                />
+                            </div>
                             <div class="row">
                                 <div>
                                     <div>Sign out of this browser</div>

@@ -10,6 +10,7 @@ import { derive, snoozeUntil } from "./todo.mjs";
 import { hashRecovery, newRecoveryCodes, newSecret, otpauth, useRecovery, verify } from "./totp.mjs";
 import { sameOrigin } from "./session.mjs";
 import { AUTOMATIONS } from "./automations.mjs";
+import { tunedMail } from "../emails.mjs";
 
 const json = (body, status = 200, headers = {}) => Response.json(body, { status, headers: { "Cache-Control": "no-store", ...headers } });
 const TWO_FACTOR_TRIES = 5;
@@ -251,11 +252,14 @@ export function adminApi(deps) {
         },
         async automations(ask) {
             if (ask.do === "test") {
-                const sent = await deps.mail.send(
-                    String(env.ADMIN_EMAILS ?? "").split(","),
-                    "Tuned admin: test alert",
-                    "Alerts from the admin reach this address.",
-                );
+                const test = tunedMail({
+                    kicker: "Tuned admin",
+                    title: "Alerts reach you here ✅",
+                    subject: "Tuned admin: test alert",
+                    intro: "This is a test from the Automations tab. Purchases, refunds, problem reports and the morning digest come to this address.",
+                    why: "Sent to Tuned's admins from the Automations tab.",
+                });
+                const sent = await deps.mail.send(String(env.ADMIN_EMAILS ?? "").split(","), test.subject, test.text, test.html);
                 return { audit: ["automation.test", { sent }], sent };
             }
             if (!AUTOMATIONS.some((a) => a.key === ask.key) || typeof ask.on !== "boolean") return null;

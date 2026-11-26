@@ -1,6 +1,8 @@
 // The Automations tab and the hourly job behind it (docs/decisions/admin.md, as Liftsmith's alerts and morning
 // digest): emails to ADMIN_EMAILS only, each kind switchable, each at most once every 6 hours (the digest once a day).
 
+import { SITE, tunedMail } from "../emails.mjs";
+
 export const AUTOMATIONS = [
     { key: "purchase", label: "A new purchase", detail: "Premium or seats bought on Play or the website." },
     { key: "refund", label: "A refund", detail: "Its seats go back automatically; this just says so." },
@@ -22,44 +24,57 @@ export function alertsToSend({ happened, failures, digest, switches, last, now }
     const on = (k) => switches[k] !== false;
     const due = (k) => !last[k] || now - last[k] >= ALERT_GAP_MS;
     const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
+    // Each alert is a short branded email (lib/emails.mjs tunedMail), with a button to the tab it's about.
+    const alert = (kind, subject, m) => {
+        const mail = tunedMail({
+            kicker: "Tuned admin",
+            subject,
+            ...m,
+            why: "Sent to Tuned's admins. Switch each kind on or off in the admin's Automations tab.",
+            footer: null,
+        });
+        out.push({ kind, subject, text: mail.text, html: mail.html });
+    };
+    const tab = (name) => `${SITE}/admin?tab=${name}`;
     if (on("purchase") && happened.purchases > 0 && due("purchase"))
-        out.push({
-            kind: "purchase",
-            subject: `Tuned: ${plural(happened.purchases, "new purchase", "new purchases")}`,
-            text: "See the Revenue tab.",
+        alert("purchase", `Tuned: ${plural(happened.purchases, "new purchase", "new purchases")}`, {
+            title: `${plural(happened.purchases, "new purchase", "new purchases")} 🎉`,
+            intro: "Someone just bought Premium or more seats, on Play or the website.",
+            cta: { label: "Open Revenue", url: tab("Revenue") },
         });
     if (on("refund") && happened.refunds > 0 && due("refund"))
-        out.push({
-            kind: "refund",
-            subject: `Tuned: ${plural(happened.refunds, "refund", "refunds")}`,
-            text: "Their seats were given back. See the Revenue tab.",
+        alert("refund", `Tuned: ${plural(happened.refunds, "refund", "refunds")}`, {
+            title: plural(happened.refunds, "refund", "refunds"),
+            intro: "Their seats were given back automatically. Nothing to do unless you want a closer look.",
+            cta: { label: "Open Revenue", url: tab("Revenue") },
         });
     if (on("report") && happened.reports > 0 && due("report"))
-        out.push({
-            kind: "report",
-            subject: `Tuned: ${plural(happened.reports, "new problem report", "new problem reports")}`,
-            text: "See the Reports tab.",
+        alert("report", `Tuned: ${plural(happened.reports, "new problem report", "new problem reports")}`, {
+            title: plural(happened.reports, "new problem report", "new problem reports"),
+            intro: "Sent from Settings › Report a problem, with the device's log (logins already taken out).",
+            cta: { label: "Read the reports", url: tab("Reports") },
         });
     if (on("signin_failures") && failures >= 5 && due("signin_failures"))
-        out.push({
-            kind: "signin_failures",
-            subject: `Tuned: ${failures} failed admin sign-ins today`,
-            text: "If that wasn't you, check the Log tab.",
+        alert("signin_failures", `Tuned: ${failures} failed admin sign-ins today`, {
+            title: `${failures} failed admin sign-ins today`,
+            intro: "Five or more wrong second-step codes since midnight UTC. If that wasn't you, check who's been trying.",
+            cta: { label: "Open the Log", url: tab("Log") },
         });
     const hour = new Date(now).getUTCHours();
     const today = new Date(now).toISOString().slice(0, 10);
     const lastDigestDay = last.digest ? new Date(last.digest).toISOString().slice(0, 10) : null;
     if (on("digest") && digest && hour >= DIGEST_HOUR_UTC && lastDigestDay !== today)
-        out.push({
-            kind: "digest",
-            subject: "Tuned: yesterday",
-            text: [
-                `Installs: ${digest.installs}`,
-                `New accounts: ${digest.accounts}`,
-                `Purchases: ${digest.purchases}`,
-                `Problem reports: ${digest.reports}`,
-                `Website visitors: ${digest.visitors}`,
-            ].join("\n"),
+        alert("digest", "Tuned: yesterday", {
+            title: "Yesterday in Tuned",
+            intro: "Good morning. Here's how yesterday went.",
+            rows: [
+                ["Installs", String(digest.installs)],
+                ["New accounts", String(digest.accounts)],
+                ["Purchases", String(digest.purchases)],
+                ["Problem reports", String(digest.reports)],
+                ["Website visitors", String(digest.visitors)],
+            ],
+            cta: { label: "Open the admin", url: tab("Overview") },
         });
     return out;
 }
@@ -67,14 +82,20 @@ export function alertsToSend({ happened, failures, digest, switches, last, now }
 /** Sends through Resend's API; false (and no throw) when it isn't set up or fails. */
 export function resendMailer(env = process.env, fetcher = fetch) {
     return {
-        async send(to, subject, text) {
+        async send(to, subject, text, html) {
             const list = to.map((e) => e.trim()).filter(Boolean);
             if (!env.RESEND_API_KEY || !list.length) return false;
             try {
                 const response = await fetcher("https://api.resend.com/emails", {
                     method: "POST",
                     headers: { Authorization: `Bearer ${env.RESEND_API_KEY}`, "Content-Type": "application/json" },
-                    body: JSON.stringify({ from: env.ADMIN_FROM || "Tuned admin <onboarding@resend.dev>", to: list, subject, text }),
+                    body: JSON.stringify({
+                        from: env.ADMIN_FROM || "Tuned admin <onboarding@resend.dev>",
+                        to: list,
+                        subject,
+                        text,
+                        ...(html ? { html } : {}),
+                    }),
                 });
                 return response.ok;
             } catch (error) {
