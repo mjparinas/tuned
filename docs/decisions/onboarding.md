@@ -48,7 +48,9 @@ Melvin, 2026-11-19: "if i install this on an android tv, entering in the url to 
 
 **Not built, and why:** a phone keyboard linked to the TV (the Google TV and SmartThings apps already type into any field, and it still means typing the login), and a page served by the TV over Wi-Fi with no server (Samsung TV apps can't listen on a port, and it fails on guest Wi-Fi and phones on mobile data).
 
-**App links** need the relay's `/.well-known/assetlinks.json` to list each signing key: it has the GitHub release key. The Play build's app-signing key goes there once the app is in Play Console; until then that build's QR opens the page, which links to the app with `tuned://tv`.
+**App links** need `/.well-known/assetlinks.json` on both hosts (www.tunedplayer.com and tuned-devices.vercel.app, one file in `devices/public/`) to list each signing key: the GitHub release key (`AD:40…`), which also signs the uploads to Play, and Play App Signing's key (`1B:D7…`, Play Console › Protected with Play), which is what signs the copies Play installs (2026-11-26, after Play Console's Deep links report showed both domains failing because only the GitHub key was there). `devices/lib/assetlinks.test.mjs` pins both. A build whose key is missing still works: its QR opens the page, which links to the app with `tuned://tv`. Changing the file goes live only when `main` deploys.
+
+**Media3's `BluetoothValidationActivity` stays.** Play Console lists its `content://media/internal/audio/media/` filter as a custom scheme failing app checks. It isn't a link: the library adds it so Android 16 and 17's Bluetooth (AVRCP) service lists Tuned as a media player for car and headphone controls, only callers holding `BLUETOOTH_PRIVILEGED` can start it, and it finishes at once. Removing it with `tools:node="remove"` would cost those controls, so the warning is ignored (2026-11-26).
 
 ## Sign out
 
