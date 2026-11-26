@@ -120,6 +120,10 @@ function serve(port, { signedIn }) {
                 res.writeHead(200, { "Content-Type": "application/json" });
                 return res.end(JSON.stringify(sampleAccount));
             }
+            if (path === "/api/account/email" && signedIn) {
+                res.writeHead(200, { "Content-Type": "application/json" });
+                return res.end(JSON.stringify({ status: "ok", tips: true }));
+            }
             if (path === "/api/account/library" && signedIn) {
                 res.writeHead(200, { "Content-Type": "application/json" });
                 return res.end(JSON.stringify(sampleLibrary));
