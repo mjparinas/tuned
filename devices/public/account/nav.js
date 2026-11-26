@@ -17,7 +17,7 @@ const SECTIONS = [
     ["pair", "Pair a TV"],
     ["backup", "Backup"],
     ["features", "What Tuned does"],
-    ["account", "Sign out or delete"],
+    ["account", "Emails, sign out or delete"],
 ];
 
 /**

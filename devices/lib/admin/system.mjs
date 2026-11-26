@@ -25,8 +25,26 @@ export const SETTINGS = [
     { group: "Admin", names: ["SUPPORT_EMAILS"], powers: "Who may read the admin without changing anything", required: false },
     { group: "Admin", names: ["ANALYTICS_SECRET"], powers: "Salt for the website's once-a-day visitor count", required: true },
     { group: "Admin", names: ["CRON_SECRET"], powers: "Lets Vercel's daily job run the digest and alerts", required: true },
-    { group: "Email", names: ["RESEND_API_KEY"], powers: "Alert and digest emails to admins", required: false },
+    {
+        group: "Email",
+        names: ["RESEND_API_KEY"],
+        powers: "Alert and digest emails to admins, and the daily emails to new accounts",
+        required: false,
+    },
     { group: "Email", names: ["ADMIN_FROM"], powers: "The From address of admin emails (a domain verified in Resend)", required: false },
+    {
+        group: "Email",
+        names: ["MAIL_FROM"],
+        powers: "The From address of the daily emails to new accounts (a domain verified in Resend)",
+        required: false,
+    },
+    {
+        group: "Email",
+        names: ["MAIL_POSTAL_ADDRESS"],
+        powers: "The postal address every email to people must carry (CAN-SPAM, CASL)",
+        required: false,
+    },
+    { group: "Email", names: ["EMAIL_SECRET"], powers: "Signs the unsubscribe links in emails (a long random string)", required: false },
     { group: "Payments", names: ["GOOGLE_PLAY_SERVICE_ACCOUNT"], powers: "Checking Play purchases", required: true },
     {
         group: "Payments",

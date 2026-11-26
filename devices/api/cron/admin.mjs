@@ -21,7 +21,7 @@ export async function GET(request) {
         });
         const mail = resendMailer();
         const to = String(process.env.ADMIN_EMAILS ?? "").split(",");
-        for (const alert of alerts) if (await mail.send(to, alert.subject, alert.text)) last[alert.kind] = now;
+        for (const alert of alerts) if (await mail.send(to, alert.subject, alert.text, alert.html)) last[alert.kind] = now;
         await data.setSetting("alert_last", last);
         await data.setSetting("cron_last_run", now);
         if (new Date(now).getUTCHours() === 4) await data.prune();

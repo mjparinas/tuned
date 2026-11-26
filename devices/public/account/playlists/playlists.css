@@ -105,48 +105,6 @@ label.check input {
     max-width: 100%;
     margin-left: auto;
 }
-input.switch {
-    appearance: none;
-    flex-shrink: 0;
-    width: 52px;
-    min-height: 32px;
-    height: 32px;
-    padding: 0;
-    border-radius: 999px;
-    background: var(--card-2);
-    border: 2px solid var(--muted);
-    position: relative;
-    cursor: pointer;
-    transition: background 0.15s;
-}
-input.switch::before {
-    content: "";
-    position: absolute;
-    top: 6px;
-    left: 6px;
-    width: 16px;
-    height: 16px;
-    border-radius: 50%;
-    background: var(--muted);
-    transition:
-        transform 0.15s,
-        width 0.15s;
-}
-input.switch:checked {
-    background: var(--primary);
-    border-color: var(--primary);
-}
-input.switch:checked::before {
-    background: var(--on-primary);
-    top: 2px;
-    width: 24px;
-    height: 24px;
-    transform: translateX(18px);
-}
-input.switch:disabled {
-    opacity: 0.5;
-}
-
 /*
  * On a desktop (account.css) the form opens beside the list instead of under it. Settings groups stack in one
  * column so each can be the section in view in the side menu (two-up left Player stuck as current over Profiles).

@@ -77,3 +77,17 @@ CREATE TABLE IF NOT EXISTS channel_lists (
     saved_at timestamptz NOT NULL DEFAULT now(),
     PRIMARY KEY (account_id, playlist_id)
 );
+
+-- The daily Getting to know Tuned emails (docs/decisions/emails.md): whether an account wants them, and which went out.
+-- lib/email-store.mjs also makes these the first time it needs them.
+CREATE TABLE IF NOT EXISTS email_prefs (
+    account_id uuid PRIMARY KEY REFERENCES accounts (id) ON DELETE CASCADE,
+    tips boolean NOT NULL DEFAULT true,
+    changed_at timestamptz NOT NULL DEFAULT now()
+);
+CREATE TABLE IF NOT EXISTS email_sends (
+    account_id uuid NOT NULL REFERENCES accounts (id) ON DELETE CASCADE,
+    key text NOT NULL,
+    sent_at timestamptz NOT NULL DEFAULT now(),
+    PRIMARY KEY (account_id, key)
+);
