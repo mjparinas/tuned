@@ -15,4 +15,8 @@
     <string name="simkl_expired">Il codice è scaduto prima di essere inserito.</string>
     <string name="simkl_failed">Impossibile raggiungere Simkl. Controlla la connessione e riprova.</string>
     <string name="simkl_try_again">Riprova</string>
+    <string name="simkl_import_films">Recupero film da Simkl…</string>
+    <string name="simkl_import_shows">Recupero serie da Simkl…</string>
+    <string name="simkl_import_none">Niente nella playlist corrisponde alla cronologia Simkl</string>
+    <string name="simkl_import_failed">Impossibile importare da Simkl. Tocca per riprovare.</string>
 </resources>

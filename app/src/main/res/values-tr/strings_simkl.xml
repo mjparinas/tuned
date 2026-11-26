@@ -15,4 +15,8 @@
     <string name="simkl_expired">Kod girilmeden süresi doldu.</string>
     <string name="simkl_failed">Simkl\'a ulaşılamadı. Bağlantıyı kontrol edip tekrar dene.</string>
     <string name="simkl_try_again">Tekrar dene</string>
+    <string name="simkl_import_films">Simkl\'tan filmler alınıyor…</string>
+    <string name="simkl_import_shows">Simkl\'tan diziler alınıyor…</string>
+    <string name="simkl_import_none">Listendeki hiçbir şey Simkl geçmişiyle eşleşmedi</string>
+    <string name="simkl_import_failed">Simkl\'tan içe aktarılamadı. Yeniden denemek için dokun.</string>
 </resources>

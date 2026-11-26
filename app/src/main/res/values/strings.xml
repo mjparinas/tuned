@@ -256,18 +256,13 @@
         <item quantity="other">%d crash and freeze reports</item>
     </plurals>
     <string name="report_title">Report a problem</string>
-    <string name="report_summary">Sends the version, this device, the latest crash or freeze and the recent log, with no login, to Tuned or wherever you share it.</string>
-    <string name="report_copied">Nothing here can share it, so the report was copied. Paste it into an email or message.</string>
-    <string name="report_failed">Couldn\'t share or copy the report. Logs below has the same details.</string>
-    <string name="report_subject">Tuned %1$s problem report</string>
-    <string name="report_dialog_text">Say what happened. The version, this device, the latest crash or freeze and the recent log go with it, with logins taken out.</string>
+    <string name="report_summary">Sends what happened, the recent log, the latest crash or freeze and this device\'s details, like its model and Android version, to Tuned. Logins are left out.</string>
+    <string name="report_dialog_text">Say what happened. The recent log, the latest crash or freeze and this device\'s details, like its model and Android version, go with it, with logins taken out.</string>
     <string name="report_what">What happened?</string>
     <string name="report_contact">Email for a reply (optional)</string>
     <string name="report_send">Send to Tuned</string>
     <string name="report_sending">Sending…</string>
-    <string name="report_share_instead">Share instead</string>
     <string name="report_sent">Sent to Tuned. Thanks for telling us.</string>
-    <string name="report_send_failed">Couldn\'t send it. Check the connection and try again, or share it instead.</string>
     <string name="logs_report_summary">Sends this log and this device\'s details, like its model and Android version, to Tuned. Nothing to type, and logins are left out.</string>
     <string name="logs_report_sending">Sending this log and this device\'s details…</string>
     <string name="logs_report_failed">Couldn\'t send it. Check the connection, then try again.</string>

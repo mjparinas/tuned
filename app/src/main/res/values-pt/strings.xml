@@ -247,18 +247,13 @@
         <item quantity="other">%d relatórios de falhas e travamentos</item>
     </plurals>
     <string name="report_title">Relatar um problema</string>
-    <string name="report_summary">Envia a versão, este dispositivo, a última falha ou travamento e o registro recente, sem login, para o Tuned ou para onde você compartilhar.</string>
-    <string name="report_copied">Nada aqui consegue compartilhar, então o relatório foi copiado. Cole num e-mail ou mensagem.</string>
-    <string name="report_failed">Não foi possível compartilhar nem copiar o relatório. Registros, abaixo, tem os mesmos detalhes.</string>
-    <string name="report_subject">Relatório de problema do Tuned %1$s</string>
-    <string name="report_dialog_text">Conte o que aconteceu. A versão, este dispositivo, a última falha ou travamento e o registro recente vão junto, sem os logins.</string>
+    <string name="report_summary">Envia para o Tuned o que aconteceu, o registro recente, a última falha ou travamento e os detalhes deste dispositivo, como o modelo e a versão do Android. Os logins ficam de fora.</string>
+    <string name="report_dialog_text">Conte o que aconteceu. O registro recente, a última falha ou travamento e os detalhes deste dispositivo, como o modelo e a versão do Android, vão junto, sem os logins.</string>
     <string name="report_what">O que aconteceu?</string>
     <string name="report_contact">E-mail para resposta (opcional)</string>
     <string name="report_send">Enviar ao Tuned</string>
     <string name="report_sending">Enviando…</string>
-    <string name="report_share_instead">Compartilhar</string>
     <string name="report_sent">Enviado ao Tuned. Obrigado por avisar.</string>
-    <string name="report_send_failed">Não foi possível enviar. Confira a conexão e tente de novo, ou compartilhe.</string>
     <string name="logs_report_summary">Envia este registro e os detalhes deste dispositivo, como modelo e versão do Android, ao Tuned. Nada para digitar, e os logins ficam de fora.</string>
     <string name="logs_report_sending">Enviando este registro e os detalhes do dispositivo…</string>
     <string name="logs_report_failed">Não foi possível enviar. Verifique a conexão e tente novamente.</string>

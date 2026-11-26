@@ -38,10 +38,10 @@ import com.tunedplayer.app.data.SyncCopyRepository
 import com.tunedplayer.app.data.SyncRepository
 import com.tunedplayer.app.data.TitleRatings
 import com.tunedplayer.app.data.TraktAccount
-import com.tunedplayer.app.data.TraktHistoryImport
 import com.tunedplayer.app.data.TuneRepository
 import com.tunedplayer.app.data.TunedAccount
 import com.tunedplayer.app.data.TvRelay
+import com.tunedplayer.app.data.WatchedHistoryImport
 import com.tunedplayer.app.data.db.TunedDatabase
 import com.tunedplayer.app.diagnostics.DeviceClock
 import com.tunedplayer.app.diagnostics.UsageStats
@@ -174,7 +174,8 @@ class AppContainer(
     val metadata by lazy { MetadataRepository(http, BuildConfig.TMDB_API_KEY, db.metadata(), appScope, ::tmdbReachable) }
     val titleRatings by lazy { TitleRatings(db, metadata) }
     val savedArtwork by lazy { SavedArtwork(context, db, metadata) }
-    val traktImport by lazy { TraktHistoryImport(trakt, db) }
+    val traktImport by lazy { WatchedHistoryImport(trakt, db, "TraktImport") }
+    val simklImport by lazy { WatchedHistoryImport(simkl, db, "SimklImport") }
     val people by lazy { PeopleRepository(http, BuildConfig.TMDB_API_KEY, db.metadata(), ::tmdbReachable) }
     val profiles by lazy { ProfileRepository(db, settings, browseFilters) }
 

@@ -9,6 +9,7 @@
     <string name="events_later">Bugün daha sonra</string>
     <string name="events_tomorrow">Yarın</string>
     <string name="events_live">Canlı</string>
+    <string name="events_no_time">Saat yok</string>
     <string name="events_empty">Rehberde önümüzdeki bir buçuk gün için maç, dövüş veya pay-per-view yok. Bu yanlış görünüyorsa rehberi Ayarlar\'dan yenile.</string>
     <plurals name="events_channels">
         <item quantity="one">%d kanalda</item>

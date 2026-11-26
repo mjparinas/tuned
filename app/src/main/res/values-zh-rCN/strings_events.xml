@@ -9,6 +9,7 @@
     <string name="events_later">今天稍后</string>
     <string name="events_tomorrow">明天</string>
     <string name="events_live">直播</string>
+    <string name="events_no_time">时间未定</string>
     <string name="events_empty">未来一天半的节目单中没有比赛、格斗或付费赛事。如果这看起来不对，请在设置中刷新节目单。</string>
     <plurals name="events_channels">
         <item quantity="other">在 %d 个频道播出</item>

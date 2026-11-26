@@ -9,6 +9,7 @@
     <string name="events_later">Później dzisiaj</string>
     <string name="events_tomorrow">Jutro</string>
     <string name="events_live">Na żywo</string>
+    <string name="events_no_time">Bez godziny</string>
     <string name="events_empty">W programie nie ma meczów, walk ani pay-per-view na najbliższe półtora dnia. Odśwież program w Ustawieniach, jeśli to wygląda na błąd.</string>
     <plurals name="events_channels">
         <item quantity="one">Na %d kanale</item>

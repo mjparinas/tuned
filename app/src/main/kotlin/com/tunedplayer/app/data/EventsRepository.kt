@@ -1,7 +1,10 @@
 package com.tunedplayer.app.data
 
+import com.tunedplayer.app.core.ChannelEvents
 import com.tunedplayer.app.core.Events
+import com.tunedplayer.app.core.TimeZones
 import com.tunedplayer.app.data.db.TunedDatabase
+import com.tunedplayer.app.diagnostics.attempt
 import com.tunedplayer.app.work.Reminders
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
@@ -22,8 +25,12 @@ class EventsRepository(
         val s = settings.settings.first()
         val rows =
             db
-                .items()
+                .events()
                 .eventProgrammes(now, now + AHEAD_MS, s.hiddenKeys(), s.showAdult)
+        val channels =
+            attempt(TAG, "Couldn't read event channel names") {
+                db.events().eventChannels(s.hiddenKeys(), s.showAdult)
+            }.getOrDefault(emptyList())
 
         // Thousands of guide rows through the title rules: off the main thread.
         return withContext(Dispatchers.Default) {
@@ -31,7 +38,15 @@ class EventsRepository(
                 rows
                     .filter { Events.sportyChannel(it.channelName, it.group) }
                     .map { Events.Row(it.itemId, it.channelName, it.group, it.title, it.start, it.stop) }
-            Events.group(sporty, now)
+            val fromGuide = Events.group(sporty, now)
+            // A channel whose guide lists no event may say it in its name ("PPV 7: UFC 312 10PM ET").
+            val listed = sporty.filter { Events.isEvent(it.title) }.mapTo(HashSet()) { it.itemId }
+            val unlisted = channels.filter { it.itemId !in listed }.map { ChannelEvents.Channel(it.itemId, it.name) }
+            // A name the rules trip over costs only the names, never the guide's events.
+            attempt(TAG, "Couldn't read events from channel names") {
+                val named = ChannelEvents.find(unlisted, now, now + AHEAD_MS, TimeZones.resolve(s.timeZone))
+                Events.withNamed(fromGuide, named, now)
+            }.getOrDefault(fromGuide)
         }
     }
 
@@ -87,6 +102,7 @@ class EventsRepository(
     }
 
     companion object {
+        private const val TAG = "Events"
         const val AHEAD_MS = 36 * 3_600_000L
 
         /** The key ([Reminders.key]) of [event]'s alert. */

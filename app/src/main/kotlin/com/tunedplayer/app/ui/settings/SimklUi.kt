@@ -30,6 +30,7 @@ import com.tunedplayer.app.premium.premiumUnlocked
 import com.tunedplayer.app.ui.common.TunedDialog
 import com.tunedplayer.app.ui.common.unbreakable
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -38,9 +39,11 @@ class SimklViewModel(
     app: Application,
 ) : AndroidViewModel(app) {
     private val account = app.container.simkl
+    private val historyImport = app.container.simklImport
     val available = account.available
     val session = account.session
     val scrobble = account.scrobbleOn
+    val importProgress = historyImport.progress
 
     /** Signing in: the code on screen, then how it ended. */
     sealed interface SignIn {
@@ -58,6 +61,7 @@ class SimklViewModel(
     private val signInFlow = MutableStateFlow<SignIn?>(null)
     val signIn: StateFlow<SignIn?> = signInFlow.asStateFlow()
     private var job: Job? = null
+    private var importJob: Job? = null
 
     fun startSignIn() {
         job?.cancel()
@@ -85,14 +89,26 @@ class SimklViewModel(
 
     fun setScrobble(on: Boolean) = account.setScrobble(on)
 
+    fun importHistory() {
+        if (importJob?.isActive == true) return
+        importJob =
+            viewModelScope.launchSafely(TAG, onError = { /* progress already Failed or cleared */ }) {
+                historyImport.run()
+                // Leave Done or Failed on the row for a moment, then idle again (like Trakt's).
+                delay(RESULT_SHOWN_MS)
+                historyImport.clearResult()
+            }
+    }
+
     private companion object {
         const val TAG = "SimklSettings"
+        const val RESULT_SHOWN_MS = 60_000L
     }
 }
 
 /**
- * Settings › Simkl: sign in with a code, see the account, choose whether films and episodes are scrobbled, sign out.
- * Hidden in builds without Simkl's app key.
+ * Settings › Simkl: sign in with a code, see the account, choose whether films and episodes are scrobbled, import
+ * Simkl's watched history into Tuned's, sign out. Hidden in builds without Simkl's app key.
  */
 @Composable
 fun SimklRows(vm: SimklViewModel = viewModel()) {
@@ -100,6 +116,7 @@ fun SimklRows(vm: SimklViewModel = viewModel()) {
     val session by vm.session.collectAsStateWithLifecycle()
     val scrobble by vm.scrobble.collectAsStateWithLifecycle()
     val signIn by vm.signIn.collectAsStateWithLifecycle()
+    val importProgress by vm.importProgress.collectAsStateWithLifecycle()
     SectionHeader(stringResource(R.string.simkl))
     val signedIn = session
     if (signedIn == null) {
@@ -113,6 +130,7 @@ fun SimklRows(vm: SimklViewModel = viewModel()) {
         val name = signedIn.username ?: stringResource(R.string.simkl_account_unnamed)
         SettingRow(stringResource(R.string.simkl_signed_in, name), stringResource(R.string.simkl_sign_out), onClick = vm::signOut)
         SwitchRow(stringResource(R.string.simkl_scrobble), scrobble, stringResource(R.string.simkl_scrobble_summary), vm::setScrobble)
+        HistoryImportRow(importProgress, SIMKL_IMPORT_TEXTS, onImport = vm::importHistory)
     }
     signIn?.let { SignInDialog(it, onRetry = vm::startSignIn, onClose = vm::closeSignIn) }
 }

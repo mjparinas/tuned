@@ -94,7 +94,7 @@ Melvin, 2026-11-19: "rename the vercel app to tuned", then "website registered: 
 
 ## Setting it up (Melvin)
 
-1. Vercel › `tuned` › Storage: add **Neon** (sets `DATABASE_URL`), then run `devices/schema.sql` in its SQL editor. Upstash is still to add too.
+1. Vercel › `tuned` › Storage: add **Neon** (sets `DATABASE_URL`), then run `devices/schema.sql` in its SQL editor. Add **Upstash** Redis there too (sessions, sign-in codes, rate limits and the TV relay; done).
 2. Google Cloud: a **Web application** OAuth client with the redirect `https://<site>/api/auth/callback` (both `www.tunedplayer.com` and `tuned-devices.vercel.app`); its id and secret into `GOOGLE_WEB_CLIENT_ID` and `GOOGLE_WEB_CLIENT_SECRET`.
 3. Apple Developer: an **App ID** with Sign in with Apple, a **Services ID** (the client id) with the same domains and the return URL `https://<site>/api/auth/callback` on both hosts, and a **Sign in with Apple** key (`.p8`). Into Vercel: `APPLE_CLIENT_ID` (the Services ID), `APPLE_TEAM_ID`, `APPLE_KEY_ID`, and `APPLE_PRIVATE_KEY` (the `.p8` PEM, with `\n` for newlines if the variable is one line).
 4. Stripe: the four prices, the secret key, and a webhook to `https://<site>/api/stripe/webhook` with the five events above.

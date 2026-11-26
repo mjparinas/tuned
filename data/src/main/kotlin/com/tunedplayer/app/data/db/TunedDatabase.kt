@@ -40,6 +40,8 @@ import androidx.sqlite.db.SupportSQLiteDatabase
 abstract class TunedDatabase : RoomDatabase() {
     abstract fun items(): ItemDao
 
+    abstract fun events(): EventDao
+
     abstract fun browseWarm(): BrowseWarmDao
 
     abstract fun programmes(): ProgrammeDao

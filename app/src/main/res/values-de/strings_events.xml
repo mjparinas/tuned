@@ -9,6 +9,7 @@
     <string name="events_later">Später heute</string>
     <string name="events_tomorrow">Morgen</string>
     <string name="events_live">Live</string>
+    <string name="events_no_time">Ohne Uhrzeit</string>
     <string name="events_empty">Keine Spiele, Kämpfe oder Pay-per-Views im Programm für die nächsten anderthalb Tage. Aktualisiere das Programm in den Einstellungen, wenn das falsch aussieht.</string>
     <plurals name="events_channels">
         <item quantity="one">Auf %d Sender</item>

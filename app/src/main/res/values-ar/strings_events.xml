@@ -9,6 +9,7 @@
     <string name="events_later">لاحقًا اليوم</string>
     <string name="events_tomorrow">غدًا</string>
     <string name="events_live">مباشر</string>
+    <string name="events_no_time">بلا وقت</string>
     <string name="events_empty">لا توجد مباريات أو نزالات أو عروض بالدفع في الدليل خلال اليوم ونصف القادمين. حدّث الدليل في الإعدادات إن بدا هذا خاطئًا.</string>
     <plurals name="events_channels">
         <item quantity="zero">على %d قناة</item>

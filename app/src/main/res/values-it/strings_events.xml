@@ -9,6 +9,7 @@
     <string name="events_later">Più tardi oggi</string>
     <string name="events_tomorrow">Domani</string>
     <string name="events_live">In diretta</string>
+    <string name="events_no_time">Senza orario</string>
     <string name="events_empty">Nessuna partita, incontro o pay-per-view nella guida per il prossimo giorno e mezzo. Aggiorna la guida nelle impostazioni se ti sembra sbagliato.</string>
     <plurals name="events_channels">
         <item quantity="one">Su %d canale</item>

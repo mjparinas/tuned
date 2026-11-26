@@ -247,18 +247,13 @@
         <item quantity="other">%d informes de fallos y bloqueos</item>
     </plurals>
     <string name="report_title">Informar de un problema</string>
-    <string name="report_summary">Envía la versión, este dispositivo, el último fallo o bloqueo y el registro reciente, sin datos de acceso, a Tuned o a donde lo compartas.</string>
-    <string name="report_copied">No hay nada aquí para compartirlo, así que se copió el informe. Pégalo en un correo o mensaje.</string>
-    <string name="report_failed">No se pudo compartir ni copiar el informe. Registros, más abajo, tiene los mismos detalles.</string>
-    <string name="report_subject">Informe de problema de Tuned %1$s</string>
-    <string name="report_dialog_text">Cuenta qué pasó. Se envían también la versión, este dispositivo, el último fallo o bloqueo y el registro reciente, sin datos de acceso.</string>
+    <string name="report_summary">Envía lo que pasó, el registro reciente, el último cierre o bloqueo y los detalles de este dispositivo, como su modelo y versión de Android, a Tuned. Los datos de acceso quedan fuera.</string>
+    <string name="report_dialog_text">Cuenta qué pasó. El registro reciente, el último cierre o bloqueo y los detalles de este dispositivo, como su modelo y versión de Android, se envían con ello, sin los datos de acceso.</string>
     <string name="report_what">¿Qué pasó?</string>
     <string name="report_contact">Correo para responderte (opcional)</string>
     <string name="report_send">Enviar a Tuned</string>
     <string name="report_sending">Enviando…</string>
-    <string name="report_share_instead">Compartir en su lugar</string>
     <string name="report_sent">Enviado a Tuned. Gracias por avisarnos.</string>
-    <string name="report_send_failed">No se pudo enviar. Revisa la conexión y vuelve a intentarlo, o compártelo en su lugar.</string>
     <string name="logs_report_summary">Envía este registro y los datos de este dispositivo, como su modelo y versión de Android, a Tuned. No hay que escribir nada y los inicios de sesión se omiten.</string>
     <string name="logs_report_sending">Enviando este registro y los datos de este dispositivo…</string>
     <string name="logs_report_failed">No se pudo enviar. Comprueba la conexión y vuelve a intentarlo.</string>

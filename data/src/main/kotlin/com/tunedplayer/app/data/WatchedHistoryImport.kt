@@ -15,14 +15,25 @@ import kotlinx.coroutines.sync.withLock
 import kotlin.coroutines.cancellation.CancellationException
 
 /**
- * Imports Trakt's watched history into Tuned's own for the profile in use (docs/decisions/trakt.md): films and episodes
- * seen elsewhere are marked watched here when the playlist has a matching title (and year when both sides have one).
- * Settings › Playlists and account › Import watched history starts it; [progress] drives the row's spinner and summary.
+ * Imports a service's watched history (Trakt or Simkl, [Source]) into Tuned's own for the profile in use
+ * (docs/decisions/trakt.md, docs/decisions/simkl.md): films and episodes seen elsewhere are marked watched here when the
+ * playlist has a matching title (and year when both sides have one). Settings › Playlists and account › Import watched
+ * history starts it; [progress] drives the row's spinner and summary.
  */
-class TraktHistoryImport(
-    private val account: TraktAccount,
+class WatchedHistoryImport(
+    private val account: Source,
     private val db: TunedDatabase,
+    private val tag: String,
 ) {
+    /** Where the watched history comes from. Each fetch is null when signed out or the service couldn't be reached. */
+    interface Source {
+        val signedIn: Boolean
+
+        suspend fun watchedFilms(): List<Trakt.WatchedFilm>?
+
+        suspend fun watchedEpisodes(): List<Trakt.WatchedEpisode>?
+    }
+
     /** Where the import is, for the Settings row. */
     sealed interface Progress {
         data object Starting : Progress
@@ -54,14 +65,14 @@ class TraktHistoryImport(
 
     /** Runs an import, or does nothing when one is already under way. Cancelling the caller stops it. */
     suspend fun run() = lock.withLock {
-        if (account.session.value == null) {
+        if (!account.signedIn) {
             progressFlow.value = Progress.Failed
             return@withLock
         }
         progressFlow.value = Progress.Starting
         try {
             val ended =
-                attempt(TAG, "Trakt history import failed") {
+                attempt(tag, "$tag: history import failed") {
                     progressFlow.value = Progress.ReadingPlaylist
                     val filmsLocal = playlistFilms()
                     val episodesLocal = playlistEpisodes()
@@ -73,8 +84,8 @@ class TraktHistoryImport(
                     val episodeMatches = Trakt.matchEpisodes(episodesLocal, watchedEpisodes)
                     val all = filmMatches + episodeMatches
                     if (all.isEmpty()) {
-                        AppLog.i(TAG) {
-                            "Trakt import matched nothing (${watchedFilms.size} films, ${watchedEpisodes.size} episodes on Trakt)"
+                        AppLog.i(tag) {
+                            "$tag matched nothing (${watchedFilms.size} films, ${watchedEpisodes.size} episodes in the history)"
                         }
                         return@attempt Progress.Done(0, 0)
                     }
@@ -89,7 +100,7 @@ class TraktHistoryImport(
                     }
                     val filmMarked = filmMatches.map { it.itemId }.toHashSet().size
                     val episodeMarked = episodeMatches.map { it.itemId }.toHashSet().size
-                    AppLog.i(TAG) { "Trakt import marked $filmMarked films and $episodeMarked episodes watched" }
+                    AppLog.i(tag) { "$tag marked $filmMarked films and $episodeMarked episodes watched" }
                     Progress.Done(filmMarked, episodeMarked)
                 }.getOrElse { Progress.Failed }
             progressFlow.value = ended
@@ -107,12 +118,12 @@ class TraktHistoryImport(
         }
     }
 
-    /** Films in the playlist as Trakt matching rows (openHelper so ItemDao stays under detekt's function limit). */
+    /** Films in the playlist as matching rows (openHelper so ItemDao stays under detekt's function limit). */
     private suspend fun playlistFilms(): List<Trakt.LocalFilm> = offMain {
         db.openHelper.readableDatabase.query(FILMS_SQL).use { c ->
             buildList {
                 while (c.moveToNext()) {
-                    attempt(TAG, "Skipping a film row for Trakt import") {
+                    attempt(tag, "Skipping a film row for the history import") {
                         add(Trakt.localFilm(c.getLong(0), c.getString(1), c.intOrNull(2)))
                     }
                 }
@@ -120,12 +131,12 @@ class TraktHistoryImport(
         }
     }
 
-    /** Episodes with a show name, season and number, as Trakt matching rows. */
+    /** Episodes with a show name, season and number, as matching rows. */
     private suspend fun playlistEpisodes(): List<Trakt.LocalEpisode> = offMain {
         db.openHelper.readableDatabase.query(EPISODES_SQL).use { c ->
             buildList {
                 while (c.moveToNext()) {
-                    attempt(TAG, "Skipping an episode row for Trakt import") {
+                    attempt(tag, "Skipping an episode row for the history import") {
                         add(Trakt.localEpisode(c.getLong(0), c.getString(1), c.intOrNull(2), c.getInt(3), c.getInt(4)))
                     }
                 }
@@ -136,7 +147,6 @@ class TraktHistoryImport(
     private fun Cursor.intOrNull(index: Int): Int? = if (isNull(index)) null else getInt(index)
 
     private companion object {
-        const val TAG = "TraktImport"
         const val MARK_CHUNK = 100
         val FILMS_SQL = "SELECT id, name, year FROM items WHERE kind = ${ContentKind.MOVIE.code}"
         val EPISODES_SQL =
