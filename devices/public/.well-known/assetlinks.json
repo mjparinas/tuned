@@ -4,7 +4,10 @@
     "target": {
       "namespace": "android_app",
       "package_name": "com.tunedplayer.app",
-      "sha256_cert_fingerprints": ["AD:40:95:4F:4E:BF:CB:9A:2B:51:00:B6:C6:F4:2F:D1:D0:44:6B:69:04:FC:DB:E0:2D:96:39:93:7D:FF:53:61"]
+      "sha256_cert_fingerprints": [
+        "AD:40:95:4F:4E:BF:CB:9A:2B:51:00:B6:C6:F4:2F:D1:D0:44:6B:69:04:FC:DB:E0:2D:96:39:93:7D:FF:53:61",
+        "1B:D7:B7:CF:F7:A8:85:33:13:DA:88:44:A7:E3:BF:EE:34:45:7F:E9:46:F4:B7:1A:C3:94:E7:2B:3C:3E:B3:1B"
+      ]
     }
   },
   {
