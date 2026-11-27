@@ -127,3 +127,102 @@ describe("the Tuned account on Vega", () => {
         expect(model.state).toMatchObject({ route: "signin", login: null, account: null });
     });
 });
+
+describe("Movies and Shows on Vega", () => {
+    const login = { kind: "xtream" as const, server: "http://tv.example", username: "u", password: "p" };
+    const answers: Record<string, unknown> = {
+        account: { user_info: { auth: 1, status: "Active" } },
+        get_live_categories: [{ category_id: "1", category_name: "News" }],
+        get_live_streams: [{ stream_id: 5, name: "One", category_id: "1" }],
+        get_vod_categories: [{ category_id: "2", category_name: "Action" }],
+        get_vod_streams: [{ stream_id: 7, name: "Fast Water", category_id: "2", container_extension: "mkv" }],
+        get_series_categories: [{ category_id: "3", category_name: "Drama" }],
+        get_series: [{ series_id: 4, name: "Harbour Street", category_id: "3" }],
+        get_series_info: {
+            episodes: { "1": [{ id: "41", season: 1, episode_num: 1, title: "Harbour Street - S01E01 - A Ship Comes In" }] },
+        },
+    };
+    const xtream = (asked: string[] = []): Http => ({
+        async getJson(url) {
+            const action = new URL(url).searchParams.get("action") ?? "account";
+            asked.push(action);
+            return { status: 200, body: answers[action] };
+        },
+        async postJson() {
+            return { status: 500, body: null };
+        },
+        async text(url) {
+            const action = new URL(url).searchParams.get("action") ?? "";
+            asked.push(action);
+            return JSON.stringify(answers[action]);
+        },
+    });
+
+    it("shows Live TV first, then gets movies and shows in the background and keeps them", async () => {
+        const asked: string[] = [];
+        const store = memoryStore();
+        const model = new AppModel({ ...services(xtream(asked), store), player: { open: async () => {}, close: async () => {} } });
+        await model.useLogin(login);
+        expect(model.state.route).toBe("live");
+        await new Promise((r) => setTimeout(r, 0));
+        await until(() => !!model.state.library);
+        expect(asked.indexOf("get_live_streams")).toBeLessThan(asked.indexOf("get_vod_streams"));
+        expect(model.state.library!.movies[0]).toMatchObject({ name: "Fast Water", url: "http://tv.example/movie/u/p/7.mkv" });
+        expect(model.state.libraryLoad.result).toMatchObject({ ok: true });
+
+        const again = new AppModel({ ...services(xtream(), store), player: { open: async () => {}, close: async () => {} } });
+        await again.boot();
+        await again.openBrowse("shows");
+        expect(again.state.route).toBe("shows");
+        expect(again.visibleTitles("shows").map((t) => t.name)).toEqual(["Harbour Street"]);
+    });
+
+    it("opens a show with its episodes' real names and plays one, one connection, picking up where it was left", async () => {
+        const open: (string | number | undefined)[][] = [];
+        let at = 0;
+        const player = {
+            open: async (url: string, startAt?: number) => void open.push([url, startAt]),
+            close: async () => {},
+            position: () => ({ at, length: 2400 }),
+        };
+        const model = new AppModel({ ...services(xtream()), player });
+        await model.useLogin(login);
+        await until(() => !!model.state.library);
+        const show = model.visibleTitles("shows")[0];
+        await model.openTitle(show);
+        const [episode] = model.episodesOf(show)!;
+        expect(episode).toMatchObject({ name: "A Ship Comes In", url: "http://tv.example/series/u/p/41.mp4" });
+
+        await model.playVod({ id: episode.id, title: show.name, url: episode.url });
+        at = 600;
+        await model.stopPlaying();
+        expect(model.state.route).toBe("title");
+        expect(model.state.positions[episode.id]).toBe(600);
+        await model.playVod({ id: episode.id, title: show.name, url: episode.url }, model.state.positions[episode.id]);
+        expect(open).toEqual([
+            ["http://tv.example/series/u/p/41.mp4", undefined],
+            ["http://tv.example/series/u/p/41.mp4", 600],
+        ]);
+        expect(model.stream.open).toBe(1);
+        at = 2390;
+        await model.stopPlaying();
+        expect(model.state.positions[episode.id]).toBeUndefined();
+    });
+
+    it("says when a show's episodes couldn't be read, with Try again", async () => {
+        const broken = xtream();
+        const model = new AppModel({ ...services(broken), player: { open: async () => {}, close: async () => {} } });
+        await model.useLogin(login);
+        await until(() => !!model.state.library);
+        broken.getJson = async () => {
+            throw new Error("offline");
+        };
+        await model.openTitle(model.visibleTitles("shows")[0]);
+        expect(model.state.episodesLoad).toMatchObject({ busy: false, failed: true });
+    });
+});
+
+async function until(check: () => boolean): Promise<void> {
+    for (let i = 0; i < 100 && !check(); i++) await new Promise((r) => setTimeout(r, 0));
+    if (!check()) throw new Error("never happened");
+}

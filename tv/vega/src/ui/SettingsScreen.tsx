@@ -5,7 +5,8 @@ import * as React from "react";
 import { ScrollView, Text, View } from "react-native";
 import { premiumText, type AppModel, type State } from "../app/model";
 import { ProgressLines } from "./LoadingScreen";
-import { Brand, Button, Screen } from "./parts";
+import { Button, Screen } from "./parts";
+import { TopBar } from "./TopBar";
 import { t } from "./strings";
 import { colours, useDp } from "./theme";
 
@@ -32,10 +33,11 @@ export function SettingsScreen({ model, state }: { model: AppModel; state: State
     const account = state.account;
     const check = state.accountCheck;
     const refresh = state.refresh;
+    const library = state.libraryLoad;
     const premium = premiumText(account);
     return (
         <Screen>
-            <Brand />
+            <TopBar model={model} tab="settings" />
             <ScrollView style={{ flex: 1, marginTop: dp(14) }} contentContainerStyle={{ maxWidth: dp(640) }}>
                 <Text style={{ color: colours.text, fontSize: dp(26), fontWeight: "600", marginBottom: dp(14) }}>{t.settings}</Text>
                 <Section title={t.accountTitle}>
@@ -59,13 +61,26 @@ export function SettingsScreen({ model, state }: { model: AppModel; state: State
                     </View>
                 </Section>
                 <Section title={t.playlistTitle}>
-                    {state.lineup ? <Line text={t.channels(state.lineup.channels.length)} /> : null}
+                    {state.lineup ? (
+                        <Line
+                            text={[
+                                t.channels(state.lineup.channels.length),
+                                ...(state.library
+                                    ? [t.movieCount(state.library.movies.length), t.showCount(state.library.shows.length)]
+                                    : []),
+                            ].join(", ")}
+                        />
+                    ) : null}
                     {refresh.busy ? <ProgressLines progress={refresh.progress ?? null} /> : null}
                     {!refresh.busy && refresh.result ? <Line text={refresh.result.text} tone={refresh.result.ok ? "ok" : "bad"} /> : null}
+                    {library.busy ? <ProgressLines progress={library.progress ?? null} /> : null}
+                    {!library.busy && library.result && state.login?.kind === "xtream" ? (
+                        <Line text={library.result.text} tone={library.result.ok ? "ok" : "bad"} />
+                    ) : null}
                     <View style={{ flexDirection: "row", gap: dp(12), flexWrap: "wrap" }}>
                         <Button
                             label={refresh.result && !refresh.result.ok ? t.tryAgain : t.refreshNow}
-                            busy={refresh.busy}
+                            busy={refresh.busy || library.busy}
                             onPress={() => void model.refreshNow()}
                         />
                         <Button label={t.signOut} onPress={() => void model.signOut()} />

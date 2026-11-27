@@ -29,14 +29,20 @@ export class VegaPlayer implements StreamPlayer {
         this.surface = handle;
     }
 
-    async open(url: string): Promise<void> {
+    async open(url: string, startAt?: number): Promise<void> {
         this.onState("starting");
         const video = new VideoPlayer();
         this.video = video;
         await video.initialize();
         if (this.video !== video) return;
         this.lastTime = -1;
+        let sought = !startAt;
         video.addEventListener("timeupdate", () => {
+            if (!sought) {
+                // A movie or episode picks up where it was left once the player knows its length.
+                sought = true;
+                this.seekTo(startAt ?? 0);
+            }
             const t = Number(video.currentTime);
             if (t !== this.lastTime) {
                 this.lastTime = t;
@@ -77,6 +83,46 @@ export class VegaPlayer implements StreamPlayer {
         // The connection is only let go once deinitialize resolves; OneStream waits for it before the next open.
         await video.deinitialize();
         this.onState("idle");
+    }
+
+    /** Where a movie or episode is and how long it is, in seconds; zeros for live TV or before it starts. */
+    position(): { at: number; length: number } {
+        const video = this.video;
+        const at = Number(video?.currentTime);
+        const length = Number(video?.duration);
+        return { at: Number.isFinite(at) ? at : 0, length: Number.isFinite(length) && length > 0 ? length : 0 };
+    }
+
+    seekTo(seconds: number): void {
+        const video = this.video;
+        if (!video) return;
+        try {
+            const { length } = this.position();
+            video.currentTime = Math.max(0, length ? Math.min(seconds, length - 1) : seconds);
+        } catch (error) {
+            log.warn("VegaPlayer", "seek", error);
+        }
+    }
+
+    seekBy(seconds: number): void {
+        this.seekTo(this.position().at + seconds);
+    }
+
+    /** Play or pause; true when it's now paused. */
+    togglePause(): boolean {
+        const video = this.video;
+        if (!video) return false;
+        try {
+            if (video.paused) {
+                void video.play();
+                return false;
+            }
+            video.pause();
+            return true;
+        } catch (error) {
+            log.warn("VegaPlayer", "pause", error);
+            return false;
+        }
     }
 
     private clearStartTimer(): void {
