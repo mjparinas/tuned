@@ -56,4 +56,4 @@ The stream's sound is in a format this device can't play, such as Dolby Digital 
 
 **Settings › Updates and advanced › Report a problem** gathers the app version, your device, the latest crash report and recent log lines into one message, and opens the share sheet so you choose where it goes. Logins are removed from the log before it's written.
 
-See also [fixing buffering](/blog/guides/buffering/) and [the TV guide is empty](/blog/guides/blank-tv-guide/).
+See also [IPTV not working? A 10-step fix list](/blog/guides/iptv-not-working/), [fixing buffering](/blog/guides/buffering/) and [the TV guide is empty](/blog/guides/blank-tv-guide/).

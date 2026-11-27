@@ -24,7 +24,7 @@ Shows appear once, as a poster; tap for seasons, then episodes, each with its sc
 
 A download uses a stream connection too. So whenever something plays (the player, picture-in-picture, background play or a cast to your TV), downloads stop and wait, and carry on when you're done. A film that was halfway picks up from where it stopped rather than starting again.
 
-Downloads follow the **Wi-Fi only** setting in Settings › Guide and refresh, so gigabyte-sized files stay off mobile data if you want them to.
+Going away? See [watch on a plane](/blog/guides/watch-iptv-offline/) for tips. Downloads follow the **Wi-Fi only** setting in Settings › Guide and refresh, so gigabyte-sized files stay off mobile data if you want them to.
 
 ## Watching offline
 

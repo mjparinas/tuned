@@ -23,7 +23,7 @@ IPTV set-up comes with a lot of jargon. Here's what each term means, and where i
 
 **MAC address.** A hardware ID written as six pairs of characters, like `00:1A:79:12:34:56`. For a MAC portal, it's the one your provider registered.
 
-**Connections.** How many streams your account may play at once. Tuned always uses one.
+**Connections.** How many streams your account may play at once. Tuned always uses one. See [connections explained](/blog/guides/iptv-connections-explained/).
 
 ## The guide
 
