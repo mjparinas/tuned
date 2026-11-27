@@ -5,6 +5,8 @@ date: 2026-11-19
 kind: compare
 ---
 
+<figure class="cover"><img src="/blog/img/posts/vs-ottplayer.jpg" alt="Tuned's Settings, Playback settings and Live TV on phones" width="1200" height="760"></figure>
+
 OttPlayer is a free player for iPhone, iPad and Apple TV, with playlists managed through an account on its website. Tuned is free on Android. Here is how they compare.
 
 ## At a glance

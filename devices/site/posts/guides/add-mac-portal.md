@@ -5,6 +5,8 @@ date: 2026-11-19
 kind: guide
 ---
 
+<figure class="cover"><img src="/blog/img/posts/add-mac-portal.jpg" alt="Tuned's MAC portal form with the portal and MAC address fields, beside Live TV on a TV" width="1200" height="760"></figure>
+
 Some providers don't hand out a username and password. Instead they register a **MAC address** and give you a **portal address**. These are Stalker or Ministra portals, made for MAG set-top boxes, and Tuned can sign in to them the same way a MAG box does.
 
 ## What you need

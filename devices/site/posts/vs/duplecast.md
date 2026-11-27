@@ -5,6 +5,8 @@ date: 2026-11-19
 kind: compare
 ---
 
+<figure class="cover"><img src="/blog/img/posts/vs-duplecast.jpg" alt="Tuned's Live TV on a TV beside its TV guide on a phone" width="1200" height="760"></figure>
+
 Duplecast is a player for smart TVs and TV boxes that you try free for 15 days, then licence. Tuned is free on Android phones and TVs. Here is how they compare.
 
 ## At a glance

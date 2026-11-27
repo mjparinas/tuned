@@ -5,6 +5,8 @@ date: 2026-11-19
 kind: compare
 ---
 
+<figure class="cover"><img src="/blog/img/posts/vs-kodi.jpg" alt="A show playing in Tuned on a TV beside the Shows tab on a phone" width="1200" height="760"></figure>
+
 Kodi is the free, open-source media centre, and its PVR IPTV Simple Client add-on turns it into an IPTV player. It's powerful and runs almost anywhere, but takes setting up. Tuned is built only for IPTV and works as soon as you sign in. Here is how they compare.
 
 ## At a glance

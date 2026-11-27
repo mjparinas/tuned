@@ -5,6 +5,8 @@ date: 2026-11-19
 kind: compare
 ---
 
+<figure class="cover"><img src="/blog/img/posts/vs-gse-smart-iptv.jpg" alt="Tuned's Live TV, TV guide and a film's details on phones" width="1200" height="760"></figure>
+
 GSE Smart IPTV, from droidvision, has been around for years on both Apple devices and Android. Tuned is Android only, built from scratch for speed. Here is how they compare.
 
 ## At a glance

@@ -5,6 +5,8 @@ date: 2026-11-19
 kind: compare
 ---
 
+<figure class="cover"><img src="/blog/img/posts/vs-uhf.jpg" alt="Tuned's Movies tab, a film's details and the Shows tab on phones" width="1200" height="760"></figure>
+
 UHF, from Short Wavelength Applications, is a polished player for iPhone, iPad and Apple TV, and one of the best-rated on the App Store. Tuned is its closest match on Android. They don't run on the same devices, so this is mostly for people choosing a platform or a household with both. Here is how they compare.
 
 ## At a glance

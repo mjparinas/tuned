@@ -1,5 +1,8 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { check } from "../build-site.mjs";
 import { SITE } from "../site/config.mjs";
 import {
@@ -7,6 +10,8 @@ import {
     cardBlurb,
     faqJsonLd,
     heroOf,
+    coverOf,
+    DEFAULT_COVERS,
     homePosts,
     indexPage,
     indexPreview,
@@ -24,6 +29,7 @@ import {
     releasePostPath,
     sitemap,
 } from "./site-build.mjs";
+const here = dirname(fileURLToPath(import.meta.url));
 
 test("the committed website matches its sources (run node devices/build-site.mjs)", () => {
     assert.deepEqual(check(), []);
@@ -83,10 +89,40 @@ test("a post's top picture is its card's picture and the picture shared links sh
     const page = postPage(SITE, post, {});
     assert.match(page, /<meta property="og:image" content="https:\/\/www.tunedplayer.com\/blog\/img\/posts\/x.jpg" \/>/);
     assert.match(page, /<meta property="og:image:height" content="760" \/>/);
-    // A post without one keeps the site's picture, and its card has none.
+});
+
+test("every post opens with a picture and every card shows one, even without a cover of its own (Melvin, 2026-11-27)", () => {
     const plain = readPost("guides/y.md", `---\ntitle: T\ndescription: D\ndate: 2026-11-26\nkind: guide\n---\nBody`);
-    assert.equal(heroOf(plain), null);
-    assert.doesNotMatch(postCard(plain), /<img/);
+    assert.deepEqual(heroOf(plain), DEFAULT_COVERS.other);
+    assert.match(postCard(plain), /<img class="thumb" src="\/blog\/img\/posts\/blog.jpg" alt=""/);
+    assert.match(
+        postPage(SITE, plain, {}),
+        /<div class="prose">\n<figure class="cover"><img src="\/blog\/img\/posts\/blog.jpg" alt="Tuned, /,
+    );
+    const release = readPost(
+        "whats-new/tuned-9-0-0.md",
+        `---\ntitle: T\ndescription: D\ndate: 2026-11-26\nkind: release\nversion: 9.0.0\n---\nBody`,
+    );
+    const page = postPage(SITE, release, {});
+    assert.match(page, /<figure class="cover"><img src="\/blog\/img\/posts\/whats-new.jpg"/);
+    assert.match(page, /<meta property="og:image" content="https:\/\/www.tunedplayer.com\/blog\/img\/posts\/whats-new.jpg" \/>/);
+    // A post with its own cover isn't given a second one.
+    const own = readPost(
+        "guides/z.md",
+        `---\ntitle: T\ndescription: D\ndate: 2026-11-26\nkind: guide\n---\n<figure class="cover"><img src="/blog/img/posts/x.jpg" alt="A" width="1200" height="760"></figure>`,
+    );
+    assert.equal((postPage(SITE, own, {}).match(/class="cover"/g) || []).length, 1);
+});
+
+test("every guide, comparison and pick has a cover of its own, and every picture a card shows exists", () => {
+    const posts = join(here, "..", "site", "posts");
+    for (const folder of readdirSync(posts)) {
+        for (const name of readdirSync(join(posts, folder)).filter((f) => f.endsWith(".md"))) {
+            const post = readPost(`${folder}/${name}`, readFileSync(join(posts, folder, name), "utf8"));
+            if (post.kind !== "release") assert.ok(coverOf(post), `${folder}/${name} has no <figure class="cover">`);
+            assert.ok(existsSync(join(here, "..", "public", heroOf(post).src)), `${heroOf(post).src} is missing`);
+        }
+    }
 });
 
 test("a post's address is its file's path", () => {

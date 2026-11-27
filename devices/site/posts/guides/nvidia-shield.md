@@ -7,6 +7,8 @@ kind: guide
 updated: 2026-11-26
 ---
 
+<figure class="cover"><img src="/blog/img/posts/nvidia-shield.jpg" alt="Tuned's Settings on a TV beside its Playback settings on a phone" width="1200" height="760"></figure>
+
 The Nvidia Shield TV is one of the most capable Android TV boxes, and Tuned runs on it like on any Android TV: same app, same remote shortcuts. Set-up is in [Tuned on Android TV](/blog/guides/android-tv/); this page is about getting the most out of a Shield.
 
 ## Recommended settings

@@ -5,6 +5,8 @@ date: 2026-11-19
 kind: guide
 ---
 
+<figure class="cover"><img src="/blog/img/posts/sign-in-tv.jpg" alt="Tuned's Send to a TV on a phone beside the TV's sign-in code and QR code" width="1200" height="760"></figure>
+
 Typing a server address, username and password with a TV remote is slow, and it's easy to get one letter wrong. Tuned lets your phone do the typing.
 
 ## On the TV

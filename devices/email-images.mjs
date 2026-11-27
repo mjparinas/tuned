@@ -2,13 +2,13 @@
 // and browser frames on Tuned's ink-and-violet background, plus a few drawn graphics (speed, one stream, Premium).
 // Writes devices/public/email/<id>.jpg, 1200 × 760, shown 560 wide in the email.
 //
-//   node devices/email-images.mjs <screens> [only-id]
+//   node devices/email-images.mjs <screens> [id,id,...]
 //
 // <screens> is a folder with the PNGs from the Screenshots workflow (the `screenshots/staging` branch:
 // `git archive origin/screenshots/staging | tar -x -C <screens>`), plus `web-playlists.png`, the website's Playlists and
 // settings page on a desktop. Uses the Playwright that CI's accessibility check already installs.
 //
-//   node devices/email-images.mjs <screens> [only-id] --blog
+//   node devices/email-images.mjs <screens> [id,id,...] --blog
 //
 // draws the blog's pictures instead (`devices/site/blog-images.mjs`, the same frames) into
 // devices/public/blog/img/posts/<id>.jpg; <screens> then also needs the website's `web-*.png` pictures.
@@ -192,6 +192,7 @@ body { font-family: Roboto, "Segoe UI", Helvetica, Arial, sans-serif; color: #e6
 .top { position: absolute; top: 28px; left: 34px; right: 34px; display: flex; align-items: center; gap: 12px }
 .top .mark { width: 44px; height: 44px }
 .top .name { font-weight: 700; font-size: 26px; letter-spacing: -.01em }
+.top .name small { display: block; font-weight: 500; font-size: 16px; color: #cac4d0; letter-spacing: 0 }
 .top .chip { margin-left: auto; padding: 9px 18px; border-radius: 999px; background: rgba(201,190,255,.14); border: 1px solid rgba(201,190,255,.35); color: #e6deff; font-weight: 600; font-size: 20px }
 .top .prem { padding: 9px 18px; border-radius: 999px; background: linear-gradient(90deg,#6d4aff,#a24bff); color: #fff; font-weight: 700; font-size: 18px; letter-spacing: .08em; text-transform: uppercase }
 .top .free { padding: 9px 18px; border-radius: 999px; background: rgba(95,220,195,.16); border: 1px solid rgba(95,220,195,.45); color: #5fdcc3; font-weight: 700; font-size: 18px; letter-spacing: .06em; text-transform: uppercase }
@@ -260,7 +261,7 @@ function page(spec) {
               ? `<span class="free">Free</span><span class="prem">+ Premium</span>`
               : "";
     return `<!doctype html><html><head><meta charset="utf-8"><style>${CSS}</style></head><body>
-<div class="top"><div class="mark">${mark}</div><div class="name">Tuned</div><span class="chip">${spec.chip}</span>${badge}</div>
+<div class="top"><div class="mark">${mark}</div><div class="name">Tuned${spec.note ? "<small>Plays your own playlists. No channels included.</small>" : ""}</div><span class="chip">${spec.chip}</span>${badge}</div>
 <div class="stage">${spec.body}</div></body></html>`;
 }
 
@@ -269,7 +270,7 @@ const browserApp = await chromium.launch();
 const tab = await browserApp.newPage({ viewport: { width: 1200, height: 760 }, deviceScaleFactor: 1 });
 const temp = join(screens, ".email-image.html");
 for (const [id, spec] of Object.entries(PICTURES)) {
-    if (only && id !== only) continue;
+    if (only && !only.split(",").includes(id)) continue;
     writeFileSync(temp, page(spec));
     await tab.goto(`file://${temp}`);
     await tab.waitForLoadState("networkidle");

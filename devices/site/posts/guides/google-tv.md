@@ -6,6 +6,8 @@ date: 2026-11-19
 kind: guide
 ---
 
+<figure class="cover"><img src="/blog/img/posts/google-tv.jpg" alt="Tuned on a Google TV playing a show, beside a film's details on a phone" width="1200" height="760"></figure>
+
 Google TV is Android TV with Google's home screen on top, so Tuned works the same way on both: the same app, the same remote controls, and the same TV layout. If you haven't set it up yet, start with [Tuned on Android TV](/blog/guides/android-tv/).
 
 ## Set it up in two minutes

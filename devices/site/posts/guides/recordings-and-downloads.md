@@ -7,6 +7,8 @@ kind: guide
 updated: 2026-11-26
 ---
 
+<figure class="cover"><img src="/blog/img/posts/recordings-downloads.jpg" alt="A show's episodes with download buttons, the Downloads tab, and downloaded shows and films in Tuned" width="1200" height="760"></figure>
+
 Tuned can keep films and episodes on your device to watch without a connection, and record the live channel you're watching. Both follow Tuned's main rule: **one stream connection at a time**, so you never go over your provider's limit.
 
 ## Download a film or episode

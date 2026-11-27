@@ -6,6 +6,8 @@ date: 2026-11-19
 kind: guide
 ---
 
+<figure class="cover"><img src="/blog/img/posts/subtitles.jpg" alt="Tuned's Captions settings with a live preview on a phone and a TV" width="1200" height="760"></figure>
+
 ## Turn captions on
 
 Tap the screen while something plays and tap **CC**. It changes captions for that video only. To have them on by default, and pick the language, go to **Settings › Captions**.

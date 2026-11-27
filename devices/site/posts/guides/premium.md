@@ -5,6 +5,8 @@ date: 2026-11-19
 kind: guide
 ---
 
+<figure class="cover"><img src="/blog/img/posts/premium-guide.jpg" alt="Six tiles of what Tuned Premium adds: pause and rewind, alerts, profiles, many playlists, three devices, themes and more" width="1200" height="760"></figure>
+
 Tuned is free, with no ads, ever. Premium unlocks the power features. Here's exactly what's in each, and how devices work.
 
 ## Free, for everyone

@@ -5,6 +5,8 @@ date: 2026-11-19
 kind: roundup
 ---
 
+<figure class="cover"><img src="/blog/img/posts/tivimate-alternatives.jpg" alt="Tuned's Live TV on a TV beside its TV guide on a phone" width="1200" height="760"></figure>
+
 TiviMate earned its place as the best-known IPTV player for Android TV, mostly for its grid guide. People look for an alternative for different reasons: they want a phone and tablet app that matches the TV one, a different price, a cleaner interface, or features TiviMate doesn't have. Here's what to check in a replacement, and how the options compare.
 
 For a full feature-by-feature and price comparison, read [Tuned vs TiviMate](/blog/vs/tivimate/).

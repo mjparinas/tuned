@@ -6,6 +6,8 @@ date: 2026-11-19
 kind: guide
 ---
 
+<figure class="cover"><img src="/blog/img/posts/casting.jpg" alt="Tuned's player casting to a TV, with play, skip, volume and Stop casting" width="1200" height="760"></figure>
+
 Tuned casts to **Chromecast** devices (including TVs and boxes with Chromecast built in) and to **DLNA and UPnP** smart TVs on your Wi-Fi.
 
 ## Start casting

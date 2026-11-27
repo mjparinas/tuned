@@ -5,6 +5,8 @@ date: 2026-11-19
 kind: compare
 ---
 
+<figure class="cover"><img src="/blog/img/posts/vs-tivimate.jpg" alt="Tuned's TV guide grid on a TV beside Live TV on a phone" width="1200" height="760"></figure>
+
 TiviMate, from Armobsoft, is the player many people try first on an Android TV box, and for good reason: it has a polished grid guide, recording and catch-up. Tuned covers the same ground on a TV and adds phones, tablets, offline downloads and film details. Here is how they compare, using what each developer says.
 
 ## At a glance

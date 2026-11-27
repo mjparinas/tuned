@@ -5,6 +5,8 @@ date: 2026-11-19
 kind: guide
 ---
 
+<figure class="cover"><img src="/blog/img/posts/glossary.jpg" alt="Tuned's mark beside the words this glossary explains: EPG, M3U, Xtream, catch-up, MAC portal and user agent" width="1200" height="760"></figure>
+
 IPTV set-up comes with a lot of jargon. Here's what each term means, and where it shows up in Tuned.
 
 ## Playlists and logins

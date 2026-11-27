@@ -6,6 +6,8 @@ date: 2026-11-19
 kind: guide
 ---
 
+<figure class="cover"><img src="/blog/img/posts/tablets.jpg" alt="Tuned's Live TV on a tablet, with the navigation rail and the channel list" width="1200" height="760"></figure>
+
 On a tablet, an unfolded foldable or a Chromebook, Tuned doesn't stretch the phone screen. It changes layout to use the room.
 
 <img src="/blog/img/guides/live-tv-tablet.webp" alt="Tuned's Live TV on a tablet, with the navigation rail on the left and group chips across the top" width="640" height="400" loading="lazy">

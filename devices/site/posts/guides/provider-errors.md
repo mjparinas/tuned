@@ -6,6 +6,8 @@ date: 2026-11-19
 kind: guide
 ---
 
+<figure class="cover"><img src="/blog/img/posts/provider-errors.jpg" alt="Tuned's first download naming each numbered step, beside its Logs page" width="1200" height="760"></figure>
+
 Tuned plays what your provider serves, so most errors start on the provider's side. Here's what each message means and what to try. Tuned never shows your password in an error.
 
 ## "The server didn't accept that username and password."
