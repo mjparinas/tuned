@@ -6,6 +6,7 @@
 // tested without a server.
 import { createHash, randomBytes } from "node:crypto";
 import WEB_SETTINGS from "./web-settings.json" with { type: "json" };
+import { byId, idText, sameId, wholeId } from "./whole-json.mjs";
 
 export { WEB_SETTINGS };
 
@@ -112,13 +113,13 @@ function settingValue(settings, s) {
 /** A profile as the channels page manages favourites and lists for it. */
 function profileView(p) {
     return {
-        id: p.id,
+        id: typeof wholeId(p.id) === "bigint" ? idText(p.id) : p.id,
         name: String(p.name ?? "You"),
-        favourites: (p.favourites ?? []).map((f) => f.itemId).filter((id) => Number.isFinite(id)),
+        favourites: (p.favourites ?? []).map((f) => idText(f.itemId)).filter(Boolean),
         lists: (p.lists ?? []).map((l) => ({
-            id: l.id,
+            id: idText(l.id),
             name: String(l.name ?? ""),
-            items: (l.items ?? []).map((i) => i.itemId).filter((id) => Number.isFinite(id)),
+            items: (l.items ?? []).map((i) => idText(i.itemId)).filter(Boolean),
         })),
     };
 }
@@ -141,8 +142,9 @@ export function libraryView(stored) {
     }
     const edits = {};
     for (const e of copy.channelEdits ?? []) {
-        if (!Number.isFinite(e?.itemId)) continue;
-        edits[e.itemId] = { name: e.name ?? null, logo: e.logo ?? null };
+        const key = idText(e?.itemId);
+        if (!key) continue;
+        edits[key] = { name: e.name ?? null, logo: e.logo ?? null };
     }
     return {
         status: "ok",
@@ -412,7 +414,8 @@ export function applyChange(stored, change, now = Date.now()) {
 }
 
 const MAX_NAME = 60;
-const itemIdOf = (v) => (Number.isFinite(Number(v)) && Number(v) > 0 ? Math.trunc(Number(v)) : null);
+// Ids are the app's Longs, often past 2^53 and often negative, so they stay whole (lib/whole-json.mjs).
+const itemIdOf = wholeId;
 const trimName = (v) =>
     String(v ?? "")
         .trim()
@@ -436,7 +439,7 @@ function ensureProfile(copy, profileId, now) {
         delete copy.partial;
     }
     const id = itemIdOf(profileId) ?? copy.profiles[0].id;
-    const profile = copy.profiles.find((p) => p.id === id);
+    const profile = copy.profiles.find((p) => sameId(p.id, id));
     if (!profile) return { error: "gone" };
     if (!Array.isArray(profile.favourites)) profile.favourites = [];
     if (!Array.isArray(profile.lists)) profile.lists = [];
@@ -458,7 +461,7 @@ function applyChannelEdit(copy, change) {
     if (name !== undefined && name !== null && !name) return { error: "bad request", field: "name" };
     if (logo !== undefined && logo !== null && !/^https?:\/\//i.test(logo)) return { error: "bad logo", field: "logo" };
     const edits = Array.isArray(copy.channelEdits) ? [...copy.channelEdits] : [];
-    const at = edits.findIndex((e) => e.itemId === itemId);
+    const at = edits.findIndex((e) => sameId(e.itemId, itemId));
     const prev = at >= 0 ? edits[at] : { itemId, name: null, logo: null };
     const next = {
         itemId,
@@ -466,7 +469,7 @@ function applyChannelEdit(copy, change) {
         logo: logo !== undefined ? logo : (prev.logo ?? null),
     };
     if (!next.name && !next.logo) {
-        copy.channelEdits = edits.filter((e) => e.itemId !== itemId);
+        copy.channelEdits = edits.filter((e) => !sameId(e.itemId, itemId));
     } else if (at >= 0) {
         edits[at] = next;
         copy.channelEdits = edits;
@@ -483,10 +486,10 @@ function applyFavourite(copy, change, now) {
     const found = ensureProfile(copy, change.profileId, now);
     if (found.error) return found;
     const { profile } = found;
-    const rest = profile.favourites.filter((f) => f.itemId !== itemId);
+    const rest = profile.favourites.filter((f) => !sameId(f.itemId, itemId));
     if (change.on) {
         const position = rest.reduce((m, f) => Math.max(m, f.position ?? 0), 0) + 1;
-        profile.favourites = [...rest, { itemId, addedAt: now, position }].sort((a, b) => a.itemId - b.itemId);
+        profile.favourites = [...rest, { itemId, addedAt: now, position }].sort((a, b) => byId(a.itemId, b.itemId));
     } else {
         profile.favourites = rest;
     }
@@ -512,7 +515,7 @@ function applyListRename(copy, change) {
     if (!listId || !name) return { error: "bad request", field: "name" };
     const found = ensureProfile(copy, change.profileId, Date.now());
     if (found.error) return found;
-    const list = found.profile.lists.find((l) => l.id === listId);
+    const list = found.profile.lists.find((l) => sameId(l.id, listId));
     if (!list) return { error: "gone" };
     list.name = name;
     return {};
@@ -524,7 +527,7 @@ function applyListDelete(copy, change) {
     const found = ensureProfile(copy, change.profileId, Date.now());
     if (found.error) return found;
     const before = found.profile.lists.length;
-    found.profile.lists = found.profile.lists.filter((l) => l.id !== listId);
+    found.profile.lists = found.profile.lists.filter((l) => !sameId(l.id, listId));
     if (found.profile.lists.length === before) return { error: "gone" };
     return {};
 }
@@ -535,13 +538,13 @@ function applyListItem(copy, change, now) {
     if (!listId || !itemId || typeof change.on !== "boolean") return { error: "bad request" };
     const found = ensureProfile(copy, change.profileId, now);
     if (found.error) return found;
-    const list = found.profile.lists.find((l) => l.id === listId);
+    const list = found.profile.lists.find((l) => sameId(l.id, listId));
     if (!list) return { error: "gone" };
     if (!Array.isArray(list.items)) list.items = [];
-    const rest = list.items.filter((i) => i.itemId !== itemId);
+    const rest = list.items.filter((i) => !sameId(i.itemId, itemId));
     if (change.on) {
         const position = rest.reduce((m, i) => Math.max(m, i.position ?? 0), 0) + 1;
-        list.items = [...rest, { itemId, addedAt: now, position }].sort((a, b) => a.itemId - b.itemId);
+        list.items = [...rest, { itemId, addedAt: now, position }].sort((a, b) => byId(a.itemId, b.itemId));
     } else {
         list.items = rest;
     }

@@ -18,6 +18,7 @@ import {
     clickPlan,
     fileName,
     fromAppCopy,
+    parseWholeIds,
     noCopyText,
     GENRES,
     genreOf,
@@ -927,7 +928,8 @@ async function appCopy(playlistId) {
             const status = (await res.json().catch(() => null))?.status;
             return { missing: res.status === 404 && status === "none" ? "none" : status === "too many" ? "too many" : "error" };
         }
-        return { body: await res.json(), by: decodeURIComponent(res.headers.get("x-saved-by") ?? "") };
+        // The app's channel ids are 64-bit and would round as Numbers, so they are read as strings.
+        return { body: parseWholeIds(await res.text()), by: decodeURIComponent(res.headers.get("x-saved-by") ?? "") };
     } catch {
         return { missing: "error" };
     }
