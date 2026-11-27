@@ -90,8 +90,8 @@ async function wait(
         } else {
             setView({ kind: "arrived" });
             if (taken.signedIn) await model.accountSignedIn(await model.account.state());
-            const login = toLogin(taken.playlists[0]);
-            if (login) await model.useLogin(login);
+            const [login, ...others] = taken.playlists.flatMap((p) => toLogin(p) ?? []);
+            if (login) await model.useLogin(login, others);
             else if (mode === "account" && taken.signedIn) model.go("settings");
             else setView({ kind: "failed", text: t.nothingUsable });
             return "done";
@@ -139,11 +139,14 @@ export function SignInScreen({ model, mode, view: shown }: { model: AppModel; mo
                             <Button label={t.tryAgain} filled start onPress={() => setRound((r) => r + 1)} />
                         ) : null}
                         {mode === "playlist" ? (
-                            <Button
-                                label={t.typeInstead}
-                                start={view.kind === "showing" || view.kind === "loading"}
-                                onPress={() => model.go("manual")}
-                            />
+                            <>
+                                <Button
+                                    label={t.typeInstead}
+                                    start={view.kind === "showing" || view.kind === "loading"}
+                                    onPress={() => model.go("manual")}
+                                />
+                                {model.state.adding ? <Button label={t.back} onPress={() => model.cancelAdding()} /> : null}
+                            </>
                         ) : (
                             <Button label={t.back} start={view.kind === "showing"} onPress={() => model.go("settings")} />
                         )}

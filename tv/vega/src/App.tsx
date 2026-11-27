@@ -50,7 +50,19 @@ export function Shell({ model, player }: { model: AppModel; player: VegaPlayer }
                     return true;
                 case "settings":
                 case "account":
-                    model.go(model.state.lineup ? (model.state.route === "account" ? "settings" : "live") : "signin");
+                    if (model.state.route === "account") model.go("settings");
+                    else model.go(model.state.lineup ? "live" : model.state.login ? "loading" : "signin");
+                    return true;
+                case "signin":
+                    if (!model.state.adding) {
+                        back.exitApp();
+                        return true;
+                    }
+                    model.cancelAdding();
+                    return true;
+                case "loading":
+                    if (model.state.playlists.length > 1) model.go("settings");
+                    else back.exitApp();
                     return true;
                 case "manual":
                     model.go("signin");

@@ -122,6 +122,12 @@ export const de: Strings = {
         'Lässt Sender weg, die den ganzen Tag eine Serie wiederholen, etwa "24/7 Friends", und alles, was in Filme, Serien und der Suche mit 24/7 markiert ist.',
     on: "An",
     off: "Aus",
+    playlists: "Playlists",
+    addPlaylist: "Weitere Playlist hinzufügen",
+    premiumForMore: "Mehr als eine Playlist ist Premium. Melde dich auf diesem Fernseher bei deinem Tuned-Konto an.",
+    using: "Aktiv",
+    use: "Verwenden",
+    remove: "Entfernen",
     movieDidntStart: "Das ist nicht gestartet. Der Server ist vielleicht ausgelastet, oder die Datei fehlt.",
     noPlaylistOnAccount:
         "Bei deinem Tuned-Konto angemeldet, aber es hat noch keine Playlist. Versuche es erneut, um eine vom Handy zu senden.",
