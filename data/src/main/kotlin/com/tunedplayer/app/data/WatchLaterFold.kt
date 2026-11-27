@@ -26,7 +26,7 @@ object WatchLaterFold {
                 FavouriteEntity(id, row.addedAt, position = row.addedAt, profileId = row.profileId)
             }
         db.withTransaction {
-            favourites.chunked(CHUNK).forEach { sync.insertFavouritesIfMissing(it) }
+            favourites.chunked(CHUNK).forEach { db.watchLater().insertFavouritesIfMissing(it) }
             sync.deleteWatchLater()
         }
         return favourites.size

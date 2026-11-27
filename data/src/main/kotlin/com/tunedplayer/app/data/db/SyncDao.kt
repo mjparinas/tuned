@@ -119,10 +119,6 @@ interface SyncDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertFavourites(rows: List<FavouriteEntity>)
 
-    /** Favourites that aren't already there, leaving one that is as it was ([com.tunedplayer.app.data.WatchLaterFold]). */
-    @Insert(onConflict = OnConflictStrategy.IGNORE)
-    suspend fun insertFavouritesIfMissing(rows: List<FavouriteEntity>)
-
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertHistory(rows: List<HistoryEntity>)
 
