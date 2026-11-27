@@ -13,6 +13,7 @@
     "./platform": "./src/platform.ts",
     "./i18n": "./src/i18n.ts",
     "./guide": "./src/guide.ts",
+    "./profiles": "./src/profiles.ts",
     "./search": "./src/search.ts",
     "./favourites": "./src/favourites.ts",
     "./tmdb": "./src/tmdb.ts",

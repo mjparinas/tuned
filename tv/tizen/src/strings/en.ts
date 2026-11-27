@@ -116,6 +116,23 @@ export const en = {
     aired: "Already aired. This channel keeps no recordings of it.",
     startsAt: (time: string) => `Starts at ${time}`,
     replayFailed: "Couldn't make a link for this recording.",
+    profiles: "Profiles",
+    whosWatching: "Who's watching?",
+    switchProfile: "Switch profile",
+    watchingAs: (n: string) => `Watching as ${n}`,
+    profilesOnPhone: "Add and change profiles in the Tuned app on your phone, or at tunedplayer.com/account.",
+    kidsProfile: "Kids",
+    pinLocked: "PIN",
+    pinFor: (n: string) => `Enter ${n}'s PIN`,
+    parentalPinFor: (n: string) => `Enter the parental PIN to switch to ${n}`,
+    parentalPin: "Enter the parental PIN",
+    pinHint: "Type the PIN with the remote's number keys, or pick the numbers below.",
+    pinChecking: "Checking…",
+    pinWrong: "That PIN isn't right.",
+    pinWait: "Too many tries. Wait 30 seconds, then try again.",
+    pinDelete: "Delete",
+    pinTyped: (c: number) => `${c} digits typed`,
+    ok: "OK",
 };
 
 export type Strings = typeof en;

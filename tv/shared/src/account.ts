@@ -202,6 +202,26 @@ export class TunedAccount {
         }
     }
 
+    /**
+     * The account's backup, Android's sync copy as JSON text (`GET /api/backup`), for its profiles; null when signed
+     * out, when there's none yet, or when the server can't be reached (the TV keeps what it read last).
+     */
+    async backup(): Promise<string | null> {
+        const token = await this.deps.store.get(KEYS.token);
+        if (!token) return null;
+        try {
+            const response = await this.deps.fetch(`${this.base}/api/backup`, { headers: { Authorization: `Bearer ${token}` } });
+            if (!response.ok) {
+                if (response.status !== 404) this.log(`The backup answered ${response.status}`);
+                return response.status === 404 ? "{}" : null;
+            }
+            return await response.text();
+        } catch (error) {
+            this.log(`Couldn't read the backup: ${String((error as Error)?.message ?? error)}`);
+            return null;
+        }
+    }
+
     /** Signs this TV out of the account, on the server too when it can be reached. */
     async signOut(): Promise<AccountState> {
         const token = await this.deps.store.get(KEYS.token);

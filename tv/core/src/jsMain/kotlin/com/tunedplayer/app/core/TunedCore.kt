@@ -31,6 +31,8 @@ class Entry internal constructor(
     val catchUpDays: Int,
     /** How a plain M3U channel's recordings are reached, as `M3uCatchUp.encode` writes it (mode, line break, template); null for none. */
     val catchUp: String?,
+    /** Android's id for the stream (`StableId`), as decimal text: what the account's backup keeps favourites and lists by. */
+    val stableId: String,
 )
 
 internal fun ContentKind.code() = when (this) {
@@ -57,6 +59,7 @@ internal fun PlaylistEntry.exported() = Entry(
     rating = rating,
     catchUpDays = catchUp?.days ?: 0,
     catchUp = catchUp?.encode(),
+    stableId = StableId.of(this).toString(),
 )
 
 /**

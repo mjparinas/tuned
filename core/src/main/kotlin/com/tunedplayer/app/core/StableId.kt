@@ -17,7 +17,7 @@ object StableId {
 
     fun fnv64(text: String): Long {
         var hash = -0x340d631b7bdddcdbL // FNV-1a offset basis
-        for (byte in text.toByteArray(Charsets.UTF_8)) {
+        for (byte in text.encodeToByteArray()) {
             hash = hash xor (byte.toLong() and 0xff)
             hash *= 0x100000001b3L
         }
