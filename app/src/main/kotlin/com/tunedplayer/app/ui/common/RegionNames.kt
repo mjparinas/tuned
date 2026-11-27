@@ -5,6 +5,7 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
 import com.tunedplayer.app.R
 import com.tunedplayer.app.core.Regions
+import com.tunedplayer.app.core.displayName
 
 /**
  * A country, language or area tag ("DE", "AR", "EUR") as the reader names it, in the device's language

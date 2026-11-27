@@ -1,0 +1,10 @@
+name: Build the TV apps' core
+description: >-
+  Compiles :core's shared rules to JavaScript (tv/core), runs their JavaScript tests, and leaves the package in
+  tv/core/build/dist/js/productionLibrary, where tv/shared (and through it each TV app) imports it as tuned-core.
+runs:
+  using: composite
+  steps:
+    - uses: ./.github/actions/setup-android
+    - shell: bash
+      run: ./gradlew :tvcore:jsNodeTest :tvcore:jsNodeProductionLibraryDistribution

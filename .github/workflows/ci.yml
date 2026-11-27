@@ -41,6 +41,8 @@ jobs:
       docs: ${{ steps.diff.outputs.docs }}
       mobile: ${{ steps.diff.outputs.mobile }}
       web: ${{ steps.diff.outputs.web }}
+      tizen: ${{ steps.diff.outputs.tizen }}
+      vega: ${{ steps.diff.outputs.vega }}
       record: ${{ steps.diff.outputs.record }}
       warm: ${{ steps.diff.outputs.warm }}
       tree: ${{ steps.diff.outputs.tree }}
@@ -57,7 +59,7 @@ jobs:
         run: |
           tree=$(git rev-parse 'HEAD^{tree}')
           echo "tree=$tree" >> "$GITHUB_OUTPUT"
-          everything() { { echo "run=true"; echo "mobile=true"; echo "web=true"; } >> "$GITHUB_OUTPUT"; exit 0; }
+          everything() { { echo "run=true"; echo "mobile=true"; echo "web=true"; echo "tizen=true"; echo "vega=true"; } >> "$GITHUB_OUTPUT"; exit 0; }
           recorded() {
             desc=$(gh api "repos/$REPO/commits/$1/statuses?per_page=100" \
               --jq '[.[] | select(.context == "CI passed tree")][0] | select(.state == "success") | .description' 2>/dev/null || true)
@@ -121,7 +123,7 @@ jobs:
           [ -n "$files" ] || everything
           needs=$(node scripts/ci-changes.mjs <<< "$files") || everything
           echo "$needs"
-          if [ "$needs" = $'mobile=false\nweb=false' ]; then
+          if ! grep -q '=true' <<< "$needs"; then
             { echo "run=false"; echo "docs=true"; } >> "$GITHUB_OUTPUT"
             if passed "$base" "$(git rev-parse "$base^{tree}")"; then
               echo "::notice::Only Markdown or docs/ changed and ${base:0:7} passed CI, so only Prettier runs."
@@ -133,10 +135,10 @@ jobs:
           fi
           { echo "run=true"; echo "$needs"; } >> "$GITHUB_OUTPUT"
           # A skipped half is vouched for only by the commit before it, so record the tree only when that one passed.
-          if [ "$needs" != $'mobile=true\nweb=true' ] && ! passed "$base" "$(git rev-parse "$base^{tree}")"; then
+          if grep -q '=false' <<< "$needs" && ! passed "$base" "$(git rev-parse "$base^{tree}")"; then
             echo "record=false" >> "$GITHUB_OUTPUT"
           fi
-          grep -q 'mobile=true' <<< "$needs" || echo "::notice::Only the website (devices/) changed, so the app's builds and tests are skipped."
+          grep -q 'mobile=true' <<< "$needs" || echo "::notice::The Android app didn't change, so its builds and tests are skipped."
           grep -q 'web=true' <<< "$needs" || echo "::notice::The website (devices/) didn't change, so its tests are skipped."
 
   # Node only, so it needs no Java or Gradle and finishes in under a minute. ktlint runs in Checks, which has Gradle.
@@ -354,9 +356,30 @@ jobs:
           PR: ${{ github.event.pull_request.number }}
         run: gh api "repos/${{ github.repository }}/pulls/$PR/files" --paginate --jq '.[].filename' | node scripts/decision-record.mjs
 
+  # The Samsung TV app (tv/tizen) and what it shares with the Vega OS app: :core's rules compiled to JavaScript and
+  # tested there (tv/core), then tv/shared's tests and type check. Only when tv/, :core or the Gradle setup changed.
+  tizen:
+    name: Samsung TV app
+    needs: changes
+    if: needs.changes.outputs.tizen == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/tv-core
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 26
+      - name: Shared TV code
+        working-directory: tv/shared
+        run: |
+          npm ci --no-audit --no-fund
+          npm test
+          npm run typecheck
+
   passed:
     name: CI passed
-    needs: [changes, decisions, format, checks, android, device]
+    needs: [changes, decisions, format, checks, android, device, tizen]
     if: always()
     runs-on: ubuntu-latest
     permissions:

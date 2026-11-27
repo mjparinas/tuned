@@ -1,7 +1,5 @@
 package com.tunedplayer.app.core
 
-import java.util.Locale
-
 /**
  * Filtering by language (Melvin, 2026-11-17): providers tag streams by country or language (`US|`, `FR:`, `EN -`), never
  * by spoken language alone, so a language is the set of tags that speak it. Hiding French hides FR; hiding English hides
@@ -50,7 +48,7 @@ object RegionLanguages {
             "so" to listOf("SO"),
         )
 
-    private val isoCountries: Set<String> = Locale.getISOCountries().toSet()
+    private val isoCountries: Set<String> = Platform.isoCountries().toSet()
 
     private val byRegion = languages.flatMap { (lang, regions) -> regions.map { it to lang } }.toMap()
 

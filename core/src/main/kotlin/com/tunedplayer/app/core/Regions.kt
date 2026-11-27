@@ -1,9 +1,5 @@
 package com.tunedplayer.app.core
 
-import java.text.Collator
-import java.text.Normalizer
-import java.util.Locale
-
 /**
  * Works out which country (or region tag) a stream belongs to, so Settings can hide whole countries.
  *
@@ -148,22 +144,14 @@ object Regions {
 
     /** Every tag that may name a region: the ISO country codes, plus the language and area tags providers add. */
     private val known: Set<String> =
-        (Locale.getISOCountries().toSet() + names.keys + aliases.keys + "UK" + "EUR") - notRegions
+        (Platform.isoCountries().toSet() + names.keys + aliases.keys + "UK" + "EUR") - notRegions
 
     /**
      * Whole words providers write instead of a code: "United States | News", "ENGLISH | Movies", "Canada: News",
      * "LATINO | Deportes". Country names come from the JDK in English; language names map to the tag that speaks them.
      */
     private val wordTags: Map<String, String> =
-        Locale.getISOCountries().associate {
-            Locale
-                .Builder()
-                .setRegion(it)
-                .build()
-                .getDisplayCountry(Locale.ENGLISH)
-                .uppercase() to
-                normalize(it)
-        } +
+        Platform.isoCountries().associate { Platform.countryName(it).uppercase() to normalize(it) } +
             mapOf(
                 "USA" to "US",
                 "AMERICA" to "US",
@@ -287,46 +275,13 @@ object Regions {
     /** The name people read: Tuned's own short names first, then the JDK's English name for any other ISO code. */
     fun displayName(region: String): String = names[region] ?: isoNames[region] ?: region
 
-    /**
-     * [displayName] in the reader's language (the app follows the device's): the JDK names countries and the
-     * language tags in [locale]'s words, so a Spanish phone reads "Alemania" and "Árabe". Areas ("Europe") and
-     * tags only Tuned knows ("Latino", "Ex-Yugoslavia") keep their English name; English keeps Tuned's short names.
-     */
-    fun displayName(
-        region: String,
-        locale: Locale,
-    ): String {
-        if (locale.language == Locale.ENGLISH.language) return displayName(region)
-        languageTagCodes[region]?.let { code ->
-            val name = Locale.forLanguageTag(code).getDisplayLanguage(locale)
-            if (name.isNotBlank() && name != code) return name.replaceFirstChar { it.titlecase(locale) }
-        }
-        val iso = if (region == "UK") "GB" else region
-        if (region !in languageTagCodes && iso in isoCodes) {
-            val name =
-                Locale
-                    .Builder()
-                    .setRegion(iso)
-                    .build()
-                    .getDisplayCountry(locale)
-            if (name.isNotBlank() && name != iso) return name
-        }
-        return displayName(region)
-    }
-
     /** The tags in [names] that are languages, not countries ("AR" is Arabic here, not Argentina). */
-    private val languageTagCodes = mapOf("AR" to "ar", "EN" to "en", "KU" to "ku")
+    internal val languageTagCodes = mapOf("AR" to "ar", "EN" to "en", "KU" to "ku")
 
-    private val isoCodes: Set<String> by lazy { Locale.getISOCountries().toSet() }
+    internal val isoCodes: Set<String> by lazy { Platform.isoCountries().toSet() }
 
     private val isoNames: Map<String, String> by lazy {
-        Locale.getISOCountries().associateWith {
-            Locale
-                .Builder()
-                .setRegion(it)
-                .build()
-                .getDisplayCountry(Locale.ENGLISH)
-        }
+        Platform.isoCountries().associateWith(Platform::countryName)
     }
 
     /**
@@ -337,7 +292,7 @@ object Regions {
         items: List<T>,
         region: (T) -> String,
     ): List<T> {
-        val collator = Collator.getInstance(Locale.ENGLISH).apply { strength = Collator.PRIMARY }
+        val collator = Platform.nameOrder()
         return items.sortedWith(compareBy(collator) { item: T -> displayName(region(item)) }.thenBy { region(it) })
     }
 
@@ -362,7 +317,7 @@ object Regions {
 
     private val marks = Regex("\\p{Mn}+")
 
-    private fun fold(text: String): String = marks.replace(Normalizer.normalize(text, Normalizer.Form.NFD), "").lowercase(Locale.ROOT)
+    private fun fold(text: String): String = marks.replace(Platform.decompose(text), "").lowercase()
 
     /** A tag providers use for a country or language, such as US, UK, EN or USA. */
     fun isKnown(tag: String): Boolean = tag.uppercase() in known
@@ -388,22 +343,36 @@ object Regions {
 
     /** Language names in English and three-letter codes ("english", "eng") to the two-letter code ("en"). */
     private val languageNames: Map<String, String> by lazy {
-        Locale
-            .getISOLanguages()
+        Platform
+            .isoLanguages()
             .flatMap { code ->
-                val locale = Locale.Builder().setLanguage(code).build()
-                listOf(locale.getDisplayLanguage(Locale.ENGLISH).lowercase() to code, locale.isO3Language to code)
+                val (name, iso3) = Platform.languageNames(code)
+                listOf(name.lowercase() to code, iso3 to code)
             }.toMap()
+    }
+
+    /** The code point at [i], reading a surrogate pair as one, as `String.codePointAt` does. */
+    private fun codePointAt(
+        text: String,
+        i: Int,
+    ): Int {
+        val high = text[i]
+        val low = text.getOrNull(i + 1)
+        return if (high.isHighSurrogate() && low != null && low.isLowSurrogate()) {
+            ((high.code - Char.MIN_HIGH_SURROGATE.code) shl SURROGATE_BITS) + (low.code - Char.MIN_LOW_SURROGATE.code) + SUPPLEMENTARY
+        } else {
+            high.code
+        }
     }
 
     /** A flag emoji (two regional indicator letters): "🇬🇧 Sports" reads UK. */
     private fun flag(text: String): String? {
         var i = 0
         while (i < text.length) {
-            val a = text.codePointAt(i)
-            val next = i + Character.charCount(a)
+            val a = codePointAt(text, i)
+            val next = i + if (a >= SUPPLEMENTARY) 2 else 1
             if (a in REGIONAL_A..REGIONAL_Z && next < text.length) {
-                val b = text.codePointAt(next)
+                val b = codePointAt(text, next)
                 if (b in REGIONAL_A..REGIONAL_Z) {
                     val code = "${'A' + (a - REGIONAL_A)}${'A' + (b - REGIONAL_A)}"
                     return normalize(code).takeIf { it in known || code in known }
@@ -515,4 +484,6 @@ object Regions {
 
     private const val REGIONAL_A = 0x1F1E6
     private const val REGIONAL_Z = 0x1F1FF
+    private const val SUPPLEMENTARY = 0x10000
+    private const val SURROGATE_BITS = 10
 }

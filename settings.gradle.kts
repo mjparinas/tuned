@@ -33,3 +33,7 @@ include(":baselineprofile")
 // The device smoke test CI runs on an emulator, and the fake provider both device tests use.
 include(":smoketest")
 include(":fakeprovider")
+// The TV apps' shared core: :core's plain-Kotlin rules compiled to JavaScript for the Samsung (Tizen) and Vega OS apps
+// (tv/, docs/decisions/tizen.md). Android never depends on it.
+include(":tvcore")
+project(":tvcore").projectDir = file("tv/core")
