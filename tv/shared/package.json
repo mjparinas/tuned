@@ -5,7 +5,12 @@
   "description": "What Tuned's TV apps (Samsung Tizen, Vega OS) share below their screens: playlist, guide and account code in plain TypeScript, over tv/core's Kotlin rules.",
   "type": "module",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./account": "./src/account.ts",
+    "./bytes": "./src/bytes.ts",
+    "./handoff": "./src/handoff.ts",
+    "./login": "./src/login.ts",
+    "./platform": "./src/platform.ts"
   },
   "scripts": {
     "test": "node --experimental-strip-types --no-warnings --test src/*.test.ts",
