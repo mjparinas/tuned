@@ -10,7 +10,8 @@
     "./bytes": "./src/bytes.ts",
     "./handoff": "./src/handoff.ts",
     "./login": "./src/login.ts",
-    "./platform": "./src/platform.ts"
+    "./platform": "./src/platform.ts",
+    "./i18n": "./src/i18n.ts"
   },
   "scripts": {
     "test": "node --experimental-strip-types --no-warnings --test src/*.test.ts",

@@ -5,6 +5,7 @@ import { start } from "./app.ts";
 import { focus, move, focusables } from "./focus.ts";
 import { isTyping, readKey } from "./keys.ts";
 import { log } from "./log.ts";
+import { language, rightToLeft } from "./strings.ts";
 import { AvPlayPlayer } from "./player/avplay.ts";
 import { connections, playback, playerEvents, usePlayer } from "./player/controller.ts";
 import { VideoPlayer } from "./player/html5.ts";
@@ -75,6 +76,10 @@ document.addEventListener("keydown", (event) => {
 
 // For the e2e test (test/e2e.mjs): how many stream connections were ever open at once.
 (window as unknown as { __tuned: unknown }).__tuned = { connections, playback: () => playback.get() };
+
+// The TV's language, and Arabic mirrored, as on Android (docs/decisions/languages.md).
+document.documentElement.lang = language;
+document.documentElement.dir = rightToLeft ? "rtl" : "ltr";
 
 render(<App />, document.getElementById("app") as HTMLElement);
 void start();

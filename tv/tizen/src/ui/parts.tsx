@@ -4,6 +4,7 @@ import type { ComponentChildren } from "preact";
 import { useEffect, useMemo, useRef } from "preact/hooks";
 import qrcode from "qrcode-generator";
 import { focusStart } from "../focus.ts";
+import { t } from "../strings.ts";
 
 export function Button(props: {
     label: ComponentChildren;
@@ -32,7 +33,7 @@ export function Button(props: {
 }
 
 export function Spinner(props: { small?: boolean }) {
-    return <span class={props.small ? "spinner small" : "spinner"} role="progressbar" aria-label="Loading" />;
+    return <span class={props.small ? "spinner small" : "spinner"} role="progressbar" aria-label={t.loading} />;
 }
 
 /** A bar with what's done of the whole, when the whole is known; otherwise a moving bar. */

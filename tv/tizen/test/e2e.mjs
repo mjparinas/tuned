@@ -120,10 +120,15 @@ const browser = await chromium.launch({
     // A Chromium already on the machine, when Playwright's own download isn't there.
     executablePath: process.env.CHROMIUM_PATH || undefined,
 });
-const page = await browser.newPage({ viewport: { width: 1920, height: 1080 } });
 const errors = [];
-page.on("pageerror", (e) => errors.push(String(e)));
-page.on("console", (m) => process.env.VERBOSE && console.log("page:", m.text()));
+/** A fresh TV (nothing saved) whose language is `locale`; Tizen hands the TV's menu language to the page the same way. */
+const freshTv = async (locale) => {
+    const tv = await browser.newPage({ viewport: { width: 1920, height: 1080 }, locale });
+    tv.on("pageerror", (e) => errors.push(String(e)));
+    tv.on("console", (m) => process.env.VERBOSE && console.log("page:", m.text()));
+    return tv;
+};
+let page = await freshTv("en-CA");
 
 const step = async (what, work) => {
     process.stdout.write(`${what}… `);
@@ -217,6 +222,47 @@ try {
         await page.waitForTimeout(300);
         await shot("7-settings");
     });
+    // The same TV in other languages (docs/decisions/languages.md): German for long words, Arabic drawn right to left,
+    // Chinese for another script. Each adds the playlist by its link, as above, then shows Live TV and Settings.
+    for (const [locale, words] of [
+        ["de-DE", { settings: "Einstellungen", channelNumbers: "Sendernummern" }],
+        ["ar-EG", { settings: "الإعدادات", channelNumbers: "أرقام القنوات" }],
+        ["zh-CN", { settings: "设置", channelNumbers: "频道号" }],
+    ]) {
+        await step(`In ${locale}`, async () => {
+            const app = await page.evaluate(() => window.__tuned.connections());
+            if (app.highest > 1) throw new Error("More than one stream connection was open at once");
+            await page.close();
+            page = await freshTv(locale);
+            const tag = locale.slice(0, 2);
+            // Arabic is mirrored, so what sits to the right in English sits to the left, and the remote follows it.
+            const [toward, away] = tag === "ar" ? ["ArrowLeft", "ArrowRight"] : ["ArrowRight", "ArrowLeft"];
+            await page.goto(base);
+            await page.getByText("K7QF-29MD").waitFor({ timeout: 10_000 });
+            await page.waitForTimeout(300);
+            await shot(`${tag}-1-welcome`);
+            await key("Enter");
+            await page.locator("input").first().waitFor();
+            await page.waitForTimeout(200);
+            await key(toward);
+            await key("Enter");
+            await key("ArrowDown");
+            await page.keyboard.type(`${base}/get.m3u`);
+            await key("ArrowDown");
+            await page.keyboard.type(`${base}/guide.xml`);
+            await key("ArrowDown");
+            await key("Enter");
+            await page.locator(".channel").first().waitFor({ timeout: 20_000 });
+            await page.getByText("The National").first().waitFor({ timeout: 10_000 });
+            await page.waitForTimeout(300);
+            await shot(`${tag}-2-live-tv`);
+            await key(away, 4);
+            for (let i = 0; i < 4 && !(await focused()).includes(words.settings); i++) await key("ArrowDown");
+            await page.getByText(words.channelNumbers).waitFor();
+            await page.waitForTimeout(300);
+            await shot(`${tag}-3-settings`);
+        });
+    }
     const app = await page.evaluate(() => window.__tuned.connections());
     console.log(`Stream connections at once: app ${app.highest}, server ${highest}`);
     if (app.highest > 1 || highest > 1) throw new Error("More than one stream connection was open at once");
