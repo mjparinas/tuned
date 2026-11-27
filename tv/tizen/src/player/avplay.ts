@@ -1,5 +1,5 @@
 // Samsung's hardware player. It draws the picture on its own plane behind the page (an <object> of type
-// application/avplayer marks where), so starting a channel and its formats (live TS, HLS, MKV and MP4 films) are the
+// application/avplayer marks where), so starting a channel and its formats (live TS, HLS, MKV and MP4 movies) are the
 // TV's own. One AVPlay at a time, which suits the one-connection rule: close() finishes before the next open().
 import type { StreamPlayer } from "@tuned/shared";
 import type { AvPlay } from "../tizen.ts";

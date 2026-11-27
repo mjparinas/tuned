@@ -1,5 +1,5 @@
 // The Samsung TV app end to end in desktop Chromium, driven with the remote's keys: the welcome screen and its code,
-// typing a playlist link, the numbered first download, Live TV with the guide, playing, channel up, Back, then Films,
+// typing a playlist link, the numbered first download, Live TV with the guide, playing, channel up, Back, then Movies,
 // Shows and Settings. A local stand-in serves the playlist, the guide, three short clips and the sign-in relay. It
 // checks there was never more than one stream connection, in the app and at the server, and saves a picture of each
 // screen in test/out/.
@@ -54,8 +54,8 @@ function playlist(base) {
     channels.forEach(([id, name, group], i) =>
         lines.push(`#EXTINF:-1 tvg-id="${id}" tvg-name="${name}" group-title="${group}",${name}`, `${base}/live/${i}.webm`),
     );
-    for (const [i, film] of ["The Long Field (2021)", "Northern Lights (2019)", "Harbour Town (2023)"].entries())
-        lines.push(`#EXTINF:-1 group-title="Films Drama",${film}`, `${base}/movie/${i}.mp4`);
+    for (const [i, movie] of ["The Long Field (2021)", "Northern Lights (2019)", "Harbour Town (2023)"].entries())
+        lines.push(`#EXTINF:-1 group-title="Movies Drama",${movie}`, `${base}/movie/${i}.mp4`);
     for (const ep of ["Coast Guard S01 E01", "Coast Guard S01 E02", "Coast Guard S02 E01"])
         lines.push(`#EXTINF:-1 group-title="Series Drama",${ep}`, `${base}/series/${ep.replace(/\s/g, "")}.mkv`);
     return lines.join("\n");
@@ -190,12 +190,12 @@ try {
         const playing = await page.evaluate(() => document.body.classList.contains("playing"));
         if (playing) throw new Error("Still playing after Back");
     });
-    await step("Films", async () => {
+    await step("Movies", async () => {
         await key("ArrowLeft", 3);
         await key("ArrowDown");
         await page.locator(".poster").first().waitFor();
         await page.waitForTimeout(400);
-        await shot("5-films");
+        await shot("5-movies");
     });
     await step("Shows and a show's episodes", async () => {
         await key("ArrowDown");

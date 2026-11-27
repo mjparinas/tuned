@@ -1,4 +1,4 @@
-// What the TV keeps (docs/decisions/tizen.md): settings and logins as strings, and each playlist's channels, films,
+// What the TV keeps (docs/decisions/tizen.md): settings and logins as strings, and each playlist's channels, movies,
 // shows and guide, in IndexedDB. Opening the app reads from here at once; nothing waits on the network. A refresh
 // writes a new generation beside the old one and switches only when it's complete, so the lists never empty mid-way.
 // If IndexedDB fails (a full disk, a private window) everything still works from memory until the app closes.

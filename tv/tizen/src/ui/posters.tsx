@@ -1,4 +1,4 @@
-// Films and Shows: groups across the top and a grid of posters. OK opens the film's or show's page.
+// Movies and Shows: groups across the top and a grid of posters. OK opens the movie's or show's page.
 import { useMemo, useState } from "preact/hooks";
 import { core, type Item, type Kind } from "@tuned/shared";
 import { currentId, favourites, groupsOf, inGroup, shows } from "../app.ts";
@@ -54,7 +54,7 @@ export function Posters(props: { kind: Exclude<Kind, "live">; height: number }) 
                 start
                 label={props.kind === "movie" ? t.movies : t.shows}
                 cell={(item) => <Poster item={item} />}
-                onPick={(item) => open(props.kind === "movie" ? { name: "film", item } : { name: "show", item })}
+                onPick={(item) => open(props.kind === "movie" ? { name: "movie", item } : { name: "show", item })}
             />
         </div>
     );

@@ -1,4 +1,4 @@
-// The row of groups across the top of Live TV, Films and Shows. Landing on a group picks it after a short pause, so
+// The row of groups across the top of Live TV, Movies and Shows. Landing on a group picks it after a short pause, so
 // running the remote along the row doesn't redraw the list at every step. The pick stays until changed, per section,
 // even after the app closes (playlist.md › filters stay chosen).
 import { useEffect, useRef, useState } from "preact/hooks";

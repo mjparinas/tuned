@@ -1,4 +1,4 @@
-// Which screen shows, and who hears the remote. Screens stack (Home, then a film's page, then Settings › App log...);
+// Which screen shows, and who hears the remote. Screens stack (Home, then a movie's page, then Settings › App log...);
 // Back pops one. A screen that handles a key itself (the player's channel up, a list's paging) registers with
 // useKeys, and the newest registration hears each key first.
 import { useEffect, useRef } from "preact/hooks";
@@ -10,7 +10,7 @@ export type Tab = "live" | "movie" | "series" | "search" | "settings";
 
 export type Route =
     | { readonly name: "home"; readonly tab: Tab }
-    | { readonly name: "film"; readonly item: Item }
+    | { readonly name: "movie"; readonly item: Item }
     | { readonly name: "show"; readonly item: Item }
     | { readonly name: "signin"; readonly purpose: "playlist" | "account" }
     | { readonly name: "manual" }

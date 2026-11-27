@@ -1,4 +1,4 @@
-// Home: Tuned's mark atop a rail (Live TV, Films, Shows, Search, Settings) and the section beside it. Landing on a
+// Home: Tuned's mark atop a rail (Live TV, Movies, Shows, Search, Settings) and the section beside it. Landing on a
 // rail item opens its section, so the remote needs no OK to move between them.
 import type { Tab } from "./nav.ts";
 import { setTab } from "./nav.ts";

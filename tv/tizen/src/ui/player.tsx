@@ -1,7 +1,7 @@
 // The player: only the picture until a key is pressed (player.md › get out of the way). OK or Info shows the banner
 // (channel, what's on now and next, the time) and the top row's buttons; they hide again after a few seconds. Live:
 // up and down or channel up and down change channel, number keys type one, the flip-back key returns to the last.
-// Films: left and right skip 10 seconds, play/pause pauses. Back hides the controls, then stops and closes the stream.
+// Movies: left and right skip 10 seconds, play/pause pauses. Back hides the controls, then stops and closes the stream.
 import { useEffect, useRef, useState } from "preact/hooks";
 import type { Programme } from "@tuned/shared";
 import { kindItems, nowNext, settings, visibleItems } from "../app.ts";

@@ -1,4 +1,4 @@
-// A film's page (Play, or Resume where it was left, and Favourite) and a show's (its seasons and episodes, with real
+// A movie's page (Play, or Resume where it was left, and Favourite) and a show's (its seasons and episodes, with real
 // episode names where the playlist has them).
 import { useEffect, useMemo, useState } from "preact/hooks";
 import type { Item } from "@tuned/shared";
