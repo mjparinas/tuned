@@ -41,6 +41,8 @@ jobs:
       docs: ${{ steps.diff.outputs.docs }}
       mobile: ${{ steps.diff.outputs.mobile }}
       web: ${{ steps.diff.outputs.web }}
+      vega: ${{ steps.diff.outputs.vega }}
+      tizen: ${{ steps.diff.outputs.tizen }}
       record: ${{ steps.diff.outputs.record }}
       warm: ${{ steps.diff.outputs.warm }}
       tree: ${{ steps.diff.outputs.tree }}
@@ -57,7 +59,7 @@ jobs:
         run: |
           tree=$(git rev-parse 'HEAD^{tree}')
           echo "tree=$tree" >> "$GITHUB_OUTPUT"
-          everything() { { echo "run=true"; echo "mobile=true"; echo "web=true"; } >> "$GITHUB_OUTPUT"; exit 0; }
+          everything() { { echo "run=true"; echo "mobile=true"; echo "web=true"; echo "vega=true"; echo "tizen=true"; } >> "$GITHUB_OUTPUT"; exit 0; }
           recorded() {
             desc=$(gh api "repos/$REPO/commits/$1/statuses?per_page=100" \
               --jq '[.[] | select(.context == "CI passed tree")][0] | select(.state == "success") | .description' 2>/dev/null || true)
@@ -121,7 +123,7 @@ jobs:
           [ -n "$files" ] || everything
           needs=$(node scripts/ci-changes.mjs <<< "$files") || everything
           echo "$needs"
-          if [ "$needs" = $'mobile=false\nweb=false' ]; then
+          if ! grep -q '=true' <<< "$needs"; then
             { echo "run=false"; echo "docs=true"; } >> "$GITHUB_OUTPUT"
             if passed "$base" "$(git rev-parse "$base^{tree}")"; then
               echo "::notice::Only Markdown or docs/ changed and ${base:0:7} passed CI, so only Prettier runs."
@@ -133,10 +135,10 @@ jobs:
           fi
           { echo "run=true"; echo "$needs"; } >> "$GITHUB_OUTPUT"
           # A skipped half is vouched for only by the commit before it, so record the tree only when that one passed.
-          if [ "$needs" != $'mobile=true\nweb=true' ] && ! passed "$base" "$(git rev-parse "$base^{tree}")"; then
+          if grep -q '=false' <<< "$needs" && ! passed "$base" "$(git rev-parse "$base^{tree}")"; then
             echo "record=false" >> "$GITHUB_OUTPUT"
           fi
-          grep -q 'mobile=true' <<< "$needs" || echo "::notice::Only the website (devices/) changed, so the app's builds and tests are skipped."
+          grep -q 'mobile=true' <<< "$needs" || echo "::notice::The Android app didn't change, so its builds and tests are skipped."
           grep -q 'web=true' <<< "$needs" || echo "::notice::The website (devices/) didn't change, so its tests are skipped."
 
   # Node only, so it needs no Java or Gradle and finishes in under a minute. ktlint runs in Checks, which has Gradle.
@@ -354,9 +356,61 @@ jobs:
           PR: ${{ github.event.pull_request.number }}
         run: gh api "repos/${{ github.repository }}/pulls/$PR/files" --paginate --jq '.[].filename' | node scripts/decision-record.mjs
 
+  # Tuned for Fire TV sticks on Vega OS (tv/vega/, docs/decisions/vega.md): type check, the Jest tests, every screen
+  # drawn in the browser preview, and the .vpkg built with Amazon's Vega SDK (Ubuntu x86_64), kept as an artifact.
+  vega:
+    name: Vega (Fire TV)
+    needs: changes
+    if: needs.changes.outputs.vega == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: tv/vega
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: tv/vega/package-lock.json
+      - run: npm ci --no-audit --no-fund
+      - name: Type check
+        run: npx tsc --noEmit
+      - name: Tests
+        run: npx jest --ci
+      - name: Screens in the browser preview
+        run: |
+          npx playwright install --with-deps chromium
+          npm run preview:build
+          npm run screenshots
+      - uses: actions/upload-artifact@v7
+        with:
+          name: vega-screenshots
+          path: tv/vega/preview/out/screenshots
+      - name: Vega SDK
+        env:
+          NONINTERACTIVE: "true"
+          SKIP_VVD_INSTALL: "true"
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq jq lz4 build-essential >/dev/null
+          curl -fsSL https://sdk-installer.vega.labcollab.net/get_vvm.sh | bash
+          echo "$HOME/vega/bin" >> "$GITHUB_PATH"
+          "$HOME/vega/bin/vega" --version
+      - name: Build the .vpkg
+        run: |
+          source ~/vega/env 2>/dev/null || true
+          npm run build:release
+          ls -la build/*/
+      - uses: actions/upload-artifact@v7
+        with:
+          name: tuned-vega-vpkg
+          path: tv/vega/build/*-release/*.vpkg
+          if-no-files-found: error
+
   passed:
     name: CI passed
-    needs: [changes, decisions, format, checks, android, device]
+    needs: [changes, decisions, format, checks, android, device, vega]
     if: always()
     runs-on: ubuntu-latest
     permissions:

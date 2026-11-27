@@ -171,6 +171,9 @@ test("a device needs a hashed id; the rest has safe defaults", () => {
     assert.equal(parseDevice({ device: "a".repeat(64) }).build, "play");
     // The Fire TV build (Amazon Appstore) is a store build of its own; anything unknown is still a store build.
     assert.equal(parseDevice({ device: "a".repeat(64), build: "amazon" }).build, "amazon");
+    // The TV apps outside Android (docs/decisions/vega.md, the Samsung app in tv/tizen/).
+    assert.equal(parseDevice({ device: "a".repeat(32), build: "vega", kind: "tv" }).build, "vega");
+    assert.equal(parseDevice({ device: "a".repeat(32), build: "tizen", kind: "tv" }).build, "tizen");
     assert.equal(parseDevice({ device: "a".repeat(64), build: "sideways" }).build, "play");
 });
 

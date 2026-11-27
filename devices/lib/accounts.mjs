@@ -160,7 +160,7 @@ export function parseDevice(body) {
     const device = body?.device;
     if (typeof device !== "string" || !/^[0-9a-f]{32,64}$/.test(device)) return null;
     const kind = ["phone", "tablet", "tv"].includes(body?.kind) ? body.kind : "phone";
-    const build = ["github", "amazon"].includes(body?.build) ? body.build : "play";
+    const build = ["github", "amazon", "vega", "tizen"].includes(body?.build) ? body.build : "play";
     const name = typeof body?.name === "string" && body.name.trim() ? body.name.trim().slice(0, 60) : "Android device";
     return { device, kind, build, name };
 }
