@@ -6,7 +6,16 @@
 // Android TV, the TV never renames a channel, changes a logo or renames a list; that stays on the phone or website.
 // Android's ids are 64-bit and are kept whole all the way through, never turned into a JavaScript number.
 // `@tuned/shared/lists`.
-import type { Item } from "./catalog.ts";
+/**
+ * What these rules need of an item: catalog's `Item` fits, and so does Vega's own, without pulling in tv/core.
+ * `androidId` is Android's id for the stream (`StableId`), as decimal text.
+ */
+export interface ListItem {
+    readonly androidId: string;
+    readonly kind: string;
+    readonly name: string;
+    readonly logo: string | null;
+}
 
 /** Marks an integer kept as its digits while the backup is open, so it's written back as the same number. */
 const WHOLE = "\u0001";
@@ -134,7 +143,7 @@ export function listsFromBackup(text: string | null): AccountLists {
 }
 
 /** A list's items on this TV, matched by Android's id: channels in the order they were added, the rest in `items`' order. */
-export function listOnTv<T extends Pick<Item, "androidId" | "kind">>(list: UserList, items: readonly T[]): T[] {
+export function listOnTv<T extends Pick<ListItem, "androidId" | "kind">>(list: UserList, items: readonly T[]): T[] {
     const wanted = new Set(list.items);
     const found = items.filter((i) => wanted.has(i.androidId));
     if (!found.length || found[0].kind !== "live") return found;
@@ -143,7 +152,7 @@ export function listOnTv<T extends Pick<Item, "androidId" | "kind">>(list: UserL
 }
 
 /** An item as the account has it: a renamed channel's name and a changed logo. */
-export function withEdit<T extends Pick<Item, "androidId" | "name" | "logo">>(item: T, edits: AccountLists["edits"]): T {
+export function withEdit<T extends Pick<ListItem, "androidId" | "name" | "logo">>(item: T, edits: AccountLists["edits"]): T {
     const edit = edits[item.androidId];
     if (!edit) return item;
     return { ...item, name: edit.name ?? item.name, logo: edit.logo ?? item.logo };
