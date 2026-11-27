@@ -48,6 +48,11 @@ const SCENES = [
     "profiles-pin-wrong",
     "live-kids",
     "settings-profile",
+    "live-lists",
+    "add-to-list",
+    "add-to-list-new",
+    "movie-lists",
+    "settings-lists",
 ];
 // A few scenes in other languages: German for long words, Arabic right to left, Chinese for another script.
 const LANGUAGE_SCENES = ["de-DE", "ar-EG", "zh-CN"].flatMap((lang) =>
@@ -73,6 +78,11 @@ page.on("pageerror", (e) => failures.push(e.message));
 for (const scene of SCENES) {
     await page.goto(`http://localhost:${port}/?scene=${scene}`);
     await page.waitForTimeout(400);
+    // Settings › Your lists is further down the page: scroll to it, as the remote would.
+    if (scene === "settings-lists") {
+        await page.getByText("Your lists", { exact: true }).evaluate((e) => e.scrollIntoView({ block: "start" }));
+        await page.waitForTimeout(100);
+    }
     await page.screenshot({ path: join(shots, `vega-${scene}.png`) });
 }
 for (const { scene, lang } of LANGUAGE_SCENES) {
