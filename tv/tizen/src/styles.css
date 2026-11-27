@@ -998,3 +998,60 @@ button.row:focus {
 .dialog.pin .buttons {
     justify-content: center;
 }
+
+/* Add to list (lists.md): the profile's lists as ticks, then New list and Done. */
+.dialog.lists .list-choices {
+    max-height: 520px;
+    overflow-y: auto;
+}
+
+.dialog.lists .row {
+    background: var(--card-high);
+}
+
+.dialog.lists button.row:focus {
+    background: #fff;
+    color: var(--ink);
+}
+
+.dialog.lists .field {
+    width: 100%;
+    margin: 16px 0;
+}
+
+.check {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    border: 3px solid var(--muted);
+    border-radius: 10px;
+    font-weight: 700;
+}
+
+.check.on {
+    border-color: var(--teal);
+    background: var(--teal);
+    color: var(--ink);
+}
+
+/* A change to the account that didn't stick, for a few seconds at the foot of the screen. */
+.notice {
+    position: fixed;
+    left: 50%;
+    bottom: calc(var(--safe-y) + 24px);
+    max-width: 1200px;
+    padding: 20px 36px;
+    border-radius: 20px;
+    background: var(--card-high);
+    color: var(--text);
+    transform: translateX(-50%);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s;
+}
+
+.notice.on {
+    opacity: 1;
+}

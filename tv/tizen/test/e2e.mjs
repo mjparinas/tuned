@@ -55,11 +55,19 @@ const pinHash = (pin) => {
     const salt = Buffer.from("tuned-e2e-salt!!");
     return `v1:${salt.toString("base64")}:${pbkdf2Sync(pin, salt, 120_000, 32, "sha256").toString("base64")}`;
 };
-/** The account's backup as the phone left it: a grown-up profile with a PIN, and a kids one whose favourite is Treehouse. */
+/**
+ * The account's backup as the phone left it: a grown-up profile with a PIN and a list for game night, a kids one whose
+ * favourite is Treehouse, and CBC News renamed on the website.
+ */
 const backup = (base) =>
-    `{"fingerprint":"f1","changedAt":1,"copy":{"settings":{"adult_pin":{"s":"${pinHash("4321")}"}},"profiles":[` +
-    `{"id":1,"name":"Sam","colour":1,"kids":false,"pinHash":"${pinHash("1234")}","createdAt":1,"avatar":"fox"},` +
+    `{"fingerprint":"f1","changedAt":1,"copy":{"settings":{"adult_pin":{"s":"${pinHash("4321")}"}},` +
+    `"channelEdits":[{"itemId":${androidId(0, `${base}/live/0.webm`, "CBC News")},"name":"CBC National","logo":null}],"profiles":[` +
+    `{"id":1,"name":"Sam","colour":1,"kids":false,"pinHash":"${pinHash("1234")}","createdAt":1,"avatar":"fox",` +
+    `"lists":[{"id":31,"name":"Game night","position":1,"createdAt":1,"items":[{"itemId":${androidId(0, `${base}/live/1.webm`, "TSN 1")},"addedAt":1,"position":1}]}]},` +
     `{"id":2,"name":"Robin","colour":5,"kids":true,"createdAt":2,"avatar":"dragon","favourites":[{"itemId":${androidId(0, `${base}/live/2.webm`, "Treehouse")},"addedAt":1,"position":0}]}]}}`;
+/** The backup as saved last (the TV saves its changes on top), and its version. */
+let saved = null;
+let savedVersion = 1;
 /** Once true, the phone signs the TV in to the account as soon as the code shows. */
 let phoneSignsIn = false;
 
@@ -129,7 +137,20 @@ const server = createServer((req, res) => {
         return res.end(JSON.stringify({ status: "ok", token: "tv-token", email: "viewer@example.com" }));
     if (url.pathname === "/api/account/seat")
         return signedIn ? res.end(JSON.stringify({ seat: "active", email: "viewer@example.com" })) : res.writeHead(401).end();
-    if (url.pathname === "/api/backup") return signedIn ? res.end(backup(base)) : res.writeHead(401).end();
+    if (url.pathname === "/api/backup") {
+        if (!signedIn) return res.writeHead(401).end();
+        saved ??= backup(base);
+        if (req.method !== "PUT") return res.writeHead(200, { "X-Backup-Version": String(savedVersion) }).end(saved);
+        let body = "";
+        req.on("data", (c) => (body += c));
+        req.on("end", () => {
+            if (req.headers["if-match"] !== `"${savedVersion}"`) return res.writeHead(409).end(JSON.stringify({ status: "conflict" }));
+            saved = body;
+            savedVersion++;
+            res.end(JSON.stringify({ status: "ok", version: savedVersion }));
+        });
+        return;
+    }
     res.removeHeader("Content-Type");
     if (url.pathname === "/get.m3u") return res.end(playlist(base));
     if (url.pathname === "/guide.xml") return res.end(guide());
@@ -194,6 +215,8 @@ const remote = async (code) => {
     await page.waitForTimeout(150);
 };
 const GREEN = 404;
+const YELLOW = 405;
+const BLUE = 406;
 const focused = () => page.evaluate(() => document.activeElement?.textContent ?? "");
 
 try {
@@ -389,6 +412,44 @@ try {
         await page.locator(".channel").nth(3).waitFor({ timeout: 10_000 });
         phoneSignsIn = false;
     });
+    await step("Your own lists, a renamed channel, and Favourites in the account", async () => {
+        await page.getByText("CBC National").first().waitFor({ timeout: 5000 });
+        await page.locator(".chip", { hasText: "Game night" }).waitFor({ timeout: 5000 });
+        await key("ArrowRight");
+        for (let i = 0; i < 4 && !(await focused()).includes("CBC National"); i++) await key("ArrowUp");
+        if (!(await focused()).includes("CBC National")) throw new Error(`Focus is on "${await focused()}"`);
+        await remote(BLUE);
+        await page.getByText("Add CBC National to a list").waitFor();
+        await page.waitForTimeout(300);
+        await shot("13-add-to-list");
+        const cbc = androidId(0, `${base}/live/0.webm`, "CBC News");
+        await key("Enter");
+        await page.locator('.dialog.lists [role="checkbox"][aria-checked="true"]').waitFor({ timeout: 10_000 });
+        if (!saved.includes(`{"itemId":${cbc},`)) throw new Error("Game night didn't get CBC News in the account");
+        await key("ArrowDown");
+        await key("Enter");
+        await page.getByPlaceholder("List name").waitFor();
+        await page.keyboard.type("Evening");
+        await key("ArrowDown");
+        await key("Enter");
+        await page.locator(".dialog.lists .row", { hasText: "Evening" }).waitFor({ timeout: 10_000 });
+        if (!saved.includes('"name":"Evening"')) throw new Error("The new list isn't in the account");
+        await key("Escape");
+        await page.locator(".dialog.lists").waitFor({ state: "detached" });
+        await remote(YELLOW);
+        await page.locator(".chip", { hasText: "Evening" }).waitFor({ timeout: 10_000 });
+        await page.waitForTimeout(1500);
+        const copy = JSON.parse(saved.replace(/(?<=[:\[,])-?\d{16,}/g, (d) => `"${d}"`)).copy;
+        if (!copy.profiles[0].favourites?.some((f) => f.itemId === cbc)) throw new Error("Yellow didn't add a favourite to the account");
+        await page.waitForTimeout(300);
+        await shot("14-lists-on-live-tv");
+        await key("ArrowLeft", 3);
+        for (let i = 0; i < 6 && !(await focused()).includes("Settings"); i++) await key("ArrowDown");
+        await key("Enter");
+        await page.getByText("Your lists").waitFor();
+        await page.waitForTimeout(300);
+        await shot("15-your-lists");
+    });
     const app = await page.evaluate(() => window.__tuned.connections());
     console.log(`Stream connections at once: app ${app.highest}, server ${highest}`);
     if (app.highest > 1 || highest > 1) throw new Error("More than one stream connection was open at once");
@@ -396,6 +457,25 @@ try {
     console.log(`Pictures in ${out}`);
 } catch (error) {
     await shot("failure").catch(() => undefined);
+    // What the player was doing, so a failure says why without a rerun.
+    const state = await page
+        .evaluate(() => {
+            const v = document.querySelector("video");
+            const p = window.__tuned.playback();
+            return {
+                playback: { state: p.state, item: p.item?.name, buffering: p.buffering },
+                video: v && {
+                    src: v.currentSrc,
+                    readyState: v.readyState,
+                    networkState: v.networkState,
+                    paused: v.paused,
+                    time: v.currentTime,
+                    error: v.error?.message,
+                },
+            };
+        })
+        .catch(() => null);
+    console.error("Player:", JSON.stringify(state), "server streams open:", open);
     console.error(`\n${error.stack ?? error}`);
     process.exitCode = 1;
 } finally {

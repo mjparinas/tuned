@@ -14,6 +14,7 @@
     "./i18n": "./src/i18n.ts",
     "./guide": "./src/guide.ts",
     "./profiles": "./src/profiles.ts",
+    "./lists": "./src/lists.ts",
     "./search": "./src/search.ts",
     "./favourites": "./src/favourites.ts",
     "./tmdb": "./src/tmdb.ts",
