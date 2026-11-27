@@ -43,6 +43,43 @@ export function blogImages({ phone, tv, browser, player, event, stack, mark }) {
             <div class="hub"><div class="logo" style="width:150px;height:150px">${mark}</div></div>
             <p class="big">No channels included. Ever.</p>`,
         },
+        "smarters-alternatives": {
+            chip: "IPTV Smarters alternatives",
+            body: stack(tv("browse-guide-grid-tv.png", 640), phone("browse-live-tv.png", 3)),
+        },
+        "free-no-ads": {
+            chip: "Free, with no ads",
+            body: stack(phone("browse-live-tv.png", -4), phone("browse-guide.png", 0), phone("browse-movie.png", 4)),
+        },
+        "playlist-types": {
+            chip: "M3U, Xtream or MAC portal?",
+            body: stack(phone("playlist-add-xtream.png", -4), phone("playlist-add-link.png", 0), phone("playlist-add-portal.png", 4)),
+        },
+        "iptv-not-working": {
+            chip: "IPTV not working? 10 fixes",
+            body: stack(phone("browse-first-download.png", -3), phone("settings-user-agents.png", 3)),
+        },
+        "samsung-lg": { chip: "Your playlist on a Samsung or LG TV", body: player("player-casting.png") },
+        "parental-controls": {
+            chip: "Parental controls",
+            premium: true,
+            body: stack(phone("browse-profiles-named.png", -3), tv("browse-profiles-tv.png", 600)),
+        },
+        connections: {
+            chip: "Connections explained",
+            body: `<div class="flow">${step("on", "Watching", "uses the connection")}${arrow}${step("wait", "Downloads and scans", "wait their turn")}</div>
+            <p class="big">Your plan counts streams, not devices.</p>`,
+        },
+        "trakt-simkl": {
+            chip: "Trakt and Simkl",
+            premium: true,
+            body: stack(phone("settings-simkl-import.png", -3), phone("browse-shows-recently-added.png", 3)),
+        },
+        offline: {
+            chip: "Download for offline",
+            premium: "both",
+            body: stack(phone("browse-show.png", -4), phone("browse-downloads.png", 0), phone("browse-movie.png", 4)),
+        },
         "fire-tv": {
             chip: "Fire TV",
             body: `${stack(tv("playlist-welcome-tv.png", 640))}

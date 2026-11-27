@@ -41,3 +41,5 @@ The same rules apply everywhere a channel can be opened: widgets, Android TV hom
 With a [Tuned account](/blog/guides/premium/), profiles, their pictures, PINs and everything they keep travel in the backup, so a new TV has the same profiles as your phone.
 
 In the Google Play version, more than one profile and the twelve Premium pictures are part of [Premium](/blog/guides/premium/).
+
+More on keeping a playlist family-friendly: [parental controls for IPTV](/blog/guides/parental-controls-iptv/).

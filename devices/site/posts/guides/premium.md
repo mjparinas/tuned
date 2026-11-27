@@ -28,7 +28,7 @@ Tuned is free, with no ads, ever. Premium unlocks the power features. Here's exa
 - **More than three downloads** at a time
 - **Following events** and their alerts
 - **A Tuned account** that backs up your playlists, settings and profiles and keeps your devices the same, plus the website's Channels and guide and Watch pages
-- **Trakt and Simkl** scrobbling (and importing Trakt's watched history into Tuned)
+- **Trakt and Simkl** scrobbling, and importing what you've watched there into Tuned
 - **Themes and accent colours** other than the default
 
 ## What it costs

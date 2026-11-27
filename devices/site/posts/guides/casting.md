@@ -41,3 +41,5 @@ Subtitles you found with [subtitle search](/blog/guides/subtitles/) go to a Chro
 - Settings › Updates and advanced › Logs records every step of a cast, for a [problem report](/blog/guides/provider-errors/).
 
 Downloads and channel scans wait while you cast, and carry on when the cast ends.
+
+Got a Samsung or LG TV? See [how to watch your IPTV playlist on a Samsung or LG TV](/blog/guides/watch-iptv-on-samsung-lg-tv/).
