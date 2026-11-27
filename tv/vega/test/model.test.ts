@@ -575,3 +575,166 @@ describe("more than one playlist on Vega", () => {
         expect(model.state.playlistId).not.toBe("current");
     });
 });
+
+describe("the guide grid, catch-up and reminders on Vega", () => {
+    const login = { kind: "xtream" as const, server: "http://tv.example", username: "u", password: "p" };
+    const b64 = (s: string) => Buffer.from(s).toString("base64");
+    const now = Date.now();
+    const sec = (ms: number) => String(Math.floor(ms / 1000));
+    const hour = 3600_000;
+    const asked: string[] = [];
+    const answers: Record<string, unknown> = {
+        account: { user_info: { auth: 1, status: "Active" }, server_info: { timezone: "UTC" } },
+        get_live_categories: [{ category_id: "1", category_name: "News" }],
+        get_live_streams: [
+            { stream_id: 5, name: "Harbour News", category_id: "1", tv_archive: 1, tv_archive_duration: 2 },
+            { stream_id: 6, name: "Quiet Channel", category_id: "1" },
+        ],
+        get_vod_categories: [],
+        get_vod_streams: [],
+        get_series_categories: [],
+        get_series: [],
+    };
+    const table = {
+        epg_listings: [
+            { title: b64("Morning"), start_timestamp: sec(now - 3 * hour), stop_timestamp: sec(now - 2 * hour) },
+            { title: b64("Now"), start_timestamp: sec(now - hour / 2), stop_timestamp: sec(now + hour / 2) },
+            { title: b64("Later"), start_timestamp: sec(now + hour), stop_timestamp: sec(now + 2 * hour) },
+            { title: b64("Next week"), start_timestamp: sec(now + 7 * 24 * hour), stop_timestamp: sec(now + 7 * 24 * hour + hour) },
+        ],
+    };
+    const xtream: Http = {
+        async getJson(url) {
+            const u = new URL(url);
+            const action = u.searchParams.get("action") ?? "account";
+            asked.push(action === "get_simple_data_table" ? `table:${u.searchParams.get("stream_id")}` : action);
+            if (action === "get_simple_data_table")
+                return { status: 200, body: u.searchParams.get("stream_id") === "5" ? table : { epg_listings: [] } };
+            return { status: 200, body: answers[action] };
+        },
+        async postJson() {
+            return { status: 500, body: null };
+        },
+        async text(url) {
+            return JSON.stringify(answers[new URL(url).searchParams.get("action") ?? ""]);
+        },
+    };
+
+    it("reads the guide for the rows on screen only, once, and keeps the window the grid shows", async () => {
+        const model = new AppModel(services(xtream));
+        await model.useLogin(login);
+        expect(model.state.lineup?.timezone).toBe("UTC");
+        const [news, quiet] = model.visibleChannels();
+        asked.length = 0;
+        await model.loadGridRows([news]);
+        await model.loadGridRows([news, quiet]);
+        expect(asked).toEqual(["table:5", "table:6"]);
+        expect(model.state.grid[news.id].map((p) => p.title)).toEqual(["Morning", "Now", "Later"]);
+        expect(model.state.grid[quiet.id]).toEqual([]);
+        await model.setPrefs({ liveGrid: true });
+        expect(model.state.prefs.liveGrid).toBe(true);
+    });
+
+    it("plays a past programme from its recording through the one connection, and keeps no position for it", async () => {
+        const opened: string[] = [];
+        const player = {
+            open: async (url: string) => void opened.push(url),
+            close: async () => {},
+            position: () => ({ at: 600, length: 3600 }),
+        };
+        const model = new AppModel({ ...services(xtream), player });
+        await model.useLogin(login);
+        const [news, quiet] = model.visibleChannels();
+        await model.loadGridRows([news, quiet]);
+        const morning = model.state.grid[news.id][0];
+        expect(await model.playReplay(quiet, morning)).toBe(false);
+        expect(await model.playReplay(news, morning)).toBe(true);
+        expect(opened[0]).toMatch(/^http:\/\/tv\.example\/timeshift\/u\/p\/60\/\d{4}-\d\d-\d\d:\d\d-\d\d\/5\.ts$/);
+        expect(model.state.vod).toMatchObject({ title: "Morning", subtitle: "Harbour News", replay: true });
+        expect(model.stream.open).toBe(1);
+        await model.stopPlaying();
+        expect(model.state.route).toBe("live");
+        expect(model.state.positions).toEqual({});
+    });
+
+    it("sets a reminder for a programme to come, tells once when it starts, and Watch plays its channel", async () => {
+        jest.useFakeTimers({ now });
+        try {
+            const played: string[] = [];
+            const player = { open: async (url: string) => void played.push(url), close: async () => {} };
+            const store = memoryStore();
+            const model = new AppModel({ ...services(xtream, store), player });
+            await model.useLogin(login);
+            const [news] = model.visibleChannels();
+            await model.loadGridRows([news]);
+            const later = model.state.grid[news.id][2];
+            await model.toggleReminder(news, later);
+            expect(model.state.reminders).toHaveLength(1);
+            expect(model.state.notice?.text).toContain("Later");
+
+            // It's kept across a restart.
+            const again = new AppModel({ ...services(xtream, store), player });
+            await again.boot();
+            expect(again.state.reminders.map((r) => r.title)).toEqual(["Later"]);
+
+            await jest.advanceTimersByTimeAsync(hour + 1000);
+            expect(model.state.due).toMatchObject({ title: "Later", channelName: "Harbour News" });
+            await model.watchDue();
+            expect(model.state.due).toBeNull();
+            expect(model.state.route).toBe("player");
+            expect(played.at(-1)).toBe(news.url);
+            expect(model.state.reminders).toHaveLength(0);
+            again.dismissDue();
+        } finally {
+            jest.useRealTimers();
+        }
+    });
+
+    it("reads a link's guide once, with progress, keeping only its channels, and says when it fails", async () => {
+        const t0 = new Date(now - 30 * 60_000);
+        const t1 = new Date(now + 30 * 60_000);
+        const stamp = (d: Date) => d.toISOString().replace(/[-:T]/g, "").slice(0, 14) + " +0000";
+        let guideUp = true;
+        const xml =
+            '<?xml version="1.0"?><tv><channel id="news"><display-name>News</display-name></channel>' +
+            `<programme channel="news" start="${stamp(t0)}" stop="${stamp(t1)}"><title>Evening News</title><desc>Today.</desc></programme>` +
+            `<programme channel="other" start="${stamp(t0)}" stop="${stamp(t1)}"><title>Not ours</title></programme></tv>`;
+        const m3u = '#EXTM3U url-tvg="http://guide.example/epg.xml"\n#EXTINF:-1 tvg-id="news",News\nhttp://tv.example/live/1.ts\n';
+        const progress: number[] = [];
+        const link: Http = {
+            async getJson() {
+                return { status: 500, body: null };
+            },
+            async postJson() {
+                return { status: 500, body: null };
+            },
+            async text(url, options) {
+                if (url.startsWith("http://guide.example")) {
+                    if (!guideUp) throw new Error("offline");
+                    options?.onProgress?.({ loaded: xml.length, total: xml.length });
+                    return xml;
+                }
+                return m3u;
+            },
+        };
+        const model = new AppModel(services(link));
+        await model.useLogin({ kind: "link", playlistUrl: "http://tv.example/list.m3u" });
+        model.subscribe(() => model.state.gridLoad.progress?.loaded && progress.push(model.state.gridLoad.progress.loaded));
+        const [news] = model.visibleChannels();
+        await model.loadGridRows([news]);
+        expect(model.state.grid[news.id]).toEqual([
+            {
+                start: t0.getTime() - (t0.getTime() % 1000),
+                stop: t1.getTime() - (t1.getTime() % 1000),
+                title: "Evening News",
+                desc: "Today.",
+            },
+        ]);
+        expect(progress.length).toBeGreaterThan(0);
+        expect(model.state.gridLoad).toMatchObject({ busy: false, result: { ok: true } });
+
+        guideUp = false;
+        await model.loadLinkGuide(true);
+        expect(model.state.gridLoad).toMatchObject({ busy: false, result: { ok: false } });
+    });
+});

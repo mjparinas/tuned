@@ -7,7 +7,7 @@ import { AppModel, CONTINUE, DEFAULT_PREFS, type State } from "../src/app/model"
 import type { Http } from "../src/core/http";
 import type { Channel, Library, Lineup, Title } from "../src/core/models";
 import { memoryStore } from "../src/core/storage";
-import { Shell } from "../src/App";
+import { ReminderBanner, Shell } from "../src/App";
 import { BrowseScreen } from "../src/ui/BrowseScreen";
 import { LiveScreen } from "../src/ui/LiveScreen";
 import { LoadingScreen } from "../src/ui/LoadingScreen";
@@ -248,6 +248,58 @@ function Scene({ name }: { name: string }) {
                 },
             });
             return <LiveScreen model={m} state={m.state} focusChannel="c101" />;
+        }
+        case "live-guide":
+        case "reminder": {
+            const base = at(18, 40);
+            const shows = ["Evening Headlines", "Weather Watch", "Market Hour", "City Desk", "Late Edition", "The Week Ahead"];
+            const grid: State["grid"] = {};
+            lineup.channels.slice(0, 12).forEach((c, i) => {
+                const list = [];
+                let start = at(17, 0) + (i % 3) * 15 * 60_000;
+                for (let k = 0; k < 8; k++) {
+                    const length = (k + i) % 3 === 0 ? 60 : 30;
+                    list.push({
+                        start,
+                        stop: start + length * 60_000,
+                        title: shows[(k + i) % shows.length],
+                        desc: "A made-up programme for the preview.",
+                    });
+                    start += length * 60_000;
+                }
+                grid[c.id] = i === 4 ? [] : list;
+            });
+            const withCatchUp = {
+                ...lineup,
+                channels: lineup.channels.map((c, i) => (i < 3 ? { ...c, catchUp: { mode: "xc" as const, days: 3, source: null } } : c)),
+            };
+            const focusStart = grid.c101[2].start;
+            const m = model({
+                route: "live",
+                lineup: withCatchUp,
+                channelId: "c101",
+                grid,
+                prefs: { ...DEFAULT_PREFS, liveGrid: true },
+                reminders: [
+                    { channelId: "c102", channelName: "", title: grid.c102[3].title, start: grid.c102[3].start, stop: grid.c102[3].stop },
+                ],
+                due:
+                    name === "reminder"
+                        ? {
+                              channelId: "c103",
+                              channelName: lineup.channels[2].name,
+                              title: "Late Edition",
+                              start: base,
+                              stop: base + 3600_000,
+                          }
+                        : null,
+            });
+            return (
+                <View style={{ flex: 1 }}>
+                    <LiveScreen model={m} state={m.state} focusProgramme={{ channelId: "c101", start: focusStart }} fixedNow={base} />
+                    <ReminderBanner model={m} state={m.state} />
+                </View>
+            );
         }
         case "live-refreshing": {
             const m = model({

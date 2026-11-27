@@ -51,7 +51,8 @@ export function storage(store: Store) {
         saveLogin: (login: Login) => store.set(KEYS.login, JSON.stringify(login)),
 
         async loadLineup(): Promise<Lineup | null> {
-            const head = await readJson<{ categories: Lineup["categories"]; chunks: number; savedAt: number }>(store, KEYS.lineupHead);
+            type Head = Pick<Lineup, "categories" | "savedAt" | "timezone" | "guideUrl"> & { chunks: number };
+            const head = await readJson<Head>(store, KEYS.lineupHead);
             if (!head) return null;
             const channels: Lineup["channels"] = [];
             for (let i = 0; i < head.chunks; i++) {
@@ -59,7 +60,13 @@ export function storage(store: Store) {
                 if (!chunk) return null;
                 channels.push(...chunk);
             }
-            return { categories: head.categories, channels, savedAt: head.savedAt };
+            return {
+                categories: head.categories,
+                channels,
+                savedAt: head.savedAt,
+                ...(head.timezone ? { timezone: head.timezone } : {}),
+                ...(head.guideUrl ? { guideUrl: head.guideUrl } : {}),
+            };
         },
 
         async saveLineup(lineup: Lineup): Promise<void> {
@@ -68,7 +75,16 @@ export function storage(store: Store) {
                 await store.set(KEYS.lineupChunk(i), JSON.stringify(lineup.channels.slice(i * CHUNK, (i + 1) * CHUNK)));
             }
             // The head goes last, so a stick that stops halfway keeps reading the old lineup's head and chunks.
-            await store.set(KEYS.lineupHead, JSON.stringify({ categories: lineup.categories, chunks, savedAt: lineup.savedAt }));
+            await store.set(
+                KEYS.lineupHead,
+                JSON.stringify({
+                    categories: lineup.categories,
+                    chunks,
+                    savedAt: lineup.savedAt,
+                    timezone: lineup.timezone ?? null,
+                    guideUrl: lineup.guideUrl,
+                }),
+            );
             const stale = (await store.keys()).filter((k) => k.startsWith(`${KEYS.lineupHead}:`) && Number(k.split(":").pop()) >= chunks);
             if (stale.length) await store.remove(stale);
         },

@@ -86,3 +86,32 @@ test("Continue Watching has the newest unfinished one per title, and finished on
         ["m8", "m9"],
     );
 });
+
+test("reminders are given once when their programme starts, and late ones and ended ones are dropped", async () => {
+    const { Reminders, remindersKey } = await import("./reminders.ts");
+    const store = new MemoryStore();
+    const r = new Reminders(store, remindersKey("current"));
+    await r.load(0);
+    const news = { channelId: "5", channelName: "Harbour News", title: "Evening News", start: 60_000, stop: 1_860_000 };
+    assert.equal(await r.toggle(news, 0), true);
+    assert.equal(await r.toggle({ ...news, start: 0, title: "Already on" }, 10), false);
+    assert.equal(r.has("5", 60_000), true);
+    assert.equal(r.next(), 60_000);
+    assert.deepEqual(await r.due(30_000), []);
+
+    const again = new Reminders(store, remindersKey("current"));
+    await again.load(30_000);
+    assert.deepEqual(
+        (await again.due(61_000)).map((x) => x.title),
+        ["Evening News"],
+    );
+    assert.deepEqual(await again.due(62_000), []);
+
+    await again.toggle({ ...news, start: 100_000_000, stop: 101_000_000, title: "Late" }, 0);
+    assert.deepEqual(await again.due(100_000_000 + 11 * 60_000), []);
+    assert.equal(again.all.length, 0);
+
+    await again.toggle({ ...news, start: 200_000_000, stop: 201_000_000, title: "Off" }, 0);
+    assert.equal(await again.toggle({ ...news, start: 200_000_000, stop: 201_000_000, title: "Off" }, 0), false);
+    assert.equal(again.all.length, 0);
+});
