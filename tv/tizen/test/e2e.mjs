@@ -184,11 +184,17 @@ const browser = await chromium.launch({
     executablePath: process.env.CHROMIUM_PATH || undefined,
 });
 const errors = [];
+/** The page's last console lines, printed when a step fails. */
+const consoleLines = [];
 /** A fresh TV (nothing saved) whose language is `locale`; Tizen hands the TV's menu language to the page the same way. */
 const freshTv = async (locale) => {
     const tv = await browser.newPage({ viewport: { width: 1920, height: 1080 }, locale });
     tv.on("pageerror", (e) => errors.push(String(e)));
-    tv.on("console", (m) => process.env.VERBOSE && console.log("page:", m.text()));
+    tv.on("console", (m) => {
+        consoleLines.push(m.text());
+        if (consoleLines.length > 30) consoleLines.shift();
+        if (process.env.VERBOSE) console.log("page:", m.text());
+    });
     return tv;
 };
 let page = await freshTv("en-CA");
@@ -217,7 +223,11 @@ const remote = async (code) => {
 const GREEN = 404;
 const YELLOW = 405;
 const BLUE = 406;
-const focused = () => page.evaluate(() => document.activeElement?.textContent ?? "");
+/** What the remote is on; nothing when focus fell to the page itself (whose text holds every word on screen). */
+const focused = () =>
+    page.evaluate(() =>
+        document.activeElement && document.activeElement !== document.body ? (document.activeElement.textContent ?? "") : "",
+    );
 
 try {
     await page.goto(base);
@@ -248,6 +258,17 @@ try {
         await page.waitForTimeout(300);
         await shot("3-live-tv");
         if (!(await focused()).includes("CBC News")) throw new Error(`Focus is on "${await focused()}"`);
+        // A focused element taken off the page (a screen or a list redrawn under the remote) leaves the remote on
+        // the screen's likely choice, never on nothing.
+        await page.evaluate(() => {
+            const temp = document.createElement("button");
+            temp.setAttribute("data-focus", "");
+            document.querySelector("[data-layer]")?.appendChild(temp);
+            temp.focus();
+            temp.remove();
+        });
+        await page.waitForTimeout(200);
+        if (!(await focused()).includes("CBC News")) throw new Error(`After a redraw the remote is on "${await focused()}"`);
     });
     await step("OK plays the channel", async () => {
         await key("Enter");
@@ -464,6 +485,8 @@ try {
             const p = window.__tuned.playback();
             return {
                 playback: { state: p.state, item: p.item?.name, buffering: p.buffering },
+                focused: document.activeElement?.outerHTML.slice(0, 160),
+                layers: document.querySelectorAll("[data-layer]").length,
                 video: v && {
                     src: v.currentSrc,
                     readyState: v.readyState,
@@ -476,6 +499,7 @@ try {
         })
         .catch(() => null);
     console.error("Player:", JSON.stringify(state), "server streams open:", open);
+    console.error("Page console:\n" + consoleLines.join("\n"));
     console.error(`\n${error.stack ?? error}`);
     process.exitCode = 1;
 } finally {

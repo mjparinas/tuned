@@ -97,10 +97,41 @@ export function move(direction: Direction): boolean {
     return focus(nearest(current, direction, all));
 }
 
+/**
+ * Whether the remote sits where the app put it rather than where the person moved it. A list that fills in after its
+ * screen opened takes the remote then (the first channel, not the rail the screen fell back to while it loaded).
+ */
+let placedByApp = false;
+export const remotePlacedByApp = (): boolean => placedByApp;
+/** The person pressed something: from now on the remote is theirs until a screen opens. */
+export function remoteMoved(): void {
+    placedByApp = false;
+}
+
 /** Puts the remote on the likely choice when a screen opens: `data-start` first, else the first focusable. */
 export function focusStart(root: ParentNode = layer()): void {
     const current = document.activeElement as HTMLElement | null;
     const all = focusables(root);
     if (current && all.includes(current)) return;
-    focus(root.querySelector<HTMLElement>("[data-start]") ?? all[0]);
+    if (focus(root.querySelector<HTMLElement>("[data-start]") ?? all[0])) placedByApp = true;
+}
+
+/**
+ * Keeps the remote on something. When the focused element leaves the page (a screen swapped under it, a list redrawn),
+ * the browser drops focus to the page itself and OK would do nothing useful; after each change to the page, a remote
+ * left on nothing goes back to the top layer's likely choice.
+ */
+export function keepFocus(root: Node): void {
+    let queued = false;
+    const check = () => {
+        queued = false;
+        const current = document.activeElement;
+        if (current && current !== document.body && current.isConnected) return;
+        focusStart();
+    };
+    new MutationObserver(() => {
+        if (queued) return;
+        queued = true;
+        requestAnimationFrame(check);
+    }).observe(root, { childList: true, subtree: true });
 }
