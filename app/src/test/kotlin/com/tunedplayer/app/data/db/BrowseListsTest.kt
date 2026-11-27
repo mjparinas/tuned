@@ -131,7 +131,12 @@ class BrowseListsTest {
         // A favourite episode still brings its show, as before.
         db.library().addFavourite(FavouriteEntity(4, addedAt = 2))
 
-        val ids = db.library().favouriteIds().first().toSet()
+        val ids =
+            db
+                .library()
+                .favouriteIds()
+                .first()
+                .toSet()
         val keys = FavouriteShows.keys(db, ids)
         assertEquals(listOf("bluey"), keys)
         val favourites = db.sortedShows(TitleSort.Order.PROVIDER, emptyList(), false, null, true, "", "", keys).all()
