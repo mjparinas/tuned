@@ -158,6 +158,18 @@ export const en = {
         "bad name": "Give the list a name.",
         busy: "Another device is saving to your account. Try again in a moment.",
     } as Record<ListProblem, string>,
+    servicesTitle: "Trakt and Simkl",
+    serviceConnect: (n: string) => `Connect ${n}`,
+    serviceSignedInAs: (n: string, u: string) => `Connected to ${n} as ${u}`,
+    serviceSignedIn: (n: string) => `Connected to ${n}`,
+    servicesAbout: "Movies and episodes you watch are added to your history there, alongside your other apps.",
+    scrobble: "Scrobble what you watch",
+    disconnect: "Disconnect",
+    serviceGo: (url: string) => `On your phone or computer, go to ${url} and enter this code.`,
+    serviceWaiting: "Waiting for the code to be entered…",
+    serviceExpired: "The code ran out. Try again for a new one.",
+    serviceDenied: (n: string) => `${n} didn't allow the sign-in.`,
+    serviceOffline: (n: string) => `Couldn't reach ${n}. Check the TV's internet connection.`,
 };
 
 export type Strings = typeof en;

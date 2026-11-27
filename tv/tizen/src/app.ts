@@ -1,5 +1,6 @@
 // The app's state below the screens: playlists, the lists read from the device, the guide, refresh with its steps,
 // the Tuned account and Premium. Screens read the stores here and call the functions; nothing here draws.
+import { forgetServices, readServices, takeServicesFromBackup } from "./services.ts";
 import {
     TunedAccount,
     core,
@@ -143,6 +144,7 @@ export async function start(): Promise<void> {
         undefined,
     );
     ready.set(true);
+    void readServices();
     // Network work waits until the first screen is up (speed.md › QuietStart).
     setTimeout(() => {
         void safely(
@@ -214,6 +216,7 @@ export async function removePlaylist(id: string): Promise<void> {
 export async function signOutEverything(): Promise<void> {
     await safely("SignOut", () => tunedAccount.signOut(), SIGNED_OUT);
     await safely("SignOut", clearEverything, undefined);
+    await safely("SignOut", forgetServices, undefined);
     await safely("SignOut", forgetKey, undefined);
     playlists.set([]);
     currentId.set(null);
@@ -470,6 +473,7 @@ export async function takeBackup(text: string): Promise<void> {
     }
     await loadFavourites();
     libraryVersion.set((v) => v + 1);
+    await takeServicesFromBackup(text);
 }
 
 // ---- Profiles (profiles.md) ----
