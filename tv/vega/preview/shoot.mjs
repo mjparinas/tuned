@@ -24,6 +24,12 @@ const SCENES = [
     "player-failed",
     "settings",
     "settings-refreshing",
+    "movies",
+    "movies-loading",
+    "shows",
+    "movie",
+    "show",
+    "movie-player",
 ];
 const types = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css", ".png": "image/png" };
 

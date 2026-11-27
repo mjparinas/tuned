@@ -5,10 +5,12 @@
 import { log } from "./log";
 
 export interface StreamPlayer {
-    /** Opens `url` and starts playing. Resolves once it's asked for; failures come back through `onError`. */
-    open(url: string): Promise<void>;
+    /** Opens `url` and starts playing, from `startAt` seconds for a movie or episode. Resolves once it's asked for. */
+    open(url: string, startAt?: number): Promise<void>;
     /** Stops and lets go of the connection. Resolves only when it's closed. */
     close(): Promise<void>;
+    /** Where a movie or episode is, in seconds, so it can pick up there next time. */
+    position?(): { at: number; length: number };
 }
 
 export class OneStream {
@@ -25,7 +27,7 @@ export class OneStream {
     }
 
     /** Plays `url`, closing whatever played before. A later `play` or `stop` wins over this one. */
-    play(url: string): Promise<boolean> {
+    play(url: string, startAt?: number): Promise<boolean> {
         const mine = ++this.generation;
         const step = this.chain.then(async () => {
             await this.closeCurrent();
@@ -33,7 +35,7 @@ export class OneStream {
             this.open++;
             this.openUrl = url;
             try {
-                await this.player.open(url);
+                await this.player.open(url, startAt);
                 return true;
             } catch (error) {
                 log.error("OneStream", "open failed", error);

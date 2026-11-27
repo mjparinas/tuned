@@ -1,11 +1,12 @@
-// Downloading a playlist's Live TV, in numbered steps with real progress (AGENTS.md: waiting is never a mystery).
-// Xtream servers answer player_api.php in JSON, which is smaller and quicker to read than their M3U; a link is read
-// as M3U in slices, letting the screen draw between them so the stick never freezes.
+// Downloading a playlist, in numbered steps with real progress (AGENTS.md: waiting is never a mystery). Xtream servers
+// answer player_api.php in JSON, which is smaller and quicker to read than their M3U: Live TV first, so the channels
+// show as soon as they can, then movies and shows on their own (`downloadLibrary`). A link is read as M3U in slices,
+// letting the screen draw between them so the stick never freezes, and gives its movies and shows in the same read.
 import { HttpError, type Http } from "./http";
 import { M3uReader } from "./m3u";
-import type { Lineup, Login } from "./models";
+import type { Library, Lineup, Login } from "./models";
 import { eta, type StepProgress } from "./progress";
-import { accountUrl, checkAccount, parseCategories, parseLiveStreams } from "./xtream";
+import { accountUrl, checkAccount, parseCategories, parseLiveStreams, parseMovies, parseShows } from "./xtream";
 
 export class PlaylistError extends Error {
     constructor(public readonly reason: "wrong login" | "expired" | "unreachable" | "empty" | "not a playlist") {
@@ -17,13 +18,10 @@ export class PlaylistError extends Error {
 const SLICE = 512 * 1024;
 const breathe = () => new Promise<void>((resolve) => setTimeout(resolve, 0));
 
-export async function downloadLineup(
-    http: Http,
-    login: Login,
-    onProgress: (p: StepProgress) => void,
-    now: () => number = Date.now,
-): Promise<Lineup> {
-    const download = async (url: string, step: number, steps: number, label: string) => {
+type OnProgress = (p: StepProgress) => void;
+
+function downloader(http: Http, onProgress: OnProgress, now: () => number) {
+    return async (url: string, step: number, steps: number, label: string) => {
         const startedAt = now();
         onProgress({ step, steps, label, loaded: 0, total: null });
         try {
@@ -37,7 +35,16 @@ export async function downloadLineup(
             throw new PlaylistError("unreachable");
         }
     };
+}
 
+/** Live TV; a link's movies and shows come with it, read from the same file. */
+export async function downloadLineup(
+    http: Http,
+    login: Login,
+    onProgress: OnProgress,
+    now: () => number = Date.now,
+): Promise<Lineup & { library?: Library }> {
+    const download = downloader(http, onProgress, now);
     if (login.kind === "xtream") {
         onProgress({ step: 1, steps: 3, label: "Checking your login" });
         const check = await checkAccount(http, login);
@@ -57,10 +64,38 @@ export async function downloadLineup(
         onProgress({ step: 2, steps: 2, label: `Reading channels (${reader.channels.length.toLocaleString("en-CA")} so far)` });
         await breathe();
     }
-    const { categories, channels } = reader.end();
-    if (!reader.sawHeader && !channels.length) throw new PlaylistError("not a playlist");
-    if (!channels.length) throw new PlaylistError("empty");
-    return { categories, channels, savedAt: now() };
+    const { categories, channels, movieCategories, showCategories, movies, shows } = reader.end();
+    const nothing = !channels.length && !movies.length && !shows.length;
+    if (!reader.sawHeader && nothing) throw new PlaylistError("not a playlist");
+    if (nothing) throw new PlaylistError("empty");
+    const savedAt = now();
+    return { categories, channels, savedAt, library: { movieCategories, showCategories, movies, shows, savedAt } };
+}
+
+/** An Xtream server's movies and shows, after Live TV: four numbered steps, each a JSON answer from player_api.php. */
+export async function downloadLibrary(
+    http: Http,
+    login: Extract<Login, { kind: "xtream" }>,
+    onProgress: OnProgress,
+    now: () => number = Date.now,
+): Promise<Library> {
+    const download = downloader(http, onProgress, now);
+    const base = accountUrl(login.server, login.username, login.password);
+    const get = async (action: string, step: number, label: string) => safeJson(await download(`${base}&action=${action}`, step, 4, label));
+    const movieCategories = parseCategories(await get("get_vod_categories", 1, "Downloading movie categories"));
+    const movies = parseMovies(await get("get_vod_streams", 2, "Downloading movies"), login);
+    const showCategories = parseCategories(await get("get_series_categories", 3, "Downloading show categories"));
+    const shows = parseShows(await get("get_series", 4, "Downloading shows"));
+    const used = (titles: { categoryId: string }[]) => new Set(titles.map((t) => t.categoryId));
+    const usedMovies = used(movies);
+    const usedShows = used(shows);
+    return {
+        movieCategories: movieCategories.filter((c) => usedMovies.has(c.id)),
+        showCategories: showCategories.filter((c) => usedShows.has(c.id)),
+        movies,
+        shows,
+        savedAt: now(),
+    };
 }
 
 function safeJson(text: string): unknown {
@@ -80,7 +115,7 @@ export function failureText(error: unknown): string {
         case "expired":
             return "The server says this account has run out or is turned off.";
         case "empty":
-            return "The playlist has no live channels.";
+            return "The playlist has no channels, movies or shows.";
         case "not a playlist":
             return "That link isn't an M3U playlist.";
         default:
@@ -89,4 +124,4 @@ export function failureText(error: unknown): string {
 }
 
 /** Refreshes are due after 12 hours, as on Android's default. */
-export const isStale = (lineup: Lineup, now = Date.now()) => now - lineup.savedAt > 12 * 3600 * 1000;
+export const isStale = (saved: { savedAt: number }, now = Date.now()) => now - saved.savedAt > 12 * 3600 * 1000;
