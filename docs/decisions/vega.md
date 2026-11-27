@@ -1,0 +1,45 @@
+# Vega OS (newest Fire TV sticks)
+
+**Decided** (Melvin, 2026-11-27: "how to get this working on vega os", then "build both vega and tizen"). Some Fire TV sticks sold from 2025 (the Fire TV Stick 4K Select and later) run Vega OS, Amazon's Linux system, instead of Fire OS. They can't install an Android APK, so the `amazon` build ([TV](tv.md#fire-tv)) never reaches them. Tuned for Vega is its own app in `tv/vega/`, built with Amazon's Vega SDK, and shares the non-screen logic with the Samsung TV app in `tv/tizen/` through `tv/shared/` (`@tuned/shared`).
+
+## How it's built
+
+| Option                                                              | Verdict      | Why                                                                                                                                                                                                                                                                                                                                                                            |
+| ------------------------------------------------------------------- | ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **React Native for Vega + Amazon's W3C media player**               | **Chosen**   | Amazon's main route for Vega apps. The player (`@amazon-devices/react-native-w3cmedia`, `VideoPlayer` drawn into a `KeplerVideoSurfaceView`) is the stick's own GStreamer pipeline with hardware decoding, and in its URL mode plays MPEG-TS, MP4, MKV, AVI and MOV links directly. Xtream live channels are `.ts` links, so a channel starts without any JavaScript demuxing. |
+| WebView app (`@amazon-devices/webview`) hosting the Samsung web app | No           | It would reuse the Samsung screens, but video would go through the web engine's `<video>`, which can't play a raw MPEG-TS link: every live channel would need mpegts.js turning TS into MSE segments in JavaScript on a stick's CPU, the slowest way to a first frame. Speed comes first.                                                                                      |
+| Kotlin or Compose                                                   | Not possible | Vega runs no JVM and no Android.                                                                                                                                                                                                                                                                                                                                               |
+
+- **React Native 0.83** with `@amazon-devices/react-native-kepler` 4.x (the Vega runtime), Hermes, TypeScript. Only Amazon's system-distributed libraries and pure JavaScript, so the app's own bundle stays small and the stick shares the runtime across apps.
+- **Package id `com.tunedplayer.app`**, component `com.tunedplayer.app.main`, like the Android app (Vega's ids are separate from Android's).
+- **Plain HTTP to any host** (`[network-traffic-policy.cleartext] allowed-domains = ["*"]`), since most providers serve `http://`, as on Android ([security](security.md)).
+- **Output** is a `.vpkg` per processor: `armv7` for Fire TV sticks (the one the Appstore takes), `aarch64` and `x86_64` for Amazon's Vega Virtual Device.
+
+## What's shared, and with whom
+
+- **`tv/shared/` (`@tuned/shared`)** is owned by the Samsung thread and holds the logic both TV apps need, in plain TypeScript with no screen code and nothing from a browser or React Native, so it runs on a Samsung TV's browser and on Vega's Hermes alike: the Xtream client, the M3U and XMLTV parsers (fed in pieces with `feed`/`end`, since React Native's `fetch` can't stream a body; Vega feeds them from `XMLHttpRequest` progress), the Tuned account client, the storage interface (async strings), and the one-connection player guard. `:core` turns into Kotlin Multiplatform with a JavaScript target for what's already written in Kotlin (`M3uParser`, `Classifier`, `XtreamUrls.redact`, `Search`, `GuideGrid`, `Regions`, `RemoteKeys`), exported as plain ES2015 classes, and the Android app keeps the JVM target unchanged.
+- **Until `@tuned/shared` is importable**, `tv/vega/src/core/` holds the few pieces the first Vega screens need, each a port of its Android original with a test, and each file says which shared piece replaces it.
+- **What Vega supplies itself**, because Hermes has no WebCrypto ECDH or `DecompressionStream`: P-256, HKDF and AES-GCM from `@noble/curves`, `@noble/hashes` and `@noble/ciphers` (pure JavaScript), and gunzip from `pako`.
+
+## What's in the first version
+
+- **Sign in from your phone** (`SignInScreen`): the stick shows the code and QR of the existing relay ([onboarding](onboarding.md)), and the phone at tunedplayer.com/tv either sends a playlist (opened with `core/handoff.ts`, the same box format as `core/TvHandoff`; a test opens a box sealed by `devices/public/tv/seal.js`) or signs the stick in to a Tuned account. Typing an Xtream login with the remote's keyboard is there too, for someone without a phone.
+- **Premium comes with the Tuned account**, as on the Fire OS build (Melvin, 2026-11-27: "Tuned account only"): no Amazon In-App Purchasing, no prices, no buy buttons and no link to a store or the website. A signed-in account with Premium takes a seat (`/api/account/seat`, build `vega`), and "full" alone locks; offline, the stick keeps what it last heard. Check again shows a spinner and says how it ended.
+- **Live TV**: categories down the left and channels beside them, both windowed lists, opened from the cache at once and refreshed after the first screen is up; the first download shows numbered steps with bytes of the full size (or bytes so far), and how much longer when it can tell.
+- **The player**: only video until a key; OK shows the channel's name and now and next, which hide themselves; up and down change channel while the controls are hidden; Back closes it. A stream that won't play says so in words with Try again.
+- **One stream connection, ever**: `core/oneStream.ts` closes and de-initializes the old `VideoPlayer` before the next one opens, so two streams never overlap; nothing prefetches and there is no preview tile.
+
+- **Words**: every string is in `src/ui/strings.ts`. The first version is in English; the other ten languages ([languages](languages.md)) follow in their own pull request, picked by the stick's language as on Android.
+
+## Left out, and why
+
+- **Downloads, recording, live rewind, casting, picture-in-picture, the widget and the self-updater**: a Vega app has no background service for long downloads, no local server for Tuned's segmenter, and the Appstore updates the app.
+- **HLS-only playlists** (`.m3u8` channels) play through URL mode where the stick's player manages them; Amazon only promises adaptive streams through a JavaScript MSE player, so Amazon's patched hls.js (a tarball from Amazon, not npm) comes in a later pull request if a provider needs it.
+- **No sleep timer, no second video** ([scope](scope.md)).
+
+## Building, testing and shipping
+
+- **CI** (`ci.yml`'s "Vega (Fire TV)" job, run when `tv/vega/` or `tv/shared/` changes, from `scripts/ci-changes.mjs`'s `vega` output): type check, the Jest tests on Node (including opening a box sealed by the phone page's own `seal.js`), and every screen drawn in the browser preview, kept as the `vega-screenshots` artifact. The `.vpkg` build needs Amazon's Vega SDK (`get_vvm.sh`, Ubuntu x86_64 or macOS), which the same job installs with `NONINTERACTIVE=true SKIP_VVD_INSTALL=true`, then uploads the `.vpkg` files as the `tuned-vega-vpkg` artifact.
+- **The browser preview** (`npm run preview` in `tv/vega/`) draws the same screens with React Native for Web and stand-ins for Amazon's modules, with a `<video>` player, for screenshots at 1920 × 1080 ([screenshots](screenshots.md)). It's how the screens are checked without a stick; playback and speed are only checked on a real stick.
+- **On a stick**: Melvin's Fire TV in developer mode, installed with `vega run-app` (or Vega Studio) from the `.vpkg`; real streams only work on his network.
+- **The Amazon Appstore**: the `.vpkg` goes up by hand in the Developer Console, alongside the Fire OS APK where the Console allows one listing for both _(check)_. Every production release still needs Melvin's go-ahead, and he submits it.

@@ -2,8 +2,15 @@
 // webapp and skip mobile builds and vice versa", and "dont run ci if there are only markdown file changes").
 // ci.yml pipes the changed files in, one per line, and gates its jobs on what this prints.
 
-/** What a changed file belongs to: "docs" (needs nothing), "web" (devices/), "mobile" (the Gradle build) or "both". */
+/**
+ * What a changed file belongs to: "docs" (needs nothing), "web" (devices/), "mobile" (the Gradle build), "vega" and
+ * "tizen" (the TV apps in tv/; docs/decisions/vega.md), "tv" (tv/shared/ and tv/core/, which both TV apps build on)
+ * or "both".
+ */
 export function area(file) {
+    if (file.startsWith("tv/vega/")) return file.endsWith(".md") ? "docs" : "vega";
+    if (file.startsWith("tv/tizen/")) return file.endsWith(".md") ? "docs" : "tizen";
+    if (file.startsWith("tv/")) return file.endsWith(".md") ? "docs" : "tv";
     // The website is built from Markdown too: its posts, and the privacy policy behind /privacy/.
     if (file.startsWith("devices/site/") || file === "docs/privacy.md") return "web";
     if (file.endsWith(".md") || file.startsWith("docs/")) return "docs";
@@ -17,21 +24,28 @@ export function area(file) {
     return "both";
 }
 
-/** Whether the mobile app's jobs and the website's tests need to run for these files. */
+/** Whether the mobile app's jobs, the website's tests and each TV app's job need to run for these files. */
 export function needs(files) {
     const areas = new Set(files.filter(Boolean).map(area));
+    const shared = areas.has("both") || areas.has("tv");
     return {
         mobile: areas.has("mobile") || areas.has("both"),
         web: areas.has("web") || areas.has("both"),
+        vega: areas.has("vega") || shared,
+        tizen: areas.has("tizen") || shared,
     };
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {
     const { readFileSync } = await import("node:fs");
-    const { mobile, web } = needs(
+    const parts = needs(
         readFileSync(0, "utf8")
             .split("\n")
             .map((f) => f.trim()),
     );
-    console.log(`mobile=${mobile}\nweb=${web}`);
+    console.log(
+        Object.entries(parts)
+            .map(([k, v]) => `${k}=${v}`)
+            .join("\n"),
+    );
 }
