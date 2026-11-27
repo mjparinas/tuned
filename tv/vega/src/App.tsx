@@ -5,6 +5,7 @@ import * as React from "react";
 import { View } from "react-native";
 import { AppModel, type Services, type State } from "./app/model";
 import { launchSafely, log } from "./core/log";
+import { BrowseScreen } from "./ui/BrowseScreen";
 import { LiveScreen } from "./ui/LiveScreen";
 import { LoadingScreen } from "./ui/LoadingScreen";
 import { ManualScreen } from "./ui/ManualScreen";
@@ -12,6 +13,7 @@ import { PlayerScreen, type PlayerHandle } from "./ui/PlayerScreen";
 import { Screen, Spinner } from "./ui/parts";
 import { SettingsScreen } from "./ui/SettingsScreen";
 import { SignInScreen } from "./ui/SignInScreen";
+import { TitleScreen } from "./ui/TitleScreen";
 import type { VegaPlayer } from "./platform/VegaPlayer";
 
 export function useModelState(model: AppModel): State {
@@ -52,6 +54,13 @@ export function Shell({ model, player }: { model: AppModel; player: VegaPlayer }
                 case "manual":
                     model.go("signin");
                     return true;
+                case "movies":
+                case "shows":
+                    model.go("live");
+                    return true;
+                case "title":
+                    model.go(model.state.title?.kind === "show" ? "shows" : "movies");
+                    return true;
                 default:
                     back.exitApp();
                     return true;
@@ -78,6 +87,11 @@ export function Shell({ model, player }: { model: AppModel; player: VegaPlayer }
             return <LoadingScreen model={model} state={state} />;
         case "live":
             return <LiveScreen model={model} state={state} />;
+        case "movies":
+        case "shows":
+            return <BrowseScreen model={model} state={state} kind={state.route} />;
+        case "title":
+            return <TitleScreen model={model} state={state} />;
         case "player":
             return <PlayerScreen ref={playerRef} model={model} state={state} player={player} />;
         case "settings":

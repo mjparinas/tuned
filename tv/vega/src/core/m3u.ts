@@ -1,17 +1,23 @@
 // An M3U playlist read in pieces as it downloads (`feed`, then `end`), since React Native's fetch can't stream a body.
-// It keeps what Live TV needs: the name, the group, the logo, the guide id and the link. Movies and episodes (an
-// Xtream /movie/ or /series/ path, or a file extension) are left out until the stick has Movies and Shows. A port of
-// the parts of core/M3uParser.kt and core/Classifier.kt Live TV uses; replaced by @tuned/shared's parser when it lands.
-import type { Category, Channel } from "./models";
+// It keeps what Live TV needs (the name, the group, the logo, the guide id and the link) and sorts movies and episodes
+// (an Xtream /movie/ or /series/ path, or a file extension) into Movies and Shows, an episode going to its show by the
+// name before "S01E02". A port of the parts of core/M3uParser.kt and core/Classifier.kt the stick uses.
+import type { Category, Channel, Episode, Title } from "./models";
 
 const ATTR = /([a-zA-Z0-9-]+)="([^"]*)"/g;
 const VOD = /\/(movie|series)\/|\.(mp4|mkv|avi|mov|m4v|wmv|flv)(\?|$)/i;
+const EPISODE = /^(.*?)[\s\-–:|.]*\bS(\d{1,2})\s*E(\d{1,3})\b(.*)$/i;
+const YEAR = /\((19\d\d|20\d\d)\)/;
 
 export class M3uReader {
     private rest = "";
     private pending: { name: string; group: string; logo: string | null; guideId?: string; number?: number } | null = null;
     private groups = new Map<string, Category>();
+    private movieGroups = new Map<string, Category>();
+    private showGroups = new Map<string, Category>();
+    private showsByName = new Map<string, Title & { episodes: Episode[] }>();
     readonly channels: Channel[] = [];
+    readonly movies: Title[] = [];
     /** Lines read, so a broken file can be told apart from an empty one. */
     lines = 0;
     sawHeader = false;
@@ -27,10 +33,80 @@ export class M3uReader {
         for (const line of all.slice(0, cut).split("\n")) this.line(line);
     }
 
-    end(): { categories: Category[]; channels: Channel[] } {
+    end(): {
+        categories: Category[];
+        channels: Channel[];
+        movieCategories: Category[];
+        showCategories: Category[];
+        movies: Title[];
+        shows: Title[];
+    } {
         if (this.rest) this.line(this.rest);
         this.rest = "";
-        return { categories: [...this.groups.values()], channels: this.channels };
+        const shows = [...this.showsByName.values()];
+        for (const show of shows) show.episodes.sort((a, b) => a.season - b.season || a.episode - b.episode);
+        return {
+            categories: [...this.groups.values()],
+            channels: this.channels,
+            movieCategories: [...this.movieGroups.values()],
+            showCategories: [...this.showGroups.values()],
+            movies: this.movies,
+            shows,
+        };
+    }
+
+    private category(groups: Map<string, Category>, name: string, prefix: string): Category {
+        let category = groups.get(name);
+        if (!category) {
+            category = { id: `${prefix}${groups.size}`, name };
+            groups.set(name, category);
+        }
+        return category;
+    }
+
+    /** A movie, or an episode of the show named before its "S01E02". */
+    private vod(entry: { name: string; group: string; logo: string | null } | null, url: string): void {
+        const name = entry?.name || "";
+        const group = entry?.group || "Other";
+        const episode = EPISODE.exec(name);
+        if (episode || /\/series\//i.test(url)) {
+            const showName = (episode?.[1] ?? name).trim() || name;
+            if (!showName) return;
+            let show = this.showsByName.get(showName);
+            if (!show) {
+                show = {
+                    id: `s:${showName}`,
+                    kind: "show",
+                    name: showName,
+                    categoryId: this.category(this.showGroups, group, "s").id,
+                    poster: entry?.logo ?? null,
+                    year: Number(YEAR.exec(showName)?.[1]) || null,
+                    rating: null,
+                    episodes: [],
+                };
+                this.showsByName.set(showName, show);
+            }
+            const rest = (episode?.[4] ?? "").replace(/^[\s\-–:|.]+|[\s\-–:|.]+$/g, "").trim();
+            show.episodes.push({
+                id: `e${this.lines}`,
+                season: Number(episode?.[2]) || 1,
+                episode: Number(episode?.[3]) || show.episodes.length + 1,
+                name: rest || null,
+                url,
+            });
+            return;
+        }
+        if (!name) return;
+        this.movies.push({
+            id: `m${this.movies.length + 1}:${name}`,
+            kind: "movie",
+            name,
+            categoryId: this.category(this.movieGroups, group, "m").id,
+            poster: entry?.logo ?? null,
+            year: Number(YEAR.exec(name)?.[1]) || null,
+            rating: null,
+            url,
+        });
     }
 
     private line(raw: string): void {
@@ -63,13 +139,9 @@ export class M3uReader {
         if (line.startsWith("#")) return;
         const entry = this.pending;
         this.pending = null;
-        if (!/^(https?|rtmp|rtsp|udp):\/\//i.test(line) || VOD.test(line)) return;
-        const group = entry?.group || "Other";
-        let category = this.groups.get(group);
-        if (!category) {
-            category = { id: `g${this.groups.size}`, name: group };
-            this.groups.set(group, category);
-        }
+        if (!/^(https?|rtmp|rtsp|udp):\/\//i.test(line)) return;
+        if (VOD.test(line)) return this.vod(entry, line);
+        const category = this.category(this.groups, entry?.group || "Other", "g");
         const position = this.channels.length + 1;
         const name = entry?.name || `Channel ${position}`;
         this.channels.push({

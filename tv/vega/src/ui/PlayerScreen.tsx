@@ -1,18 +1,23 @@
 // The player (docs/decisions/player.md): only video until a key. OK shows the channel, now and next, which hide
 // themselves after a few seconds; up and down change channel while they're hidden; number keys jump to a channel;
-// Back hides them, then closes the player. A stream that won't start says so in words, with Try again.
+// Back hides them, then closes the player. A movie or episode shows its name and where it is instead: OK pauses and
+// plays, left and right skip 10 seconds back and forward, and where it was left is kept. A stream that won't start
+// says so in words, with Try again.
 import { KeplerVideoSurfaceView } from "@amazon-devices/react-native-w3cmedia";
 import { useTVEventHandler, type HWEvent } from "@amazon-devices/react-native-kepler";
 import * as React from "react";
 import { Text, View } from "react-native";
 import type { AppModel, State } from "../app/model";
 import type { PlaybackState, VegaPlayer } from "../platform/VegaPlayer";
-import { Button, Spinner } from "./parts";
+import { Button, ProgressBar, Spinner } from "./parts";
 import { t } from "./strings";
 import { colours, SAFE, useDp } from "./theme";
+import { clockTime } from "../core/progress";
 
 const HIDE_MS = 5000;
 const DIGITS_MS = 1500;
+const SKIP_S = 10;
+const KEEP_MS = 15_000;
 
 const clock = (ms: number) => new Date(ms).toLocaleTimeString("en-CA", { hour: "numeric", minute: "2-digit" });
 
@@ -23,7 +28,12 @@ export interface PlayerHandle {
 
 export const PlayerScreen = React.forwardRef<
     PlayerHandle,
-    { model: AppModel; state: State; player: VegaPlayer; shown?: { controls?: boolean; playback?: PlaybackState } }
+    {
+        model: AppModel;
+        state: State;
+        player: VegaPlayer;
+        shown?: { controls?: boolean; playback?: PlaybackState; position?: { at: number; length: number }; paused?: boolean };
+    }
 >(function PlayerScreen({ model, state, player, shown }, ref) {
     const dp = useDp();
     const [playback, setPlayback] = React.useState<PlaybackState>(shown?.playback ?? "starting");
@@ -31,8 +41,22 @@ export const PlayerScreen = React.forwardRef<
     const [digits, setDigits] = React.useState("");
     const hideTimer = React.useRef<ReturnType<typeof setTimeout> | null>(null);
     const digitTimer = React.useRef<ReturnType<typeof setTimeout> | null>(null);
-    const channel = state.lineup?.channels.find((c) => c.id === state.channelId) ?? null;
+    const vod = state.vod;
+    const channel = vod ? null : (state.lineup?.channels.find((c) => c.id === state.channelId) ?? null);
     const guide = channel ? (state.guide[channel.id] ?? []) : [];
+    const [position, setPosition] = React.useState(shown?.position ?? { at: 0, length: 0 });
+    const [paused, setPaused] = React.useState(!!shown?.paused);
+
+    // A movie's time moves while its controls show, and where it is gets kept every few seconds.
+    React.useEffect(() => {
+        if (shown || !vod) return;
+        const tick = setInterval(() => setPosition(player.position()), 1000);
+        const keep = setInterval(() => void model.rememberPosition().catch(() => undefined), KEEP_MS);
+        return () => {
+            clearInterval(tick);
+            clearInterval(keep);
+        };
+    }, [player, model, vod, shown]);
 
     React.useEffect(() => {
         if (shown) return;
@@ -67,6 +91,19 @@ export const PlayerScreen = React.forwardRef<
     useTVEventHandler((event: HWEvent) => {
         if (shown || event.eventKeyAction === 1) return;
         const type = event.eventType;
+        if (vod) {
+            if (type === "select" || type === "play_pause" || type === "playpause") {
+                if (controls || type !== "select") setPaused(player.togglePause());
+                showControls();
+            } else if (type === "left" || type === "rewind") {
+                player.seekBy(-SKIP_S);
+                showControls();
+            } else if (type === "right" || type === "fast_forward") {
+                player.seekBy(SKIP_S);
+                showControls();
+            } else if (type === "up" || type === "down" || type === "menu" || type === "info") showControls();
+            return;
+        }
         if (/^num_\d$/.test(type)) {
             const next = (digits + type.slice(4)).slice(-4);
             setDigits(next);
@@ -113,10 +150,17 @@ export const PlayerScreen = React.forwardRef<
                     }}
                 >
                     <Text style={{ color: colours.text, fontSize: dp(18), textAlign: "center", maxWidth: dp(520), lineHeight: dp(26) }}>
-                        {t.didntStart}
+                        {vod ? t.movieDidntStart : t.didntStart}
                     </Text>
                     <View style={{ flexDirection: "row", gap: dp(12) }}>
-                        <Button label={t.tryAgain} filled start onPress={() => channel && void model.play(channel)} />
+                        <Button
+                            label={t.tryAgain}
+                            filled
+                            start
+                            onPress={() =>
+                                vod ? void model.playVod(vod, state.positions[vod.id] ?? 0) : channel && void model.play(channel)
+                            }
+                        />
                         <Button label={t.back} onPress={() => void model.stopPlaying()} />
                     </View>
                 </View>
@@ -165,6 +209,46 @@ export const PlayerScreen = React.forwardRef<
                             {`${i === 0 ? t.now : t.next}  ${clock(p.start)}–${clock(p.end)}  ${p.title}`}
                         </Text>
                     ))}
+                </View>
+            ) : null}
+            {controls && vod ? (
+                <View
+                    style={{
+                        position: "absolute",
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        paddingHorizontal: dp(SAFE.side + 24),
+                        paddingBottom: dp(SAFE.top + 16),
+                        paddingTop: dp(28),
+                        backgroundColor: colours.scrim,
+                        gap: dp(10),
+                    }}
+                >
+                    <View style={{ flexDirection: "row", alignItems: "baseline", gap: dp(14) }}>
+                        <Text numberOfLines={1} style={{ color: colours.text, fontSize: dp(24), fontWeight: "600", flexShrink: 1 }}>
+                            {vod.title}
+                        </Text>
+                        {paused ? <Text style={{ color: colours.primary, fontSize: dp(15), fontWeight: "600" }}>{t.paused}</Text> : null}
+                    </View>
+                    {vod.subtitle ? (
+                        <Text numberOfLines={1} style={{ color: colours.muted, fontSize: dp(15) }}>
+                            {vod.subtitle}
+                        </Text>
+                    ) : null}
+                    {position.length > 0 ? (
+                        <View style={{ flexDirection: "row", alignItems: "center", gap: dp(14) }}>
+                            <Text style={{ color: colours.text, fontSize: dp(14), fontVariant: ["tabular-nums"] }}>
+                                {clockTime(position.at)}
+                            </Text>
+                            <View style={{ flex: 1 }}>
+                                <ProgressBar share={position.at / position.length} />
+                            </View>
+                            <Text style={{ color: colours.muted, fontSize: dp(14), fontVariant: ["tabular-nums"] }}>
+                                {clockTime(position.length)}
+                            </Text>
+                        </View>
+                    ) : null}
                 </View>
             ) : null}
         </View>

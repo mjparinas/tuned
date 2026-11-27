@@ -1,18 +1,19 @@
-// Live TV: categories down the left, channels beside them, both windowed lists so only the rows on screen exist
-// (speed first). The remote starts on the channel last watched, or the first one; OK plays it. A refresh shows its
+// Live TV: the tabs along the top, categories down the left, channels beside them, both windowed lists so only the
+// rows on screen exist (speed first). The remote starts on the channel last watched, or the first one; OK plays it. A refresh shows its
 // step in the corner while the saved channels stay usable.
 import * as React from "react";
 import { FlatList, Image, Text, View } from "react-native";
 import type { AppModel, State } from "../app/model";
 import type { Category, Channel } from "../core/models";
 import { stepLine } from "../core/progress";
-import { Brand, Focusable, Screen, Spinner } from "./parts";
+import { Focusable, Screen, Spinner } from "./parts";
+import { TopBar } from "./TopBar";
 import { t } from "./strings";
 import { colours, useDp } from "./theme";
 
 const ROW = 52;
 
-function CategoryRow({
+export function CategoryRow({
     name,
     count,
     selected,
@@ -152,16 +153,23 @@ export function LiveScreen({ model, state, focusChannel }: { model: AppModel; st
 
     return (
         <Screen>
-            <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", minHeight: dp(32) }}>
-                <Brand />
-                {state.refresh.busy ? (
-                    <Spinner
-                        line={state.refresh.progress ? `${t.refreshing}, ${stepLine(state.refresh.progress).toLowerCase()}` : t.refreshing}
-                    />
-                ) : state.refresh.result && !state.refresh.result.ok ? (
-                    <Text style={{ color: colours.danger, fontSize: dp(13) }}>{t.refreshFailed}</Text>
-                ) : null}
-            </View>
+            <TopBar
+                model={model}
+                tab="live"
+                status={
+                    state.refresh.busy ? (
+                        <Spinner
+                            line={
+                                state.refresh.progress ? `${t.refreshing}, ${stepLine(state.refresh.progress).toLowerCase()}` : t.refreshing
+                            }
+                        />
+                    ) : state.refresh.result && !state.refresh.result.ok ? (
+                        <Text numberOfLines={2} style={{ color: colours.danger, fontSize: dp(13), textAlign: "right" }}>
+                            {t.refreshFailed}
+                        </Text>
+                    ) : null
+                }
+            />
             <View style={{ flex: 1, flexDirection: "row", gap: dp(20), marginTop: dp(14) }}>
                 <View style={{ width: dp(230) }}>
                     <FlatList
@@ -177,7 +185,6 @@ export function LiveScreen({ model, state, focusChannel }: { model: AppModel; st
                         )}
                         initialNumToRender={14}
                         windowSize={5}
-                        ListFooterComponent={<CategoryRow name={t.settings} selected={false} onPress={() => model.go("settings")} />}
                     />
                 </View>
                 <View style={{ flex: 1 }}>

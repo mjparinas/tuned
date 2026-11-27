@@ -1,18 +1,19 @@
 // The app's state and what changes it, apart from the screens, so it's tested on Node. Opening shows the channels
 // saved on the stick at once and refreshes after the first screen is up (AGENTS.md: nothing waits on the network);
-// every refresh, sign-in and account check reports progress and how it ended.
+// every refresh, sign-in and account check reports progress and how it ended. Movies and shows load after Live TV,
+// in the background, so they never hold up the channels.
 import { ACCOUNT_BASE, TunedAccount, type AccountState as SharedAccount } from "@tuned/shared/account";
 import type { Fetch, KeyValueStore } from "@tuned/shared/platform";
 import type { Http } from "../core/http";
 import { addSecret, clearSecrets, launchSafely, log } from "../core/log";
-import type { Channel, Lineup, Login, Programme } from "../core/models";
+import type { Channel, Episode, Library, Lineup, Login, Playable, Programme, Title } from "../core/models";
 import { OneStream, type StreamPlayer } from "../core/oneStream";
-import { downloadLineup, failureText, isStale } from "../core/playlist";
+import { downloadLibrary, downloadLineup, failureText, isStale } from "../core/playlist";
 import type { StepProgress } from "../core/progress";
 import { PREFIX, storage, type Storage, type Store } from "../core/storage";
 import { gunzip, nobleCrypto } from "../platform/crypto";
 import { backupLogin } from "./logins";
-import { parseShortEpg, shortEpgUrl } from "../core/xtream";
+import { parseEpisodes, parseShortEpg, seriesInfoUrl, shortEpgUrl } from "../core/xtream";
 
 /** The Tuned account as the screens show it; null when the stick isn't signed in. */
 export interface AccountState {
@@ -34,7 +35,7 @@ const sharedStore = (store: Store): KeyValueStore => ({
     remove: (key) => store.remove([PREFIX + key]),
 });
 
-export type Route = "boot" | "signin" | "manual" | "loading" | "live" | "player" | "settings" | "account";
+export type Route = "boot" | "signin" | "manual" | "loading" | "live" | "movies" | "shows" | "title" | "player" | "settings" | "account";
 
 export interface Busy {
     busy: boolean;
@@ -56,6 +57,21 @@ export interface State {
     category: string | null;
     channelId: string | null;
     guide: Record<string, Programme[]>;
+    /** Movies and shows; null until read from the stick or downloaded. */
+    library: Library | null;
+    /** Downloading movies and shows, in its own steps. */
+    libraryLoad: Busy;
+    movieCategory: string | null;
+    showCategory: string | null;
+    /** The movie or show whose page is open. */
+    title: Title | null;
+    /** Xtream shows' episodes, read when a show is opened and kept for the session. */
+    episodes: Record<string, Episode[]>;
+    episodesLoad: { id: string | null; busy: boolean; failed: boolean };
+    /** The movie or episode playing; null for live TV. */
+    vod: Playable | null;
+    /** Where each movie and episode was left, in seconds. */
+    positions: Record<string, number>;
 }
 
 export interface Services {
@@ -83,8 +99,19 @@ export class AppModel {
         category: null,
         channelId: null,
         guide: {},
+        library: null,
+        libraryLoad: { busy: false },
+        movieCategory: null,
+        showCategory: null,
+        title: null,
+        episodes: {},
+        episodesLoad: { id: null, busy: false, failed: false },
+        vod: null,
+        positions: {},
     };
     readonly saved: Storage;
+    /** Whether the saved movies and shows have been read yet (after the first screen, so Live TV comes first). */
+    private libraryRead = false;
     readonly account: TunedAccount;
     readonly stream: OneStream;
     private listeners = new Set<() => void>();
@@ -142,7 +169,9 @@ export class AppModel {
         this.set({ login, lineup, account, route: "live", channelId: last ?? lineup.channels[0]?.id ?? null });
         launchSafely("boot.background", async () => {
             await this.services.quietStart?.();
+            await this.readSavedLibrary();
             if (isStale(lineup)) await this.refreshNow();
+            else if (!this.state.library || isStale(this.state.library)) await this.refreshLibrary();
             if (account) await this.checkAccount();
         });
     }
@@ -151,7 +180,7 @@ export class AppModel {
     async useLogin(login: Login): Promise<void> {
         rememberSecrets(login);
         await this.saved.saveLogin(login);
-        this.set({ login, lineup: null, route: "loading" });
+        this.set({ login, lineup: null, library: null, episodes: {}, route: "loading" });
         await this.firstDownload();
     }
 
@@ -160,8 +189,12 @@ export class AppModel {
         if (!login) return this.go("signin");
         this.set({ loading: { progress: null, error: null } });
         try {
-            const lineup = await downloadLineup(this.services.http, login, (progress) => this.set({ loading: { progress, error: null } }));
+            const { library, ...lineup } = await downloadLineup(this.services.http, login, (progress) =>
+                this.set({ loading: { progress, error: null } }),
+            );
             await this.saved.saveLineup(lineup);
+            if (library) await this.keepLibrary(library);
+            this.libraryRead = true;
             this.set({
                 lineup,
                 route: "live",
@@ -169,6 +202,7 @@ export class AppModel {
                 channelId: lineup.channels[0]?.id ?? null,
                 loading: { progress: null, error: null },
             });
+            if (login.kind === "xtream") launchSafely("first.library", () => this.refreshLibrary());
         } catch (error) {
             log.warn("AppModel", "first download", error);
             this.set({ loading: { progress: null, error: failureText(error) } });
@@ -181,13 +215,116 @@ export class AppModel {
         if (!login || this.state.refresh.busy) return;
         this.set({ refresh: { busy: true, progress: null, result: null } });
         try {
-            const lineup = await downloadLineup(this.services.http, login, (progress) => this.set({ refresh: { busy: true, progress } }));
+            const { library, ...lineup } = await downloadLineup(this.services.http, login, (progress) =>
+                this.set({ refresh: { busy: true, progress } }),
+            );
             await this.saved.saveLineup(lineup);
+            if (library) await this.keepLibrary(library);
             this.set({ lineup, refresh: { busy: false, result: { ok: true, text: "Channels are up to date." } } });
         } catch (error) {
             log.warn("AppModel", "refresh", error);
             this.set({ refresh: { busy: false, result: { ok: false, text: failureText(error) } } });
+            return;
         }
+        if (login.kind === "xtream") await this.refreshLibrary();
+    }
+
+    private async keepLibrary(library: Library): Promise<void> {
+        await this.saved.saveLibrary(library);
+        this.set({ library, libraryLoad: { busy: false, result: { ok: true, text: "Movies and shows are up to date." } } });
+    }
+
+    private async readSavedLibrary(): Promise<void> {
+        if (this.libraryRead) return;
+        this.libraryRead = true;
+        const [library, positions] = await Promise.all([
+            this.saved.loadLibrary().catch(() => null),
+            this.saved.loadPositions().catch(() => ({})),
+        ]);
+        this.set({ library: this.state.library ?? library, positions });
+    }
+
+    /**
+     * Movies and shows: an Xtream server's in four steps of their own, a link's with its channels (the same file).
+     * Progress while it runs, then how it ended; the saved ones stay on screen if it fails.
+     */
+    async refreshLibrary(): Promise<void> {
+        const login = this.state.login;
+        if (!login || this.state.libraryLoad.busy) return;
+        if (login.kind !== "xtream") return this.refreshNow();
+        this.set({ libraryLoad: { busy: true, progress: null, result: null } });
+        try {
+            const library = await downloadLibrary(this.services.http, login, (progress) =>
+                this.set({ libraryLoad: { busy: true, progress } }),
+            );
+            await this.keepLibrary(library);
+        } catch (error) {
+            log.warn("AppModel", "library", error);
+            this.set({ libraryLoad: { busy: false, result: { ok: false, text: failureText(error) } } });
+        }
+    }
+
+    /** Movies or Shows on the remote: what the stick saved at once, and a download only when it has none. */
+    async openBrowse(kind: "movies" | "shows"): Promise<void> {
+        this.go(kind);
+        await this.readSavedLibrary();
+        if (!this.state.library && !this.state.libraryLoad.busy && !this.state.refresh.busy) await this.refreshLibrary();
+    }
+
+    pickBrowseCategory(kind: "movies" | "shows", id: string | null): void {
+        this.set(kind === "movies" ? { movieCategory: id } : { showCategory: id });
+    }
+
+    visibleTitles(kind: "movies" | "shows"): Title[] {
+        const library = this.state.library;
+        if (!library) return [];
+        const all = kind === "movies" ? library.movies : library.shows;
+        const category = kind === "movies" ? this.state.movieCategory : this.state.showCategory;
+        return category ? all.filter((t) => t.categoryId === category) : all;
+    }
+
+    /** A movie's or show's page; an Xtream show reads its episodes as it opens (one small request). */
+    async openTitle(title: Title): Promise<void> {
+        this.set({ title, route: "title" });
+        if (title.kind === "show" && !title.episodes && !this.state.episodes[title.id]) await this.loadEpisodes(title);
+    }
+
+    episodesOf(title: Title): Episode[] | null {
+        return title.episodes ?? this.state.episodes[title.id] ?? null;
+    }
+
+    async loadEpisodes(title: Title): Promise<void> {
+        const login = this.state.login;
+        if (!login || login.kind !== "xtream" || title.seriesId === undefined) return;
+        this.set({ episodesLoad: { id: title.id, busy: true, failed: false } });
+        try {
+            const answer = await this.services.http.getJson(seriesInfoUrl(login, title.seriesId));
+            if (answer.status < 200 || answer.status >= 300) throw new Error(`HTTP ${answer.status}`);
+            const episodes = parseEpisodes(answer.body, login, title.name);
+            this.set({
+                episodes: { ...this.state.episodes, [title.id]: episodes },
+                episodesLoad: { id: title.id, busy: false, failed: false },
+            });
+        } catch (error) {
+            log.warn("AppModel", "episodes", error);
+            this.set({ episodesLoad: { id: title.id, busy: false, failed: true } });
+        }
+    }
+
+    /** A movie or an episode, from `from` seconds: the old stream closes before this one opens. */
+    async playVod(item: Playable, from = 0): Promise<void> {
+        this.set({ vod: item, route: "player" });
+        await this.stream.play(item.url, from > 0 ? from : undefined);
+    }
+
+    /** Keeps where the movie or episode is; one near its end counts as watched and starts over next time. */
+    async rememberPosition(): Promise<void> {
+        const vod = this.state.vod;
+        const where = this.services.player.position?.();
+        if (!vod || !where || where.at < 5) return;
+        const done = where.length > 0 && where.at > where.length * 0.95;
+        const positions = await this.saved.savePosition(vod.id, done ? 0 : where.at);
+        this.set({ positions });
     }
 
     pickCategory(id: string | null): void {
@@ -202,7 +339,7 @@ export class AppModel {
 
     /** Plays a channel: the old stream closes before this one opens. */
     async play(channel: Channel): Promise<void> {
-        this.set({ channelId: channel.id, route: "player" });
+        this.set({ channelId: channel.id, vod: null, route: "player" });
         launchSafely("play.remember", () => this.saved.saveLastChannel(channel.id));
         await this.stream.play(channel.url);
         launchSafely("play.guide", () => this.loadGuide(channel));
@@ -211,7 +348,7 @@ export class AppModel {
     /** Up and down in the player: the next or previous channel in the list being shown, wrapping round. */
     async zap(step: 1 | -1): Promise<void> {
         const list = this.visibleChannels();
-        if (!list.length) return;
+        if (!list.length || this.state.vod) return;
         const at = Math.max(
             0,
             list.findIndex((c) => c.id === this.state.channelId),
@@ -220,8 +357,10 @@ export class AppModel {
     }
 
     async stopPlaying(): Promise<void> {
+        const vod = this.state.vod;
+        if (vod) await this.rememberPosition().catch((error) => log.warn("AppModel", "position", error));
         await this.stream.stop();
-        this.set({ route: "live" });
+        this.set({ route: vod && this.state.title ? "title" : "live", vod: null });
     }
 
     /** Now and next for Xtream channels: one small request, kept for the session. */
@@ -313,7 +452,17 @@ export class AppModel {
             category: null,
             refresh: { busy: false },
             accountCheck: { busy: false },
+            library: null,
+            libraryLoad: { busy: false },
+            movieCategory: null,
+            showCategory: null,
+            title: null,
+            episodes: {},
+            episodesLoad: { id: null, busy: false, failed: false },
+            vod: null,
+            positions: {},
         });
+        this.libraryRead = false;
     }
 }
 
