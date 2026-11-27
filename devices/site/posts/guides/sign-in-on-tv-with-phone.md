@@ -49,3 +49,5 @@ The TV makes a one-time key and puts it in the QR code. Your phone locks the log
 **Type it on the TV instead** takes you back to the usual forms. On a TV, the password shows as you type, so you can check it.
 
 If you use a [Tuned account](/blog/guides/premium/), a TV can also sign in to it with your phone and restore your backup in one step.
+
+Moving your whole setup to a new phone or TV: [move without starting over](/blog/guides/move-iptv-to-a-new-phone-or-tv/).

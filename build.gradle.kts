@@ -48,3 +48,12 @@ tasks.withType<io.gitlab.arturbosch.detekt.Detekt>().configureEach {
         md.required.set(false)
     }
 }
+
+// Kotlin/JS (tv/core) fetches Node and Yarn from repositories it would add to the project, which settings.gradle.kts's
+// FAIL_ON_PROJECT_REPOS refuses. settings.gradle.kts declares those two repositories, so the plugin adds none of its own.
+plugins.withType<org.jetbrains.kotlin.gradle.targets.js.nodejs.NodeJsPlugin> {
+    the<org.jetbrains.kotlin.gradle.targets.js.nodejs.NodeJsEnvSpec>().downloadBaseUrl.set(null as String?)
+}
+plugins.withType<org.jetbrains.kotlin.gradle.targets.js.yarn.YarnPlugin> {
+    the<org.jetbrains.kotlin.gradle.targets.js.yarn.YarnRootEnvSpec>().downloadBaseUrl.set(null as String?)
+}

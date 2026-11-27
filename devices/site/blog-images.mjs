@@ -80,6 +80,58 @@ export function blogImages({ phone, tv, browser, player, event, stack, mark }) {
             premium: "both",
             body: stack(phone("browse-show.png", -4), phone("browse-downloads.png", 0), phone("browse-movie.png", 4)),
         },
+        "data-usage": {
+            chip: "How much data IPTV uses",
+            body: `<div class="flow" style="gap:18px">${[
+                step("off", "SD", "about 1 GB an hour", true),
+                step("wait", "HD", "about 2 GB", true),
+                step("wait", "Full HD", "about 3 GB", true),
+                step("on", "4K", "7 to 11 GB", true),
+            ].join("")}</div>
+            <p class="big">Per stream, per hour. Tuned only ever plays one.</p>`,
+        },
+        "how-iptv-works": {
+            chip: "How IPTV works",
+            body: `<div class="flow" style="gap:18px">${[
+                step("off", "Your provider", "channels, login, guide", true),
+                step("wait", "Your device", "keeps the list and guide", true),
+                step("on", "Your screen", "one stream plays", true),
+            ].join(arrow)}</div>
+            <div class="hub"><div class="logo" style="width:130px;height:130px">${mark}</div></div>`,
+        },
+        "big-playlist": {
+            chip: "Tame a huge playlist",
+            body: stack(
+                phone("browse-live-tv-group-chosen.png", -4),
+                phone("settings-countries.png", 0),
+                phone("browse-live-tv-pinned.png", 4),
+            ),
+        },
+        "picture-sound": {
+            chip: "Best picture and sound",
+            body: stack(phone("settings-page-playback.png", -3), tv("settings-tv-calibrate.png", 620)),
+        },
+        "media-server-iptv": {
+            chip: "Plex, Jellyfin or Emby plus IPTV",
+            body: stack(phone("playlist-add-jellyfin.png", -3), phone("browse-shows.png", 3)),
+        },
+        "app-safety": {
+            chip: "Is that IPTV app safe?",
+            body: `<div class="flow">${step("on", "tunedplayer.com/download", "the real Tuned")}${step("off", "Modded copies", "never type a login into one")}</div>
+            <div class="hub"><div class="logo" style="width:130px;height:130px">${mark}</div></div>`,
+        },
+        "new-device": {
+            chip: "Move to a new phone or TV",
+            body: stack(phone("playlist-send-to-tv.png", -3), tv("playlist-welcome-tv.png", 620)),
+        },
+        "epg-deep-dive": {
+            chip: "How TV guides work",
+            body: stack(tv("browse-guide-grid-tv.png", 640), phone("browse-search-guide.png", 3)),
+        },
+        accessible: {
+            chip: "Accessible IPTV",
+            body: stack(phone("settings-captions.png", -3), phone("settings-page-appearance.png", 3)),
+        },
         "fire-tv": {
             chip: "Fire TV",
             body: `${stack(tv("playlist-welcome-tv.png", 640))}

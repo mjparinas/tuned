@@ -62,3 +62,9 @@ kotlin {
         }
     }
 }
+
+// Kotlin/JS fetches Node from a repository it adds to this project, which settings.gradle.kts's FAIL_ON_PROJECT_REPOS
+// refuses; settings.gradle.kts declares that repository instead, so the plugin is told not to add its own.
+plugins.withType<org.jetbrains.kotlin.gradle.targets.js.nodejs.NodeJsPlugin> {
+    the<org.jetbrains.kotlin.gradle.targets.js.nodejs.NodeJsEnvSpec>().downloadBaseUrl.set(null as String?)
+}

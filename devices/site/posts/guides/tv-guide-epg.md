@@ -59,3 +59,5 @@ If one channel shows the wrong times or the wrong programmes, open its guide and
 The fix stays through every refresh.
 
 Still blank? See [the TV guide is empty](/blog/guides/blank-tv-guide/).
+
+The deep version, with how matching and time offsets work: [how IPTV TV guides work](/blog/guides/how-iptv-tv-guides-work/).
