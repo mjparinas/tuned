@@ -46,7 +46,9 @@ object RemoteKeys {
     /**
      * The action for [keyCode]. The arrows only act while the controls are hidden, so that once they show the arrows
      * move between buttons as usual: up and down change channel on live TV, left and right skip in films and episodes.
-     * The channel, guide, menu and info buttons work either way.
+     * The channel, guide, menu and info buttons work either way. A Fire TV remote's only spare button is the menu (three
+     * lines): the mini guide on live TV, as the guide button does, and the controls in films and episodes, where there is
+     * no guide (docs/decisions/tv.md#fire-tv).
      */
     fun action(
         keyCode: Int,
@@ -56,8 +58,6 @@ object RemoteKeys {
         CHANNEL_UP, PAGE_UP -> if (live) Action.NEXT_CHANNEL else Action.NONE
         CHANNEL_DOWN, PAGE_DOWN -> if (live) Action.PREVIOUS_CHANNEL else Action.NONE
         GUIDE -> if (live) Action.GUIDE else Action.NONE
-        // A Fire TV remote's only spare button is the menu (three lines): the mini guide on live TV, as the guide
-        // button does, and the controls in films and episodes, where there is no guide (docs/decisions/tv.md#fire-tv).
         MENU -> if (live) Action.GUIDE else Action.INFO
         INFO -> Action.INFO
         LAST_CHANNEL -> if (live) Action.LAST_CHANNEL else Action.NONE
