@@ -29,7 +29,7 @@ Can't scan? Open the address the TV shows on any phone or computer and type the 
 
 ## On a phone with Tuned
 
-If Tuned is already set up on your phone, it can send everything at once: every saved playlist (except playlist files), your settings, profiles with their favourites, lists and watch later, channel renames, guide fixes, and your Trakt and OpenSubtitles sign-ins.
+If Tuned is already set up on your phone, it can send everything at once: every saved playlist (except playlist files), your settings, profiles with their favourites and lists, channel renames, guide fixes, and your Trakt and OpenSubtitles sign-ins.
 
 - Scan the TV's QR code with the phone's camera, and it opens in Tuned, or
 - go to **Settings › Playlists and account › Playlists › Send to a TV** and type the code from the TV.

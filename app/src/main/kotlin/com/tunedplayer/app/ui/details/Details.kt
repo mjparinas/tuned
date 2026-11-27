@@ -75,8 +75,6 @@ import com.tunedplayer.app.diagnostics.startActivitySafely
 import com.tunedplayer.app.ui.common.focusRing
 import com.tunedplayer.app.ui.common.rememberStartFocus
 import com.tunedplayer.app.ui.common.startFocus
-import com.tunedplayer.app.ui.library.LibraryViewModel
-import com.tunedplayer.app.ui.library.WatchLaterButton
 import com.tunedplayer.app.ui.library.WatchedButton
 import com.tunedplayer.app.ui.offline.DownloadButton
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -202,7 +200,6 @@ fun MovieScreen(
                     details?.trailer?.let { TrailerButton(it) }
                     item?.let {
                         DownloadButton(it)
-                        WatchLaterButton(LibraryViewModel.movie(it.id, it.name, it.logo))
                         WatchedButton(it.id)
                         FilmPicks(it.id)
                     }

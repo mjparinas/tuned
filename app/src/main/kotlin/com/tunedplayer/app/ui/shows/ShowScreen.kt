@@ -84,7 +84,6 @@ import com.tunedplayer.app.ui.details.DetailsViewModel
 import com.tunedplayer.app.ui.details.MetaLine
 import com.tunedplayer.app.ui.details.TrailerButton
 import com.tunedplayer.app.ui.library.LibraryViewModel
-import com.tunedplayer.app.ui.library.WatchLaterButton
 import com.tunedplayer.app.ui.offline.DownloadButton
 import com.tunedplayer.app.ui.offline.SeasonDownloadButton
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -283,7 +282,6 @@ private fun PhoneShowDetails(
                     Spacer(Modifier.height(12.dp))
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         metadata?.trailer?.let { TrailerButton(it) }
-                        WatchLaterButton(LibraryViewModel.show(showKey, title, metadata?.poster ?: episodes.firstOrNull()?.logo))
                         ShowFavouriteButton(showKey)
                     }
                     Spacer(Modifier.height(12.dp))
@@ -384,7 +382,6 @@ private fun TvShowPage(
                             itemVerticalAlignment = Alignment.CenterVertically,
                         ) {
                             metadata?.trailer?.let { TrailerButton(it) }
-                            WatchLaterButton(LibraryViewModel.show(showKey, title, poster))
                             ShowFavouriteButton(showKey)
                         }
                         DetailsBody(metadata, hasKey, onOpenPerson = onOpenPerson)
