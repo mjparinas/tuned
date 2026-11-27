@@ -2,7 +2,7 @@
 // as Amazon expects). Nothing here waits on the network: boot reads what the stick saved and draws it.
 import { useKeplerBackHandler } from "@amazon-devices/react-native-kepler";
 import * as React from "react";
-import { View } from "react-native";
+import { Text, View } from "react-native";
 import { AppModel, type Services, type State } from "./app/model";
 import { launchSafely, log } from "./core/log";
 import { BrowseScreen } from "./ui/BrowseScreen";
@@ -10,7 +10,9 @@ import { LiveScreen } from "./ui/LiveScreen";
 import { LoadingScreen } from "./ui/LoadingScreen";
 import { ManualScreen } from "./ui/ManualScreen";
 import { PlayerScreen, type PlayerHandle } from "./ui/PlayerScreen";
-import { Screen, Spinner } from "./ui/parts";
+import { Button, Screen, Spinner } from "./ui/parts";
+import { t } from "./ui/strings";
+import { colours, useDp } from "./ui/theme";
 import { SearchScreen } from "./ui/SearchScreen";
 import { SettingsScreen } from "./ui/SettingsScreen";
 import { SignInScreen } from "./ui/SignInScreen";
@@ -37,8 +39,50 @@ class Recover extends React.Component<{ children: React.ReactNode; onError: () =
     }
 }
 
+/**
+ * A reminder whose programme just started, over whatever is on screen except the player: what and where, with Watch
+ * and Not now. It never takes the remote's focus, so nothing being done is interrupted.
+ */
+export function ReminderBanner({ model, state }: { model: AppModel; state: State }) {
+    const dp = useDp();
+    const due = state.due;
+    if (!due || state.route === "player") return null;
+    return (
+        <View
+            accessibilityLiveRegion="assertive"
+            style={{
+                position: "absolute",
+                left: dp(48),
+                right: dp(48),
+                bottom: dp(32),
+                flexDirection: "row",
+                alignItems: "center",
+                gap: dp(14),
+                padding: dp(16),
+                borderRadius: dp(18),
+                backgroundColor: colours.card2,
+            }}
+        >
+            <Text numberOfLines={2} style={{ flex: 1, color: colours.text, fontSize: dp(16), fontWeight: "600" }}>
+                {t.reminderNow(due.title, due.channelName)}
+            </Text>
+            <Button label={t.watch} filled onPress={() => void model.watchDue()} />
+            <Button label={t.notNow} onPress={() => model.dismissDue()} />
+        </View>
+    );
+}
+
 export function Shell({ model, player }: { model: AppModel; player: VegaPlayer }) {
     const state = useModelState(model);
+    return (
+        <View style={{ flex: 1 }}>
+            <Screens model={model} player={player} state={state} />
+            <ReminderBanner model={model} state={state} />
+        </View>
+    );
+}
+
+function Screens({ model, player, state }: { model: AppModel; player: VegaPlayer; state: State }) {
     const playerRef = React.useRef<PlayerHandle>(null);
     const back = useKeplerBackHandler();
 
@@ -50,7 +94,19 @@ export function Shell({ model, player }: { model: AppModel; player: VegaPlayer }
                     return true;
                 case "settings":
                 case "account":
-                    model.go(model.state.lineup ? (model.state.route === "account" ? "settings" : "live") : "signin");
+                    if (model.state.route === "account") model.go("settings");
+                    else model.go(model.state.lineup ? "live" : model.state.login ? "loading" : "signin");
+                    return true;
+                case "signin":
+                    if (!model.state.adding) {
+                        back.exitApp();
+                        return true;
+                    }
+                    model.cancelAdding();
+                    return true;
+                case "loading":
+                    if (model.state.playlists.length > 1) model.go("settings");
+                    else back.exitApp();
                     return true;
                 case "manual":
                     model.go("signin");

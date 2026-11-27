@@ -1,3 +1,5 @@
+import type { CatchUp } from "@tuned/shared/guide";
+
 /** A playlist the stick signs in to: an Xtream login, or an M3U link with an optional guide. */
 export type Login =
     | { kind: "xtream"; server: string; username: string; password: string; name?: string }
@@ -19,11 +21,17 @@ export interface Channel {
     /** The Xtream stream id, for now and next. */
     streamId?: number;
     guideId?: string;
+    /** How its recordings are reached, for a channel that keeps them (catch-up); missing when it keeps none. */
+    catchUp?: CatchUp;
 }
 
 export interface Lineup {
     categories: Category[];
     channels: Channel[];
+    /** An Xtream server's time zone (`server_info.timezone`), for catch-up links' dates. */
+    timezone?: string | null;
+    /** A link's guide named in its `#EXTM3U` line (`url-tvg`), when the login gave none. */
+    guideUrl?: string;
     /** When it was downloaded, in ms. */
     savedAt: number;
 }
@@ -32,6 +40,14 @@ export interface Programme {
     title: string;
     start: number;
     end: number;
+}
+
+/** A programme in the grid guide, in the shared guide code's shape. */
+export interface GuideProgramme {
+    start: number;
+    stop: number;
+    title: string;
+    desc: string | null;
 }
 
 /** A movie or a show in Movies and Shows. */
@@ -81,6 +97,8 @@ export interface Playable {
     title: string;
     /** The movie, or the show the episode is in, for Continue Watching. */
     titleId?: string;
+    /** A recording from the guide (catch-up): it seeks, but where it was left isn't kept. */
+    replay?: boolean;
     /** "Season 1, episode 2" under a show's name. */
     subtitle?: string;
     url: string;

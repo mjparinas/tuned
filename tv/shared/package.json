@@ -19,7 +19,9 @@
     "./tmdb": "./src/tmdb.ts",
     "./filters": "./src/filters.ts",
     "./sort": "./src/sort.ts",
-    "./progress": "./src/progress.ts"
+    "./progress": "./src/progress.ts",
+    "./reminders": "./src/reminders.ts",
+    "./xmltv": "./src/xmltv.ts"
   },
   "scripts": {
     "test": "node --experimental-strip-types --no-warnings --test src/*.test.ts",

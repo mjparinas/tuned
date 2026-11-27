@@ -339,3 +339,48 @@ describe("progress and the log", () => {
         clearSecrets();
     });
 });
+
+describe("the guide's data on the stick", () => {
+    const { parseEpgTable, parseLiveStreams } = require("../src/core/xtream");
+    const login = { kind: "xtream" as const, server: "http://tv.example", username: "u", password: "p" };
+    const b64 = (s: string) => Buffer.from(s).toString("base64");
+
+    it("reads Xtream catch-up days and a channel's whole guide with descriptions", () => {
+        const [kept, none] = parseLiveStreams(
+            [
+                { stream_id: 5, name: "News", tv_archive: 1, tv_archive_duration: "3" },
+                { stream_id: 6, name: "Kids", tv_archive: 0 },
+            ],
+            login,
+        );
+        expect(kept.catchUp).toEqual({ mode: "xc", days: 3, source: null });
+        expect(none.catchUp).toBeUndefined();
+        const guide = parseEpgTable({
+            epg_listings: [
+                { title: b64("Late News"), description: b64("The day's news."), start_timestamp: "7200", stop_timestamp: "9000" },
+                { title: b64("Morning"), description: "", start_timestamp: "3600", stop_timestamp: "7200" },
+                { title: b64("Morning"), description: "", start_timestamp: "3600", stop_timestamp: "7200" },
+                { title: "", start_timestamp: "1", stop_timestamp: "2" },
+            ],
+        });
+        expect(guide).toEqual([
+            { start: 3_600_000, stop: 7_200_000, title: "Morning", desc: null },
+            { start: 7_200_000, stop: 9_000_000, title: "Late News", desc: "The day's news." },
+        ]);
+    });
+
+    it("reads an M3U's catch-up attributes and the header's guide link, as Android does", () => {
+        const r = new M3uReader();
+        r.feed(
+            '#EXTM3U url-tvg="http://guide.example/epg.xml" catchup="shift"\n' +
+                '#EXTINF:-1 tvg-id="news" catchup="default" catchup-source="http://tv.example/rec/{utc}" catchup-days="2",News\nhttp://tv.example/live/1.ts\n' +
+                '#EXTINF:-1 tvg-id="kids",Kids\nhttp://tv.example/live/2.ts\n' +
+                '#EXTINF:-1 catchup="fs",Sport\nhttp://tv.example/live/3.ts\n',
+        );
+        const { channels } = r.end();
+        expect(r.guideUrl).toBe("http://guide.example/epg.xml");
+        expect(channels[0].catchUp).toEqual({ mode: "default", days: 2, source: "http://tv.example/rec/{utc}" });
+        expect(channels[1].catchUp).toEqual({ mode: "shift", days: 5, source: null });
+        expect(channels[2].catchUp).toEqual({ mode: "flussonic", days: 5, source: null });
+    });
+});

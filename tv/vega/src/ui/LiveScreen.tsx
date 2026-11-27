@@ -5,7 +5,8 @@ import * as React from "react";
 import { FlatList, Image, Text, View } from "react-native";
 import { FAVOURITES, type AppModel, type State } from "../app/model";
 import type { Category, Channel } from "../core/models";
-import { Focusable, Screen, Spinner } from "./parts";
+import { GuideGrid } from "./GuideGrid";
+import { Button, Focusable, Screen, Spinner } from "./parts";
 import { TopBar } from "./TopBar";
 import { t } from "./strings";
 import { colours, useDp } from "./theme";
@@ -138,7 +139,20 @@ function ChannelRow({
     );
 }
 
-export function LiveScreen({ model, state, focusChannel }: { model: AppModel; state: State; focusChannel?: string }) {
+export function LiveScreen({
+    model,
+    state,
+    focusChannel,
+    focusProgramme,
+    fixedNow,
+}: {
+    model: AppModel;
+    state: State;
+    focusChannel?: string;
+    /** For the preview's guide grid. */
+    focusProgramme?: { channelId: string; start: number };
+    fixedNow?: number;
+}) {
     const dp = useDp();
     const lineup = state.lineup;
     // Hidden channels and categories (Settings › Content) are left out everywhere, counts included.
@@ -214,16 +228,22 @@ export function LiveScreen({ model, state, focusChannel }: { model: AppModel; st
                     />
                 </View>
                 <View style={{ flex: 1 }}>
-                    <View style={{ flexDirection: "row", alignItems: "baseline", gap: dp(12), marginBottom: dp(10) }}>
+                    <View style={{ flexDirection: "row", alignItems: "center", gap: dp(12), marginBottom: dp(10) }}>
                         <Text numberOfLines={1} style={{ color: colours.text, fontSize: dp(22), fontWeight: "600", flexShrink: 1 }}>
                             {title}
                         </Text>
                         <Text style={{ color: colours.muted, fontSize: dp(13) }}>{t.channels(channels.length)}</Text>
                         <Text numberOfLines={1} style={{ flex: 1, textAlign: "right", color: colours.muted, fontSize: dp(12) }}>
-                            {t.favouriteHint}
+                            {state.prefs.liveGrid ? t.reminderOpenNote : t.favouriteHint}
                         </Text>
+                        <Button
+                            label={state.prefs.liveGrid ? t.listView : t.guideView}
+                            onPress={() => void model.setPrefs({ liveGrid: !state.prefs.liveGrid })}
+                        />
                     </View>
-                    {channels.length ? (
+                    {channels.length && state.prefs.liveGrid ? (
+                        <GuideGrid model={model} state={state} channels={channels} showFocused={focusProgramme} now={fixedNow} />
+                    ) : channels.length ? (
                         <FlatList
                             data={channels}
                             keyExtractor={(c) => c.id}

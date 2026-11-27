@@ -3,7 +3,7 @@
 // then says how it ended (docs/decisions/settings.md#every-button-says-it-did-something-melvin-2026-11-21).
 import * as React from "react";
 import { ScrollView, Text, View } from "react-native";
-import { premiumText, type AppModel, type State } from "../app/model";
+import { hasPremium, premiumText, type AppModel, type State } from "../app/model";
 import { ProgressLines } from "./LoadingScreen";
 import { Button, Focusable, Screen } from "./parts";
 import { TopBar } from "./TopBar";
@@ -104,6 +104,30 @@ export function SettingsScreen({ model, state }: { model: AppModel; state: State
                             <Button label={t.accountSignIn} filled start onPress={() => model.go("account")} />
                         )}
                     </View>
+                </Section>
+                <Section title={t.playlists}>
+                    {state.playlists.map((p) => (
+                        <View key={p.id} style={{ flexDirection: "row", alignItems: "center", gap: dp(12), minHeight: dp(48) }}>
+                            <Text numberOfLines={1} style={{ flex: 1, color: colours.text, fontSize: dp(15), fontWeight: "600" }}>
+                                {p.name}
+                            </Text>
+                            {p.id === state.playlistId ? (
+                                <Text style={{ color: colours.teal, fontSize: dp(14) }}>{t.using}</Text>
+                            ) : (
+                                <>
+                                    <Button label={t.use} onPress={() => void model.switchPlaylist(p.id)} />
+                                    <Button label={t.remove} onPress={() => void model.removePlaylist(p.id)} />
+                                </>
+                            )}
+                        </View>
+                    ))}
+                    {hasPremium(state.account) ? (
+                        <View style={{ flexDirection: "row" }}>
+                            <Button label={t.addPlaylist} onPress={() => model.startAdding()} />
+                        </View>
+                    ) : (
+                        <Line text={t.premiumForMore} />
+                    )}
                 </Section>
                 <Section title={t.contentTitle}>
                     <Toggle
