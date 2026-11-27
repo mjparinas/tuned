@@ -28,12 +28,14 @@ const hashed = (pin: string) => {
 
 // Android's ids are 64-bit, past what a JavaScript number holds exactly.
 const big = "-7046029254386353131";
-const backup = `{"playlists":[],"settings":{"adult_pin":{"s":"${hashed("4321")}"},"accent":{"s":"violet"}},
+const copy = `{"playlists":[],"settings":{"adult_pin":{"s":"${hashed("4321")}"},"accent":{"s":"violet"}},
  "profiles":[
   {"id":2,"name":"Kids","colour":3,"kids":true,"createdAt":20,"avatar":"dragon",
    "favourites":[{"itemId":8070450532247928832,"addedAt":1,"position":1},{"itemId":${big},"addedAt":1,"position":0}]},
   {"id":1,"name":"Melvin \\"M\\" 1234567890123456789","colour":0,"kids":false,"pinHash":"${hashed("1234")}","createdAt":10}
  ]}`;
+/** As Android stores it (`TunedAccount.Stored`): the sync copy under `copy`. */
+const backup = `{"fingerprint":"f1","changedAt":1795000000000,"copy":${copy}}`;
 
 test("reads Android's 64-bit ids whole, and leaves strings and short numbers alone", () => {
     const parsed = parseWholeIds(`{"a":${big},"b":12,"c":"x:1234567890123456789","d":[1.5e300,12345678901234567]}`) as Record<
@@ -57,6 +59,7 @@ test("profiles come from the backup in Android's order, with their favourites wh
     assert.equal(profiles[1].avatar, "dragon");
     assert.equal(profiles[0].pinHash?.startsWith("v1:"), true);
     assert.equal(parentalPin?.startsWith("v1:"), true);
+    assert.deepEqual(profilesFromBackup(copy), profilesFromBackup(backup));
     assert.deepEqual(profilesFromBackup("not json"), { profiles: [], parentalPin: null });
     assert.deepEqual(profilesFromBackup("{}"), { profiles: [], parentalPin: null });
 });

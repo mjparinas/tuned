@@ -109,13 +109,15 @@ export function parseWholeIds(text: string): unknown {
 
 const text = (v: unknown): string | null => (typeof v === "string" ? v : typeof v === "number" ? String(v) : null);
 
-/** The profiles and parental PIN in the account's backup (`GET /api/backup`), Android's sync copy. */
+/** The profiles and parental PIN in the account's backup (`GET /api/backup`): Android's sync copy, under `copy`. */
 export function profilesFromBackup(backup: string): AccountProfiles {
     let copy: Record<string, unknown>;
     try {
         const parsed = parseWholeIds(backup);
         if (!parsed || typeof parsed !== "object") return NO_PROFILES;
-        copy = parsed as Record<string, unknown>;
+        // Android stores `{fingerprint, changedAt, copy}` (TunedAccount's `Stored`); the sync copy is under `copy`.
+        const whole = parsed as Record<string, unknown>;
+        copy = whole.copy && typeof whole.copy === "object" ? (whole.copy as Record<string, unknown>) : whole;
     } catch {
         return NO_PROFILES;
     }

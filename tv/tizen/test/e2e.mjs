@@ -57,9 +57,9 @@ const pinHash = (pin) => {
 };
 /** The account's backup as the phone left it: a grown-up profile with a PIN, and a kids one whose favourite is Treehouse. */
 const backup = (base) =>
-    `{"settings":{"adult_pin":{"s":"${pinHash("4321")}"}},"profiles":[` +
+    `{"fingerprint":"f1","changedAt":1,"copy":{"settings":{"adult_pin":{"s":"${pinHash("4321")}"}},"profiles":[` +
     `{"id":1,"name":"Sam","colour":1,"kids":false,"pinHash":"${pinHash("1234")}","createdAt":1,"avatar":"fox"},` +
-    `{"id":2,"name":"Robin","colour":5,"kids":true,"createdAt":2,"avatar":"dragon","favourites":[{"itemId":${androidId(0, `${base}/live/2.webm`, "Treehouse")},"addedAt":1,"position":0}]}]}`;
+    `{"id":2,"name":"Robin","colour":5,"kids":true,"createdAt":2,"avatar":"dragon","favourites":[{"itemId":${androidId(0, `${base}/live/2.webm`, "Treehouse")},"addedAt":1,"position":0}]}]}}`;
 /** Once true, the phone signs the TV in to the account as soon as the code shows. */
 let phoneSignsIn = false;
 
