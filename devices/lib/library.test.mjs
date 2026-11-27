@@ -14,6 +14,7 @@ import {
     REFRESH_KEY,
     WEB_SETTINGS,
 } from "./library.mjs";
+import { parseWhole, stringifyWhole } from "./whole-json.mjs";
 
 const xtream = { server: "http://a.example:8080", username: "me", password: "secret" };
 const stored = (playlists, settings) => ({
@@ -270,7 +271,7 @@ test("favourites and lists are edited per profile", () => {
     const fav = applyChange(start, { op: "favourite", itemId: 3, on: true }, 10).stored;
     assert.equal(fav.copy.profiles.length, 1);
     assert.deepEqual(fav.copy.profiles[0].favourites, [{ itemId: 3, addedAt: 10, position: 1 }]);
-    assert.equal(libraryView(fav).profiles[0].favourites[0], 3);
+    assert.equal(libraryView(fav).profiles[0].favourites[0], "3");
     const listed = applyChange(fav, { op: "list_add", name: "Weekend" }, 11).stored;
     const listId = listed.copy.profiles[0].lists[0].id;
     assert.equal(listed.copy.profiles[0].lists[0].name, "Weekend");
@@ -282,4 +283,39 @@ test("favourites and lists are edited per profile", () => {
     assert.deepEqual(gone.copy.profiles[0].lists, []);
     const off = applyChange(gone, { op: "favourite", itemId: 3, on: false }).stored;
     assert.deepEqual(off.copy.profiles[0].favourites, []);
+});
+
+test("a website edit keeps every 64-bit id in the backup whole", () => {
+    // Real ids from a device: StableId hashes past 2^53, negative and positive, and an own list's random Long.
+    const fav = "-7046029254386353131";
+    const other = "5397910112836148011";
+    const list = "8807341150221749317";
+    const text = `{"fingerprint":"f","changedAt":1,"copy":{"version":2,"playlists":[{"server":"http://a.example:8080","username":"me","password":"secret"}],"profiles":[{"id":1,"name":"You","favourites":[{"itemId":${fav},"addedAt":1,"position":1}],"lists":[{"id":${list},"name":"Sport","position":1,"createdAt":1,"items":[{"itemId":${other},"addedAt":1,"position":1}]}]}],"channelEdits":[{"itemId":${other},"name":"CBC","logo":null}]}}`;
+    const read = parseWhole(text);
+    // The browser sends a big id as a string, as the page reads it.
+    const result = applyChange(read, { op: "favourite", itemId: other, on: true }, 5);
+    const written = stringifyWhole(result.stored);
+    for (const id of [fav, other, list]) assert.ok(written.includes(`:${id}`), `${id} kept whole and unquoted`);
+    assert.ok(!written.includes("7046029254386353000"));
+    const view = libraryView(result.stored);
+    assert.deepEqual(view.profiles[0].favourites, [fav, other]);
+    assert.deepEqual(view.profiles[0].lists[0], { id: list, name: "Sport", items: [other] });
+    assert.deepEqual(Object.keys(view.channelEdits), [other]);
+    JSON.stringify(view); // the page's answer holds no BigInt
+    // Taking one off, renaming the list and putting a channel in it all find the whole ids.
+    const off = applyChange(result.stored, { op: "favourite", itemId: fav, on: false }).stored;
+    assert.deepEqual(libraryView(off).profiles[0].favourites, [other]);
+    const renamed = applyChange(off, { op: "list_rename", listId: list, name: "Hockey" }).stored;
+    assert.equal(renamed.copy.profiles[0].lists[0].name, "Hockey");
+    const out = applyChange(renamed, { op: "list_item", listId: list, itemId: other, on: false }).stored;
+    assert.deepEqual(out.copy.profiles[0].lists[0].items, []);
+    const edited = applyChange(out, { op: "channel_edit", itemId: other, name: "" }).stored;
+    assert.deepEqual(edited.copy.channelEdits, []);
+});
+
+test("ids outside a Long, zero or not whole are refused", () => {
+    const start = stored([xtream]);
+    for (const itemId of [0, "0", "9223372036854775808", 1.5, "12abc", null, 2 ** 60])
+        assert.equal(applyChange(start, { op: "favourite", itemId, on: true }).error, "bad request", String(itemId));
+    assert.equal(applyChange(start, { op: "favourite", itemId: "-9223372036854775808", on: true }).error, undefined);
 });
