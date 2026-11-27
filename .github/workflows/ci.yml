@@ -357,13 +357,16 @@ jobs:
         run: gh api "repos/${{ github.repository }}/pulls/$PR/files" --paginate --jq '.[].filename' | node scripts/decision-record.mjs
 
   # The Samsung TV app (tv/tizen) and what it shares with the Vega OS app: :core's rules compiled to JavaScript and
-  # tested there (tv/core), then tv/shared's tests and type check. Only when tv/, :core or the Gradle setup changed.
+  # tested there (tv/core), tv/shared's tests and type check, then the app: its tests, type check, the build for 2020
+  # TVs, the .wgt, and every screen driven with the remote's keys in Chromium against a stand-in provider, which also
+  # checks there was never more than one stream connection. The pictures and the .wgt are kept as artifacts. Only when
+  # tv/, :core or the Gradle setup changed.
   tizen:
     name: Samsung TV app
     needs: changes
     if: needs.changes.outputs.tizen == 'true'
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v7
       - uses: ./.github/actions/tv-core
@@ -376,6 +379,31 @@ jobs:
           npm ci --no-audit --no-fund
           npm test
           npm run typecheck
+      - name: Samsung app
+        working-directory: tv/tizen
+        run: |
+          npm ci --no-audit --no-fund
+          npm test
+          npm run typecheck
+          npm run build
+          npm run package
+      - name: Every screen with the remote
+        working-directory: tv/tizen
+        run: |
+          command -v ffmpeg >/dev/null || (sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg >/dev/null)
+          npx playwright install --with-deps chromium
+          npm run e2e
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: tizen-screens
+          path: tv/tizen/test/out/*.png
+          if-no-files-found: ignore
+      - uses: actions/upload-artifact@v7
+        with:
+          name: tuned-tizen-wgt
+          path: tv/tizen/dist-wgt/Tuned.wgt
+          if-no-files-found: error
 
   # Tuned for Fire TV sticks on Vega OS (tv/vega/, docs/decisions/vega.md): type check, the Jest tests, every screen
   # drawn in the browser preview, and the .vpkg built with Amazon's Vega SDK (Ubuntu x86_64), kept as an artifact.

@@ -188,8 +188,9 @@ test("never has two stream connections open, however fast the channel changes", 
     assert.deepEqual(events, ["open a", "close", "open b", "close", "open c", "close"]);
 });
 
-test("signs the TV in to the account from the website's link and keeps Premium when offline", async () => {
+test("signs the TV in to the account, takes a Premium seat, locks only when the seats are full, keeps it offline", async () => {
     let online = true;
+    let seat = "active";
     const fetch = fakeFetch((url, init) => {
         if (!online) throw new Error("offline");
         const body = init.body ? JSON.parse(init.body) : {};
@@ -201,9 +202,11 @@ test("signs the TV in to the account from the website's link and keeps Premium w
             assert.match(body.device, /^[0-9a-f]{32}$/);
             return { body: { status: "ok", token: "t0k", email: "me@example.com" } };
         }
-        if (url.pathname === "/api/account/me") {
+        // The server's own answer (devices/api/account/seat.mjs): `premium` is the product's name, `seat` decides.
+        if (url.pathname === "/api/account/seat") {
             assert.equal(init.headers?.Authorization, "Bearer t0k");
-            return { body: { status: "ok", email: "me@example.com", premium: true } };
+            assert.deepEqual(body, { use: true, purchases: [] });
+            return { body: { status: "ok", email: "me@example.com", premium: "premium_yearly", seat } };
         }
         return undefined;
     });
@@ -222,6 +225,11 @@ test("signs the TV in to the account from the website's link and keeps Premium w
     assert.equal(taken.kind, "signed in");
     assert.equal((await account.state()).premium, true);
     online = false;
+    assert.equal((await account.refresh()).premium, true);
+    online = true;
+    seat = "full";
+    assert.equal((await account.refresh()).premium, false);
+    seat = "active";
     assert.equal((await account.refresh()).premium, true);
 });
 
