@@ -1,16 +1,38 @@
 // The app's state and what changes it, apart from the screens, so it's tested on Node. Opening shows the channels
 // saved on the stick at once and refreshes after the first screen is up (AGENTS.md: nothing waits on the network);
 // every refresh, sign-in and account check reports progress and how it ended.
-import { accountClient, type AccountClient, SITE } from "../core/account";
+import { ACCOUNT_BASE, TunedAccount, type AccountState as SharedAccount } from "@tuned/shared/account";
+import type { Fetch, KeyValueStore } from "@tuned/shared/platform";
 import type { Http } from "../core/http";
 import { addSecret, clearSecrets, launchSafely, log } from "../core/log";
 import type { Channel, Lineup, Login, Programme } from "../core/models";
 import { OneStream, type StreamPlayer } from "../core/oneStream";
-import { loginFrom } from "../core/handoff";
 import { downloadLineup, failureText, isStale } from "../core/playlist";
 import type { StepProgress } from "../core/progress";
-import { storage, type AccountState, type Storage, type Store } from "../core/storage";
+import { PREFIX, storage, type Storage, type Store } from "../core/storage";
+import { gunzip, nobleCrypto } from "../platform/crypto";
+import { backupLogin } from "./logins";
 import { parseShortEpg, shortEpgUrl } from "../core/xtream";
+
+/** The Tuned account as the screens show it; null when the stick isn't signed in. */
+export interface AccountState {
+    email: string;
+    /** What the server last said; kept so an outage never locks a paying person out. */
+    premium: boolean;
+    /** "full" alone locks Premium while the account has it (docs/decisions/accounts.md). */
+    seat: "active" | "full" | "none" | "unknown";
+    checkedAt: number;
+}
+
+const accountView = (s: SharedAccount): AccountState | null =>
+    s.signedIn ? { email: s.email, premium: s.premium, seat: s.seat ?? "unknown", checkedAt: s.checkedAt } : null;
+
+/** @tuned/shared's store over the stick's, under the same "tuned:" prefix, so signing out clears it with the rest. */
+const sharedStore = (store: Store): KeyValueStore => ({
+    get: (key) => store.get(PREFIX + key),
+    set: (key, value) => store.set(PREFIX + key, value),
+    remove: (key) => store.remove([PREFIX + key]),
+});
 
 export type Route = "boot" | "signin" | "manual" | "loading" | "live" | "player" | "settings" | "account";
 
@@ -39,6 +61,8 @@ export interface State {
 export interface Services {
     store: Store;
     http: Http;
+    /** The account and relay calls (`fetch` on the stick). */
+    fetch: Fetch;
     random: (n: number) => Uint8Array;
     player: StreamPlayer;
     deviceName: string;
@@ -61,13 +85,21 @@ export class AppModel {
         guide: {},
     };
     readonly saved: Storage;
-    readonly account: AccountClient;
+    readonly account: TunedAccount;
     readonly stream: OneStream;
     private listeners = new Set<() => void>();
 
     constructor(readonly services: Services) {
         this.saved = storage(services.store);
-        this.account = accountClient(services.http, services.site ?? SITE);
+        this.account = new TunedAccount({
+            fetch: services.fetch,
+            store: sharedStore(services.store),
+            crypto: nobleCrypto(services.random),
+            gunzip,
+            device: { kind: "tv", build: "vega", name: services.deviceName },
+            base: services.site ?? ACCOUNT_BASE,
+            log: (tag, message) => log.info(tag, message),
+        });
         this.stream = new OneStream(services.player);
     }
 
@@ -98,7 +130,7 @@ export class AppModel {
         const [login, lineup, account, last] = await Promise.all([
             this.saved.loadLogin().catch(() => null),
             this.saved.loadLineup().catch(() => null),
-            this.saved.loadAccount().catch(() => null),
+            this.account.state().then(accountView, () => null),
             this.saved.loadLastChannel().catch(() => null),
         ]);
         rememberSecrets(login);
@@ -202,60 +234,73 @@ export class AppModel {
         this.set({ guide: { ...this.state.guide, [channel.id]: programmes } });
     }
 
-    /** The website signed this stick in to a Tuned account: keep the token, then ask for Premium. */
-    async accountLinked(link: string): Promise<boolean> {
-        const device = await this.saved.deviceId(this.services.random);
-        const signedIn = await this.account.signIn(link, { device, name: this.services.deviceName });
-        if (!signedIn) return false;
-        const account: AccountState = { token: signedIn.token, email: signedIn.email, premium: false, seat: "unknown", checkedAt: 0 };
-        await this.saved.saveAccount(account);
-        this.set({ account });
-        await this.checkAccount();
+    /** The site base the sign-in screen names ("www.tunedplayer.com/tv"). */
+    get site(): string {
+        return this.services.site ?? ACCOUNT_BASE;
+    }
+
+    /** The phone or website signed this stick in to a Tuned account (it holds a seat by now, when one is free). */
+    async accountSignedIn(state: SharedAccount): Promise<void> {
+        this.set({ account: accountView(state) });
         // Signed in on the welcome screen: the playlist comes from the account's backup, as on Android.
-        if (!this.state.login) {
-            const restored = loginFrom(await this.account.backup(account.token));
+        if (!this.state.login && state.signedIn) {
+            const restored = backupLogin(await this.backup());
             if (restored) await this.useLogin(restored);
         }
+    }
+
+    /** The website's one-time link: this stick's own token, then Premium. */
+    async accountLinked(link: string): Promise<boolean> {
+        const state = await this.account.signIn(link);
+        if (!state.signedIn) return false;
+        await this.accountSignedIn(state);
         return true;
+    }
+
+    /** The account's backup (the Android app's sync copy), for its playlists; null when there's none or no answer. */
+    private async backup(): Promise<unknown | null> {
+        const token = await this.services.store.get(`${PREFIX}account.token`);
+        if (!token) return null;
+        try {
+            const answer = await this.services.http.getJson(`${this.site}/api/backup`, { Authorization: `Bearer ${token}` });
+            return answer.status === 200 ? answer.body : null;
+        } catch (error) {
+            log.warn("AppModel", "backup", error);
+            return null;
+        }
     }
 
     /** Settings › Check again: a spinner, then Premium on, none, full, or couldn't reach (keeping what it had). */
     async checkAccount(): Promise<void> {
-        const account = this.state.account;
-        if (!account || this.state.accountCheck.busy) return;
+        const before = this.state.account;
+        if (!before || this.state.accountCheck.busy) return;
         this.set({ accountCheck: { busy: true, result: null } });
-        const answer = await this.account.seat(account.token);
-        if (answer === "signed out") {
-            await this.saved.clearAccount();
+        const next = accountView(await this.account.refresh());
+        if (!next) {
             this.set({
                 account: null,
                 accountCheck: { busy: false, result: { ok: false, text: "Your Tuned account signed this TV out." } },
             });
-            return;
-        }
-        if (answer === null) {
+        } else if (next.checkedAt === before.checkedAt) {
             this.set({
+                account: next,
                 accountCheck: { busy: false, result: { ok: false, text: "Couldn't reach your Tuned account. Premium stays as it was." } },
             });
-            return;
+        } else {
+            this.set({ account: next, accountCheck: { busy: false, result: { ok: next.premium, text: premiumText(next) } } });
         }
-        const next = { ...account, ...answer, checkedAt: Date.now() };
-        await this.saved.saveAccount(next);
-        this.set({ account: next, accountCheck: { busy: false, result: { ok: answer.premium, text: premiumText(next) } } });
     }
 
     async signOutOfAccount(): Promise<void> {
-        const account = this.state.account;
-        if (!account) return;
-        await this.account.signOut(account.token);
-        await this.saved.clearAccount();
+        if (!this.state.account) return;
+        await this.account.signOut();
         this.set({ account: null, accountCheck: { busy: false, result: null } });
     }
 
     /** Sign out: back to how the stick was installed (AGENTS.md), the account signed out too. */
     async signOut(): Promise<void> {
         await this.stream.stop();
-        if (this.state.account) await this.account.signOut(this.state.account.token);
+        if (this.state.account) await this.account.signOut();
         await this.saved.reset();
         clearSecrets();
         this.set({

@@ -31,6 +31,11 @@ export interface AccountState {
     readonly signedIn: boolean;
     readonly email: string;
     readonly premium: boolean;
+    /**
+     * The seat's last answer, so a screen can say why Premium is off: "full" (every seat on the account is taken, so
+     * another device must give one back) or "none" (the account has no Premium). Absent until the server has answered.
+     */
+    readonly seat?: "active" | "full" | "none";
     /** When the server last answered, epoch milliseconds; 0 for never. */
     readonly checkedAt: number;
 }
@@ -188,6 +193,7 @@ export class TunedAccount {
                 signedIn: true,
                 email: String(answer.email ?? kept.email),
                 premium: answer.seat === "active",
+                seat: answer.seat,
                 checkedAt: Date.now(),
             });
         } catch (error) {

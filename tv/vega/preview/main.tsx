@@ -64,6 +64,7 @@ function model(patch: Partial<State>): AppModel {
     const m = new AppModel({
         store: memoryStore(),
         http: offline,
+        fetch: () => Promise.reject(new Error("The preview is offline")),
         random: (n) => crypto.getRandomValues(new Uint8Array(n)),
         player: new VegaPlayer(),
         deviceName: "Preview",
@@ -75,7 +76,7 @@ function model(patch: Partial<State>): AppModel {
 const hour = 3600_000;
 const at = (h: number, m: number) => new Date(2026, 10, 27, h, m).getTime();
 const lineup = sampleLineup();
-const account = { token: "t", email: "you@example.com", premium: true, seat: "active" as const, checkedAt: Date.now() };
+const account = { email: "you@example.com", premium: true, seat: "active" as const, checkedAt: Date.now() };
 
 function Scene({ name }: { name: string }) {
     const player = React.useMemo(() => new VegaPlayer(), []);

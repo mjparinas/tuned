@@ -1,3 +1,4 @@
+import type { Fetch } from "@tuned/shared/platform";
 import { AppModel, hasPremium } from "../src/app/model";
 import type { Http } from "../src/core/http";
 import { memoryStore } from "../src/core/storage";
@@ -18,9 +19,24 @@ function http(routes: Record<string, (body: any) => { status: number; body: any 
     };
 }
 
+/** The same routes as `fetch`, which the account and relay calls use. */
+const fetchFrom =
+    (h: Http): Fetch =>
+    async (url, init) => {
+        const answer = init?.method === "POST" ? await h.postJson(url, JSON.parse(init.body ?? "{}")) : await h.getJson(url);
+        return {
+            ok: answer.status >= 200 && answer.status < 300,
+            status: answer.status,
+            headers: { get: () => null },
+            text: async () => JSON.stringify(answer.body),
+            json: async () => answer.body,
+        };
+    };
+
 const services = (h: Http, store = memoryStore()) => ({
     store,
     http: h,
+    fetch: fetchFrom(h),
     random: (n: number) => new Uint8Array(n).fill(7),
     player: { open: async () => {}, close: async () => {} },
     deviceName: "Test stick",

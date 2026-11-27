@@ -228,7 +228,9 @@ test("signs the TV in to the account, takes a Premium seat, locks only when the 
     assert.equal((await account.refresh()).premium, true);
     online = true;
     seat = "full";
-    assert.equal((await account.refresh()).premium, false);
+    const full = await account.refresh();
+    assert.equal(full.premium, false);
+    assert.equal(full.seat, "full");
     seat = "active";
     assert.equal((await account.refresh()).premium, true);
 });

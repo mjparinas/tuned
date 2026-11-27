@@ -10,27 +10,15 @@ export interface Store {
     keys(): Promise<string[]>;
 }
 
-const PREFIX = "tuned:";
+export const PREFIX = "tuned:";
 const CHUNK = 2000;
 
 export const KEYS = {
     login: `${PREFIX}login`,
     lineupHead: `${PREFIX}lineup`,
     lineupChunk: (i: number) => `${PREFIX}lineup:${i}`,
-    device: `${PREFIX}device`,
-    account: `${PREFIX}account`,
     lastChannel: `${PREFIX}lastChannel`,
 } as const;
-
-export interface AccountState {
-    token: string;
-    email: string;
-    /** What the server last said; kept so an outage never locks a paying person out. */
-    premium: boolean;
-    /** "full" alone locks Premium (docs/decisions/accounts.md). */
-    seat: "active" | "full" | "none" | "unknown";
-    checkedAt: number;
-}
 
 async function readJson<T>(store: Store, key: string): Promise<T | null> {
     const raw = await store.get(key);
@@ -69,19 +57,6 @@ export function storage(store: Store) {
             const stale = (await store.keys()).filter((k) => k.startsWith(`${KEYS.lineupHead}:`) && Number(k.split(":").pop()) >= chunks);
             if (stale.length) await store.remove(stale);
         },
-
-        /** This stick's id for the account: random, made once, 32 hex digits. */
-        async deviceId(random: (n: number) => Uint8Array): Promise<string> {
-            const kept = await store.get(KEYS.device);
-            if (kept && /^[0-9a-f]{32}$/.test(kept)) return kept;
-            const id = Array.from(random(16), (b) => b.toString(16).padStart(2, "0")).join("");
-            await store.set(KEYS.device, id);
-            return id;
-        },
-
-        loadAccount: () => readJson<AccountState>(store, KEYS.account),
-        saveAccount: (account: AccountState) => store.set(KEYS.account, JSON.stringify(account)),
-        clearAccount: () => store.remove([KEYS.account]),
 
         loadLastChannel: () => store.get(KEYS.lastChannel),
         saveLastChannel: (id: string) => store.set(KEYS.lastChannel, id),
