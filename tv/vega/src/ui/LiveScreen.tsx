@@ -141,25 +141,25 @@ function ChannelRow({
 export function LiveScreen({ model, state, focusChannel }: { model: AppModel; state: State; focusChannel?: string }) {
     const dp = useDp();
     const lineup = state.lineup;
+    // Hidden channels and categories (Settings › Content) are left out everywhere, counts included.
+    const shown = React.useMemo(() => model.shownChannels(), [model, lineup, state.prefs]);
+    const shownCategories = React.useMemo(() => model.shownCategories("live"), [model, lineup, state.prefs]);
     const counts = React.useMemo(() => {
         const out = new Map<string, number>();
-        for (const c of lineup?.channels ?? []) out.set(c.categoryId, (out.get(c.categoryId) ?? 0) + 1);
+        for (const c of shown) out.set(c.categoryId, (out.get(c.categoryId) ?? 0) + 1);
         return out;
-    }, [lineup]);
-    const channels = React.useMemo(() => model.visibleChannels(), [model, lineup, state.category]);
+    }, [shown]);
+    const channels = React.useMemo(() => model.visibleChannels(), [model, shown, state.category, state.favourites]);
     const startId = state.channelId && channels.some((c) => c.id === state.channelId) ? state.channelId : channels[0]?.id;
     const startIndex = Math.max(
         0,
         channels.findIndex((c) => c.id === startId),
     );
-    const favouriteCount = React.useMemo(
-        () => (lineup?.channels ?? []).filter((c) => state.favourites.has(c.id)).length,
-        [lineup, state.favourites],
-    );
+    const favouriteCount = React.useMemo(() => shown.filter((c) => state.favourites.has(c.id)).length, [shown, state.favourites]);
     const categories: (Category | null)[] = [
         null,
         ...(favouriteCount || state.category === FAVOURITES ? [{ id: FAVOURITES, name: t.favourites }] : []),
-        ...(lineup?.categories ?? []),
+        ...shownCategories.filter((c) => counts.has(c.id)),
     ];
     const title =
         state.category === FAVOURITES
@@ -204,7 +204,7 @@ export function LiveScreen({ model, state, focusChannel }: { model: AppModel; st
                         renderItem={({ item }) => (
                             <CategoryRow
                                 name={item ? item.name : t.allChannels}
-                                count={item ? (item.id === FAVOURITES ? favouriteCount : counts.get(item.id)) : lineup?.channels.length}
+                                count={item ? (item.id === FAVOURITES ? favouriteCount : counts.get(item.id)) : shown.length}
                                 selected={(item?.id ?? null) === state.category}
                                 onPress={() => model.pickCategory(item?.id ?? null)}
                             />

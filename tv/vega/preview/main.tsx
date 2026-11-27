@@ -3,7 +3,7 @@
 import * as React from "react";
 import { createRoot } from "react-dom/client";
 import { View } from "react-native";
-import { AppModel, type State } from "../src/app/model";
+import { AppModel, CONTINUE, DEFAULT_PREFS, type State } from "../src/app/model";
 import type { Http } from "../src/core/http";
 import type { Channel, Library, Lineup, Title } from "../src/core/models";
 import { memoryStore } from "../src/core/storage";
@@ -295,6 +295,17 @@ function Scene({ name }: { name: string }) {
         case "movies": {
             const m = model({ route: "movies", lineup, library });
             return <BrowseScreen model={m} state={m.state} kind="movies" focusTitle="m1" />;
+        }
+        case "movies-sorted": {
+            const m = model({ route: "movies", lineup, library, prefs: { ...DEFAULT_PREFS, sortMovies: "rating" } });
+            return <BrowseScreen model={m} state={m.state} kind="movies" />;
+        }
+        case "movies-continue": {
+            const watching = library.movies
+                .slice(2, 5)
+                .map((x, i) => ({ id: x.id, titleId: x.id, at: 1200, length: 6000, watchedAt: 10 - i }));
+            const m = model({ route: "movies", lineup, library, watching, movieCategory: CONTINUE });
+            return <BrowseScreen model={m} state={m.state} kind="movies" />;
         }
         case "movies-loading": {
             const m = model({

@@ -1,5 +1,5 @@
 import type { Fetch } from "@tuned/shared/platform";
-import { AppModel, FAVOURITES, hasPremium } from "../src/app/model";
+import { AppModel, CONTINUE, FAVOURITES, hasPremium } from "../src/app/model";
 import type { Http } from "../src/core/http";
 import { memoryStore } from "../src/core/storage";
 
@@ -347,5 +347,130 @@ describe("search, favourites and TMDB details on Vega", () => {
         expect(fresh.state.detailsLoad.failed).toBe(true);
         expect(tmdbAsked.length).toBeGreaterThan(asked);
         tmdbUp = true;
+    });
+});
+
+describe("sorting, hiding adult and 24/7, and Continue Watching on Vega", () => {
+    const login = { kind: "xtream" as const, server: "http://tv.example", username: "u", password: "p" };
+    const answers: Record<string, unknown> = {
+        account: { user_info: { auth: 1, status: "Active" } },
+        get_live_categories: [
+            { category_id: "1", category_name: "News" },
+            { category_id: "9", category_name: "XXX | Adults" },
+        ],
+        get_live_streams: [
+            { stream_id: 5, name: "Harbour News", category_id: "1" },
+            { stream_id: 6, name: "24/7 Harbour Street", category_id: "1" },
+            { stream_id: 8, name: "Late", category_id: "9" },
+        ],
+        get_vod_categories: [{ category_id: "2", category_name: "Drama" }],
+        get_vod_streams: [
+            { stream_id: 7, name: "Paper Boats", category_id: "2", year: "2019", rating: "6", added: "1700000300" },
+            { stream_id: 10, name: "A Quiet Bay", category_id: "2", year: "2024", rating: "8.5", added: "1700000100" },
+            { stream_id: 11, name: "Lighthouse", category_id: "2", year: "2021", rating: "0", added: "1700000200" },
+        ],
+        get_series_categories: [{ category_id: "3", category_name: "Drama" }],
+        get_series: [{ series_id: 4, name: "Harbour Street", category_id: "3", last_modified: "1700000000" }],
+        get_series_info: { episodes: { "1": [{ id: "41", season: 1, episode_num: 1, title: "Harbour Street S01E01" }] } },
+    };
+    const xtream: Http = {
+        async getJson(url) {
+            return { status: 200, body: answers[new URL(url).searchParams.get("action") ?? "account"] };
+        },
+        async postJson() {
+            return { status: 500, body: null };
+        },
+        async text(url) {
+            return JSON.stringify(answers[new URL(url).searchParams.get("action") ?? ""]);
+        },
+    };
+
+    it("hides adult categories by default and 24/7 channels when asked, everywhere, and keeps the choice", async () => {
+        const store = memoryStore();
+        const model = new AppModel(services(xtream, store));
+        await model.boot();
+        await model.useLogin(login);
+        await until(() => !!model.state.library);
+        expect(model.state.prefs).toMatchObject({ hideAdult: true, hide247: false });
+        expect(model.shownCategories("live").map((c) => c.name)).toEqual(["News"]);
+        expect(model.visibleChannels().map((c) => c.name)).toEqual(["Harbour News", "24/7 Harbour Street"]);
+
+        await model.setPrefs({ hide247: true });
+        expect(model.visibleChannels().map((c) => c.name)).toEqual(["Harbour News"]);
+        model.setQuery("harbour");
+        expect(model.results().map((r) => (r.kind === "live" ? r.channel.name : r.title.name))).toEqual(["Harbour News", "Harbour Street"]);
+
+        await model.setPrefs({ hideAdult: false, hide247: false });
+        model.pickCategory("9");
+        expect(model.visibleChannels().map((c) => c.name)).toEqual(["Late"]);
+        await model.setPrefs({ hideAdult: true });
+        expect(model.state.category).toBeNull();
+
+        const again = new AppModel(services(xtream, store));
+        await again.boot();
+        expect(again.state.prefs).toMatchObject({ hideAdult: true, hide247: false });
+    });
+
+    it("sorts each tab its own way and keeps it", async () => {
+        const store = memoryStore();
+        const model = new AppModel(services(xtream, store));
+        await model.useLogin(login);
+        await until(() => !!model.state.library);
+        const names = () => model.visibleTitles("movies").map((x) => x.name);
+        expect(names()).toEqual(["Paper Boats", "A Quiet Bay", "Lighthouse"]);
+        await model.nextSort("movies");
+        expect(model.state.prefs.sortMovies).toBe("added");
+        expect(names()).toEqual(["Paper Boats", "Lighthouse", "A Quiet Bay"]);
+        await model.setPrefs({ sortMovies: "year" });
+        expect(names()).toEqual(["A Quiet Bay", "Lighthouse", "Paper Boats"]);
+        await model.setPrefs({ sortMovies: "rating" });
+        expect(names()).toEqual(["A Quiet Bay", "Paper Boats", "Lighthouse"]);
+        await model.setPrefs({ sortMovies: "title" });
+        expect(names()).toEqual(["Lighthouse", "Paper Boats", "A Quiet Bay"]);
+        expect(model.state.prefs.sortShows).toBe("provider");
+
+        const again = new AppModel(services(xtream, store));
+        await again.boot();
+        expect(again.state.prefs.sortMovies).toBe("title");
+    });
+
+    it("puts a half-watched movie or episode in Continue watching, and takes it out once finished", async () => {
+        let at = 0;
+        const player = { open: async () => {}, close: async () => {}, position: () => ({ at, length: 2400 }) };
+        const store = memoryStore();
+        const model = new AppModel({ ...services(xtream, store), player });
+        await model.useLogin(login);
+        await until(() => !!model.state.library);
+        const show = model.visibleTitles("shows")[0];
+        await model.openTitle(show);
+        const [episode] = model.episodesOf(show)!;
+        await model.playVod({ id: episode.id, titleId: show.id, title: show.name, url: episode.url });
+        at = 600;
+        await model.stopPlaying();
+        expect(model.continueTitles("shows").map((x) => x.name)).toEqual(["Harbour Street"]);
+        model.pickBrowseCategory("shows", CONTINUE);
+        expect(model.visibleTitles("shows").map((x) => x.name)).toEqual(["Harbour Street"]);
+
+        const again = new AppModel({ ...services(xtream, store), player });
+        await again.boot();
+        await again.openBrowse("shows");
+        expect(again.state.positions[episode.id]).toBe(600);
+        expect(again.continueTitles("shows").map((x) => x.name)).toEqual(["Harbour Street"]);
+
+        await model.playVod({ id: episode.id, titleId: show.id, title: show.name, url: episode.url }, 600);
+        at = 2390;
+        await model.stopPlaying();
+        expect(model.continueTitles("shows")).toEqual([]);
+        expect(model.state.positions[episode.id]).toBeUndefined();
+    });
+
+    it("carries over where movies were left before Continue watching", async () => {
+        const store = memoryStore();
+        await store.set("tuned:positions", JSON.stringify({ m10: 900, e41: 300 }));
+        const model = new AppModel(services(xtream, store));
+        await model.useLogin(login);
+        await until(() => !!model.state.library);
+        await model.openBrowse("movies");
+        expect(model.continueTitles("movies").map((x) => x.name)).toEqual(["A Quiet Bay"]);
     });
 });

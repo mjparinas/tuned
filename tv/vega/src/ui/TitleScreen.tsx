@@ -96,7 +96,7 @@ function FavouriteButton({ model, state, title }: { model: AppModel; state: Stat
 function MoviePage({ model, state, title, category }: { model: AppModel; state: State; title: Title; category?: string }) {
     const dp = useDp();
     const at = state.positions[title.id] ?? 0;
-    const item = { id: title.id, title: title.name, url: title.url ?? "" };
+    const item = { id: title.id, titleId: title.id, title: title.name, url: title.url ?? "" };
     const details = state.details[title.id];
     return (
         <View style={{ gap: dp(14), flex: 1 }}>
@@ -204,6 +204,7 @@ function ShowPage({
         void model.playVod(
             {
                 id: e.id,
+                titleId: title.id,
                 title: title.name,
                 subtitle: name ? `${t.seasonEpisode(e.season, e.episode)}: ${name}` : t.seasonEpisode(e.season, e.episode),
                 url: e.url,

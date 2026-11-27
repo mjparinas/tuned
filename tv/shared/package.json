@@ -14,7 +14,10 @@
     "./i18n": "./src/i18n.ts",
     "./search": "./src/search.ts",
     "./favourites": "./src/favourites.ts",
-    "./tmdb": "./src/tmdb.ts"
+    "./tmdb": "./src/tmdb.ts",
+    "./filters": "./src/filters.ts",
+    "./sort": "./src/sort.ts",
+    "./progress": "./src/progress.ts"
   },
   "scripts": {
     "test": "node --experimental-strip-types --no-warnings --test src/*.test.ts",

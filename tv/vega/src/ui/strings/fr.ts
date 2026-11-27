@@ -105,6 +105,23 @@ export const fr: Strings = {
         return h && m ? `${h} h ${m} min` : h ? `${h} h` : `${m} min`;
     },
     tmdbNotice: "Ce produit utilise l'API TMDB, mais n'est ni approuvé ni certifié par TMDB.",
+    continueWatching: "Reprendre la lecture",
+    sortButton: (order: string) => `Trier : ${order}`,
+    sortNames: {
+        provider: "Ordre de la playlist",
+        added: "Ajouts récents",
+        year: "Plus récents",
+        rating: "Mieux notés",
+        title: "A à Z",
+    },
+    contentTitle: "Contenu",
+    hideAdult: "Masquer les catégories pour adultes",
+    hideAdultHint: "Retire les catégories et les flux pour adultes de la télé en direct, des Films, des Séries et de la recherche.",
+    hide247: "Masquer les chaînes 24/7",
+    hide247Hint:
+        "Retire les chaînes qui passent une seule série en boucle, comme « 24/7 Friends », et tout ce qui est marqué 24/7 dans Films, Séries et la recherche.",
+    on: "Oui",
+    off: "Non",
     movieDidntStart: "La lecture n'a pas démarré. Le serveur est peut-être occupé, ou le fichier manque.",
     noPlaylistOnAccount:
         "Connecté à votre compte Tuned, mais il n'a pas encore de playlist. Réessayez pour en envoyer une depuis votre téléphone.",

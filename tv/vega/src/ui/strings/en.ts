@@ -100,6 +100,23 @@ export const en = {
         return h && m ? `${h} h ${m} min` : h ? `${h} h` : `${m} min`;
     },
     tmdbNotice: "This product uses the TMDB API but is not endorsed or certified by TMDB.",
+    continueWatching: "Continue watching",
+    sortButton: (order: string) => `Sort: ${order}`,
+    sortNames: {
+        provider: "Playlist order",
+        added: "Recently added",
+        year: "Newest",
+        rating: "Top rated",
+        title: "A to Z",
+    },
+    contentTitle: "Content",
+    hideAdult: "Hide adult categories",
+    hideAdultHint: "Leaves out categories and streams for adults in Live TV, Movies, Shows and search.",
+    hide247: "Hide 24/7 channels",
+    hide247Hint:
+        'Leaves out channels that loop one show all day, such as "24/7 Friends", and anything labelled 24/7 in Movies, Shows and search.',
+    on: "On",
+    off: "Off",
     movieDidntStart: "This didn't start. The server may be busy, or the file may be missing.",
     noPlaylistOnAccount: "Signed in to your Tuned account, but it has no playlist yet. Try again to send one from your phone.",
     nothingUsable: "What the phone sent had no playlist the TV can use. Send it again from the phone.",

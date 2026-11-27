@@ -5,7 +5,7 @@ import * as React from "react";
 import { ScrollView, Text, View } from "react-native";
 import { premiumText, type AppModel, type State } from "../app/model";
 import { ProgressLines } from "./LoadingScreen";
-import { Button, Screen } from "./parts";
+import { Button, Focusable, Screen } from "./parts";
 import { TopBar } from "./TopBar";
 import { t } from "./strings";
 import { colours, useDp } from "./theme";
@@ -27,6 +27,51 @@ const Line = ({ text, tone = "muted" }: { text: string; tone?: "muted" | "ok" | 
     const colour = tone === "ok" ? colours.teal : tone === "bad" ? colours.danger : colours.muted;
     return <Text style={{ color: colour, fontSize: dp(14), lineHeight: dp(21) }}>{text}</Text>;
 };
+
+/** A switch row: OK turns it on or off, and the state is said in words as well as colour (accessibility.md). */
+function Toggle({ label, hint, on, onChange }: { label: string; hint: string; on: boolean; onChange: (on: boolean) => void }) {
+    const dp = useDp();
+    return (
+        <Focusable
+            onPress={() => onChange(!on)}
+            accessibilityRole="switch"
+            accessibilityLabel={label}
+            accessibilityState={{ checked: on }}
+            style={{
+                minHeight: dp(48),
+                borderRadius: dp(14),
+                paddingHorizontal: dp(14),
+                paddingVertical: dp(10),
+                backgroundColor: colours.card2,
+            }}
+            focusedStyle={{ backgroundColor: colours.line }}
+        >
+            {() => (
+                <View style={{ flexDirection: "row", alignItems: "center", gap: dp(14) }}>
+                    <View style={{ flex: 1, gap: dp(4) }}>
+                        <Text style={{ color: colours.text, fontSize: dp(15), fontWeight: "600" }}>{label}</Text>
+                        <Text style={{ color: colours.muted, fontSize: dp(13), lineHeight: dp(19) }}>{hint}</Text>
+                    </View>
+                    <View
+                        style={{
+                            minWidth: dp(56),
+                            minHeight: dp(28),
+                            borderRadius: dp(14),
+                            paddingHorizontal: dp(10),
+                            alignItems: "center",
+                            justifyContent: "center",
+                            backgroundColor: on ? colours.primary : colours.card,
+                        }}
+                    >
+                        <Text style={{ color: on ? colours.onPrimary : colours.muted, fontSize: dp(13), fontWeight: "700" }}>
+                            {on ? t.on : t.off}
+                        </Text>
+                    </View>
+                </View>
+            )}
+        </Focusable>
+    );
+}
 
 export function SettingsScreen({ model, state }: { model: AppModel; state: State }) {
     const dp = useDp();
@@ -59,6 +104,20 @@ export function SettingsScreen({ model, state }: { model: AppModel; state: State
                             <Button label={t.accountSignIn} filled start onPress={() => model.go("account")} />
                         )}
                     </View>
+                </Section>
+                <Section title={t.contentTitle}>
+                    <Toggle
+                        label={t.hideAdult}
+                        hint={t.hideAdultHint}
+                        on={state.prefs.hideAdult}
+                        onChange={(hideAdult) => void model.setPrefs({ hideAdult })}
+                    />
+                    <Toggle
+                        label={t.hide247}
+                        hint={t.hide247Hint}
+                        on={state.prefs.hide247}
+                        onChange={(hide247) => void model.setPrefs({ hide247 })}
+                    />
                 </Section>
                 <Section title={t.playlistTitle}>
                     {state.lineup ? (
