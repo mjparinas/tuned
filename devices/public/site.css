@@ -440,101 +440,68 @@ button.danger {
     }
 }
 
-/* Sign-in choices: Google, and Apple coming soon in Apple's own black (white on dark) style. */
+/*
+ * Sign-in choices, one above the other at the same width (Melvin, 2026-11-27: "the layout within the card looks off").
+ * Google's light button and Apple's white-outline button are the same thing (white, grey outline, near-black words),
+ * so both use it, on a light and a dark page alike: both brands' guidelines allow it, and the pair never mixes a dark
+ * button with a white one.
+ */
 .sign-in-options {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 8px;
+    display: grid;
+    gap: 12px;
 }
-.sign-in-options p {
-    flex-basis: 100%;
-}
-/* Apple's Sign in with Apple button (Human Interface guidelines): black on light, white on dark, pill shaped. */
+.gsi,
 a.apple,
 button.apple {
-    display: inline-flex;
+    display: flex;
     align-items: center;
     justify-content: center;
-    gap: 8px;
-    min-height: 48px;
-    padding: 10px 20px;
-    border: 1px solid #000000;
-    border-radius: 999px;
-    background: #000000;
-    color: #ffffff;
-    font:
-        500 15px/20px system-ui,
-        -apple-system,
-        sans-serif;
-    text-decoration: none;
-    cursor: pointer;
-}
-a.apple:hover,
-button.apple:hover {
-    background: #1a1a1a;
-}
-a.apple:focus-visible,
-button.apple:focus-visible {
-    outline: 3px solid #000000;
-    outline-offset: 2px;
-}
-@media (prefers-color-scheme: dark) {
-    a.apple,
-    button.apple {
-        background: #ffffff;
-        border-color: #ffffff;
-        color: #000000;
-    }
-    a.apple:hover,
-    button.apple:hover {
-        background: #f2f2f2;
-    }
-    a.apple:focus-visible,
-    button.apple:focus-visible {
-        outline-color: #ffffff;
-    }
-}
-
-/* Google's own Sign in with Google button (its branding guidelines): the four-colour G on white with a grey
-   outline, or on #131314 in dark, Roboto Medium, pill shaped. */
-.gsi {
-    display: inline-flex;
-    align-items: center;
     gap: 12px;
-    min-height: 48px;
-    padding: 10px 20px 10px 14px;
+    width: 100%;
+    min-height: 52px;
+    padding: 12px 20px;
     border: 1px solid #747775;
     border-radius: 999px;
     background: #ffffff;
     color: #1f1f1f;
     font:
-        500 15px/20px Roboto,
+        500 16px/20px Roboto,
         system-ui,
+        -apple-system,
         sans-serif;
-    letter-spacing: 0.25px;
+    letter-spacing: 0.1px;
     text-decoration: none;
     cursor: pointer;
+    transition: background-color 0.15s ease;
 }
-.gsi img {
+.gsi img,
+.apple svg {
+    flex: none;
     width: 20px;
     height: 20px;
 }
-.gsi:hover {
-    background: #f8f9fa;
+.gsi:hover,
+a.apple:hover,
+button.apple:hover {
+    background: #f2f2f2;
 }
-.gsi:focus-visible {
-    outline: 3px solid #4285f4;
+.gsi:focus-visible,
+a.apple:focus-visible,
+button.apple:focus-visible {
+    outline: 3px solid var(--focus);
     outline-offset: 2px;
 }
 @media (prefers-color-scheme: dark) {
-    .gsi {
-        background: #131314;
-        border-color: #8e918f;
-        color: #e3e3e3;
+    .gsi,
+    a.apple,
+    button.apple {
+        border-color: #ffffff;
     }
-    .gsi:hover {
-        background: #1f1f20;
+    .gsi:hover,
+    a.apple:hover,
+    button.apple:hover {
+        background: #e3e3e3;
+        border-color: #e3e3e3;
     }
 }
 
