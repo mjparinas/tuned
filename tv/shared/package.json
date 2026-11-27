@@ -24,7 +24,8 @@
     "./reminders": "./src/reminders.ts",
     "./events": "./src/events.ts",
     "./xmltv": "./src/xmltv.ts",
-    "./stableid": "./src/stableid.ts"
+    "./stableid": "./src/stableid.ts",
+    "./simkl": "./src/simkl.ts"
   },
   "scripts": {
     "test": "node --experimental-strip-types --no-warnings --test src/*.test.ts",
