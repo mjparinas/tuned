@@ -12,6 +12,8 @@ export interface Reminder {
     /** Epoch milliseconds. */
     start: number;
     stop: number;
+    /** A live event's alert (`@tuned/shared/events`): Watch auto-tunes its title rather than playing `channelId`. */
+    tune?: boolean;
 }
 
 /** How long after a programme starts it's still worth saying, for an app opened late. */

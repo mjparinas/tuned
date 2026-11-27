@@ -46,6 +46,7 @@ export const PlayerScreen = React.forwardRef<
     const guide = channel ? (state.guide[channel.id] ?? []) : [];
     const [position, setPosition] = React.useState(shown?.position ?? { at: 0, length: 0 });
     const [paused, setPaused] = React.useState(!!shown?.paused);
+    const tune = vod ? null : state.tune;
 
     // A movie's time moves while its controls show, and where it is gets kept every few seconds.
     React.useEffect(() => {
@@ -60,11 +61,14 @@ export const PlayerScreen = React.forwardRef<
 
     React.useEffect(() => {
         if (shown) return;
-        player.onState = setPlayback;
+        player.onState = (next) => {
+            setPlayback(next);
+            model.playback(next);
+        };
         return () => {
             player.onState = () => {};
         };
-    }, [player, shown]);
+    }, [player, model, shown]);
 
     const showControls = React.useCallback(() => {
         setControls(true);
@@ -79,6 +83,12 @@ export const PlayerScreen = React.forwardRef<
         },
         [],
     );
+
+    // A channel auto-tune found shows its controls, with Next stream, for a few seconds.
+    const found = !!tune?.found;
+    React.useEffect(() => {
+        if (found && !shown) showControls();
+    }, [found, shown, showControls]);
 
     React.useImperativeHandle(ref, () => ({
         back() {
@@ -131,10 +141,18 @@ export const PlayerScreen = React.forwardRef<
                 <View
                     style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, alignItems: "center", justifyContent: "center" }}
                 >
-                    <Spinner line={playback === "starting" ? t.starting : t.buffering} />
+                    <Spinner
+                        line={
+                            tune && !tune.found && !tune.failed
+                                ? t.tuning(tune.at + 1, tune.ids.length)
+                                : playback === "starting"
+                                  ? t.starting
+                                  : t.buffering
+                        }
+                    />
                 </View>
             ) : null}
-            {playback === "failed" ? (
+            {tune?.failed || (playback === "failed" && !tune) ? (
                 <View
                     style={{
                         position: "absolute",
@@ -150,7 +168,7 @@ export const PlayerScreen = React.forwardRef<
                     }}
                 >
                     <Text style={{ color: colours.text, fontSize: dp(18), textAlign: "center", maxWidth: dp(520), lineHeight: dp(26) }}>
-                        {vod ? t.movieDidntStart : t.didntStart}
+                        {tune ? t.tuneNone(tune.title) : vod ? t.movieDidntStart : t.didntStart}
                     </Text>
                     <View style={{ flexDirection: "row", gap: dp(12) }}>
                         <Button
@@ -158,7 +176,11 @@ export const PlayerScreen = React.forwardRef<
                             filled
                             start
                             onPress={() =>
-                                vod ? void model.playVod(vod, state.positions[vod.id] ?? 0) : channel && void model.play(channel)
+                                tune
+                                    ? void model.retryTune()
+                                    : vod
+                                      ? void model.playVod(vod, state.positions[vod.id] ?? 0)
+                                      : channel && void model.play(channel)
                             }
                         />
                         <Button label={t.back} onPress={() => void model.stopPlaying()} />
@@ -209,6 +231,15 @@ export const PlayerScreen = React.forwardRef<
                             {`${i === 0 ? t.now : t.next}  ${clock(p.start)}–${clock(p.end)}  ${p.title}`}
                         </Text>
                     ))}
+                    {tune && tune.found ? (
+                        // Auto-tune found a picture; if it's the wrong event, Next stream carries on down the list.
+                        <View style={{ flexDirection: "row", alignItems: "center", gap: dp(14), justifyContent: "flex-end" }}>
+                            <Text numberOfLines={1} style={{ color: colours.muted, fontSize: dp(14), flexShrink: 1 }}>
+                                {`${t.autoTune}: ${tune.title} · ${tune.at + 1}/${tune.ids.length}`}
+                            </Text>
+                            <Button label={t.nextStream} filled start onPress={() => void model.nextStream()} />
+                        </View>
+                    ) : null}
                 </View>
             ) : null}
             {controls && vod ? (

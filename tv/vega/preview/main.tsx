@@ -9,6 +9,7 @@ import type { Channel, Library, Lineup, Title } from "../src/core/models";
 import { memoryStore } from "../src/core/storage";
 import { ReminderBanner, Shell } from "../src/App";
 import { BrowseScreen } from "../src/ui/BrowseScreen";
+import { EventsScreen } from "../src/ui/EventsScreen";
 import { LiveScreen } from "../src/ui/LiveScreen";
 import { LoadingScreen } from "../src/ui/LoadingScreen";
 import { ManualScreen } from "../src/ui/ManualScreen";
@@ -18,7 +19,7 @@ import { SettingsScreen } from "../src/ui/SettingsScreen";
 import { SignInScreen } from "../src/ui/SignInScreen";
 import { TitleScreen } from "../src/ui/TitleScreen";
 import { VegaPlayer } from "../src/platform/VegaPlayer";
-import { chooseLanguage, rightToLeft } from "../src/ui/strings";
+import { chooseLanguage, rightToLeft, t as tr0 } from "../src/ui/strings";
 
 const offline: Http = {
     text: () => Promise.reject(new Error("preview")),
@@ -299,6 +300,77 @@ function Scene({ name }: { name: string }) {
                     <LiveScreen model={m} state={m.state} focusProgramme={{ channelId: "c101", start: focusStart }} fixedNow={base} />
                     <ReminderBanner model={m} state={m.state} />
                 </View>
+            );
+        }
+        case "events":
+        case "events-reading": {
+            // Made-up teams and events: store builds never name a league, team or brand.
+            const now = at(19, 10);
+            const ev = (title: string, start: number, length: number, channels: string[], timeKnown = true) => ({
+                key: title.toLowerCase(),
+                title,
+                start,
+                stop: start + length * 60_000,
+                channels,
+                timeKnown,
+            });
+            const events = [
+                ev("Harbour Hawks vs. Valley Bears", at(19, 0), 180, ["c107", "c108", "c109"]),
+                ev("City Cup Final", at(18, 30), 120, ["c110"]),
+                ev("Fight Night 12: Main Card", now, 180, ["c111", "c112"], false),
+                ev("Lakeside Open: Final Round", at(20, 0), 240, ["c108"]),
+                ev("Coast Kings @ Metro Stars", at(22, 30), 150, ["c109", "c112"]),
+                ev("Rink Classic: North vs. South", at(19, 0) + 24 * hour, 150, ["c109"]),
+            ];
+            const m = model({
+                route: "events",
+                lineup,
+                events,
+                reminders: [
+                    {
+                        channelId: "c109",
+                        channelName: "Rink Live",
+                        title: events[4].title,
+                        start: events[4].start,
+                        stop: events[4].stop,
+                        tune: true,
+                    },
+                ],
+                eventsLoad:
+                    name === "events-reading"
+                        ? {
+                              busy: true,
+                              progress: { step: 1, steps: 1, label: "", loaded: 34, total: 120, eta: "about 1 min left" },
+                          }
+                        : { busy: false },
+            });
+            if (name === "events-reading") m.state.eventsLoad.progress!.label = tr0.eventsGuide(34, 120);
+            return <EventsScreen model={m} state={m.state} fixedNow={now} showFocused={0} />;
+        }
+        case "tune-trying":
+        case "tune-found":
+        case "tune-none": {
+            const ids = ["c107", "c108", "c109", "c110", "c111", "c112", "c101", "c102", "c103"];
+            const m = model({
+                route: "player",
+                lineup,
+                channelId: name === "tune-trying" ? "c108" : "c109",
+                guide: { c109: [{ title: "Harbour Hawks vs. Valley Bears", start: at(19, 0), end: at(22, 0) }] },
+                tune: {
+                    title: "Harbour Hawks vs. Valley Bears",
+                    ids,
+                    at: name === "tune-trying" ? 1 : 2,
+                    found: name === "tune-found",
+                    failed: name === "tune-none",
+                },
+            });
+            return (
+                <PlayerScreen
+                    model={m}
+                    state={m.state}
+                    player={player}
+                    shown={{ controls: name === "tune-found", playback: name === "tune-trying" ? "starting" : "playing" }}
+                />
             );
         }
         case "live-refreshing": {

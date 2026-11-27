@@ -5,6 +5,22 @@
 import { ACCOUNT_BASE, TunedAccount, type AccountState as SharedAccount } from "@tuned/shared/account";
 import { Favourites, favouritesKey } from "@tuned/shared/favourites";
 import { visible, type Hiding } from "@tuned/shared/filters";
+import {
+    ChannelHealth,
+    EVENTS_AHEAD_MS,
+    eventsInNames,
+    groupEvents,
+    hasWords,
+    healthKey,
+    rankForTune,
+    regionTag,
+    sportyChannel,
+    tuneWords,
+    withNamed,
+    type EventProgramme,
+    type LiveEvent,
+    type TuneCandidate,
+} from "@tuned/shared/events";
 import { catchUpLink, keepFrom, MAX_CATCH_UP_DAYS, replayable } from "@tuned/shared/guide";
 import { Reminders, remindersKey, type Reminder } from "@tuned/shared/reminders";
 import { XmltvReader } from "@tuned/shared/xmltv";
@@ -46,7 +62,19 @@ const sharedStore = (store: Store): KeyValueStore => ({
 });
 
 export type Route =
-    "boot" | "signin" | "manual" | "loading" | "live" | "movies" | "shows" | "search" | "title" | "player" | "settings" | "account";
+    | "boot"
+    | "signin"
+    | "manual"
+    | "loading"
+    | "live"
+    | "events"
+    | "movies"
+    | "shows"
+    | "search"
+    | "title"
+    | "player"
+    | "settings"
+    | "account";
 
 /** The category that holds what the person starred, first after All in Live TV, Movies and Shows. */
 export const FAVOURITES = "__favourites";
@@ -63,9 +91,37 @@ export interface Prefs extends Hiding {
     sortShows: SortOrder;
     /** Live TV as a guide grid instead of the list; the list stays the default, as on Android. */
     liveGrid: boolean;
+    /** Settings › Auto-tune: how long a channel gets to show a picture before the next is tried, in seconds. */
+    tuneWaitS: number;
 }
 
-export const DEFAULT_PREFS: Prefs = { hideAdult: true, hide247: false, sortMovies: "provider", sortShows: "provider", liveGrid: false };
+/** Settings › Auto-tune's choices, as on Android (5 to 20 seconds, 8 by default). */
+export const TUNE_WAITS = [5, 8, 12, 20] as const;
+
+export const DEFAULT_PREFS: Prefs = {
+    hideAdult: true,
+    hide247: false,
+    sortMovies: "provider",
+    sortShows: "provider",
+    liveGrid: false,
+    tuneWaitS: 8,
+};
+
+/** At most this many sports channels' guides are read for Live events, so a huge playlist doesn't take all night. */
+export const MAX_EVENT_ROWS = 300;
+
+/** Auto-tune working through the channels that may show an event, one at a time (docs/decisions/auto-tune.md). */
+export interface Tune {
+    title: string;
+    /** The channels to try, best first. */
+    ids: string[];
+    /** The one playing or being tried. */
+    at: number;
+    /** It has shown a picture. */
+    found: boolean;
+    /** Every channel was tried and none played. */
+    failed: boolean;
+}
 
 /** Days of guide ahead the grid scrolls to. */
 export const GUIDE_DAYS = 2;
@@ -130,6 +186,13 @@ export interface State {
     reminders: readonly Reminder[];
     /** A reminder whose programme just started, shown over any screen with Watch. */
     due: Reminder | null;
+    /** Today's games, fights and pay-per-views, live first. */
+    events: LiveEvent[];
+    /** Reading sports channels' guides for them, with progress, and how it ended. */
+    eventsLoad: Busy;
+    /** Teams, leagues and fighters followed on the phone or the website, from the account's backup. */
+    follows: string[];
+    tune: Tune | null;
     /** Every playlist on the stick, by name; the open one is `playlistId`. */
     playlists: { id: string; name: string }[];
     playlistId: string;
@@ -190,12 +253,20 @@ export class AppModel {
         gridLoad: { busy: false },
         reminders: [],
         due: null,
+        events: [],
+        eventsLoad: { busy: false },
+        follows: [],
+        tune: null,
     };
     readonly saved: Storage;
     favourites!: Favourites;
     readonly tmdb: Tmdb;
     progress!: WatchProgress;
     reminders!: Reminders;
+    health!: ChannelHealth;
+    private tuneTimer: ReturnType<typeof setTimeout> | null = null;
+    /** Bumped on each channel auto-tune tries, so a late answer about an earlier one is ignored. */
+    private tuneTry = 0;
     private reminderTimer: ReturnType<typeof setTimeout> | null = null;
     /** Channels whose guide is being read, so a row scrolled past twice is asked for once. */
     private gridAsked = new Set<string>();
@@ -246,6 +317,7 @@ export class AppModel {
         this.progressRead = null;
         this.reminders = new Reminders(this.shared, remindersKey(id));
         this.reminders.onChange((reminders) => this.set({ reminders }));
+        this.health = new ChannelHealth(this.shared, healthKey(id));
     }
 
     subscribe = (listener: () => void) => {
@@ -280,7 +352,13 @@ export class AppModel {
         ]);
         rememberSecrets(login);
         await this.readPlaylists(login);
-        await Promise.all([this.favourites.load().catch(() => undefined), this.loadPrefs(), this.readProgress(), this.readReminders()]);
+        await Promise.all([
+            this.favourites.load().catch(() => undefined),
+            this.loadPrefs(),
+            this.readProgress(),
+            this.readReminders(),
+            this.health.load(),
+        ]);
         if (!login) return this.set({ route: "signin", account });
         if (!lineup) {
             this.set({ login, account, route: "loading" });
@@ -355,12 +433,15 @@ export class AppModel {
         await this.saved.saveLogin(login);
         await this.saved.savePlaylistId(id);
         this.showPlaylists(id);
-        await Promise.all([this.favourites.load().catch(() => undefined), this.readProgress(), this.readReminders()]);
+        await Promise.all([this.favourites.load().catch(() => undefined), this.readProgress(), this.readReminders(), this.health.load()]);
         this.gridAsked.clear();
         this.linkGuideRead = false;
+        this.endTune();
         this.set({
             grid: {},
             gridLoad: { busy: false },
+            events: [],
+            eventsLoad: { busy: false },
             due: null,
             login,
             lineup: null,
@@ -489,6 +570,7 @@ export class AppModel {
                     sortMovies: isSortOrder(saved.sortMovies) ? saved.sortMovies : DEFAULT_PREFS.sortMovies,
                     sortShows: isSortOrder(saved.sortShows) ? saved.sortShows : DEFAULT_PREFS.sortShows,
                     liveGrid: typeof saved.liveGrid === "boolean" ? saved.liveGrid : DEFAULT_PREFS.liveGrid,
+                    tuneWaitS: TUNE_WAITS.includes(saved.tuneWaitS as never) ? (saved.tuneWaitS as number) : DEFAULT_PREFS.tuneWaitS,
                 },
             });
         } catch (error) {
@@ -761,6 +843,7 @@ export class AppModel {
 
     /** A movie or an episode, from `from` seconds: the old stream closes before this one opens. */
     async playVod(item: Playable, from = 0): Promise<void> {
+        this.endTune();
         this.set({ vod: item, route: "player" });
         await this.stream.play(item.url, from > 0 ? from : undefined);
     }
@@ -787,6 +870,7 @@ export class AppModel {
 
     /** Plays a channel: the old stream closes before this one opens. */
     async play(channel: Channel): Promise<void> {
+        this.endTune();
         this.set({ channelId: channel.id, vod: null, route: "player" });
         launchSafely("play.remember", () => this.saved.saveLastChannel(channel.id));
         await this.stream.play(channel.url);
@@ -795,6 +879,9 @@ export class AppModel {
 
     /** Up and down in the player: the next or previous channel in the list being shown, wrapping round. */
     async zap(step: 1 | -1): Promise<void> {
+        const tune = this.state.tune;
+        // While auto-tune has a list, up and down move through it, as Android's next and previous do.
+        if (tune && !this.state.vod) return this.tryTune((tune.at + step + tune.ids.length) % tune.ids.length);
         const list = this.visibleChannels();
         if (!list.length || this.state.vod) return;
         const at = Math.max(
@@ -807,8 +894,10 @@ export class AppModel {
     async stopPlaying(): Promise<void> {
         const vod = this.state.vod;
         if (vod) await this.rememberPosition().catch((error) => log.warn("AppModel", "position", error));
+        const tuned = !!this.state.tune;
+        this.endTune();
         await this.stream.stop();
-        this.set({ route: vod && this.state.title ? "title" : "live", vod: null });
+        this.set({ route: vod && this.state.title ? "title" : tuned ? "events" : "live", vod: null });
     }
 
     /** Now and next for Xtream channels: one small request, kept for the session. */
@@ -972,12 +1061,245 @@ export class AppModel {
     async watchDue(): Promise<void> {
         const due = this.state.due;
         this.set({ due: null });
+        if (due?.tune) return this.tuneEvent(due.title, [due.channelId]);
         const channel = due && this.state.lineup?.channels.find((c) => c.id === due.channelId);
         if (channel) await this.play(channel);
     }
 
     dismissDue(): void {
         this.set({ due: null });
+    }
+
+    // ---- Live events and auto-tune (docs/decisions/events.md, auto-tune.md, vega.md) ----
+
+    /** Sports and pay-per-view channels that aren't hidden. */
+    sportsChannels(): Channel[] {
+        const names = new Map((this.state.lineup?.categories ?? []).map((c) => [c.id, c.name]));
+        return this.shownChannels().filter((c) => sportyChannel(c.name, names.get(c.categoryId) ?? ""));
+    }
+
+    /** Live events: the list from what the stick has at once, then the sports channels' guides as they come. */
+    async openEvents(): Promise<void> {
+        this.set({ route: "events" });
+        this.buildEvents();
+        await this.loadEventGuide();
+    }
+
+    /**
+     * The events from the guide read so far, and from the names of sports channels whose guide lists none in the next
+     * 36 hours (pay-per-view slots renamed for each event).
+     */
+    buildEvents(now = Date.now()): void {
+        const sports = this.sportsChannels();
+        const to = now + EVENTS_AHEAD_MS;
+        const rows: EventProgramme[] = [];
+        for (const c of sports) {
+            for (const p of this.state.grid[c.id] ?? []) {
+                if (p.stop > now && p.start < to) rows.push({ channelId: c.id, title: p.title, start: p.start, stop: p.stop });
+            }
+        }
+        const fromGuide = groupEvents(rows, now);
+        const covered = new Set(fromGuide.flatMap((e) => e.channels));
+        let named: ReturnType<typeof eventsInNames> = [];
+        try {
+            named = eventsInNames(
+                sports.filter((c) => !covered.has(c.id)),
+                now,
+                to,
+            );
+        } catch (error) {
+            // A name the rules trip over leaves the guide's events as they are.
+            log.warn("AppModel", "event names", error);
+        }
+        this.set({ events: withNamed(fromGuide, named, now) });
+    }
+
+    /**
+     * The sports channels' guides. An Xtream server's come a channel at a time, two at once, at most 300 channels, with
+     * how many are read so far; a link's is its guide file, read once a session for the grid as well.
+     */
+    async loadEventGuide(): Promise<void> {
+        const login = this.state.login;
+        if (!login || this.state.eventsLoad.busy) return;
+        if (login.kind !== "xtream") {
+            await this.loadLinkGuide();
+            this.buildEvents();
+            return;
+        }
+        const wanted = this.sportsChannels()
+            .filter((c) => c.streamId !== undefined && !(c.id in this.state.grid))
+            .slice(0, MAX_EVENT_ROWS);
+        if (!wanted.length) return;
+        const generation = this.generation;
+        const total = wanted.length;
+        const startedAt = Date.now();
+        let done = 0;
+        let failed = 0;
+        const show = () =>
+            this.set({
+                eventsLoad: {
+                    busy: true,
+                    progress: {
+                        step: 1,
+                        steps: 1,
+                        label: t.eventsGuide(done, total),
+                        loaded: done,
+                        total,
+                        eta: eta(done, total, startedAt, Date.now()),
+                    },
+                },
+            });
+        show();
+        const queue = [...wanted];
+        const next = async (): Promise<void> => {
+            const channel = queue.shift();
+            if (!channel || generation !== this.generation) return;
+            this.gridAsked.add(channel.id);
+            let programmes: GuideProgramme[] | null = null;
+            try {
+                const answer = await this.services.http.getJson(epgTableUrl(login, channel.streamId!));
+                if (answer.status >= 200 && answer.status < 300) programmes = this.window(parseEpgTable(answer.body), channel);
+            } catch (error) {
+                log.warn("AppModel", "event guide", error);
+            }
+            if (generation !== this.generation) return;
+            done++;
+            if (programmes) this.set({ grid: { ...this.state.grid, [channel.id]: programmes } });
+            else {
+                failed++;
+                this.gridAsked.delete(channel.id);
+            }
+            show();
+            if (done % 10 === 0) this.buildEvents();
+            await next();
+        };
+        await Promise.all([next(), next()]);
+        if (generation !== this.generation) return;
+        this.buildEvents();
+        const ok = failed < total;
+        this.set({ eventsLoad: { busy: false, result: { ok, text: ok ? t.refreshed : t.guideFailed } } });
+    }
+
+    /**
+     * Tune: the event's channels and every other one whose name, or whose guide now or within the hour, has its words,
+     * best first (English, known-good, listed, sharper), tried one at a time through the one connection.
+     */
+    async tuneEvent(title: string, channelIds: readonly string[] = []): Promise<void> {
+        const now = Date.now();
+        const words = tuneWords(title);
+        const listed = new Set(channelIds);
+        const names = new Map((this.state.lineup?.categories ?? []).map((c) => [c.id, c.name]));
+        const soon = now + 3600_000;
+        const candidates: TuneCandidate[] = [];
+        for (const c of this.shownChannels()) {
+            const nameMatch = hasWords(c.name, words);
+            const guideMatch =
+                listed.has(c.id) || (this.state.grid[c.id] ?? []).some((p) => p.start < soon && p.stop > now && hasWords(p.title, words));
+            if (!nameMatch && !guideMatch) continue;
+            const group = names.get(c.categoryId) ?? "";
+            candidates.push({
+                id: c.id,
+                name: c.name,
+                group,
+                region: regionTag(c.name, group),
+                nameMatch,
+                guideMatch,
+                ...this.health.of(c.id),
+            });
+        }
+        const ids = rankForTune(candidates, now).map((c) => c.id);
+        if (!ids.length) return this.say({ on: false, name: title, text: t.tuneNothing(title) });
+        this.set({ tune: { title, ids, at: 0, found: false, failed: false } });
+        await this.tryTune(0);
+    }
+
+    /** Tries the `at`th channel; past the last, says none played. */
+    private async tryTune(at: number): Promise<void> {
+        const tune = this.state.tune;
+        if (!tune) return;
+        this.clearTuneTimer();
+        const mine = ++this.tuneTry;
+        if (at >= tune.ids.length) {
+            await this.stream.stop();
+            if (mine === this.tuneTry) this.set({ tune: { ...tune, found: false, failed: true } });
+            return;
+        }
+        const channel = this.state.lineup?.channels.find((c) => c.id === tune.ids[at]);
+        if (!channel) return this.tryTune(at + 1);
+        this.set({ tune: { ...tune, at, found: false, failed: false }, channelId: channel.id, vod: null, route: "player" });
+        this.tuneTimer = setTimeout(() => {
+            if (mine === this.tuneTry) launchSafely("tune.wait", () => this.tuneFailed(channel.id));
+        }, this.state.prefs.tuneWaitS * 1000);
+        const opened = await this.stream.play(channel.url);
+        if (mine !== this.tuneTry) return;
+        if (!opened) await this.tuneFailed(channel.id);
+        else launchSafely("play.guide", () => this.loadGuide(channel));
+    }
+
+    /** What the player says, for auto-tune: a picture means this channel works; an error, or none in time, moves on. */
+    playback(state: "idle" | "starting" | "playing" | "buffering" | "failed"): void {
+        const tune = this.state.tune;
+        if (!tune || tune.failed) return;
+        const id = tune.ids[tune.at];
+        if (state === "playing" && !tune.found) {
+            this.clearTuneTimer();
+            this.set({ tune: { ...tune, found: true } });
+            launchSafely("tune.played", () => this.health.played(id));
+        } else if (state === "failed" && id === this.state.channelId) {
+            launchSafely("tune.failed", () => this.tuneFailed(id));
+        }
+    }
+
+    private async tuneFailed(id: string): Promise<void> {
+        const tune = this.state.tune;
+        if (!tune || tune.failed || tune.ids[tune.at] !== id) return;
+        this.clearTuneTimer();
+        await this.health.failed(id);
+        await this.tryTune(tune.at + 1);
+    }
+
+    /** Next stream: the channel played, but it's the wrong event; auto-tune carries on from the next. */
+    async nextStream(): Promise<void> {
+        const tune = this.state.tune;
+        if (tune && !tune.failed) await this.tryTune(tune.at + 1);
+    }
+
+    /** Try again, after none played: from the best one again. */
+    async retryTune(): Promise<void> {
+        const tune = this.state.tune;
+        if (tune) await this.tryTune(0);
+    }
+
+    private endTune(): void {
+        this.clearTuneTimer();
+        this.tuneTry++;
+        if (this.state.tune) this.set({ tune: null });
+    }
+
+    private clearTuneTimer(): void {
+        if (this.tuneTimer) clearTimeout(this.tuneTimer);
+        this.tuneTimer = null;
+    }
+
+    hasEventReminder(event: LiveEvent): boolean {
+        return !!event.channels[0] && this.reminders.has(event.channels[0], event.start);
+    }
+
+    /** The bell on an event that hasn't started: when it starts, Watch auto-tunes it. */
+    async toggleEventReminder(event: LiveEvent): Promise<void> {
+        const first = event.channels[0];
+        if (!first || !event.timeKnown) return;
+        const channel = this.state.lineup?.channels.find((c) => c.id === first);
+        const on = await this.reminders.toggle({
+            channelId: first,
+            channelName: channel?.name ?? "",
+            title: event.title,
+            start: event.start,
+            stop: event.stop,
+            tune: true,
+        });
+        this.say({ on, name: event.title, text: on ? t.reminderAdded(event.title) : t.reminderRemoved(event.title) });
+        this.scheduleReminders();
     }
 
     /** The site base the sign-in screen names ("www.tunedplayer.com/tv"). */
@@ -1080,7 +1402,12 @@ export class AppModel {
             gridLoad: { busy: false },
             reminders: [],
             due: null,
+            events: [],
+            eventsLoad: { busy: false },
+            follows: [],
+            tune: null,
         });
+        this.endTune();
         this.gridAsked.clear();
         this.linkGuideRead = false;
         if (this.reminderTimer) clearTimeout(this.reminderTimer);
@@ -1088,7 +1415,13 @@ export class AppModel {
         this.saved_playlists = [];
         this.keepFor(FIRST);
         this.showPlaylists(FIRST);
-        await Promise.all([this.favourites.load().catch(() => undefined), this.readProgress(), this.loadPrefs(), this.readReminders()]);
+        await Promise.all([
+            this.favourites.load().catch(() => undefined),
+            this.readProgress(),
+            this.loadPrefs(),
+            this.readReminders(),
+            this.health.load(),
+        ]);
         this.libraryRead = false;
     }
 }

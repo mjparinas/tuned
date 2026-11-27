@@ -182,6 +182,8 @@ export function LiveScreen({
               ? (lineup?.categories.find((c) => c.id === state.category)?.name ?? "")
               : t.allChannels;
     const nowTitle = (c: Channel) => state.guide[c.id]?.[0]?.title;
+    // Live events first, as Android's chip is, when the playlist has sports or pay-per-view channels.
+    const hasSports = React.useMemo(() => model.sportsChannels().length > 0, [model, shown]);
 
     return (
         <Screen>
@@ -212,6 +214,7 @@ export function LiveScreen({
             />
             <View style={{ flex: 1, flexDirection: "row", gap: dp(20), marginTop: dp(14) }}>
                 <View style={{ width: dp(230) }}>
+                    {hasSports ? <CategoryRow name={t.liveEvents} selected={false} onPress={() => void model.openEvents()} /> : null}
                     <FlatList
                         data={categories}
                         keyExtractor={(c) => c?.id ?? "all"}

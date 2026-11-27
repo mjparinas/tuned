@@ -738,3 +738,144 @@ describe("the guide grid, catch-up and reminders on Vega", () => {
         expect(model.state.gridLoad).toMatchObject({ busy: false, result: { ok: false } });
     });
 });
+
+describe("live events and auto-tune on Vega", () => {
+    const login = { kind: "xtream" as const, server: "http://tv.example", username: "u", password: "p" };
+    const b64 = (s: string) => Buffer.from(s).toString("base64");
+    const now = Date.now();
+    const sec = (ms: number) => String(Math.floor(ms / 1000));
+    const hour = 3600_000;
+    const asked: string[] = [];
+    const answers: Record<string, unknown> = {
+        account: { user_info: { auth: 1, status: "Active" }, server_info: { timezone: "UTC" } },
+        get_live_categories: [
+            { category_id: "1", category_name: "Sports" },
+            { category_id: "2", category_name: "PPV" },
+            { category_id: "3", category_name: "News" },
+        ],
+        get_live_streams: [
+            { stream_id: 10, name: "US| ESPN", category_id: "1" },
+            { stream_id: 11, name: "CA| TSN 1", category_id: "1" },
+            { stream_id: 12, name: "PPV 1: UFC 312", category_id: "2" },
+            { stream_id: 13, name: "ES| PPV 2: UFC 312", category_id: "2" },
+            { stream_id: 14, name: "CNN", category_id: "3" },
+        ],
+        get_vod_categories: [],
+        get_vod_streams: [],
+        get_series_categories: [],
+        get_series: [],
+    };
+    const listing = (title: string, from: number, to: number) => ({
+        title: b64(title),
+        start_timestamp: sec(from),
+        stop_timestamp: sec(to),
+    });
+    const tables: Record<string, unknown> = {
+        "10": {
+            epg_listings: [
+                listing("Leafs vs. Canucks", now - hour, now + 2 * hour),
+                listing("Raptors vs. Celtics", now + 3 * hour, now + 5 * hour),
+            ],
+        },
+        "11": { epg_listings: [listing("LIVE: Leafs vs. Canucks", now - hour, now + 2 * hour)] },
+    };
+    const xtream: Http = {
+        async getJson(url) {
+            const u = new URL(url);
+            const action = u.searchParams.get("action") ?? "account";
+            if (action === "get_simple_data_table") {
+                const id = u.searchParams.get("stream_id") ?? "";
+                asked.push(`table:${id}`);
+                return { status: 200, body: tables[id] ?? { epg_listings: [] } };
+            }
+            return { status: 200, body: answers[action] };
+        },
+        async postJson() {
+            return { status: 500, body: null };
+        },
+        async text(url) {
+            return JSON.stringify(answers[new URL(url).searchParams.get("action") ?? ""]);
+        },
+    };
+    const idOf = (model: AppModel, name: string) => model.state.lineup!.channels.find((c) => c.name === name)!.id;
+
+    it("lists events from the sports channels' guides and their names, reading only sports channels", async () => {
+        const model = new AppModel(services(xtream));
+        await model.useLogin(login);
+        asked.length = 0;
+        await model.openEvents();
+        expect(model.state.route).toBe("events");
+        expect(asked.sort()).toEqual(["table:10", "table:11", "table:12", "table:13"]);
+        expect(model.state.eventsLoad).toMatchObject({ busy: false, result: { ok: true } });
+        const [game, ufc, later] = model.state.events;
+        expect(game).toMatchObject({ title: "Leafs vs. Canucks", channels: [idOf(model, "US| ESPN"), idOf(model, "CA| TSN 1")] });
+        expect(ufc).toMatchObject({ title: "UFC 312", timeKnown: false });
+        expect(ufc.channels).toHaveLength(2);
+        expect(later.title).toBe("Raptors vs. Celtics");
+        // A second visit reads nothing again.
+        asked.length = 0;
+        await model.openEvents();
+        expect(asked).toEqual([]);
+    });
+
+    it("auto-tunes one channel at a time, best first, moving on when one fails and remembering what worked", async () => {
+        let open = 0;
+        let most = 0;
+        const opened: string[] = [];
+        const player = {
+            open: async (url: string) => {
+                opened.push(url);
+                most = Math.max(most, ++open);
+            },
+            close: async () => void open--,
+        };
+        const model = new AppModel({ ...services(xtream), player });
+        await model.useLogin(login);
+        await model.openEvents();
+        const ufc = model.state.events.find((e) => e.title === "UFC 312")!;
+        await model.tuneEvent(ufc.title, ufc.channels);
+        // No country first, then the Spanish one.
+        expect(model.state.tune).toMatchObject({ title: "UFC 312", at: 0, found: false });
+        expect(model.state.tune!.ids).toEqual([idOf(model, "PPV 1: UFC 312"), idOf(model, "ES| PPV 2: UFC 312")]);
+        model.playback("failed");
+        await until(() => model.state.tune?.at === 1);
+        await until(() => opened.length === 2);
+        model.playback("playing");
+        expect(model.state.tune).toMatchObject({ at: 1, found: true });
+        expect(model.health.of(idOf(model, "PPV 1: UFC 312")).deadAt).toBeGreaterThan(0);
+        expect(model.health.of(idOf(model, "ES| PPV 2: UFC 312")).okAt).toBeGreaterThan(0);
+        // Next stream past the last says none played and lets go of the stream.
+        await model.nextStream();
+        expect(model.state.tune).toMatchObject({ failed: true });
+        expect(open).toBe(0);
+        expect(most).toBe(1);
+        // Try again starts from the best one, which now goes last for having failed.
+        await model.retryTune();
+        expect(model.state.tune!.at).toBe(0);
+        await model.stopPlaying();
+        expect(model.state.tune).toBeNull();
+        expect(model.state.route).toBe("events");
+    });
+
+    it("a later event's bell sets a reminder that auto-tunes it, and nothing found says so", async () => {
+        const model = new AppModel(services(xtream));
+        await model.useLogin(login);
+        await model.openEvents();
+        const later = model.state.events.find((e) => e.title === "Raptors vs. Celtics")!;
+        await model.toggleEventReminder(later);
+        expect(model.hasEventReminder(later)).toBe(true);
+        expect(model.state.reminders[0]).toMatchObject({ title: "Raptors vs. Celtics", tune: true });
+        (model as unknown as { set(p: object): void }).set({ due: model.state.reminders[0] });
+        await model.watchDue();
+        expect(model.state.tune).toMatchObject({ title: "Raptors vs. Celtics" });
+        expect(model.state.tune!.ids[0]).toBe(idOf(model, "US| ESPN"));
+        await model.stopPlaying();
+        await model.tuneEvent("Bobsleigh Final");
+        expect(model.state.tune).toBeNull();
+        expect(model.state.notice?.text).toContain("Bobsleigh Final");
+        await model.setPrefs({ tuneWaitS: 12 });
+        expect(model.state.prefs.tuneWaitS).toBe(12);
+        await model.toggleEventReminder(later);
+        expect(model.hasEventReminder(later)).toBe(false);
+    });
+});

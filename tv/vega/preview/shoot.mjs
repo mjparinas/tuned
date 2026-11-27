@@ -38,6 +38,11 @@ const SCENES = [
     "settings-playlists",
     "live-guide",
     "reminder",
+    "events",
+    "events-reading",
+    "tune-trying",
+    "tune-found",
+    "tune-none",
 ];
 // A few scenes in other languages: German for long words, Arabic right to left, Chinese for another script.
 const LANGUAGE_SCENES = ["de-DE", "ar-EG", "zh-CN"].flatMap((lang) =>

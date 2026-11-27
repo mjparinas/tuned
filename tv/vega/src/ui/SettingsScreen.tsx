@@ -3,7 +3,7 @@
 // then says how it ended (docs/decisions/settings.md#every-button-says-it-did-something-melvin-2026-11-21).
 import * as React from "react";
 import { ScrollView, Text, View } from "react-native";
-import { hasPremium, premiumText, type AppModel, type State } from "../app/model";
+import { hasPremium, premiumText, TUNE_WAITS, type AppModel, type State } from "../app/model";
 import { ProgressLines } from "./LoadingScreen";
 import { Button, Focusable, Screen } from "./parts";
 import { TopBar } from "./TopBar";
@@ -27,6 +27,35 @@ const Line = ({ text, tone = "muted" }: { text: string; tone?: "muted" | "ok" | 
     const colour = tone === "ok" ? colours.teal : tone === "bad" ? colours.danger : colours.muted;
     return <Text style={{ color: colour, fontSize: dp(14), lineHeight: dp(21) }}>{text}</Text>;
 };
+
+/** A row with a few choices: OK moves to the next, and the one picked is said in words. */
+function Choice({ label, value, onPress }: { label: string; value: string; onPress: () => void }) {
+    const dp = useDp();
+    return (
+        <Focusable
+            onPress={onPress}
+            accessibilityRole="button"
+            accessibilityLabel={`${label}: ${value}`}
+            style={{
+                minHeight: dp(48),
+                borderRadius: dp(14),
+                paddingHorizontal: dp(14),
+                paddingVertical: dp(10),
+                backgroundColor: colours.card2,
+                flexDirection: "row",
+                alignItems: "center",
+            }}
+            focusedStyle={{ backgroundColor: colours.line }}
+        >
+            {() => (
+                <View style={{ flexDirection: "row", alignItems: "center", gap: dp(14), flex: 1 }}>
+                    <Text style={{ flex: 1, color: colours.text, fontSize: dp(15), fontWeight: "600" }}>{label}</Text>
+                    <Text style={{ color: colours.primary, fontSize: dp(15), fontWeight: "600" }}>{value}</Text>
+                </View>
+            )}
+        </Focusable>
+    );
+}
 
 /** A switch row: OK turns it on or off, and the state is said in words as well as colour (accessibility.md). */
 function Toggle({ label, hint, on, onChange }: { label: string; hint: string; on: boolean; onChange: (on: boolean) => void }) {
@@ -141,6 +170,16 @@ export function SettingsScreen({ model, state }: { model: AppModel; state: State
                         hint={t.hide247Hint}
                         on={state.prefs.hide247}
                         onChange={(hide247) => void model.setPrefs({ hide247 })}
+                    />
+                </Section>
+                <Section title={t.autoTune}>
+                    <Choice
+                        label={t.tuneWait}
+                        value={t.seconds(state.prefs.tuneWaitS)}
+                        onPress={() => {
+                            const at = TUNE_WAITS.indexOf(state.prefs.tuneWaitS as (typeof TUNE_WAITS)[number]);
+                            void model.setPrefs({ tuneWaitS: TUNE_WAITS[(at + 1) % TUNE_WAITS.length] });
+                        }}
                     />
                 </Section>
                 <Section title={t.playlistTitle}>
