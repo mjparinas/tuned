@@ -143,7 +143,7 @@ export function adminApi(deps) {
         traffic: async (_r, q) => json({ days: periodOf(q.get("days")), ...(await data.traffic(periodOf(q.get("days")))) }),
         acquisition: async (_r, q) => json({ days: periodOf(q.get("days")), ...(await data.acquisition(periodOf(q.get("days")))) }),
         funnel: async (_r, q) => {
-            const build = ["github", "play"].includes(q.get("build")) ? q.get("build") : null;
+            const build = ["github", "play", "amazon", "vega", "tizen"].includes(q.get("build")) ? q.get("build") : null;
             return json({ days: periodOf(q.get("days")), build, ...(await data.funnels(periodOf(q.get("days")), build)) });
         },
         devices: async (_r, q) => json({ days: periodOf(q.get("days")), ...(await data.devicesData(periodOf(q.get("days")))) }),

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="settings_backup_copies">Zu einer Ersatzkopie wechseln</string>
-    <string name="settings_backup_copies_summary">Wenn ein Sender ausfällt, eine andere Kopie aus deiner Liste abspielen, etwa ESPN FHD für ESPN HD</string>
+    <string name="settings_backup_copies_summary">Wenn ein Sender ausfällt, eine andere Kopie aus deiner Liste abspielen, etwa Lakeshore FHD für Lakeshore HD</string>
     <string name="player_trying_copy">Funktioniert nicht. Ersatzkopie wird versucht (%1$d von %2$d)…</string>
     <string name="player_copy_playing">Gewechselt zu %1$s</string>
     <string name="player_no_copy_works">Dieser Sender und seine Ersatzkopien funktionieren gerade nicht</string>

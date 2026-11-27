@@ -5,6 +5,8 @@ date: 2026-11-19
 kind: guide
 ---
 
+<figure class="cover"><img src="/blog/img/posts/premium-guide.jpg" alt="Six tiles of what Tuned Premium adds: pause and rewind, alerts, profiles, many playlists, three devices, themes and more" width="1200" height="760"></figure>
+
 Tuned is free, with no ads, ever. Premium unlocks the power features. Here's exactly what's in each, and how devices work.
 
 ## Free, for everyone
@@ -28,7 +30,7 @@ Tuned is free, with no ads, ever. Premium unlocks the power features. Here's exa
 - **More than three downloads** at a time
 - **Following events** and their alerts
 - **A Tuned account** that backs up your playlists, settings and profiles and keeps your devices the same, plus the website's Channels and guide and Watch pages
-- **Trakt and Simkl** scrobbling (and importing Trakt's watched history into Tuned)
+- **Trakt and Simkl** scrobbling, and importing what you've watched there into Tuned
 - **Themes and accent colours** other than the default
 
 ## What it costs

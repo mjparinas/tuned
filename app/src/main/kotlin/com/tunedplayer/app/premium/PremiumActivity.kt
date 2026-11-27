@@ -45,6 +45,7 @@ import com.tunedplayer.app.ui.common.BackTopBar
 import com.tunedplayer.app.ui.common.LocalTvCalibration
 import com.tunedplayer.app.ui.common.TvSafeArea
 import com.tunedplayer.app.ui.common.tvCalibration
+import com.tunedplayer.app.ui.settings.TunedAccountRows
 import com.tunedplayer.app.ui.theme.TunedTheme
 
 /**
@@ -83,7 +84,7 @@ private fun PremiumScreen(
     var note by remember { mutableStateOf<Int?>(null) }
     var restoring by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
-    LaunchedEffect(unlocked) { if (!unlocked && !purchased) offers = premium.store.offers() }
+    LaunchedEffect(unlocked) { if (!unlocked && !purchased && Premium.SOLD_IN_APP) offers = premium.store.offers() }
     Scaffold(topBar = { BackTopBar(stringResource(R.string.premium_title), onBack) }) { padding ->
         Column(
             Modifier
@@ -101,7 +102,9 @@ private fun PremiumScreen(
             Spacer(Modifier.height(8.dp))
             // Bought, but every seat is taken or this device gave its own up: the devices list, not the prices.
             PremiumDevices(premium, activity)
-            if (!unlocked && !purchased) {
+            // Fire TV sells nothing in the app (docs/decisions/tv.md#fire-tv): Premium comes with the Tuned account.
+            if (!unlocked && !purchased && !Premium.SOLD_IN_APP) AccountOnly(premium)
+            if (!unlocked && !purchased && Premium.SOLD_IN_APP) {
                 val list = offers
                 when {
                     list == null -> {
@@ -172,6 +175,55 @@ private fun offerLabel(offer: Offer): String = when {
     !offer.yearly -> stringResource(R.string.premium_buy_lifetime, offer.price)
     offer.trialDays > 0 -> pluralStringResource(R.plurals.premium_try_free, offer.trialDays, offer.trialDays, offer.price)
     else -> stringResource(R.string.premium_buy_yearly, offer.price)
+}
+
+/**
+ * The Premium screen in the Fire TV build: no prices or buy buttons, only the Tuned account's sign-in (which brings
+ * Premium bought anywhere with it) and Check again, which asks the account with a spinner while it does.
+ */
+@Composable
+private fun AccountOnly(premium: Premium) {
+    var checking by remember { mutableStateOf(false) }
+    var note by remember { mutableStateOf<Int?>(null) }
+    val scope = rememberCoroutineScope()
+    AccountOnlyOffer(checking, note, account = { TunedAccountRows() }) {
+        if (!checking) {
+            checking = true
+            note = null
+            scope.launchSafely(TAG, onError = {
+                checking = false
+                note = R.string.premium_account_unreachable
+            }) {
+                note =
+                    when (premium.restore()) {
+                        true -> null
+                        false -> R.string.premium_account_none
+                        null -> R.string.premium_account_unreachable
+                    }
+                checking = false
+            }
+        }
+    }
+}
+
+/** [AccountOnly] as drawn: the lead, the account's rows ([account]), Check again (a spinner while [checking]) and [note]. */
+@Composable
+internal fun AccountOnlyOffer(
+    checking: Boolean,
+    note: Int?,
+    account: @Composable () -> Unit,
+    onCheck: () -> Unit,
+) {
+    Text(stringResource(R.string.premium_account_only), style = MaterialTheme.typography.bodyMedium)
+    account()
+    TextButton(onClick = onCheck, modifier = Modifier.fillMaxWidth()) {
+        if (checking) {
+            CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp)
+        } else {
+            Text(stringResource(R.string.premium_account_check))
+        }
+    }
+    note?.let { Text(stringResource(it), style = MaterialTheme.typography.bodyMedium) }
 }
 
 @Composable

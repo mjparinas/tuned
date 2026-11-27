@@ -6,6 +6,8 @@ date: 2026-11-19
 kind: guide
 ---
 
+<figure class="cover"><img src="/blog/img/posts/subtitles.jpg" alt="Tuned's Captions settings with a live preview on a phone and a TV" width="1200" height="760"></figure>
+
 ## Turn captions on
 
 Tap the screen while something plays and tap **CC**. It changes captions for that video only. To have them on by default, and pick the language, go to **Settings › Captions**.
@@ -39,3 +41,5 @@ Subtitles found with subtitle search go to a Chromecast with the video. See [cas
 ## Audio language
 
 Not subtitles, but close: **Settings › Playback › Preferred audio language** picks a matching sound track when a stream has one, and the player's settings button switches tracks while you watch.
+
+Captions, TalkBack, large text and the remote: [accessible IPTV](/blog/guides/accessible-iptv/).

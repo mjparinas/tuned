@@ -6,6 +6,8 @@ date: 2026-11-19
 kind: guide
 ---
 
+<figure class="cover"><img src="/blog/img/posts/catch-up.jpg" alt="Tuned's TV guide on a phone and the guide grid on a TV" width="1200" height="760"></figure>
+
 Catch-up (also called TV archive or timeshift) lets you play a programme that has already aired. Your provider records some channels for a few days, and Tuned shows a replay button on anything still in that window.
 
 ## Which channels have catch-up?

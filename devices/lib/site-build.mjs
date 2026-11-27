@@ -69,6 +69,16 @@ export function markdown(md) {
             i++;
             continue;
         }
+        // A fenced code block (```), kept exactly as written and escaped. It scrolls sideways on a phone, so, like a
+        // table, it can take focus and has a name, letting a keyboard scroll it too (WCAG 2.1.1).
+        if (/^```/.test(line)) {
+            const code = [];
+            i++;
+            while (i < lines.length && !/^```/.test(lines[i])) code.push(lines[i++]);
+            i++;
+            out.push(`<pre tabindex="0" role="region" aria-label="Code"><code>${esc(code.join("\n"))}</code></pre>`);
+            continue;
+        }
         if (/^\s*</.test(line)) {
             while (i < lines.length && !isBlank(lines[i])) out.push(lines[i++]);
             continue;
@@ -189,6 +199,7 @@ export const INDEX_PREVIEW = {
     guide: {
         limit: 3,
         prefer: [
+            "guides/set-up-iptv-on-tv.md",
             "guides/add-xtream-codes-playlist.md",
             "guides/add-m3u-playlist.md",
             "guides/add-mac-portal.md",
@@ -201,7 +212,7 @@ export const INDEX_PREVIEW = {
         limit: 3,
         prefer: ["vs/tivimate.md", "vs/iptv-smarters-pro.md", "vs/ott-navigator.md", "vs/kodi.md", "vs/iptv-pro.md", "vs/uhf.md"],
     },
-    roundup: { limit: 2, prefer: [] },
+    roundup: { limit: 4, prefer: [] },
 };
 
 /** Posts for one kind on the blog index: preferred paths first, then by date, capped. */
@@ -539,6 +550,51 @@ ${siteFooter(site)}
 `;
 }
 
+/**
+ * Every post's top picture when its Markdown has none (Melvin, 2026-11-27: "ensure that every post has a hero image",
+ * "blog previews should ALWAYS have an image showing"): release posts (release.yml writes them) share What's new's
+ * picture, and any other post the blog's. Both are drawn like the others, from `devices/site/blog-images.mjs`.
+ */
+export const DEFAULT_COVERS = {
+    release: {
+        src: "/blog/img/posts/whats-new.jpg",
+        alt: "What's new in Tuned: Live TV on a phone and the TV guide on a TV, beside New, Faster and Fixed",
+        width: 1200,
+        height: 760,
+    },
+    other: {
+        src: "/blog/img/posts/blog.jpg",
+        alt: "Tuned, the IPTV player for your own playlists, showing Live TV on a TV and the guide on a phone",
+        width: 1200,
+        height: 760,
+    },
+};
+
+/**
+ * A post's own top picture (`<figure class="cover">` first in its Markdown; docs/decisions/website.md › The blog), as
+ * `{ src, width, height, alt }`, or null when the Markdown has none.
+ */
+export function coverOf(post) {
+    const m = /<figure class="cover"><img src="([^"]+)" alt="([^"]*)" width="(\d+)" height="(\d+)"/.exec(post.html ?? "");
+    if (!m) return null;
+    const alt = m[2]
+        .replace(/&quot;/g, '"')
+        .replace(/&#39;/g, "'")
+        .replace(/&lt;/g, "<")
+        .replace(/&gt;/g, ">")
+        .replace(/&amp;/g, "&");
+    return { src: m[1], alt, width: Number(m[3]), height: Number(m[4]) };
+}
+
+/**
+ * The picture a post's page opens with, its card shows and shared links show (`og:image`): its own cover, or the
+ * default for its kind, so it is never missing.
+ */
+export const heroOf = (post) => coverOf(post) ?? (post.kind === "release" ? DEFAULT_COVERS.release : DEFAULT_COVERS.other);
+
+const coverFigure = (c) =>
+    `<figure class="cover"><img src="${c.src}" alt="${esc(c.alt)}" width="${c.width}" height="${c.height}"></figure>`;
+
 /** A card linking to a post. */
 // `level` is the card's heading level: 3 under a section's h2, 2 straight under a folder page's h1, so headings never
 // skip a level (WCAG 1.3.1, 2026-11-20 audit). `showKind` is off inside a kind section (the h2 already names it).
@@ -546,7 +602,10 @@ export const postCard = (p, level = 3, { showKind = true } = {}) => {
     const blurb = cardBlurb(p);
     const kind = showKind ? `<span class="kind">${esc(kindTitle(p.kind))}</span>` : "";
     const body = blurb ? `<p>${esc(blurb)}</p>` : p.kind === "release" ? "" : `<p>${esc(p.description)}</p>`;
-    return `<li class="post-card"><a href="${p.url}">${kind}<h${level}>${esc(p.title)}</h${level}>${body}<time datetime="${p.date}">${longDate(p.date)}</time></a></li>`;
+    // The picture repeats what the heading says, so it is hidden from screen readers (alt="").
+    const hero = heroOf(p);
+    const thumb = `<img class="thumb" src="${hero.src}" alt="" width="${hero.width}" height="${hero.height}" loading="lazy">`;
+    return `<li class="post-card"><a href="${p.url}">${thumb}${kind}<h${level}>${esc(p.title)}</h${level}>${body}<time datetime="${p.date}">${longDate(p.date)}</time></a></li>`;
 };
 
 /** A post's own page. */
@@ -564,13 +623,14 @@ export function postPage(site, post, { latestVersion, related = [] }) {
 <h1>${esc(post.title)}</h1>
 <p class="meta"><time datetime="${post.date}">${longDate(post.date)}</time>${post.updated && post.updated !== post.date ? ` · Updated <time datetime="${post.updated}">${longDate(post.updated)}</time>` : ""}</p>
 <div class="prose">
-${post.html}
+${coverOf(post) ? "" : `${coverFigure(heroOf(post))}\n`}${post.html}
 </div>
 ${ctaCard(site, "post", latestVersion)}
 ${related.length ? `<section aria-labelledby="more"><h2 id="more" class="section-title">More from the blog</h2><ul class="post-grid">${related.map((p) => postCard(p)).join("\n")}</ul></section>` : ""}
 </article>`;
-    const firstImage = /<img src="([^"]+)"/.exec(post.html)?.[1];
+    const hero = heroOf(post);
     return layout(site, {
+        image: hero,
         title: postTitle(post),
         description: post.description,
         path: post.url,
@@ -589,7 +649,7 @@ ${related.length ? `<section aria-labelledby="more"><h2 id="more" class="section
                 inLanguage: "en-CA",
                 url: `${site.url}${post.url}`,
                 mainEntityOfPage: { "@type": "WebPage", "@id": `${site.url}${post.url}` },
-                image: `${site.url}${firstImage ?? OG_IMAGE.src}`,
+                image: `${site.url}${hero.src}`,
                 articleSection: section?.title,
                 isPartOf: { "@type": "Blog", name: `${site.name} blog`, url: `${site.url}/blog/` },
                 author: { "@type": "Organization", name: site.name, url: site.url },

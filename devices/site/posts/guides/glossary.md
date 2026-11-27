@@ -5,6 +5,8 @@ date: 2026-11-19
 kind: guide
 ---
 
+<figure class="cover"><img src="/blog/img/posts/glossary.jpg" alt="Tuned's mark beside the words this glossary explains: EPG, M3U, Xtream, catch-up, MAC portal and user agent" width="1200" height="760"></figure>
+
 IPTV set-up comes with a lot of jargon. Here's what each term means, and where it shows up in Tuned.
 
 ## Playlists and logins
@@ -23,7 +25,7 @@ IPTV set-up comes with a lot of jargon. Here's what each term means, and where i
 
 **MAC address.** A hardware ID written as six pairs of characters, like `00:1A:79:12:34:56`. For a MAC portal, it's the one your provider registered.
 
-**Connections.** How many streams your account may play at once. Tuned always uses one.
+**Connections.** How many streams your account may play at once. Tuned always uses one. See [connections explained](/blog/guides/iptv-connections-explained/).
 
 ## The guide
 
@@ -62,3 +64,5 @@ IPTV set-up comes with a lot of jargon. Here's what each term means, and where i
 **Picture-in-picture.** Android shrinking the video you're watching into a small window when you leave the app.
 
 **Frame rate matching.** Switching the TV's refresh rate to the video's (24, 25, 50 or 60 frames a second) so motion looks smooth.
+
+How all of these fit together: [how IPTV works, from your provider to your screen](/blog/guides/how-iptv-works/).

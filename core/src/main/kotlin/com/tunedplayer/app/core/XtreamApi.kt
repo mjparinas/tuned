@@ -1,7 +1,5 @@
 package com.tunedplayer.app.core
 
-import java.net.URLEncoder
-
 /**
  * Reading an Xtream server through its JSON API (`player_api.php`) instead of the `get.php` M3U download. Some
  * providers turn the M3U download off, or leave series out of it, while their API answers; Tuned then reads the
@@ -132,5 +130,5 @@ object XtreamApi {
 
     private fun String?.orIfBlank(fallback: String) = this?.takeIf { it.isNotBlank() } ?: fallback
 
-    private fun enc(value: String): String = URLEncoder.encode(value, "UTF-8")
+    private fun enc(value: String): String = Platform.formEncode(value)
 }

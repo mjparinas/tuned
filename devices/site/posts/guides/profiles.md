@@ -5,6 +5,8 @@ date: 2026-11-19
 kind: guide
 ---
 
+<figure class="cover"><img src="/blog/img/posts/profiles.jpg" alt="Tuned's Who's watching screen with named and kids profiles on a phone and a TV" width="1200" height="760"></figure>
+
 Profiles let everyone in the house keep their own **favourites, Continue Watching, watched marks, watch later and new-episode markers**, while sharing the same playlist, settings and downloads.
 
 ## Add a profile
@@ -41,3 +43,5 @@ The same rules apply everywhere a channel can be opened: widgets, Android TV hom
 With a [Tuned account](/blog/guides/premium/), profiles, their pictures, PINs and everything they keep travel in the backup, so a new TV has the same profiles as your phone.
 
 In the Google Play version, more than one profile and the twelve Premium pictures are part of [Premium](/blog/guides/premium/).
+
+More on keeping a playlist family-friendly: [parental controls for IPTV](/blog/guides/parental-controls-iptv/).

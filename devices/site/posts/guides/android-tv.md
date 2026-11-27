@@ -4,7 +4,10 @@ seoTitle: "Tuned IPTV player on Android TV: set-up and remote tips"
 description: Install Tuned on an Android TV, sign in with your phone, and get the most out of the remote, from channel numbers to flip back.
 date: 2026-11-19
 kind: guide
+updated: 2026-11-26
 ---
+
+<figure class="cover"><img src="/blog/img/posts/android-tv.jpg" alt="Tuned's Live TV on an Android TV, with the channel list, filters and the Show the TV guide grid button" width="1200" height="760"></figure>
 
 Tuned is one app for phones, tablets and TVs. On an Android TV it shows its own banner on the home screen, fits inside the TV's safe area, and works with the remote alone. It runs on Android 8.0 and newer.
 
@@ -18,6 +21,8 @@ Most TVs have no web browser, so use the free **Downloader** app:
 
 Tuned then keeps itself up to date.
 
+<figure><img src="/blog/img/guides/playlist-welcome-tv.webp" alt="Tuned's welcome screen on a TV, with Restore from your Tuned account and the ways to add a playlist" width="640" height="360" loading="lazy"><figcaption>Tuned's first screen on a TV.</figcaption></figure>
+
 ## Sign in without typing
 
 On the TV, Tuned's first card is **Sign in with your phone**. Scan the QR code and fill in your playlist on your phone, or send everything from Tuned on your phone. Step by step: [sign in on a TV with your phone](/blog/guides/sign-in-on-tv-with-phone/).
@@ -29,6 +34,8 @@ On a TV, Live TV's groups (Live events, Filters, Favourites, your lists, Recent 
 <img src="/blog/img/guides/live-tv-tv.webp" alt="Tuned's Live TV on a TV, with the side rail, channel chips across the top, the channel list and a details panel" width="640" height="360" loading="lazy">
 
 The side rail has Live TV, Movies, Shows, Search, Settings and your profile (no Downloads on a TV). Live TV has a button for the [grid guide](/blog/guides/tv-guide-epg/). There are no three-dot menus: every action is a button the remote can reach. Settings › Appearance › **Calibrate screen** moves and stretches the overscan margin so nothing is cropped on your set.
+
+<figure><img src="/blog/img/guides/browse-guide-grid-tv.webp" alt="Tuned's TV guide grid on a TV, with channels down the side and times across the top" width="640" height="360" loading="lazy"><figcaption>The grid guide, one press away.</figcaption></figure>
 
 ## The remote in the player
 
@@ -56,8 +63,12 @@ Holding a channel button changes channel once, so you never flip through a strin
 - **Start on the last channel** (Settings › Channels and lists) opens straight into the channel you watched last, like a cable box.
 - **Settings › Appearance › Lighter mode** helps cheap TV boxes with little memory. Automatic turns it on by itself when needed.
 
+<figure><img src="/blog/img/guides/settings-tv-calibrate.webp" alt="Calibrate screen on a TV, with marks in each corner and sliders to move and stretch the picture" width="640" height="360" loading="lazy"><figcaption>Settings › Appearance › Calibrate screen.</figcaption></figure>
+
 ## On the TV's home screen
 
 Films and episodes you're partway through show in the system's Continue watching row, and your favourite channels get a Tuned row of their own.
 
 More: [Google TV](/blog/guides/google-tv/), [Nvidia Shield](/blog/guides/nvidia-shield/).
+
+Smoother sport, sound in sync and nothing cut off: [the best picture and sound on Android TV](/blog/guides/best-picture-and-sound-android-tv/).

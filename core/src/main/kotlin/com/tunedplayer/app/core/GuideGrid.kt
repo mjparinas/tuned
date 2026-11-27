@@ -13,7 +13,7 @@ object GuideGrid {
     const val BLOCK = 6 * HOUR
 
     /** The half hour [time] falls in, where the timeline's ticks are. */
-    fun slotStart(time: Long): Long = Math.floorDiv(time, SLOT) * SLOT
+    fun slotStart(time: Long): Long = time.floorDiv(SLOT) * SLOT
 
     /** Half-hour ticks from the one at or before [from] up to [to]. */
     fun ticks(
@@ -28,7 +28,7 @@ object GuideGrid {
     fun blocks(
         from: Long,
         to: Long,
-    ): LongRange = Math.floorDiv(from, BLOCK)..Math.floorDiv(maxOf(from, to - 1), BLOCK)
+    ): LongRange = from.floorDiv(BLOCK)..maxOf(from, to - 1).floorDiv(BLOCK)
 
     /**
      * How far back the grid scrolls: an hour (the guide keeps no more), or as many days as the longest catch-up a

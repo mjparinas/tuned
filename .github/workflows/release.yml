@@ -4,12 +4,13 @@ name: Release
 # GITHUB_TOKEN doesn't fire `push`) and on demand (Actions › Release › Run workflow, from any branch):
 #   - builds a signed APK and publishes it as a GitHub release tagged v<version> (for example v1.2.0). Installed
 #     copies find it and offer to update (docs/decisions/updates.md);
-#   - builds a signed App Bundle and, once PLAY_SERVICE_ACCOUNT_JSON exists, uploads it to the Play internal track.
+#   - builds a signed App Bundle and, once PLAY_SERVICE_ACCOUNT_JSON exists, uploads it to the Play internal track;
+#   - builds a signed Fire TV APK for the Amazon Appstore, kept as the tuned-amazon-apk artifact.
 # Version name: the last release's version, bumped by the commits since (scripts/next-version.mjs); version code: made
 # from the version (1.2.3 -> 1002003), so every release is newer than the last for Android and the in-app updater. Skips itself with a notice until the
 # signing secrets exist.
 #
-# The APK and the bundle build side by side on two runners (2026-11-21, Melvin: "Is it possible to speed up ci without
+# The APKs and the bundle build side by side, one runner each (2026-11-21, Melvin: "Is it possible to speed up ci without
 # affecting safety"). On one runner the two variants' Kotlin, release lint and R8 shared 4 cores and took about 13
 # minutes. They are the same signed builds with the same checks (release lint included) as before. The version is
 # worked out once, before either starts, and nothing is published (GitHub release, blog post, Play) until both have
@@ -79,6 +80,11 @@ jobs:
             variant: playRelease
             task: :app:bundlePlayRelease
             output: app/build/outputs/bundle/playRelease/app-play-release.aab
+          # Fire TV (docs/decisions/tv.md#fire-tv): uploaded to the Amazon Appstore by hand from the artifact.
+          - name: Amazon APK
+            variant: amazonRelease
+            task: :app:assembleAmazonRelease
+            output: app/build/outputs/apk/amazon/release/app-amazon-release.apk
     steps:
       - uses: actions/checkout@v7
       - uses: ./.github/actions/setup-android
@@ -174,11 +180,18 @@ jobs:
           path: |
             app/build/outputs/mapping/githubRelease/mapping.txt
             app/build/outputs/mapping/playRelease/mapping.txt
+            app/build/outputs/mapping/amazonRelease/mapping.txt
           retention-days: 90
       - uses: actions/upload-artifact@v7
         with:
           name: tuned-release-aab
           path: app/build/outputs/bundle/playRelease/app-play-release.aab
+          retention-days: 30
+      - uses: actions/upload-artifact@v7
+        # The Fire TV build for the Amazon Appstore's Developer Console, which has no upload API worth a secret yet.
+        with:
+          name: tuned-amazon-apk
+          path: app/build/outputs/apk/amazon/release/app-amazon-release.apk
           retention-days: 30
       - name: Upload to Play (internal)
         if: env.HAS_PLAY == 'true'

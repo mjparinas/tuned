@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="settings_backup_copies">Trocar para uma cópia reserva</string>
-    <string name="settings_backup_copies_summary">Quando um canal para de funcionar, toca outra cópia dele da sua lista, como ESPN FHD no lugar de ESPN HD</string>
+    <string name="settings_backup_copies_summary">Quando um canal para de funcionar, toca outra cópia dele da sua lista, como Lakeshore FHD no lugar de Lakeshore HD</string>
     <string name="player_trying_copy">Não está funcionando. Tentando uma cópia reserva (%1$d de %2$d)…</string>
     <string name="player_copy_playing">Trocado para %1$s</string>
     <string name="player_no_copy_works">Este canal e as cópias reserva não estão funcionando agora</string>

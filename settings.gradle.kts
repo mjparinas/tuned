@@ -17,6 +17,19 @@ dependencyResolutionManagement {
     repositories {
         google()
         mavenCentral()
+        // Node and Yarn for the TV apps' core (tv/core, Kotlin/JS); build.gradle.kts stops the plugin adding these itself.
+        ivy("https://nodejs.org/dist") {
+            name = "Node.js"
+            patternLayout { artifact("v[revision]/[artifact](-v[revision]-[classifier]).[ext]") }
+            metadataSources { artifact() }
+            content { includeModule("org.nodejs", "node") }
+        }
+        ivy("https://github.com/yarnpkg/yarn/releases/download") {
+            name = "Yarn"
+            patternLayout { artifact("v[revision]/[artifact](-v[revision]).[ext]") }
+            metadataSources { artifact() }
+            content { includeModule("com.yarnpkg", "yarn") }
+        }
     }
 }
 
@@ -33,3 +46,7 @@ include(":baselineprofile")
 // The device smoke test CI runs on an emulator, and the fake provider both device tests use.
 include(":smoketest")
 include(":fakeprovider")
+// The TV apps' shared core: :core's plain-Kotlin rules compiled to JavaScript for the Samsung (Tizen) and Vega OS apps
+// (tv/, docs/decisions/tizen.md). Android never depends on it.
+include(":tvcore")
+project(":tvcore").projectDir = file("tv/core")

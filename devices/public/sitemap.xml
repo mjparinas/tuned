@@ -1,14 +1,42 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url><loc>https://www.tunedplayer.com/</loc><lastmod>2026-11-26</lastmod><priority>1.0</priority></url>
-  <url><loc>https://www.tunedplayer.com/blog/</loc><lastmod>2026-11-26</lastmod><priority>0.8</priority></url>
+  <url><loc>https://www.tunedplayer.com/</loc><lastmod>2026-11-27</lastmod><priority>1.0</priority></url>
+  <url><loc>https://www.tunedplayer.com/blog/</loc><lastmod>2026-11-27</lastmod><priority>0.8</priority></url>
   <url><loc>https://www.tunedplayer.com/privacy/</loc><priority>0.3</priority></url>
-  <url><loc>https://www.tunedplayer.com/blog/guides/</loc><lastmod>2026-11-22</lastmod><priority>0.6</priority></url>
-  <url><loc>https://www.tunedplayer.com/blog/roundups/</loc><lastmod>2026-11-19</lastmod><priority>0.6</priority></url>
+  <url><loc>https://www.tunedplayer.com/blog/guides/</loc><lastmod>2026-11-27</lastmod><priority>0.6</priority></url>
+  <url><loc>https://www.tunedplayer.com/blog/roundups/</loc><lastmod>2026-11-27</lastmod><priority>0.6</priority></url>
   <url><loc>https://www.tunedplayer.com/blog/vs/</loc><lastmod>2026-11-19</lastmod><priority>0.6</priority></url>
-  <url><loc>https://www.tunedplayer.com/blog/whats-new/</loc><lastmod>2026-11-26</lastmod><priority>0.6</priority></url>
+  <url><loc>https://www.tunedplayer.com/blog/whats-new/</loc><lastmod>2026-11-27</lastmod><priority>0.6</priority></url>
+  <url><loc>https://www.tunedplayer.com/blog/whats-new/tuned-2-18-0/</loc><lastmod>2026-11-27</lastmod><priority>0.5</priority></url>
+  <url><loc>https://www.tunedplayer.com/blog/guides/accessible-iptv/</loc><lastmod>2026-11-27</lastmod><priority>0.7</priority></url>
+  <url><loc>https://www.tunedplayer.com/blog/guides/how-iptv-tv-guides-work/</loc><lastmod>2026-11-27</lastmod><priority>0.7</priority></url>
+  <url><loc>https://www.tunedplayer.com/blog/guides/how-iptv-works/</loc><lastmod>2026-11-27</lastmod><priority>0.7</priority></url>
+  <url><loc>https://www.tunedplayer.com/blog/guides/iptv-connections-explained/</loc><lastmod>2026-11-27</lastmod><priority>0.7</priority></url>
+  <url><loc>https://www.tunedplayer.com/blog/guides/how-much-data-does-iptv-use/</loc><lastmod>2026-11-27</lastmod><priority>0.7</priority></url>
+  <url><loc>https://www.tunedplayer.com/blog/guides/watch-iptv-on-samsung-lg-tv/</loc><lastmod>2026-11-27</lastmod><priority>0.7</priority></url>
+  <url><loc>https://www.tunedplayer.com/blog/guides/iptv-not-working/</loc><lastmod>2026-11-27</lastmod><priority>0.7</priority></url>
+  <url><loc>https://www.tunedplayer.com/blog/guides/is-my-iptv-app-safe/</loc><lastmod>2026-11-27</lastmod><priority>0.7</priority></url>
+  <url><loc>https://www.tunedplayer.com/blog/guides/m3u-vs-xtream-codes-vs-mac-portal/</loc><lastmod>2026-11-27</lastmod><priority>0.7</priority></url>
+  <url><loc>https://www.tunedplayer.com/blog/guides/move-iptv-to-a-new-phone-or-tv/</loc><lastmod>2026-11-27</lastmod><priority>0.7</priority></url>
+  <url><loc>https://www.tunedplayer.com/blog/guides/parental-controls-iptv/</loc><lastmod>2026-11-27</lastmod><priority>0.7</priority></url>
+  <url><loc>https://www.tunedplayer.com/blog/guides/plex-jellyfin-emby-and-iptv/</loc><lastmod>2026-11-27</lastmod><priority>0.7</priority></url>
+  <url><loc>https://www.tunedplayer.com/blog/guides/organize-a-huge-iptv-playlist/</loc><lastmod>2026-11-27</lastmod><priority>0.7</priority></url>
+  <url><loc>https://www.tunedplayer.com/blog/roundups/best-free-iptv-player-no-ads/</loc><lastmod>2026-11-27</lastmod><priority>0.7</priority></url>
+  <url><loc>https://www.tunedplayer.com/blog/roundups/iptv-smarters-alternatives/</loc><lastmod>2026-11-27</lastmod><priority>0.7</priority></url>
+  <url><loc>https://www.tunedplayer.com/blog/guides/best-picture-and-sound-android-tv/</loc><lastmod>2026-11-27</lastmod><priority>0.7</priority></url>
+  <url><loc>https://www.tunedplayer.com/blog/guides/trakt-and-simkl/</loc><lastmod>2026-11-27</lastmod><priority>0.7</priority></url>
+  <url><loc>https://www.tunedplayer.com/blog/guides/watch-iptv-offline/</loc><lastmod>2026-11-27</lastmod><priority>0.7</priority></url>
   <url><loc>https://www.tunedplayer.com/blog/whats-new/tuned-2-17-0/</loc><lastmod>2026-11-26</lastmod><priority>0.5</priority></url>
   <url><loc>https://www.tunedplayer.com/blog/whats-new/tuned-2-16-1/</loc><lastmod>2026-11-26</lastmod><priority>0.5</priority></url>
+  <url><loc>https://www.tunedplayer.com/blog/guides/fire-tv/</loc><lastmod>2026-11-26</lastmod><priority>0.7</priority></url>
+  <url><loc>https://www.tunedplayer.com/blog/guides/set-up-iptv-on-tv/</loc><lastmod>2026-11-26</lastmod><priority>0.7</priority></url>
+  <url><loc>https://www.tunedplayer.com/blog/guides/is-iptv-legal/</loc><lastmod>2026-11-26</lastmod><priority>0.7</priority></url>
+  <url><loc>https://www.tunedplayer.com/blog/guides/never-miss-a-game/</loc><lastmod>2026-11-26</lastmod><priority>0.7</priority></url>
+  <url><loc>https://www.tunedplayer.com/blog/guides/pause-rewind-record-live-tv/</loc><lastmod>2026-11-26</lastmod><priority>0.7</priority></url>
+  <url><loc>https://www.tunedplayer.com/blog/guides/switch-from-tivimate-or-smarters/</loc><lastmod>2026-11-26</lastmod><priority>0.7</priority></url>
+  <url><loc>https://www.tunedplayer.com/blog/roundups/best-iptv-player-android-phone/</loc><lastmod>2026-11-26</lastmod><priority>0.7</priority></url>
+  <url><loc>https://www.tunedplayer.com/blog/roundups/best-streaming-box-for-iptv/</loc><lastmod>2026-11-26</lastmod><priority>0.7</priority></url>
+  <url><loc>https://www.tunedplayer.com/blog/guides/channels-and-guide-on-your-computer/</loc><lastmod>2026-11-26</lastmod><priority>0.7</priority></url>
   <url><loc>https://www.tunedplayer.com/blog/whats-new/tuned-2-16-0/</loc><lastmod>2026-11-25</lastmod><priority>0.5</priority></url>
   <url><loc>https://www.tunedplayer.com/blog/whats-new/tuned-2-15-0/</loc><lastmod>2026-11-24</lastmod><priority>0.5</priority></url>
   <url><loc>https://www.tunedplayer.com/blog/whats-new/tuned-2-14-0/</loc><lastmod>2026-11-24</lastmod><priority>0.5</priority></url>
@@ -45,14 +73,14 @@
   <url><loc>https://www.tunedplayer.com/blog/whats-new/tuned-1-13-0/</loc><lastmod>2026-11-19</lastmod><priority>0.5</priority></url>
   <url><loc>https://www.tunedplayer.com/blog/whats-new/tuned-1-12-0/</loc><lastmod>2026-11-19</lastmod><priority>0.5</priority></url>
   <url><loc>https://www.tunedplayer.com/blog/guides/add-mac-portal/</loc><lastmod>2026-11-19</lastmod><priority>0.7</priority></url>
-  <url><loc>https://www.tunedplayer.com/blog/guides/add-m3u-playlist/</loc><lastmod>2026-11-19</lastmod><priority>0.7</priority></url>
-  <url><loc>https://www.tunedplayer.com/blog/guides/add-xtream-codes-playlist/</loc><lastmod>2026-11-19</lastmod><priority>0.7</priority></url>
+  <url><loc>https://www.tunedplayer.com/blog/guides/add-m3u-playlist/</loc><lastmod>2026-11-26</lastmod><priority>0.7</priority></url>
+  <url><loc>https://www.tunedplayer.com/blog/guides/add-xtream-codes-playlist/</loc><lastmod>2026-11-26</lastmod><priority>0.7</priority></url>
   <url><loc>https://www.tunedplayer.com/blog/guides/casting/</loc><lastmod>2026-11-19</lastmod><priority>0.7</priority></url>
   <url><loc>https://www.tunedplayer.com/blog/guides/user-agent/</loc><lastmod>2026-11-19</lastmod><priority>0.7</priority></url>
-  <url><loc>https://www.tunedplayer.com/blog/guides/buffering/</loc><lastmod>2026-11-19</lastmod><priority>0.7</priority></url>
-  <url><loc>https://www.tunedplayer.com/blog/guides/recordings-and-downloads/</loc><lastmod>2026-11-19</lastmod><priority>0.7</priority></url>
+  <url><loc>https://www.tunedplayer.com/blog/guides/buffering/</loc><lastmod>2026-11-26</lastmod><priority>0.7</priority></url>
+  <url><loc>https://www.tunedplayer.com/blog/guides/recordings-and-downloads/</loc><lastmod>2026-11-26</lastmod><priority>0.7</priority></url>
   <url><loc>https://www.tunedplayer.com/blog/guides/profiles/</loc><lastmod>2026-11-19</lastmod><priority>0.7</priority></url>
-  <url><loc>https://www.tunedplayer.com/blog/guides/tv-guide-epg/</loc><lastmod>2026-11-19</lastmod><priority>0.7</priority></url>
+  <url><loc>https://www.tunedplayer.com/blog/guides/tv-guide-epg/</loc><lastmod>2026-11-26</lastmod><priority>0.7</priority></url>
   <url><loc>https://www.tunedplayer.com/blog/guides/sign-in-on-tv-with-phone/</loc><lastmod>2026-11-19</lastmod><priority>0.7</priority></url>
   <url><loc>https://www.tunedplayer.com/blog/guides/subtitles/</loc><lastmod>2026-11-19</lastmod><priority>0.7</priority></url>
   <url><loc>https://www.tunedplayer.com/blog/guides/catch-up/</loc><lastmod>2026-11-19</lastmod><priority>0.7</priority></url>
@@ -61,9 +89,9 @@
   <url><loc>https://www.tunedplayer.com/blog/roundups/best-iptv-player-android-tv/</loc><lastmod>2026-11-19</lastmod><priority>0.7</priority></url>
   <url><loc>https://www.tunedplayer.com/blog/roundups/tivimate-alternatives/</loc><lastmod>2026-11-19</lastmod><priority>0.7</priority></url>
   <url><loc>https://www.tunedplayer.com/blog/guides/blank-tv-guide/</loc><lastmod>2026-11-19</lastmod><priority>0.7</priority></url>
-  <url><loc>https://www.tunedplayer.com/blog/guides/android-tv/</loc><lastmod>2026-11-19</lastmod><priority>0.7</priority></url>
+  <url><loc>https://www.tunedplayer.com/blog/guides/android-tv/</loc><lastmod>2026-11-26</lastmod><priority>0.7</priority></url>
   <url><loc>https://www.tunedplayer.com/blog/guides/google-tv/</loc><lastmod>2026-11-19</lastmod><priority>0.7</priority></url>
-  <url><loc>https://www.tunedplayer.com/blog/guides/nvidia-shield/</loc><lastmod>2026-11-19</lastmod><priority>0.7</priority></url>
+  <url><loc>https://www.tunedplayer.com/blog/guides/nvidia-shield/</loc><lastmod>2026-11-26</lastmod><priority>0.7</priority></url>
   <url><loc>https://www.tunedplayer.com/blog/guides/tablets/</loc><lastmod>2026-11-19</lastmod><priority>0.7</priority></url>
   <url><loc>https://www.tunedplayer.com/blog/vs/duplecast/</loc><lastmod>2026-11-19</lastmod><priority>0.7</priority></url>
   <url><loc>https://www.tunedplayer.com/blog/vs/flix-iptv/</loc><lastmod>2026-11-19</lastmod><priority>0.7</priority></url>

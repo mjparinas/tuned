@@ -6,6 +6,8 @@ date: 2026-11-22
 kind: guide
 ---
 
+<figure class="cover"><img src="/blog/img/posts/add-media-server.jpg" alt="Tuned's Jellyfin sign-in form, the Movies tab and a film's details page" width="1200" height="760"></figure>
+
 Tuned isn't only for IPTV providers. You can add a **Plex**, **Jellyfin** or **Emby** server the same way you add a playlist, and get Live TV, films and shows from your own library on your phone, tablet and Android TV.
 
 Tuned includes no channels or content of its own. You need a server you already run, or an Xtream, M3U or MAC playlist from your provider.
@@ -42,3 +44,5 @@ Prefer **Sign in with your phone** and fill the form there, rather than typing a
 - [Add an Xtream Codes playlist](/blog/guides/add-xtream-codes-playlist/) if you also have an IPTV login.
 - [Tuned on Android TV](/blog/guides/android-tv/) for remote tips and calibrate screen.
 - [Premium, seats and devices](/blog/guides/premium/) when you want several playlists on one account.
+
+Using a server and an IPTV provider side by side: [Plex, Jellyfin or Emby plus IPTV in one app](/blog/guides/plex-jellyfin-emby-and-iptv/).

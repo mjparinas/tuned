@@ -299,7 +299,7 @@ class UsageStats(
                     else -> "phone"
                 }
             return Device(
-                build = if (BuildConfig.GITHUB_UPDATES) "github" else "play",
+                build = BuildConfig.STORE,
                 version = BuildConfig.VERSION_NAME,
                 versionCode = BuildConfig.VERSION_CODE,
                 android = Build.VERSION.RELEASE.orEmpty(),

@@ -1,7 +1,5 @@
 package com.tunedplayer.app.core
 
-import java.text.Normalizer
-
 /**
  * Backup streams (Melvin, 2026-11-17, from the app audit). Providers list the same channel several times: "ESPN",
  * "US| ESPN HD", "US| ESPN FHD", "ESPN (Backup)". When the one playing dies, another copy is usually fine. [key] reduces
@@ -86,7 +84,7 @@ object ChannelCopies {
      * not a tag ("SKY SPORTS NEWS HQ" is a channel). A name with no tag is [UNKNOWN].
      */
     fun picture(name: String): Int {
-        val text = trailingBrackets.replace(Normalizer.normalize(name, Normalizer.Form.NFKC), "").uppercase()
+        val text = trailingBrackets.replace(Platform.compatible(name), "").uppercase()
         var best: Int? = null
         for (token in text.split(' ', '\t').filter { it.isNotEmpty() }.asReversed()) {
             val tier = tiers[token] ?: if (token in neutralTags) continue else break

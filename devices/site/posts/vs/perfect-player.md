@@ -5,6 +5,8 @@ date: 2026-11-19
 kind: compare
 ---
 
+<figure class="cover"><img src="/blog/img/posts/vs-perfect-player.jpg" alt="Tuned's Live TV on a TV, with the channel list and filters" width="1200" height="760"></figure>
+
 Perfect Player, from Niklabs, is a light "set-top box style" player that has been a favourite on Android boxes for years. Tuned keeps the same remote-first feel on a TV and adds films, shows and live event tools. Here is how they compare.
 
 ## At a glance

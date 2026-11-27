@@ -5,6 +5,8 @@ date: 2026-11-19
 kind: compare
 ---
 
+<figure class="cover"><img src="/blog/img/posts/vs-iptv-pro.jpg" alt="Tuned's Live TV, TV guide and a film's details on phones" width="1200" height="760"></figure>
+
 IPTV Pro, from Alexander Sofronov, is the paid version of one of the most installed IPTV players on Google Play, with over ten million installs for the free one. Tuned is a newer app with a different focus. Here is how they compare.
 
 ## At a glance

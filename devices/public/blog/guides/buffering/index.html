@@ -13,17 +13,17 @@
 <meta property="og:title" content="How to fix IPTV buffering in Tuned" />
 <meta property="og:description" content="Why IPTV streams stall, and the settings and checks that fix most buffering, from buffering modes to backup copies." />
 <meta property="og:url" content="https://www.tunedplayer.com/blog/guides/buffering/" />
-<meta property="og:image" content="https://www.tunedplayer.com/img/og.png" />
+<meta property="og:image" content="https://www.tunedplayer.com/blog/img/posts/buffering.jpg" />
 <meta property="og:image:width" content="1200" />
-<meta property="og:image:height" content="630" />
-<meta property="og:image:alt" content="Tuned, the IPTV player for Android, on a phone and a TV" />
+<meta property="og:image:height" content="760" />
+<meta property="og:image:alt" content="Tuned&#39;s settings for when a channel fails, Playback settings and the user agent choices" />
 <meta property="article:published_time" content="2026-11-19" />
-<meta property="article:modified_time" content="2026-11-19" />
+<meta property="article:modified_time" content="2026-11-26" />
 <meta name="twitter:card" content="summary_large_image" />
 <meta name="twitter:title" content="How to fix IPTV buffering in Tuned" />
 <meta name="twitter:description" content="Why IPTV streams stall, and the settings and checks that fix most buffering, from buffering modes to backup copies." />
-<meta name="twitter:image" content="https://www.tunedplayer.com/img/og.png" />
-<meta name="twitter:image:alt" content="Tuned, the IPTV player for Android, on a phone and a TV" />
+<meta name="twitter:image" content="https://www.tunedplayer.com/blog/img/posts/buffering.jpg" />
+<meta name="twitter:image:alt" content="Tuned&#39;s settings for when a channel fails, Playback settings and the user agent choices" />
 <meta name="theme-color" content="#fcfaff" media="(prefers-color-scheme: light)" />
 <meta name="theme-color" content="#121018" media="(prefers-color-scheme: dark)" />
 <link rel="icon" href="/favicon.ico" sizes="48x48" />
@@ -32,7 +32,7 @@
 <link rel="alternate" type="application/rss+xml" title="Tuned blog" href="/blog/feed.xml" />
 <link rel="stylesheet" href="/site.css" />
 <link rel="stylesheet" href="/web.css" />
-<script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"How to fix buffering in Tuned","description":"Why IPTV streams stall, and the settings and checks that fix most buffering, from buffering modes to backup copies.","datePublished":"2026-11-19","dateModified":"2026-11-19","inLanguage":"en-CA","url":"https://www.tunedplayer.com/blog/guides/buffering/","mainEntityOfPage":{"@type":"WebPage","@id":"https://www.tunedplayer.com/blog/guides/buffering/"},"image":"https://www.tunedplayer.com/blog/img/guides/playback-settings.webp","articleSection":"Guides","isPartOf":{"@type":"Blog","name":"Tuned blog","url":"https://www.tunedplayer.com/blog/"},"author":{"@type":"Organization","name":"Tuned","url":"https://www.tunedplayer.com"},"publisher":{"@type":"Organization","name":"Tuned","logo":{"@type":"ImageObject","url":"https://www.tunedplayer.com/apple-touch-icon.png"}}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"How to fix buffering in Tuned","description":"Why IPTV streams stall, and the settings and checks that fix most buffering, from buffering modes to backup copies.","datePublished":"2026-11-19","dateModified":"2026-11-26","inLanguage":"en-CA","url":"https://www.tunedplayer.com/blog/guides/buffering/","mainEntityOfPage":{"@type":"WebPage","@id":"https://www.tunedplayer.com/blog/guides/buffering/"},"image":"https://www.tunedplayer.com/blog/img/posts/buffering.jpg","articleSection":"Guides","isPartOf":{"@type":"Blog","name":"Tuned blog","url":"https://www.tunedplayer.com/blog/"},"author":{"@type":"Organization","name":"Tuned","url":"https://www.tunedplayer.com"},"publisher":{"@type":"Organization","name":"Tuned","logo":{"@type":"ImageObject","url":"https://www.tunedplayer.com/apple-touch-icon.png"}}}</script>
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://www.tunedplayer.com/"},{"@type":"ListItem","position":2,"name":"Blog","item":"https://www.tunedplayer.com/blog/"},{"@type":"ListItem","position":3,"name":"Guides","item":"https://www.tunedplayer.com/blog/guides/"},{"@type":"ListItem","position":4,"name":"How to fix buffering in Tuned","item":"https://www.tunedplayer.com/blog/guides/buffering/"}]}</script>
 </head>
 <body class="web">
@@ -60,8 +60,9 @@
 <article class="wrap post">
 <nav class="crumbs" aria-label="Breadcrumb"><a href="/blog/">Blog</a> <span aria-hidden="true">›</span> <a href="/blog/guides/">Guides</a></nav>
 <h1>How to fix buffering in Tuned</h1>
-<p class="meta"><time datetime="2026-11-19">November 19, 2026</time></p>
+<p class="meta"><time datetime="2026-11-19">November 19, 2026</time> · Updated <time datetime="2026-11-26">November 26, 2026</time></p>
 <div class="prose">
+<figure class="cover"><img src="/blog/img/posts/buffering.jpg" alt="Tuned's settings for when a channel fails, Playback settings and the user agent choices" width="1200" height="760"></figure>
 <p>Buffering means the stream isn&#39;t arriving as fast as it plays. It&#39;s usually the provider&#39;s server or the internet between you and it, sometimes the device. Here&#39;s how to narrow it down and fix it.</p>
 <h2 id="1-is-it-one-channel-or-all-of-them">1. Is it one channel or all of them?</h2>
 <ul><li><strong>One channel:</strong> that copy of the channel is struggling. See &quot;Backup copies and quality&quot; below.</li><li><strong>Every channel:</strong> it&#39;s your connection, your device, or the provider&#39;s server as a whole. Read on.</li></ul>
@@ -72,6 +73,7 @@
 <img src="/blog/img/guides/playback-settings.webp" alt="Tuned's Playback settings, with Buffering set to Balanced" width="270" height="586" loading="lazy">
 <h2 id="3-let-tuned-reconnect-for-you">3. Let Tuned reconnect for you</h2>
 <p><strong>Auto-reconnect</strong> (Settings › When a channel fails, on by default) retries a dropped stream up to five times, with &quot;Reconnecting… (2 of 5)&quot; on screen, and starts again by itself when your connection comes back.</p>
+<figure><img src="/blog/img/guides/settings-page-reliability.webp" alt="Tuned's reliability settings, with reconnecting and switching to a backup copy" width="270" height="586" loading="lazy"><figcaption>Settings for when a channel drops or dies.</figcaption></figure>
 <h2 id="4-backup-copies-and-quality">4. Backup copies and quality</h2>
 <p>Providers often list a channel several times: &quot;HD&quot;, &quot;FHD&quot;, &quot;4K&quot;, &quot;(Backup)&quot;. When one copy dies, Tuned can switch to another by itself (<strong>Switch to a backup copy</strong>, on by default). If a channel buffers, the <strong>quality</strong> button in the player&#39;s top row lists its other copies; a lower quality needs less speed.</p>
 <h2 id="5-check-your-connection">5. Check your connection</h2>
@@ -80,6 +82,7 @@
 <p>Most providers allow a set number of connections per account. If someone else is watching on the same login, or another app is still connected, the server can slow or drop you. Tuned itself never uses more than one connection: downloads, recordings and channel scans all wait while you watch.</p>
 <h2 id="7-on-a-tv-box">7. On a TV box</h2>
 <ul><li><strong>Settings › Appearance › Lighter mode</strong> helps boxes with little memory. Automatic turns it on by itself after freezes.</li><li><strong>Match frame rate</strong> and <strong>Tunnelled playback</strong> (Settings › Playback) can help 4K and 60 fps sport play smoothly. See <a href="/blog/guides/nvidia-shield/">Nvidia Shield settings</a>.</li></ul>
+<figure><img src="/blog/img/guides/settings-tv.webp" alt="Tuned's Settings on a TV, with Playlists and account selected" width="640" height="360" loading="lazy"><figcaption>On a TV box, every setting is reachable with the remote.</figcaption></figure>
 <h2 id="8-still-buffering">8. Still buffering?</h2>
 <p>If every player buffers at the same time of day, it&#39;s usually the provider&#39;s server at peak hours. Tell them, with the times. <strong>Settings › Updates and advanced › Report a problem</strong> collects the details a fix needs, without your login.</p>
 <p>See also <a href="/blog/guides/provider-errors/">provider errors</a>.</p>
@@ -88,14 +91,14 @@
 <img src="/icon.svg" alt="" width="64" height="64" />
 <div>
 <h2 id="cta-post">Get Tuned for Android</h2>
-<p>A fast, quiet IPTV player for phones, tablets and Android TV. Free, with no ads. The latest version is 2.17.0.</p>
+<p>A fast, quiet IPTV player for phones, tablets and Android TV. Free, with no ads. The latest version is 2.18.0.</p>
 <div class="actions"><a class="button big" href="/download" data-cta="apk-post"><svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor" aria-hidden="true"><path d="M17.6 9.48 19.44 6.3a.38.38 0 0 0-.66-.38l-1.86 3.22a11.5 11.5 0 0 0-9.84 0L5.22 5.92a.38.38 0 0 0-.66.38L6.4 9.48A10.8 10.8 0 0 0 1 18h22a10.8 10.8 0 0 0-5.4-8.52M7 15.25a1.25 1.25 0 1 1 0-2.5 1.25 1.25 0 0 1 0 2.5m10 0a1.25 1.25 0 1 1 0-2.5 1.25 1.25 0 0 1 0 2.5"/></svg><span>Download for Android</span></a></div>
 <p class="fine">Free APK · updates itself. On a TV, use the Downloader app — <a href="/blog/guides/android-tv/">Android TV guide</a>. Google Play and Samsung TV are coming soon.</p>
 </div>
 </section>
-<section aria-labelledby="more"><h2 id="more" class="section-title">More from the blog</h2><ul class="post-grid"><li class="post-card"><a href="/blog/guides/nvidia-shield/"><span class="kind">Guides</span><h3>Tuned on Nvidia Shield TV: the best settings</h3><p>Get smooth 4K and sport on a Shield with frame rate matching, tunnelled playback and the right buffering, plus casting tips.</p><time datetime="2026-11-19">November 19, 2026</time></a></li>
-<li class="post-card"><a href="/blog/guides/subtitles/"><span class="kind">Guides</span><h3>How to use subtitles and captions in Tuned</h3><p>Turn captions on, style them, fix their timing, and find subtitles for films and episodes that don&#39;t have any.</p><time datetime="2026-11-19">November 19, 2026</time></a></li>
-<li class="post-card"><a href="/blog/roundups/best-iptv-player-android-tv/"><span class="kind">Best picks</span><h3>The best IPTV player for Android TV in 2026</h3><p>What to look for in an IPTV player for Android TV and Google TV, how Tuned approaches it, and how the popular alternatives compare.</p><time datetime="2026-11-19">November 19, 2026</time></a></li></ul></section>
+<section aria-labelledby="more"><h2 id="more" class="section-title">More from the blog</h2><ul class="post-grid"><li class="post-card"><a href="/blog/guides/iptv-not-working/"><img class="thumb" src="/blog/img/posts/iptv-not-working.jpg" alt="" width="1200" height="760" loading="lazy"><span class="kind">Guides</span><h3>IPTV not working? A 10-step fix list</h3><p>Channels won&#39;t load, a stream won&#39;t start, the guide is empty or everything buffers. Ten checks, in order, that fix most IPTV problems on Android phones and TVs.</p><time datetime="2026-11-27">November 27, 2026</time></a></li>
+<li class="post-card"><a href="/blog/guides/how-iptv-tv-guides-work/"><img class="thumb" src="/blog/img/posts/epg-deep-dive.jpg" alt="" width="1200" height="760" loading="lazy"><span class="kind">Guides</span><h3>How IPTV TV guides work: XMLTV, channel IDs and time zones, explained</h3><p>A deep dive into the IPTV TV guide (EPG). What an XMLTV file is, how a player matches it to channels, why times go wrong, and how to fix every common guide problem.</p><time datetime="2026-11-27">November 27, 2026</time></a></li>
+<li class="post-card"><a href="/blog/roundups/best-streaming-box-for-iptv/"><img class="thumb" src="/blog/img/posts/streaming-box.jpg" alt="" width="1200" height="760" loading="lazy"><span class="kind">Best picks</span><h3>The best streaming box for IPTV in 2026</h3><p>Which Android TV or Google TV box to buy for your IPTV playlist, what actually matters (Ethernet, frame rate matching, memory, sound), and the settings to change on day one.</p><time datetime="2026-11-26">November 26, 2026</time></a></li></ul></section>
 </article>
 </main>
 <footer class="foot">

@@ -5,6 +5,8 @@ date: 2026-11-19
 kind: compare
 ---
 
+<figure class="cover"><img src="/blog/img/posts/vs-implayer.jpg" alt="Tuned's search on a TV beside a film's details on a phone" width="1200" height="760"></figure>
+
 iMPlayer, from HzApps, is a modern player on Android and Apple devices, with Trakt, TMDB details and a Premium subscription. It's one of the closest apps to Tuned in spirit. Here is how they compare.
 
 ## At a glance

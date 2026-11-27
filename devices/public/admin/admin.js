@@ -496,8 +496,11 @@ const SECTIONS = {
             "div",
             { class: "segmented", role: "group", "aria-label": "Build" },
             [
-                ["", "Both builds"],
+                ["", "All builds"],
                 ["play", "Google Play"],
+                ["amazon", "Fire TV"],
+                ["vega", "Fire TV (Vega)"],
+                ["tizen", "Samsung TV"],
                 ["github", "GitHub"],
             ].map(([v, l]) =>
                 h(
@@ -877,8 +880,11 @@ const SECTIONS = {
             h(
                 "select",
                 { class: "plain", "aria-label": "Build", onchange: (e) => setFilter("build", e.target.value) },
-                h("option", { value: "" }, "Both builds"),
+                h("option", { value: "" }, "All builds"),
                 h("option", { value: "play", selected: filters.build === "play" }, "Google Play"),
+                h("option", { value: "amazon", selected: filters.build === "amazon" }, "Fire TV (Amazon)"),
+                h("option", { value: "vega", selected: filters.build === "vega" }, "Fire TV (Vega OS)"),
+                h("option", { value: "tizen", selected: filters.build === "tizen" }, "Samsung TV"),
                 h("option", { value: "github", selected: filters.build === "github" }, "GitHub"),
             ),
             h("input", {

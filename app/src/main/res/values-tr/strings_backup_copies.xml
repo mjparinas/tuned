@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="settings_backup_copies">Yedek kopyaya geç</string>
-    <string name="settings_backup_copies_summary">Bir kanal çalışmayı bıraktığında listendeki başka bir kopyasını oynat, örneğin ESPN HD yerine ESPN FHD</string>
+    <string name="settings_backup_copies_summary">Bir kanal çalışmayı bıraktığında listendeki başka bir kopyasını oynat, örneğin Lakeshore HD yerine Lakeshore FHD</string>
     <string name="player_trying_copy">Çalışmıyor. Yedek kopya deneniyor (%1$d / %2$d)…</string>
     <string name="player_copy_playing">%1$s kanalına geçildi</string>
     <string name="player_no_copy_works">Bu kanal ve yedek kopyaları şu an çalışmıyor</string>

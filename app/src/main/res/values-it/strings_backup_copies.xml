@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="settings_backup_copies">Passa a una copia di riserva</string>
-    <string name="settings_backup_copies_summary">Quando un canale smette di funzionare, riproduci un\'altra sua copia dal tuo elenco, come ESPN FHD al posto di ESPN HD</string>
+    <string name="settings_backup_copies_summary">Quando un canale smette di funzionare, riproduci un\'altra sua copia dal tuo elenco, come Lakeshore FHD al posto di Lakeshore HD</string>
     <string name="player_trying_copy">Non funziona. Provo una copia di riserva (%1$d di %2$d)…</string>
     <string name="player_copy_playing">Passato a %1$s</string>
     <string name="player_no_copy_works">Questo canale e le sue copie di riserva non funzionano in questo momento</string>

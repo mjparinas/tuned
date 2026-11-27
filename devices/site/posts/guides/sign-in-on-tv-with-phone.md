@@ -5,6 +5,8 @@ date: 2026-11-19
 kind: guide
 ---
 
+<figure class="cover"><img src="/blog/img/posts/sign-in-tv.jpg" alt="Tuned's Send to a TV on a phone beside the TV's sign-in code and QR code" width="1200" height="760"></figure>
+
 Typing a server address, username and password with a TV remote is slow, and it's easy to get one letter wrong. Tuned lets your phone do the typing.
 
 ## On the TV
@@ -49,3 +51,5 @@ The TV makes a one-time key and puts it in the QR code. Your phone locks the log
 **Type it on the TV instead** takes you back to the usual forms. On a TV, the password shows as you type, so you can check it.
 
 If you use a [Tuned account](/blog/guides/premium/), a TV can also sign in to it with your phone and restore your backup in one step.
+
+Moving your whole setup to a new phone or TV: [move without starting over](/blog/guides/move-iptv-to-a-new-phone-or-tv/).

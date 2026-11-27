@@ -5,6 +5,8 @@ date: 2026-11-19
 kind: compare
 ---
 
+<figure class="cover"><img src="/blog/img/posts/vs-iptv-smarters-pro.jpg" alt="Tuned's Live TV on a TV beside its TV guide on a phone" width="1200" height="760"></figure>
+
 IPTV Smarters Pro, from WHMCS Smarters, is on almost every platform: Android, Fire TV, Samsung TVs and more, and many providers point new customers to it. Tuned is Android only, and puts its effort into speed and a clean player. Here is how they compare.
 
 ## At a glance

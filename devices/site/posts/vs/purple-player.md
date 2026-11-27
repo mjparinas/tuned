@@ -5,6 +5,8 @@ date: 2026-11-19
 kind: compare
 ---
 
+<figure class="cover"><img src="/blog/img/posts/vs-purple-player.jpg" alt="Tuned's Live TV, TV guide and a film's details on phones" width="1200" height="760"></figure>
+
 Purple Playlist Player, from Purple Smart TV, is a player for iPhone, iPad and Apple TV, with cloud recording sold as an extra. Purple also has separate apps for Android. Tuned is Android only. Here is how they compare.
 
 ## At a glance

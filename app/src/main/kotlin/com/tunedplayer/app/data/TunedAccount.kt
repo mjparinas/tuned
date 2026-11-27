@@ -91,7 +91,7 @@ class TunedAccount(
 
     /** Swaps a one-time code from the relay for this device's own token. False when the code ran out or the server is down. */
     suspend fun signIn(link: String): Boolean {
-        val ask = TokenAsk(link, deviceId, kind, if (BuildConfig.GITHUB_UPDATES) "github" else "play", deviceName)
+        val ask = TokenAsk(link, deviceId, kind, BuildConfig.STORE, deviceName)
         val reply = send(post("api/auth/token", json.encodeToString(TokenAsk.serializer(), ask)))
         val answer =
             reply?.takeIf { it.first == HTTP_OK }?.let { (_, text) ->

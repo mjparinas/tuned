@@ -5,6 +5,8 @@ date: 2026-11-19
 kind: compare
 ---
 
+<figure class="cover"><img src="/blog/img/posts/vs-sparkle-tv.jpg" alt="Tuned's TV guide grid on a TV beside Live TV on a phone" width="1200" height="760"></figure>
+
 Sparkle TV, from Hede Konsulttjänst, is an Android TV player that also connects to home TV servers and tuners. Tuned is built for IPTV providers, on phones as well as TVs. Here is how they compare.
 
 ## At a glance

@@ -1,14 +1,15 @@
 # Premium and store builds
 
-Tuned is free with no ads, and a Premium unlock covers the power features. Melvin agreed the plan on 2026-11-17 ([plan](https://claude.ai/artifact/2WZsayqCX4acMnvmVmnBHX)): free plus Premium with no ads, the split below, the prices, an empty server field in store builds, and GitHub releases staying free with everything unlocked. On 2026-11-18 he decided no Fire TV (Amazon Appstore) for now ("not going to do fire tv for now"), so Play is the only store; the listing's support email is his own Gmail address. The privacy policy is at https://www.tunedplayer.com/privacy/ (`devices/public/privacy/`), which the listing links to.
+Tuned is free with no ads, and a Premium unlock covers the power features. Melvin agreed the plan on 2026-11-17 ([plan](https://claude.ai/artifact/2WZsayqCX4acMnvmVmnBHX)): free plus Premium with no ads, the split below, the prices, an empty server field in store builds, and GitHub releases staying free with everything unlocked. On 2026-11-18 he decided no Fire TV (Amazon Appstore) for now ("not going to do fire tv for now"), and on 2026-11-27 reversed it ("can you start building the fire tv version of this"): the `amazon` build is for the Amazon Appstore, with Premium from the Tuned account rather than a store ([TV](tv.md#fire-tv)). Play is the only store that sells Premium in the app; the listing's support email is his own Gmail address. The privacy policy is at https://www.tunedplayer.com/privacy/ (`devices/public/privacy/`), which the listing links to.
 
-## Two builds
+## Three builds
 
 - **`github`** is what GitHub Releases ship (`release.yml` builds `assembleGithubRelease`). It updates itself from GitHub ([updates](updates.md)), and has every Premium feature unlocked, so Melvin's copies and everyone already on the GitHub releases lose nothing.
 - **`play`** is for Google Play and later other stores (`release.yml` builds `bundlePlayRelease` for the internal track). It drops `REQUEST_INSTALL_PACKAGES` and the GitHub updater, because stores update the app themselves and Play doesn't allow the permission. Neither build fills in a server (Melvin, 2026-11-19), so the two forms are the same.
-- Both share the application id `com.tunedplayer.app` and the upload key, so one can replace the other.
+- **`amazon`** is for the Amazon Appstore on Fire TV ([TV](tv.md#fire-tv)): like `play` it has no updater or `REQUEST_INSTALL_PACKAGES`, and it has no Play Billing or Play updates, since Fire TV has no Google Play. It sells nothing; Premium comes from the Tuned account.
+- All three share the application id `com.tunedplayer.app` and the upload key, so one can replace another.
 - **Release › Run workflow › Signed store bundle only** builds the signed `play` bundle as the `tuned-release-aab` artifact without a GitHub release, so a build can go to a Play testing track without a production release. Play only lets you create in-app products once it has seen a build with Play Billing, and the first upload is by hand (2026-11-18).
-- `BuildConfig.GITHUB_UPDATES`, `PREMIUM_ALWAYS` and `DEVICES_URL` are the only differences in code; anything new that differs gets its own `BuildConfig` field in `app/build.gradle.kts`.
+- `BuildConfig.STORE`, `GITHUB_UPDATES`, `PREMIUM_ALWAYS` and `DEVICES_URL` are the only differences in code; anything new that differs gets its own `BuildConfig` field in `app/build.gradle.kts`.
 
 ## Store policy
 

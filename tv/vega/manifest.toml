@@ -1,0 +1,49 @@
+# Tuned for Fire TV sticks on Vega OS (docs/decisions/vega.md).
+schema-version = 1
+
+[package]
+title = "Tuned"
+version = "0.1.0"
+# Raise for every Appstore upload.
+build-number = 1
+id = "com.tunedplayer.app"
+
+[os.version]
+min = "1.2"
+target = "1.2"
+
+[needs]
+[[needs.module]]
+id = "/com.amazon.vega.os@IVega_1_2"
+
+[components]
+[[components.interactive]]
+id = "com.tunedplayer.app.main"
+runtime-module = "/com.amazon.kepler.runtime.react_native_kepler_4@IReactNativeKepler_0"
+launch-type = "singleton"
+categories = ["com.amazon.category.main"]
+
+[wants]
+# Video and audio through Amazon's W3C media player.
+[[wants.service]]
+id = "com.amazon.mediametrics.service"
+[[wants.service]]
+id = "com.amazon.mediabuffer.service"
+[[wants.service]]
+id = "com.amazon.mediatransform.service"
+[[wants.service]]
+id = "com.amazon.audio.stream"
+[[wants.service]]
+id = "com.amazon.audio.control"
+[[wants.privilege]]
+id = "com.amazon.devconf.privilege.accessibility"
+# The on-screen keyboard for typing a login.
+[[wants.service]]
+id = "com.amazon.inputmethod.service"
+# Screen reader support.
+[[wants.service]]
+id = "com.amazon.kepler.ucc.publisher"
+
+# Most providers serve plain http:// (docs/decisions/security.md).
+[network-traffic-policy.cleartext]
+allowed-domains = ["*"]

@@ -3,7 +3,10 @@ title: How to add an M3U playlist link or file to Tuned
 description: Add any M3U or M3U8 link, with or without a guide link, or open an .m3u file saved on your device.
 date: 2026-11-19
 kind: guide
+updated: 2026-11-26
 ---
+
+<figure class="cover"><img src="/blog/img/posts/add-m3u.jpg" alt="Tuned's welcome screen, the Playlist link form with an optional guide link, and the TV guide on a phone" width="1200" height="760"></figure>
 
 If your provider gave you a link ending in `.m3u` or `.m3u8`, or a playlist file, Tuned plays it. M3U is the most common playlist format in IPTV: a plain list of channels with their names, logos, groups and stream links.
 
@@ -20,6 +23,8 @@ Tuned downloads the playlist once and keeps it on the device, so Live TV opens i
 
 **Tip:** if the link has `get.php` with a username and password in it, it's really an Xtream Codes login. Tuned recognizes it and sets it up that way, which also gives you catch-up. See [adding an Xtream Codes playlist](/blog/guides/add-xtream-codes-playlist/).
 
+<figure><img src="/blog/img/guides/playlist-add-link.webp" alt="Tuned's Playlist link form with the playlist link, an optional guide link and a name" width="270" height="586" loading="lazy"><figcaption>The Playlist link form.</figcaption></figure>
+
 ## Do I need a guide link?
 
 Many playlists name their own guide on their first line (`x-tvg-url`, `url-tvg` or `tvg-url`). Tuned reads it while it saves the playlist, so you get the TV guide without typing anything. If your playlist doesn't name one and you have no guide link, the channels still play; there just won't be a "what's on" line.
@@ -32,6 +37,8 @@ You can add more guide links later, to fill channels the first guide misses. See
 2. Choose the `.m3u` file from your device.
 
 Tuned copies the file into the app, so the playlist keeps working even if you move or delete the original. A file that isn't an M3U playlist is refused rather than half loaded. Because a file belongs to one device, it isn't copied to your other devices by the Tuned account backup.
+
+<figure><img src="/blog/img/guides/settings-page-guide.webp" alt="Tuned's Guide and refresh settings, with Extra guide links" width="270" height="586" loading="lazy"><figcaption>Add more guide links in Settings › Guide and refresh.</figcaption></figure>
 
 ## What Tuned reads from your playlist
 

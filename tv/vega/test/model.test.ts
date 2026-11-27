@@ -1,0 +1,228 @@
+import type { Fetch } from "@tuned/shared/platform";
+import { AppModel, hasPremium } from "../src/app/model";
+import type { Http } from "../src/core/http";
+import { memoryStore } from "../src/core/storage";
+
+function http(routes: Record<string, (body: any) => { status: number; body: any } | Promise<never>>): Http {
+    const answer = async (url: string, body?: any) => {
+        const path = new URL(url).pathname;
+        const route = routes[path];
+        if (!route) throw new Error(`no route ${path}`);
+        return route(body);
+    };
+    return {
+        getJson: (url) => answer(url),
+        postJson: (url, body) => answer(url, body),
+        text: async () => {
+            throw new Error("no text");
+        },
+    };
+}
+
+/** The same routes as `fetch`, which the account and relay calls use. */
+const fetchFrom =
+    (h: Http): Fetch =>
+    async (url, init) => {
+        const answer = init?.method === "POST" ? await h.postJson(url, JSON.parse(init.body ?? "{}")) : await h.getJson(url);
+        return {
+            ok: answer.status >= 200 && answer.status < 300,
+            status: answer.status,
+            headers: { get: () => null },
+            text: async () => JSON.stringify(answer.body),
+            json: async () => answer.body,
+        };
+    };
+
+const services = (h: Http, store = memoryStore()) => ({
+    store,
+    http: h,
+    fetch: fetchFrom(h),
+    random: (n: number) => new Uint8Array(n).fill(7),
+    player: { open: async () => {}, close: async () => {} },
+    deviceName: "Test stick",
+    site: "https://tuned.example",
+});
+
+describe("the Tuned account on Vega", () => {
+    it("signs in with the website's link as a vega TV and takes a Premium seat", async () => {
+        const asked: any[] = [];
+        const model = new AppModel(
+            services(
+                http({
+                    "/api/auth/token": (b) => (
+                        asked.push(b),
+                        { status: 200, body: { status: "ok", token: "tok", email: "a@example.com" } }
+                    ),
+                    "/api/account/seat": () => ({ status: 200, body: { seat: "active" } }),
+                    "/api/backup": () => ({ status: 404, body: { status: "none" } }),
+                }),
+            ),
+        );
+        expect(await model.accountLinked("link")).toBe(true);
+        expect(asked[0]).toMatchObject({ link: "link", kind: "tv", build: "vega", name: "Test stick", device: "07".repeat(16) });
+        expect(model.state.account).toMatchObject({ email: "a@example.com", premium: true, seat: "active" });
+        expect(hasPremium(model.state.account)).toBe(true);
+    });
+
+    it("keeps Premium through an outage, and only full locks", async () => {
+        let up = true;
+        let seat = "active";
+        const model = new AppModel(
+            services(
+                http({
+                    "/api/auth/token": () => ({ status: 200, body: { status: "ok", token: "tok", email: "" } }),
+                    "/api/account/seat": () => (up ? { status: 200, body: { seat } } : Promise.reject(new Error("offline"))),
+                    "/api/backup": () => ({ status: 404, body: null }),
+                }),
+            ),
+        );
+        await model.accountLinked("link");
+        up = false;
+        await model.checkAccount();
+        expect(hasPremium(model.state.account)).toBe(true);
+        expect(model.state.accountCheck).toMatchObject({ busy: false, result: { ok: false } });
+        up = true;
+        seat = "full";
+        await model.checkAccount();
+        expect(hasPremium(model.state.account)).toBe(false);
+    });
+
+    it("restores the playlist from the account's backup on the welcome screen", async () => {
+        const model = new AppModel(
+            services(
+                http({
+                    "/api/auth/token": () => ({ status: 200, body: { status: "ok", token: "tok", email: "" } }),
+                    "/api/account/seat": () => ({ status: 200, body: { seat: "none" } }),
+                    "/api/backup": () => ({
+                        status: 200,
+                        body: { version: 3, playlists: [{ server: "http://tv.example", username: "u", password: "p", playlistUrl: "" }] },
+                    }),
+                    "/player_api.php": () => ({ status: 200, body: { user_info: { auth: 0 } } }),
+                }),
+            ),
+        );
+        await model.accountLinked("link");
+        expect(model.state.login).toMatchObject({ kind: "xtream", server: "http://tv.example" });
+        expect(model.state.route).toBe("loading");
+        expect(model.state.loading.error).toMatch(/didn't accept/);
+    });
+
+    it("signs out back to how it was installed", async () => {
+        const store = memoryStore();
+        const model = new AppModel(
+            services(
+                http({
+                    "/api/auth/token": () => ({ status: 200, body: { status: "ok", token: "tok", email: "" } }),
+                    "/api/account/seat": () => ({ status: 200, body: { seat: "active" } }),
+                    "/api/backup": () => ({ status: 404, body: null }),
+                    "/api/auth/signout": () => ({ status: 200, body: { status: "ok" } }),
+                }),
+                store,
+            ),
+        );
+        await model.accountLinked("link");
+        await model.saved.saveLogin({ kind: "link", playlistUrl: "http://x.example/a.m3u" });
+        await model.signOut();
+        expect(await store.keys()).toEqual([]);
+        expect(model.state).toMatchObject({ route: "signin", login: null, account: null });
+    });
+});
+
+describe("Movies and Shows on Vega", () => {
+    const login = { kind: "xtream" as const, server: "http://tv.example", username: "u", password: "p" };
+    const answers: Record<string, unknown> = {
+        account: { user_info: { auth: 1, status: "Active" } },
+        get_live_categories: [{ category_id: "1", category_name: "News" }],
+        get_live_streams: [{ stream_id: 5, name: "One", category_id: "1" }],
+        get_vod_categories: [{ category_id: "2", category_name: "Action" }],
+        get_vod_streams: [{ stream_id: 7, name: "Fast Water", category_id: "2", container_extension: "mkv" }],
+        get_series_categories: [{ category_id: "3", category_name: "Drama" }],
+        get_series: [{ series_id: 4, name: "Harbour Street", category_id: "3" }],
+        get_series_info: {
+            episodes: { "1": [{ id: "41", season: 1, episode_num: 1, title: "Harbour Street - S01E01 - A Ship Comes In" }] },
+        },
+    };
+    const xtream = (asked: string[] = []): Http => ({
+        async getJson(url) {
+            const action = new URL(url).searchParams.get("action") ?? "account";
+            asked.push(action);
+            return { status: 200, body: answers[action] };
+        },
+        async postJson() {
+            return { status: 500, body: null };
+        },
+        async text(url) {
+            const action = new URL(url).searchParams.get("action") ?? "";
+            asked.push(action);
+            return JSON.stringify(answers[action]);
+        },
+    });
+
+    it("shows Live TV first, then gets movies and shows in the background and keeps them", async () => {
+        const asked: string[] = [];
+        const store = memoryStore();
+        const model = new AppModel({ ...services(xtream(asked), store), player: { open: async () => {}, close: async () => {} } });
+        await model.useLogin(login);
+        expect(model.state.route).toBe("live");
+        await new Promise((r) => setTimeout(r, 0));
+        await until(() => !!model.state.library);
+        expect(asked.indexOf("get_live_streams")).toBeLessThan(asked.indexOf("get_vod_streams"));
+        expect(model.state.library!.movies[0]).toMatchObject({ name: "Fast Water", url: "http://tv.example/movie/u/p/7.mkv" });
+        expect(model.state.libraryLoad.result).toMatchObject({ ok: true });
+
+        const again = new AppModel({ ...services(xtream(), store), player: { open: async () => {}, close: async () => {} } });
+        await again.boot();
+        await again.openBrowse("shows");
+        expect(again.state.route).toBe("shows");
+        expect(again.visibleTitles("shows").map((t) => t.name)).toEqual(["Harbour Street"]);
+    });
+
+    it("opens a show with its episodes' real names and plays one, one connection, picking up where it was left", async () => {
+        const open: (string | number | undefined)[][] = [];
+        let at = 0;
+        const player = {
+            open: async (url: string, startAt?: number) => void open.push([url, startAt]),
+            close: async () => {},
+            position: () => ({ at, length: 2400 }),
+        };
+        const model = new AppModel({ ...services(xtream()), player });
+        await model.useLogin(login);
+        await until(() => !!model.state.library);
+        const show = model.visibleTitles("shows")[0];
+        await model.openTitle(show);
+        const [episode] = model.episodesOf(show)!;
+        expect(episode).toMatchObject({ name: "A Ship Comes In", url: "http://tv.example/series/u/p/41.mp4" });
+
+        await model.playVod({ id: episode.id, title: show.name, url: episode.url });
+        at = 600;
+        await model.stopPlaying();
+        expect(model.state.route).toBe("title");
+        expect(model.state.positions[episode.id]).toBe(600);
+        await model.playVod({ id: episode.id, title: show.name, url: episode.url }, model.state.positions[episode.id]);
+        expect(open).toEqual([
+            ["http://tv.example/series/u/p/41.mp4", undefined],
+            ["http://tv.example/series/u/p/41.mp4", 600],
+        ]);
+        expect(model.stream.open).toBe(1);
+        at = 2390;
+        await model.stopPlaying();
+        expect(model.state.positions[episode.id]).toBeUndefined();
+    });
+
+    it("says when a show's episodes couldn't be read, with Try again", async () => {
+        const broken = xtream();
+        const model = new AppModel({ ...services(broken), player: { open: async () => {}, close: async () => {} } });
+        await model.useLogin(login);
+        await until(() => !!model.state.library);
+        broken.getJson = async () => {
+            throw new Error("offline");
+        };
+        await model.openTitle(model.visibleTitles("shows")[0]);
+        expect(model.state.episodesLoad).toMatchObject({ busy: false, failed: true });
+    });
+});
+
+async function until(check: () => boolean): Promise<void> {
+    for (let i = 0; i < 100 && !check(); i++) await new Promise((r) => setTimeout(r, 0));
+    if (!check()) throw new Error("never happened");
+}

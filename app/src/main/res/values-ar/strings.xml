@@ -421,6 +421,10 @@
     <string name="premium_store_unreachable">تعذّر الوصول إلى Google Play. حاول مرة أخرى بعد قليل.</string>
     <string name="premium_loading">جارٍ طلب الأسعار من Google Play…</string>
     <string name="premium_fine_print">تتجدد الخطة السنوية حتى تلغيها في Google Play. شراء واحد يغطي حتى 3 أجهزة على حساب Google الخاص بك، مثل هاتف وتلفزيون وجهاز آخر.</string>
+    <string name="premium_account_only">يأتي Premium على هذا التلفاز مع حسابك في Tuned. لديك Premium بالفعل؟ سجّل الدخول أدناه وسيعمل هنا.</string>
+    <string name="premium_account_check">تحقّق مرة أخرى</string>
+    <string name="premium_account_none">لا يتضمن حسابك في Tuned اشتراك Premium بعد.</string>
+    <string name="premium_account_unreachable">تعذّر الوصول إلى حسابك في Tuned. حاول مرة أخرى بعد قليل.</string>
     <string name="premium_summary_on">مفعّل</string>
     <string name="premium_summary_off">الخطة المجانية. اطّلع على ما يضيفه Premium</string>
     <string name="premium_locked">Premium</string>

@@ -13,6 +13,7 @@ import com.google.android.play.core.install.model.UpdateAvailability
 import com.tunedplayer.app.BuildConfig
 import com.tunedplayer.app.container
 import com.tunedplayer.app.data.ServerFlags
+import com.tunedplayer.app.premium.Premium
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
@@ -31,7 +32,8 @@ import kotlinx.coroutines.launch
 class AppUpdates(
     private val activity: ComponentActivity,
 ) {
-    private val manager = AppUpdateManagerFactory.create(activity)
+    // Made only when Play is asked, so a Fire TV (no Play) never touches Play's library.
+    private val manager by lazy { AppUpdateManagerFactory.create(activity) }
     private val launcher: ActivityResultLauncher<IntentSenderRequest> =
         activity.registerForActivityResult(ActivityResultContracts.StartIntentSenderForResult()) { }
 
@@ -44,7 +46,11 @@ class AppUpdates(
     private val fromPlay: Boolean = activity.container.updates.fromPlay()
     private var askedPlay = false
 
+    /** The Amazon Appstore keeps the Fire TV build current itself, and Fire TV has no Play to ask. */
+    private val byAppstore = BuildConfig.STORE == Premium.STORE_AMAZON
+
     fun check() {
+        if (byAppstore) return
         if (!fromPlay) {
             // The app's scope, not this screen's: leaving the screen mid-download (Back, the player) must not cut
             // the check short. The check never throws.
@@ -81,6 +87,7 @@ class AppUpdates(
 
     /** An immediate update interrupted (app left mid-install) must be resumed, as Play's docs require. */
     fun resume() {
+        if (byAppstore) return
         if (!fromPlay) {
             // Back from the installer's confirm window, or from allowing Tuned to install apps.
             activity.container.updates.onReturned(activity)
@@ -100,6 +107,6 @@ class AppUpdates(
     }
 
     fun stop() {
-        manager.unregisterListener(listener)
+        if (askedPlay) manager.unregisterListener(listener)
     }
 }

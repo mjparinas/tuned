@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="settings_backup_copies">切换到备用源</string>
-    <string name="settings_backup_copies_summary">频道无法播放时，从你的列表中播放它的另一个副本，例如用 ESPN FHD 代替 ESPN HD</string>
+    <string name="settings_backup_copies_summary">频道无法播放时，从你的列表中播放它的另一个副本，例如用 Lakeshore FHD 代替 Lakeshore HD</string>
     <string name="player_trying_copy">无法播放。正在尝试备用源（%1$d / %2$d）…</string>
     <string name="player_copy_playing">已切换到 %1$s</string>
     <string name="player_no_copy_works">此频道及其备用源目前都无法播放</string>

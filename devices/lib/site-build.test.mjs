@@ -1,11 +1,17 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { check } from "../build-site.mjs";
 import { SITE } from "../site/config.mjs";
 import {
     buildSite,
     cardBlurb,
     faqJsonLd,
+    heroOf,
+    coverOf,
+    DEFAULT_COVERS,
     homePosts,
     indexPage,
     indexPreview,
@@ -14,6 +20,7 @@ import {
     navIsCurrent,
     noteLine,
     parseFrontmatter,
+    postPage,
     postCard,
     readPost,
     relatedPosts,
@@ -22,6 +29,7 @@ import {
     releasePostPath,
     sitemap,
 } from "./site-build.mjs";
+const here = dirname(fileURLToPath(import.meta.url));
 
 test("the committed website matches its sources (run node devices/build-site.mjs)", () => {
     assert.deepEqual(check(), []);
@@ -43,6 +51,10 @@ test("inline Markdown escapes text and keeps code literal", () => {
 test("block Markdown: headings never make a second h1, lists, tables and raw HTML", () => {
     assert.equal(markdown("# Top"), '<h2 id="top">Top</h2>');
     assert.equal(markdown("- a\n- b"), "<ul><li>a</li><li>b</li></ul>");
+    assert.equal(
+        markdown('```xml\n<tv>\n  <a b="1">x & y</a>\n</tv>\n```\n\nAfter'),
+        '<pre tabindex="0" role="region" aria-label="Code"><code>&lt;tv&gt;\n  &lt;a b=&quot;1&quot;&gt;x &amp; y&lt;/a&gt;\n&lt;/tv&gt;</code></pre>\n<p>After</p>',
+    );
     assert.equal(markdown("1. a\n2. b"), "<ol><li>a</li><li>b</li></ol>");
     assert.match(
         markdown("| A | B |\n|---|:-:|\n| 1 | 2 |"),
@@ -65,6 +77,52 @@ test("post cards never skip a heading level", () => {
     assert.match(postCard(p, 2), /<h2>T<\/h2>/);
     // As a map callback it must not take the index as its level.
     assert.match([p, p].map((x) => postCard(x))[1], /<h3>T<\/h3>/);
+});
+
+test("a post's top picture is its card's picture and the picture shared links show", () => {
+    const post = readPost(
+        "guides/x.md",
+        `---\ntitle: T\ndescription: D\ndate: 2026-11-26\nkind: guide\n---\n<figure class="cover"><img src="/blog/img/posts/x.jpg" alt="Tuned's guide" width="1200" height="760"></figure>\n\nBody`,
+    );
+    assert.deepEqual(heroOf(post), { src: "/blog/img/posts/x.jpg", alt: "Tuned's guide", width: 1200, height: 760 });
+    assert.match(postCard(post), /<img class="thumb" src="\/blog\/img\/posts\/x.jpg" alt="" width="1200" height="760"/);
+    const page = postPage(SITE, post, {});
+    assert.match(page, /<meta property="og:image" content="https:\/\/www.tunedplayer.com\/blog\/img\/posts\/x.jpg" \/>/);
+    assert.match(page, /<meta property="og:image:height" content="760" \/>/);
+});
+
+test("every post opens with a picture and every card shows one, even without a cover of its own (Melvin, 2026-11-27)", () => {
+    const plain = readPost("guides/y.md", `---\ntitle: T\ndescription: D\ndate: 2026-11-26\nkind: guide\n---\nBody`);
+    assert.deepEqual(heroOf(plain), DEFAULT_COVERS.other);
+    assert.match(postCard(plain), /<img class="thumb" src="\/blog\/img\/posts\/blog.jpg" alt=""/);
+    assert.match(
+        postPage(SITE, plain, {}),
+        /<div class="prose">\n<figure class="cover"><img src="\/blog\/img\/posts\/blog.jpg" alt="Tuned, /,
+    );
+    const release = readPost(
+        "whats-new/tuned-9-0-0.md",
+        `---\ntitle: T\ndescription: D\ndate: 2026-11-26\nkind: release\nversion: 9.0.0\n---\nBody`,
+    );
+    const page = postPage(SITE, release, {});
+    assert.match(page, /<figure class="cover"><img src="\/blog\/img\/posts\/whats-new.jpg"/);
+    assert.match(page, /<meta property="og:image" content="https:\/\/www.tunedplayer.com\/blog\/img\/posts\/whats-new.jpg" \/>/);
+    // A post with its own cover isn't given a second one.
+    const own = readPost(
+        "guides/z.md",
+        `---\ntitle: T\ndescription: D\ndate: 2026-11-26\nkind: guide\n---\n<figure class="cover"><img src="/blog/img/posts/x.jpg" alt="A" width="1200" height="760"></figure>`,
+    );
+    assert.equal((postPage(SITE, own, {}).match(/class="cover"/g) || []).length, 1);
+});
+
+test("every guide, comparison and pick has a cover of its own, and every picture a card shows exists", () => {
+    const posts = join(here, "..", "site", "posts");
+    for (const folder of readdirSync(posts)) {
+        for (const name of readdirSync(join(posts, folder)).filter((f) => f.endsWith(".md"))) {
+            const post = readPost(`${folder}/${name}`, readFileSync(join(posts, folder, name), "utf8"));
+            if (post.kind !== "release") assert.ok(coverOf(post), `${folder}/${name} has no <figure class="cover">`);
+            assert.ok(existsSync(join(here, "..", "public", heroOf(post).src)), `${heroOf(post).src} is missing`);
+        }
+    }
 });
 
 test("a post's address is its file's path", () => {

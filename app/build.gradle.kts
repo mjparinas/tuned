@@ -49,22 +49,33 @@ android {
         buildConfigField("String", "GIT_COMMIT", "\"${gitCommit.orEmpty().trim().take(7)}\"")
     }
 
-    // Two builds of the same app (docs/decisions/premium.md). `github` is what GitHub Releases ship: it updates itself
-    // from GitHub. `play` is for Google Play and other stores: no self-updater (stores don't allow
-    // REQUEST_INSTALL_PACKAGES). Neither fills in a server: the Xtream form starts empty (Melvin, 2026-11-19).
+    // Three builds of the same app (docs/decisions/premium.md). `github` is what GitHub Releases ship: it updates itself
+    // from GitHub. `play` is for Google Play: no self-updater (stores don't allow REQUEST_INSTALL_PACKAGES). `amazon` is
+    // for the Amazon Appstore on Fire TV (docs/decisions/tv.md#fire-tv): no Google Play services, so no Play Billing
+    // and no Play updates; Premium comes from the Tuned account. None fills in a server (Melvin, 2026-11-19).
+    // STORE names the build to the server and the usage stats.
     flavorDimensions += "store"
     productFlavors {
         create("github") {
             dimension = "store"
+            buildConfigField("String", "STORE", "\"github\"")
             buildConfigField("boolean", "GITHUB_UPDATES", "true")
             buildConfigField("boolean", "PREMIUM_ALWAYS", "true")
             buildConfigField("String", "DEVICES_URL", "\"\"")
         }
         create("play") {
             dimension = "store"
+            buildConfigField("String", "STORE", "\"play\"")
             buildConfigField("boolean", "GITHUB_UPDATES", "false")
             buildConfigField("boolean", "PREMIUM_ALWAYS", "false")
             // The Premium device list (docs/decisions/premium.md); without it a store build has no device limit.
+            buildConfigField("String", "DEVICES_URL", "\"${System.getenv("PREMIUM_DEVICES_URL").orEmpty()}\"")
+        }
+        create("amazon") {
+            dimension = "store"
+            buildConfigField("String", "STORE", "\"amazon\"")
+            buildConfigField("boolean", "GITHUB_UPDATES", "false")
+            buildConfigField("boolean", "PREMIUM_ALWAYS", "false")
             buildConfigField("String", "DEVICES_URL", "\"${System.getenv("PREMIUM_DEVICES_URL").orEmpty()}\"")
         }
     }

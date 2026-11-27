@@ -1,8 +1,5 @@
 package com.tunedplayer.app.core
 
-import java.net.URLDecoder
-import java.net.URLEncoder
-
 /**
  * A stream link and the HTTP headers its server wants. Some providers only serve a stream to a given player or page:
  * the playlist says so with `#EXTVLCOPT:http-user-agent=…` or `#EXTVLCOPT:http-referrer=…` before the link, or with
@@ -48,7 +45,7 @@ object StreamLink {
         headers: Map<String, String>,
     ): String {
         if (headers.isEmpty()) return url
-        return url + "|" + headers.entries.joinToString("&") { (k, v) -> "$k=${URLEncoder.encode(v, "UTF-8").replace("+", "%20")}" }
+        return url + "|" + headers.entries.joinToString("&") { (k, v) -> "$k=${Platform.formEncode(v).replace("+", "%20")}" }
     }
 
     /** A header from an `#EXTVLCOPT:` line, or null for any other option. */
@@ -68,7 +65,7 @@ object StreamLink {
     }
 
     private fun decode(value: String): String = try {
-        URLDecoder.decode(value.replace("+", "%2B"), "UTF-8")
+        Platform.formDecode(value.replace("+", "%2B"))
     } catch (_: IllegalArgumentException) {
         value // not encoded after all: "Mozilla/5.0 (X11; Linux)"
     }

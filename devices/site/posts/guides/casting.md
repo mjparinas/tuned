@@ -6,6 +6,8 @@ date: 2026-11-19
 kind: guide
 ---
 
+<figure class="cover"><img src="/blog/img/posts/casting.jpg" alt="Tuned's player casting to a TV, with play, skip, volume and Stop casting" width="1200" height="760"></figure>
+
 Tuned casts to **Chromecast** devices (including TVs and boxes with Chromecast built in) and to **DLNA and UPnP** smart TVs on your Wi-Fi.
 
 ## Start casting
@@ -41,3 +43,5 @@ Subtitles you found with [subtitle search](/blog/guides/subtitles/) go to a Chro
 - Settings › Updates and advanced › Logs records every step of a cast, for a [problem report](/blog/guides/provider-errors/).
 
 Downloads and channel scans wait while you cast, and carry on when the cast ends.
+
+Got a Samsung or LG TV? See [how to watch your IPTV playlist on a Samsung or LG TV](/blog/guides/watch-iptv-on-samsung-lg-tv/).

@@ -4,7 +4,10 @@ seoTitle: "How to fix IPTV buffering in Tuned"
 description: Why IPTV streams stall, and the settings and checks that fix most buffering, from buffering modes to backup copies.
 date: 2026-11-19
 kind: guide
+updated: 2026-11-26
 ---
+
+<figure class="cover"><img src="/blog/img/posts/buffering.jpg" alt="Tuned's settings for when a channel fails, Playback settings and the user agent choices" width="1200" height="760"></figure>
 
 Buffering means the stream isn't arriving as fast as it plays. It's usually the provider's server or the internet between you and it, sometimes the device. Here's how to narrow it down and fix it.
 
@@ -29,6 +32,8 @@ If channels stall now and then, try Smooth first.
 
 **Auto-reconnect** (Settings › When a channel fails, on by default) retries a dropped stream up to five times, with "Reconnecting… (2 of 5)" on screen, and starts again by itself when your connection comes back.
 
+<figure><img src="/blog/img/guides/settings-page-reliability.webp" alt="Tuned's reliability settings, with reconnecting and switching to a backup copy" width="270" height="586" loading="lazy"><figcaption>Settings for when a channel drops or dies.</figcaption></figure>
+
 ## 4. Backup copies and quality
 
 Providers often list a channel several times: "HD", "FHD", "4K", "(Backup)". When one copy dies, Tuned can switch to another by itself (**Switch to a backup copy**, on by default). If a channel buffers, the **quality** button in the player's top row lists its other copies; a lower quality needs less speed.
@@ -47,6 +52,8 @@ Most providers allow a set number of connections per account. If someone else is
 
 - **Settings › Appearance › Lighter mode** helps boxes with little memory. Automatic turns it on by itself after freezes.
 - **Match frame rate** and **Tunnelled playback** (Settings › Playback) can help 4K and 60 fps sport play smoothly. See [Nvidia Shield settings](/blog/guides/nvidia-shield/).
+
+<figure><img src="/blog/img/guides/settings-tv.webp" alt="Tuned's Settings on a TV, with Playlists and account selected" width="640" height="360" loading="lazy"><figcaption>On a TV box, every setting is reachable with the remote.</figcaption></figure>
 
 ## 8. Still buffering?
 

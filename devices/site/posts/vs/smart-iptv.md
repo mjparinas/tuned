@@ -5,6 +5,8 @@ date: 2026-11-19
 kind: compare
 ---
 
+<figure class="cover"><img src="/blog/img/posts/vs-smart-iptv.jpg" alt="Tuned's player casting to a TV, with play, skip, volume and Stop casting" width="1200" height="760"></figure>
+
 Smart IPTV (SIPTV) is one of the oldest IPTV players for smart TVs, activated with a one-time fee per device. Tuned is free on Android phones and TVs. Here is how they compare.
 
 ## At a glance

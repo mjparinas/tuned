@@ -6,6 +6,8 @@ date: 2026-11-19
 kind: guide
 ---
 
+<figure class="cover"><img src="/blog/img/posts/provider-errors.jpg" alt="Tuned's first download naming each numbered step, beside its Logs page" width="1200" height="760"></figure>
+
 Tuned plays what your provider serves, so most errors start on the provider's side. Here's what each message means and what to try. Tuned never shows your password in an error.
 
 ## "The server didn't accept that username and password."
@@ -56,4 +58,4 @@ The stream's sound is in a format this device can't play, such as Dolby Digital 
 
 **Settings › Updates and advanced › Report a problem** gathers the app version, your device, the latest crash report and recent log lines into one message, and opens the share sheet so you choose where it goes. Logins are removed from the log before it's written.
 
-See also [fixing buffering](/blog/guides/buffering/) and [the TV guide is empty](/blog/guides/blank-tv-guide/).
+See also [IPTV not working? A 10-step fix list](/blog/guides/iptv-not-working/), [fixing buffering](/blog/guides/buffering/) and [the TV guide is empty](/blog/guides/blank-tv-guide/).

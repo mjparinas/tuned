@@ -357,6 +357,10 @@
     <string name="premium_store_unreachable">Google Play ist nicht erreichbar. Versuche es gleich noch einmal.</string>
     <string name="premium_loading">Preise werden bei Google Play abgefragt…</string>
     <string name="premium_fine_print">Das Jahresabo verlängert sich, bis du es in Google Play kündigst. Ein Kauf gilt für bis zu 3 Geräte in deinem Google-Konto, etwa ein Handy, einen Fernseher und ein weiteres.</string>
+    <string name="premium_account_only">Premium auf diesem Fernseher kommt mit deinem Tuned-Konto. Du hast schon Premium? Melde dich unten an, dann ist es hier aktiv.</string>
+    <string name="premium_account_check">Erneut prüfen</string>
+    <string name="premium_account_none">Dein Tuned-Konto hat noch kein Premium.</string>
+    <string name="premium_account_unreachable">Dein Tuned-Konto ist nicht erreichbar. Versuche es gleich noch einmal.</string>
     <string name="premium_summary_on">Aktiv</string>
     <string name="premium_summary_off">Kostenloser Tarif. Sieh dir an, was Premium bietet</string>
     <string name="premium_locked">Premium</string>

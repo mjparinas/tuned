@@ -37,6 +37,12 @@ class RemoteKeysTest {
     }
 
     @Test
+    fun fireTvMenuButtonShowsTheControlsInFilms() {
+        assertEquals(Action.INFO, RemoteKeys.action(RemoteKeys.MENU, live = false, controlsShown = false))
+        assertEquals(Action.INFO, RemoteKeys.action(RemoteKeys.MENU, live = false, controlsShown = true))
+    }
+
+    @Test
     fun channelButtonsDoNothingInFilms() {
         assertEquals(Action.NONE, RemoteKeys.action(RemoteKeys.CHANNEL_UP, live = false, controlsShown = false))
         assertEquals(Action.NONE, RemoteKeys.action(RemoteKeys.GUIDE, live = false, controlsShown = false))

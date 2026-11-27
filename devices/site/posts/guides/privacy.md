@@ -5,6 +5,8 @@ date: 2026-11-19
 kind: guide
 ---
 
+<figure class="cover"><img src="/blog/img/posts/privacy-guide.jpg" alt="Tuned's Logs, which leave logins out, and the Sign out dialog that resets the app" width="1200" height="760"></figure>
+
 Tuned is a player. It has no ads, no third-party analytics and no content of its own, and almost everything it knows stays on your device. Here's the plain-English version.
 
 ## On your device
@@ -51,3 +53,5 @@ The backup isn't encrypted by Tuned; only devices signed in to your account can 
 **Settings › Playlists and account › Sign out** resets Tuned to how it was installed: every playlist and login, the cache, profiles, settings and history are removed. It asks whether to keep your downloads. Your Premium and your account backup stay, so signing back in can bring everything back.
 
 The full [privacy policy](/privacy/) has the details.
+
+Keeping your login safe whichever player you use: [is that IPTV app safe?](/blog/guides/is-my-iptv-app-safe/)

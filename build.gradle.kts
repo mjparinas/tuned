@@ -4,6 +4,7 @@ plugins {
     alias(libs.plugins.android.test) apply false
     alias(libs.plugins.androidx.baselineprofile) apply false
     alias(libs.plugins.kotlin.jvm) apply false
+    alias(libs.plugins.kotlin.multiplatform) apply false
     alias(libs.plugins.kotlin.compose) apply false
     alias(libs.plugins.kotlin.serialization) apply false
     alias(libs.plugins.ksp) apply false
@@ -34,7 +35,7 @@ detekt {
     allRules = false
     parallel = true
     config.setFrom(files("config/detekt/detekt.yml"))
-    source.setFrom(files("core/src", "data/src", "app/src", "baselineprofile/src", "smoketest/src", "fakeprovider/src"))
+    source.setFrom(files("core/src", "data/src", "app/src", "baselineprofile/src", "smoketest/src", "fakeprovider/src", "tv/core/src"))
 }
 
 tasks.withType<io.gitlab.arturbosch.detekt.Detekt>().configureEach {
@@ -46,4 +47,13 @@ tasks.withType<io.gitlab.arturbosch.detekt.Detekt>().configureEach {
         xml.required.set(false)
         md.required.set(false)
     }
+}
+
+// Kotlin/JS (tv/core) fetches Node and Yarn from repositories it would add to the project, which settings.gradle.kts's
+// FAIL_ON_PROJECT_REPOS refuses. settings.gradle.kts declares those two repositories, so the plugin adds none of its own.
+plugins.withType<org.jetbrains.kotlin.gradle.targets.js.nodejs.NodeJsPlugin> {
+    the<org.jetbrains.kotlin.gradle.targets.js.nodejs.NodeJsEnvSpec>().downloadBaseUrl.set(null as String?)
+}
+plugins.withType<org.jetbrains.kotlin.gradle.targets.js.yarn.YarnPlugin> {
+    the<org.jetbrains.kotlin.gradle.targets.js.yarn.YarnRootEnvSpec>().downloadBaseUrl.set(null as String?)
 }
