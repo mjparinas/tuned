@@ -37,7 +37,7 @@ export function SettingsScreen({ model, state }: { model: AppModel; state: State
     const premium = premiumText(account);
     return (
         <Screen>
-            <TopBar model={model} tab="settings" />
+            <TopBar model={model} state={state} tab="settings" />
             <ScrollView style={{ flex: 1, marginTop: dp(14) }} contentContainerStyle={{ maxWidth: dp(640) }}>
                 <Text style={{ color: colours.text, fontSize: dp(26), fontWeight: "600", marginBottom: dp(14) }}>{t.settings}</Text>
                 <Section title={t.accountTitle}>
@@ -88,6 +88,7 @@ export function SettingsScreen({ model, state }: { model: AppModel; state: State
                     <Line text={t.signOutHint} />
                 </Section>
                 <Line text={t.about(VERSION)} />
+                {model.tmdb.enabled ? <Line text={t.tmdbNotice} /> : null}
                 <Line text={t.noContent} />
             </ScrollView>
         </Screen>

@@ -82,6 +82,24 @@ export const en = {
     episodeCount: (n: number) => `${n.toLocaleString("en-CA")} ${n === 1 ? "episode" : "episodes"}`,
     rating: (r: number) => `★ ${r.toFixed(1)}`,
     paused: "Paused",
+    search: "Search",
+    searchHint: "Type a channel, movie or show",
+    noResults: (q: string) => `Nothing matches “${q}”.`,
+    favourites: "Favourites",
+    favourite: "Add to Favourites",
+    unfavourite: "Remove from Favourites",
+    favouriteHint: "Hold OK on a channel to add it to Favourites.",
+    favouriteAdded: (name: string) => `${name} is in Favourites.`,
+    favouriteRemoved: (name: string) => `${name} is out of Favourites.`,
+    gettingDetails: "Getting details…",
+    detailsFailed: "Couldn't reach TMDB. Showing the playlist's own details.",
+    cast: "Cast",
+    runtime: (minutes: number) => {
+        const h = Math.floor(minutes / 60);
+        const m = minutes % 60;
+        return h && m ? `${h} h ${m} min` : h ? `${h} h` : `${m} min`;
+    },
+    tmdbNotice: "This product uses the TMDB API but is not endorsed or certified by TMDB.",
     movieDidntStart: "This didn't start. The server may be busy, or the file may be missing.",
     noPlaylistOnAccount: "Signed in to your Tuned account, but it has no playlist yet. Try again to send one from your phone.",
     nothingUsable: "What the phone sent had no playlist the TV can use. Send it again from the phone.",

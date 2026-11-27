@@ -1,5 +1,5 @@
 import type { Fetch } from "@tuned/shared/platform";
-import { AppModel, hasPremium } from "../src/app/model";
+import { AppModel, FAVOURITES, hasPremium } from "../src/app/model";
 import type { Http } from "../src/core/http";
 import { memoryStore } from "../src/core/storage";
 
@@ -226,3 +226,126 @@ async function until(check: () => boolean): Promise<void> {
     for (let i = 0; i < 100 && !check(); i++) await new Promise((r) => setTimeout(r, 0));
     if (!check()) throw new Error("never happened");
 }
+
+describe("search, favourites and TMDB details on Vega", () => {
+    const login = { kind: "xtream" as const, server: "http://tv.example", username: "u", password: "p" };
+    const answers: Record<string, unknown> = {
+        account: { user_info: { auth: 1, status: "Active" } },
+        get_live_categories: [{ category_id: "1", category_name: "News" }],
+        get_live_streams: [
+            { stream_id: 5, name: "Télé-Québec", category_id: "1" },
+            { stream_id: 6, name: "Harbour News", category_id: "1" },
+        ],
+        get_vod_categories: [{ category_id: "2", category_name: "Drama" }],
+        get_vod_streams: [{ stream_id: 7, name: "EN | Paper Boats (2025)", category_id: "2" }],
+        get_series_categories: [{ category_id: "3", category_name: "Drama" }],
+        get_series: [{ series_id: 4, name: "Harbour Street", category_id: "3" }],
+        get_series_info: { episodes: { "1": [{ id: "41", season: 1, episode_num: 1, title: "Harbour Street S01E01" }] } },
+    };
+    const xtream: Http = {
+        async getJson(url) {
+            return { status: 200, body: answers[new URL(url).searchParams.get("action") ?? "account"] };
+        },
+        async postJson() {
+            return { status: 500, body: null };
+        },
+        async text(url) {
+            return JSON.stringify(answers[new URL(url).searchParams.get("action") ?? ""]);
+        },
+    };
+    const tmdbAsked: string[] = [];
+    let tmdbUp = true;
+    const tmdbFetch: Fetch = async (url) => {
+        const u = new URL(url);
+        tmdbAsked.push(u.pathname);
+        const body: unknown = !tmdbUp
+            ? null
+            : u.pathname === "/3/search/movie"
+              ? { results: [{ id: 9 }] }
+              : u.pathname === "/3/movie/9"
+                ? { id: 9, title: "Paper Boats", overview: "Two friends.", runtime: 112, genres: [{ name: "Drama" }], vote_average: 7.8 }
+                : u.pathname === "/3/search/tv"
+                  ? { results: [{ id: 44 }] }
+                  : u.pathname === "/3/tv/44"
+                    ? { id: 44, name: "Harbour Street" }
+                    : u.pathname === "/3/tv/44/season/1"
+                      ? { episodes: [{ episode_number: 1, name: "A Ship Comes In" }] }
+                      : null;
+        return {
+            ok: tmdbUp && body !== null,
+            status: tmdbUp ? 200 : 503,
+            headers: { get: () => null },
+            text: async () => JSON.stringify(body),
+            json: async () => body,
+        };
+    };
+    const make = (store = memoryStore()) =>
+        new AppModel({
+            ...services(xtream, store),
+            fetch: tmdbFetch,
+            tmdbKey: "k",
+            player: { open: async () => {}, close: async () => {} },
+        });
+
+    it("finds channels, movies and shows without accents or punctuation, channels first", async () => {
+        const model = make();
+        await model.useLogin(login);
+        await until(() => !!model.state.library);
+        model.setQuery("tele que");
+        expect(model.results().map((f) => (f.kind === "live" ? f.channel.name : f.title.name))).toEqual(["Télé-Québec"]);
+        model.setQuery("harbour");
+        expect(model.results().map((f) => f.kind)).toEqual(["live", "show"]);
+        model.setQuery("  ");
+        expect(model.results()).toEqual([]);
+    });
+
+    it("keeps favourites across a restart, shows them as their own category, and says what a star did", async () => {
+        const store = memoryStore();
+        const model = make(store);
+        await model.useLogin(login);
+        await until(() => !!model.state.library);
+        await model.toggleFavourite("6", "Harbour News");
+        expect(model.state.notice).toEqual({ on: true, name: "Harbour News" });
+        await model.toggleFavourite("m7", "Paper Boats");
+        model.pickCategory(FAVOURITES);
+        expect(model.visibleChannels().map((c) => c.name)).toEqual(["Harbour News"]);
+
+        const again = make(store);
+        await again.boot();
+        expect([...again.state.favourites].sort()).toEqual(["6", "m7"]);
+        await again.openBrowse("movies");
+        again.pickBrowseCategory("movies", FAVOURITES);
+        expect(again.visibleTitles("movies").map((x) => x.id)).toEqual(["m7"]);
+        await again.signOut();
+        expect(again.state.favourites.size).toBe(0);
+    });
+
+    it("fills a page from TMDB, with real episode names, and keeps the playlist's own when TMDB is down", async () => {
+        const model = make();
+        await model.useLogin(login);
+        await until(() => !!model.state.library);
+        const movie = model.visibleTitles("movies")[0];
+        await model.openTitle(movie);
+        await until(() => !model.state.detailsLoad.busy && movie.id in model.state.details);
+        expect(model.state.details[movie.id]).toMatchObject({ overview: "Two friends.", runtime: 112, genres: ["Drama"] });
+
+        const show = model.visibleTitles("shows")[0];
+        await model.openTitle(show);
+        await until(() => Object.keys(model.state.seasons).length > 0);
+        const [episode] = model.episodesOf(show)!;
+        expect(episode.name).toBeNull();
+        expect(model.episodeName(show, episode)).toBe("A Ship Comes In");
+
+        // A stick that can't reach TMDB says so and keeps the playlist's own details.
+        const asked = tmdbAsked.length;
+        const fresh = make();
+        await fresh.useLogin(login);
+        tmdbUp = false;
+        await until(() => !!fresh.state.library);
+        await fresh.openTitle(fresh.visibleTitles("movies")[0]);
+        await until(() => !fresh.state.detailsLoad.busy && fresh.state.detailsLoad.id !== null);
+        expect(fresh.state.detailsLoad.failed).toBe(true);
+        expect(tmdbAsked.length).toBeGreaterThan(asked);
+        tmdbUp = true;
+    });
+});

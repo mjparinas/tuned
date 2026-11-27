@@ -84,6 +84,24 @@ export const tr: Strings = {
     episodeCount: (n: number) => `${num(n)} bölüm`,
     rating: (r: number) => `★ ${r.toFixed(1).replace(".", ",")}`,
     paused: "Duraklatıldı",
+    search: "Ara",
+    searchHint: "Bir kanal, film veya dizi yazın",
+    noResults: (q: string) => `“${q}” ile eşleşen bir şey yok.`,
+    favourites: "Favoriler",
+    favourite: "Favorilere ekle",
+    unfavourite: "Favorilerden çıkar",
+    favouriteHint: "Bir kanalı Favorilere eklemek için üzerinde OK tuşunu basılı tutun.",
+    favouriteAdded: (name: string) => `${name} Favorilerde.`,
+    favouriteRemoved: (name: string) => `${name} Favorilerden çıkarıldı.`,
+    gettingDetails: "Ayrıntılar alınıyor…",
+    detailsFailed: "TMDB'ye ulaşılamadı. Oynatma listesinin kendi ayrıntıları gösteriliyor.",
+    cast: "Oyuncular",
+    runtime: (minutes: number) => {
+        const h = Math.floor(minutes / 60);
+        const m = minutes % 60;
+        return h && m ? `${h} sa ${m} dk` : h ? `${h} sa` : `${m} dk`;
+    },
+    tmdbNotice: "Bu ürün TMDB API'sini kullanır ancak TMDB tarafından onaylanmamış veya sertifikalandırılmamıştır.",
     movieDidntStart: "Bu başlamadı. Sunucu meşgul olabilir ya da dosya eksik olabilir.",
     noPlaylistOnAccount: "Tuned hesabına giriş yapıldı ama hesapta henüz liste yok. Telefonundan bir liste göndermek için tekrar dene.",
     nothingUsable: "Telefonun gönderdiği şeyde TV'nin kullanabileceği bir liste yoktu. Telefondan tekrar gönder.",

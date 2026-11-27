@@ -11,6 +11,7 @@ import { LoadingScreen } from "./ui/LoadingScreen";
 import { ManualScreen } from "./ui/ManualScreen";
 import { PlayerScreen, type PlayerHandle } from "./ui/PlayerScreen";
 import { Screen, Spinner } from "./ui/parts";
+import { SearchScreen } from "./ui/SearchScreen";
 import { SettingsScreen } from "./ui/SettingsScreen";
 import { SignInScreen } from "./ui/SignInScreen";
 import { TitleScreen } from "./ui/TitleScreen";
@@ -56,10 +57,11 @@ export function Shell({ model, player }: { model: AppModel; player: VegaPlayer }
                     return true;
                 case "movies":
                 case "shows":
+                case "search":
                     model.go("live");
                     return true;
                 case "title":
-                    model.go(model.state.title?.kind === "show" ? "shows" : "movies");
+                    model.closeTitle();
                     return true;
                 default:
                     back.exitApp();
@@ -90,6 +92,8 @@ export function Shell({ model, player }: { model: AppModel; player: VegaPlayer }
         case "movies":
         case "shows":
             return <BrowseScreen model={model} state={state} kind={state.route} />;
+        case "search":
+            return <SearchScreen model={model} state={state} />;
         case "title":
             return <TitleScreen model={model} state={state} />;
         case "player":

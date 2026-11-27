@@ -85,6 +85,24 @@ export const ar: Strings = {
     episodeCount: (n: number) => `الحلقات: ${num(n)}`,
     rating: (r: number) => `★ ${r.toFixed(1)}`,
     paused: "متوقف مؤقتًا",
+    search: "بحث",
+    searchHint: "اكتب قناة أو فيلمًا أو مسلسلًا",
+    noResults: (q: string) => `لا توجد نتائج لـ "${q}".`,
+    favourites: "المفضلة",
+    favourite: "إضافة إلى المفضلة",
+    unfavourite: "إزالة من المفضلة",
+    favouriteHint: "اضغط مطولًا على OK فوق قناة لإضافتها إلى المفضلة.",
+    favouriteAdded: (name: string) => `${name} في المفضلة.`,
+    favouriteRemoved: (name: string) => `أُزيل ${name} من المفضلة.`,
+    gettingDetails: "جارٍ جلب التفاصيل…",
+    detailsFailed: "تعذّر الوصول إلى TMDB. تُعرض تفاصيل قائمة التشغيل نفسها.",
+    cast: "طاقم التمثيل",
+    runtime: (minutes: number) => {
+        const h = Math.floor(minutes / 60);
+        const m = minutes % 60;
+        return h && m ? `${h} س ${m} د` : h ? `${h} س` : `${m} د`;
+    },
+    tmdbNotice: "يستخدم هذا المنتج واجهة TMDB البرمجية، لكنه غير معتمد أو موثق من TMDB.",
     movieDidntStart: "لم يبدأ التشغيل. ربما الخادم مشغول، أو الملف مفقود.",
     noPlaylistOnAccount: "تم تسجيل الدخول إلى حساب Tuned، لكن ليس فيه قائمة تشغيل بعد. أعد المحاولة لإرسال واحدة من هاتفك.",
     nothingUsable: "ما أرسله الهاتف لا يحتوي على قائمة تشغيل يمكن للتلفاز استخدامها. أرسلها مرة أخرى من الهاتف.",

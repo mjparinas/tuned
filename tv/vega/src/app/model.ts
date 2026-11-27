@@ -3,7 +3,10 @@
 // every refresh, sign-in and account check reports progress and how it ended. Movies and shows load after Live TV,
 // in the background, so they never hold up the channels.
 import { ACCOUNT_BASE, TunedAccount, type AccountState as SharedAccount } from "@tuned/shared/account";
+import { Favourites, favouritesKey } from "@tuned/shared/favourites";
 import type { Fetch, KeyValueStore } from "@tuned/shared/platform";
+import { search as searchItems } from "@tuned/shared/search";
+import { Tmdb, type Details, type EpisodeInfo } from "@tuned/shared/tmdb";
 import type { Http } from "../core/http";
 import { addSecret, clearSecrets, launchSafely, log } from "../core/log";
 import type { Channel, Episode, Library, Lineup, Login, Playable, Programme, Title } from "../core/models";
@@ -36,7 +39,14 @@ const sharedStore = (store: Store): KeyValueStore => ({
     remove: (key) => store.remove([PREFIX + key]),
 });
 
-export type Route = "boot" | "signin" | "manual" | "loading" | "live" | "movies" | "shows" | "title" | "player" | "settings" | "account";
+export type Route =
+    "boot" | "signin" | "manual" | "loading" | "live" | "movies" | "shows" | "search" | "title" | "player" | "settings" | "account";
+
+/** The category that holds what the person starred, first after All in Live TV, Movies and Shows. */
+export const FAVOURITES = "__favourites";
+
+/** One search result: a channel, a movie or a show. */
+export type Found = { kind: "live"; channel: Channel } | { kind: "movie" | "show"; title: Title };
 
 export interface Busy {
     busy: boolean;
@@ -73,6 +83,16 @@ export interface State {
     vod: Playable | null;
     /** Where each movie and episode was left, in seconds. */
     positions: Record<string, number>;
+    /** The ids starred, channels, movies and shows alike. */
+    favourites: ReadonlySet<string>;
+    /** What a star just did, said for a few seconds ("Added to Favourites"). */
+    notice: { on: boolean; name: string } | null;
+    /** TMDB's details per title id; null when TMDB has no match. */
+    details: Record<string, Details | null>;
+    detailsLoad: { id: string | null; busy: boolean; failed: boolean };
+    /** TMDB's episode names per "tmdbId:season". */
+    seasons: Record<string, EpisodeInfo[]>;
+    query: string;
 }
 
 export interface Services {
@@ -86,6 +106,10 @@ export interface Services {
     site?: string;
     /** Waits until the first screen has been drawn before background work starts (QuietStart on Android). */
     quietStart?: () => Promise<void>;
+    /** The app's TMDB key, built in at build time (platform/keys.ts); empty turns details off. */
+    tmdbKey?: string;
+    /** The TV's language for TMDB ("fr-CA"). */
+    language?: string;
 }
 
 export class AppModel {
@@ -109,8 +133,19 @@ export class AppModel {
         episodesLoad: { id: null, busy: false, failed: false },
         vod: null,
         positions: {},
+        favourites: new Set(),
+        notice: null,
+        details: {},
+        detailsLoad: { id: null, busy: false, failed: false },
+        seasons: {},
+        query: "",
     };
     readonly saved: Storage;
+    readonly favourites: Favourites;
+    readonly tmdb: Tmdb;
+    private noticeTimer: ReturnType<typeof setTimeout> | null = null;
+    /** Where Back from a movie's or show's page goes: the grid it was picked from, or Search. */
+    private titleFrom: Route = "movies";
     /** Whether the saved movies and shows have been read yet (after the first screen, so Live TV comes first). */
     private libraryRead = false;
     readonly account: TunedAccount;
@@ -129,6 +164,11 @@ export class AppModel {
             log: (tag, message) => log.info(tag, message),
         });
         this.stream = new OneStream(services.player);
+        const shared = sharedStore(services.store);
+        // One playlist on the stick, so one list of favourites; the key is the Samsung app's, for the same playlist id.
+        this.favourites = new Favourites(shared, favouritesKey("current"));
+        this.favourites.onChange((favourites) => this.set({ favourites }));
+        this.tmdb = new Tmdb(services.fetch, shared, services.tmdbKey ?? "", Date.now, services.language ?? "en-CA");
     }
 
     subscribe = (listener: () => void) => {
@@ -162,6 +202,7 @@ export class AppModel {
             this.saved.loadLastChannel().catch(() => null),
         ]);
         rememberSecrets(login);
+        await this.favourites.load().catch(() => undefined);
         if (!login) return this.set({ route: "signin", account });
         if (!lineup) {
             this.set({ login, account, route: "loading" });
@@ -281,13 +322,106 @@ export class AppModel {
         if (!library) return [];
         const all = kind === "movies" ? library.movies : library.shows;
         const category = kind === "movies" ? this.state.movieCategory : this.state.showCategory;
+        if (category === FAVOURITES) return all.filter((t) => this.state.favourites.has(t.id));
         return category ? all.filter((t) => t.categoryId === category) : all;
+    }
+
+    /** Stars or unstars a channel, movie or show, and says which for a few seconds. */
+    async toggleFavourite(id: string, name: string): Promise<void> {
+        const on = await this.favourites.toggle(id);
+        this.say({ on, name });
+    }
+
+    /** A short line the screens show and take away themselves. */
+    private say(notice: NonNullable<State["notice"]>): void {
+        if (this.noticeTimer) clearTimeout(this.noticeTimer);
+        this.set({ notice });
+        this.noticeTimer = setTimeout(() => this.set({ notice: null }), 3000);
+    }
+
+    /** Search reads the saved movies and shows too, so it finds them before Movies has been opened. */
+    async openSearch(): Promise<void> {
+        this.go("search");
+        await this.readSavedLibrary();
+    }
+
+    /** Search across channels, movies and shows, channels first, as Android's search lists them. */
+    setQuery(query: string): void {
+        this.set({ query });
+    }
+
+    results(): Found[] {
+        const q = this.state.query;
+        if (!q.trim()) return [];
+        const channels = searchItems(this.state.lineup?.channels ?? [], q, (c) => c.name, 200);
+        const movies = searchItems(this.state.library?.movies ?? [], q, (t) => t.name, 200);
+        const shows = searchItems(this.state.library?.shows ?? [], q, (t) => t.name, 200);
+        return [
+            ...channels.map((channel) => ({ kind: "live" as const, channel })),
+            ...movies.map((title) => ({ kind: "movie" as const, title })),
+            ...shows.map((title) => ({ kind: "show" as const, title })),
+        ];
+    }
+
+    /**
+     * TMDB's details for a page (Melvin, 2026-11-17: real names over numbers): read once, kept on the stick, and for a
+     * show each season's episode names. The playlist's own details show meanwhile, and stay if TMDB can't be reached.
+     */
+    async loadDetails(title: Title): Promise<void> {
+        if (!this.tmdb.enabled || title.id in this.state.details) return this.loadSeasons(title);
+        this.set({ detailsLoad: { id: title.id, busy: true, failed: false } });
+        try {
+            const details = await this.tmdb.details(title.kind, title.name, title.year);
+            this.set({
+                details: { ...this.state.details, [title.id]: details },
+                detailsLoad: { id: title.id, busy: false, failed: false },
+            });
+        } catch (error) {
+            log.warn("AppModel", "details", error);
+            this.set({ detailsLoad: { id: title.id, busy: false, failed: true } });
+            return;
+        }
+        await this.loadSeasons(title);
+    }
+
+    /** TMDB's names for the seasons a show's episodes are in. */
+    private async loadSeasons(title: Title): Promise<void> {
+        const details = this.state.details[title.id];
+        const episodes = this.episodesOf(title);
+        if (title.kind !== "show" || !details || !episodes) return;
+        for (const season of [...new Set(episodes.map((e) => e.season))]) {
+            const key = `${details.tmdbId}:${season}`;
+            if (this.state.seasons[key]) continue;
+            try {
+                const list = await this.tmdb.season(details.tmdbId, season);
+                this.set({ seasons: { ...this.state.seasons, [key]: list } });
+            } catch (error) {
+                log.warn("AppModel", "season names", error);
+            }
+        }
+    }
+
+    /** An episode's name: TMDB's where it has one, else the provider's, else null (the screen says "Episode 2"). */
+    episodeName(title: Title, episode: Episode): string | null {
+        const details = this.state.details[title.id];
+        const tmdb = details
+            ? this.state.seasons[`${details.tmdbId}:${episode.season}`]?.find((e) => e.episode === episode.episode)
+            : undefined;
+        return tmdb?.name ?? episode.name;
     }
 
     /** A movie's or show's page; an Xtream show reads its episodes as it opens (one small request). */
     async openTitle(title: Title): Promise<void> {
+        if (this.state.route !== "title" && this.state.route !== "player") this.titleFrom = this.state.route;
         this.set({ title, route: "title" });
+        launchSafely("title.details", () => this.loadDetails(title));
         if (title.kind === "show" && !title.episodes && !this.state.episodes[title.id]) await this.loadEpisodes(title);
+        if (title.kind === "show") await this.loadSeasons(title);
+    }
+
+    closeTitle(): void {
+        const kind = this.state.title?.kind === "show" ? "shows" : "movies";
+        this.go(this.titleFrom === "search" ? "search" : kind);
     }
 
     episodesOf(title: Title): Episode[] | null {
@@ -335,6 +469,7 @@ export class AppModel {
     visibleChannels(): Channel[] {
         const { lineup, category } = this.state;
         if (!lineup) return [];
+        if (category === FAVOURITES) return lineup.channels.filter((c) => this.state.favourites.has(c.id));
         return category ? lineup.channels.filter((c) => c.categoryId === category) : lineup.channels;
     }
 
@@ -462,7 +597,13 @@ export class AppModel {
             episodesLoad: { id: null, busy: false, failed: false },
             vod: null,
             positions: {},
+            favourites: new Set(),
+            details: {},
+            detailsLoad: { id: null, busy: false, failed: false },
+            seasons: {},
+            query: "",
         });
+        await this.favourites.load().catch(() => undefined);
         this.libraryRead = false;
     }
 }
