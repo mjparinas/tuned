@@ -240,4 +240,20 @@ export const fr: Strings = {
         busy: "Un autre appareil enregistre dans votre compte. Réessayez dans un instant.",
     },
     listHint: "Maintenez OK sur une chaîne pour l’ajouter aux favoris ou à l’une de vos listes.",
+    simkl: "Simkl",
+    simklHint:
+        "Les films et épisodes que vous regardez ici apparaissent dans votre historique Simkl, comme depuis l'app Tuned sur votre téléphone.",
+    simklConnect: "Connecter Simkl",
+    simklCode: (site: string) => "Sur votre téléphone ou votre ordinateur, allez sur " + site + " et saisissez ce code :",
+    simklWaiting: "En attente du code…",
+    simklConnected: (user: string | null) => (user ? "Connecté en tant que " + user + "" : "Connecté"),
+    simklScrobble: "Scrobbler ce que vous regardez",
+    simklScrobbleHint: "Indiquez à Simkl ce qui est en lecture, pour l'ajouter à votre historique et à En cours.",
+    simklDisconnect: "Déconnecter",
+    simklProblem: {
+        offline: "Impossible de joindre Simkl. Vérifiez la connexion Internet du téléviseur et réessayez.",
+        expired: "Le code a expiré avant d'être saisi. Réessayez pour en obtenir un nouveau.",
+        denied: "Simkl n'a pas autorisé la connexion de Tuned. Réessayez plus tard.",
+    },
+    simklPremium: "Simkl est inclus dans Premium, avec votre compte Tuned.",
 };

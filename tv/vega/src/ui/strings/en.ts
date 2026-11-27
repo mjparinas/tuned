@@ -237,6 +237,21 @@ export const en = {
         busy: "Another device is saving to your account. Try again in a moment.",
     } as Record<ListProblem, string>,
     listHint: "Hold OK on a channel to add it to Favourites or one of your lists.",
+    simkl: "Simkl",
+    simklHint: "Movies and episodes you watch here show up in your Simkl history, as from the Tuned app on your phone.",
+    simklConnect: "Connect Simkl",
+    simklCode: (site: string) => "On your phone or computer, go to " + site + " and type this code:",
+    simklWaiting: "Waiting for the code…",
+    simklConnected: (user: string | null) => (user ? "Connected as " + user + "" : "Connected"),
+    simklScrobble: "Scrobble what you watch",
+    simklScrobbleHint: "Tell Simkl what's playing, so it lands in your history and Watching now.",
+    simklDisconnect: "Disconnect",
+    simklProblem: {
+        offline: "Couldn't reach Simkl. Check the TV's internet connection and try again.",
+        expired: "The code ran out before it was typed. Try again for a new one.",
+        denied: "Simkl didn't let Tuned sign in. Try again later.",
+    },
+    simklPremium: "Simkl comes with Premium, through your Tuned account.",
 };
 
 export type Strings = typeof en;

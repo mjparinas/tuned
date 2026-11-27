@@ -1127,3 +1127,143 @@ describe("your own lists, account Favourites and renamed channels on Vega", () =
         expect(s.puts).toBe(0);
     });
 });
+
+describe("Simkl on Vega", () => {
+    const login = { kind: "xtream" as const, server: "http://tv.example", username: "u", password: "p" };
+    const answers: Record<string, unknown> = {
+        account: { user_info: { auth: 1, status: "Active" } },
+        get_live_categories: [{ category_id: "1", category_name: "News" }],
+        get_live_streams: [{ stream_id: 5, name: "Harbour News", category_id: "1" }],
+        get_vod_categories: [],
+        get_vod_streams: [],
+        get_series_categories: [],
+        get_series: [],
+    };
+    const xtream: Http = {
+        async getJson(url) {
+            return { status: 200, body: answers[new URL(url).searchParams.get("action") ?? "account"] };
+        },
+        async postJson() {
+            return { status: 500, body: null };
+        },
+        async text(url) {
+            return JSON.stringify(answers[new URL(url).searchParams.get("action") ?? ""]);
+        },
+    };
+    const make = (backup: string) => {
+        const sent: { path: string; body: any }[] = [];
+        const polls = ["authorization_pending", "slow_down"];
+        const fetch: Fetch = async (url, init) => {
+            const u = new URL(url);
+            const reply = (status: number, body: unknown) => ({
+                ok: status < 300,
+                status,
+                headers: { get: () => null },
+                text: async () => JSON.stringify(body),
+                json: async () => body,
+            });
+            if (u.host === "api.simkl.com") {
+                sent.push({ path: u.pathname, body: init?.body?.startsWith("{") ? JSON.parse(init.body) : init?.body });
+                if (u.pathname === "/oauth2/device")
+                    return reply(200, {
+                        device_code: "d",
+                        user_code: "QW7E",
+                        verification_uri: "https://simkl.com/pin",
+                        expires_in: 900,
+                        interval: 1,
+                    });
+                if (u.pathname === "/oauth2/token") {
+                    const error = polls.shift();
+                    return error ? reply(400, { error }) : reply(200, { access_token: "a", refresh_token: "r", expires_in: 90 * 86400 });
+                }
+                if (u.pathname === "/users/settings") return reply(200, { user: { name: "Robin" } });
+                return reply(201, {});
+            }
+            if (u.pathname === "/api/backup") return { ...reply(200, null), text: async () => backup };
+            if (u.pathname === "/api/auth/token") return reply(200, { status: "ok", token: "tok", email: "" });
+            return reply(200, { seat: "active" });
+        };
+        let at = 0;
+        const player = { open: async () => {}, close: async () => {}, position: () => ({ at, length: 2000 }) };
+        const model = new AppModel({ ...services(xtream), fetch, player, simklId: "cid" });
+        return { model, sent, seek: (s: number) => (at = s) };
+    };
+    const noProfiles = '{"fingerprint":"f","changedAt":1,"copy":{"version":3,"playlists":[],"profiles":[],"settings":{}}}';
+    const movie = {
+        id: "m7",
+        titleId: "m7",
+        title: "Paper Boats",
+        url: "http://tv.example/movie/u/p/7.mp4",
+        scrobble: { type: "movie" as const, title: "Paper Boats", year: 2025 },
+    };
+
+    afterEach(() => jest.useRealTimers());
+
+    it("connects with a code, then tells Simkl a movie started, paused and stopped", async () => {
+        const { model, sent, seek } = make(noProfiles);
+        await model.useLogin(login);
+        await model.accountLinked("link");
+        expect(model.simklOn()).toBe(true);
+        jest.useFakeTimers();
+        const connecting = model.connectSimkl();
+        await jest.advanceTimersByTimeAsync(0);
+        expect(model.state.simkl.code?.userCode).toBe("QW7E");
+        expect(model.state.simkl.busy).toBe(true);
+        await jest.advanceTimersByTimeAsync(1000); // waiting
+        await jest.advanceTimersByTimeAsync(1000); // slow down: the next ask waits 6 s
+        await jest.advanceTimersByTimeAsync(5000);
+        expect(model.state.simkl.signedIn).toBe(false);
+        await jest.advanceTimersByTimeAsync(1000);
+        await connecting;
+        jest.useRealTimers();
+        expect(model.state.simkl).toMatchObject({ signedIn: true, user: "Robin", code: null, busy: false, problem: null });
+
+        await model.playVod(movie);
+        model.playback("playing");
+        seek(500);
+        model.pauseChanged(true);
+        model.playback("playing"); // the picture coming back after a pause isn't a second start
+        seek(1700);
+        await model.stopPlaying();
+        await until(() => sent.filter((s) => s.path.startsWith("/scrobble")).length === 3);
+        expect(sent.filter((s) => s.path.startsWith("/scrobble"))).toEqual([
+            { path: "/scrobble/start", body: { movie: { title: "Paper Boats", year: 2025 }, progress: 0 } },
+            { path: "/scrobble/pause", body: { movie: { title: "Paper Boats", year: 2025 }, progress: 25 } },
+            { path: "/scrobble/stop", body: { movie: { title: "Paper Boats", year: 2025 }, progress: 85 } },
+        ]);
+
+        // Scrobble off sends nothing; live TV and catch-up never do.
+        await model.setSimklScrobble(false);
+        await model.playVod(movie);
+        model.playback("playing");
+        await model.stopPlaying();
+        await model.setSimklScrobble(true);
+        await model.playVod({ ...movie, replay: true });
+        model.playback("playing");
+        await model.stopPlaying();
+        await new Promise((r) => setTimeout(r, 20));
+        expect(sent.filter((s) => s.path.startsWith("/scrobble")).length).toBe(3);
+    });
+
+    it("Back stops waiting for the code", async () => {
+        const { model } = make(noProfiles);
+        await model.useLogin(login);
+        await model.accountLinked("link");
+        jest.useFakeTimers();
+        void model.connectSimkl();
+        await jest.advanceTimersByTimeAsync(0);
+        model.cancelSimkl();
+        await jest.advanceTimersByTimeAsync(10_000);
+        expect(model.state.simkl).toMatchObject({ signedIn: false, busy: false, code: null });
+    });
+
+    it("takes the phone's Simkl sign-in from the account's backup", async () => {
+        const backup = `{"fingerprint":"f","changedAt":1,"copy":{"version":3,"playlists":[],"profiles":[],"settings":{},
+            "simkl":{"access":"a","refresh":"r","expiresAt":${Date.now() + 30 * 86400_000},"username":"Robin"}}}`;
+        const { model } = make(backup);
+        await model.useLogin(login);
+        await model.accountLinked("link");
+        await until(() => model.state.simkl.signedIn);
+        expect(model.state.simkl.user).toBe("Robin");
+    });
+});
