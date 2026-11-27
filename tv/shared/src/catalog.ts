@@ -27,6 +27,8 @@ export interface Item {
     readonly catchUp: string | null;
     /** Live channels are numbered from 1 in playlist order, as on Android (Settings › Channel numbers). */
     readonly number: number;
+    /** Android's id for the same stream (`StableId`, decimal text), which the account's backup keeps favourites by. */
+    readonly androidId: string;
 }
 
 /** FNV-1a, 52 bits: short, fast and stable, so an id never carries the link (and its login) itself. */
@@ -63,6 +65,7 @@ export function toItem(entry: Entry, number = 0, extra: Partial<Pick<Item, "catc
         catchUpDays: extra.catchUpDays ?? entry.catchUpDays,
         catchUp: extra.catchUp !== undefined ? extra.catchUp : (entry.catchUp ?? null),
         number,
+        androidId: entry.stableId,
     };
 }
 

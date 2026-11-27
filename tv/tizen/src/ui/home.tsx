@@ -1,7 +1,10 @@
 // Home: Tuned's mark atop a rail (Live TV, Movies, Shows, Search, Settings) and the section beside it. Landing on a
 // rail item opens its section, so the remote needs no OK to move between them.
 import type { Tab } from "./nav.ts";
-import { setTab } from "./nav.ts";
+import { open, setTab } from "./nav.ts";
+import { currentProfile, profileId, profiles } from "../app.ts";
+import { useStore } from "../state.ts";
+import { Avatar } from "./profiles.tsx";
 import { t } from "../strings.ts";
 import { Brand, Screen } from "./parts.tsx";
 import { LiveTv } from "./live.tsx";
@@ -21,19 +24,25 @@ const TABS: { tab: Tab; label: string; icon: string }[] = [
 const HEIGHT = 1080 - 2 * 48;
 
 export function Home(props: { tab: Tab }) {
+    useStore(profileId);
+    const many = useStore(profiles).profiles.length > 1;
+    const who = currentProfile();
+    // A kids profile has no Settings, as on Android (profiles.md).
+    const tabs = who?.kids ? TABS.filter((x) => x.tab !== "settings") : TABS;
+    const tab = who?.kids && props.tab === "settings" ? "live" : props.tab;
     return (
         // The section puts the remote on its first item once its list is read (lists.tsx).
         <Screen class="home" noStart>
             <nav class="rail" aria-label="Tuned" data-region>
                 <Brand />
-                {TABS.map((x) => (
+                {tabs.map((x) => (
                     <button
                         key={x.tab}
                         type="button"
-                        class={x.tab === props.tab ? "rail-item picked" : "rail-item"}
-                        aria-current={x.tab === props.tab ? "page" : undefined}
+                        class={x.tab === tab ? "rail-item picked" : "rail-item"}
+                        aria-current={x.tab === tab ? "page" : undefined}
                         data-focus
-                        onFocus={() => x.tab !== props.tab && setTab(x.tab)}
+                        onFocus={() => x.tab !== tab && setTab(x.tab)}
                         onClick={() => setTab(x.tab)}
                     >
                         <span class="icon" aria-hidden="true">
@@ -42,13 +51,26 @@ export function Home(props: { tab: Tab }) {
                         {x.label}
                     </button>
                 ))}
+                {many && who ? (
+                    // Switching profile is the rail's last item, so landing on it opens nothing; OK does.
+                    <button
+                        type="button"
+                        class="rail-item who"
+                        data-focus
+                        aria-label={t.switchProfile}
+                        onClick={() => open({ name: "profiles" })}
+                    >
+                        <Avatar profile={who} size={44} />
+                        <span class="grow">{who.name}</span>
+                    </button>
+                ) : null}
             </nav>
-            <main class="content" key={props.tab} data-region>
-                {props.tab === "live" ? <LiveTv height={HEIGHT} /> : null}
-                {props.tab === "movie" ? <Posters kind="movie" height={HEIGHT} /> : null}
-                {props.tab === "series" ? <Posters kind="series" height={HEIGHT} /> : null}
-                {props.tab === "search" ? <Search height={HEIGHT} /> : null}
-                {props.tab === "settings" ? <Settings height={HEIGHT} /> : null}
+            <main class="content" key={tab} data-region>
+                {tab === "live" ? <LiveTv height={HEIGHT} /> : null}
+                {tab === "movie" ? <Posters kind="movie" height={HEIGHT} /> : null}
+                {tab === "series" ? <Posters kind="series" height={HEIGHT} /> : null}
+                {tab === "search" ? <Search height={HEIGHT} /> : null}
+                {tab === "settings" ? <Settings height={HEIGHT} /> : null}
             </main>
         </Screen>
     );

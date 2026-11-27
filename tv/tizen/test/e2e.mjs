@@ -4,6 +4,7 @@
 // checks there was never more than one stream connection, in the app and at the server, and saves a picture of each
 // screen in test/out/.
 import { execFileSync } from "node:child_process";
+import { pbkdf2Sync } from "node:crypto";
 import { createReadStream, existsSync, mkdirSync, readFileSync, statSync } from "node:fs";
 import { createServer } from "node:http";
 import { extname, join } from "node:path";
@@ -37,6 +38,30 @@ colours.forEach((src, i) => {
             file,
         ]);
 });
+
+/** Android's id for a stream (`StableId`): FNV-1a 64 of kind, link tail and name, as signed decimal text. */
+function androidId(kind, url, name) {
+    const tail = url
+        .split("?")[0]
+        .split("/")
+        .pop()
+        .replace(/\.[^.]*$/, "");
+    let hash = 0xcbf29ce484222325n;
+    for (const byte of Buffer.from(`${kind}|${tail}|${name}`)) hash = ((hash ^ BigInt(byte)) * 0x100000001b3n) & 0xffffffffffffffffn;
+    return BigInt.asIntN(64, hash).toString();
+}
+/** A PIN hashed as Android's `PinHash` does. */
+const pinHash = (pin) => {
+    const salt = Buffer.from("tuned-e2e-salt!!");
+    return `v1:${salt.toString("base64")}:${pbkdf2Sync(pin, salt, 120_000, 32, "sha256").toString("base64")}`;
+};
+/** The account's backup as the phone left it: a grown-up profile with a PIN, and a kids one whose favourite is Treehouse. */
+const backup = (base) =>
+    `{"settings":{"adult_pin":{"s":"${pinHash("4321")}"}},"profiles":[` +
+    `{"id":1,"name":"Sam","colour":1,"kids":false,"pinHash":"${pinHash("1234")}","createdAt":1,"avatar":"fox"},` +
+    `{"id":2,"name":"Robin","colour":5,"kids":true,"createdAt":2,"avatar":"dragon","favourites":[{"itemId":${androidId(0, `${base}/live/2.webm`, "Treehouse")},"addedAt":1,"position":0}]}]}`;
+/** Once true, the phone signs the TV in to the account as soon as the code shows. */
+let phoneSignsIn = false;
 
 let open = 0;
 let highest = 0;
@@ -96,9 +121,16 @@ const server = createServer((req, res) => {
     }
     if (url.pathname === "/api/tv/take") {
         res.setHeader("Content-Type", "application/json");
-        return res.end(JSON.stringify({ status: "waiting" }));
+        return res.end(JSON.stringify(phoneSignsIn ? { status: "ok", link: "one-time" } : { status: "waiting" }));
     }
-    if (url.pathname === "/api/account/seat") return res.writeHead(401).end();
+    const signedIn = req.headers.authorization === "Bearer tv-token";
+    res.setHeader("Content-Type", "application/json");
+    if (url.pathname === "/api/auth/token")
+        return res.end(JSON.stringify({ status: "ok", token: "tv-token", email: "viewer@example.com" }));
+    if (url.pathname === "/api/account/seat")
+        return signedIn ? res.end(JSON.stringify({ seat: "active", email: "viewer@example.com" })) : res.writeHead(401).end();
+    if (url.pathname === "/api/backup") return signedIn ? res.end(backup(base)) : res.writeHead(401).end();
+    res.removeHeader("Content-Type");
     if (url.pathname === "/get.m3u") return res.end(playlist(base));
     if (url.pathname === "/guide.xml") return res.end(guide());
     const stream = url.pathname.match(/^\/(live|movie|series|catchup)\/(.+)$/);
@@ -305,6 +337,58 @@ try {
             await shot(`${tag}-3-settings`);
         });
     }
+    await step("Who's watching, a kids profile, and a PIN", async () => {
+        await page.close();
+        page = await freshTv("en-CA");
+        phoneSignsIn = true;
+        await page.goto(base);
+        await page.getByText("Signed in to your Tuned account.").waitFor({ timeout: 10_000 });
+        await page.waitForTimeout(300);
+        await page.getByText("Type a login with the remote").click();
+        await page.getByText("Xtream login").waitFor();
+        await page.waitForTimeout(200);
+        await key("ArrowRight");
+        await key("Enter");
+        await key("ArrowDown");
+        await page.keyboard.type(`${base}/get.m3u`);
+        await key("ArrowDown");
+        await page.keyboard.type(`${base}/guide.xml`);
+        await key("ArrowDown");
+        await key("Enter");
+        await page.getByText("Who's watching?").waitFor({ timeout: 20_000 });
+        await page.waitForTimeout(300);
+        await shot("10-whos-watching");
+        if (!(await focused()).includes("Sam")) throw new Error(`Focus is on "${await focused()}"`);
+        await key("ArrowRight");
+        await key("Enter");
+        await page.locator(".channel").first().waitFor({ timeout: 10_000 });
+        await page.getByText("Favourites").first().waitFor({ timeout: 5000 });
+        const names = await page.locator(".channel .name").allTextContents();
+        if (names.join() !== "Treehouse") throw new Error(`A kids profile sees ${names.join(", ")}`);
+        if (await page.locator(".rail").getByText("Settings").count()) throw new Error("A kids profile has Settings");
+        await page.waitForTimeout(300);
+        await shot("11-kids-profile");
+        await key("ArrowLeft", 3);
+        for (let i = 0; i < 6 && !(await focused()).includes("Robin"); i++) await key("ArrowDown");
+        await key("Enter");
+        await page.getByText("Who's watching?").waitFor();
+        await page.waitForTimeout(300);
+        await key("ArrowLeft");
+        await key("Enter");
+        await page.getByText("Enter Sam's PIN").waitFor();
+        await page.keyboard.type("1111");
+        await page.waitForTimeout(200);
+        await key("Enter");
+        await page.getByText("That PIN isn't right.").waitFor({ timeout: 10_000 });
+        await page.waitForTimeout(300);
+        await shot("12-pin");
+        await page.keyboard.type("1234");
+        await page.waitForTimeout(200);
+        await key("Enter");
+        await page.getByText("Who's watching?").waitFor({ state: "detached", timeout: 10_000 });
+        await page.locator(".channel").nth(3).waitFor({ timeout: 10_000 });
+        phoneSignsIn = false;
+    });
     const app = await page.evaluate(() => window.__tuned.connections());
     console.log(`Stream connections at once: app ${app.highest}, server ${highest}`);
     if (app.highest > 1 || highest > 1) throw new Error("More than one stream connection was open at once");

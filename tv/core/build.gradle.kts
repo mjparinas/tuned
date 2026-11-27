@@ -26,6 +26,7 @@ val shared =
         "Regions",
         "RemoteKeys",
         "Search",
+        "StableId",
         "StreamLink",
         "TitleSort",
         "Tmdb",
