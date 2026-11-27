@@ -2,7 +2,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { MemoryStore } from "./platform.ts";
-import { readHistory, Simkl, simklFromBackup, simklProgress, type SignInCode } from "./simkl.ts";
+import { readHistory, Simkl, simklFromBackup, simklProgress, simklScrobbleFromBackup, type SignInCode } from "./simkl.ts";
 import { fakeFetch } from "./test-fetch.ts";
 
 const DAY = 24 * 3600_000;
@@ -121,6 +121,8 @@ test("takes a newer sign-in from the account's backup, never an older one", asyn
         `{"fingerprint":"f","copy":{"profiles":[],"simkl":{"access":"a${expiresAt}","refresh":"r","expiresAt":${expiresAt},"username":"Robin"}}}`;
     assert.equal(simklFromBackup('{"copy":{}}'), null);
     assert.equal(simklFromBackup("not json"), null);
+    assert.equal(simklScrobbleFromBackup('{"copy":{"simklScrobble":false}}'), false);
+    assert.equal(simklScrobbleFromBackup('{"copy":{}}'), null);
     assert.equal(await simkl.adopt(simklFromBackup(backup(5 * DAY))), true);
     assert.equal(await simkl.adopt(simklFromBackup(backup(4 * DAY))), false);
     assert.deepEqual(await simkl.state(), { signedIn: true, user: "Robin" });

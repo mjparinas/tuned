@@ -31,6 +31,7 @@ export const App = makeApp(
         quietStart,
         tmdbKey: KEYS.tmdb,
         simklId: KEYS.simkl,
+        traktId: KEYS.trakt,
         language: locale(),
     },
     player,

@@ -49,7 +49,8 @@ import type { Fetch, KeyValueStore } from "@tuned/shared/platform";
 import { progressKey, WatchProgress, type Watched } from "@tuned/shared/progress";
 import { isSortOrder, nextSort, sortItems, type SortOrder } from "@tuned/shared/sort";
 import { search as searchItems } from "@tuned/shared/search";
-import { Simkl, simklFromBackup, simklProgress, type ScrobbleMedia, type SignInCode } from "@tuned/shared/simkl";
+import { Simkl, simklFromBackup, simklProgress, simklScrobbleFromBackup, type ScrobbleMedia, type SignInCode } from "@tuned/shared/simkl";
+import { Trakt, traktFromBackup, traktScrobbleFromBackup } from "@tuned/shared/trakt";
 import { Tmdb, type Details, type EpisodeInfo } from "@tuned/shared/tmdb";
 import type { Http } from "../core/http";
 import { addSecret, clearSecrets, launchSafely, log } from "../core/log";
@@ -239,8 +240,8 @@ export interface State {
     listFor: { id: string; name: string } | null;
     /** A change to the account saving (what for: a list's id, "new", "favourite"), and why the last one didn't stick. */
     listSave: { busy: string | null; problem: ListProblem | null };
-    /** Simkl in Settings: signed in or not, the code being shown, and how the last step ended. */
-    simkl: SimklView;
+    /** Trakt and Simkl in Settings: signed in or not, the code being shown, and how the last step ended. */
+    trackers: Record<Tracker, TrackerView>;
 }
 
 export interface Services {
@@ -256,25 +257,31 @@ export interface Services {
     quietStart?: () => Promise<void>;
     /** The app's TMDB key, built in at build time (platform/keys.ts); empty turns details off. */
     tmdbKey?: string;
-    /** Simkl's app id (SIMKL_CLIENT_ID), built in the same way; empty hides Simkl. */
+    /** Simkl's and Trakt's app ids (SIMKL_CLIENT_ID, TRAKT_CLIENT_ID), built in the same way; empty hides that one. */
     simklId?: string;
+    traktId?: string;
     /** The TV's language for TMDB ("fr-CA"). */
     language?: string;
 }
 
-export interface SimklView {
+/** The services that keep what's watched, as on Android: each signs in with a code and scrobbles on its own. */
+export type Tracker = "trakt" | "simkl";
+export const TRACKERS: readonly Tracker[] = ["trakt", "simkl"];
+
+export interface TrackerView {
     signedIn: boolean;
     user: string | null;
     /** Settings' Scrobble what you watch. */
     scrobble: boolean;
     /** Connecting or disconnecting. */
     busy: boolean;
-    /** The code to type at simkl.com/pin while connecting. */
+    /** The code to type at simkl.com/pin or trakt.tv/activate while connecting. */
     code: SignInCode | null;
     problem: "offline" | "expired" | "denied" | null;
 }
 
-export const NO_SIMKL: SimklView = { signedIn: false, user: null, scrobble: true, busy: false, code: null, problem: null };
+export const NO_TRACKER: TrackerView = { signedIn: false, user: null, scrobble: true, busy: false, code: null, problem: null };
+export const NO_TRACKERS: Record<Tracker, TrackerView> = { trakt: NO_TRACKER, simkl: NO_TRACKER };
 
 export class AppModel {
     state: State = {
@@ -321,14 +328,14 @@ export class AppModel {
         lists: NO_LISTS,
         listFor: null,
         listSave: { busy: null, problem: null },
-        simkl: NO_SIMKL,
+        trackers: NO_TRACKERS,
     };
     /** One guard for every PIN on the stick, so switching between a profile's and the parental PIN doesn't reset it. */
     readonly pins = new PinThrottle();
-    private readonly simkl: Simkl;
+    private readonly trackers: Record<Tracker, Simkl | Trakt>;
     /** Each Connect counts up, so going back stops its polling. */
-    private simklRun = 0;
-    /** What Simkl was told is playing, until it stops. */
+    private trackerRun: Record<Tracker, number> = { trakt: 0, simkl: 0 };
+    /** What Trakt and Simkl were told is playing, until it stops. */
     private scrobbling: ScrobbleMedia | null = null;
     /** Whether "Who's watching?" has been answered since the app opened; it asks at each start, as on Android. */
     private picked = false;
@@ -376,13 +383,11 @@ export class AppModel {
         const shared = sharedStore(services.store);
         this.tmdb = new Tmdb(services.fetch, shared, services.tmdbKey ?? "", Date.now, services.language ?? "en-CA");
         this.shared = shared;
-        this.simkl = new Simkl({
-            fetch: services.fetch,
-            store: shared,
-            clientId: services.simklId ?? "",
-            appVersion: "vega",
-            log: (tag, message) => log.info(tag, message),
-        });
+        const say = (tag: string, message: string) => log.info(tag, message);
+        this.trackers = {
+            trakt: new Trakt({ fetch: services.fetch, store: shared, clientId: services.traktId ?? "", log: say }),
+            simkl: new Simkl({ fetch: services.fetch, store: shared, clientId: services.simklId ?? "", appVersion: "vega", log: say }),
+        };
         this.keepFor(FIRST);
     }
 
@@ -445,7 +450,7 @@ export class AppModel {
         if (account) await this.readProfiles();
         this.keepFor(this.state.playlistId);
         await this.readPlaylists(login);
-        await Promise.all([this.loadKept(), this.loadPrefs(), this.readSimkl()]);
+        await Promise.all([this.loadKept(), this.loadPrefs(), this.readTrackers()]);
         if (!login) return this.set({ route: "signin", account });
         if (!lineup) {
             this.set({ login, account, route: "loading" });
@@ -1576,9 +1581,7 @@ export class AppModel {
         const read = profilesFromBackup(text);
         const follows = followsFromBackup(text);
         const lists = listsFromBackup(text);
-        launchSafely("simkl.adopt", async () => {
-            if (await this.simkl.adopt(simklFromBackup(text))) await this.readSimkl();
-        });
+        launchSafely("trackers.adopt", () => this.adoptTrackers(text));
         await Promise.all([
             this.shared.set(PROFILES_KEY, JSON.stringify(read)),
             this.shared.set(FOLLOWS_KEY, JSON.stringify(follows)),
@@ -1790,82 +1793,107 @@ export class AppModel {
         return !(await this.changeAccount(listId, { op: "list_delete", profileId: profile.id, listId }));
     }
 
-    /** Whether this build has Simkl's id; without it, nothing of Simkl shows. */
-    get simklAvailable(): boolean {
-        return this.simkl.available;
+    /** Whether this build has the service's id; without it, nothing of it shows. */
+    trackerAvailable(name: Tracker): boolean {
+        return this.trackers[name].available;
     }
 
-    /** Simkl is Premium, as on Android, and needs the app's id in the build (simkl.md). */
-    simklOn(): boolean {
-        return this.simkl.available && hasPremium(this.state.account);
+    /** Trakt and Simkl are Premium, as on Android ([trakt](trakt.md), [simkl](simkl.md)). */
+    trackerOn(name: Tracker): boolean {
+        return this.trackers[name].available && hasPremium(this.state.account);
     }
 
-    private async readSimkl(): Promise<void> {
+    private setTracker(name: Tracker, patch: Partial<TrackerView>): void {
+        const trackers = this.state.trackers;
+        this.set({ trackers: { ...trackers, [name]: { ...trackers[name], ...patch } } });
+    }
+
+    private async readTrackers(): Promise<void> {
+        await Promise.all(TRACKERS.map((name) => this.readTracker(name)));
+    }
+
+    private async readTracker(name: Tracker): Promise<void> {
         try {
-            const [now, scrobble] = await Promise.all([this.simkl.state(), this.simkl.scrobbleOn()]);
-            this.set({ simkl: { ...this.state.simkl, signedIn: now.signedIn, user: now.user, scrobble } });
+            const tracker = this.trackers[name];
+            const [now, scrobble] = await Promise.all([tracker.state(), tracker.scrobbleOn()]);
+            this.setTracker(name, { signedIn: now.signedIn, user: now.user, scrobble });
         } catch (e) {
-            log.warn("AppModel", "simkl state", e);
+            log.warn("AppModel", `${name} state`, e);
+        }
+    }
+
+    /** The phone's sign-ins and Scrobble switches from the account's backup, taken when newer (one sign-in covers every device). */
+    private async adoptTrackers(text: string): Promise<void> {
+        const found = {
+            trakt: { session: traktFromBackup(text), scrobble: traktScrobbleFromBackup(text) },
+            simkl: { session: simklFromBackup(text), scrobble: simklScrobbleFromBackup(text) },
+        };
+        for (const name of TRACKERS) {
+            const tracker = this.trackers[name];
+            const { session, scrobble } = found[name];
+            const took = await (tracker as Simkl).adopt(session);
+            if (took && scrobble !== null) await tracker.setScrobble(scrobble);
+            if (took) await this.readTracker(name);
         }
     }
 
     /**
-     * Settings › Simkl › Connect: shows a code to type at simkl.com/pin and asks Simkl each few seconds until it's typed,
-     * runs out, or the person goes back. The tokens stay on the stick (`simkl.token`) and are never logged.
+     * Settings › Trakt or Simkl › Connect: shows a code to type at trakt.tv/activate or simkl.com/pin and asks each few
+     * seconds until it's typed, runs out, or the person goes back. The tokens stay on the stick and are never logged.
      */
-    async connectSimkl(): Promise<void> {
-        if (this.state.simkl.busy) return;
-        const run = ++this.simklRun;
-        this.set({ simkl: { ...this.state.simkl, busy: true, code: null, problem: null } });
-        const code = await this.simkl.startSignIn();
-        if (run !== this.simklRun) return;
-        if (!code) return this.set({ simkl: { ...this.state.simkl, busy: false, problem: "offline" } });
-        this.set({ simkl: { ...this.state.simkl, code } });
+    async connectTracker(name: Tracker): Promise<void> {
+        if (this.state.trackers[name].busy) return;
+        const tracker = this.trackers[name];
+        const run = ++this.trackerRun[name];
+        const stale = () => run !== this.trackerRun[name];
+        this.setTracker(name, { busy: true, code: null, problem: null });
+        const code = await tracker.startSignIn();
+        if (stale()) return;
+        if (!code) return this.setTracker(name, { busy: false, problem: "offline" });
+        this.setTracker(name, { code });
         let wait = code.intervalMs;
         for (;;) {
             await new Promise((resolve) => setTimeout(resolve, wait));
-            if (run !== this.simklRun) return;
-            const answer = await this.simkl.pollSignIn(code);
-            if (run !== this.simklRun) return;
+            if (stale()) return;
+            const answer = await tracker.pollSignIn(code);
+            if (stale()) return;
             if (answer === "waiting") continue;
             if (answer === "slow down") {
-                wait = Simkl.slowDown(wait);
+                wait = name === "trakt" ? Trakt.slowDown(wait) : Simkl.slowDown(wait);
                 continue;
             }
             if (typeof answer === "object") {
-                this.set({ simkl: { ...this.state.simkl, busy: false, code: null, signedIn: true, user: answer.user, problem: null } });
-                return;
+                return this.setTracker(name, { busy: false, code: null, signedIn: true, user: answer.user, problem: null });
             }
-            return this.set({ simkl: { ...this.state.simkl, busy: false, code: null, problem: answer } });
+            return this.setTracker(name, { busy: false, code: null, problem: answer });
         }
     }
 
-    /** Back, or Cancel, while the code shows. */
-    cancelSimkl(): void {
-        this.simklRun++;
-        this.set({ simkl: { ...this.state.simkl, busy: false, code: null } });
+    /** Back, or the Back button, while the code shows. */
+    cancelTracker(name: Tracker): void {
+        this.trackerRun[name]++;
+        this.setTracker(name, { busy: false, code: null });
     }
 
-    /** Settings › Simkl › Disconnect: forgets the sign-in and tells Simkl to drop the token. */
-    async disconnectSimkl(): Promise<void> {
-        this.set({ simkl: { ...this.state.simkl, busy: true, problem: null } });
-        await this.simkl.signOut().catch((e) => log.warn("AppModel", "simkl sign out", e));
-        this.set({ simkl: { ...this.state.simkl, busy: false, signedIn: false, user: null } });
+    /** Settings › Disconnect: forgets the sign-in and tells the service to drop the token. */
+    async disconnectTracker(name: Tracker): Promise<void> {
+        this.setTracker(name, { busy: true, problem: null });
+        await this.trackers[name].signOut().catch((e) => log.warn("AppModel", `${name} sign out`, e));
+        this.setTracker(name, { busy: false, signedIn: false, user: null });
     }
 
-    async setSimklScrobble(on: boolean): Promise<void> {
-        this.set({ simkl: { ...this.state.simkl, scrobble: on } });
-        await this.simkl.setScrobble(on).catch((e) => log.warn("AppModel", "simkl scrobble", e));
+    async setTrackerScrobble(name: Tracker, on: boolean): Promise<void> {
+        this.setTracker(name, { scrobble: on });
+        await this.trackers[name].setScrobble(on).catch((e) => log.warn("AppModel", `${name} scrobble`, e));
     }
 
-    /** The player paused or went on (the remote's play and pause), told to Simkl as Android does. */
+    /** The player paused or went on (the remote's play and pause), told to Trakt and Simkl as Android does. */
     pauseChanged(paused: boolean): void {
         if (!this.scrobbling) return;
-        if (paused) this.scrobbleSend("pause", this.scrobbling);
-        else this.scrobbleSend("start", this.scrobbling);
+        this.scrobbleSend(paused ? "pause" : "start", this.scrobbling);
     }
 
-    /** A movie or episode started playing: tells Simkl once per play, from where it is. */
+    /** A movie or episode started playing: tells each service once per play, from where it is. */
     private scrobbleStart(): void {
         const media = this.state.vod?.scrobble;
         if (!media || this.state.vod?.replay || this.scrobbling === media) return;
@@ -1881,20 +1909,23 @@ export class AppModel {
     }
 
     private scrobbleSend(kind: "start" | "pause" | "stop", media: ScrobbleMedia): void {
-        if (!this.simklOn() || !this.state.simkl.signedIn || !this.state.simkl.scrobble) return;
         const where = this.services.player.position?.() ?? { at: 0, length: 0 };
         const progress = simklProgress(where.at * 1000, where.length * 1000);
-        launchSafely(`simkl.${kind}`, async () => {
-            const answer = await this.simkl.scrobble(kind, media, progress);
-            if (answer === "signed out") await this.readSimkl();
-        });
+        for (const name of TRACKERS) {
+            const view = this.state.trackers[name];
+            if (!this.trackerOn(name) || !view.signedIn || !view.scrobble) continue;
+            launchSafely(`${name}.${kind}`, async () => {
+                const answer = await this.trackers[name].scrobble(kind, media, progress);
+                if (answer === "signed out") await this.readTracker(name);
+            });
+        }
     }
 
     /** Sign out: back to how the stick was installed (AGENTS.md), the account signed out too. */
     async signOut(): Promise<void> {
         this.scrobbleEnd();
         await this.stream.stop();
-        await this.simkl.forget().catch((e) => log.warn("AppModel", "simkl forget", e));
+        for (const name of TRACKERS) await this.trackers[name].forget().catch((e) => log.warn("AppModel", `${name} forget`, e));
         if (this.state.account) await this.account.signOut();
         await this.saved.reset();
         clearSecrets();
@@ -1916,7 +1947,7 @@ export class AppModel {
             episodes: {},
             episodesLoad: { id: null, busy: false, failed: false },
             vod: null,
-            simkl: NO_SIMKL,
+            trackers: NO_TRACKERS,
             positions: {},
             watching: [],
             prefs: DEFAULT_PREFS,

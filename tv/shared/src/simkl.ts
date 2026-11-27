@@ -108,6 +108,18 @@ export function simklFromBackup(text: string | null): SimklSession | null {
     return readSession(copy?.simkl);
 }
 
+/** Whether the account's backup has Simkl scrobbling on or off (`copy.simklScrobble`), or null when it doesn't say. */
+export function simklScrobbleFromBackup(text: string | null): boolean | null {
+    let whole: Row | null = null;
+    try {
+        whole = text ? obj(JSON.parse(text)) : null;
+    } catch {
+        return null;
+    }
+    const on = (obj(whole?.copy) ?? whole)?.simklScrobble;
+    return typeof on === "boolean" ? on : null;
+}
+
 function readSession(v: unknown): SimklSession | null {
     const s = obj(v);
     const access = str(s?.access);
