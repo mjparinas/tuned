@@ -56,7 +56,8 @@ export function TopBar({ model, state, tab, status }: { model: AppModel; state?:
             <View style={{ flex: 1, alignItems: "flex-end" }}>
                 {state?.notice ? (
                     <Text accessibilityLiveRegion="polite" numberOfLines={1} style={{ color: colours.teal, fontSize: dp(14) }}>
-                        {state.notice.on ? t.favouriteAdded(state.notice.name) : t.favouriteRemoved(state.notice.name)}
+                        {state.notice.text ??
+                            (state.notice.on ? t.favouriteAdded(state.notice.name) : t.favouriteRemoved(state.notice.name))}
                     </Text>
                 ) : (
                     status

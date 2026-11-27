@@ -2,6 +2,7 @@
 // It keeps what Live TV needs (the name, the group, the logo, the guide id and the link) and sorts movies and episodes
 // (an Xtream /movie/ or /series/ path, or a file extension) into Movies and Shows, an episode going to its show by the
 // name before "S01E02". A port of the parts of core/M3uParser.kt and core/Classifier.kt the stick uses.
+import type { CatchUp } from "@tuned/shared/guide";
 import type { Category, Channel, Episode, Title } from "./models";
 
 const ATTR = /([a-zA-Z0-9-]+)="([^"]*)"/g;
@@ -11,7 +12,18 @@ const YEAR = /\((19\d\d|20\d\d)\)/;
 
 export class M3uReader {
     private rest = "";
-    private pending: { name: string; group: string; logo: string | null; guideId?: string; number?: number } | null = null;
+    private pending: {
+        name: string;
+        group: string;
+        logo: string | null;
+        guideId?: string;
+        number?: number;
+        catchUp?: CatchUp;
+    } | null = null;
+    /** The `#EXTM3U` line's attributes: a guide link (`url-tvg`) and catch-up every channel shares. */
+    private header: Record<string, string> = {};
+    /** The guide the `#EXTM3U` line names, if any. */
+    guideUrl: string | undefined;
     private groups = new Map<string, Category>();
     private movieGroups = new Map<string, Category>();
     private showGroups = new Map<string, Category>();
@@ -115,6 +127,9 @@ export class M3uReader {
         this.lines++;
         if (line.startsWith("#EXTM3U")) {
             this.sawHeader = true;
+            for (const m of line.matchAll(ATTR)) this.header[m[1].toLowerCase()] = m[2];
+            const guide = (this.header["url-tvg"] ?? this.header["x-tvg-url"] ?? "").split(",")[0].trim();
+            if (/^https?:\/\//i.test(guide)) this.guideUrl = guide;
             return;
         }
         if (line.startsWith("#EXTINF")) {
@@ -129,6 +144,7 @@ export class M3uReader {
                 logo: /^https?:\/\//.test(attrs["tvg-logo"] ?? "") ? attrs["tvg-logo"] : null,
                 guideId: attrs["tvg-id"] || undefined,
                 number: Number.isFinite(number) && number > 0 ? number : undefined,
+                catchUp: m3uCatchUp(attrs, this.header),
             };
             return;
         }
@@ -152,6 +168,7 @@ export class M3uReader {
             logo: entry?.logo ?? null,
             url: line,
             guideId: entry?.guideId,
+            ...(entry?.catchUp ? { catchUp: entry.catchUp } : {}),
         });
     }
 
@@ -165,4 +182,34 @@ export class M3uReader {
         }
         return line.length;
     }
+}
+
+const MODES = new Set(["default", "append", "shift", "flussonic", "xc"]);
+const ALIASES: Record<string, CatchUp["mode"]> = {
+    timeshift: "shift",
+    fs: "flussonic",
+    "flussonic-hls": "flussonic",
+    "flussonic-ts": "flussonic",
+    flussonic_hls: "flussonic",
+    flussonic_ts: "flussonic",
+    xtream: "xc",
+};
+
+/** A channel's catch-up from its `catchup`, `catchup-days` and `catchup-source`, or the header's (core/CatchUp.kt). */
+export function m3uCatchUp(attrs: Record<string, string>, header: Record<string, string>): CatchUp | undefined {
+    const read = (...keys: string[]) => {
+        for (const k of keys) if (attrs[k]?.trim()) return attrs[k];
+        for (const k of keys) if (header[k]?.trim()) return header[k];
+        return undefined;
+    };
+    const source = read("catchup-source");
+    const daysText = read("catchup-days", "timeshift", "tvg-rec");
+    const named = read("catchup", "catchup-type")?.trim().toLowerCase();
+    let mode: CatchUp["mode"] | undefined;
+    if (named !== undefined) mode = ALIASES[named] ?? (MODES.has(named) ? (named as CatchUp["mode"]) : undefined);
+    else if (source) mode = "default";
+    else if (attrs["timeshift"]?.trim()) mode = "shift";
+    if (!mode || ((mode === "default" || mode === "append") && !source)) return undefined;
+    const days = Number.parseInt(daysText?.trim() ?? "", 10);
+    return { mode, days: Math.min(days > 0 ? days : 5, 7), source: source ?? null };
 }

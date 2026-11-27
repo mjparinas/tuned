@@ -7,7 +7,7 @@ import { M3uReader } from "./m3u";
 import type { Library, Lineup, Login } from "./models";
 import { t } from "../ui/strings";
 import { eta, type StepProgress } from "./progress";
-import { accountUrl, checkAccount, parseCategories, parseLiveStreams, parseMovies, parseShows } from "./xtream";
+import { accountUrl, readAccount, parseCategories, parseLiveStreams, parseMovies, parseShows } from "./xtream";
 
 export class PlaylistError extends Error {
     constructor(public readonly reason: "wrong login" | "expired" | "unreachable" | "empty" | "not a playlist") {
@@ -48,14 +48,14 @@ export async function downloadLineup(
     const download = downloader(http, onProgress, now);
     if (login.kind === "xtream") {
         onProgress({ step: 1, steps: 3, label: t.checkingLogin });
-        const check = await checkAccount(http, login);
+        const { check, timezone } = await readAccount(http, login);
         if (check !== "ok") throw new PlaylistError(check);
         const base = accountUrl(login.server, login.username, login.password);
         const categories = parseCategories(safeJson(await download(`${base}&action=get_live_categories`, 2, 3, t.downloadingCategories)));
         const channels = parseLiveStreams(safeJson(await download(`${base}&action=get_live_streams`, 3, 3, t.downloadingChannels)), login);
         if (!channels.length) throw new PlaylistError("empty");
         const used = new Set(channels.map((c) => c.categoryId));
-        return { categories: categories.filter((c) => used.has(c.id)), channels, savedAt: now() };
+        return { categories: categories.filter((c) => used.has(c.id)), channels, timezone, savedAt: now() };
     }
 
     const text = await download(login.playlistUrl, 1, 2, t.downloadingPlaylist);
@@ -70,7 +70,13 @@ export async function downloadLineup(
     if (!reader.sawHeader && nothing) throw new PlaylistError("not a playlist");
     if (nothing) throw new PlaylistError("empty");
     const savedAt = now();
-    return { categories, channels, savedAt, library: { movieCategories, showCategories, movies, shows, savedAt } };
+    return {
+        categories,
+        channels,
+        savedAt,
+        ...(reader.guideUrl ? { guideUrl: reader.guideUrl } : {}),
+        library: { movieCategories, showCategories, movies, shows, savedAt },
+    };
 }
 
 /** An Xtream server's movies and shows, after Live TV: four numbered steps, each a JSON answer from player_api.php. */
