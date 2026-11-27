@@ -6,6 +6,7 @@ import { ScrollView, Text, View } from "react-native";
 import { hasPremium, premiumText, TUNE_WAITS, type AppModel, type State } from "../app/model";
 import { ProgressLines } from "./LoadingScreen";
 import { Button, Focusable, Screen } from "./parts";
+import { Avatar, PinPad } from "./ProfilesScreen";
 import { TopBar } from "./TopBar";
 import { t } from "./strings";
 import { colours, useDp } from "./theme";
@@ -109,6 +110,24 @@ export function SettingsScreen({ model, state }: { model: AppModel; state: State
     const refresh = state.refresh;
     const library = state.libraryLoad;
     const premium = premiumText(account);
+    const [askAdult, setAskAdult] = React.useState(false);
+    const profile = state.profiles.profiles.length > 1 ? model.currentProfile() : null;
+    const kids = model.kids();
+    if (askAdult) {
+        // Showing adult categories asks for the parental PIN the phone set, as on Android.
+        return (
+            <PinPad
+                model={model}
+                title={t.adultPin}
+                hash={state.profiles.parentalPin}
+                onCancel={() => setAskAdult(false)}
+                onOk={() => {
+                    setAskAdult(false);
+                    void model.setPrefs({ hideAdult: false });
+                }}
+            />
+        );
+    }
     return (
         <Screen>
             <TopBar model={model} state={state} tab="settings" />
@@ -134,6 +153,17 @@ export function SettingsScreen({ model, state }: { model: AppModel; state: State
                         )}
                     </View>
                 </Section>
+                {profile ? (
+                    <Section title={t.profiles}>
+                        <View style={{ flexDirection: "row", alignItems: "center", gap: dp(12), minHeight: dp(48) }}>
+                            <Avatar profile={profile} size={dp(36)} />
+                            <Text numberOfLines={1} style={{ flex: 1, color: colours.text, fontSize: dp(15), fontWeight: "600" }}>
+                                {t.watchingAs(profile.name)}
+                            </Text>
+                            <Button label={t.switchProfile} onPress={() => model.openProfiles()} />
+                        </View>
+                    </Section>
+                ) : null}
                 <Section title={t.playlists}>
                     {state.playlists.map((p) => (
                         <View key={p.id} style={{ flexDirection: "row", alignItems: "center", gap: dp(12), minHeight: dp(48) }}>
@@ -159,12 +189,16 @@ export function SettingsScreen({ model, state }: { model: AppModel; state: State
                     )}
                 </Section>
                 <Section title={t.contentTitle}>
-                    <Toggle
-                        label={t.hideAdult}
-                        hint={t.hideAdultHint}
-                        on={state.prefs.hideAdult}
-                        onChange={(hideAdult) => void model.setPrefs({ hideAdult })}
-                    />
+                    {kids ? null : (
+                        <Toggle
+                            label={t.hideAdult}
+                            hint={t.hideAdultHint}
+                            on={state.prefs.hideAdult}
+                            onChange={(hideAdult) =>
+                                !hideAdult && state.profiles.parentalPin ? setAskAdult(true) : void model.setPrefs({ hideAdult })
+                            }
+                        />
+                    )}
                     <Toggle
                         label={t.hide247}
                         hint={t.hide247Hint}

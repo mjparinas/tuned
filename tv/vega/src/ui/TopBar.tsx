@@ -5,6 +5,7 @@ import * as React from "react";
 import { Text, View } from "react-native";
 import type { AppModel, State } from "../app/model";
 import { Brand, Focusable } from "./parts";
+import { Avatar } from "./ProfilesScreen";
 import { t } from "./strings";
 import { colours, useDp } from "./theme";
 
@@ -31,6 +32,23 @@ function TabButton({ label, on, onPress }: { label: string; on: boolean; onPress
                     {label}
                 </Text>
             )}
+        </Focusable>
+    );
+}
+
+/** The profile in use, while there's more than one: OK opens "Who's watching?" to switch. */
+function ProfileBadge({ model, state }: { model: AppModel; state?: State }) {
+    const dp = useDp();
+    const profile = state && state.profiles.profiles.length > 1 ? model.currentProfile() : null;
+    if (!profile) return null;
+    return (
+        <Focusable
+            onPress={() => model.openProfiles()}
+            accessibilityRole="button"
+            accessibilityLabel={`${t.watchingAs(profile.name)}. ${t.switchProfile}`}
+            style={{ padding: dp(2), borderRadius: dp(14) }}
+        >
+            {() => <Avatar profile={profile} size={dp(32)} />}
         </Focusable>
     );
 }
@@ -63,6 +81,7 @@ export function TopBar({ model, state, tab, status }: { model: AppModel; state?:
                     status
                 )}
             </View>
+            <ProfileBadge model={model} state={state} />
         </View>
     );
 }

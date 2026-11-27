@@ -1,4 +1,6 @@
 import type { Fetch } from "@tuned/shared/platform";
+import { pbkdf2Sync } from "node:crypto";
+import { fnv64 } from "@tuned/shared/stableid";
 import { AppModel, CONTINUE, FAVOURITES, hasPremium } from "../src/app/model";
 import type { Http } from "../src/core/http";
 import { memoryStore } from "../src/core/storage";
@@ -877,5 +879,112 @@ describe("live events and auto-tune on Vega", () => {
         expect(model.state.prefs.tuneWaitS).toBe(12);
         await model.toggleEventReminder(later);
         expect(model.hasEventReminder(later)).toBe(false);
+    });
+});
+
+describe("profiles, kids and PINs on Vega", () => {
+    const login = { kind: "xtream" as const, server: "http://tv.example", username: "u", password: "p" };
+    const answers: Record<string, unknown> = {
+        account: { user_info: { auth: 1, status: "Active" } },
+        get_live_categories: [
+            { category_id: "1", category_name: "News" },
+            { category_id: "2", category_name: "Kids" },
+        ],
+        get_live_streams: [
+            { stream_id: 5, name: "Harbour News", category_id: "1" },
+            { stream_id: 6, name: "Puffin Cartoons", category_id: "2" },
+        ],
+        get_vod_categories: [{ category_id: "3", category_name: "Drama" }],
+        get_vod_streams: [{ stream_id: 7, name: "Paper Boats", category_id: "3" }],
+        get_series_categories: [],
+        get_series: [],
+    };
+    const xtream: Http = {
+        async getJson(url) {
+            return { status: 200, body: answers[new URL(url).searchParams.get("action") ?? "account"] };
+        },
+        async postJson(url) {
+            return new URL(url).pathname === "/api/auth/token"
+                ? { status: 200, body: { status: "ok", token: "tok", email: "" } }
+                : { status: 500, body: null };
+        },
+        async text(url) {
+            return JSON.stringify(answers[new URL(url).searchParams.get("action") ?? ""]);
+        },
+    };
+    const hashed = (pin: string) => {
+        const salt = Buffer.alloc(16, 3);
+        return `v1:${salt.toString("base64")}:${pbkdf2Sync(pin, salt, 120_000, 32, "sha256").toString("base64")}`;
+    };
+    // Android's sync copy as the server keeps it, 64-bit ids written as bare numbers.
+    const backup = `{"fingerprint":"f","changedAt":1,"copy":{"version":3,"playlists":[],
+        "profiles":[
+            {"id":7340000000000000001,"name":"Mel","colour":1,"kids":false,"favourites":[
+                {"itemId":${fnv64("1|7|Paper Boats")},"position":1},{"itemId":${fnv64("0|5|Harbour News")},"position":0}]},
+            {"id":7340000000000000002,"name":"Pip","colour":3,"kids":true,"avatar":"fox","favourites":[]},
+            {"id":7340000000000000003,"name":"Sam","colour":5,"kids":false,"pinHash":"${hashed("1234")}","favourites":[]}],
+        "settings":{"adult_pin":{"s":"${hashed("4321")}"},"followed_events":{"set":["Leafs"]}}}}`;
+    const accountFetch: Fetch = async (url) => {
+        const path = new URL(url).pathname;
+        const body =
+            path === "/api/backup" ? backup : path === "/api/auth/token" ? '{"status":"ok","token":"tok","email":""}' : '{"seat":"active"}';
+        return { ok: true, status: 200, headers: { get: () => null }, text: async () => body, json: async () => JSON.parse(body) };
+    };
+    const make = (store = memoryStore()) => new AppModel({ ...services(xtream, store), fetch: accountFetch });
+
+    it("asks who's watching, starts each profile with the account's favourites, and reads followed teams", async () => {
+        const store = memoryStore();
+        const model = make(store);
+        await model.useLogin(login);
+        await model.refreshLibrary();
+        await model.accountLinked("link");
+        expect(model.state.route).toBe("profiles");
+        expect(model.state.profiles.profiles.map((p) => p.name)).toEqual(["Mel", "Pip", "Sam"]);
+        expect(model.state.follows).toEqual(["Leafs"]);
+        const [mel, pip, sam] = model.state.profiles.profiles;
+        expect(mel.id).toBe("7340000000000000001");
+
+        expect(model.lockFor(mel)).toBe("none");
+        await model.useProfile(mel.id);
+        expect(model.state.route).toBe("live");
+        expect([...model.state.favourites]).toEqual(["5", "m7"]);
+        // Once only: unstarring stays unstarred.
+        await model.toggleFavourite("5", "Harbour News");
+        await model.useProfile(mel.id);
+        expect([...model.state.favourites]).toEqual(["m7"]);
+
+        // Moving into a kids profile never asks; it sees kids channels only, and its own favourites.
+        expect(model.lockFor(pip)).toBe("none");
+        await model.useProfile(pip.id);
+        expect(model.shownChannels().map((c) => c.name)).toEqual(["Puffin Cartoons"]);
+        expect(model.shownCategories("live").map((c) => c.name)).toEqual(["Kids"]);
+        expect(model.shownTitles("movies")).toEqual([]);
+        expect(model.state.favourites.size).toBe(0);
+
+        // Leaving it needs the parental PIN; a profile with its own PIN needs that.
+        expect(model.lockFor(mel)).toBe("parental");
+        expect(model.lockFor(sam)).toBe("profile");
+        expect(await model.checkPin("1111", sam.pinHash)).toBe("wrong");
+        expect(await model.checkPin("1234", sam.pinHash)).toBe("ok");
+        expect(await model.checkPin("4321", model.state.profiles.parentalPin)).toBe("ok");
+
+        // Opening the app again asks again, the last one used first in line.
+        const again = make(store);
+        await again.boot();
+        expect(again.state.route).toBe("profiles");
+        expect(again.currentProfile()?.name).toBe("Pip");
+        expect(again.state.follows).toEqual(["Leafs"]);
+    }, 20_000);
+
+    it("forgets the profiles when the account signs out", async () => {
+        const model = make();
+        await model.useLogin(login);
+        await model.accountLinked("link");
+        await model.useProfile(model.state.profiles.profiles[1].id);
+        expect(model.kids()).toBe(true);
+        await model.signOutOfAccount().catch(() => undefined);
+        expect(model.state.profiles.profiles).toEqual([]);
+        expect(model.kids()).toBe(false);
+        expect(model.shownChannels().length).toBe(2);
     });
 });
