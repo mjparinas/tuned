@@ -108,4 +108,13 @@ export const es: Strings = {
         const [unit, value] = eta.split(":");
         return unit === "s" ? `unos ${value} s restantes` : unit === "m" ? `unos ${value} min restantes` : `unas ${value} h restantes`;
     },
+    guideGrid: "Mostrar TV en vivo como guía en cuadrícula",
+    gridHint: "Verde cambia entre la lista y la guía en cuadrícula",
+    today: "Hoy",
+    catchUp: "Ver de nuevo",
+    replayHint: "OK lo reproduce desde el principio",
+    watchLiveHint: "OK lo ves en vivo",
+    aired: "Ya se emitió. Este canal no guarda grabaciones.",
+    startsAt: (time: string) => `Empieza a las ${time}`,
+    replayFailed: "No se pudo crear un enlace para esta grabación.",
 };

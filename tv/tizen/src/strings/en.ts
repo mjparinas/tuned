@@ -107,6 +107,15 @@ export const en = {
         const [unit, value] = eta.split(":");
         return unit === "s" ? `about ${value} s left` : unit === "m" ? `about ${value} min left` : `about ${value} h left`;
     },
+    guideGrid: "Show Live TV as a guide grid",
+    gridHint: "Green switches between the list and the guide grid",
+    today: "Today",
+    catchUp: "Catch-up",
+    replayHint: "OK plays it from the start",
+    watchLiveHint: "OK watches it live",
+    aired: "Already aired. This channel keeps no recordings of it.",
+    startsAt: (time: string) => `Starts at ${time}`,
+    replayFailed: "Couldn't make a link for this recording.",
 };
 
 export type Strings = typeof en;

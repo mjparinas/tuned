@@ -108,4 +108,13 @@ export const hi: Strings = {
         const hours = Number(value) === 1 ? "घंटा" : "घंटे";
         return unit === "s" ? `लगभग ${value} सेकंड बाकी` : unit === "m" ? `लगभग ${value} मिनट बाकी` : `लगभग ${value} ${hours} बाकी`;
     },
+    guideGrid: "लाइव टीवी को गाइड ग्रिड के रूप में दिखाएँ",
+    gridHint: "हरा बटन सूची और गाइड ग्रिड के बीच बदलता है",
+    today: "आज",
+    catchUp: "कैच-अप",
+    replayHint: "OK इसे शुरू से चलाता है",
+    watchLiveHint: "OK इसे लाइव दिखाता है",
+    aired: "यह प्रसारित हो चुका है। यह चैनल इसकी रिकॉर्डिंग नहीं रखता।",
+    startsAt: (time: string) => `${time} बजे शुरू`,
+    replayFailed: "इस रिकॉर्डिंग का लिंक नहीं बन सका।",
 };

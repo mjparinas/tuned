@@ -29,6 +29,8 @@ class Entry internal constructor(
     val rating: Double?,
     /** Days of catch-up a plain M3U channel offers; 0 for none. */
     val catchUpDays: Int,
+    /** How a plain M3U channel's recordings are reached, as `M3uCatchUp.encode` writes it (mode, line break, template); null for none. */
+    val catchUp: String?,
 )
 
 internal fun ContentKind.code() = when (this) {
@@ -54,6 +56,7 @@ internal fun PlaylistEntry.exported() = Entry(
     year = year,
     rating = rating,
     catchUpDays = catchUp?.days ?: 0,
+    catchUp = catchUp?.encode(),
 )
 
 /**

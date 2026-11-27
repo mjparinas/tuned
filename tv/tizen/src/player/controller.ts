@@ -1,7 +1,8 @@
 // What plays, and the remote's moves while it does: channel up and down, typing a number, flipping back to the last
 // channel, pausing and seeking a movie. Every open goes through OneConnection, so there is never a second stream
 // (scope.md), and a failed open leaves nothing open and says so on screen with Try again.
-import { OneConnection, core, type Item, type StreamPlayer } from "@tuned/shared";
+import { OneConnection, core, type Item, type Programme, type StreamPlayer } from "@tuned/shared";
+import { catchUpLink, decodeCatchUp } from "@tuned/shared/guide";
 import { kv } from "../db.ts";
 import { log } from "../log.ts";
 import { store } from "../state.ts";
@@ -70,8 +71,11 @@ export const playerEvents = {
 
 const positionKey = (item: Item) => `position.${current()?.id ?? ""}.${item.id}`;
 
+/** A catch-up recording plays like a movie (pause, skip) but is never resumed: its id starts with "r". */
+const isReplay = (item: Item) => item.id.startsWith("r");
+
 export async function savedPosition(item: Item): Promise<number> {
-    if (item.kind === "live") return 0;
+    if (item.kind === "live" || isReplay(item)) return 0;
     const raw = await kv.get(positionKey(item)).catch(() => null);
     return raw ? Number(raw) || 0 : 0;
 }
@@ -82,7 +86,7 @@ async function forgetPosition(item: Item): Promise<void> {
 
 function savePosition(): void {
     const p = playback.get();
-    if (!player || !p.item || p.item.kind === "live" || p.state !== "playing") return;
+    if (!player || !p.item || p.item.kind === "live" || isReplay(p.item) || p.state !== "playing") return;
     const at = player.position();
     const length = player.duration();
     // Near the end counts as watched, so the next Play starts at the beginning.
@@ -112,6 +116,31 @@ export async function play(item: Item, list: readonly Item[] = [item], startAt =
         log("Player", `Couldn't open ${item.kind}: ${redact(String((error as Error)?.message ?? error))}`);
         playback.set((p) => ({ ...p, state: "failed" }));
     }
+}
+
+/**
+ * Plays a past programme from the start on a channel that keeps recordings (playlist.md › Catch-up), through the same
+ * one connection. False when the channel can't make a link for it, so the screen can say so.
+ */
+export async function playReplay(channel: Item, programme: Programme): Promise<boolean> {
+    const catchUp = decodeCatchUp(channel.catchUp, channel.catchUpDays);
+    const link = catchUp
+        ? catchUpLink(channel.url, catchUp, programme.start, programme.stop, Date.now(), current()?.timezone ?? null)
+        : null;
+    if (!link) {
+        log("Player", "This channel's catch-up link couldn't be made");
+        return false;
+    }
+    const item: Item = {
+        ...channel,
+        id: `r${channel.id}.${programme.start}`,
+        kind: "movie",
+        name: `${channel.name} · ${programme.title}`,
+        url: link,
+        number: 0,
+    };
+    await play(item, [item]);
+    return true;
 }
 
 export async function retry(): Promise<void> {

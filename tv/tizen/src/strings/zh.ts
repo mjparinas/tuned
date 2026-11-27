@@ -108,4 +108,13 @@ export const zh: Strings = {
         const [unit, value] = eta.split(":");
         return unit === "s" ? `大约还剩 ${value} 秒` : unit === "m" ? `大约还剩 ${value} 分钟` : `大约还剩 ${value} 小时`;
     },
+    guideGrid: "以节目表网格显示直播电视",
+    gridHint: "绿色键在列表和节目表网格之间切换",
+    today: "今天",
+    catchUp: "回看",
+    replayHint: "按 OK 从头播放",
+    watchLiveHint: "按 OK 观看直播",
+    aired: "已播出。该频道未保留录像。",
+    startsAt: (time: string) => `${time} 开始`,
+    replayFailed: "无法为此录像生成链接。",
 };

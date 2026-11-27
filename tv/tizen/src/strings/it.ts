@@ -107,4 +107,13 @@ export const it: Strings = {
         const [unit, value] = eta.split(":");
         return unit === "s" ? `circa ${value} s rimanenti` : unit === "m" ? `circa ${value} min rimanenti` : `circa ${value} h rimanenti`;
     },
+    guideGrid: "Mostra la TV in diretta come guida a griglia",
+    gridHint: "Verde passa dall'elenco alla guida a griglia",
+    today: "Oggi",
+    catchUp: "Rivedi",
+    replayHint: "OK lo riproduce dall'inizio",
+    watchLiveHint: "OK lo guarda in diretta",
+    aired: "Già andato in onda. Questo canale non conserva registrazioni.",
+    startsAt: (time: string) => `Inizia alle ${time}`,
+    replayFailed: "Impossibile creare un link per questa registrazione.",
 };

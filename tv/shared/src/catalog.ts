@@ -23,6 +23,8 @@ export interface Item {
     readonly year: number | null;
     readonly rating: number | null;
     readonly catchUpDays: number;
+    /** How the channel's recordings are reached (`guide.ts` `decodeCatchUp`): "xc" for an Xtream server, or a playlist's own. */
+    readonly catchUp: string | null;
     /** Live channels are numbered from 1 in playlist order, as on Android (Settings › Channel numbers). */
     readonly number: number;
 }
@@ -39,7 +41,7 @@ export function hashText(text: string): string {
     return (h1.toString(36) + h2.toString(36)).slice(0, 12);
 }
 
-export function toItem(entry: Entry, number = 0): Item {
+export function toItem(entry: Entry, number = 0, extra: Partial<Pick<Item, "catchUpDays" | "catchUp">> = {}): Item {
     const kind: Kind = entry.kind === "movie" || entry.kind === "series" ? entry.kind : "live";
     return {
         id: `${kind[0]}${hashText(entry.url)}`,
@@ -58,7 +60,8 @@ export function toItem(entry: Entry, number = 0): Item {
         added: entry.added,
         year: entry.year ?? null,
         rating: entry.rating ?? null,
-        catchUpDays: entry.catchUpDays,
+        catchUpDays: extra.catchUpDays ?? entry.catchUpDays,
+        catchUp: extra.catchUp !== undefined ? extra.catchUp : (entry.catchUp ?? null),
         number,
     };
 }

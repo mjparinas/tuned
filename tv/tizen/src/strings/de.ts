@@ -107,4 +107,13 @@ export const de: Strings = {
         const [unit, value] = eta.split(":");
         return unit === "s" ? `noch etwa ${value} Sek.` : unit === "m" ? `noch etwa ${value} Min.` : `noch etwa ${value} Std.`;
     },
+    guideGrid: "Live-TV als Programmraster zeigen",
+    gridHint: "Grün wechselt zwischen Liste und Programmraster",
+    today: "Heute",
+    catchUp: "Nachholen",
+    replayHint: "OK spielt es von Anfang an",
+    watchLiveHint: "OK schaut es live",
+    aired: "Bereits gelaufen. Dieser Sender speichert keine Aufnahmen davon.",
+    startsAt: (time: string) => `Beginnt um ${time}`,
+    replayFailed: "Für diese Aufnahme konnte kein Link erstellt werden.",
 };

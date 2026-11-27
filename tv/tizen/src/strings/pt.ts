@@ -111,4 +111,13 @@ export const pt: Strings = {
               ? `cerca de ${value} min restantes`
               : `cerca de ${value} h restantes`;
     },
+    guideGrid: "Mostrar TV ao vivo como guia em grade",
+    gridHint: "Verde alterna entre a lista e o guia em grade",
+    today: "Hoje",
+    catchUp: "Assistir de novo",
+    replayHint: "OK reproduz desde o início",
+    watchLiveHint: "OK assiste ao vivo",
+    aired: "Já foi exibido. Este canal não guarda gravações.",
+    startsAt: (time: string) => `Começa às ${time}`,
+    replayFailed: "Não foi possível criar um link para esta gravação.",
 };

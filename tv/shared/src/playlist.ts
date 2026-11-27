@@ -4,6 +4,7 @@
 // rule (scope.md) is the player's (player.ts).
 import { ChannelNumbers, toItem, type Item } from "./catalog.ts";
 import { core, M3uReader, Xtream, type Entry } from "./core.ts";
+import { xtreamDays } from "./guide.ts";
 import { HttpError, readJson, readText, type Progress } from "./http.ts";
 import type { PlaylistLogin } from "./login.ts";
 import type { AbortSignalLike, Fetch } from "./platform.ts";
@@ -31,6 +32,15 @@ export interface LoadResult {
     readonly shows: number;
     /** Where the guide is: the Xtream server's, the playlist header's (`url-tvg`), or the one the person gave. */
     readonly guideUrl: string;
+    /** The server's time zone (Xtream's `server_info.timezone`), which catch-up links are read in; null when it doesn't say. */
+    readonly timezone?: string | null;
+}
+
+/** `server_info.timezone` from an Xtream account answer, such as `Europe/London`. */
+export function xtreamTimezone(account: unknown): string | null {
+    const info = (account as { server_info?: { timezone?: unknown } } | null)?.server_info;
+    const zone = typeof info?.timezone === "string" ? info.timezone.trim() : "";
+    return /^[A-Za-z_]+(\/[A-Za-z0-9_+-]+)*$/.test(zone) ? zone : null;
 }
 
 /** Why a playlist didn't load, for the screen's words and Try again. */
@@ -79,11 +89,11 @@ class Counter {
         this.events = events;
     }
 
-    async add(entry: Entry): Promise<void> {
+    async add(entry: Entry, extra?: Parameters<typeof toItem>[2]): Promise<void> {
         if (entry.kind === "live") this.live++;
         else if (entry.kind === "movie") this.movies++;
         else this.shows++;
-        this.batch.push(toItem(entry, this.numbers.number(entry)));
+        this.batch.push(toItem(entry, this.numbers.number(entry), extra));
         if (this.batch.length >= BATCH) await this.flush();
     }
 
@@ -204,6 +214,10 @@ async function loadXtream(
                     core.rating(text(o, "rating"), text(o, "rating_5based")),
                     order++,
                 ),
+                // Xtream's own catch-up flag (playlist.md › Catch-up): replayed through the server's timeshift link.
+                kind === "live" && xtreamDays(o.tv_archive, o.tv_archive_duration) > 0
+                    ? { catchUpDays: xtreamDays(o.tv_archive, o.tv_archive_duration), catchUp: "xc\n" }
+                    : undefined,
             );
         }
         await counter.flush();
@@ -236,7 +250,7 @@ async function loadXtream(
     }
     await counter.flush();
     if (counter.live + counter.movies + counter.shows === 0) throw new LoadError("empty", "The server sent no streams");
-    return { live: counter.live, movies: counter.movies, shows: counter.shows, guideUrl: x.guideUrl };
+    return { live: counter.live, movies: counter.movies, shows: counter.shows, guideUrl: x.guideUrl, timezone: xtreamTimezone(account) };
 }
 
 /** The show id of a stand-in row (an Xtream show before its episodes are read), or null. */
