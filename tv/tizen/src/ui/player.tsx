@@ -174,7 +174,7 @@ export function Player() {
                                 <span>{clock(at)}</span>
                                 <Bar done={at} total={length} />
                                 <span>{length ? clock(length) : ""}</span>
-                                {p.paused ? <span aria-label="Paused">❚❚</span> : null}
+                                {p.paused ? <span aria-label={t.paused}>❚❚</span> : null}
                             </div>
                         )}
                     </div>

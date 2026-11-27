@@ -1,82 +1,37 @@
-// Every word a person reads on the stick, in one place so the 11 translations (docs/decisions/languages.md) can be
-// added beside it. "Tuned" is never translated.
-export const t = {
-    noContent: "Tuned includes no content. Use it with a playlist from your own provider.",
-    signInTitle: "Sign in with your phone",
-    signInStep1: "On your phone, go to",
-    signInStep2: "Enter this code, or scan the QR code:",
-    signInDigits: (d: string) => `If your phone asks, the TV's check digits are ${d}.`,
-    signInWhat: "Send a playlist from your phone, or sign in to your Tuned account for Premium.",
-    gettingCode: "Getting a code…",
-    relayOffline: "Couldn't reach Tuned's sign-in service. Check the stick's internet.",
-    typeInstead: "Type a login with the remote",
-    tryAgain: "Try again",
-    back: "Back",
-    arrived: "Got it. Signing in…",
-    xtream: "Xtream login",
-    link: "Playlist link",
-    server: "Server",
-    username: "Username",
-    password: "Password",
-    playlistUrl: "Playlist link (M3U)",
-    guideUrl: "Guide link (XMLTV, optional)",
-    signIn: "Sign in",
-    fillXtream: "Fill in the server, username and password.",
-    fillLink: "Fill in the playlist link.",
-    loadingTitle: "Getting your channels",
-    changeLogin: "Change login",
-    allChannels: "All channels",
-    settings: "Settings",
-    refreshing: "Refreshing channels",
-    refreshFailed: "Couldn't refresh the channels. Showing the ones saved on this TV.",
-    refreshed: "Channels are up to date.",
-    channels: (n: number) => `${n.toLocaleString("en-CA")} ${n === 1 ? "channel" : "channels"}`,
-    noChannels: "No channels in this category.",
-    starting: "Starting…",
-    buffering: "Buffering…",
-    didntStart: "This channel didn't start. It may be off the air, or the server may be busy.",
-    now: "Now",
-    next: "Next",
-    accountTitle: "Tuned account",
-    accountSignedOut: "Sign in to your Tuned account to use Premium on this TV.",
-    accountSignIn: "Sign in to your account",
-    accountAs: (email: string) => `Signed in as ${email}`,
-    premiumOn: "Premium is on for this TV.",
-    premiumNone: "This account doesn't have Premium yet.",
-    premiumFull: "Premium is on every device this account allows. Free a seat on another device, then check again.",
-    premiumUnknown: "Couldn't reach your Tuned account. Premium stays as it was.",
-    checkAgain: "Check again",
-    checking: "Checking your account…",
-    accountSignOut: "Sign out of the account",
-    playlistTitle: "Playlist",
-    refreshNow: "Refresh channels, movies and shows",
-    signOut: "Sign out and reset this TV",
-    signOutHint: "Removes the playlist, the account and everything Tuned saved on this TV.",
-    about: (version: string) => `Tuned for Fire TV ${version}`,
-    liveTv: "Live TV",
-    movies: "Movies",
-    shows: "Shows",
-    allMovies: "All movies",
-    allShows: "All shows",
-    movieCount: (n: number) => `${n.toLocaleString("en-CA")} ${n === 1 ? "movie" : "movies"}`,
-    showCount: (n: number) => `${n.toLocaleString("en-CA")} ${n === 1 ? "show" : "shows"}`,
-    noMovies: "No movies in this category.",
-    noShows: "No shows in this category.",
-    gettingLibrary: "Getting your movies and shows",
-    refreshingLibrary: "Refreshing movies and shows",
-    libraryFailed: "Couldn't refresh movies and shows. Showing the ones saved on this TV.",
-    play: "Play",
-    resume: (at: string) => `Resume from ${at}`,
-    fromStart: "From the start",
-    season: (n: number) => `Season ${n}`,
-    episodeNumber: (n: number) => `Episode ${n}`,
-    episodeShort: (season: number, episode: number) => `S${season} E${episode}`,
-    seasonEpisode: (season: number, episode: number) => `Season ${season}, episode ${episode}`,
-    loadingEpisodes: "Getting the episodes…",
-    episodesFailed: "Couldn't get this show's episodes. Check the stick's internet, then try again.",
-    noEpisodes: "This show has no episodes yet.",
-    episodeCount: (n: number) => `${n.toLocaleString("en-CA")} ${n === 1 ? "episode" : "episodes"}`,
-    rating: (r: number) => `★ ${r.toFixed(1)}`,
-    paused: "Paused",
-    movieDidntStart: "This didn't start. The server may be busy, or the file may be missing.",
-};
+// Every word a person reads on the stick, in the stick's own language (docs/decisions/languages.md): the same 11
+// translations as the Android app, picked by the TV's language with no picker, and English when Tuned has none for it.
+// `t` starts in English and main.tsx switches it once, before the first screen draws.
+import { isRightToLeft, pickLanguage, type Language } from "@tuned/shared/i18n";
+import { ar } from "./strings/ar";
+import { de } from "./strings/de";
+import { en, type Strings } from "./strings/en";
+import { es } from "./strings/es";
+import { fr } from "./strings/fr";
+import { hi } from "./strings/hi";
+import { it } from "./strings/it";
+import { pl } from "./strings/pl";
+import { pt } from "./strings/pt";
+import { ru } from "./strings/ru";
+import { tr } from "./strings/tr";
+import { zh } from "./strings/zh";
+
+export type { Strings };
+
+export const TRANSLATIONS: Record<Language, Strings> = { en, es, pt, fr, de, it, tr, ru, pl, ar, hi, zh };
+
+export const t: Strings = { ...en };
+export let language: Language = "en";
+let tag = "en-CA";
+
+/** Picks the first of the TV's languages Tuned has (English otherwise) and switches every line to it. */
+export function chooseLanguage(tags: readonly (string | null | undefined)[]): Language {
+    language = pickLanguage(tags);
+    tag = tags.find((each): each is string => !!each)?.replace(/_/g, "-") ?? "en-CA";
+    Object.assign(t, TRANSLATIONS[language]);
+    return language;
+}
+
+export const rightToLeft = () => isRightToLeft(language);
+
+/** The TV's own language tag ("de-DE"), for times of day. */
+export const locale = () => tag;

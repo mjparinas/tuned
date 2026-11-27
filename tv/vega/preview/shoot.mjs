@@ -31,6 +31,10 @@ const SCENES = [
     "show",
     "movie-player",
 ];
+// A few scenes in other languages: German for long words, Arabic right to left, Chinese for another script.
+const LANGUAGE_SCENES = ["de-DE", "ar-EG", "zh-CN"].flatMap((lang) =>
+    ["live", "movies", "show", "settings"].map((scene) => ({ scene, lang })),
+);
 const types = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css", ".png": "image/png" };
 
 const server = createServer(async (req, res) => {
@@ -53,10 +57,15 @@ for (const scene of SCENES) {
     await page.waitForTimeout(400);
     await page.screenshot({ path: join(shots, `vega-${scene}.png`) });
 }
+for (const { scene, lang } of LANGUAGE_SCENES) {
+    await page.goto(`http://localhost:${port}/?scene=${scene}&lang=${lang}`);
+    await page.waitForTimeout(400);
+    await page.screenshot({ path: join(shots, `vega-${lang.slice(0, 2)}-${scene}.png`) });
+}
 await browser.close();
 server.close();
 if (failures.length) {
     console.error(failures.join("\n"));
     process.exit(1);
 }
-console.log(`${SCENES.length} screenshots in ${shots}`);
+console.log(`${SCENES.length + LANGUAGE_SCENES.length} screenshots in ${shots}`);

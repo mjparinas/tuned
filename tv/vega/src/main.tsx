@@ -1,10 +1,15 @@
 // The stick's wiring: Amazon's storage, player and random source behind the app's interfaces.
 import type { Fetch } from "@tuned/shared/platform";
 import { xhrHttp } from "./core/http";
+import { deviceLanguages } from "./platform/language";
+import { chooseLanguage } from "./ui/strings";
 import { makeApp } from "./App";
 import { random } from "./platform/random";
 import { deviceStore } from "./platform/store";
 import { VegaPlayer } from "./platform/VegaPlayer";
+
+// Every line in the stick's language, before anything is drawn.
+chooseLanguage(deviceLanguages());
 
 const player = new VegaPlayer();
 

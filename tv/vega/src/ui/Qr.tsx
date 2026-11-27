@@ -2,6 +2,7 @@
 import qrcode from "qrcode-generator";
 import * as React from "react";
 import { View } from "react-native";
+import { t } from "./strings";
 
 export function Qr({ text, size }: { text: string; size: number }) {
     const rows = React.useMemo(() => {
@@ -29,10 +30,7 @@ export function Qr({ text, size }: { text: string; size: number }) {
     const quiet = 2;
     const cell = size / (rows.count + quiet * 2);
     return (
-        <View
-            accessibilityLabel="QR code for the phone page"
-            style={{ width: size, height: size, backgroundColor: "#ffffff", borderRadius: cell * 2 }}
-        >
+        <View accessibilityLabel={t.qrLabel} style={{ width: size, height: size, backgroundColor: "#ffffff", borderRadius: cell * 2 }}>
             {rows.out.map((runs, r) =>
                 runs.map((run) => (
                     <View

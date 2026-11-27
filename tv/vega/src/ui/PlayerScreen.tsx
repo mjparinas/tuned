@@ -10,7 +10,7 @@ import { Text, View } from "react-native";
 import type { AppModel, State } from "../app/model";
 import type { PlaybackState, VegaPlayer } from "../platform/VegaPlayer";
 import { Button, ProgressBar, Spinner } from "./parts";
-import { t } from "./strings";
+import { locale, t } from "./strings";
 import { colours, SAFE, useDp } from "./theme";
 import { clockTime } from "../core/progress";
 
@@ -19,7 +19,7 @@ const DIGITS_MS = 1500;
 const SKIP_S = 10;
 const KEEP_MS = 15_000;
 
-const clock = (ms: number) => new Date(ms).toLocaleTimeString("en-CA", { hour: "numeric", minute: "2-digit" });
+const clock = (ms: number) => new Date(ms).toLocaleTimeString(locale(), { hour: "numeric", minute: "2-digit" });
 
 export interface PlayerHandle {
     /** Back: true when it was used to hide the controls, so the player stays open. */

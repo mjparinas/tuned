@@ -5,6 +5,7 @@
 import { HttpError, type Http } from "./http";
 import { M3uReader } from "./m3u";
 import type { Library, Lineup, Login } from "./models";
+import { t } from "../ui/strings";
 import { eta, type StepProgress } from "./progress";
 import { accountUrl, checkAccount, parseCategories, parseLiveStreams, parseMovies, parseShows } from "./xtream";
 
@@ -46,22 +47,22 @@ export async function downloadLineup(
 ): Promise<Lineup & { library?: Library }> {
     const download = downloader(http, onProgress, now);
     if (login.kind === "xtream") {
-        onProgress({ step: 1, steps: 3, label: "Checking your login" });
+        onProgress({ step: 1, steps: 3, label: t.checkingLogin });
         const check = await checkAccount(http, login);
         if (check !== "ok") throw new PlaylistError(check);
         const base = accountUrl(login.server, login.username, login.password);
-        const categories = parseCategories(safeJson(await download(`${base}&action=get_live_categories`, 2, 3, "Downloading categories")));
-        const channels = parseLiveStreams(safeJson(await download(`${base}&action=get_live_streams`, 3, 3, "Downloading channels")), login);
+        const categories = parseCategories(safeJson(await download(`${base}&action=get_live_categories`, 2, 3, t.downloadingCategories)));
+        const channels = parseLiveStreams(safeJson(await download(`${base}&action=get_live_streams`, 3, 3, t.downloadingChannels)), login);
         if (!channels.length) throw new PlaylistError("empty");
         const used = new Set(channels.map((c) => c.categoryId));
         return { categories: categories.filter((c) => used.has(c.id)), channels, savedAt: now() };
     }
 
-    const text = await download(login.playlistUrl, 1, 2, "Downloading the playlist");
+    const text = await download(login.playlistUrl, 1, 2, t.downloadingPlaylist);
     const reader = new M3uReader();
     for (let at = 0; at < text.length; at += SLICE) {
         reader.feed(text.slice(at, at + SLICE));
-        onProgress({ step: 2, steps: 2, label: `Reading channels (${reader.channels.length.toLocaleString("en-CA")} so far)` });
+        onProgress({ step: 2, steps: 2, label: t.readingChannels(reader.channels.length) });
         await breathe();
     }
     const { categories, channels, movieCategories, showCategories, movies, shows } = reader.end();
@@ -82,10 +83,10 @@ export async function downloadLibrary(
     const download = downloader(http, onProgress, now);
     const base = accountUrl(login.server, login.username, login.password);
     const get = async (action: string, step: number, label: string) => safeJson(await download(`${base}&action=${action}`, step, 4, label));
-    const movieCategories = parseCategories(await get("get_vod_categories", 1, "Downloading movie categories"));
-    const movies = parseMovies(await get("get_vod_streams", 2, "Downloading movies"), login);
-    const showCategories = parseCategories(await get("get_series_categories", 3, "Downloading show categories"));
-    const shows = parseShows(await get("get_series", 4, "Downloading shows"));
+    const movieCategories = parseCategories(await get("get_vod_categories", 1, t.downloadingMovieCategories));
+    const movies = parseMovies(await get("get_vod_streams", 2, t.downloadingMovies), login);
+    const showCategories = parseCategories(await get("get_series_categories", 3, t.downloadingShowCategories));
+    const shows = parseShows(await get("get_series", 4, t.downloadingShows));
     const used = (titles: { categoryId: string }[]) => new Set(titles.map((t) => t.categoryId));
     const usedMovies = used(movies);
     const usedShows = used(shows);
@@ -111,15 +112,15 @@ export function failureText(error: unknown): string {
     const reason = error instanceof PlaylistError ? error.reason : "unreachable";
     switch (reason) {
         case "wrong login":
-            return "The server didn't accept that username and password.";
+            return t.failed.wrongLogin;
         case "expired":
-            return "The server says this account has run out or is turned off.";
+            return t.failed.expired;
         case "empty":
-            return "The playlist has no channels, movies or shows.";
+            return t.failed.empty;
         case "not a playlist":
-            return "That link isn't an M3U playlist.";
+            return t.failed.notPlaylist;
         default:
-            return "Couldn't reach the server. Check the stick's internet, then try again.";
+            return t.failed.unreachable;
     }
 }
 

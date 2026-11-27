@@ -5,7 +5,6 @@ import * as React from "react";
 import { FlatList, Image, Text, View } from "react-native";
 import type { AppModel, State } from "../app/model";
 import type { Category, Title } from "../core/models";
-import { stepLine } from "../core/progress";
 import { CategoryRow } from "./LiveScreen";
 import { ProgressLines } from "./LoadingScreen";
 import { Button, Focusable, Screen, Spinner } from "./parts";
@@ -116,7 +115,13 @@ export function BrowseScreen({
 
     const status = load.busy ? (
         library ? (
-            <Spinner line={load.progress ? `${t.refreshingLibrary}, ${stepLine(load.progress).toLowerCase()}` : t.refreshingLibrary} />
+            <Spinner
+                line={
+                    load.progress
+                        ? t.refreshStep(t.refreshingLibrary, load.progress.step, load.progress.steps, load.progress.label)
+                        : t.refreshingLibrary
+                }
+            />
         ) : null
     ) : load.result && !load.result.ok && library ? (
         <Text numberOfLines={2} style={{ color: colours.danger, fontSize: dp(13), textAlign: "right" }}>
