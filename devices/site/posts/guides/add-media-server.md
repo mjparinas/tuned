@@ -42,3 +42,5 @@ Prefer **Sign in with your phone** and fill the form there, rather than typing a
 - [Add an Xtream Codes playlist](/blog/guides/add-xtream-codes-playlist/) if you also have an IPTV login.
 - [Tuned on Android TV](/blog/guides/android-tv/) for remote tips and calibrate screen.
 - [Premium, seats and devices](/blog/guides/premium/) when you want several playlists on one account.
+
+Using a server and an IPTV provider side by side: [Plex, Jellyfin or Emby plus IPTV in one app](/blog/guides/plex-jellyfin-emby-and-iptv/).

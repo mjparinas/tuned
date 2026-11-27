@@ -39,3 +39,5 @@ Subtitles found with subtitle search go to a Chromecast with the video. See [cas
 ## Audio language
 
 Not subtitles, but close: **Settings › Playback › Preferred audio language** picks a matching sound track when a stream has one, and the player's settings button switches tracks while you watch.
+
+Captions, TalkBack, large text and the remote: [accessible IPTV](/blog/guides/accessible-iptv/).

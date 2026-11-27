@@ -68,3 +68,5 @@ Holding a channel button changes channel once, so you never flip through a strin
 Films and episodes you're partway through show in the system's Continue watching row, and your favourite channels get a Tuned row of their own.
 
 More: [Google TV](/blog/guides/google-tv/), [Nvidia Shield](/blog/guides/nvidia-shield/).
+
+Smoother sport, sound in sync and nothing cut off: [the best picture and sound on Android TV](/blog/guides/best-picture-and-sound-android-tv/).

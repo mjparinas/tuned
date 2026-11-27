@@ -69,6 +69,16 @@ export function markdown(md) {
             i++;
             continue;
         }
+        // A fenced code block (```), kept exactly as written and escaped. It scrolls sideways on a phone, so, like a
+        // table, it can take focus and has a name, letting a keyboard scroll it too (WCAG 2.1.1).
+        if (/^```/.test(line)) {
+            const code = [];
+            i++;
+            while (i < lines.length && !/^```/.test(lines[i])) code.push(lines[i++]);
+            i++;
+            out.push(`<pre tabindex="0" role="region" aria-label="Code"><code>${esc(code.join("\n"))}</code></pre>`);
+            continue;
+        }
         if (/^\s*</.test(line)) {
             while (i < lines.length && !isBlank(lines[i])) out.push(lines[i++]);
             continue;
