@@ -62,3 +62,5 @@ IPTV set-up comes with a lot of jargon. Here's what each term means, and where i
 **Picture-in-picture.** Android shrinking the video you're watching into a small window when you leave the app.
 
 **Frame rate matching.** Switching the TV's refresh rate to the video's (24, 25, 50 or 60 frames a second) so motion looks smooth.
+
+How all of these fit together: [how IPTV works, from your provider to your screen](/blog/guides/how-iptv-works/).

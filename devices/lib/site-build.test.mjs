@@ -45,6 +45,10 @@ test("inline Markdown escapes text and keeps code literal", () => {
 test("block Markdown: headings never make a second h1, lists, tables and raw HTML", () => {
     assert.equal(markdown("# Top"), '<h2 id="top">Top</h2>');
     assert.equal(markdown("- a\n- b"), "<ul><li>a</li><li>b</li></ul>");
+    assert.equal(
+        markdown('```xml\n<tv>\n  <a b="1">x & y</a>\n</tv>\n```\n\nAfter'),
+        '<pre tabindex="0" role="region" aria-label="Code"><code>&lt;tv&gt;\n  &lt;a b=&quot;1&quot;&gt;x &amp; y&lt;/a&gt;\n&lt;/tv&gt;</code></pre>\n<p>After</p>',
+    );
     assert.equal(markdown("1. a\n2. b"), "<ol><li>a</li><li>b</li></ol>");
     assert.match(
         markdown("| A | B |\n|---|:-:|\n| 1 | 2 |"),

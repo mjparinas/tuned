@@ -51,3 +51,5 @@ The backup isn't encrypted by Tuned; only devices signed in to your account can 
 **Settings › Playlists and account › Sign out** resets Tuned to how it was installed: every playlist and login, the cache, profiles, settings and history are removed. It asks whether to keep your downloads. Your Premium and your account backup stay, so signing back in can bring everything back.
 
 The full [privacy policy](/privacy/) has the details.
+
+Keeping your login safe whichever player you use: [is that IPTV app safe?](/blog/guides/is-my-iptv-app-safe/)
