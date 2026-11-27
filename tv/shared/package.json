@@ -20,6 +20,7 @@
     "./sort": "./src/sort.ts",
     "./progress": "./src/progress.ts",
     "./reminders": "./src/reminders.ts",
+    "./events": "./src/events.ts",
     "./xmltv": "./src/xmltv.ts"
   },
   "scripts": {

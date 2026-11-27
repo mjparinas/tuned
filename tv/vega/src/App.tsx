@@ -6,6 +6,7 @@ import { Text, View } from "react-native";
 import { AppModel, type Services, type State } from "./app/model";
 import { launchSafely, log } from "./core/log";
 import { BrowseScreen } from "./ui/BrowseScreen";
+import { EventsScreen } from "./ui/EventsScreen";
 import { LiveScreen } from "./ui/LiveScreen";
 import { LoadingScreen } from "./ui/LoadingScreen";
 import { ManualScreen } from "./ui/ManualScreen";
@@ -114,6 +115,7 @@ function Screens({ model, player, state }: { model: AppModel; player: VegaPlayer
                 case "movies":
                 case "shows":
                 case "search":
+                case "events":
                     model.go("live");
                     return true;
                 case "title":
@@ -145,6 +147,8 @@ function Screens({ model, player, state }: { model: AppModel; player: VegaPlayer
             return <LoadingScreen model={model} state={state} />;
         case "live":
             return <LiveScreen model={model} state={state} />;
+        case "events":
+            return <EventsScreen model={model} state={state} />;
         case "movies":
         case "shows":
             return <BrowseScreen model={model} state={state} kind={state.route} />;
