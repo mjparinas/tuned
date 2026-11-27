@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="settings_backup_copies">Passer à une copie de secours</string>
-    <string name="settings_backup_copies_summary">Quand une chaîne ne fonctionne plus, lire une autre copie de votre liste, comme ESPN FHD pour ESPN HD</string>
+    <string name="settings_backup_copies_summary">Quand une chaîne ne fonctionne plus, lire une autre copie de votre liste, comme Lakeshore FHD pour Lakeshore HD</string>
     <string name="player_trying_copy">Ne fonctionne pas. Essai d\'une copie de secours (%1$d sur %2$d)…</string>
     <string name="player_copy_playing">Passé à %1$s</string>
     <string name="player_no_copy_works">Cette chaîne et ses copies de secours ne fonctionnent pas pour l\'instant</string>

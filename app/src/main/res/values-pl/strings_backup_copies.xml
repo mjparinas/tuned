@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="settings_backup_copies">Przełączaj na kopię zapasową</string>
-    <string name="settings_backup_copies_summary">Gdy kanał przestaje działać, odtwórz inną jego kopię z listy, np. ESPN FHD zamiast ESPN HD</string>
+    <string name="settings_backup_copies_summary">Gdy kanał przestaje działać, odtwórz inną jego kopię z listy, np. Lakeshore FHD zamiast Lakeshore HD</string>
     <string name="player_trying_copy">Nie działa. Próbujemy kopii zapasowej (%1$d z %2$d)…</string>
     <string name="player_copy_playing">Przełączono na %1$s</string>
     <string name="player_no_copy_works">Ten kanał i jego kopie zapasowe teraz nie działają</string>

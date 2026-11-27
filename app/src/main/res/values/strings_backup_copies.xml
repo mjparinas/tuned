@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="settings_backup_copies">Switch to a backup copy</string>
-    <string name="settings_backup_copies_summary">When a channel stops working, play another copy of it from your list, such as ESPN FHD for ESPN HD</string>
+    <string name="settings_backup_copies_summary">When a channel stops working, play another copy of it from your list, such as Lakeshore FHD for Lakeshore HD</string>
     <!-- %1$d: which copy is being tried; %2$d: how many copies there are. -->
     <string name="player_trying_copy">Not working. Trying a backup copy (%1$d of %2$d)…</string>
     <string name="player_copy_playing">Switched to %1$s</string>
