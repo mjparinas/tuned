@@ -8,9 +8,13 @@ const version =
     process.env.TUNED_VERSION ||
     (JSON.parse(readFileSync(new URL("../../package.json", import.meta.url), "utf8")) as { version: string }).version;
 
+// The app's own ids for Trakt and Simkl, from the build's environment (CI passes them from its secrets, as the Android
+// release does); never committed. With none, that service stays hidden on a TV (docs/decisions/trakt.md).
+const keys = { trakt: (process.env.TRAKT_CLIENT_ID ?? "").trim(), simkl: (process.env.SIMKL_CLIENT_ID ?? "").trim() };
+
 export default defineConfig({
     base: "./",
-    define: { __VERSION__: JSON.stringify(version) },
+    define: { __VERSION__: JSON.stringify(version), __KEYS__: JSON.stringify(keys) },
     build: {
         target: "chrome69",
         outDir: "dist",

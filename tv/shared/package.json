@@ -25,7 +25,8 @@
     "./events": "./src/events.ts",
     "./xmltv": "./src/xmltv.ts",
     "./stableid": "./src/stableid.ts",
-    "./simkl": "./src/simkl.ts"
+    "./simkl": "./src/simkl.ts",
+    "./trakt": "./src/trakt.ts"
   },
   "scripts": {
     "test": "node --experimental-strip-types --no-warnings --test src/*.test.ts",
