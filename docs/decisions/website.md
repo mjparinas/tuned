@@ -31,6 +31,10 @@ First "The width of the account view on the website can be wider please, it's to
 - **Playlists and settings**: Add a playlist sits by the Playlists title; on a desktop the form opens beside the list instead of under it, and the settings groups fill two columns top to bottom, so a short group never leaves a hole beside a long one.
 - Phones keep one column at 560 px. The accessibility check covers both pages signed in.
 
+## The sign-in card (Melvin, 2026-11-27)
+
+Melvin, 2026-11-27: "can you improve the login page. it should be centered, the layout within the card looks off". Signed out, `/account` shows one card centred across and down the page in a 440 px column (`main.account.signed-out` in `account/account.css`; on a phone it sits under the header): Tuned's mark, "Sign in to Tuned", one line on what the account is for, the two sign-in buttons stacked at full width, and the note about the daily emails as small print under a rule, apart from the buttons. The page title stays for screen readers only. Google's and Apple's buttons look the same: white, a grey outline and near-black words, in a light and a dark page alike (Google's light button and Apple's white-outline button, both allowed by their guidelines; `site.css`). Before, one was dark and one white, side by side, with the note pressed against them.
+
 ## Dropdowns are Tuned's own (Melvin, 2026-11-21)
 
 Melvin, 2026-11-21, of the More seats card on `/account`: "something about this dropdown looks ugly, can you make it our own custom component. also spacing in that card looks a bit off to me", then "can you make changes to all the drop downs in the admin please". So no page shows the browser's own dropdown:

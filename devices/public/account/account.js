@@ -67,6 +67,7 @@ function render() {
     $("signed-in").hidden = !me;
     $("account-nav").hidden = !me;
     document.querySelector("main").classList.toggle("signed-in", Boolean(me));
+    document.querySelector("main").classList.toggle("signed-out", !me);
     const tv = params.get("tv");
     $("tv").hidden = !(me && tv);
     $("tv-code").textContent = tv ?? "";
