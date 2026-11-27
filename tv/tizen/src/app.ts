@@ -191,7 +191,7 @@ export async function refreshNow(): Promise<void> {
         await safely("Refresh", () => dropGeneration(p.id, p.gen), undefined);
         cache.clear();
         libraryVersion.set((v) => v + 1);
-        log("Refresh", `${result.live} channels, ${result.movies} films, ${result.shows} shows`);
+        log("Refresh", `${result.live} channels, ${result.movies} movies, ${result.shows} shows`);
         await refreshGuide(updated);
         refresh.set({ running: false, step: null, startedAt: 0, error: null, finishedAt: Date.now() });
     } catch (error) {

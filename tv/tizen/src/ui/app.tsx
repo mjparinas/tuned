@@ -18,7 +18,7 @@ function screenFor(route: Route) {
     switch (route.name) {
         case "home":
             return <Home tab={route.tab} />;
-        case "film":
+        case "movie":
             return <FilmPage item={route.item} />;
         case "show":
             return <ShowPage item={route.item} />;

@@ -1,5 +1,5 @@
 // What plays, and the remote's moves while it does: channel up and down, typing a number, flipping back to the last
-// channel, pausing and seeking a film. Every open goes through OneConnection, so there is never a second stream
+// channel, pausing and seeking a movie. Every open goes through OneConnection, so there is never a second stream
 // (scope.md), and a failed open leaves nothing open and says so on screen with Try again.
 import { OneConnection, core, type Item, type StreamPlayer } from "@tuned/shared";
 import { kv } from "../db.ts";

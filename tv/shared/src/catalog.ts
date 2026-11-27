@@ -1,4 +1,4 @@
-// What a playlist holds once it's read: channels, films and shows as plain objects a TV app can keep (IndexedDB on
+// What a playlist holds once it's read: channels, movies and shows as plain objects a TV app can keep (IndexedDB on
 // Tizen), built from tv/core's entries so sorting, regions and links match Android's.
 import type { Entry } from "./core.ts";
 

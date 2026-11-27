@@ -1,4 +1,4 @@
-// Search across channels, films and shows of the playlist in use. Typing uses the TV's own keyboard.
+// Search across channels, movies and shows of the playlist in use. Typing uses the TV's own keyboard.
 import { useEffect, useMemo, useState } from "preact/hooks";
 import type { Item } from "@tuned/shared";
 import { kindItems, libraryVersion, search, shows, visibleItems } from "../app.ts";
@@ -53,7 +53,7 @@ export function Search(props: { height: number }) {
                               item,
                               found.filter((i) => i.kind === "live"),
                           )
-                        : open(item.kind === "movie" ? { name: "film", item } : { name: "show", item })
+                        : open(item.kind === "movie" ? { name: "movie", item } : { name: "show", item })
                 }
                 row={(item) => (
                     <div class="channel">
