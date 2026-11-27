@@ -2,10 +2,12 @@
 // now and next from the guide. OK plays it; channel up and down then walk the same group (player.md).
 import { useEffect, useMemo, useState } from "preact/hooks";
 import type { Item, Programme } from "@tuned/shared";
-import { currentId, favourites, groupsOf, guideVersion, inGroup, nowNext, saveSettings, settings, toggleFavourite } from "../app.ts";
+import { currentId, favourites, groupsOf, guideVersion, inGroup, nowNext, saveSettings, settings } from "../app.ts";
+import { toggleFavourite } from "../my-lists.ts";
 import { play } from "../player/controller.ts";
 import { useStore } from "../state.ts";
 import { t, timeOfDay } from "../strings.ts";
+import { AddToList } from "./add-to-list.tsx";
 import { GuideGrid } from "./guide.tsx";
 import { Groups, usePickedGroup } from "./groups.tsx";
 import { useItems } from "./library.ts";
@@ -50,15 +52,21 @@ export function LiveTv(props: { height: number }) {
         [items, picked, groups],
     );
     const [focused, setFocused] = useState<Item | null>(null);
+    const [adding, setAdding] = useState<Item | null>(null);
 
-    // Yellow on a channel: add to or take from Favourites, as the Android TV app's long press does.
+    // Yellow on a channel: add to or take from Favourites, as the Android TV app's long press does; blue: Add to list.
     useKeys((press) => {
         // Green switches between the list and the grid guide, and Live TV stays that way (Settings has the same switch).
         if (press.action === "green") {
             void saveSettings({ guideGrid: !guideGrid });
             return true;
         }
-        if (press.action !== "yellow" || !focused || guideGrid) return false;
+        if (!focused || guideGrid || adding) return false;
+        if (press.action === "blue") {
+            setAdding(focused);
+            return true;
+        }
+        if (press.action !== "yellow") return false;
         void toggleFavourite(focused);
         return true;
     });
@@ -101,6 +109,7 @@ export function LiveTv(props: { height: number }) {
                 />
                 <ChannelInfo item={focused ?? shown[0] ?? null} />
             </div>
+            {adding ? <AddToList item={adding} onClose={() => setAdding(null)} /> : null}
         </div>
     );
 }
@@ -129,6 +138,7 @@ function ChannelInfo(props: { item: Item | null }) {
             ) : (
                 <p class="muted">{t.noGuide}</p>
             )}
+            <p class="hint">{t.liveKeysHint}</p>
             <p class="hint">{t.gridHint}</p>
         </aside>
     );

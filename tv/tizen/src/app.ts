@@ -28,6 +28,7 @@ import {
     type AccountProfiles,
     type Profile,
 } from "@tuned/shared/profiles";
+import { NO_LISTS, listOnTv, listsFromBackup, withEdit, type AccountLists } from "@tuned/shared/lists";
 import { gunzipSync } from "fflate";
 import { clearEverything, clearGuide, dropGeneration, kv, putItems, putProgrammes, readGuide, readKind } from "./db.ts";
 import { log, safely } from "./log.ts";
@@ -77,6 +78,8 @@ export const profiles = store<AccountProfiles>(NO_PROFILES);
 export const profileId = store<string | null>(null);
 /** Whether "Who's watching?" was answered since the app opened: it asks each time, as Android does. */
 export const profilePicked = store(false);
+/** The account's own lists for each profile, and its renamed channels and logos (lists.md); none when signed out. */
+export const accountLists = store<AccountLists>(NO_LISTS);
 /** Bumped whenever the lists on the device change, so screens read them again. */
 export const libraryVersion = store(0);
 export const guideVersion = store(0);
@@ -100,6 +103,7 @@ const KEYS = {
     settings: "settings",
     profiles: "profiles",
     profile: "profile.current",
+    lists: "lists.account",
     /** Each playlist's favourites, and with profiles each profile's own. */
     favourites: (id: string, profile?: string | null) => (profile ? `favourites.${id}.${profile}` : `favourites.${id}`),
 };
@@ -126,6 +130,8 @@ export async function start(): Promise<void> {
             if (s) settings.set({ ...settings.get(), ...(JSON.parse(s) as Partial<Settings>) });
             const kept = JSON.parse((await unseal(await kv.get(KEYS.profiles))) ?? "null") as AccountProfiles | null;
             if (kept && Array.isArray(kept.profiles)) profiles.set(kept);
+            const lists = JSON.parse((await unseal(await kv.get(KEYS.lists))) ?? "null") as AccountLists | null;
+            if (lists && lists.lists && lists.edits) accountLists.set(lists);
             const who = await kv.get(KEYS.profile);
             profileId.set(profiles.get().profiles.some((x) => x.id === who) ? who : null);
             profilePicked.set(profiles.get().profiles.length < 2);
@@ -213,6 +219,7 @@ export async function signOutEverything(): Promise<void> {
     currentId.set(null);
     account.set(SIGNED_OUT);
     profiles.set(NO_PROFILES);
+    accountLists.set(NO_LISTS);
     profileId.set(null);
     profilePicked.set(true);
     favourites.set(new Set());
@@ -298,7 +305,21 @@ export function kindItems(kind: Kind): Promise<Item[]> {
     if (!p || !p.gen) return Promise.resolve([]);
     let found = cache.get(kind);
     if (!found) {
-        found = safely("Library", () => readKind(p.id, p.gen, kind), [] as Item[]);
+        found = safely(
+            "Library",
+            async () => {
+                const items = await readKind(p.id, p.gen, kind);
+                // Channels renamed or given a logo on the phone or website show that way here too (lists.md).
+                const { edits } = accountLists.get();
+                if (kind !== "live" || !Object.keys(edits).length) return items;
+                return items.map((i) => {
+                    const edited = withEdit(i, edits);
+                    if (edited !== i) playlistNames.set(i.id, i.name);
+                    return edited;
+                });
+            },
+            [] as Item[],
+        );
         cache.set(kind, found);
     }
     return found;
@@ -312,15 +333,40 @@ export interface Group {
 
 export const ALL = "__all";
 export const FAVOURITES = "__favourites";
+const LIST = "__list:";
 
-/** The groups a kind's items fall in, in playlist order, after All and Favourites. Adult groups are hidden by default. */
+/** A renamed channel's name in the playlist, so search finds it by either name. */
+const playlistNames = new Map<string, string>();
+export const playlistNameOf = (item: Item): string | undefined => playlistNames.get(item.id);
+
+/**
+ * The profile whose Favourites and lists live in the account: the one picked, or the only one. Null when signed out
+ * or the account has no profiles yet, and then Favourites stay on the TV.
+ */
+export function accountProfile(): Profile | null {
+    const list = profiles.get().profiles;
+    return currentProfile() ?? (list.length === 1 ? list[0] : null);
+}
+
+/** Your own lists for the profile in use; Premium, as on Android (lists.md), so none on a free account. */
+export function myLists(): AccountLists["lists"][string] {
+    const p = accountProfile();
+    return p && account.get().premium ? (accountLists.get().lists[p.id] ?? []) : [];
+}
+
+/**
+ * The groups a kind's items fall in, in playlist order, after All, Favourites and each of your own lists that holds
+ * something of that kind (Live TV and Movies; shows aren't added to lists). Adult groups are hidden by default.
+ */
 export function groupsOf(items: Item[]): Group[] {
     const counts = new Map<string, number>();
     for (const i of items) counts.set(i.group, (counts.get(i.group) ?? 0) + 1);
     const favs = items.filter((i) => favourites.get().has(i.id)).length;
+    const lists = items[0]?.kind === "series" ? [] : myLists();
     return [
         { id: ALL, name: "All", count: items.length },
         ...(favs ? [{ id: FAVOURITES, name: "Favourites", count: favs }] : []),
+        ...lists.map((l) => ({ id: LIST + l.id, name: l.name, count: listOnTv(l, items).length })).filter((g) => g.count > 0),
         ...[...counts].map(([name, count]) => ({ id: name, name, count })),
     ];
 }
@@ -333,6 +379,10 @@ export function visibleItems(items: Item[]): Item[] {
 export function inGroup(items: Item[], group: string): Item[] {
     if (group === ALL) return items;
     if (group === FAVOURITES) return items.filter((i) => favourites.get().has(i.id));
+    if (group.startsWith(LIST)) {
+        const list = myLists().find((l) => LIST + l.id === group);
+        return list ? listOnTv(list, items) : [];
+    }
     return items.filter((i) => i.group === group);
 }
 
@@ -361,38 +411,65 @@ export function search(items: Item[], query: string): Item[] {
     if (!q) return [];
     const words = q.split(" ");
     return items.filter((i) => {
-        const text = core.searchText(i.name);
+        const text = core.searchText(i.name + " " + (playlistNames.get(i.id) ?? ""));
         return words.every((w) => text.includes(w));
     });
 }
 
 /**
- * The playlist's favourites for the profile in use. A profile seen for the first time on this TV starts with the
- * favourites the account keeps for it (from the phone), matched to this playlist's items by Android's id.
+ * The playlist's favourites for the profile in use. Signed in to an account with profiles, Favourites are the
+ * account's, as the phone and website keep them, matched to this playlist's items by Android's id; a show, which
+ * Android doesn't favourite, stays on the TV. Otherwise they're kept on the TV for each playlist.
  */
-async function loadFavourites(): Promise<void> {
+export async function loadFavourites(): Promise<void> {
     const id = currentId.get();
-    const profile = currentProfile();
-    const key = id ? KEYS.favourites(id, profile?.id) : null;
-    const raw = key ? await kv.get(key) : null;
-    if (raw || !key || !profile?.favourites.length || !current()?.gen) {
-        favourites.set(new Set(raw ? (JSON.parse(raw) as string[]) : []));
-        return;
-    }
-    const items = [...(await kindItems("live")), ...(await kindItems("movie")), ...(await kindItems("series"))];
-    const seeded = favouritesOnTv(profile, items);
-    favourites.set(new Set(seeded));
-    if (seeded.length) await kv.set(key, JSON.stringify(seeded));
+    const raw = id ? await kv.get(KEYS.favourites(id, currentProfile()?.id)) : null;
+    const kept = safelyParse(raw);
+    const profile = accountProfile();
+    if (!profile || !current()?.gen) return void favourites.set(new Set(kept));
+    const items = [...(await kindItems("live")), ...(await kindItems("movie"))];
+    const shows = new Set((await kindItems("series")).map((i) => i.id));
+    favourites.set(new Set([...favouritesOnTv(profile, items), ...kept.filter((x) => shows.has(x))]));
 }
 
-export async function toggleFavourite(item: Item): Promise<void> {
+function safelyParse(raw: string | null): string[] {
+    try {
+        const list: unknown = raw ? JSON.parse(raw) : [];
+        return Array.isArray(list) ? list.filter((x): x is string => typeof x === "string") : [];
+    } catch {
+        return [];
+    }
+}
+
+/** Stars or unstars one of the favourites kept on the TV (a show's, or every one when Favourites aren't the account's). */
+export async function keepFavourite(itemId: string, on: boolean): Promise<void> {
     const id = currentId.get();
     if (!id) return;
-    const next = new Set(favourites.get());
-    if (next.has(item.id)) next.delete(item.id);
-    else next.add(item.id);
-    favourites.set(next);
-    await kv.set(KEYS.favourites(id, currentProfile()?.id), JSON.stringify([...next]));
+    const key = KEYS.favourites(id, currentProfile()?.id);
+    const kept = new Set(safelyParse(await kv.get(key)));
+    if (on) kept.add(itemId);
+    else kept.delete(itemId);
+    await kv.set(key, JSON.stringify([...kept]));
+}
+
+/**
+ * Takes the profiles, lists and channel edits from the account's backup, as read or as the TV just saved it, and
+ * keeps them for when the TV is offline. Edits that changed redraw the lists.
+ */
+export async function takeBackup(text: string): Promise<void> {
+    const read = profilesFromBackup(text);
+    const lists = listsFromBackup(text);
+    const editsChanged = JSON.stringify(lists.edits) !== JSON.stringify(accountLists.get().edits);
+    profiles.set(read);
+    accountLists.set(lists);
+    await kv.set(KEYS.profiles, await seal(JSON.stringify(read)));
+    await kv.set(KEYS.lists, await seal(JSON.stringify(lists)));
+    if (editsChanged) {
+        cache.clear();
+        playlistNames.clear();
+    }
+    await loadFavourites();
+    libraryVersion.set((v) => v + 1);
 }
 
 // ---- Profiles (profiles.md) ----
@@ -412,7 +489,11 @@ account.subscribe((state) => {
 
 async function forgetProfiles(): Promise<void> {
     profiles.set(NO_PROFILES);
+    accountLists.set(NO_LISTS);
     await kv.remove(KEYS.profiles);
+    await kv.remove(KEYS.lists);
+    cache.clear();
+    playlistNames.clear();
     await useProfile(null);
 }
 
@@ -421,9 +502,8 @@ export async function refreshProfiles(): Promise<void> {
     if (!account.get().signedIn) return;
     const text = await safely("Profiles", () => tunedAccount.backup(), null);
     if (text === null) return;
-    const read = profilesFromBackup(text);
-    profiles.set(read);
-    await kv.set(KEYS.profiles, await seal(JSON.stringify(read)));
+    await takeBackup(text);
+    const read = profiles.get();
     if (profileId.get() && !currentProfile()) await useProfile(null);
     if (read.profiles.length > 1 && !profileId.get()) profilePicked.set(false);
     else if (read.profiles.length < 2) profilePicked.set(true);

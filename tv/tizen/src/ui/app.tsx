@@ -1,8 +1,9 @@
 // The app's screens: the welcome (sign in with a phone) until there's a playlist, its first download, then Home.
 // Screens opened from there stack above it and keep their place underneath; the player sits on top of everything.
-import { useLayoutEffect, useRef } from "preact/hooks";
+import { useEffect, useLayoutEffect, useRef } from "preact/hooks";
 import { currentId, playlists, profilePicked, ready } from "../app.ts";
 import { focus } from "../focus.ts";
+import { notice } from "../my-lists.ts";
 import { playback } from "../player/controller.ts";
 import { useStore } from "../state.ts";
 import { FilmPage, ShowPage } from "./details.tsx";
@@ -89,6 +90,22 @@ export function App() {
                 </div>
             ))}
             {playing ? <Player /> : null}
+            <Notice />
         </>
+    );
+}
+
+/** A change to the account that didn't stick says so for a few seconds, over whatever is on screen. */
+function Notice() {
+    const text = useStore(notice);
+    useEffect(() => {
+        if (!text) return;
+        const id = setTimeout(() => notice.set(null), 5000);
+        return () => clearTimeout(id);
+    }, [text]);
+    return (
+        <div class={text ? "notice on" : "notice"} role="status" aria-live="polite">
+            {text ?? ""}
+        </div>
     );
 }

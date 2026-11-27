@@ -25,6 +25,7 @@ import { open } from "./nav.ts";
 import { Button, Screen, Spinner } from "./parts.tsx";
 import { StepLine } from "./loading.tsx";
 import { Avatar, PinPad } from "./profiles.tsx";
+import { ManageLists } from "./add-to-list.tsx";
 
 function Toggle(props: { label: string; on: boolean; onChange: (on: boolean) => void }) {
     return (
@@ -91,6 +92,7 @@ export function Settings(props: { height: number }) {
                     <p class="muted">{t.profilesOnPhone}</p>
                 </section>
             ) : null}
+            <ManageLists />
             <section>
                 <h2>{t.playlists}</h2>
                 <div class="buttons" data-row>
