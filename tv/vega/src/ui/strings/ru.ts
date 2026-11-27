@@ -87,6 +87,24 @@ export const ru: Strings = {
     episodeCount: (n: number) => count(n, "серия", "серии", "серий"),
     rating: (r: number) => `★ ${r.toFixed(1).replace(".", ",")}`,
     paused: "Пауза",
+    search: "Поиск",
+    searchHint: "Введите канал, фильм или сериал",
+    noResults: (q: string) => `Ничего не найдено по запросу «${q}».`,
+    favourites: "Избранное",
+    favourite: "Добавить в Избранное",
+    unfavourite: "Убрать из Избранного",
+    favouriteHint: "Удерживайте OK на канале, чтобы добавить его в Избранное.",
+    favouriteAdded: (name: string) => `${name} в Избранном.`,
+    favouriteRemoved: (name: string) => `${name} убран из Избранного.`,
+    gettingDetails: "Загрузка сведений…",
+    detailsFailed: "Не удалось подключиться к TMDB. Показаны сведения из плейлиста.",
+    cast: "В ролях",
+    runtime: (minutes: number) => {
+        const h = Math.floor(minutes / 60);
+        const m = minutes % 60;
+        return h && m ? `${h} ч ${m} мин` : h ? `${h} ч` : `${m} мин`;
+    },
+    tmdbNotice: "Этот продукт использует API TMDB, но не одобрен и не сертифицирован TMDB.",
     movieDidntStart: "Не запустилось. Возможно, сервер занят или файла нет.",
     noPlaylistOnAccount: "Вы вошли в аккаунт Tuned, но в нём пока нет плейлиста. Повторите, чтобы отправить его с телефона.",
     nothingUsable: "В том, что прислал телефон, нет плейлиста, который может использовать телевизор. Отправьте его с телефона ещё раз.",

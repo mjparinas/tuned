@@ -85,6 +85,24 @@ export const zh: Strings = {
     episodeCount: (n: number) => `${num(n)} 集`,
     rating: (r: number) => `★ ${r.toFixed(1)}`,
     paused: "已暂停",
+    search: "搜索",
+    searchHint: "输入频道、电影或剧集",
+    noResults: (q: string) => `没有与“${q}”匹配的内容。`,
+    favourites: "收藏",
+    favourite: "加入收藏",
+    unfavourite: "取消收藏",
+    favouriteHint: "在频道上按住 OK 即可加入收藏。",
+    favouriteAdded: (name: string) => `${name} 已加入收藏。`,
+    favouriteRemoved: (name: string) => `${name} 已取消收藏。`,
+    gettingDetails: "正在获取详情…",
+    detailsFailed: "无法连接 TMDB，显示播放列表自带的详情。",
+    cast: "演员",
+    runtime: (minutes: number) => {
+        const h = Math.floor(minutes / 60);
+        const m = minutes % 60;
+        return h && m ? `${h}小时 ${m}分钟` : h ? `${h}小时` : `${m}分钟`;
+    },
+    tmdbNotice: "本产品使用 TMDB API，但未经 TMDB 认可或认证。",
     movieDidntStart: "没有开始播放。服务器可能繁忙，或者文件缺失。",
     noPlaylistOnAccount: "已登录你的 Tuned 账号，但账号里还没有播放列表。请重试，从手机发送一个。",
     nothingUsable: "手机发送的内容中没有电视可用的播放列表。请从手机再次发送。",

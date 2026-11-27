@@ -447,6 +447,9 @@ jobs:
           echo "$HOME/vega/bin" >> "$GITHUB_PATH"
           "$HOME/vega/bin/vega" --version
       - name: Build the .vpkg
+        env:
+          # Built in like the Android release's (scripts/keys.mjs); with no secret, TMDB details stay off.
+          TMDB_API_KEY: ${{ secrets.TMDB_API_KEY }}
         run: |
           source ~/vega/env 2>/dev/null || true
           npm run build:release

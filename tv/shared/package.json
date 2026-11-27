@@ -12,7 +12,10 @@
     "./login": "./src/login.ts",
     "./platform": "./src/platform.ts",
     "./i18n": "./src/i18n.ts",
-    "./guide": "./src/guide.ts"
+    "./guide": "./src/guide.ts",
+    "./search": "./src/search.ts",
+    "./favourites": "./src/favourites.ts",
+    "./tmdb": "./src/tmdb.ts"
   },
   "scripts": {
     "test": "node --experimental-strip-types --no-warnings --test src/*.test.ts",

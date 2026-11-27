@@ -84,6 +84,24 @@ export const hi: Strings = {
     episodeCount: (n: number) => `${num(n)} एपिसोड`,
     rating: (r: number) => `★ ${r.toFixed(1)}`,
     paused: "रुका हुआ",
+    search: "खोजें",
+    searchHint: "कोई चैनल, फ़िल्म या शो लिखें",
+    noResults: (q: string) => `“${q}” से कुछ नहीं मिला।`,
+    favourites: "पसंदीदा",
+    favourite: "पसंदीदा में जोड़ें",
+    unfavourite: "पसंदीदा से हटाएँ",
+    favouriteHint: "किसी चैनल को पसंदीदा में जोड़ने के लिए उस पर OK दबाकर रखें।",
+    favouriteAdded: (name: string) => `${name} पसंदीदा में है।`,
+    favouriteRemoved: (name: string) => `${name} पसंदीदा से हटाया गया।`,
+    gettingDetails: "जानकारी ला रहे हैं…",
+    detailsFailed: "TMDB तक नहीं पहुँच सके। प्लेलिस्ट की अपनी जानकारी दिखा रहे हैं।",
+    cast: "कलाकार",
+    runtime: (minutes: number) => {
+        const h = Math.floor(minutes / 60);
+        const m = minutes % 60;
+        return h && m ? `${h} घं ${m} मि` : h ? `${h} घं` : `${m} मि`;
+    },
+    tmdbNotice: "यह उत्पाद TMDB API का उपयोग करता है, लेकिन TMDB द्वारा समर्थित या प्रमाणित नहीं है।",
     movieDidntStart: "यह शुरू नहीं हुआ। सर्वर व्यस्त हो सकता है, या फ़ाइल गायब हो सकती है।",
     noPlaylistOnAccount: "आपके Tuned खाते में साइन इन हो गया, पर उसमें अभी कोई प्लेलिस्ट नहीं है। फ़ोन से एक भेजने के लिए फिर से कोशिश करें।",
     nothingUsable: "फ़ोन ने जो भेजा उसमें ऐसी कोई प्लेलिस्ट नहीं थी जिसे टीवी इस्तेमाल कर सके। फ़ोन से फिर से भेजें।",

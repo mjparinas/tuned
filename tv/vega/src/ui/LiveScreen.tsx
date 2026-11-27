@@ -3,7 +3,7 @@
 // step in the corner while the saved channels stay usable.
 import * as React from "react";
 import { FlatList, Image, Text, View } from "react-native";
-import type { AppModel, State } from "../app/model";
+import { FAVOURITES, type AppModel, type State } from "../app/model";
 import type { Category, Channel } from "../core/models";
 import { Focusable, Screen, Spinner } from "./parts";
 import { TopBar } from "./TopBar";
@@ -65,12 +65,16 @@ function ChannelRow({
     channel,
     now,
     onPress,
+    onLongPress,
+    favourite,
     start,
     showFocused,
 }: {
     channel: Channel;
     now?: string;
     onPress: () => void;
+    onLongPress: () => void;
+    favourite: boolean;
     start?: boolean;
     showFocused?: boolean;
 }) {
@@ -80,8 +84,9 @@ function ChannelRow({
             start={start}
             showFocused={showFocused}
             onPress={onPress}
+            onLongPress={onLongPress}
             accessibilityRole="button"
-            accessibilityLabel={`${channel.number} ${channel.name}`}
+            accessibilityLabel={favourite ? `${channel.number} ${channel.name}, ${t.favourites}` : `${channel.number} ${channel.name}`}
             style={{
                 height: dp(ROW - 4),
                 marginBottom: dp(4),
@@ -126,6 +131,7 @@ function ChannelRow({
                             </Text>
                         ) : null}
                     </View>
+                    {favourite ? <Text style={{ color: colours.primary, fontSize: dp(16) }}>★</Text> : null}
                 </>
             )}
         </Focusable>
@@ -146,14 +152,28 @@ export function LiveScreen({ model, state, focusChannel }: { model: AppModel; st
         0,
         channels.findIndex((c) => c.id === startId),
     );
-    const categories: (Category | null)[] = [null, ...(lineup?.categories ?? [])];
-    const title = state.category ? (lineup?.categories.find((c) => c.id === state.category)?.name ?? "") : t.allChannels;
+    const favouriteCount = React.useMemo(
+        () => (lineup?.channels ?? []).filter((c) => state.favourites.has(c.id)).length,
+        [lineup, state.favourites],
+    );
+    const categories: (Category | null)[] = [
+        null,
+        ...(favouriteCount || state.category === FAVOURITES ? [{ id: FAVOURITES, name: t.favourites }] : []),
+        ...(lineup?.categories ?? []),
+    ];
+    const title =
+        state.category === FAVOURITES
+            ? t.favourites
+            : state.category
+              ? (lineup?.categories.find((c) => c.id === state.category)?.name ?? "")
+              : t.allChannels;
     const nowTitle = (c: Channel) => state.guide[c.id]?.[0]?.title;
 
     return (
         <Screen>
             <TopBar
                 model={model}
+                state={state}
                 tab="live"
                 status={
                     state.refresh.busy ? (
@@ -184,7 +204,7 @@ export function LiveScreen({ model, state, focusChannel }: { model: AppModel; st
                         renderItem={({ item }) => (
                             <CategoryRow
                                 name={item ? item.name : t.allChannels}
-                                count={item ? counts.get(item.id) : lineup?.channels.length}
+                                count={item ? (item.id === FAVOURITES ? favouriteCount : counts.get(item.id)) : lineup?.channels.length}
                                 selected={(item?.id ?? null) === state.category}
                                 onPress={() => model.pickCategory(item?.id ?? null)}
                             />
@@ -199,6 +219,9 @@ export function LiveScreen({ model, state, focusChannel }: { model: AppModel; st
                             {title}
                         </Text>
                         <Text style={{ color: colours.muted, fontSize: dp(13) }}>{t.channels(channels.length)}</Text>
+                        <Text numberOfLines={1} style={{ flex: 1, textAlign: "right", color: colours.muted, fontSize: dp(12) }}>
+                            {t.favouriteHint}
+                        </Text>
                     </View>
                     {channels.length ? (
                         <FlatList
@@ -216,7 +239,9 @@ export function LiveScreen({ model, state, focusChannel }: { model: AppModel; st
                                     now={nowTitle(item)}
                                     start={item.id === startId}
                                     showFocused={item.id === focusChannel}
+                                    favourite={state.favourites.has(item.id)}
                                     onPress={() => void model.play(item)}
+                                    onLongPress={() => void model.toggleFavourite(item.id, item.name)}
                                 />
                             )}
                         />

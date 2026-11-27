@@ -2,7 +2,8 @@
 import type { Fetch } from "@tuned/shared/platform";
 import { xhrHttp } from "./core/http";
 import { deviceLanguages } from "./platform/language";
-import { chooseLanguage } from "./ui/strings";
+import { KEYS } from "./platform/keys";
+import { chooseLanguage, locale } from "./ui/strings";
 import { makeApp } from "./App";
 import { random } from "./platform/random";
 import { deviceStore } from "./platform/store";
@@ -20,6 +21,16 @@ const fetch: Fetch = (url, init) => globalThis.fetch(url, init as RequestInit);
 const quietStart = () => new Promise<void>((resolve) => setTimeout(resolve, 3000));
 
 export const App = makeApp(
-    { store: deviceStore, http: xhrHttp(), fetch, random, player, deviceName: "Fire TV (Vega OS)", quietStart },
+    {
+        store: deviceStore,
+        http: xhrHttp(),
+        fetch,
+        random,
+        player,
+        deviceName: "Fire TV (Vega OS)",
+        quietStart,
+        tmdbKey: KEYS.tmdb,
+        language: locale(),
+    },
     player,
 );
