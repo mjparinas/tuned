@@ -6,6 +6,8 @@ date: 2026-11-19
 kind: guide
 ---
 
+<figure class="cover"><img src="/blog/img/posts/user-agent.jpg" alt="Tuned's user agent choices beside its settings for when a channel fails" width="1200" height="760"></figure>
+
 Every time an app asks a server for something, it says what it is. That's the **user agent**. Some IPTV servers only answer players they know, and turn others away with an error, an empty playlist or a stream that won't start. Telling the server Tuned is a player it knows often fixes it.
 
 ## Change it

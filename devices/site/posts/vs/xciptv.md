@@ -5,6 +5,8 @@ date: 2026-11-19
 kind: compare
 ---
 
+<figure class="cover"><img src="/blog/img/posts/vs-xciptv.jpg" alt="A show playing in Tuned on a TV beside the Shows tab on a phone" width="1200" height="760"></figure>
+
 XCIPTV Player, from OTTRUN (now also called OTR Player), is a common choice for Xtream Codes logins, and many providers ship branded copies of it. Tuned works with the same logins. Here is how they compare.
 
 ## At a glance

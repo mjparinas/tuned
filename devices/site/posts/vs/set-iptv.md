@@ -5,6 +5,8 @@ date: 2026-11-19
 kind: compare
 ---
 
+<figure class="cover"><img src="/blog/img/posts/vs-set-iptv.jpg" alt="Tuned's Live TV on a TV, with the channel list and filters" width="1200" height="760"></figure>
+
 SET IPTV, from SETSYSTEME, runs on smart TVs and Android, with a 7-day trial and then a lifetime activation per device. Tuned is free on Android. Here is how they compare.
 
 ## At a glance

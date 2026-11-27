@@ -5,6 +5,8 @@ date: 2026-11-19
 kind: compare
 ---
 
+<figure class="cover"><img src="/blog/img/posts/vs-flix-iptv.jpg" alt="Tuned's Movies tab, a film's details and the Shows tab on phones" width="1200" height="760"></figure>
+
 Flix IPTV is a player for TVs that you activate per device after a trial. Tuned is free on Android phones and TVs. Here is how they compare.
 
 ## At a glance

@@ -5,6 +5,8 @@ date: 2026-11-19
 kind: compare
 ---
 
+<figure class="cover"><img src="/blog/img/posts/vs-vlc.jpg" alt="Tuned's player controls over a live picture: play, skip, rewind and the stream's details" width="1200" height="760"></figure>
+
 VLC, from VideoLAN, plays almost any file or stream, is free and has no ads. Many people first open an IPTV link in it. But it's a general player: it has no TV guide or channel lists built for IPTV. Here is how it compares with Tuned.
 
 ## At a glance

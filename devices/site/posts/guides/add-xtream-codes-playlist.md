@@ -6,6 +6,8 @@ kind: guide
 updated: 2026-11-26
 ---
 
+<figure class="cover"><img src="/blog/img/posts/add-xtream.jpg" alt="Tuned's welcome screen, its Xtream Codes sign-in form with server, username and password, and Live TV filled from the playlist" width="1200" height="760"></figure>
+
 Most IPTV providers send three things when you sign up: a **server address**, a **username** and a **password**. That's an Xtream Codes login, and it's the most complete way to use Tuned: it brings in live channels, films, shows, the TV guide and catch-up from one sign-in.
 
 Tuned includes no channels or content of its own. You need a playlist from your own provider.

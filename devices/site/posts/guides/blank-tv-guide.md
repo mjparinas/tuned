@@ -6,6 +6,8 @@ date: 2026-11-19
 kind: guide
 ---
 
+<figure class="cover"><img src="/blog/img/posts/blank-tv-guide.jpg" alt="Tuned's Guide and refresh settings on a phone, beside the TV guide grid on a TV" width="1200" height="760"></figure>
+
 Channels play but there's no "what's on", or the times are off? The guide (EPG) is a separate download from the channel list, so it can go wrong on its own. Work through these in order.
 
 ## The whole guide is empty

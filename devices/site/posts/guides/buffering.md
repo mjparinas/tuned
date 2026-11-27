@@ -7,6 +7,8 @@ kind: guide
 updated: 2026-11-26
 ---
 
+<figure class="cover"><img src="/blog/img/posts/buffering.jpg" alt="Tuned's settings for when a channel fails, Playback settings and the user agent choices" width="1200" height="760"></figure>
+
 Buffering means the stream isn't arriving as fast as it plays. It's usually the provider's server or the internet between you and it, sometimes the device. Here's how to narrow it down and fix it.
 
 ## 1. Is it one channel or all of them?

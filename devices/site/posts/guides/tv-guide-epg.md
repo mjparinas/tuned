@@ -7,6 +7,8 @@ kind: guide
 updated: 2026-11-26
 ---
 
+<figure class="cover"><img src="/blog/img/posts/tv-guide.jpg" alt="Tuned's TV guide on a phone and the guide grid on a TV" width="1200" height="760"></figure>
+
 The TV guide, or EPG (electronic programme guide), is what tells you what's on now and next. In IPTV it comes as an **XMLTV** file from your provider, separate from the channel list. Tuned downloads it with your playlist, keeps it on the device, and shows it everywhere: under each channel, in the player, in a full grid, and on the Live Events page of today's games and events.
 
 ## Where the guide comes from

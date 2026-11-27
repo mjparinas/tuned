@@ -5,6 +5,8 @@ date: 2026-11-19
 kind: compare
 ---
 
+<figure class="cover"><img src="/blog/img/posts/vs-televizo.jpg" alt="Tuned's Live TV on a TV beside its TV guide on a phone" width="1200" height="760"></figure>
+
 Televizo, from Andrey Menscikov, is a popular free player for phones, tablets and TVs, with a one-time Premium that removes ads. Tuned is also free on the same devices, with no ads at all. Here is how they compare.
 
 ## At a glance

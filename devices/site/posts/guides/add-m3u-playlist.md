@@ -6,6 +6,8 @@ kind: guide
 updated: 2026-11-26
 ---
 
+<figure class="cover"><img src="/blog/img/posts/add-m3u.jpg" alt="Tuned's welcome screen, the Playlist link form with an optional guide link, and the TV guide on a phone" width="1200" height="760"></figure>
+
 If your provider gave you a link ending in `.m3u` or `.m3u8`, or a playlist file, Tuned plays it. M3U is the most common playlist format in IPTV: a plain list of channels with their names, logos, groups and stream links.
 
 ## Add a playlist link

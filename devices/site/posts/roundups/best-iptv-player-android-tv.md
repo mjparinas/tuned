@@ -5,6 +5,8 @@ date: 2026-11-19
 kind: roundup
 ---
 
+<figure class="cover"><img src="/blog/img/posts/best-android-tv.jpg" alt="Tuned's TV guide grid on an Android TV beside Live TV on a phone" width="1200" height="760"></figure>
+
 There's no shortage of IPTV players for Android TV. The best one is the one that gets you to the channel fastest, stays smooth from the sofa, and doesn't fight the remote. Here's what to look for, how Tuned does it, and where to read how each popular player compares.
 
 A note first: every player on this page, Tuned included, is just a player. None includes channels. You bring the playlist from your own provider.

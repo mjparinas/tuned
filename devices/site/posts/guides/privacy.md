@@ -5,6 +5,8 @@ date: 2026-11-19
 kind: guide
 ---
 
+<figure class="cover"><img src="/blog/img/posts/privacy-guide.jpg" alt="Tuned's Logs, which leave logins out, and the Sign out dialog that resets the app" width="1200" height="760"></figure>
+
 Tuned is a player. It has no ads, no third-party analytics and no content of its own, and almost everything it knows stays on your device. Here's the plain-English version.
 
 ## On your device

@@ -13,17 +13,17 @@
 <meta property="og:title" content="What Tuned stores, and what it never sees" />
 <meta property="og:description" content="Where your login, playlists and history live, who Tuned talks to and why, and what the optional Tuned account keeps." />
 <meta property="og:url" content="https://www.tunedplayer.com/blog/guides/privacy/" />
-<meta property="og:image" content="https://www.tunedplayer.com/img/og.png" />
+<meta property="og:image" content="https://www.tunedplayer.com/blog/img/posts/privacy-guide.jpg" />
 <meta property="og:image:width" content="1200" />
-<meta property="og:image:height" content="630" />
-<meta property="og:image:alt" content="Tuned, the IPTV player for Android, on a phone and a TV" />
+<meta property="og:image:height" content="760" />
+<meta property="og:image:alt" content="Tuned&#39;s Logs, which leave logins out, and the Sign out dialog that resets the app" />
 <meta property="article:published_time" content="2026-11-19" />
 <meta property="article:modified_time" content="2026-11-19" />
 <meta name="twitter:card" content="summary_large_image" />
 <meta name="twitter:title" content="What Tuned stores, and what it never sees" />
 <meta name="twitter:description" content="Where your login, playlists and history live, who Tuned talks to and why, and what the optional Tuned account keeps." />
-<meta name="twitter:image" content="https://www.tunedplayer.com/img/og.png" />
-<meta name="twitter:image:alt" content="Tuned, the IPTV player for Android, on a phone and a TV" />
+<meta name="twitter:image" content="https://www.tunedplayer.com/blog/img/posts/privacy-guide.jpg" />
+<meta name="twitter:image:alt" content="Tuned&#39;s Logs, which leave logins out, and the Sign out dialog that resets the app" />
 <meta name="theme-color" content="#fcfaff" media="(prefers-color-scheme: light)" />
 <meta name="theme-color" content="#121018" media="(prefers-color-scheme: dark)" />
 <link rel="icon" href="/favicon.ico" sizes="48x48" />
@@ -32,7 +32,7 @@
 <link rel="alternate" type="application/rss+xml" title="Tuned blog" href="/blog/feed.xml" />
 <link rel="stylesheet" href="/site.css" />
 <link rel="stylesheet" href="/web.css" />
-<script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"What Tuned stores, and what it never sees","description":"Where your login, playlists and history live, who Tuned talks to and why, and what the optional Tuned account keeps.","datePublished":"2026-11-19","dateModified":"2026-11-19","inLanguage":"en-CA","url":"https://www.tunedplayer.com/blog/guides/privacy/","mainEntityOfPage":{"@type":"WebPage","@id":"https://www.tunedplayer.com/blog/guides/privacy/"},"image":"https://www.tunedplayer.com/img/og.png","articleSection":"Guides","isPartOf":{"@type":"Blog","name":"Tuned blog","url":"https://www.tunedplayer.com/blog/"},"author":{"@type":"Organization","name":"Tuned","url":"https://www.tunedplayer.com"},"publisher":{"@type":"Organization","name":"Tuned","logo":{"@type":"ImageObject","url":"https://www.tunedplayer.com/apple-touch-icon.png"}}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"What Tuned stores, and what it never sees","description":"Where your login, playlists and history live, who Tuned talks to and why, and what the optional Tuned account keeps.","datePublished":"2026-11-19","dateModified":"2026-11-19","inLanguage":"en-CA","url":"https://www.tunedplayer.com/blog/guides/privacy/","mainEntityOfPage":{"@type":"WebPage","@id":"https://www.tunedplayer.com/blog/guides/privacy/"},"image":"https://www.tunedplayer.com/blog/img/posts/privacy-guide.jpg","articleSection":"Guides","isPartOf":{"@type":"Blog","name":"Tuned blog","url":"https://www.tunedplayer.com/blog/"},"author":{"@type":"Organization","name":"Tuned","url":"https://www.tunedplayer.com"},"publisher":{"@type":"Organization","name":"Tuned","logo":{"@type":"ImageObject","url":"https://www.tunedplayer.com/apple-touch-icon.png"}}}</script>
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://www.tunedplayer.com/"},{"@type":"ListItem","position":2,"name":"Blog","item":"https://www.tunedplayer.com/blog/"},{"@type":"ListItem","position":3,"name":"Guides","item":"https://www.tunedplayer.com/blog/guides/"},{"@type":"ListItem","position":4,"name":"What Tuned stores, and what it never sees","item":"https://www.tunedplayer.com/blog/guides/privacy/"}]}</script>
 </head>
 <body class="web">
@@ -62,6 +62,7 @@
 <h1>What Tuned stores, and what it never sees</h1>
 <p class="meta"><time datetime="2026-11-19">November 19, 2026</time></p>
 <div class="prose">
+<figure class="cover"><img src="/blog/img/posts/privacy-guide.jpg" alt="Tuned's Logs, which leave logins out, and the Sign out dialog that resets the app" width="1200" height="760"></figure>
 <p>Tuned is a player. It has no ads, no third-party analytics and no content of its own, and almost everything it knows stays on your device. Here&#39;s the plain-English version.</p>
 <h2 id="on-your-device">On your device</h2>
 <ul><li><strong>Your playlist logins</strong> (server, username and password, playlist link or MAC address) are encrypted with a key kept in Android&#39;s Keystore, which never leaves the device. They&#39;re deleted when you sign out.</li><li><strong>Your playlists, guide, favourites, watch history, settings, downloads and recordings</strong> stay on the device.</li><li><strong>Crash reports and the app&#39;s log</strong> stay on the device too, with logins removed before anything is written. They leave only if you share them.</li><li><strong>Android&#39;s cloud backup is off</strong> for Tuned, so none of this ends up in a phone backup.</li></ul>

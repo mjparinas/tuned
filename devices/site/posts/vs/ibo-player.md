@@ -5,6 +5,8 @@ date: 2026-11-19
 kind: compare
 ---
 
+<figure class="cover"><img src="/blog/img/posts/vs-ibo-player.jpg" alt="Tuned's TV guide grid on a TV beside Live TV on a phone" width="1200" height="760"></figure>
+
 IBO Player Pro, from IBO DEV, runs on smart TVs, Roku, Windows and Android, and is activated per device after a trial. Tuned is Android only. Here is how they compare.
 
 ## At a glance

@@ -5,6 +5,8 @@ date: 2026-11-19
 kind: compare
 ---
 
+<figure class="cover"><img src="/blog/img/posts/vs-ott-navigator.jpg" alt="Tuned's TV guide grid on a TV beside Live TV on a phone" width="1200" height="760"></figure>
+
 OTT Navigator, from Scillarium Studio, is a deep, highly configurable player that runs on phones, tablets and TV boxes. Tuned aims for fewer settings to learn and a player that gets out of your way. Here is how they compare.
 
 ## At a glance

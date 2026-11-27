@@ -7,6 +7,8 @@ kind: guide
 updated: 2026-11-26
 ---
 
+<figure class="cover"><img src="/blog/img/posts/android-tv.jpg" alt="Tuned's Live TV on an Android TV, with the channel list, filters and the Show the TV guide grid button" width="1200" height="760"></figure>
+
 Tuned is one app for phones, tablets and TVs. On an Android TV it shows its own banner on the home screen, fits inside the TV's safe area, and works with the remote alone. It runs on Android 8.0 and newer.
 
 ## Install it
