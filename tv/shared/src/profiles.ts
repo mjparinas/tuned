@@ -5,8 +5,20 @@
 // no tv/core, so Vega's Hermes bundle takes it too; the rules are core/Profiles.kt's, with its cases in the test.
 // `@tuned/shared/profiles`.
 import { unb64, utf8Encode } from "./bytes.ts";
-import type { Item } from "./catalog.ts";
 import { searchText } from "./search.ts";
+
+/**
+ * What these rules read of a catalog item (`catalog.ts`'s `Item` has it). Named here rather than imported, so an app
+ * without tv/core (Vega) can take this module without compiling the catalog.
+ */
+export interface Item {
+    readonly id: string;
+    readonly androidId: string;
+    readonly name: string;
+    readonly group: string;
+    readonly kind: string;
+    readonly adult: boolean;
+}
 
 export interface Profile {
     /** Android's id for the profile, as decimal text. */

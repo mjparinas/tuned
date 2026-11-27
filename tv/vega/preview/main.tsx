@@ -9,6 +9,8 @@ import type { Channel, Library, Lineup, Title } from "../src/core/models";
 import { memoryStore } from "../src/core/storage";
 import { ReminderBanner, Shell } from "../src/App";
 import { BrowseScreen } from "../src/ui/BrowseScreen";
+import { PinPad, ProfilesScreen } from "../src/ui/ProfilesScreen";
+import { EventsScreen } from "../src/ui/EventsScreen";
 import { LiveScreen } from "../src/ui/LiveScreen";
 import { LoadingScreen } from "../src/ui/LoadingScreen";
 import { ManualScreen } from "../src/ui/ManualScreen";
@@ -18,7 +20,7 @@ import { SettingsScreen } from "../src/ui/SettingsScreen";
 import { SignInScreen } from "../src/ui/SignInScreen";
 import { TitleScreen } from "../src/ui/TitleScreen";
 import { VegaPlayer } from "../src/platform/VegaPlayer";
-import { chooseLanguage, rightToLeft } from "../src/ui/strings";
+import { chooseLanguage, rightToLeft, t as tr0 } from "../src/ui/strings";
 
 const offline: Http = {
     text: () => Promise.reject(new Error("preview")),
@@ -192,6 +194,16 @@ const at = (h: number, m: number) => new Date(2026, 10, 27, h, m).getTime();
 const lineup = sampleLineup();
 const account = { email: "you@example.com", premium: true, seat: "active" as const, checkedAt: Date.now() };
 
+const PROFILES = {
+    profiles: [
+        { id: "1", name: "Alex", colour: 0, kids: false, pinHash: null, avatar: null, favourites: [] },
+        { id: "2", name: "Jordan", colour: 2, kids: false, pinHash: "v1:preview:only", avatar: "owl", favourites: [] },
+        { id: "3", name: "Robin", colour: 5, kids: true, pinHash: null, avatar: "fox", favourites: [] },
+        { id: "4", name: "Sam", colour: 4, kids: false, pinHash: null, avatar: "rocket", favourites: [] },
+    ],
+    parentalPin: "v1:preview:only",
+};
+
 function Scene({ name }: { name: string }) {
     const player = React.useMemo(() => new VegaPlayer(), []);
     switch (name) {
@@ -301,6 +313,77 @@ function Scene({ name }: { name: string }) {
                 </View>
             );
         }
+        case "events":
+        case "events-reading": {
+            // Made-up teams and events: store builds never name a league, team or brand.
+            const now = at(19, 10);
+            const ev = (title: string, start: number, length: number, channels: string[], timeKnown = true) => ({
+                key: title.toLowerCase(),
+                title,
+                start,
+                stop: start + length * 60_000,
+                channels,
+                timeKnown,
+            });
+            const events = [
+                ev("Harbour Hawks vs. Valley Bears", at(19, 0), 180, ["c107", "c108", "c109"]),
+                ev("City Cup Final", at(18, 30), 120, ["c110"]),
+                ev("Fight Night 12: Main Card", now, 180, ["c111", "c112"], false),
+                ev("Lakeside Open: Final Round", at(20, 0), 240, ["c108"]),
+                ev("Coast Kings @ Metro Stars", at(22, 30), 150, ["c109", "c112"]),
+                ev("Rink Classic: North vs. South", at(19, 0) + 24 * hour, 150, ["c109"]),
+            ];
+            const m = model({
+                route: "events",
+                lineup,
+                events,
+                reminders: [
+                    {
+                        channelId: "c109",
+                        channelName: "Rink Live",
+                        title: events[4].title,
+                        start: events[4].start,
+                        stop: events[4].stop,
+                        tune: true,
+                    },
+                ],
+                eventsLoad:
+                    name === "events-reading"
+                        ? {
+                              busy: true,
+                              progress: { step: 1, steps: 1, label: "", loaded: 34, total: 120, eta: "about 1 min left" },
+                          }
+                        : { busy: false },
+            });
+            if (name === "events-reading") m.state.eventsLoad.progress!.label = tr0.eventsGuide(34, 120);
+            return <EventsScreen model={m} state={m.state} fixedNow={now} showFocused={0} />;
+        }
+        case "tune-trying":
+        case "tune-found":
+        case "tune-none": {
+            const ids = ["c107", "c108", "c109", "c110", "c111", "c112", "c101", "c102", "c103"];
+            const m = model({
+                route: "player",
+                lineup,
+                channelId: name === "tune-trying" ? "c108" : "c109",
+                guide: { c109: [{ title: "Harbour Hawks vs. Valley Bears", start: at(19, 0), end: at(22, 0) }] },
+                tune: {
+                    title: "Harbour Hawks vs. Valley Bears",
+                    ids,
+                    at: name === "tune-trying" ? 1 : 2,
+                    found: name === "tune-found",
+                    failed: name === "tune-none",
+                },
+            });
+            return (
+                <PlayerScreen
+                    model={m}
+                    state={m.state}
+                    player={player}
+                    shown={{ controls: name === "tune-found", playback: name === "tune-trying" ? "starting" : "playing" }}
+                />
+            );
+        }
         case "live-refreshing": {
             const m = model({
                 route: "live",
@@ -328,6 +411,32 @@ function Scene({ name }: { name: string }) {
         case "player-failed": {
             const m = model({ route: "player", lineup, channelId: "c107" });
             return <PlayerScreen model={m} state={m.state} player={player} shown={{ playback: "failed" }} />;
+        }
+        case "profiles": {
+            const m = model({ route: "profiles", lineup, account, profiles: PROFILES, profileId: "1" });
+            return <ProfilesScreen model={m} state={m.state} showFocused={1} />;
+        }
+        case "profiles-pin":
+        case "profiles-pin-wrong": {
+            const m = model({ route: "profiles", lineup, account, profiles: PROFILES, profileId: "1" });
+            return (
+                <PinPad
+                    model={m}
+                    title={tr0.pinFor("Jordan")}
+                    hash={null}
+                    onOk={() => undefined}
+                    onCancel={() => undefined}
+                    preview={name === "profiles-pin" ? { typed: 3 } : { typed: 0, problem: tr0.pinWrong }}
+                />
+            );
+        }
+        case "live-kids": {
+            const m = model({ route: "live", lineup, account, profiles: PROFILES, profileId: "3" });
+            return <LiveScreen model={m} state={m.state} focusChannel={m.shownChannels()[0]?.id} />;
+        }
+        case "settings-profile": {
+            const m = model({ route: "settings", lineup, account, profiles: PROFILES, profileId: "1" });
+            return <SettingsScreen model={m} state={m.state} />;
         }
         case "settings": {
             const m = model({ route: "settings", lineup, account });

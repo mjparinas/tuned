@@ -6,9 +6,11 @@ import { Text, View } from "react-native";
 import { AppModel, type Services, type State } from "./app/model";
 import { launchSafely, log } from "./core/log";
 import { BrowseScreen } from "./ui/BrowseScreen";
+import { EventsScreen } from "./ui/EventsScreen";
 import { LiveScreen } from "./ui/LiveScreen";
 import { LoadingScreen } from "./ui/LoadingScreen";
 import { ManualScreen } from "./ui/ManualScreen";
+import { ProfilesScreen } from "./ui/ProfilesScreen";
 import { PlayerScreen, type PlayerHandle } from "./ui/PlayerScreen";
 import { Button, Screen, Spinner } from "./ui/parts";
 import { t } from "./ui/strings";
@@ -88,7 +90,12 @@ function Screens({ model, player, state }: { model: AppModel; player: VegaPlayer
 
     React.useEffect(() => {
         const handler = () => {
+            if (model.onBack?.()) return true;
             switch (model.state.route) {
+                case "profiles":
+                    if (model.state.lineup && model.answered) model.go("live");
+                    else back.exitApp();
+                    return true;
                 case "player":
                     if (!playerRef.current?.back()) launchSafely("back.player", () => model.stopPlaying());
                     return true;
@@ -114,6 +121,7 @@ function Screens({ model, player, state }: { model: AppModel; player: VegaPlayer
                 case "movies":
                 case "shows":
                 case "search":
+                case "events":
                     model.go("live");
                     return true;
                 case "title":
@@ -143,8 +151,12 @@ function Screens({ model, player, state }: { model: AppModel; player: VegaPlayer
             return <ManualScreen model={model} />;
         case "loading":
             return <LoadingScreen model={model} state={state} />;
+        case "profiles":
+            return <ProfilesScreen model={model} state={state} />;
         case "live":
             return <LiveScreen model={model} state={state} />;
+        case "events":
+            return <EventsScreen model={model} state={state} />;
         case "movies":
         case "shows":
             return <BrowseScreen model={model} state={state} kind={state.route} />;

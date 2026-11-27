@@ -12,6 +12,7 @@ import { body, caller, guarded, json } from "../../lib/auth.mjs";
 import { applyChange, libraryView } from "../../lib/library.mjs";
 import { command } from "../../lib/redis.mjs";
 import { backup, saveBackup } from "../../lib/account-store.mjs";
+import { parseWhole, stringifyWhole } from "../../lib/whole-json.mjs";
 
 const CHANGES_PER_HOUR = 120;
 const TRIES = 3;
@@ -20,7 +21,7 @@ async function newest(account) {
     const found = await backup(account, null);
     if (!found) return { version: 0, stored: null };
     try {
-        return { version: found.version, stored: JSON.parse(gunzipSync(Buffer.from(found.data, "base64")).toString()) };
+        return { version: found.version, stored: parseWhole(gunzipSync(Buffer.from(found.data, "base64")).toString()) };
     } catch {
         return { version: found.version, stored: null, damaged: true };
     }
@@ -51,7 +52,7 @@ export function POST(request) {
             if (damaged) return json({ status: "unavailable" }, 503);
             const result = applyChange(stored, change);
             if (result.error) return json({ status: result.error, field: result.field ?? null }, 400);
-            const text = JSON.stringify(result.stored);
+            const text = stringifyWhole(result.stored);
             if (Buffer.byteLength(text) > MAX_BACKUP_BYTES) return json({ status: "too large" }, 413);
             const saved = await saveBackup(who.account, version, gzipSync(text).toString("base64"), Buffer.byteLength(text), "Website");
             if (saved != null) return json(libraryView(result.stored));

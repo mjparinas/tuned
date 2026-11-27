@@ -22,7 +22,9 @@
     "./sort": "./src/sort.ts",
     "./progress": "./src/progress.ts",
     "./reminders": "./src/reminders.ts",
-    "./xmltv": "./src/xmltv.ts"
+    "./events": "./src/events.ts",
+    "./xmltv": "./src/xmltv.ts",
+    "./stableid": "./src/stableid.ts"
   },
   "scripts": {
     "test": "node --experimental-strip-types --no-warnings --test src/*.test.ts",

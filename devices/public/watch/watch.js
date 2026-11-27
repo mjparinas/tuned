@@ -4,7 +4,7 @@
 import { drawNav, flagOn } from "/account/nav.js";
 import { enhanceSelect } from "/select.js";
 import { isPreviewHost } from "/check/verdict.mjs";
-import { ago, applyFilters, fromAppCopy, NO_FILTERS, nowNext, platformOf, vlcLink } from "/account/channels/core.mjs";
+import { ago, applyFilters, fromAppCopy, NO_FILTERS, nowNext, parseWholeIds, platformOf, vlcLink } from "/account/channels/core.mjs";
 import { playStream } from "/watch/player.mjs";
 
 const $ = (id) => document.getElementById(id);
@@ -131,7 +131,8 @@ async function appCopy(playlistId) {
             const status = (await res.json().catch(() => null))?.status;
             return { missing: res.status === 404 && status === "none" ? "none" : status === "too many" ? "too many" : "error" };
         }
-        return { body: await res.json(), by: decodeURIComponent(res.headers.get("x-saved-by") ?? "") };
+        // The app's channel ids are 64-bit and would round as Numbers, so they are read as strings.
+        return { body: parseWholeIds(await res.text()), by: decodeURIComponent(res.headers.get("x-saved-by") ?? "") };
     } catch {
         return { missing: "error" };
     }

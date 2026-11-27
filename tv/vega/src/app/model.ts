@@ -4,7 +4,35 @@
 // in the background, so they never hold up the channels.
 import { ACCOUNT_BASE, TunedAccount, type AccountState as SharedAccount } from "@tuned/shared/account";
 import { Favourites, favouritesKey } from "@tuned/shared/favourites";
+import {
+    isKids,
+    lockFor,
+    NO_PROFILES,
+    PinThrottle,
+    profilesFromBackup,
+    verifyPin,
+    type AccountProfiles,
+    type Profile,
+} from "@tuned/shared/profiles";
+import { androidIdHex, idToHex, xtreamShowLink } from "@tuned/shared/stableid";
 import { visible, type Hiding } from "@tuned/shared/filters";
+import {
+    ChannelHealth,
+    EVENTS_AHEAD_MS,
+    eventsInNames,
+    followsFromBackup,
+    groupEvents,
+    hasWords,
+    healthKey,
+    rankForTune,
+    regionTag,
+    sportyChannel,
+    tuneWords,
+    withNamed,
+    type EventProgramme,
+    type LiveEvent,
+    type TuneCandidate,
+} from "@tuned/shared/events";
 import { catchUpLink, keepFrom, MAX_CATCH_UP_DAYS, replayable } from "@tuned/shared/guide";
 import { Reminders, remindersKey, type Reminder } from "@tuned/shared/reminders";
 import { XmltvReader } from "@tuned/shared/xmltv";
@@ -20,7 +48,7 @@ import { OneStream, type StreamPlayer } from "../core/oneStream";
 import { downloadLibrary, downloadLineup, failureText, isStale } from "../core/playlist";
 import { eta, type StepProgress } from "../core/progress";
 import { PREFIX, storage, type SavedPlaylist, type Storage, type Store } from "../core/storage";
-import { gunzip, nobleCrypto } from "../platform/crypto";
+import { gunzip, nobleCrypto, noblePbkdf2 } from "../platform/crypto";
 import { t } from "../ui/strings";
 import { backupLogins, playlistName, sameLogin } from "./logins";
 import { epgTableUrl, parseEpgTable, parseEpisodes, parseShortEpg, seriesInfoUrl, shortEpgUrl } from "../core/xtream";
@@ -46,7 +74,20 @@ const sharedStore = (store: Store): KeyValueStore => ({
 });
 
 export type Route =
-    "boot" | "signin" | "manual" | "loading" | "live" | "movies" | "shows" | "search" | "title" | "player" | "settings" | "account";
+    | "boot"
+    | "signin"
+    | "manual"
+    | "loading"
+    | "live"
+    | "events"
+    | "movies"
+    | "shows"
+    | "search"
+    | "title"
+    | "player"
+    | "settings"
+    | "account"
+    | "profiles";
 
 /** The category that holds what the person starred, first after All in Live TV, Movies and Shows. */
 export const FAVOURITES = "__favourites";
@@ -63,13 +104,45 @@ export interface Prefs extends Hiding {
     sortShows: SortOrder;
     /** Live TV as a guide grid instead of the list; the list stays the default, as on Android. */
     liveGrid: boolean;
+    /** Settings › Auto-tune: how long a channel gets to show a picture before the next is tried, in seconds. */
+    tuneWaitS: number;
 }
 
-export const DEFAULT_PREFS: Prefs = { hideAdult: true, hide247: false, sortMovies: "provider", sortShows: "provider", liveGrid: false };
+/** Settings › Auto-tune's choices, as on Android (5 to 20 seconds, 8 by default). */
+export const TUNE_WAITS = [5, 8, 12, 20] as const;
+
+export const DEFAULT_PREFS: Prefs = {
+    hideAdult: true,
+    hide247: false,
+    sortMovies: "provider",
+    sortShows: "provider",
+    liveGrid: false,
+    tuneWaitS: 8,
+};
+
+/** At most this many sports channels' guides are read for Live events, so a huge playlist doesn't take all night. */
+export const MAX_EVENT_ROWS = 300;
+
+/** Auto-tune working through the channels that may show an event, one at a time (docs/decisions/auto-tune.md). */
+export interface Tune {
+    title: string;
+    /** The channels to try, best first. */
+    ids: string[];
+    /** The one playing or being tried. */
+    at: number;
+    /** It has shown a picture. */
+    found: boolean;
+    /** Every channel was tried and none played. */
+    failed: boolean;
+}
 
 /** Days of guide ahead the grid scrolls to. */
 export const GUIDE_DAYS = 2;
 const PREFS_KEY = "settings";
+/** The account's profiles and the one last used, and the teams followed, as last read from its backup. */
+const PROFILES_KEY = "profiles";
+const PROFILE_KEY = "profile.current";
+const FOLLOWS_KEY = "events.follows";
 
 /** One search result: a channel, a movie or a show. */
 export type Found = { kind: "live"; channel: Channel } | { kind: "movie" | "show"; title: Title };
@@ -130,11 +203,22 @@ export interface State {
     reminders: readonly Reminder[];
     /** A reminder whose programme just started, shown over any screen with Watch. */
     due: Reminder | null;
+    /** Today's games, fights and pay-per-views, live first. */
+    events: LiveEvent[];
+    /** Reading sports channels' guides for them, with progress, and how it ended. */
+    eventsLoad: Busy;
+    /** Teams, leagues and fighters followed on the phone or the website, from the account's backup. */
+    follows: string[];
+    tune: Tune | null;
     /** Every playlist on the stick, by name; the open one is `playlistId`. */
     playlists: { id: string; name: string }[];
     playlistId: string;
     /** Adding another playlist from Settings: the sign-in screens offer Back to Settings. */
     adding: boolean;
+    /** "Who's watching?": the account's profiles, as the phone and the website made them; none when signed out. */
+    profiles: AccountProfiles;
+    /** The profile in use; null with fewer than two profiles, or before one is picked. */
+    profileId: string | null;
 }
 
 export interface Services {
@@ -190,12 +274,28 @@ export class AppModel {
         gridLoad: { busy: false },
         reminders: [],
         due: null,
+        events: [],
+        eventsLoad: { busy: false },
+        follows: [],
+        tune: null,
+        profiles: NO_PROFILES,
+        profileId: null,
     };
+    /** One guard for every PIN on the stick, so switching between a profile's and the parental PIN doesn't reset it. */
+    readonly pins = new PinThrottle();
+    /** Whether "Who's watching?" has been answered since the app opened; it asks at each start, as on Android. */
+    private picked = false;
+    /** A layer over the screen (the PIN pad) that Back closes first; it says whether it took the key. */
+    onBack: (() => boolean) | null = null;
     readonly saved: Storage;
     favourites!: Favourites;
     readonly tmdb: Tmdb;
     progress!: WatchProgress;
     reminders!: Reminders;
+    health!: ChannelHealth;
+    private tuneTimer: ReturnType<typeof setTimeout> | null = null;
+    /** Bumped on each channel auto-tune tries, so a late answer about an earlier one is ignored. */
+    private tuneTry = 0;
     private reminderTimer: ReturnType<typeof setTimeout> | null = null;
     /** Channels whose guide is being read, so a row scrolled past twice is asked for once. */
     private gridAsked = new Set<string>();
@@ -232,11 +332,14 @@ export class AppModel {
         this.keepFor(FIRST);
     }
 
-    /** Favourites and Continue watching are each playlist's own, under the Samsung app's keys for the same id. */
+    /**
+     * Favourites and Continue watching are each playlist's own, under the Samsung app's keys for the same id, and with
+     * profiles each profile's own; the account's first profile keeps the ones the stick had before profiles.
+     */
     private keepFor(id: string): void {
-        this.favourites = new Favourites(this.shared, favouritesKey(id));
+        this.favourites = new Favourites(this.shared, this.profileKey(favouritesKey(id)));
         this.favourites.onChange((favourites) => this.set({ favourites }));
-        this.progress = new WatchProgress(this.shared, progressKey(id));
+        this.progress = new WatchProgress(this.shared, this.profileKey(progressKey(id)));
         this.progress.onChange((list) =>
             this.set({
                 positions: Object.fromEntries(list.map((w) => [w.id, w.at])),
@@ -246,6 +349,12 @@ export class AppModel {
         this.progressRead = null;
         this.reminders = new Reminders(this.shared, remindersKey(id));
         this.reminders.onChange((reminders) => this.set({ reminders }));
+        this.health = new ChannelHealth(this.shared, healthKey(id));
+    }
+
+    private profileKey(key: string): string {
+        const id = this.state.profileId;
+        return id && id !== this.state.profiles.profiles[0]?.id ? `${key}.${id}` : key;
     }
 
     subscribe = (listener: () => void) => {
@@ -279,21 +388,35 @@ export class AppModel {
             this.saved.loadLastChannel().catch(() => null),
         ]);
         rememberSecrets(login);
+        if (account) await this.readProfiles();
+        this.keepFor(this.state.playlistId);
         await this.readPlaylists(login);
-        await Promise.all([this.favourites.load().catch(() => undefined), this.loadPrefs(), this.readProgress(), this.readReminders()]);
+        await Promise.all([this.loadKept(), this.loadPrefs()]);
         if (!login) return this.set({ route: "signin", account });
         if (!lineup) {
             this.set({ login, account, route: "loading" });
             return this.firstDownload();
         }
-        this.set({ login, lineup, account, route: "live", channelId: last ?? lineup.channels[0]?.id ?? null });
+        this.set({ login, lineup, account, channelId: last ?? lineup.channels[0]?.id ?? null });
+        this.set({ route: this.home() });
         launchSafely("boot.background", async () => {
             await this.services.quietStart?.();
             await this.readSavedLibrary();
+            if (account) await this.refreshProfiles();
             if (isStale(lineup)) await this.refreshNow();
             else if (!this.state.library || isStale(this.state.library)) await this.refreshLibrary();
             if (account) await this.checkAccount();
         });
+    }
+
+    /** Favourites, Continue watching, reminders and channel health for the playlist and profile in use. */
+    private loadKept(): Promise<unknown> {
+        return Promise.all([this.favourites.load().catch(() => undefined), this.readProgress(), this.readReminders(), this.health.load()]);
+    }
+
+    /** Where opening the app lands: "Who's watching?" while there are profiles to pick from, else Live TV. */
+    private home(): Route {
+        return this.state.profiles.profiles.length > 1 && !this.picked ? "profiles" : "live";
     }
 
     /** The playlists kept on the stick; a stick from before there could be several has just its one login. */
@@ -355,12 +478,15 @@ export class AppModel {
         await this.saved.saveLogin(login);
         await this.saved.savePlaylistId(id);
         this.showPlaylists(id);
-        await Promise.all([this.favourites.load().catch(() => undefined), this.readProgress(), this.readReminders()]);
+        await this.loadKept();
         this.gridAsked.clear();
         this.linkGuideRead = false;
+        this.endTune();
         this.set({
             grid: {},
             gridLoad: { busy: false },
+            events: [],
+            eventsLoad: { busy: false },
             due: null,
             login,
             lineup: null,
@@ -417,11 +543,12 @@ export class AppModel {
             this.libraryRead = true;
             this.set({
                 lineup,
-                route: "live",
+                route: this.home(),
                 category: null,
                 channelId: lineup.channels[0]?.id ?? null,
                 loading: { progress: null, error: null },
             });
+            launchSafely("first.favourites", () => this.seedFavourites());
             if (login.kind === "xtream") launchSafely("first.library", () => this.refreshLibrary());
         } catch (error) {
             log.warn("AppModel", "first download", error);
@@ -456,6 +583,7 @@ export class AppModel {
     private async keepLibrary(library: Library): Promise<void> {
         await this.saved.saveLibrary(library);
         this.set({ library, libraryLoad: { busy: false, result: { ok: true, text: t.refreshedLibrary } } });
+        await this.seedFavourites();
     }
 
     private async readSavedLibrary(): Promise<void> {
@@ -463,6 +591,7 @@ export class AppModel {
         this.libraryRead = true;
         const library = await this.saved.loadLibrary().catch(() => null);
         this.set({ library: this.state.library ?? library });
+        await this.seedFavourites();
     }
 
     private progressRead: Promise<void> | null = null;
@@ -472,6 +601,7 @@ export class AppModel {
         this.progressRead ??= (async () => {
             const old = await this.saved.loadPositions().catch(() => ({}));
             await this.progress.load();
+            if (this.profileKey("") !== "") return;
             // Positions kept before Continue Watching knew each one's title: a movie's id is its own title.
             await this.progress.adopt(old, (id) => (id.startsWith("m") ? id : null)).catch((e) => log.warn("AppModel", "adopt", e));
         })();
@@ -489,6 +619,7 @@ export class AppModel {
                     sortMovies: isSortOrder(saved.sortMovies) ? saved.sortMovies : DEFAULT_PREFS.sortMovies,
                     sortShows: isSortOrder(saved.sortShows) ? saved.sortShows : DEFAULT_PREFS.sortShows,
                     liveGrid: typeof saved.liveGrid === "boolean" ? saved.liveGrid : DEFAULT_PREFS.liveGrid,
+                    tuneWaitS: TUNE_WAITS.includes(saved.tuneWaitS as never) ? (saved.tuneWaitS as number) : DEFAULT_PREFS.tuneWaitS,
                 },
             });
         } catch (error) {
@@ -526,23 +657,40 @@ export class AppModel {
                 : kind === "movies"
                   ? (this.state.library?.movieCategories ?? [])
                   : (this.state.library?.showCategories ?? []);
-        return visible(
+        const shown = visible(
             list,
-            this.state.prefs,
+            this.kids() ? { ...this.state.prefs, hideAdult: true } : this.state.prefs,
             (c) => c.name,
             () => "",
         );
+        if (!this.kids()) return shown;
+        // On a kids profile, only the categories something it may watch is in.
+        const items = kind === "live" ? this.shownChannels() : this.shownTitles(kind);
+        const used = new Set(items.map((x) => x.categoryId));
+        return shown.filter((c) => used.has(c.id));
     }
 
     /** Channels, movies or shows without the hidden ones, by their category's name or their own. */
-    private shown<T extends { name: string; categoryId: string }>(items: readonly T[], categories: readonly Category[]): T[] {
+    private shown<T extends { name: string; categoryId: string }>(
+        items: readonly T[],
+        categories: readonly Category[],
+        live: boolean,
+    ): T[] {
         const names = new Map(categories.map((c) => [c.id, c.name]));
-        return visible(
+        const kids = this.kids();
+        const out = visible(
             items,
-            this.state.prefs,
+            kids ? { ...this.state.prefs, hideAdult: true } : this.state.prefs,
             (x) => x.name,
             (x) => names.get(x.categoryId) ?? "",
         );
+        // A kids profile sees kids and family only (`KidsContent`), as on Android.
+        return kids ? out.filter((x) => isKids(names.get(x.categoryId) ?? "", x.name, live)) : out;
+    }
+
+    /** Whether the profile in use is a kids one. */
+    kids(): boolean {
+        return this.currentProfile()?.kids === true;
     }
 
     /** Every channel that isn't hidden. */
@@ -560,7 +708,7 @@ export class AppModel {
             : this.shownMemo("shows", library.shows, library.showCategories);
     }
 
-    private memo = new Map<string, { items: readonly unknown[]; prefs: Prefs; out: unknown[] }>();
+    private memo = new Map<string, { items: readonly unknown[]; prefs: Prefs; kids: boolean; out: unknown[] }>();
 
     /** Filtering a big list once per change of list or setting, not on every screen draw. */
     private shownMemo<T extends { name: string; categoryId: string }>(
@@ -573,12 +721,13 @@ export class AppModel {
             hit &&
             hit.items === items &&
             hit.prefs.hideAdult === this.state.prefs.hideAdult &&
-            hit.prefs.hide247 === this.state.prefs.hide247
+            hit.prefs.hide247 === this.state.prefs.hide247 &&
+            hit.kids === this.kids()
         ) {
             return hit.out as T[];
         }
-        const out = this.shown(items, categories);
-        this.memo.set(key, { items, prefs: this.state.prefs, out });
+        const out = this.shown(items, categories, key === "live");
+        this.memo.set(key, { items, prefs: this.state.prefs, kids: this.kids(), out });
         return out;
     }
 
@@ -761,6 +910,7 @@ export class AppModel {
 
     /** A movie or an episode, from `from` seconds: the old stream closes before this one opens. */
     async playVod(item: Playable, from = 0): Promise<void> {
+        this.endTune();
         this.set({ vod: item, route: "player" });
         await this.stream.play(item.url, from > 0 ? from : undefined);
     }
@@ -787,6 +937,7 @@ export class AppModel {
 
     /** Plays a channel: the old stream closes before this one opens. */
     async play(channel: Channel): Promise<void> {
+        this.endTune();
         this.set({ channelId: channel.id, vod: null, route: "player" });
         launchSafely("play.remember", () => this.saved.saveLastChannel(channel.id));
         await this.stream.play(channel.url);
@@ -795,6 +946,9 @@ export class AppModel {
 
     /** Up and down in the player: the next or previous channel in the list being shown, wrapping round. */
     async zap(step: 1 | -1): Promise<void> {
+        const tune = this.state.tune;
+        // While auto-tune has a list, up and down move through it, as Android's next and previous do.
+        if (tune && !this.state.vod) return this.tryTune((tune.at + step + tune.ids.length) % tune.ids.length);
         const list = this.visibleChannels();
         if (!list.length || this.state.vod) return;
         const at = Math.max(
@@ -807,8 +961,10 @@ export class AppModel {
     async stopPlaying(): Promise<void> {
         const vod = this.state.vod;
         if (vod) await this.rememberPosition().catch((error) => log.warn("AppModel", "position", error));
+        const tuned = !!this.state.tune;
+        this.endTune();
         await this.stream.stop();
-        this.set({ route: vod && this.state.title ? "title" : "live", vod: null });
+        this.set({ route: vod && this.state.title ? "title" : tuned ? "events" : "live", vod: null });
     }
 
     /** Now and next for Xtream channels: one small request, kept for the session. */
@@ -972,12 +1128,245 @@ export class AppModel {
     async watchDue(): Promise<void> {
         const due = this.state.due;
         this.set({ due: null });
+        if (due?.tune) return this.tuneEvent(due.title, [due.channelId]);
         const channel = due && this.state.lineup?.channels.find((c) => c.id === due.channelId);
         if (channel) await this.play(channel);
     }
 
     dismissDue(): void {
         this.set({ due: null });
+    }
+
+    // ---- Live events and auto-tune (docs/decisions/events.md, auto-tune.md, vega.md) ----
+
+    /** Sports and pay-per-view channels that aren't hidden. */
+    sportsChannels(): Channel[] {
+        const names = new Map((this.state.lineup?.categories ?? []).map((c) => [c.id, c.name]));
+        return this.shownChannels().filter((c) => sportyChannel(c.name, names.get(c.categoryId) ?? ""));
+    }
+
+    /** Live events: the list from what the stick has at once, then the sports channels' guides as they come. */
+    async openEvents(): Promise<void> {
+        this.set({ route: "events" });
+        this.buildEvents();
+        await this.loadEventGuide();
+    }
+
+    /**
+     * The events from the guide read so far, and from the names of sports channels whose guide lists none in the next
+     * 36 hours (pay-per-view slots renamed for each event).
+     */
+    buildEvents(now = Date.now()): void {
+        const sports = this.sportsChannels();
+        const to = now + EVENTS_AHEAD_MS;
+        const rows: EventProgramme[] = [];
+        for (const c of sports) {
+            for (const p of this.state.grid[c.id] ?? []) {
+                if (p.stop > now && p.start < to) rows.push({ channelId: c.id, title: p.title, start: p.start, stop: p.stop });
+            }
+        }
+        const fromGuide = groupEvents(rows, now);
+        const covered = new Set(fromGuide.flatMap((e) => e.channels));
+        let named: ReturnType<typeof eventsInNames> = [];
+        try {
+            named = eventsInNames(
+                sports.filter((c) => !covered.has(c.id)),
+                now,
+                to,
+            );
+        } catch (error) {
+            // A name the rules trip over leaves the guide's events as they are.
+            log.warn("AppModel", "event names", error);
+        }
+        this.set({ events: withNamed(fromGuide, named, now) });
+    }
+
+    /**
+     * The sports channels' guides. An Xtream server's come a channel at a time, two at once, at most 300 channels, with
+     * how many are read so far; a link's is its guide file, read once a session for the grid as well.
+     */
+    async loadEventGuide(): Promise<void> {
+        const login = this.state.login;
+        if (!login || this.state.eventsLoad.busy) return;
+        if (login.kind !== "xtream") {
+            await this.loadLinkGuide();
+            this.buildEvents();
+            return;
+        }
+        const wanted = this.sportsChannels()
+            .filter((c) => c.streamId !== undefined && !(c.id in this.state.grid))
+            .slice(0, MAX_EVENT_ROWS);
+        if (!wanted.length) return;
+        const generation = this.generation;
+        const total = wanted.length;
+        const startedAt = Date.now();
+        let done = 0;
+        let failed = 0;
+        const show = () =>
+            this.set({
+                eventsLoad: {
+                    busy: true,
+                    progress: {
+                        step: 1,
+                        steps: 1,
+                        label: t.eventsGuide(done, total),
+                        loaded: done,
+                        total,
+                        eta: eta(done, total, startedAt, Date.now()),
+                    },
+                },
+            });
+        show();
+        const queue = [...wanted];
+        const next = async (): Promise<void> => {
+            const channel = queue.shift();
+            if (!channel || generation !== this.generation) return;
+            this.gridAsked.add(channel.id);
+            let programmes: GuideProgramme[] | null = null;
+            try {
+                const answer = await this.services.http.getJson(epgTableUrl(login, channel.streamId!));
+                if (answer.status >= 200 && answer.status < 300) programmes = this.window(parseEpgTable(answer.body), channel);
+            } catch (error) {
+                log.warn("AppModel", "event guide", error);
+            }
+            if (generation !== this.generation) return;
+            done++;
+            if (programmes) this.set({ grid: { ...this.state.grid, [channel.id]: programmes } });
+            else {
+                failed++;
+                this.gridAsked.delete(channel.id);
+            }
+            show();
+            if (done % 10 === 0) this.buildEvents();
+            await next();
+        };
+        await Promise.all([next(), next()]);
+        if (generation !== this.generation) return;
+        this.buildEvents();
+        const ok = failed < total;
+        this.set({ eventsLoad: { busy: false, result: { ok, text: ok ? t.refreshed : t.guideFailed } } });
+    }
+
+    /**
+     * Tune: the event's channels and every other one whose name, or whose guide now or within the hour, has its words,
+     * best first (English, known-good, listed, sharper), tried one at a time through the one connection.
+     */
+    async tuneEvent(title: string, channelIds: readonly string[] = []): Promise<void> {
+        const now = Date.now();
+        const words = tuneWords(title);
+        const listed = new Set(channelIds);
+        const names = new Map((this.state.lineup?.categories ?? []).map((c) => [c.id, c.name]));
+        const soon = now + 3600_000;
+        const candidates: TuneCandidate[] = [];
+        for (const c of this.shownChannels()) {
+            const nameMatch = hasWords(c.name, words);
+            const guideMatch =
+                listed.has(c.id) || (this.state.grid[c.id] ?? []).some((p) => p.start < soon && p.stop > now && hasWords(p.title, words));
+            if (!nameMatch && !guideMatch) continue;
+            const group = names.get(c.categoryId) ?? "";
+            candidates.push({
+                id: c.id,
+                name: c.name,
+                group,
+                region: regionTag(c.name, group),
+                nameMatch,
+                guideMatch,
+                ...this.health.of(c.id),
+            });
+        }
+        const ids = rankForTune(candidates, now).map((c) => c.id);
+        if (!ids.length) return this.say({ on: false, name: title, text: t.tuneNothing(title) });
+        this.set({ tune: { title, ids, at: 0, found: false, failed: false } });
+        await this.tryTune(0);
+    }
+
+    /** Tries the `at`th channel; past the last, says none played. */
+    private async tryTune(at: number): Promise<void> {
+        const tune = this.state.tune;
+        if (!tune) return;
+        this.clearTuneTimer();
+        const mine = ++this.tuneTry;
+        if (at >= tune.ids.length) {
+            await this.stream.stop();
+            if (mine === this.tuneTry) this.set({ tune: { ...tune, found: false, failed: true } });
+            return;
+        }
+        const channel = this.state.lineup?.channels.find((c) => c.id === tune.ids[at]);
+        if (!channel) return this.tryTune(at + 1);
+        this.set({ tune: { ...tune, at, found: false, failed: false }, channelId: channel.id, vod: null, route: "player" });
+        this.tuneTimer = setTimeout(() => {
+            if (mine === this.tuneTry) launchSafely("tune.wait", () => this.tuneFailed(channel.id));
+        }, this.state.prefs.tuneWaitS * 1000);
+        const opened = await this.stream.play(channel.url);
+        if (mine !== this.tuneTry) return;
+        if (!opened) await this.tuneFailed(channel.id);
+        else launchSafely("play.guide", () => this.loadGuide(channel));
+    }
+
+    /** What the player says, for auto-tune: a picture means this channel works; an error, or none in time, moves on. */
+    playback(state: "idle" | "starting" | "playing" | "buffering" | "failed"): void {
+        const tune = this.state.tune;
+        if (!tune || tune.failed) return;
+        const id = tune.ids[tune.at];
+        if (state === "playing" && !tune.found) {
+            this.clearTuneTimer();
+            this.set({ tune: { ...tune, found: true } });
+            launchSafely("tune.played", () => this.health.played(id));
+        } else if (state === "failed" && id === this.state.channelId) {
+            launchSafely("tune.failed", () => this.tuneFailed(id));
+        }
+    }
+
+    private async tuneFailed(id: string): Promise<void> {
+        const tune = this.state.tune;
+        if (!tune || tune.failed || tune.ids[tune.at] !== id) return;
+        this.clearTuneTimer();
+        await this.health.failed(id);
+        await this.tryTune(tune.at + 1);
+    }
+
+    /** Next stream: the channel played, but it's the wrong event; auto-tune carries on from the next. */
+    async nextStream(): Promise<void> {
+        const tune = this.state.tune;
+        if (tune && !tune.failed) await this.tryTune(tune.at + 1);
+    }
+
+    /** Try again, after none played: from the best one again. */
+    async retryTune(): Promise<void> {
+        const tune = this.state.tune;
+        if (tune) await this.tryTune(0);
+    }
+
+    private endTune(): void {
+        this.clearTuneTimer();
+        this.tuneTry++;
+        if (this.state.tune) this.set({ tune: null });
+    }
+
+    private clearTuneTimer(): void {
+        if (this.tuneTimer) clearTimeout(this.tuneTimer);
+        this.tuneTimer = null;
+    }
+
+    hasEventReminder(event: LiveEvent): boolean {
+        return !!event.channels[0] && this.reminders.has(event.channels[0], event.start);
+    }
+
+    /** The bell on an event that hasn't started: when it starts, Watch auto-tunes it. */
+    async toggleEventReminder(event: LiveEvent): Promise<void> {
+        const first = event.channels[0];
+        if (!first || !event.timeKnown) return;
+        const channel = this.state.lineup?.channels.find((c) => c.id === first);
+        const on = await this.reminders.toggle({
+            channelId: first,
+            channelName: channel?.name ?? "",
+            title: event.title,
+            start: event.start,
+            stop: event.stop,
+            tune: true,
+        });
+        this.say({ on, name: event.title, text: on ? t.reminderAdded(event.title) : t.reminderRemoved(event.title) });
+        this.scheduleReminders();
     }
 
     /** The site base the sign-in screen names ("www.tunedplayer.com/tv"). */
@@ -988,6 +1377,7 @@ export class AppModel {
     /** The phone or website signed this stick in to a Tuned account (it holds a seat by now, when one is free). */
     async accountSignedIn(state: SharedAccount): Promise<void> {
         this.set({ account: accountView(state) });
+        if (state.signedIn) await this.refreshProfiles();
         // Signed in on the welcome screen: the playlist comes from the account's backup, as on Android.
         if (!this.state.login && state.signedIn) {
             const [first, ...others] = backupLogins(await this.backup());
@@ -1023,6 +1413,7 @@ export class AppModel {
         this.set({ accountCheck: { busy: true, result: null } });
         const next = accountView(await this.account.refresh());
         if (!next) {
+            await this.forgetProfiles();
             this.set({
                 account: null,
                 accountCheck: { busy: false, result: { ok: false, text: t.accountSignedThisOut } },
@@ -1034,13 +1425,149 @@ export class AppModel {
             });
         } else {
             this.set({ account: next, accountCheck: { busy: false, result: { ok: next.premium, text: premiumText(next) } } });
+            await this.refreshProfiles();
         }
     }
 
     async signOutOfAccount(): Promise<void> {
         if (!this.state.account) return;
         await this.account.signOut();
+        await this.forgetProfiles();
         this.set({ account: null, accountCheck: { busy: false, result: null } });
+    }
+
+    // ---- Profiles (docs/decisions/profiles.md) ----
+
+    /** The profile in use: the one picked, or an account's only profile. */
+    currentProfile(): Profile | null {
+        const list = this.state.profiles.profiles;
+        return list.find((p) => p.id === this.state.profileId) ?? (list.length === 1 ? list[0] : null);
+    }
+
+    /** The profiles, the one used last and the teams followed, as the stick last read them (none while signed out). */
+    private async readProfiles(): Promise<void> {
+        try {
+            const [raw, who, follows] = await Promise.all([
+                this.shared.get(PROFILES_KEY),
+                this.shared.get(PROFILE_KEY),
+                this.shared.get(FOLLOWS_KEY),
+            ]);
+            const kept = raw ? (JSON.parse(raw) as AccountProfiles) : null;
+            const list = kept && Array.isArray(kept.profiles) ? kept : NO_PROFILES;
+            const followed: unknown = follows ? JSON.parse(follows) : [];
+            this.set({
+                profiles: list,
+                profileId: list.profiles.length > 1 && list.profiles.some((p) => p.id === who) ? who : null,
+                follows: Array.isArray(followed) ? followed.filter((x): x is string => typeof x === "string") : [],
+            });
+        } catch (error) {
+            log.warn("AppModel", "profiles", error);
+        }
+    }
+
+    /**
+     * Reads the profiles, the parental PIN and the teams followed from the account's backup. Offline, the ones read
+     * last stay. A profile removed on the phone stops being used; new profiles ask "Who's watching?" on Live TV.
+     */
+    async refreshProfiles(): Promise<void> {
+        if (!this.state.account) return;
+        const text = await this.account.backup().catch(() => null);
+        if (!text) return;
+        const read = profilesFromBackup(text);
+        const follows = followsFromBackup(text);
+        await Promise.all([
+            this.shared.set(PROFILES_KEY, JSON.stringify(read)),
+            this.shared.set(FOLLOWS_KEY, JSON.stringify(follows)),
+        ]).catch((e) => log.warn("AppModel", "save profiles", e));
+        const before = this.state.profileId;
+        const first = this.state.profiles.profiles[0]?.id;
+        this.set({ profiles: read, follows });
+        const still = read.profiles.length > 1 && read.profiles.some((p) => p.id === before) ? before : null;
+        if (still !== before || first !== read.profiles[0]?.id) await this.switchProfile(still);
+        if (read.profiles.length > 1 && !this.picked && this.state.route === "live") this.go("profiles");
+        else await this.seedFavourites();
+    }
+
+    private async forgetProfiles(): Promise<void> {
+        await Promise.all([this.shared.remove(PROFILES_KEY), this.shared.remove(PROFILE_KEY), this.shared.remove(FOLLOWS_KEY)]).catch((e) =>
+            log.warn("AppModel", "forget profiles", e),
+        );
+        const had = this.state.profileId;
+        this.set({ profiles: NO_PROFILES, follows: [] });
+        if (had) await this.switchProfile(null);
+    }
+
+    /** Whether "Who's watching?" has been answered since the app opened. */
+    get answered(): boolean {
+        return this.picked;
+    }
+
+    /** "Who's watching?" from Settings or the top bar. */
+    openProfiles(): void {
+        this.go("profiles");
+    }
+
+    /** Which PIN picking `to` needs (`lockFor`): its own, the parental one leaving a kids profile, or none. */
+    lockFor(to: Profile): "none" | "profile" | "parental" {
+        const using = this.currentProfile();
+        if (using?.id === to.id && this.picked) return "none";
+        return lockFor(using, to, this.state.profiles.parentalPin);
+    }
+
+    /**
+     * Checks a PIN against its hash, five wrong in a row waiting 30 seconds (`PinThrottle`): "ok", "wrong" or "wait".
+     */
+    async checkPin(pin: string, hash: string | null): Promise<"ok" | "wrong" | "wait"> {
+        if (this.pins.waiting()) return "wait";
+        const ok = await verifyPin(noblePbkdf2, pin, hash).catch((error: unknown) => {
+            log.warn("AppModel", "pin", error);
+            return false;
+        });
+        return this.pins.record(ok);
+    }
+
+    /** Watches as `id` from now on, its PIN asked already: its favourites and Continue watching, kids rules, Live TV. */
+    async useProfile(id: string): Promise<void> {
+        this.picked = true;
+        await this.shared.set(PROFILE_KEY, id).catch((e) => log.warn("AppModel", "save profile", e));
+        if (id !== this.state.profileId) await this.switchProfile(id);
+        await this.seedFavourites();
+        this.set({ route: "live" });
+    }
+
+    private async switchProfile(id: string | null): Promise<void> {
+        this.set({ profileId: id, category: null, movieCategory: null, showCategory: null });
+        this.memo.clear();
+        this.keepFor(this.state.playlistId);
+        await this.loadKept();
+    }
+
+    /**
+     * A profile's first time on this stick starts with the favourites the account keeps for it, matched by Android's
+     * ids (`StableId`). Once only: what's starred here after that is the stick's own.
+     */
+    private async seedFavourites(): Promise<void> {
+        const profile = this.currentProfile();
+        const { lineup, library, login } = this.state;
+        if (!profile?.favourites.length || !lineup || (login?.kind === "xtream" && !library)) return;
+        const key = this.profileKey(favouritesKey(this.state.playlistId));
+        if ((await this.shared.get(key).catch(() => "")) !== null) return;
+        const wanted = new Map<string, string>();
+        for (const id of profile.favourites) {
+            const hex = idToHex(id);
+            if (hex) wanted.set(hex, id);
+        }
+        const found = new Map<string, string>();
+        const match = (hex: string, id: string) => {
+            const android = wanted.get(hex);
+            if (android && !found.has(android)) found.set(android, id);
+        };
+        for (const c of lineup.channels) match(androidIdHex("live", c.url, c.name), c.id);
+        for (const m of library?.movies ?? []) if (m.url) match(androidIdHex("movie", m.url, m.name), m.id);
+        for (const x of library?.shows ?? []) if (x.seriesId != null) match(androidIdHex("show", xtreamShowLink(x.seriesId), x.name), x.id);
+        const ids = profile.favourites.flatMap((a) => found.get(a) ?? []);
+        await this.shared.set(key, JSON.stringify(ids)).catch((e) => log.warn("AppModel", "seed favourites", e));
+        await this.favourites.load().catch(() => undefined);
     }
 
     /** Sign out: back to how the stick was installed (AGENTS.md), the account signed out too. */
@@ -1080,7 +1607,15 @@ export class AppModel {
             gridLoad: { busy: false },
             reminders: [],
             due: null,
+            events: [],
+            eventsLoad: { busy: false },
+            follows: [],
+            tune: null,
+            profiles: NO_PROFILES,
+            profileId: null,
         });
+        this.picked = false;
+        this.endTune();
         this.gridAsked.clear();
         this.linkGuideRead = false;
         if (this.reminderTimer) clearTimeout(this.reminderTimer);
@@ -1088,7 +1623,7 @@ export class AppModel {
         this.saved_playlists = [];
         this.keepFor(FIRST);
         this.showPlaylists(FIRST);
-        await Promise.all([this.favourites.load().catch(() => undefined), this.readProgress(), this.loadPrefs(), this.readReminders()]);
+        await Promise.all([this.loadKept(), this.loadPrefs()]);
         this.libraryRead = false;
     }
 }

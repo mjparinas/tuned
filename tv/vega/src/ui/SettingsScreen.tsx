@@ -3,9 +3,10 @@
 // then says how it ended (docs/decisions/settings.md#every-button-says-it-did-something-melvin-2026-11-21).
 import * as React from "react";
 import { ScrollView, Text, View } from "react-native";
-import { hasPremium, premiumText, type AppModel, type State } from "../app/model";
+import { hasPremium, premiumText, TUNE_WAITS, type AppModel, type State } from "../app/model";
 import { ProgressLines } from "./LoadingScreen";
 import { Button, Focusable, Screen } from "./parts";
+import { Avatar, PinPad } from "./ProfilesScreen";
 import { TopBar } from "./TopBar";
 import { t } from "./strings";
 import { colours, useDp } from "./theme";
@@ -27,6 +28,35 @@ const Line = ({ text, tone = "muted" }: { text: string; tone?: "muted" | "ok" | 
     const colour = tone === "ok" ? colours.teal : tone === "bad" ? colours.danger : colours.muted;
     return <Text style={{ color: colour, fontSize: dp(14), lineHeight: dp(21) }}>{text}</Text>;
 };
+
+/** A row with a few choices: OK moves to the next, and the one picked is said in words. */
+function Choice({ label, value, onPress }: { label: string; value: string; onPress: () => void }) {
+    const dp = useDp();
+    return (
+        <Focusable
+            onPress={onPress}
+            accessibilityRole="button"
+            accessibilityLabel={`${label}: ${value}`}
+            style={{
+                minHeight: dp(48),
+                borderRadius: dp(14),
+                paddingHorizontal: dp(14),
+                paddingVertical: dp(10),
+                backgroundColor: colours.card2,
+                flexDirection: "row",
+                alignItems: "center",
+            }}
+            focusedStyle={{ backgroundColor: colours.line }}
+        >
+            {() => (
+                <View style={{ flexDirection: "row", alignItems: "center", gap: dp(14), flex: 1 }}>
+                    <Text style={{ flex: 1, color: colours.text, fontSize: dp(15), fontWeight: "600" }}>{label}</Text>
+                    <Text style={{ color: colours.primary, fontSize: dp(15), fontWeight: "600" }}>{value}</Text>
+                </View>
+            )}
+        </Focusable>
+    );
+}
 
 /** A switch row: OK turns it on or off, and the state is said in words as well as colour (accessibility.md). */
 function Toggle({ label, hint, on, onChange }: { label: string; hint: string; on: boolean; onChange: (on: boolean) => void }) {
@@ -80,6 +110,24 @@ export function SettingsScreen({ model, state }: { model: AppModel; state: State
     const refresh = state.refresh;
     const library = state.libraryLoad;
     const premium = premiumText(account);
+    const [askAdult, setAskAdult] = React.useState(false);
+    const profile = state.profiles.profiles.length > 1 ? model.currentProfile() : null;
+    const kids = model.kids();
+    if (askAdult) {
+        // Showing adult categories asks for the parental PIN the phone set, as on Android.
+        return (
+            <PinPad
+                model={model}
+                title={t.adultPin}
+                hash={state.profiles.parentalPin}
+                onCancel={() => setAskAdult(false)}
+                onOk={() => {
+                    setAskAdult(false);
+                    void model.setPrefs({ hideAdult: false });
+                }}
+            />
+        );
+    }
     return (
         <Screen>
             <TopBar model={model} state={state} tab="settings" />
@@ -105,6 +153,17 @@ export function SettingsScreen({ model, state }: { model: AppModel; state: State
                         )}
                     </View>
                 </Section>
+                {profile ? (
+                    <Section title={t.profiles}>
+                        <View style={{ flexDirection: "row", alignItems: "center", gap: dp(12), minHeight: dp(48) }}>
+                            <Avatar profile={profile} size={dp(36)} />
+                            <Text numberOfLines={1} style={{ flex: 1, color: colours.text, fontSize: dp(15), fontWeight: "600" }}>
+                                {t.watchingAs(profile.name)}
+                            </Text>
+                            <Button label={t.switchProfile} onPress={() => model.openProfiles()} />
+                        </View>
+                    </Section>
+                ) : null}
                 <Section title={t.playlists}>
                     {state.playlists.map((p) => (
                         <View key={p.id} style={{ flexDirection: "row", alignItems: "center", gap: dp(12), minHeight: dp(48) }}>
@@ -130,17 +189,31 @@ export function SettingsScreen({ model, state }: { model: AppModel; state: State
                     )}
                 </Section>
                 <Section title={t.contentTitle}>
-                    <Toggle
-                        label={t.hideAdult}
-                        hint={t.hideAdultHint}
-                        on={state.prefs.hideAdult}
-                        onChange={(hideAdult) => void model.setPrefs({ hideAdult })}
-                    />
+                    {kids ? null : (
+                        <Toggle
+                            label={t.hideAdult}
+                            hint={t.hideAdultHint}
+                            on={state.prefs.hideAdult}
+                            onChange={(hideAdult) =>
+                                !hideAdult && state.profiles.parentalPin ? setAskAdult(true) : void model.setPrefs({ hideAdult })
+                            }
+                        />
+                    )}
                     <Toggle
                         label={t.hide247}
                         hint={t.hide247Hint}
                         on={state.prefs.hide247}
                         onChange={(hide247) => void model.setPrefs({ hide247 })}
+                    />
+                </Section>
+                <Section title={t.autoTune}>
+                    <Choice
+                        label={t.tuneWait}
+                        value={t.seconds(state.prefs.tuneWaitS)}
+                        onPress={() => {
+                            const at = TUNE_WAITS.indexOf(state.prefs.tuneWaitS as (typeof TUNE_WAITS)[number]);
+                            void model.setPrefs({ tuneWaitS: TUNE_WAITS[(at + 1) % TUNE_WAITS.length] });
+                        }}
                     />
                 </Section>
                 <Section title={t.playlistTitle}>

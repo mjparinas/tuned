@@ -1,4 +1,6 @@
 import type { Fetch } from "@tuned/shared/platform";
+import { pbkdf2Sync } from "node:crypto";
+import { fnv64 } from "@tuned/shared/stableid";
 import { AppModel, CONTINUE, FAVOURITES, hasPremium } from "../src/app/model";
 import type { Http } from "../src/core/http";
 import { memoryStore } from "../src/core/storage";
@@ -736,5 +738,253 @@ describe("the guide grid, catch-up and reminders on Vega", () => {
         guideUp = false;
         await model.loadLinkGuide(true);
         expect(model.state.gridLoad).toMatchObject({ busy: false, result: { ok: false } });
+    });
+});
+
+describe("live events and auto-tune on Vega", () => {
+    const login = { kind: "xtream" as const, server: "http://tv.example", username: "u", password: "p" };
+    const b64 = (s: string) => Buffer.from(s).toString("base64");
+    const now = Date.now();
+    const sec = (ms: number) => String(Math.floor(ms / 1000));
+    const hour = 3600_000;
+    const asked: string[] = [];
+    const answers: Record<string, unknown> = {
+        account: { user_info: { auth: 1, status: "Active" }, server_info: { timezone: "UTC" } },
+        get_live_categories: [
+            { category_id: "1", category_name: "Sports" },
+            { category_id: "2", category_name: "PPV" },
+            { category_id: "3", category_name: "News" },
+        ],
+        get_live_streams: [
+            { stream_id: 10, name: "US| ESPN", category_id: "1" },
+            { stream_id: 11, name: "CA| TSN 1", category_id: "1" },
+            { stream_id: 12, name: "PPV 1: UFC 312", category_id: "2" },
+            { stream_id: 13, name: "ES| PPV 2: UFC 312", category_id: "2" },
+            { stream_id: 14, name: "CNN", category_id: "3" },
+        ],
+        get_vod_categories: [],
+        get_vod_streams: [],
+        get_series_categories: [],
+        get_series: [],
+    };
+    const listing = (title: string, from: number, to: number) => ({
+        title: b64(title),
+        start_timestamp: sec(from),
+        stop_timestamp: sec(to),
+    });
+    const tables: Record<string, unknown> = {
+        "10": {
+            epg_listings: [
+                listing("Leafs vs. Canucks", now - hour, now + 2 * hour),
+                listing("Raptors vs. Celtics", now + 3 * hour, now + 5 * hour),
+            ],
+        },
+        "11": { epg_listings: [listing("LIVE: Leafs vs. Canucks", now - hour, now + 2 * hour)] },
+    };
+    const xtream: Http = {
+        async getJson(url) {
+            const u = new URL(url);
+            const action = u.searchParams.get("action") ?? "account";
+            if (action === "get_simple_data_table") {
+                const id = u.searchParams.get("stream_id") ?? "";
+                asked.push(`table:${id}`);
+                return { status: 200, body: tables[id] ?? { epg_listings: [] } };
+            }
+            return { status: 200, body: answers[action] };
+        },
+        async postJson() {
+            return { status: 500, body: null };
+        },
+        async text(url) {
+            return JSON.stringify(answers[new URL(url).searchParams.get("action") ?? ""]);
+        },
+    };
+    const idOf = (model: AppModel, name: string) => model.state.lineup!.channels.find((c) => c.name === name)!.id;
+
+    it("lists events from the sports channels' guides and their names, reading only sports channels", async () => {
+        const model = new AppModel(services(xtream));
+        await model.useLogin(login);
+        asked.length = 0;
+        await model.openEvents();
+        expect(model.state.route).toBe("events");
+        expect(asked.sort()).toEqual(["table:10", "table:11", "table:12", "table:13"]);
+        expect(model.state.eventsLoad).toMatchObject({ busy: false, result: { ok: true } });
+        const [game, ufc, later] = model.state.events;
+        expect(game).toMatchObject({ title: "Leafs vs. Canucks", channels: [idOf(model, "US| ESPN"), idOf(model, "CA| TSN 1")] });
+        expect(ufc).toMatchObject({ title: "UFC 312", timeKnown: false });
+        expect(ufc.channels).toHaveLength(2);
+        expect(later.title).toBe("Raptors vs. Celtics");
+        // A second visit reads nothing again.
+        asked.length = 0;
+        await model.openEvents();
+        expect(asked).toEqual([]);
+    });
+
+    it("auto-tunes one channel at a time, best first, moving on when one fails and remembering what worked", async () => {
+        let open = 0;
+        let most = 0;
+        const opened: string[] = [];
+        const player = {
+            open: async (url: string) => {
+                opened.push(url);
+                most = Math.max(most, ++open);
+            },
+            close: async () => void open--,
+        };
+        const model = new AppModel({ ...services(xtream), player });
+        await model.useLogin(login);
+        await model.openEvents();
+        const ufc = model.state.events.find((e) => e.title === "UFC 312")!;
+        await model.tuneEvent(ufc.title, ufc.channels);
+        // No country first, then the Spanish one.
+        expect(model.state.tune).toMatchObject({ title: "UFC 312", at: 0, found: false });
+        expect(model.state.tune!.ids).toEqual([idOf(model, "PPV 1: UFC 312"), idOf(model, "ES| PPV 2: UFC 312")]);
+        model.playback("failed");
+        await until(() => model.state.tune?.at === 1);
+        await until(() => opened.length === 2);
+        model.playback("playing");
+        expect(model.state.tune).toMatchObject({ at: 1, found: true });
+        expect(model.health.of(idOf(model, "PPV 1: UFC 312")).deadAt).toBeGreaterThan(0);
+        expect(model.health.of(idOf(model, "ES| PPV 2: UFC 312")).okAt).toBeGreaterThan(0);
+        // Next stream past the last says none played and lets go of the stream.
+        await model.nextStream();
+        expect(model.state.tune).toMatchObject({ failed: true });
+        expect(open).toBe(0);
+        expect(most).toBe(1);
+        // Try again starts from the best one, which now goes last for having failed.
+        await model.retryTune();
+        expect(model.state.tune!.at).toBe(0);
+        await model.stopPlaying();
+        expect(model.state.tune).toBeNull();
+        expect(model.state.route).toBe("events");
+    });
+
+    it("a later event's bell sets a reminder that auto-tunes it, and nothing found says so", async () => {
+        const model = new AppModel(services(xtream));
+        await model.useLogin(login);
+        await model.openEvents();
+        const later = model.state.events.find((e) => e.title === "Raptors vs. Celtics")!;
+        await model.toggleEventReminder(later);
+        expect(model.hasEventReminder(later)).toBe(true);
+        expect(model.state.reminders[0]).toMatchObject({ title: "Raptors vs. Celtics", tune: true });
+        (model as unknown as { set(p: object): void }).set({ due: model.state.reminders[0] });
+        await model.watchDue();
+        expect(model.state.tune).toMatchObject({ title: "Raptors vs. Celtics" });
+        expect(model.state.tune!.ids[0]).toBe(idOf(model, "US| ESPN"));
+        await model.stopPlaying();
+        await model.tuneEvent("Bobsleigh Final");
+        expect(model.state.tune).toBeNull();
+        expect(model.state.notice?.text).toContain("Bobsleigh Final");
+        await model.setPrefs({ tuneWaitS: 12 });
+        expect(model.state.prefs.tuneWaitS).toBe(12);
+        await model.toggleEventReminder(later);
+        expect(model.hasEventReminder(later)).toBe(false);
+    });
+});
+
+describe("profiles, kids and PINs on Vega", () => {
+    const login = { kind: "xtream" as const, server: "http://tv.example", username: "u", password: "p" };
+    const answers: Record<string, unknown> = {
+        account: { user_info: { auth: 1, status: "Active" } },
+        get_live_categories: [
+            { category_id: "1", category_name: "News" },
+            { category_id: "2", category_name: "Kids" },
+        ],
+        get_live_streams: [
+            { stream_id: 5, name: "Harbour News", category_id: "1" },
+            { stream_id: 6, name: "Puffin Cartoons", category_id: "2" },
+        ],
+        get_vod_categories: [{ category_id: "3", category_name: "Drama" }],
+        get_vod_streams: [{ stream_id: 7, name: "Paper Boats", category_id: "3" }],
+        get_series_categories: [],
+        get_series: [],
+    };
+    const xtream: Http = {
+        async getJson(url) {
+            return { status: 200, body: answers[new URL(url).searchParams.get("action") ?? "account"] };
+        },
+        async postJson(url) {
+            return new URL(url).pathname === "/api/auth/token"
+                ? { status: 200, body: { status: "ok", token: "tok", email: "" } }
+                : { status: 500, body: null };
+        },
+        async text(url) {
+            return JSON.stringify(answers[new URL(url).searchParams.get("action") ?? ""]);
+        },
+    };
+    const hashed = (pin: string) => {
+        const salt = Buffer.alloc(16, 3);
+        return `v1:${salt.toString("base64")}:${pbkdf2Sync(pin, salt, 120_000, 32, "sha256").toString("base64")}`;
+    };
+    // Android's sync copy as the server keeps it, 64-bit ids written as bare numbers.
+    const backup = `{"fingerprint":"f","changedAt":1,"copy":{"version":3,"playlists":[],
+        "profiles":[
+            {"id":7340000000000000001,"name":"Mel","colour":1,"kids":false,"favourites":[
+                {"itemId":${fnv64("1|7|Paper Boats")},"position":1},{"itemId":${fnv64("0|5|Harbour News")},"position":0}]},
+            {"id":7340000000000000002,"name":"Pip","colour":3,"kids":true,"avatar":"fox","favourites":[]},
+            {"id":7340000000000000003,"name":"Sam","colour":5,"kids":false,"pinHash":"${hashed("1234")}","favourites":[]}],
+        "settings":{"adult_pin":{"s":"${hashed("4321")}"},"followed_events":{"set":["Leafs"]}}}}`;
+    const accountFetch: Fetch = async (url) => {
+        const path = new URL(url).pathname;
+        const body =
+            path === "/api/backup" ? backup : path === "/api/auth/token" ? '{"status":"ok","token":"tok","email":""}' : '{"seat":"active"}';
+        return { ok: true, status: 200, headers: { get: () => null }, text: async () => body, json: async () => JSON.parse(body) };
+    };
+    const make = (store = memoryStore()) => new AppModel({ ...services(xtream, store), fetch: accountFetch });
+
+    it("asks who's watching, starts each profile with the account's favourites, and reads followed teams", async () => {
+        const store = memoryStore();
+        const model = make(store);
+        await model.useLogin(login);
+        await model.refreshLibrary();
+        await model.accountLinked("link");
+        expect(model.state.route).toBe("profiles");
+        expect(model.state.profiles.profiles.map((p) => p.name)).toEqual(["Mel", "Pip", "Sam"]);
+        expect(model.state.follows).toEqual(["Leafs"]);
+        const [mel, pip, sam] = model.state.profiles.profiles;
+        expect(mel.id).toBe("7340000000000000001");
+
+        expect(model.lockFor(mel)).toBe("none");
+        await model.useProfile(mel.id);
+        expect(model.state.route).toBe("live");
+        expect([...model.state.favourites]).toEqual(["5", "m7"]);
+        // Once only: unstarring stays unstarred.
+        await model.toggleFavourite("5", "Harbour News");
+        await model.useProfile(mel.id);
+        expect([...model.state.favourites]).toEqual(["m7"]);
+
+        // Moving into a kids profile never asks; it sees kids channels only, and its own favourites.
+        expect(model.lockFor(pip)).toBe("none");
+        await model.useProfile(pip.id);
+        expect(model.shownChannels().map((c) => c.name)).toEqual(["Puffin Cartoons"]);
+        expect(model.shownCategories("live").map((c) => c.name)).toEqual(["Kids"]);
+        expect(model.shownTitles("movies")).toEqual([]);
+        expect(model.state.favourites.size).toBe(0);
+
+        // Leaving it needs the parental PIN; a profile with its own PIN needs that.
+        expect(model.lockFor(mel)).toBe("parental");
+        expect(model.lockFor(sam)).toBe("profile");
+        expect(await model.checkPin("1111", sam.pinHash)).toBe("wrong");
+        expect(await model.checkPin("1234", sam.pinHash)).toBe("ok");
+        expect(await model.checkPin("4321", model.state.profiles.parentalPin)).toBe("ok");
+
+        // Opening the app again asks again, the last one used first in line.
+        const again = make(store);
+        await again.boot();
+        expect(again.state.route).toBe("profiles");
+        expect(again.currentProfile()?.name).toBe("Pip");
+        expect(again.state.follows).toEqual(["Leafs"]);
+    }, 20_000);
+
+    it("forgets the profiles when the account signs out", async () => {
+        const model = make();
+        await model.useLogin(login);
+        await model.accountLinked("link");
+        await model.useProfile(model.state.profiles.profiles[1].id);
+        expect(model.kids()).toBe(true);
+        await model.signOutOfAccount().catch(() => undefined);
+        expect(model.state.profiles.profiles).toEqual([]);
+        expect(model.kids()).toBe(false);
+        expect(model.shownChannels().length).toBe(2);
     });
 });
