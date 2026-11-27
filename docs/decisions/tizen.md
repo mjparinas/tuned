@@ -5,7 +5,7 @@
 **Choices taken from the plan** (2026-11-27; the plan's open questions were never answered, so its recommendations stand until Melvin changes them):
 
 - **Samsung TVs from 2020 on** (Tizen 5.5, Chromium 69). Everything is built for that browser: plain ES2015 out of the Kotlin compiler, no newer JavaScript, `Intl.DisplayNames` not assumed.
-- **Premium only through the Tuned account** (as on Fire TV, Melvin 2026-11-26): the TV signs in to the account and Premium follows it. No Samsung Checkout, no prices or purchase links on the TV.
+- **Premium only through the Tuned account** (as on Fire TV, Melvin 2026-11-26): the TV signs in to the account and takes one of its Premium seats (`POST /api/account/seat`, as the Fire TV builds do), so it counts toward the device limit. A seat "active" unlocks Premium, "full" or no Premium locks it, and offline the last answer stands. No Samsung Checkout, no prices or purchase links on the TV.
 - **Sign in from your phone in v1**, through the TV sign-in relay Android TV already uses (`devices/lib/tv.mjs`): the TV shows a code and a QR code for tunedplayer.com/tv, where a phone sends a playlist or signs the TV in to the account. Typing on the TV stays as the fallback.
 - **Same repository**, under `tv/`.
 

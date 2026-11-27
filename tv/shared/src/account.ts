@@ -164,22 +164,30 @@ export class TunedAccount {
     }
 
     /**
-     * Asks the account for its Premium status. Offline, the last answer stands, so a TV that can't reach the server
-     * keeps what it had; only a clear "signed out" (the device was removed on the website) signs it out.
+     * Asks the account for this TV's Premium seat, as the Fire TV builds do (accounts.md › seats): `POST
+     * /api/account/seat {use: true}` takes one of the account's seats. "active" unlocks Premium; "full" (every seat
+     * taken) and "none" (no Premium on the account) lock it. Offline or on any other answer, the last answer stands, so
+     * a TV that can't reach the server keeps what it had; only a clear "signed out" (the device was removed on the
+     * website) signs it out.
      */
     async refresh(): Promise<AccountState> {
         const token = await this.deps.store.get(KEYS.token);
         const kept = await this.state();
         if (!token) return kept.signedIn ? this.signOutLocally() : kept;
         try {
-            const response = await this.deps.fetch(`${this.base}/api/account/me`, { headers: { Authorization: `Bearer ${token}` } });
+            const response = await this.deps.fetch(`${this.base}/api/account/seat`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+                body: JSON.stringify({ use: true, purchases: [] }),
+            });
             if (response.status === 401) return this.signOutLocally();
             if (!response.ok) return kept;
-            const me = (await response.json()) as { email?: unknown; premium?: unknown };
+            const answer = (await response.json()) as { email?: unknown; seat?: unknown };
+            if (answer.seat !== "active" && answer.seat !== "full" && answer.seat !== "none") return kept;
             return this.save({
                 signedIn: true,
-                email: String(me.email ?? kept.email),
-                premium: me.premium === true,
+                email: String(answer.email ?? kept.email),
+                premium: answer.seat === "active",
                 checkedAt: Date.now(),
             });
         } catch (error) {

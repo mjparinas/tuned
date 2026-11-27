@@ -89,7 +89,7 @@ const server = createServer((req, res) => {
         res.setHeader("Content-Type", "application/json");
         return res.end(JSON.stringify({ status: "waiting" }));
     }
-    if (url.pathname === "/api/account/me") return res.writeHead(401).end();
+    if (url.pathname === "/api/account/seat") return res.writeHead(401).end();
     if (url.pathname === "/get.m3u") return res.end(playlist(base));
     if (url.pathname === "/guide.xml") return res.end(guide());
     const stream = url.pathname.match(/^\/(live|movie|series)\/(.+)$/);
