@@ -111,4 +111,13 @@ export const fr: Strings = {
               ? `environ ${value} min restantes`
               : `environ ${value} h restantes`;
     },
+    guideGrid: "Afficher la télé en direct en grille de programmes",
+    gridHint: "Vert bascule entre la liste et la grille de programmes",
+    today: "Aujourd'hui",
+    catchUp: "Revoir",
+    replayHint: "OK le lit depuis le début",
+    watchLiveHint: "OK le regarde en direct",
+    aired: "Déjà diffusé. Cette chaîne ne garde pas d'enregistrements.",
+    startsAt: (time: string) => `Commence à ${time}`,
+    replayFailed: "Impossible de créer un lien pour cet enregistrement.",
 };

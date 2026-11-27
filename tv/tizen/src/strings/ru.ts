@@ -111,4 +111,13 @@ export const ru: Strings = {
         const [unit, value] = eta.split(":");
         return left(Number(value), unit === "s" ? "с" : unit === "m" ? "мин" : "ч");
     },
+    guideGrid: "Показывать прямой эфир сеткой телепрограммы",
+    gridHint: "Зелёная кнопка переключает список и сетку телепрограммы",
+    today: "Сегодня",
+    catchUp: "Архив",
+    replayHint: "OK — смотреть с начала",
+    watchLiveHint: "OK — смотреть в прямом эфире",
+    aired: "Уже прошло. Этот канал не хранит записи.",
+    startsAt: (time: string) => `Начало в ${time}`,
+    replayFailed: "Не удалось получить ссылку на эту запись.",
 };

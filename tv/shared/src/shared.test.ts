@@ -84,11 +84,19 @@ const xtreamServer = (accept = true) =>
     fakeFetch((url) => {
         if (url.pathname !== "/player_api.php") return undefined;
         const action = url.searchParams.get("action");
-        if (!action) return { body: { user_info: { auth: accept ? 1 : 0 } } };
+        if (!action) return { body: { user_info: { auth: accept ? 1 : 0 }, server_info: { timezone: "Europe/London" } } };
         const lists: Record<string, unknown> = {
             get_live_categories: [{ category_id: "1", category_name: "UK | News" }],
             get_live_streams: [
-                { stream_id: 10, name: "UK: Sky News", stream_icon: "http://l/sky.png", category_id: "1", epg_channel_id: "sky.uk" },
+                {
+                    stream_id: 10,
+                    name: "UK: Sky News",
+                    stream_icon: "http://l/sky.png",
+                    category_id: "1",
+                    epg_channel_id: "sky.uk",
+                    tv_archive: 1,
+                    tv_archive_duration: "3",
+                },
                 { stream_id: 11, name: "UK: BBC News HD", category_id: "1" },
             ],
             get_vod_categories: [{ category_id: "2", category_name: "Movies" }],
@@ -119,6 +127,10 @@ test("reads an Xtream server through its API, step by step, with Android's links
     assert.equal(sky.url, "http://tv.example:8080/live/u/p/10.ts");
     assert.equal(sky.region, "UK");
     assert.equal(sky.number, 1);
+    // Catch-up from Xtream's tv_archive, replayed in the server's time zone.
+    assert.deepEqual([sky.catchUpDays, sky.catchUp], [3, "xc\n"]);
+    assert.deepEqual([items[1].catchUpDays, items[1].catchUp], [0, null]);
+    assert.equal(result.timezone, "Europe/London");
     assert.equal(items.find((i) => i.kind === "movie")!.rating, 8.3);
     const show = items.find((i) => i.kind === "series")!;
     const episodes = await loadEpisodes(fetch, login, show);
@@ -132,7 +144,7 @@ test("reads an Xtream server through its API, step by step, with Android's links
 
 test("reads an M3U link as it streams in, with its guide from the header", async () => {
     const m3u =
-        '#EXTM3U url-tvg="http://g.example/guide.xml"\n#EXTINF:-1 tvg-id="cbc.ca" group-title="CA| News",CBC News\nhttp://tv.example/live/1.ts\n';
+        '#EXTM3U url-tvg="http://g.example/guide.xml"\n#EXTINF:-1 tvg-id="cbc.ca" catchup="append" catchup-days="2" catchup-source="?utc={utc}" group-title="CA| News",CBC News\nhttp://tv.example/live/1.ts\n';
     const fetch = fakeFetch((url) => (url.pathname === "/list.m3u" ? { body: m3u } : undefined), { stream: true, piece: 5 });
     const items: Item[] = [];
     const steps: Step[] = [];
@@ -144,6 +156,7 @@ test("reads an M3U link as it streams in, with its guide from the header", async
     assert.equal(result.live, 1);
     assert.equal(result.guideUrl, "http://g.example/guide.xml");
     assert.equal(items[0].region, "CA");
+    assert.deepEqual([items[0].catchUpDays, items[0].catchUp], [2, "append\n?utc={utc}"]);
     assert.ok(steps.some((s) => s.progress && s.progress.total === m3u.length));
 });
 

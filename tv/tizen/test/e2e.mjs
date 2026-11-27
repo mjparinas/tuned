@@ -40,6 +40,8 @@ colours.forEach((src, i) => {
 
 let open = 0;
 let highest = 0;
+/** What catch-up recordings the app asked for. */
+const replays = [];
 const now = Date.now();
 const xmltvTime = (ms) => new Date(ms).toISOString().replace(/[-:T]/g, "").slice(0, 14) + " +0000";
 
@@ -51,8 +53,13 @@ function playlist(base) {
         ["kids.ca", "Treehouse", "Kids"],
         ["docs.ca", "Documentary Channel", "News"],
     ];
+    // CBC News keeps three days of recordings, as a Kodi-style playlist says so (playlist.md › Catch-up).
+    const catchUp = `catchup="default" catchup-days="3" catchup-source="${base}/catchup/{utc}-{duration}.webm"`;
     channels.forEach(([id, name, group], i) =>
-        lines.push(`#EXTINF:-1 tvg-id="${id}" tvg-name="${name}" group-title="${group}",${name}`, `${base}/live/${i}.webm`),
+        lines.push(
+            `#EXTINF:-1 tvg-id="${id}" tvg-name="${name}" ${i === 0 ? catchUp + " " : ""}group-title="${group}",${name}`,
+            `${base}/live/${i}.webm`,
+        ),
     );
     for (const [i, movie] of ["The Long Field (2021)", "Northern Lights (2019)", "Harbour Town (2023)"].entries())
         lines.push(`#EXTINF:-1 group-title="Movies Drama",${movie}`, `${base}/movie/${i}.mp4`);
@@ -69,6 +76,8 @@ function guide() {
     };
     let xml = '<?xml version="1.0"?><tv>';
     for (const id of Object.keys(shows)) xml += `<channel id="${id}"><display-name>${id}</display-name></channel>`;
+    // Something CBC News showed earlier, which its recordings can replay.
+    xml += `<programme channel="news.ca" start="${xmltvTime(now - 9000_000)}" stop="${xmltvTime(now - 1800_000)}"><title>Morning Show</title></programme>`;
     for (const [id, [a, b]] of Object.entries(shows)) {
         xml += `<programme channel="${id}" start="${xmltvTime(now - 1800_000)}" stop="${xmltvTime(now + 1800_000)}"><title>${a}</title><desc>Tonight's top stories from across the country.</desc></programme>`;
         xml += `<programme channel="${id}" start="${xmltvTime(now + 1800_000)}" stop="${xmltvTime(now + 5400_000)}"><title>${b}</title></programme>`;
@@ -92,8 +101,9 @@ const server = createServer((req, res) => {
     if (url.pathname === "/api/account/seat") return res.writeHead(401).end();
     if (url.pathname === "/get.m3u") return res.end(playlist(base));
     if (url.pathname === "/guide.xml") return res.end(guide());
-    const stream = url.pathname.match(/^\/(live|movie|series)\/(.+)$/);
+    const stream = url.pathname.match(/^\/(live|movie|series|catchup)\/(.+)$/);
     if (stream) {
+        if (stream[1] === "catchup") replays.push(stream[2]);
         const n = Number(stream[2].match(/\d/)?.[0] ?? 0) % 3;
         const file = join(out, `clip${n}.webm`);
         open++;
@@ -142,6 +152,16 @@ const key = async (k, times = 1) => {
         await page.waitForTimeout(120);
     }
 };
+/** A key only a Samsung remote has (the colour keys), sent with its Tizen code. */
+const remote = async (code) => {
+    await page.evaluate((c) => {
+        const event = new Event("keydown", { bubbles: true, cancelable: true });
+        Object.defineProperty(event, "keyCode", { value: c });
+        document.dispatchEvent(event);
+    }, code);
+    await page.waitForTimeout(150);
+};
+const GREEN = 404;
 const focused = () => page.evaluate(() => document.activeElement?.textContent ?? "");
 
 try {
@@ -194,6 +214,28 @@ try {
         await page.waitForTimeout(300);
         const playing = await page.evaluate(() => document.body.classList.contains("playing"));
         if (playing) throw new Error("Still playing after Back");
+    });
+    await step("Green shows the guide grid, and a past programme replays from its recording", async () => {
+        await remote(GREEN);
+        await page.locator(".grid").waitFor();
+        await page.locator(".prog.on").getByText("The National").waitFor({ timeout: 5000 });
+        await page.waitForTimeout(300);
+        await shot("8-guide-grid");
+        await key("ArrowLeft");
+        await page.locator(".prog.on").getByText("Morning Show").waitFor({ timeout: 5000 });
+        await page.getByText("OK plays it from the start").waitFor();
+        await page.waitForTimeout(300);
+        await shot("9-catch-up");
+        await key("Enter");
+        await page.waitForFunction(() => document.querySelector("video")?.currentTime > 0.5, null, { timeout: 15_000 });
+        const start = Math.floor((now - 9000_000) / 1000);
+        if (replays[replays.length - 1] !== `${start}-7200.webm`) throw new Error(`Asked for the recording ${replays.join(", ")}`);
+        await page.waitForTimeout(5500);
+        await key("Escape");
+        await page.locator(".player").waitFor({ state: "detached", timeout: 5000 });
+        await remote(GREEN);
+        await page.locator(".channel").first().waitFor();
+        await page.waitForTimeout(300);
     });
     await step("Movies", async () => {
         await key("ArrowLeft", 3);

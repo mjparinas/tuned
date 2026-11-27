@@ -113,6 +113,7 @@ export function Settings(props: { height: number }) {
                 <h2>{t.settings}</h2>
                 <Toggle label={t.channelNumbers} on={s.channelNumbers} onChange={(on) => void saveSettings({ channelNumbers: on })} />
                 <Toggle label={t.hideAdult} on={s.hideAdult} onChange={(on) => void saveSettings({ hideAdult: on })} />
+                <Toggle label={t.guideGrid} on={s.guideGrid} onChange={(on) => void saveSettings({ guideGrid: on })} />
                 <button type="button" class="row" data-focus onClick={() => open({ name: "log" })}>
                     {t.log}
                 </button>

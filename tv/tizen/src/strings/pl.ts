@@ -116,4 +116,13 @@ export const pl: Strings = {
         const n = Number(value);
         return unit === "s" ? left(n, "s", false) : unit === "m" ? left(n, "min", true) : left(n, "godz.", true);
     },
+    guideGrid: "Pokazuj telewizję na żywo jako siatkę programu",
+    gridHint: "Zielony przełącza między listą a siatką programu",
+    today: "Dzisiaj",
+    catchUp: "Archiwum",
+    replayHint: "OK odtwarza od początku",
+    watchLiveHint: "OK ogląda na żywo",
+    aired: "Już wyemitowano. Ten kanał nie przechowuje nagrań.",
+    startsAt: (time: string) => `Początek o ${time}`,
+    replayFailed: "Nie udało się utworzyć linku do tego nagrania.",
 };

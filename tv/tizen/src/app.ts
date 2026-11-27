@@ -18,6 +18,7 @@ import {
     type Step,
     SIGNED_OUT,
 } from "@tuned/shared";
+import { keepFrom } from "@tuned/shared/guide";
 import { gunzipSync } from "fflate";
 import { clearEverything, clearGuide, dropGeneration, kv, putItems, putProgrammes, readGuide, readKind } from "./db.ts";
 import { log, safely } from "./log.ts";
@@ -33,6 +34,8 @@ export interface SavedPlaylist {
     readonly gen: number;
     readonly guideUrl: string;
     readonly refreshedAt: number;
+    /** The server's time zone for catch-up links (Xtream's `server_info.timezone`); the TV's own when unknown. */
+    readonly timezone?: string | null;
 }
 
 export interface Refresh {
@@ -47,13 +50,18 @@ export interface Refresh {
 export interface Settings {
     readonly channelNumbers: boolean;
     readonly hideAdult: boolean;
+    /** Live TV as a grid guide instead of a list (playlist.md › Grid guide); the list stays the default, as on Android. */
+    readonly guideGrid: boolean;
 }
+
+/** Days of guide kept ahead, and how far the grid scrolls. */
+export const GUIDE_DAYS = 3;
 
 export const playlists = store<SavedPlaylist[]>([]);
 export const currentId = store<string | null>(null);
 export const refresh = store<Refresh>({ running: false, step: null, startedAt: 0, error: null, finishedAt: 0 });
 export const account = store<AccountState>(SIGNED_OUT);
-export const settings = store<Settings>({ channelNumbers: true, hideAdult: true });
+export const settings = store<Settings>({ channelNumbers: true, hideAdult: true, guideGrid: false });
 export const favourites = store<Set<string>>(new Set());
 /** Bumped whenever the lists on the device change, so screens read them again. */
 export const libraryVersion = store(0);
@@ -185,7 +193,7 @@ export async function refreshNow(): Promise<void> {
             onStep: (step) => refresh.set((r) => ({ ...r, step })),
             onItems: (items) => putItems(p.id, gen, items),
         });
-        const updated: SavedPlaylist = { ...p, gen, guideUrl: result.guideUrl, refreshedAt: Date.now() };
+        const updated: SavedPlaylist = { ...p, gen, guideUrl: result.guideUrl, refreshedAt: Date.now(), timezone: result.timezone ?? null };
         playlists.set(playlists.get().map((x) => (x.id === p.id ? updated : x)));
         await savePlaylists();
         await safely("Refresh", () => dropGeneration(p.id, p.gen), undefined);
@@ -204,11 +212,17 @@ export async function refreshNow(): Promise<void> {
 
 async function refreshGuide(p: SavedPlaylist): Promise<void> {
     if (!p.guideUrl) return;
-    const channels = new Set((await kindItems("live")).map((i) => i.tvgId).filter(Boolean) as string[]);
-    if (!channels.size) return;
+    // Each channel's guide from two hours ago, or from as far back as it keeps recordings (playlist.md › Catch-up).
     const now = Date.now();
-    const from = now - 2 * 3_600_000;
-    const to = now + 3 * 86_400_000;
+    const recent = now - 2 * 3_600_000;
+    const from = new Map<string, number>();
+    for (const i of await kindItems("live")) {
+        if (!i.tvgId) continue;
+        const since = Math.min(recent, i.catchUpDays > 0 ? keepFrom(now, i.catchUpDays) : recent);
+        from.set(i.tvgId, Math.min(from.get(i.tvgId) ?? since, since));
+    }
+    if (!from.size) return;
+    const to = now + GUIDE_DAYS * 86_400_000;
     const redact = redactor(p.login);
     refresh.set((r) => ({ ...r, step: { id: "guide", number: 1, count: 1, progress: null } }));
     await safely(
@@ -218,7 +232,10 @@ async function refreshGuide(p: SavedPlaylist): Promise<void> {
             const count = await loadGuide(
                 tvFetch,
                 p.guideUrl,
-                (channel, start, stop) => channels.has(channel) && stop > from && start < to,
+                (channel, start, stop) => {
+                    const since = from.get(channel);
+                    return since !== undefined && stop > since && start < to;
+                },
                 (piece) => (piece.programmes.length ? putProgrammes(p.id, piece.programmes) : undefined),
                 { redact, onProgress: (progress) => refresh.set((r) => ({ ...r, step: { id: "guide", number: 1, count: 1, progress } })) },
             );
@@ -357,6 +374,12 @@ export async function nowNext(item: Item, now = Date.now()): Promise<{ now: Prog
     const at = list.findIndex((p) => p.stop > now);
     if (at < 0) return { now: null, next: null };
     return list[at].start <= now ? { now: list[at], next: list[at + 1] ?? null } : { now: null, next: list[at] };
+}
+
+/** Every channel's programmes by guide id, sorted, for the grid guide to read without waiting row by row. */
+export async function guideByChannel(): Promise<Map<string, Programme[]>> {
+    const id = currentId.get();
+    return id ? guideFor(id) : new Map();
 }
 
 export async function programmes(item: Item): Promise<Programme[]> {

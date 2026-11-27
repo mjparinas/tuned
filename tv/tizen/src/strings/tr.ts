@@ -107,4 +107,13 @@ export const tr: Strings = {
         const [unit, value] = eta.split(":");
         return unit === "s" ? `yaklaşık ${value} sn kaldı` : unit === "m" ? `yaklaşık ${value} dk kaldı` : `yaklaşık ${value} sa kaldı`;
     },
+    guideGrid: "Canlı TV'yi yayın akışı tablosu olarak göster",
+    gridHint: "Yeşil, liste ile yayın akışı tablosu arasında geçiş yapar",
+    today: "Bugün",
+    catchUp: "Tekrar izle",
+    replayHint: "OK baştan oynatır",
+    watchLiveHint: "OK canlı izletir",
+    aired: "Yayınlandı. Bu kanal kayıt tutmuyor.",
+    startsAt: (time: string) => `${time} saatinde başlar`,
+    replayFailed: "Bu kayıt için bağlantı oluşturulamadı.",
 };

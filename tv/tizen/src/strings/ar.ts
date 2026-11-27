@@ -108,4 +108,13 @@ export const ar: Strings = {
         const [unit, value] = eta.split(":");
         return unit === "s" ? `يتبقى نحو ${value} ث` : unit === "m" ? `يتبقى نحو ${value} د` : `يتبقى نحو ${value} س`;
     },
+    guideGrid: "عرض البث المباشر كشبكة دليل البرامج",
+    gridHint: "الأخضر يبدّل بين القائمة وشبكة دليل البرامج",
+    today: "اليوم",
+    catchUp: "إعادة المشاهدة",
+    replayHint: "OK يشغّله من البداية",
+    watchLiveHint: "OK يشاهده مباشرة",
+    aired: "عُرض بالفعل. هذه القناة لا تحتفظ بتسجيلات له.",
+    startsAt: (time: string) => `يبدأ في ${time}`,
+    replayFailed: "تعذّر إنشاء رابط لهذا التسجيل.",
 };
