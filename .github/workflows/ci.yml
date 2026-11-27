@@ -381,6 +381,11 @@ jobs:
           npm run typecheck
       - name: Samsung app
         working-directory: tv/tizen
+        env:
+          # The app's ids for Trakt and Simkl, built in like the Android release's (vite.config.ts); with none, a TV
+          # hides that service. The end-to-end run stands in for both, so nothing reaches them from CI.
+          TRAKT_CLIENT_ID: ${{ secrets.TRAKT_CLIENT_ID }}
+          SIMKL_CLIENT_ID: ${{ secrets.SIMKL_CLIENT_ID }}
         run: |
           npm ci --no-audit --no-fund
           npm test
