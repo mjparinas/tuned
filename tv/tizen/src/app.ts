@@ -19,6 +19,15 @@ import {
     SIGNED_OUT,
 } from "@tuned/shared";
 import { keepFrom } from "@tuned/shared/guide";
+import {
+    NO_PROFILES,
+    favouritesOnTv,
+    forKids,
+    profilesFromBackup,
+    webPbkdf2,
+    type AccountProfiles,
+    type Profile,
+} from "@tuned/shared/profiles";
 import { gunzipSync } from "fflate";
 import { clearEverything, clearGuide, dropGeneration, kv, putItems, putProgrammes, readGuide, readKind } from "./db.ts";
 import { log, safely } from "./log.ts";
@@ -63,6 +72,11 @@ export const refresh = store<Refresh>({ running: false, step: null, startedAt: 0
 export const account = store<AccountState>(SIGNED_OUT);
 export const settings = store<Settings>({ channelNumbers: true, hideAdult: true, guideGrid: false });
 export const favourites = store<Set<string>>(new Set());
+/** The account's "Who's watching?" profiles, as the phone made them (profiles.md); none when signed out. */
+export const profiles = store<AccountProfiles>(NO_PROFILES);
+export const profileId = store<string | null>(null);
+/** Whether "Who's watching?" was answered since the app opened: it asks each time, as Android does. */
+export const profilePicked = store(false);
 /** Bumped whenever the lists on the device change, so screens read them again. */
 export const libraryVersion = store(0);
 export const guideVersion = store(0);
@@ -80,7 +94,15 @@ export const tunedAccount = new TunedAccount({
     log,
 });
 
-const KEYS = { playlists: "playlists", current: "playlist.current", settings: "settings", favourites: (id: string) => `favourites.${id}` };
+const KEYS = {
+    playlists: "playlists",
+    current: "playlist.current",
+    settings: "settings",
+    profiles: "profiles",
+    profile: "profile.current",
+    /** Each playlist's favourites, and with profiles each profile's own. */
+    favourites: (id: string, profile?: string | null) => (profile ? `favourites.${id}.${profile}` : `favourites.${id}`),
+};
 
 export const current = (): SavedPlaylist | null => playlists.get().find((p) => p.id === currentId.get()) ?? null;
 
@@ -102,7 +124,14 @@ export async function start(): Promise<void> {
             currentId.set(playlists.get().some((p) => p.id === id) ? id : (playlists.get()[0]?.id ?? null));
             const s = await kv.get(KEYS.settings);
             if (s) settings.set({ ...settings.get(), ...(JSON.parse(s) as Partial<Settings>) });
+            const kept = JSON.parse((await unseal(await kv.get(KEYS.profiles))) ?? "null") as AccountProfiles | null;
+            if (kept && Array.isArray(kept.profiles)) profiles.set(kept);
+            const who = await kv.get(KEYS.profile);
+            profileId.set(profiles.get().profiles.some((x) => x.id === who) ? who : null);
+            profilePicked.set(profiles.get().profiles.length < 2);
+            quiet = true;
             account.set(await tunedAccount.state());
+            quiet = false;
             await loadFavourites();
         },
         undefined,
@@ -110,7 +139,14 @@ export async function start(): Promise<void> {
     ready.set(true);
     // Network work waits until the first screen is up (speed.md › QuietStart).
     setTimeout(() => {
-        void safely("Account", async () => account.set(await tunedAccount.refresh()), undefined);
+        void safely(
+            "Account",
+            async () => {
+                account.set(await tunedAccount.refresh());
+                await refreshProfiles();
+            },
+            undefined,
+        );
         const p = current();
         if (p && Date.now() - p.refreshedAt > REFRESH_EVERY) void refreshNow();
     }, 1500);
@@ -148,9 +184,9 @@ export async function addPlaylist(login: PlaylistLogin): Promise<SavedPlaylist> 
 export async function switchPlaylist(id: string): Promise<void> {
     currentId.set(id);
     await savePlaylists();
-    await loadFavourites();
     cache.clear();
     guide.clear();
+    await loadFavourites();
     libraryVersion.set((v) => v + 1);
     guideVersion.set((v) => v + 1);
 }
@@ -161,6 +197,7 @@ export async function removePlaylist(id: string): Promise<void> {
     await safely("Playlists", () => dropGeneration(p.id, p.gen), undefined);
     await safely("Playlists", () => clearGuide(p.id), undefined);
     await kv.remove(KEYS.favourites(id));
+    for (const x of profiles.get().profiles) await kv.remove(KEYS.favourites(id, x.id));
     playlists.set(playlists.get().filter((x) => x.id !== id));
     if (currentId.get() === id) currentId.set(playlists.get()[0]?.id ?? null);
     await savePlaylists();
@@ -175,6 +212,9 @@ export async function signOutEverything(): Promise<void> {
     playlists.set([]);
     currentId.set(null);
     account.set(SIGNED_OUT);
+    profiles.set(NO_PROFILES);
+    profileId.set(null);
+    profilePicked.set(true);
     favourites.set(new Set());
     cache.clear();
     guide.clear();
@@ -198,6 +238,7 @@ export async function refreshNow(): Promise<void> {
         await savePlaylists();
         await safely("Refresh", () => dropGeneration(p.id, p.gen), undefined);
         cache.clear();
+        await loadFavourites();
         libraryVersion.set((v) => v + 1);
         log("Refresh", `${result.live} channels, ${result.movies} movies, ${result.shows} shows`);
         await refreshGuide(updated);
@@ -285,6 +326,7 @@ export function groupsOf(items: Item[]): Group[] {
 }
 
 export function visibleItems(items: Item[]): Item[] {
+    if (currentProfile()?.kids) return items.filter(forKids);
     return settings.get().hideAdult ? items.filter((i) => !i.adult) : items;
 }
 
@@ -324,10 +366,23 @@ export function search(items: Item[], query: string): Item[] {
     });
 }
 
+/**
+ * The playlist's favourites for the profile in use. A profile seen for the first time on this TV starts with the
+ * favourites the account keeps for it (from the phone), matched to this playlist's items by Android's id.
+ */
 async function loadFavourites(): Promise<void> {
     const id = currentId.get();
-    const raw = id ? await kv.get(KEYS.favourites(id)) : null;
-    favourites.set(new Set(raw ? (JSON.parse(raw) as string[]) : []));
+    const profile = currentProfile();
+    const key = id ? KEYS.favourites(id, profile?.id) : null;
+    const raw = key ? await kv.get(key) : null;
+    if (raw || !key || !profile?.favourites.length || !current()?.gen) {
+        favourites.set(new Set(raw ? (JSON.parse(raw) as string[]) : []));
+        return;
+    }
+    const items = [...(await kindItems("live")), ...(await kindItems("movie")), ...(await kindItems("series"))];
+    const seeded = favouritesOnTv(profile, items);
+    favourites.set(new Set(seeded));
+    if (seeded.length) await kv.set(key, JSON.stringify(seeded));
 }
 
 export async function toggleFavourite(item: Item): Promise<void> {
@@ -337,7 +392,51 @@ export async function toggleFavourite(item: Item): Promise<void> {
     if (next.has(item.id)) next.delete(item.id);
     else next.add(item.id);
     favourites.set(next);
-    await kv.set(KEYS.favourites(id), JSON.stringify([...next]));
+    await kv.set(KEYS.favourites(id, currentProfile()?.id), JSON.stringify([...next]));
+}
+
+// ---- Profiles (profiles.md) ----
+
+export const currentProfile = (): Profile | null => profiles.get().profiles.find((p) => p.id === profileId.get()) ?? null;
+
+/** PBKDF2 for checking a PIN against the hash the phone made, on the TV's own crypto. */
+export const pbkdf2 = webPbkdf2(crypto.subtle as never);
+
+// Signing in reads the account's profiles; signing out of it (here, or the TV removed on the website) forgets them.
+let quiet = false;
+account.subscribe((state) => {
+    if (quiet) return;
+    if (state.signedIn && !profiles.get().profiles.length) void refreshProfiles();
+    if (!state.signedIn && profiles.get().profiles.length) void forgetProfiles();
+});
+
+async function forgetProfiles(): Promise<void> {
+    profiles.set(NO_PROFILES);
+    await kv.remove(KEYS.profiles);
+    await useProfile(null);
+}
+
+/** Reads the profiles from the account's backup. Offline, the ones read last stay. */
+export async function refreshProfiles(): Promise<void> {
+    if (!account.get().signedIn) return;
+    const text = await safely("Profiles", () => tunedAccount.backup(), null);
+    if (text === null) return;
+    const read = profilesFromBackup(text);
+    profiles.set(read);
+    await kv.set(KEYS.profiles, await seal(JSON.stringify(read)));
+    if (profileId.get() && !currentProfile()) await useProfile(null);
+    if (read.profiles.length > 1 && !profileId.get()) profilePicked.set(false);
+    else if (read.profiles.length < 2) profilePicked.set(true);
+}
+
+/** Watches as `id` from now on: its favourites, and kids mode for a kids profile. The PIN was asked already. */
+export async function useProfile(id: string | null): Promise<void> {
+    profileId.set(id);
+    profilePicked.set(true);
+    if (id) await kv.set(KEYS.profile, id);
+    else await kv.remove(KEYS.profile);
+    await loadFavourites();
+    libraryVersion.set((v) => v + 1);
 }
 
 // ---- The guide ----

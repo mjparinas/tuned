@@ -14,6 +14,7 @@ export type Route =
     | { readonly name: "show"; readonly item: Item }
     | { readonly name: "signin"; readonly purpose: "playlist" | "account" }
     | { readonly name: "manual" }
+    | { readonly name: "profiles" }
     | { readonly name: "log" };
 
 export const routes = store<Route[]>([{ name: "home", tab: "live" }]);

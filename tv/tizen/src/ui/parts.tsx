@@ -14,6 +14,8 @@ export function Button(props: {
     busy?: boolean;
     kind?: "primary" | "plain";
     id?: string;
+    /** What a screen reader says, for a button whose label is a symbol. */
+    ariaLabel?: string;
 }) {
     return (
         <button
@@ -23,6 +25,7 @@ export function Button(props: {
             data-focus
             data-start={props.start ? "" : undefined}
             disabled={props.disabled}
+            aria-label={props.ariaLabel}
             aria-busy={props.busy ? "true" : undefined}
             onClick={() => !props.busy && props.onClick()}
         >
