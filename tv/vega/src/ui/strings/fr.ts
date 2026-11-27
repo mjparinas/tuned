@@ -122,6 +122,12 @@ export const fr: Strings = {
         "Retire les chaînes qui passent une seule série en boucle, comme « 24/7 Friends », et tout ce qui est marqué 24/7 dans Films, Séries et la recherche.",
     on: "Oui",
     off: "Non",
+    playlists: "Playlists",
+    addPlaylist: "Ajouter une autre playlist",
+    premiumForMore: "Plus d'une playlist, c'est Premium. Connectez-vous à votre compte Tuned sur ce téléviseur.",
+    using: "Utilisée",
+    use: "Utiliser",
+    remove: "Retirer",
     movieDidntStart: "La lecture n'a pas démarré. Le serveur est peut-être occupé, ou le fichier manque.",
     noPlaylistOnAccount:
         "Connecté à votre compte Tuned, mais il n'a pas encore de playlist. Réessayez pour en envoyer une depuis votre téléphone.",

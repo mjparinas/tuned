@@ -474,3 +474,104 @@ describe("sorting, hiding adult and 24/7, and Continue Watching on Vega", () => 
         expect(model.continueTitles("movies").map((x) => x.name)).toEqual(["A Quiet Bay"]);
     });
 });
+
+describe("more than one playlist on Vega", () => {
+    const one = { kind: "xtream" as const, server: "http://one.example", username: "u", password: "p" };
+    const two = { kind: "link" as const, playlistUrl: "http://two.example/list.m3u", name: "Two" };
+    const m3u = '#EXTM3U\n#EXTINF:-1 group-title="Kids",Two Kids\nhttp://two.example/live/1.ts\n';
+    const answers: Record<string, unknown> = {
+        account: { user_info: { auth: 1, status: "Active" } },
+        get_live_categories: [{ category_id: "1", category_name: "News" }],
+        get_live_streams: [{ stream_id: 5, name: "One News", category_id: "1" }],
+        get_vod_categories: [],
+        get_vod_streams: [],
+        get_series_categories: [],
+        get_series: [],
+    };
+    const both = (premium: boolean): Http => ({
+        async getJson(url) {
+            const u = new URL(url);
+            if (u.pathname === "/api/account/seat") return { status: 200, body: { seat: premium ? "active" : "none" } };
+            if (u.pathname === "/api/auth/token") return { status: 200, body: { status: "ok", token: "tok", email: "" } };
+            return { status: 200, body: answers[u.searchParams.get("action") ?? "account"] };
+        },
+        async postJson(url) {
+            const u = new URL(url);
+            if (u.pathname === "/api/auth/token") return { status: 200, body: { status: "ok", token: "tok", email: "" } };
+            if (u.pathname === "/api/account/seat") return { status: 200, body: { seat: premium ? "active" : "none" } };
+            return { status: 500, body: null };
+        },
+        async text(url) {
+            if (url.startsWith("http://two.example")) return m3u;
+            return JSON.stringify(answers[new URL(url).searchParams.get("action") ?? ""]);
+        },
+    });
+
+    it("adds a second playlist with Premium, switches between them with each one's favourites, and removes one", async () => {
+        const store = memoryStore();
+        const model = new AppModel(services(both(true), store));
+        await model.boot();
+        await model.useLogin(one);
+        await model.toggleFavourite("5", "One News");
+        await model.accountLinked("link");
+        expect(hasPremium(model.state.account)).toBe(true);
+
+        model.startAdding();
+        expect(model.state).toMatchObject({ route: "signin", adding: true });
+        await model.useLogin(two);
+        expect(model.state.route).toBe("live");
+        expect(model.state.adding).toBe(false);
+        expect(model.state.playlists.map((p) => p.name)).toEqual(["one.example", "Two"]);
+        expect(model.visibleChannels().map((c) => c.name)).toEqual(["Two Kids"]);
+        expect(model.state.favourites.size).toBe(0);
+
+        await model.switchPlaylist(model.state.playlists[0].id);
+        expect(model.state.playlistId).toBe("current");
+        expect(model.visibleChannels().map((c) => c.name)).toEqual(["One News"]);
+        expect([...model.state.favourites]).toEqual(["5"]);
+
+        // A restart opens the one last used, with every playlist still there.
+        const again = new AppModel(services(both(true), store));
+        await again.boot();
+        expect(again.state.playlists).toHaveLength(2);
+        expect(again.state.playlistId).toBe("current");
+        expect(again.state.lineup?.channels.map((c) => c.name)).toEqual(["One News"]);
+
+        const second = model.state.playlists[1].id;
+        await model.removePlaylist("current");
+        expect(model.state.playlists).toHaveLength(2);
+        await model.removePlaylist(second);
+        expect(model.state.playlists.map((p) => p.name)).toEqual(["one.example"]);
+    });
+
+    it("keeps only the playlist picked without Premium, and the same login reopens rather than adding", async () => {
+        const model = new AppModel(services(both(false)));
+        await model.boot();
+        await model.useLogin(one, [two]);
+        expect(model.state.playlists).toHaveLength(1);
+        await model.useLogin({ ...one, server: "http://one.example/" });
+        expect(model.state.playlists).toHaveLength(1);
+    });
+
+    it("never lets an old playlist's download land on the next one", async () => {
+        let release: () => void = () => {};
+        const slow = both(true);
+        const getJson = slow.getJson;
+        let hold = true;
+        slow.getJson = async (url) => {
+            if (hold && url.includes("get_live_streams")) await new Promise<void>((r) => (release = r));
+            return getJson(url);
+        };
+        const store = memoryStore();
+        const model = new AppModel(services(slow, store));
+        await model.boot();
+        const first = model.useLogin(one);
+        await new Promise((r) => setTimeout(r, 5));
+        hold = false;
+        await model.useLogin(two);
+        release();
+        await first;
+        expect(model.state.lineup?.channels.map((c) => c.name)).toEqual(["Two Kids"]);
+        expect(model.state.playlistId).not.toBe("current");
+    });
+});

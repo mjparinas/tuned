@@ -281,6 +281,19 @@ function Scene({ name }: { name: string }) {
             const m = model({ route: "settings", lineup, account });
             return <SettingsScreen model={m} state={m.state} />;
         }
+        case "settings-playlists": {
+            const m = model({
+                route: "settings",
+                lineup,
+                account,
+                playlists: [
+                    { id: "current", name: "Home" },
+                    { id: "p2", name: "provider.example" },
+                ],
+                playlistId: "current",
+            });
+            return <SettingsScreen model={m} state={m.state} />;
+        }
         case "settings-refreshing": {
             const m = model({
                 route: "settings",

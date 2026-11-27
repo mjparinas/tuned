@@ -122,6 +122,12 @@ export const es: Strings = {
         'Quita los canales que repiten una serie todo el día, como "24/7 Friends", y todo lo marcado como 24/7 en Películas, Series y la búsqueda.',
     on: "Sí",
     off: "No",
+    playlists: "Listas",
+    addPlaylist: "Añadir otra lista",
+    premiumForMore: "Más de una lista es Premium. Inicia sesión en tu cuenta de Tuned en este televisor.",
+    using: "En uso",
+    use: "Usar",
+    remove: "Quitar",
     movieDidntStart: "No se inició. Puede que el servidor esté ocupado o que falte el archivo.",
     noPlaylistOnAccount:
         "Has iniciado sesión en tu cuenta de Tuned, pero aún no tiene ninguna lista. Vuelve a intentarlo para enviar una desde tu móvil.",

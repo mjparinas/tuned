@@ -34,7 +34,11 @@ export function LoadingScreen({ model, state }: { model: AppModel; state: State 
                         <Text style={{ color: colours.danger, fontSize: dp(16), lineHeight: dp(24) }}>{error}</Text>
                         <View style={{ flexDirection: "row", gap: dp(12) }}>
                             <Button label={t.tryAgain} filled start onPress={() => void model.firstDownload()} />
-                            <Button label={t.changeLogin} onPress={() => void model.signOut()} />
+                            {state.playlists.length > 1 ? (
+                                <Button label={t.playlists} onPress={() => model.go("settings")} />
+                            ) : (
+                                <Button label={t.changeLogin} onPress={() => void model.signOut()} />
+                            )}
                         </View>
                     </>
                 ) : (

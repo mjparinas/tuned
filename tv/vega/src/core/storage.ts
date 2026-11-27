@@ -21,7 +21,16 @@ export const KEYS = {
     libraryHead: `${PREFIX}library`,
     libraryChunk: (part: "m" | "s", i: number) => `${PREFIX}library:${part}:${i}`,
     positions: `${PREFIX}positions`,
+    /** Every playlist on the stick, and which one is open (`login` above is always the open one's). */
+    playlists: `${PREFIX}playlists`,
+    playlist: `${PREFIX}playlist`,
 } as const;
+
+/** A playlist kept on the stick. The first one's id is "current", so what it kept before there were several stays. */
+export interface SavedPlaylist {
+    id: string;
+    login: Login;
+}
 
 /** How many movies and episodes keep where they were left; the oldest go first. */
 const POSITIONS = 300;
@@ -120,6 +129,18 @@ export function storage(store: Store) {
             for (const old of keys.slice(0, Math.max(0, keys.length - POSITIONS))) delete all[old];
             await store.set(KEYS.positions, JSON.stringify(all));
             return all;
+        },
+
+        loadPlaylists: async () => (await readJson<SavedPlaylist[]>(store, KEYS.playlists)) ?? [],
+        savePlaylists: (list: SavedPlaylist[]) => store.set(KEYS.playlists, JSON.stringify(list)),
+        loadPlaylistId: () => store.get(KEYS.playlist),
+        savePlaylistId: (id: string) => store.set(KEYS.playlist, id),
+
+        /** Switching playlists: the open one's channels, movies and last channel go, so the next one's download replaces them. */
+        async clearDownloads(): Promise<void> {
+            const heads = [KEYS.lineupHead, KEYS.libraryHead];
+            const gone = (await store.keys()).filter((k) => heads.some((h) => k === h || k.startsWith(`${h}:`)) || k === KEYS.lastChannel);
+            if (gone.length) await store.remove(gone);
         },
 
         loadLastChannel: () => store.get(KEYS.lastChannel),

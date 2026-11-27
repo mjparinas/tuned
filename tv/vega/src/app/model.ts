@@ -16,10 +16,10 @@ import type { Category, Channel, Episode, Library, Lineup, Login, Playable, Prog
 import { OneStream, type StreamPlayer } from "../core/oneStream";
 import { downloadLibrary, downloadLineup, failureText, isStale } from "../core/playlist";
 import type { StepProgress } from "../core/progress";
-import { PREFIX, storage, type Storage, type Store } from "../core/storage";
+import { PREFIX, storage, type SavedPlaylist, type Storage, type Store } from "../core/storage";
 import { gunzip, nobleCrypto } from "../platform/crypto";
 import { t } from "../ui/strings";
-import { backupLogin } from "./logins";
+import { backupLogins, playlistName, sameLogin } from "./logins";
 import { parseEpisodes, parseShortEpg, seriesInfoUrl, shortEpgUrl } from "../core/xtream";
 
 /** The Tuned account as the screens show it; null when the stick isn't signed in. */
@@ -47,6 +47,9 @@ export type Route =
 
 /** The category that holds what the person starred, first after All in Live TV, Movies and Shows. */
 export const FAVOURITES = "__favourites";
+
+/** The first playlist's id, which favourites and Continue watching were kept under before there could be several. */
+const FIRST = "current";
 
 /** The category of movies and shows started and not finished, first in Movies and Shows when there are any. */
 export const CONTINUE = "__continue";
@@ -111,6 +114,11 @@ export interface State {
     /** TMDB's episode names per "tmdbId:season". */
     seasons: Record<string, EpisodeInfo[]>;
     query: string;
+    /** Every playlist on the stick, by name; the open one is `playlistId`. */
+    playlists: { id: string; name: string }[];
+    playlistId: string;
+    /** Adding another playlist from Settings: the sign-in screens offer Back to Settings. */
+    adding: boolean;
 }
 
 export interface Services {
@@ -159,11 +167,18 @@ export class AppModel {
         detailsLoad: { id: null, busy: false, failed: false },
         seasons: {},
         query: "",
+        playlists: [],
+        playlistId: FIRST,
+        adding: false,
     };
     readonly saved: Storage;
-    readonly favourites: Favourites;
+    favourites!: Favourites;
     readonly tmdb: Tmdb;
-    readonly progress: WatchProgress;
+    progress!: WatchProgress;
+    /** Every playlist with its login; only the open one's channels and movies are kept. */
+    private saved_playlists: SavedPlaylist[] = [];
+    /** Bumped on each switch, so a download for the playlist left behind never lands on the next one. */
+    private generation = 0;
     private readonly shared: KeyValueStore;
     private noticeTimer: ReturnType<typeof setTimeout> | null = null;
     /** Where Back from a movie's or show's page goes: the grid it was picked from, or Search. */
@@ -187,18 +202,23 @@ export class AppModel {
         });
         this.stream = new OneStream(services.player);
         const shared = sharedStore(services.store);
-        // One playlist on the stick, so one list of favourites; the key is the Samsung app's, for the same playlist id.
-        this.favourites = new Favourites(shared, favouritesKey("current"));
-        this.favourites.onChange((favourites) => this.set({ favourites }));
         this.tmdb = new Tmdb(services.fetch, shared, services.tmdbKey ?? "", Date.now, services.language ?? "en-CA");
         this.shared = shared;
-        this.progress = new WatchProgress(shared, progressKey("current"));
+        this.keepFor(FIRST);
+    }
+
+    /** Favourites and Continue watching are each playlist's own, under the Samsung app's keys for the same id. */
+    private keepFor(id: string): void {
+        this.favourites = new Favourites(this.shared, favouritesKey(id));
+        this.favourites.onChange((favourites) => this.set({ favourites }));
+        this.progress = new WatchProgress(this.shared, progressKey(id));
         this.progress.onChange((list) =>
             this.set({
                 positions: Object.fromEntries(list.map((w) => [w.id, w.at])),
                 watching: this.progress.continueWatching(),
             }),
         );
+        this.progressRead = null;
     }
 
     subscribe = (listener: () => void) => {
@@ -232,6 +252,7 @@ export class AppModel {
             this.saved.loadLastChannel().catch(() => null),
         ]);
         rememberSecrets(login);
+        await this.readPlaylists(login);
         await Promise.all([this.favourites.load().catch(() => undefined), this.loadPrefs(), this.readProgress()]);
         if (!login) return this.set({ route: "signin", account });
         if (!lineup) {
@@ -248,23 +269,117 @@ export class AppModel {
         });
     }
 
-    /** A login from the phone or the form: saved, then the first download. */
-    async useLogin(login: Login): Promise<void> {
+    /** The playlists kept on the stick; a stick from before there could be several has just its one login. */
+    private async readPlaylists(login: Login | null): Promise<void> {
+        const [list, id] = await Promise.all([this.saved.loadPlaylists().catch(() => []), this.saved.loadPlaylistId().catch(() => null)]);
+        this.saved_playlists = list.length ? list : login ? [{ id: FIRST, login }] : [];
+        for (const p of this.saved_playlists) rememberSecrets(p.login);
+        const open = id && this.saved_playlists.some((p) => p.id === id) ? id : (this.saved_playlists[0]?.id ?? FIRST);
+        if (open !== this.state.playlistId) this.keepFor(open);
+        this.showPlaylists(open);
+    }
+
+    private showPlaylists(playlistId: string): void {
+        this.set({ playlists: this.saved_playlists.map((p) => ({ id: p.id, name: playlistName(p.login) })), playlistId });
+    }
+
+    /**
+     * A login from the phone, the form or the account's backup: one already on the stick opens, a new one is added and
+     * opens (with any others sent alongside added too), then its first download. The first ever is "current".
+     */
+    async useLogin(login: Login, others: Login[] = []): Promise<void> {
         rememberSecrets(login);
-        await this.readProgress();
+        for (const o of others) rememberSecrets(o);
+        const add = (l: Login): string => {
+            const found = this.saved_playlists.find((p) => sameLogin(p.login, l));
+            if (found) {
+                found.login = l;
+                return found.id;
+            }
+            const taken = new Set(this.saved_playlists.map((p) => p.id));
+            let id = taken.has(FIRST) ? `p${Date.now().toString(36)}` : FIRST;
+            for (let n = 2; taken.has(id); n++) id = `p${Date.now().toString(36)}${n}`;
+            this.saved_playlists.push({ id, login: l });
+            return id;
+        };
+        const id = add(login);
+        // More than one playlist is Premium (premium.md); without it, only the one picked is kept.
+        if (hasPremium(this.state.account)) for (const o of others) add(o);
+        await this.saved.savePlaylists(this.saved_playlists);
+        await this.open(id, login);
+    }
+
+    /** Settings › Playlists: another one on the stick. Its channels download as on the first sign-in. */
+    async switchPlaylist(id: string): Promise<void> {
+        const target = this.saved_playlists.find((p) => p.id === id);
+        if (!target || (id === this.state.playlistId && this.state.lineup)) return;
+        await this.open(id, target.login);
+    }
+
+    private async open(id: string, login: Login): Promise<void> {
+        const switching = id !== this.state.playlistId;
+        await this.stream.stop();
+        if (switching) {
+            this.generation++;
+            await this.saved.clearDownloads().catch((e) => log.warn("AppModel", "clear downloads", e));
+            this.keepFor(id);
+            this.libraryRead = false;
+        }
         await this.saved.saveLogin(login);
-        this.set({ login, lineup: null, library: null, episodes: {}, route: "loading" });
+        await this.saved.savePlaylistId(id);
+        this.showPlaylists(id);
+        await Promise.all([this.favourites.load().catch(() => undefined), this.readProgress()]);
+        this.set({
+            login,
+            lineup: null,
+            library: null,
+            episodes: {},
+            guide: {},
+            channelId: null,
+            category: null,
+            movieCategory: null,
+            showCategory: null,
+            title: null,
+            vod: null,
+            query: "",
+            refresh: { busy: false },
+            libraryLoad: { busy: false },
+            adding: false,
+            route: "loading",
+        });
         await this.firstDownload();
+    }
+
+    /** Settings › Playlists › Add a playlist: the phone or the form, with Back to Settings. */
+    startAdding(): void {
+        this.set({ adding: true, route: "signin" });
+    }
+
+    cancelAdding(): void {
+        this.set({ adding: false, route: this.state.login ? (this.state.lineup ? "settings" : "loading") : "signin" });
+    }
+
+    /** Takes a playlist off the stick (never the open one), with its favourites and Continue watching. */
+    async removePlaylist(id: string): Promise<void> {
+        if (id === this.state.playlistId || !this.saved_playlists.some((p) => p.id === id)) return;
+        this.saved_playlists = this.saved_playlists.filter((p) => p.id !== id);
+        await this.saved.savePlaylists(this.saved_playlists);
+        await Promise.all([this.shared.remove(favouritesKey(id)), this.shared.remove(progressKey(id))]).catch((e) =>
+            log.warn("AppModel", "remove playlist", e),
+        );
+        this.showPlaylists(this.state.playlistId);
     }
 
     async firstDownload(): Promise<void> {
         const login = this.state.login;
         if (!login) return this.go("signin");
+        const generation = this.generation;
         this.set({ loading: { progress: null, error: null } });
         try {
-            const { library, ...lineup } = await downloadLineup(this.services.http, login, (progress) =>
-                this.set({ loading: { progress, error: null } }),
-            );
+            const { library, ...lineup } = await downloadLineup(this.services.http, login, (progress) => {
+                if (generation === this.generation) this.set({ loading: { progress, error: null } });
+            });
+            if (generation !== this.generation) return;
             await this.saved.saveLineup(lineup);
             if (library) await this.keepLibrary(library);
             this.libraryRead = true;
@@ -278,6 +393,7 @@ export class AppModel {
             if (login.kind === "xtream") launchSafely("first.library", () => this.refreshLibrary());
         } catch (error) {
             log.warn("AppModel", "first download", error);
+            if (generation !== this.generation) return;
             this.set({ loading: { progress: null, error: failureText(error) } });
         }
     }
@@ -286,16 +402,19 @@ export class AppModel {
     async refreshNow(): Promise<void> {
         const login = this.state.login;
         if (!login || this.state.refresh.busy) return;
+        const generation = this.generation;
         this.set({ refresh: { busy: true, progress: null, result: null } });
         try {
-            const { library, ...lineup } = await downloadLineup(this.services.http, login, (progress) =>
-                this.set({ refresh: { busy: true, progress } }),
-            );
+            const { library, ...lineup } = await downloadLineup(this.services.http, login, (progress) => {
+                if (generation === this.generation) this.set({ refresh: { busy: true, progress } });
+            });
+            if (generation !== this.generation) return;
             await this.saved.saveLineup(lineup);
             if (library) await this.keepLibrary(library);
             this.set({ lineup, refresh: { busy: false, result: { ok: true, text: t.refreshed } } });
         } catch (error) {
             log.warn("AppModel", "refresh", error);
+            if (generation !== this.generation) return;
             this.set({ refresh: { busy: false, result: { ok: false, text: failureText(error) } } });
             return;
         }
@@ -444,14 +563,17 @@ export class AppModel {
         const login = this.state.login;
         if (!login || this.state.libraryLoad.busy) return;
         if (login.kind !== "xtream") return this.refreshNow();
+        const generation = this.generation;
         this.set({ libraryLoad: { busy: true, progress: null, result: null } });
         try {
-            const library = await downloadLibrary(this.services.http, login, (progress) =>
-                this.set({ libraryLoad: { busy: true, progress } }),
-            );
+            const library = await downloadLibrary(this.services.http, login, (progress) => {
+                if (generation === this.generation) this.set({ libraryLoad: { busy: true, progress } });
+            });
+            if (generation !== this.generation) return;
             await this.keepLibrary(library);
         } catch (error) {
             log.warn("AppModel", "library", error);
+            if (generation !== this.generation) return;
             this.set({ libraryLoad: { busy: false, result: { ok: false, text: failureText(error) } } });
         }
     }
@@ -676,8 +798,8 @@ export class AppModel {
         this.set({ account: accountView(state) });
         // Signed in on the welcome screen: the playlist comes from the account's backup, as on Android.
         if (!this.state.login && state.signedIn) {
-            const restored = backupLogin(await this.backup());
-            if (restored) await this.useLogin(restored);
+            const [first, ...others] = backupLogins(await this.backup());
+            if (first) await this.useLogin(first, others);
         }
     }
 
@@ -761,8 +883,12 @@ export class AppModel {
             detailsLoad: { id: null, busy: false, failed: false },
             seasons: {},
             query: "",
+            adding: false,
         });
-        this.progressRead = null;
+        this.generation++;
+        this.saved_playlists = [];
+        this.keepFor(FIRST);
+        this.showPlaylists(FIRST);
         await Promise.all([this.favourites.load().catch(() => undefined), this.readProgress(), this.loadPrefs()]);
         this.libraryRead = false;
     }
