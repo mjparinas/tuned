@@ -84,7 +84,7 @@ object XtreamAccount {
     fun daysLeft(
         expiresAt: Long,
         now: Long,
-    ): Long = Math.floorDiv(expiresAt - now, DAY_MS)
+    ): Long = (expiresAt - now).floorDiv(DAY_MS)
 
     private const val MS_PER_SECOND = 1_000L
     private const val DAY_MS = 86_400_000L

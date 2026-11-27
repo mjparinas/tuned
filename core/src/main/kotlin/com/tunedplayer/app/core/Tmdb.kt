@@ -1,7 +1,5 @@
 package com.tunedplayer.app.core
 
-import java.net.URLEncoder
-
 /**
  * Ratings, summaries and trailers from The Movie Database. The person brings their own key (Settings › Ratings): a
  * v3 API key goes in the link, a v4 read token in an Authorization header. Nothing here touches the network.
@@ -118,5 +116,5 @@ object Tmdb {
 
     private fun apiKey(key: String) = if (isToken(key)) "" else "&api_key=${enc(key.trim())}"
 
-    private fun enc(value: String) = URLEncoder.encode(value, "UTF-8")
+    private fun enc(value: String) = Platform.formEncode(value)
 }

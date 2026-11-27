@@ -41,8 +41,8 @@ jobs:
       docs: ${{ steps.diff.outputs.docs }}
       mobile: ${{ steps.diff.outputs.mobile }}
       web: ${{ steps.diff.outputs.web }}
-      vega: ${{ steps.diff.outputs.vega }}
       tizen: ${{ steps.diff.outputs.tizen }}
+      vega: ${{ steps.diff.outputs.vega }}
       record: ${{ steps.diff.outputs.record }}
       warm: ${{ steps.diff.outputs.warm }}
       tree: ${{ steps.diff.outputs.tree }}
@@ -59,7 +59,7 @@ jobs:
         run: |
           tree=$(git rev-parse 'HEAD^{tree}')
           echo "tree=$tree" >> "$GITHUB_OUTPUT"
-          everything() { { echo "run=true"; echo "mobile=true"; echo "web=true"; echo "vega=true"; echo "tizen=true"; } >> "$GITHUB_OUTPUT"; exit 0; }
+          everything() { { echo "run=true"; echo "mobile=true"; echo "web=true"; echo "tizen=true"; echo "vega=true"; } >> "$GITHUB_OUTPUT"; exit 0; }
           recorded() {
             desc=$(gh api "repos/$REPO/commits/$1/statuses?per_page=100" \
               --jq '[.[] | select(.context == "CI passed tree")][0] | select(.state == "success") | .description' 2>/dev/null || true)
@@ -356,6 +356,27 @@ jobs:
           PR: ${{ github.event.pull_request.number }}
         run: gh api "repos/${{ github.repository }}/pulls/$PR/files" --paginate --jq '.[].filename' | node scripts/decision-record.mjs
 
+  # The Samsung TV app (tv/tizen) and what it shares with the Vega OS app: :core's rules compiled to JavaScript and
+  # tested there (tv/core), then tv/shared's tests and type check. Only when tv/, :core or the Gradle setup changed.
+  tizen:
+    name: Samsung TV app
+    needs: changes
+    if: needs.changes.outputs.tizen == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/tv-core
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 26
+      - name: Shared TV code
+        working-directory: tv/shared
+        run: |
+          npm ci --no-audit --no-fund
+          npm test
+          npm run typecheck
+
   # Tuned for Fire TV sticks on Vega OS (tv/vega/, docs/decisions/vega.md): type check, the Jest tests, every screen
   # drawn in the browser preview, and the .vpkg built with Amazon's Vega SDK (Ubuntu x86_64), kept as an artifact.
   vega:
@@ -410,7 +431,7 @@ jobs:
 
   passed:
     name: CI passed
-    needs: [changes, decisions, format, checks, android, device, vega]
+    needs: [changes, decisions, format, checks, android, device, tizen, vega]
     if: always()
     runs-on: ubuntu-latest
     permissions:
