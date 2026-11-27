@@ -6,6 +6,7 @@ import {
     buildSite,
     cardBlurb,
     faqJsonLd,
+    heroOf,
     homePosts,
     indexPage,
     indexPreview,
@@ -14,6 +15,7 @@ import {
     navIsCurrent,
     noteLine,
     parseFrontmatter,
+    postPage,
     postCard,
     readPost,
     relatedPosts,
@@ -65,6 +67,22 @@ test("post cards never skip a heading level", () => {
     assert.match(postCard(p, 2), /<h2>T<\/h2>/);
     // As a map callback it must not take the index as its level.
     assert.match([p, p].map((x) => postCard(x))[1], /<h3>T<\/h3>/);
+});
+
+test("a post's top picture is its card's picture and the picture shared links show", () => {
+    const post = readPost(
+        "guides/x.md",
+        `---\ntitle: T\ndescription: D\ndate: 2026-11-26\nkind: guide\n---\n<figure class="cover"><img src="/blog/img/posts/x.jpg" alt="Tuned's guide" width="1200" height="760"></figure>\n\nBody`,
+    );
+    assert.deepEqual(heroOf(post), { src: "/blog/img/posts/x.jpg", alt: "Tuned's guide", width: 1200, height: 760 });
+    assert.match(postCard(post), /<img class="thumb" src="\/blog\/img\/posts\/x.jpg" alt="" width="1200" height="760"/);
+    const page = postPage(SITE, post, {});
+    assert.match(page, /<meta property="og:image" content="https:\/\/www.tunedplayer.com\/blog\/img\/posts\/x.jpg" \/>/);
+    assert.match(page, /<meta property="og:image:height" content="760" \/>/);
+    // A post without one keeps the site's picture, and its card has none.
+    const plain = readPost("guides/y.md", `---\ntitle: T\ndescription: D\ndate: 2026-11-26\nkind: guide\n---\nBody`);
+    assert.equal(heroOf(plain), null);
+    assert.doesNotMatch(postCard(plain), /<img/);
 });
 
 test("a post's address is its file's path", () => {

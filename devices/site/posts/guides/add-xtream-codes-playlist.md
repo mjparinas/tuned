@@ -3,6 +3,7 @@ title: How to add an Xtream Codes playlist to Tuned
 description: Sign in with the server address, username and password your provider sent, and get Live TV, Movies, Shows and the guide in one step.
 date: 2026-11-19
 kind: guide
+updated: 2026-11-26
 ---
 
 Most IPTV providers send three things when you sign up: a **server address**, a **username** and a **password**. That's an Xtream Codes login, and it's the most complete way to use Tuned: it brings in live channels, films, shows, the TV guide and catch-up from one sign-in.
@@ -39,6 +40,11 @@ Got a link like `http://example.com:8080/get.php?username=…&password=…`? Pas
 - **A cache on your device.** Next time you open Tuned, the channels show at once, before anything downloads. Tuned refreshes in the background: channels every 12 hours and the guide every 6, both changeable in Settings › Guide and refresh.
 
 If your provider has turned off the playlist download, Tuned reads the same channels, films and shows through the server's other interface instead, without you doing anything.
+
+<div class="shots">
+<figure><img src="/blog/img/guides/browse-live-tv.webp" alt="Tuned's Live TV after adding an Xtream Codes login, with channel logos and what's on now" width="270" height="586" loading="lazy"><figcaption>Live TV, with the guide filled in.</figcaption></figure>
+<figure><img src="/blog/img/guides/browse-shows.webp" alt="Tuned's Shows tab with posters from the provider's series" width="270" height="586" loading="lazy"><figcaption>Series get their own tab with posters.</figcaption></figure>
+</div>
 
 ## Your login stays on your device
 

@@ -189,6 +189,7 @@ export const INDEX_PREVIEW = {
     guide: {
         limit: 3,
         prefer: [
+            "guides/set-up-iptv-on-tv.md",
             "guides/add-xtream-codes-playlist.md",
             "guides/add-m3u-playlist.md",
             "guides/add-mac-portal.md",
@@ -201,7 +202,7 @@ export const INDEX_PREVIEW = {
         limit: 3,
         prefer: ["vs/tivimate.md", "vs/iptv-smarters-pro.md", "vs/ott-navigator.md", "vs/kodi.md", "vs/iptv-pro.md", "vs/uhf.md"],
     },
-    roundup: { limit: 2, prefer: [] },
+    roundup: { limit: 4, prefer: [] },
 };
 
 /** Posts for one kind on the blog index: preferred paths first, then by date, capped. */
@@ -539,6 +540,22 @@ ${siteFooter(site)}
 `;
 }
 
+/**
+ * A post's top picture (`<figure class="cover">` first in its Markdown; docs/decisions/website.md › The blog), as
+ * `{ src, width, height, alt }`, or null. It is the picture shared links show and the post's card shows.
+ */
+export function heroOf(post) {
+    const m = /<figure class="cover"><img src="([^"]+)" alt="([^"]*)" width="(\d+)" height="(\d+)"/.exec(post.html ?? "");
+    if (!m) return null;
+    const alt = m[2]
+        .replace(/&quot;/g, '"')
+        .replace(/&#39;/g, "'")
+        .replace(/&lt;/g, "<")
+        .replace(/&gt;/g, ">")
+        .replace(/&amp;/g, "&");
+    return { src: m[1], alt, width: Number(m[3]), height: Number(m[4]) };
+}
+
 /** A card linking to a post. */
 // `level` is the card's heading level: 3 under a section's h2, 2 straight under a folder page's h1, so headings never
 // skip a level (WCAG 1.3.1, 2026-11-20 audit). `showKind` is off inside a kind section (the h2 already names it).
@@ -546,7 +563,10 @@ export const postCard = (p, level = 3, { showKind = true } = {}) => {
     const blurb = cardBlurb(p);
     const kind = showKind ? `<span class="kind">${esc(kindTitle(p.kind))}</span>` : "";
     const body = blurb ? `<p>${esc(blurb)}</p>` : p.kind === "release" ? "" : `<p>${esc(p.description)}</p>`;
-    return `<li class="post-card"><a href="${p.url}">${kind}<h${level}>${esc(p.title)}</h${level}>${body}<time datetime="${p.date}">${longDate(p.date)}</time></a></li>`;
+    // The picture repeats what the heading says, so it is hidden from screen readers (alt="").
+    const hero = heroOf(p);
+    const thumb = hero ? `<img class="thumb" src="${hero.src}" alt="" width="${hero.width}" height="${hero.height}" loading="lazy">` : "";
+    return `<li class="post-card"><a href="${p.url}">${thumb}${kind}<h${level}>${esc(p.title)}</h${level}>${body}<time datetime="${p.date}">${longDate(p.date)}</time></a></li>`;
 };
 
 /** A post's own page. */
@@ -570,7 +590,9 @@ ${ctaCard(site, "post", latestVersion)}
 ${related.length ? `<section aria-labelledby="more"><h2 id="more" class="section-title">More from the blog</h2><ul class="post-grid">${related.map((p) => postCard(p)).join("\n")}</ul></section>` : ""}
 </article>`;
     const firstImage = /<img src="([^"]+)"/.exec(post.html)?.[1];
+    const hero = heroOf(post);
     return layout(site, {
+        ...(hero ? { image: hero } : {}),
         title: postTitle(post),
         description: post.description,
         path: post.url,
