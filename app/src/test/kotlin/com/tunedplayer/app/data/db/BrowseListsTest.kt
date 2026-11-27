@@ -4,7 +4,10 @@ import android.content.Context
 import androidx.paging.PagingSource
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
+import com.tunedplayer.app.core.Episodes
 import com.tunedplayer.app.core.Search
+import com.tunedplayer.app.core.TitleSort
+import com.tunedplayer.app.data.FavouriteShows
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.junit.After
@@ -110,6 +113,39 @@ class BrowseListsTest {
     }
 
     @Test
+    fun aShowFavouritedWholeIsInTheShowsTabsFavourites() = runTest {
+        // Melvin, 2026-11-27: "I'm talking about the actual show itself", not one of its episodes.
+        val writer = PlaylistWriter(db)
+        writer.begin()
+        val rows =
+            listOf(
+                episode(1, "The Simpsons", "Cartoons"),
+                episode(2, "The Simpsons", "Cartoons"),
+                episode(3, "Bluey", "Kids"),
+                episode(4, "Severance", "Drama"),
+            )
+        rows.forEach { writer.accept(it.id) }
+        writer.add(rows)
+        writer.commit()
+        db.library().addFavourite(FavouriteEntity(FavouriteShows.id(Episodes.showKey("Bluey")), addedAt = 1))
+        // A favourite episode still brings its show, as before.
+        db.library().addFavourite(FavouriteEntity(4, addedAt = 2))
+
+        val ids = db.library().favouriteIds().first().toSet()
+        val keys = FavouriteShows.keys(db, ids)
+        assertEquals(listOf("bluey"), keys)
+        val favourites = db.sortedShows(TitleSort.Order.PROVIDER, emptyList(), false, null, true, "", "", keys).all()
+        assertEquals(listOf("Bluey" to 1, "Severance" to 1), favourites.map { it.showName to it.episodes })
+        // Without the keys, only the show with a favourite episode: the whole-show favourite needs them.
+        assertEquals(
+            listOf("Severance"),
+            db.sortedShows(TitleSort.Order.PROVIDER, emptyList(), false, null, true, "", "").all().map { it.showName },
+        )
+        // And it never shows as a channel or a film, because nothing in the playlist has its id.
+        assertEquals(emptyList<FavouriteRow>(), db.library().favouriteChannels().first())
+    }
+
+    @Test
     fun hide247LeavesOutMoviesAndShowsToo() = runTest {
         val writer = PlaylistWriter(db)
         writer.begin()
@@ -132,7 +168,7 @@ class BrowseListsTest {
         assertEquals(listOf("Action"), items.groups(1, hidden, false).first().map { it.groupName })
         assertEquals(listOf("Bluey"), shows.showsTab(hidden, false, null).all().map { it.showName })
         assertEquals(listOf("Kids"), shows.showGroupChips(hidden, false).first().map { it.groupName })
-        assertEquals(listOf("Bluey"), items.shows(hidden, false, null, false, "", "").all().map { it.showName })
+        assertEquals(listOf("Bluey"), items.shows(hidden, false, null, false, emptyList(), "", "").all().map { it.showName })
         // Off, everything is back.
         assertEquals(2, items.items(1, emptyList(), false, null, false, "", "", 0).all().size)
         assertEquals(3, shows.showsTab(emptyList(), false, null).all().size)

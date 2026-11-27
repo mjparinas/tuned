@@ -78,6 +78,12 @@ class Picks(
         onFavouritesChanged()
     }
 
+    /** A whole show as a favourite, rather than one of its episodes ([FavouriteShows]). */
+    fun setShowFavourite(
+        showKey: String,
+        on: Boolean,
+    ) = setFavourite(FavouriteShows.id(showKey), on)
+
     fun setWatchLater(
         row: WatchLaterEntity,
         on: Boolean,
