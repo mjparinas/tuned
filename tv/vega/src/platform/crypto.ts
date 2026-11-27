@@ -4,9 +4,11 @@
 import { gcm } from "@noble/ciphers/aes";
 import { p256 } from "@noble/curves/nist";
 import { hmac } from "@noble/hashes/hmac";
+import { pbkdf2Async } from "@noble/hashes/pbkdf2";
 import { sha256 } from "@noble/hashes/sha2";
 import { ungzip } from "pako";
 import type { CryptoKeyLike, CryptoLike, Gunzip, SubtleLike } from "@tuned/shared/platform";
+import type { Pbkdf2 } from "@tuned/shared/profiles";
 
 type Key = { readonly use: "public" | "private" | "hmac" | "aes"; readonly bytes: Uint8Array };
 
@@ -62,3 +64,10 @@ export function nobleCrypto(random: (n: number) => Uint8Array): CryptoLike {
 }
 
 export const gunzip: Gunzip = async (bytes) => ungzip(bytes);
+
+/**
+ * A profile's PIN check (`@tuned/shared/profiles`): PBKDF2-SHA256 as Android hashes PINs, 120,000 rounds, given back
+ * to the screen thread between rounds so "Checking" keeps moving while it runs.
+ */
+export const noblePbkdf2: Pbkdf2 = (password, salt, iterations, bits) =>
+    pbkdf2Async(sha256, password, salt, { c: iterations, dkLen: bits / 8, asyncTick: 20 });

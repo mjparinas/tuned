@@ -9,6 +9,7 @@ import type { Channel, Library, Lineup, Title } from "../src/core/models";
 import { memoryStore } from "../src/core/storage";
 import { ReminderBanner, Shell } from "../src/App";
 import { BrowseScreen } from "../src/ui/BrowseScreen";
+import { PinPad, ProfilesScreen } from "../src/ui/ProfilesScreen";
 import { EventsScreen } from "../src/ui/EventsScreen";
 import { LiveScreen } from "../src/ui/LiveScreen";
 import { LoadingScreen } from "../src/ui/LoadingScreen";
@@ -192,6 +193,16 @@ const hour = 3600_000;
 const at = (h: number, m: number) => new Date(2026, 10, 27, h, m).getTime();
 const lineup = sampleLineup();
 const account = { email: "you@example.com", premium: true, seat: "active" as const, checkedAt: Date.now() };
+
+const PROFILES = {
+    profiles: [
+        { id: "1", name: "Alex", colour: 0, kids: false, pinHash: null, avatar: null, favourites: [] },
+        { id: "2", name: "Jordan", colour: 2, kids: false, pinHash: "v1:preview:only", avatar: "owl", favourites: [] },
+        { id: "3", name: "Robin", colour: 5, kids: true, pinHash: null, avatar: "fox", favourites: [] },
+        { id: "4", name: "Sam", colour: 4, kids: false, pinHash: null, avatar: "rocket", favourites: [] },
+    ],
+    parentalPin: "v1:preview:only",
+};
 
 function Scene({ name }: { name: string }) {
     const player = React.useMemo(() => new VegaPlayer(), []);
@@ -400,6 +411,32 @@ function Scene({ name }: { name: string }) {
         case "player-failed": {
             const m = model({ route: "player", lineup, channelId: "c107" });
             return <PlayerScreen model={m} state={m.state} player={player} shown={{ playback: "failed" }} />;
+        }
+        case "profiles": {
+            const m = model({ route: "profiles", lineup, account, profiles: PROFILES, profileId: "1" });
+            return <ProfilesScreen model={m} state={m.state} showFocused={1} />;
+        }
+        case "profiles-pin":
+        case "profiles-pin-wrong": {
+            const m = model({ route: "profiles", lineup, account, profiles: PROFILES, profileId: "1" });
+            return (
+                <PinPad
+                    model={m}
+                    title={tr0.pinFor("Jordan")}
+                    hash={null}
+                    onOk={() => undefined}
+                    onCancel={() => undefined}
+                    preview={name === "profiles-pin" ? { typed: 3 } : { typed: 0, problem: tr0.pinWrong }}
+                />
+            );
+        }
+        case "live-kids": {
+            const m = model({ route: "live", lineup, account, profiles: PROFILES, profileId: "3" });
+            return <LiveScreen model={m} state={m.state} focusChannel={m.shownChannels()[0]?.id} />;
+        }
+        case "settings-profile": {
+            const m = model({ route: "settings", lineup, account, profiles: PROFILES, profileId: "1" });
+            return <SettingsScreen model={m} state={m.state} />;
         }
         case "settings": {
             const m = model({ route: "settings", lineup, account });
