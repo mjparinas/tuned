@@ -3,9 +3,9 @@
 // from Settings (`mode="account"`). Typing a login with the remote is one button away.
 import * as React from "react";
 import { Text, View } from "react-native";
+import type { SignInCode } from "@tuned/shared/account";
 import type { AppModel } from "../app/model";
-import type { RelayCode } from "../core/account";
-import { checkDigits, displayCode, link, loginFrom, newKeys, open, unb64, unpack, type Keys } from "../core/handoff";
+import { toLogin } from "../app/logins";
 import { log } from "../core/log";
 import { Brand, Button, OneLineCode, Screen, Spinner } from "./parts";
 import { Qr } from "./Qr";
@@ -28,22 +28,22 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 export function useRelay(model: AppModel, mode: "playlist" | "account", round: number): RelayView {
     const [view, setView] = React.useState<RelayView>({ kind: "loading" });
     React.useEffect(() => {
+        if (round < 0) return;
         let gone = false;
         (async () => {
             while (!gone) {
                 setView({ kind: "loading" });
-                const keys: Keys = newKeys(model.services.random);
-                const code = await model.account.code(b64Key(keys));
+                const code = await model.account.newCode();
                 if (gone) return;
                 if (!code) return setView({ kind: "offline" });
                 setView({
                     kind: "showing",
-                    code: displayCode(code.code),
-                    site: `${model.account.base.replace(/^https?:\/\//, "")}/tv`,
-                    digits: checkDigits(keys.publicKey),
-                    qr: link(model.account.base, code.code, keys.publicKey),
+                    code: code.display,
+                    site: `${model.site.replace(/^https?:\/\//, "")}/tv`,
+                    digits: code.digits,
+                    qr: code.link,
                 });
-                const result = await wait(model, code, keys, mode, () => gone, setView);
+                const result = await wait(model, code, mode, () => gone, setView);
                 if (result !== "again") return;
             }
         })().catch((error) => {
@@ -57,21 +57,14 @@ export function useRelay(model: AppModel, mode: "playlist" | "account", round: n
     return view;
 }
 
-function b64Key(keys: Keys): string {
-    let binary = "";
-    for (const b of keys.publicKey) binary += String.fromCharCode(b);
-    return globalThis.btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
-}
-
 async function wait(
     model: AppModel,
-    code: RelayCode,
-    keys: Keys,
+    code: SignInCode,
     mode: string,
     gone: () => boolean,
     setView: (v: RelayView) => void,
 ): Promise<"again" | "done"> {
-    const until = Date.now() + (code.seconds - MARGIN_S) * 1000;
+    const until = code.expiresAt - MARGIN_S * 1000;
     let misses = 0;
     while (Date.now() < until) {
         await sleep(POLL_MS);
@@ -84,11 +77,10 @@ async function wait(
                 setView({ kind: "offline" });
                 return "done";
             }
-        } else if (taken.kind === "link") {
+        } else if (taken.kind === "signed in") {
             setView({ kind: "arrived" });
-            const ok = await model.accountLinked(taken.link);
-            if (!ok) setView({ kind: "failed", text: "Couldn't sign in to the Tuned account. Try again." });
-            else if (mode === "account") model.go("settings");
+            await model.accountSignedIn(taken.state);
+            if (mode === "account") model.go("settings");
             else if (!model.state.login)
                 setView({
                     kind: "failed",
@@ -97,14 +89,11 @@ async function wait(
             return "done";
         } else {
             setView({ kind: "arrived" });
-            try {
-                const login = loginFrom(unpack(open(unb64(taken.box), code.code.replace("-", ""), keys)));
-                if (!login) throw new Error("no playlist in the box");
-                await model.useLogin(login);
-            } catch (error) {
-                log.warn("SignIn", "box", error);
-                setView({ kind: "failed", text: "What the phone sent couldn't be read. Send it again from the phone." });
-            }
+            if (taken.signedIn) await model.accountSignedIn(await model.account.state());
+            const login = toLogin(taken.playlists[0]);
+            if (login) await model.useLogin(login);
+            else if (mode === "account" && taken.signedIn) model.go("settings");
+            else setView({ kind: "failed", text: "What the phone sent had no playlist the TV can use. Send it again from the phone." });
             return "done";
         }
     }

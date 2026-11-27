@@ -154,9 +154,7 @@ describe("storage", () => {
         await s.saveLineup({ categories: [{ id: "1", name: "All" }], channels: channels.slice(0, 10), savedAt: 6 });
         expect((await s.loadLineup())?.channels).toHaveLength(10);
         expect((await store.keys()).filter((k) => k.startsWith("tuned:lineup:"))).toEqual(["tuned:lineup:0"]);
-        const id = await s.deviceId(() => new Uint8Array(16).fill(171));
-        expect(id).toBe("ab".repeat(16));
-        expect(await s.deviceId(() => new Uint8Array(16))).toBe(id);
+        await store.set("tuned:account.token", "tok");
         await s.reset();
         expect(await store.keys()).toEqual(["other"]);
     });
