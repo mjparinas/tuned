@@ -12,6 +12,7 @@ import { downloadLibrary, downloadLineup, failureText, isStale } from "../core/p
 import type { StepProgress } from "../core/progress";
 import { PREFIX, storage, type Storage, type Store } from "../core/storage";
 import { gunzip, nobleCrypto } from "../platform/crypto";
+import { t } from "../ui/strings";
 import { backupLogin } from "./logins";
 import { parseEpisodes, parseShortEpg, seriesInfoUrl, shortEpgUrl } from "../core/xtream";
 
@@ -220,7 +221,7 @@ export class AppModel {
             );
             await this.saved.saveLineup(lineup);
             if (library) await this.keepLibrary(library);
-            this.set({ lineup, refresh: { busy: false, result: { ok: true, text: "Channels are up to date." } } });
+            this.set({ lineup, refresh: { busy: false, result: { ok: true, text: t.refreshed } } });
         } catch (error) {
             log.warn("AppModel", "refresh", error);
             this.set({ refresh: { busy: false, result: { ok: false, text: failureText(error) } } });
@@ -231,7 +232,7 @@ export class AppModel {
 
     private async keepLibrary(library: Library): Promise<void> {
         await this.saved.saveLibrary(library);
-        this.set({ library, libraryLoad: { busy: false, result: { ok: true, text: "Movies and shows are up to date." } } });
+        this.set({ library, libraryLoad: { busy: false, result: { ok: true, text: t.refreshedLibrary } } });
     }
 
     private async readSavedLibrary(): Promise<void> {
@@ -418,12 +419,12 @@ export class AppModel {
         if (!next) {
             this.set({
                 account: null,
-                accountCheck: { busy: false, result: { ok: false, text: "Your Tuned account signed this TV out." } },
+                accountCheck: { busy: false, result: { ok: false, text: t.accountSignedThisOut } },
             });
         } else if (next.checkedAt === before.checkedAt) {
             this.set({
                 account: next,
-                accountCheck: { busy: false, result: { ok: false, text: "Couldn't reach your Tuned account. Premium stays as it was." } },
+                accountCheck: { busy: false, result: { ok: false, text: t.premiumUnknown } },
             });
         } else {
             this.set({ account: next, accountCheck: { busy: false, result: { ok: next.premium, text: premiumText(next) } } });
@@ -468,16 +469,16 @@ export class AppModel {
 
 /** Premium only from the Tuned account; "full" alone locks, and an outage keeps what the stick last heard. */
 export function premiumText(account: AccountState | null): string {
-    if (!account) return "Sign in to your Tuned account to use Premium on this TV.";
+    if (!account) return t.accountSignedOut;
     switch (account.seat) {
         case "active":
-            return "Premium is on for this TV.";
+            return t.premiumOn;
         case "full":
-            return "Premium is on every device this account allows. Free a seat on another device, then check again.";
+            return t.premiumFull;
         case "none":
-            return "This account doesn't have Premium yet.";
+            return t.premiumNone;
         default:
-            return account.premium ? "Premium is on for this TV." : "Checking Premium…";
+            return account.premium ? t.premiumOn : t.premiumChecking;
     }
 }
 

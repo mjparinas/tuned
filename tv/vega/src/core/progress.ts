@@ -1,5 +1,6 @@
 // Waiting is never a mystery (AGENTS.md): numbered steps, bytes of the full size or bytes so far, and about how much
 // longer once the job has moved long enough to guess. Like core/Eta.kt and ui/ProgressEta on Android.
+import { t } from "../ui/strings";
 
 export interface StepProgress {
     /** 1-based. */
@@ -21,7 +22,7 @@ export function formatBytes(bytes: number): string {
 
 /** "4.2 MB of 18 MB", or "4.2 MB so far" when the size isn't known. */
 export function bytesLine(loaded: number, total: number | null | undefined): string {
-    return total && total > 0 ? `${formatBytes(loaded)} of ${formatBytes(total)}` : `${formatBytes(loaded)} so far`;
+    return total && total > 0 ? t.bytesOf(formatBytes(loaded), formatBytes(total)) : t.bytesSoFar(formatBytes(loaded));
 }
 
 /** Guesses the time left from the rate since `startedAt`, after 3 seconds and 5% of the way, as core/Eta does. */
@@ -29,15 +30,15 @@ export function eta(loaded: number, total: number | null | undefined, startedAt:
     const elapsed = (now - startedAt) / 1000;
     if (!total || total <= 0 || loaded <= 0 || elapsed < 3 || loaded / total < 0.05 || loaded >= total) return null;
     const seconds = ((total - loaded) * elapsed) / loaded;
-    if (seconds < 50) return "less than a minute left";
+    if (seconds < 50) return t.lessThanMinuteLeft;
     const minutes = Math.round(seconds / 60);
-    if (minutes < 60) return `about ${minutes} min left`;
+    if (minutes < 60) return t.minutesLeft(minutes);
     const hours = Math.floor(minutes / 60);
-    return `about ${hours} h ${minutes % 60} min left`;
+    return t.hoursLeft(hours, minutes % 60);
 }
 
 export function stepLine(p: StepProgress): string {
-    return `Step ${p.step} of ${p.steps}: ${p.label}`;
+    return t.stepLine(p.step, p.steps, p.label);
 }
 
 export function detailLine(p: StepProgress): string | null {

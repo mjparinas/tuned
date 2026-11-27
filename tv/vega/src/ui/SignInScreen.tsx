@@ -84,7 +84,7 @@ async function wait(
             else if (!model.state.login)
                 setView({
                     kind: "failed",
-                    text: "Signed in to your Tuned account, but it has no playlist yet. Try again to send one from your phone.",
+                    text: t.noPlaylistOnAccount,
                 });
             return "done";
         } else {
@@ -93,7 +93,7 @@ async function wait(
             const login = toLogin(taken.playlists[0]);
             if (login) await model.useLogin(login);
             else if (mode === "account" && taken.signedIn) model.go("settings");
-            else setView({ kind: "failed", text: "What the phone sent had no playlist the TV can use. Send it again from the phone." });
+            else setView({ kind: "failed", text: t.nothingUsable });
             return "done";
         }
     }

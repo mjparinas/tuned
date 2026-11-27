@@ -5,7 +5,6 @@ import * as React from "react";
 import { FlatList, Image, Text, View } from "react-native";
 import type { AppModel, State } from "../app/model";
 import type { Category, Channel } from "../core/models";
-import { stepLine } from "../core/progress";
 import { Focusable, Screen, Spinner } from "./parts";
 import { TopBar } from "./TopBar";
 import { t } from "./strings";
@@ -160,7 +159,14 @@ export function LiveScreen({ model, state, focusChannel }: { model: AppModel; st
                     state.refresh.busy ? (
                         <Spinner
                             line={
-                                state.refresh.progress ? `${t.refreshing}, ${stepLine(state.refresh.progress).toLowerCase()}` : t.refreshing
+                                state.refresh.progress
+                                    ? t.refreshStep(
+                                          t.refreshing,
+                                          state.refresh.progress.step,
+                                          state.refresh.progress.steps,
+                                          state.refresh.progress.label,
+                                      )
+                                    : t.refreshing
                             }
                         />
                     ) : state.refresh.result && !state.refresh.result.ok ? (

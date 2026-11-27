@@ -17,6 +17,7 @@ import { SettingsScreen } from "../src/ui/SettingsScreen";
 import { SignInScreen } from "../src/ui/SignInScreen";
 import { TitleScreen } from "../src/ui/TitleScreen";
 import { VegaPlayer } from "../src/platform/VegaPlayer";
+import { chooseLanguage, rightToLeft } from "../src/ui/strings";
 
 const offline: Http = {
     text: () => Promise.reject(new Error("preview")),
@@ -353,7 +354,11 @@ function Scene({ name }: { name: string }) {
     }
 }
 
-const scene = new URLSearchParams(location.search).get("scene") ?? "";
+const params = new URLSearchParams(location.search);
+const scene = params.get("scene") ?? "";
+// ?lang=de-DE draws the scene in that language, as a stick set to it would (docs/decisions/languages.md).
+chooseLanguage(params.get("lang") ? [params.get("lang")] : [...navigator.languages]);
+document.documentElement.dir = rightToLeft() ? "rtl" : "ltr";
 createRoot(document.getElementById("root")!).render(
     <View style={{ width: "100vw" as unknown as number, height: "100vh" as unknown as number }}>
         <Scene name={scene} />
