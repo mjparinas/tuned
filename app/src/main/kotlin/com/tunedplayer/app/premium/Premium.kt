@@ -12,6 +12,7 @@ import com.tunedplayer.app.core.SeatDevice
 import com.tunedplayer.app.data.AccountPlan
 import com.tunedplayer.app.data.TunedAccount
 import com.tunedplayer.app.diagnostics.launchSafely
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -19,6 +20,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeoutOrNull
 import java.security.MessageDigest
 
 /** One thing a store sells: its product id, its price as the store writes it, and its free trial in days (0 for none). */
@@ -29,8 +31,14 @@ data class Offer(
     val yearly: Boolean,
 )
 
-/** The store behind the Premium unlock: Play Billing in the `play` build, nothing in the `github` build. */
+/**
+ * The store behind the Premium unlock: Play Billing in the `play` build, nothing in the `github` build, and in the
+ * `amazon` build (Fire TV) no store at all, only the Tuned account.
+ */
 interface Store {
+    /** False when nothing is sold in the app (the `amazon` build): Premium comes only from the Tuned account. */
+    val sells: Boolean get() = true
+
     /** True when this account owns Premium, false when it doesn't, null when the store couldn't be asked. */
     suspend fun owned(): Boolean?
 
@@ -91,8 +99,19 @@ class Premium(
     /** What the account last said about Premium and its seats; null when signed out or not asked yet. */
     val plan: StateFlow<AccountPlan?> = _plan.asStateFlow()
 
-    /** The signed-in account, in a build that limits devices; null otherwise. */
-    private fun account(): TunedAccount? = tunedAccount?.invoke()?.takeIf { limited && it.signedIn.value }
+    private val loaded = CompletableDeferred<Unit>()
+
+    /** Whether Premium is unlocked, once the answer remembered on the device has been read (for background work). */
+    suspend fun unlockedNow(): Boolean {
+        if (!ALWAYS) withTimeoutOrNull(LOAD_WAIT_MS) { loaded.await() }
+        return state.value
+    }
+
+    /** True when the Tuned account can unlock Premium here: a build that limits devices, or one that sells nothing. */
+    private val usesAccount: Boolean get() = limited || !store.sells
+
+    /** The signed-in account, in a build that uses it; null otherwise. */
+    private fun account(): TunedAccount? = tunedAccount?.invoke()?.takeIf { usesAccount && it.signedIn.value }
 
     init {
         if (!ALWAYS) {
@@ -102,10 +121,11 @@ class Premium(
                     seat.value = if (prefs.contains(KEY_SEAT)) prefs.getBoolean(KEY_SEAT, true) else null
                 }
                 update()
+                loaded.complete(Unit)
             }
             // Signing in to the account or out of it moves the seat there or back: ask again each time.
             val make = tunedAccount
-            if (limited && make != null) {
+            if (usesAccount && make != null) {
                 scope.launchSafely(TAG) {
                     withContext(Dispatchers.IO) { make() }.signedIn.drop(1).collect { check() }
                 }
@@ -131,7 +151,13 @@ class Premium(
         if (account == null) _plan.value = null
         if (account != null && !released()) {
             val plan = account.seat(use = true, purchases = store.purchases())
-            if (plan != null) return heardAccount(plan, answer)
+            if (plan != null) return heardAccount(plan, answer ?: if (store.sells) null else false)
+        }
+        // Nothing sold here and no account signed in: nothing can unlock Premium. Signed in but unreachable keeps
+        // what this device last heard, as offline does.
+        if (!store.sells && account == null) {
+            remember(false)
+            return false
         }
         answer ?: return null
         remember(answer)
@@ -237,6 +263,11 @@ class Premium(
         /** The `github` build: everything unlocked, nothing sold. */
         val ALWAYS: Boolean = BuildConfig.PREMIUM_ALWAYS
 
+        /** False in the `amazon` build (Fire TV): nothing is sold in the app, and the Tuned account brings Premium. */
+        val SOLD_IN_APP: Boolean = BuildConfig.STORE != STORE_AMAZON
+
+        const val STORE_AMAZON = "amazon"
+
         /** Downloads a free copy can keep on the device at once. */
         const val FREE_DOWNLOADS = 3
 
@@ -248,6 +279,7 @@ class Premium(
         private const val KEY_SEAT = "seat"
         private const val KEY_RELEASED = "seat_released"
         private const val TAG = "Premium"
+        private const val LOAD_WAIT_MS = 5_000L
 
         /** A purchase token's hash, as the account names the purchases it has recorded. */
         private fun sha256(text: String): String =

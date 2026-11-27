@@ -357,6 +357,10 @@
     <string name="premium_store_unreachable">Google Play\'e ulaşılamadı. Birazdan tekrar dene.</string>
     <string name="premium_loading">Fiyatlar Google Play\'den alınıyor…</string>
     <string name="premium_fine_print">Yıllık plan, Google Play\'de iptal edene kadar yenilenir. Bir satın alım, Google hesabındaki en fazla 3 cihazı kapsar: örneğin bir telefon, bir TV ve bir cihaz daha.</string>
+    <string name="premium_account_only">Bu TV\'de Premium, Tuned hesabınızla gelir. Zaten Premium\'unuz var mı? Aşağıdan giriş yapın, burada açılsın.</string>
+    <string name="premium_account_check">Tekrar kontrol et</string>
+    <string name="premium_account_none">Tuned hesabınızda henüz Premium yok.</string>
+    <string name="premium_account_unreachable">Tuned hesabınıza ulaşılamadı. Birazdan tekrar deneyin.</string>
     <string name="premium_summary_on">Açık</string>
     <string name="premium_summary_off">Ücretsiz plan. Premium\'un neler eklediğini gör</string>
     <string name="premium_locked">Premium</string>

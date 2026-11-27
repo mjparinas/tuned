@@ -18,6 +18,7 @@ import com.tunedplayer.app.container
 import com.tunedplayer.app.data.ServerFlags
 import com.tunedplayer.app.diagnostics.attempt
 import com.tunedplayer.app.diagnostics.logFailures
+import com.tunedplayer.app.premium.Premium
 import java.util.concurrent.TimeUnit
 
 /**
@@ -34,7 +35,10 @@ class CloudSyncWorker(
         val sync = applicationContext.container.cloudSync
         // The admin's `account_backup` switch pauses the hourly run too.
         if (!ServerFlags.now.value.accountBackup) return@logFailures Result.success()
-        val saved = sync.run()
+        // Fire TV lets anyone sign in, since that's how Premium arrives there; the backup itself stays Premium, as on
+        // Play, where signing in is (docs/decisions/tv.md#fire-tv).
+        val backs = Premium.SOLD_IN_APP || applicationContext.container.premium.unlockedNow()
+        val saved = !backs || sync.run()
         // Every signed-in app keeps its channel list in the account (Melvin, 2026-11-20), for the website's Channels and guide
         // page and for a new or reset device whose provider download fails. It doesn't wait on the backup: a backup that
         // kept failing once held the list back too, and the website showed no channels (2026-11-21).

@@ -357,6 +357,10 @@
     <string name="premium_store_unreachable">Google Play तक नहीं पहुंच सके। थोड़ी देर में फिर कोशिश करें।</string>
     <string name="premium_loading">Google Play से कीमतें पूछी जा रही हैं…</string>
     <string name="premium_fine_print">वार्षिक प्लान तब तक रिन्यू होता है जब तक आप उसे Google Play में रद्द न करें। एक खरीदारी आपके Google खाते के 3 डिवाइस तक कवर करती है, जैसे एक फ़ोन, एक टीवी और एक और।</string>
+    <string name="premium_account_only">इस टीवी पर Premium आपके Tuned खाते के साथ आता है। पहले से Premium है? नीचे साइन इन करें और यह यहाँ चालू हो जाएगा।</string>
+    <string name="premium_account_check">फिर से जाँचें</string>
+    <string name="premium_account_none">आपके Tuned खाते में अभी Premium नहीं है।</string>
+    <string name="premium_account_unreachable">आपके Tuned खाते तक नहीं पहुँच सके। थोड़ी देर में फिर से कोशिश करें।</string>
     <string name="premium_summary_on">चालू</string>
     <string name="premium_summary_off">मुफ़्त प्लान। देखें Premium क्या जोड़ता है</string>
     <string name="premium_locked">Premium</string>

@@ -1,10 +1,14 @@
 package com.tunedplayer.app.screenshots
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
@@ -16,6 +20,7 @@ import com.tunedplayer.app.data.AppReset
 import com.tunedplayer.app.data.AppSettings
 import com.tunedplayer.app.data.CaptionStyle
 import com.tunedplayer.app.data.LighterMode
+import com.tunedplayer.app.premium.AccountOnlyOffer
 import com.tunedplayer.app.premium.MoreDevicesOffer
 import com.tunedplayer.app.premium.Offer
 import com.tunedplayer.app.ui.CaptionSettingsRoute
@@ -30,6 +35,7 @@ import com.tunedplayer.app.ui.settings.AccountSignInDialog
 import com.tunedplayer.app.ui.settings.LogReport
 import com.tunedplayer.app.ui.settings.ReportDialog
 import com.tunedplayer.app.ui.settings.ReportRow
+import com.tunedplayer.app.ui.settings.SettingRow
 import com.tunedplayer.app.ui.settings.SettingsPage
 import com.tunedplayer.app.ui.settings.SignOutDialog
 import com.tunedplayer.app.ui.settings.SignOutDownloadsDialog
@@ -295,6 +301,34 @@ class SettingsScreenshots : Screenshots() {
                 Column(Modifier.padding(24.dp)) {
                     MoreDevicesOffer(Offer(AccountSeats.SEAT_ONCE, "US$4.99", 0, yearly = false), most = 7, failed = false, onBuy = {})
                     MoreDevicesOffer(Offer(AccountSeats.SEAT_YEARLY, "US$1.99", 0, yearly = true), most = 1, failed = false, onBuy = {})
+                }
+            }
+        },
+    )
+
+    /** Tuned Premium on Fire TV (docs/decisions/tv.md#fire-tv): no prices, only the Tuned account's sign-in. */
+    @Test
+    @Config(qualifiers = TV)
+    fun premiumFireTv() = shot(
+        "premium-fire-tv",
+        SettingsPageRoute(SettingsPage.ABOUT.name),
+        wait = text(R.string.premium_account_only),
+        overlay = {
+            Surface(Modifier.fillMaxSize()) {
+                Column(Modifier.padding(24.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Text(stringResource(R.string.premium_lead), style = MaterialTheme.typography.titleMedium)
+                    AccountOnlyOffer(
+                        checking = false,
+                        note = R.string.premium_account_none,
+                        account = {
+                            SettingRow(
+                                stringResource(R.string.tuned_account_sign_in),
+                                stringResource(R.string.tuned_account_sign_in_summary),
+                                onClick = {},
+                            )
+                        },
+                        onCheck = {},
+                    )
                 }
             }
         },

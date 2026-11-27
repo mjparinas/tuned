@@ -17,7 +17,7 @@ const SECTION = oneOf("live", "movies", "shows", "downloads", "events", "search"
 
 /** About the device, sent with every batch and kept on its install row. */
 export const INSTALL_FIELDS = {
-    build: oneOf("github", "play"),
+    build: oneOf("github", "play", "amazon"),
     version: text(24),
     versionCode: int(0, 2_000_000_000),
     android: text(12),

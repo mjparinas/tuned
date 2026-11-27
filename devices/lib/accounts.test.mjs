@@ -169,6 +169,9 @@ test("a device needs a hashed id; the rest has safe defaults", () => {
     });
     assert.equal(parseDevice({ device: "a".repeat(64), kind: "fridge" }).kind, "phone");
     assert.equal(parseDevice({ device: "a".repeat(64) }).build, "play");
+    // The Fire TV build (Amazon Appstore) is a store build of its own; anything unknown is still a store build.
+    assert.equal(parseDevice({ device: "a".repeat(64), build: "amazon" }).build, "amazon");
+    assert.equal(parseDevice({ device: "a".repeat(64), build: "sideways" }).build, "play");
 });
 
 test("cookies, same-site checks and backup versions", () => {
