@@ -1,5 +1,5 @@
 // An M3U playlist read in pieces as it downloads (`feed`, then `end`), since React Native's fetch can't stream a body.
-// It keeps what Live TV needs: the name, the group, the logo, the guide id and the link. Films and episodes (an
+// It keeps what Live TV needs: the name, the group, the logo, the guide id and the link. Movies and episodes (an
 // Xtream /movie/ or /series/ path, or a file extension) are left out until the stick has Movies and Shows. A port of
 // the parts of core/M3uParser.kt and core/Classifier.kt Live TV uses; replaced by @tuned/shared's parser when it lands.
 import type { Category, Channel } from "./models";
