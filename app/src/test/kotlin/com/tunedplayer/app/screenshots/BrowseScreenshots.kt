@@ -166,6 +166,20 @@ class BrowseScreenshots : Screenshots() {
 
     @Test fun shows() = shot("browse-shows", HomeRoute, wait = "Snowline", settings = DARK.copy(startTab = StartTab.SHOWS))
 
+    /** Shows › Favourites with a show favourited whole, from its page's heart or its poster's long press (2026-11-27). */
+    @Test
+    fun showsFavourites() = shot(
+        "browse-shows-favourites",
+        HomeRoute,
+        wait = "Snowline",
+        settings = DARK.copy(startTab = StartTab.SHOWS),
+        then = {
+            compose.onNode(hasText(text(R.string.filter_favourites))).performClick()
+            compose.waitUntil(15_000L) { compose.onAllNodes(hasText("Snowline")).fetchSemanticsNodes().isEmpty() }
+            compose.waitUntil(15_000L) { compose.onAllNodes(hasText("Harbour Town")).fetchSemanticsNodes().isNotEmpty() }
+        },
+    )
+
     // The TV's grid has two big posters a row beside the details pane, so only the first row (Harbour Town and The
     // Night Desk) is drawn; Snowline sits below the fold, out of the lazy grid, and waiting for it timed out.
     @Test

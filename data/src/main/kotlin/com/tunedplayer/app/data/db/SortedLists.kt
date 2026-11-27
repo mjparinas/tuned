@@ -37,14 +37,16 @@ fun TunedDatabase.sortedShows(
     favouritesOnly: Boolean,
     query: String,
     match: String,
+    /** The shows favourited whole ([com.tunedplayer.app.data.FavouriteShows]), with [favouritesOnly]. */
+    favouriteShows: List<String> = emptyList(),
 ): PagingSource<Int, ShowSummary> {
     val by = titleSorts()
     return when (order) {
-        TitleSort.Order.PROVIDER -> items().shows(hidden, adult, group, favouritesOnly, query, match)
-        TitleSort.Order.ADDED -> by.showsByAdded(hidden, adult, group, favouritesOnly, query, match)
-        TitleSort.Order.YEAR -> by.showsByYear(hidden, adult, group, favouritesOnly, query, match)
-        TitleSort.Order.RATING -> by.showsByRating(hidden, adult, group, favouritesOnly, query, match)
-        TitleSort.Order.TITLE -> by.showsByTitle(hidden, adult, group, favouritesOnly, query, match)
+        TitleSort.Order.PROVIDER -> items().shows(hidden, adult, group, favouritesOnly, favouriteShows, query, match)
+        TitleSort.Order.ADDED -> by.showsByAdded(hidden, adult, group, favouritesOnly, favouriteShows, query, match)
+        TitleSort.Order.YEAR -> by.showsByYear(hidden, adult, group, favouritesOnly, favouriteShows, query, match)
+        TitleSort.Order.RATING -> by.showsByRating(hidden, adult, group, favouritesOnly, favouriteShows, query, match)
+        TitleSort.Order.TITLE -> by.showsByTitle(hidden, adult, group, favouritesOnly, favouriteShows, query, match)
     }
 }
 

@@ -60,6 +60,10 @@ interface ShowDao {
     @Query("DELETE FROM show_groups")
     suspend fun deleteShowGroups()
 
+    /** Every show's key, to find the shows favourited whole ([com.tunedplayer.app.data.FavouriteShows]). */
+    @Query("SELECT DISTINCT showKey FROM show_groups")
+    suspend fun showKeys(): List<String>
+
     /** Opened Xtream shows' own covers ([ShowCoverEntity]). */
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun saveCovers(covers: List<ShowCoverEntity>)

@@ -81,6 +81,7 @@ interface TitleSortDao {
         adult: Boolean,
         group: String?,
         favouritesOnly: Boolean,
+        favouriteShows: List<String>,
         query: String,
         match: String,
     ): PagingSource<Int, ShowSummary>
@@ -92,6 +93,7 @@ interface TitleSortDao {
         adult: Boolean,
         group: String?,
         favouritesOnly: Boolean,
+        favouriteShows: List<String>,
         query: String,
         match: String,
     ): PagingSource<Int, ShowSummary>
@@ -106,6 +108,7 @@ interface TitleSortDao {
         adult: Boolean,
         group: String?,
         favouritesOnly: Boolean,
+        favouriteShows: List<String>,
         query: String,
         match: String,
     ): PagingSource<Int, ShowSummary>
@@ -117,6 +120,7 @@ interface TitleSortDao {
         adult: Boolean,
         group: String?,
         favouritesOnly: Boolean,
+        favouriteShows: List<String>,
         query: String,
         match: String,
     ): PagingSource<Int, ShowSummary>

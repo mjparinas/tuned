@@ -285,6 +285,19 @@ test("favourites and lists are edited per profile", () => {
     assert.deepEqual(off.copy.profiles[0].favourites, []);
 });
 
+test("a channel favourited on the website keeps the whole shows favourited in the app", () => {
+    // A favourite show is kept under its own id, StableId.show("breaking bad") (core/StableIdTest), with no channel
+    // behind it. The channels page never lists it, but adding or taking off a channel must leave it where it was.
+    const show = "-8280274774364748610";
+    const channel = "5397910112836148011";
+    const text = `{"fingerprint":"f","changedAt":1,"copy":{"version":2,"profiles":[{"id":1,"name":"You","favourites":[{"itemId":${show},"addedAt":1,"position":1}]}]}}`;
+    const on = applyChange(parseWhole(text), { op: "favourite", itemId: channel, on: true }, 5).stored;
+    assert.deepEqual(libraryView(on).profiles[0].favourites, [show, channel]);
+    const off = applyChange(on, { op: "favourite", itemId: channel, on: false }, 6).stored;
+    assert.deepEqual(libraryView(off).profiles[0].favourites, [show]);
+    assert.ok(stringifyWhole(off).includes(`"itemId":${show},"addedAt":1,"position":1`));
+});
+
 test("a website edit keeps every 64-bit id in the backup whole", () => {
     // Real ids from a device: StableId hashes past 2^53, negative and positive, and an own list's random Long.
     const fav = "-7046029254386353131";

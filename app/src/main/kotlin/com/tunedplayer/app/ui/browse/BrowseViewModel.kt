@@ -18,6 +18,7 @@ import com.tunedplayer.app.core.Regions
 import com.tunedplayer.app.core.Search
 import com.tunedplayer.app.core.TitleSort
 import com.tunedplayer.app.data.AppSettings
+import com.tunedplayer.app.data.FavouriteShows
 import com.tunedplayer.app.data.SyncProgress
 import com.tunedplayer.app.data.TitleRatings
 import com.tunedplayer.app.data.db.ChannelNumbers
@@ -404,9 +405,25 @@ class BrowseViewModel(
                 }.flow
             }.cachedIn(viewModelScope)
 
+    /**
+     * The shows favourited whole ([FavouriteShows]), while the Shows tab shows Favourites; empty otherwise, so browsing
+     * never waits on it and a heart tapped elsewhere doesn't start the list over.
+     */
+    private val favouriteShows: Flow<List<String>> =
+        combine(
+            filter(ContentKind.SERIES).map { it == Filter.Favourites }.distinctUntilChanged(),
+            container.picks.favourites.value,
+        ) { on, ids -> if (on) ids else emptySet() }
+            .distinctUntilChanged()
+            .mapLatest { ids ->
+                attempt("BrowseViewModel", "Favourite shows failed") {
+                    FavouriteShows.keys(container.db, ids)
+                }.getOrDefault(emptyList())
+            }.distinctUntilChanged()
+
     val shows: Flow<PagingData<ShowSummary>> =
-        combine(query(ContentKind.SERIES), sort(ContentKind.SERIES)) { q, order -> q to order }
-            .flatMapLatest { (q, order) ->
+        combine(query(ContentKind.SERIES), sort(ContentKind.SERIES), favouriteShows) { q, order, favs -> Triple(q, order, favs) }
+            .flatMapLatest { (q, order, favs) ->
                 Pager(config) {
                     val group = (q.filter as? Filter.Group)?.name
                     // Browsing reads the per-show table; a search or Favourites narrows the episodes themselves.
@@ -421,6 +438,7 @@ class BrowseViewModel(
                             q.filter == Filter.Favourites,
                             q.search,
                             Search.match(q.search),
+                            favs,
                         )
                     }
                 }.flow
@@ -562,6 +580,14 @@ class BrowseViewModel(
         favourite: Boolean,
     ) {
         container.picks.setFavourite(itemId, !favourite)
+    }
+
+    /** A whole show's heart, on its poster's long press ([FavouriteShows]). */
+    fun toggleShowFavourite(
+        showKey: String,
+        favourite: Boolean,
+    ) {
+        container.picks.setShowFavourite(showKey, !favourite)
     }
 
     private val listFlows = mutableMapOf<ContentKind, StateFlow<List<ListEntity>>>()

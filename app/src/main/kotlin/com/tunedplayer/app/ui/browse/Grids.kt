@@ -56,6 +56,7 @@ import com.tunedplayer.app.core.ContentKind
 import com.tunedplayer.app.core.FastScroll
 import com.tunedplayer.app.core.ScreenLayout
 import com.tunedplayer.app.core.Titles
+import com.tunedplayer.app.data.FavouriteShows
 import com.tunedplayer.app.data.db.ContinueRow
 import com.tunedplayer.app.data.db.ItemEntity
 import com.tunedplayer.app.data.db.ShowSummary
@@ -167,6 +168,7 @@ internal fun ShowGrid(
     onFocusShow: ((ShowSummary) -> Unit)? = null,
 ) {
     val shows = vm.shows.collectAsLazyPagingItems()
+    val favourites by vm.favouriteIds.collectAsStateWithLifecycle()
     val library: LibraryViewModel = viewModel()
     val later by library.laterKeys.collectAsStateWithLifecycle()
     val ratings by vm.ratingProgress.collectAsStateWithLifecycle()
@@ -193,6 +195,8 @@ internal fun ShowGrid(
                 } else {
                     // The show's own cover, TMDB's poster first, rather than an episode's still.
                     val art = rememberShowArt(show.showName, show.logo)
+                    // The show itself as a favourite, not one of its episodes (Melvin, 2026-11-27).
+                    val favourite = FavouriteShows.id(show.showKey) in favourites
                     Poster(
                         modifier =
                             Modifier.tvFocusItem(focus, show.showKey, first = index == 0).then(
@@ -216,7 +220,9 @@ internal fun ShowGrid(
                             } else {
                                 pluralEpisodes(show.episodes)
                             },
+                        favourite = favourite,
                         onClick = { onOpenShow(show.showKey, show.showName) },
+                        onToggleFavourite = { vm.toggleShowFavourite(show.showKey, favourite) },
                         extraMenu =
                             listOf(
                                 stringResource(

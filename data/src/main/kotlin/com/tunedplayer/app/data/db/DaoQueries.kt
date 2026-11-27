@@ -204,7 +204,11 @@ internal const val SHOW_SUMMARY = """
         FROM items i
 """
 
-/** [TITLE_FILTER] for [SHOW_SUMMARY]: the shows with an episode left in, one row each. Each sort adds its ORDER BY. */
+/**
+ * [TITLE_FILTER] for [SHOW_SUMMARY]: the shows with an episode left in, one row each. Each sort adds its ORDER BY.
+ * Favourites are the shows favourited whole (`:favouriteShows`, their keys from [com.tunedplayer.app.data.FavouriteShows])
+ * and the shows with a favourite episode.
+ */
 internal const val SHOW_FILTER = """
         WHERE i.kind = 2 AND i.showKey IS NOT NULL
             AND COALESCE(i.region, 'none') NOT IN (:hidden) AND ('g:' || i.kind || ':' || i.groupName) NOT IN (:hidden)
@@ -218,7 +222,8 @@ internal const val SHOW_FILTER = """
             AND (:adult OR i.adult = 0)
             $KIDS_ONLY_I
             AND (:group IS NULL OR i.groupName = :group)
-            AND (:favouritesOnly = 0 OR i.id IN (SELECT itemId FROM favourites WHERE profileId = $ME))
+            AND (:favouritesOnly = 0 OR i.id IN (SELECT itemId FROM favourites WHERE profileId = $ME)
+                OR i.showKey IN (:favouriteShows))
             AND (:query = '' OR i.id IN (SELECT docid FROM items_fts WHERE items_fts MATCH :match))
         GROUP BY showKey
 """
