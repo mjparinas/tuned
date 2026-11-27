@@ -102,6 +102,23 @@ export const tr: Strings = {
         return h && m ? `${h} sa ${m} dk` : h ? `${h} sa` : `${m} dk`;
     },
     tmdbNotice: "Bu ürün TMDB API'sini kullanır ancak TMDB tarafından onaylanmamış veya sertifikalandırılmamıştır.",
+    continueWatching: "İzlemeye devam et",
+    sortButton: (order: string) => `Sırala: ${order}`,
+    sortNames: {
+        provider: "Oynatma listesi sırası",
+        added: "Son eklenenler",
+        year: "En yeni",
+        rating: "En yüksek puanlı",
+        title: "A'dan Z'ye",
+    },
+    contentTitle: "İçerik",
+    hideAdult: "Yetişkin kategorilerini gizle",
+    hideAdultHint: "Canlı TV, Filmler, Diziler ve aramadan yetişkin kategorilerini ve yayınlarını çıkarır.",
+    hide247: "7/24 kanalları gizle",
+    hide247Hint:
+        'Bütün gün tek bir diziyi döndüren "24/7 Friends" gibi kanalları ve Filmler, Diziler ile aramada 24/7 etiketli her şeyi çıkarır.',
+    on: "Açık",
+    off: "Kapalı",
     movieDidntStart: "Bu başlamadı. Sunucu meşgul olabilir ya da dosya eksik olabilir.",
     noPlaylistOnAccount: "Tuned hesabına giriş yapıldı ama hesapta henüz liste yok. Telefonundan bir liste göndermek için tekrar dene.",
     nothingUsable: "Telefonun gönderdiği şeyde TV'nin kullanabileceği bir liste yoktu. Telefondan tekrar gönder.",

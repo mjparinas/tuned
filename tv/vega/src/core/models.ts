@@ -45,6 +45,8 @@ export interface Title {
     year: number | null;
     /** Out of 10, as the provider gives it; null when it gives none. */
     rating: number | null;
+    /** When the provider added it, in ms, for Recently added; missing when it doesn't say. */
+    added?: number;
     plot?: string;
     /** A movie's link. */
     url?: string;
@@ -77,6 +79,8 @@ export interface Playable {
     /** The movie's or episode's id, for where it was left. */
     id: string;
     title: string;
+    /** The movie, or the show the episode is in, for Continue Watching. */
+    titleId?: string;
     /** "Season 1, episode 2" under a show's name. */
     subtitle?: string;
     url: string;

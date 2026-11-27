@@ -105,6 +105,23 @@ export const de: Strings = {
         return h && m ? `${h} Std. ${m} Min.` : h ? `${h} Std.` : `${m} Min.`;
     },
     tmdbNotice: "Dieses Produkt nutzt die TMDB-API, wird aber nicht von TMDB unterstützt oder zertifiziert.",
+    continueWatching: "Weiterschauen",
+    sortButton: (order: string) => `Sortieren: ${order}`,
+    sortNames: {
+        provider: "Playlist-Reihenfolge",
+        added: "Zuletzt hinzugefügt",
+        year: "Neueste",
+        rating: "Bestbewertet",
+        title: "A bis Z",
+    },
+    contentTitle: "Inhalte",
+    hideAdult: "Erwachseneninhalte ausblenden",
+    hideAdultHint: "Lässt Kategorien und Streams für Erwachsene in Live-TV, Filme, Serien und der Suche weg.",
+    hide247: "24/7-Sender ausblenden",
+    hide247Hint:
+        'Lässt Sender weg, die den ganzen Tag eine Serie wiederholen, etwa "24/7 Friends", und alles, was in Filme, Serien und der Suche mit 24/7 markiert ist.',
+    on: "An",
+    off: "Aus",
     movieDidntStart: "Das ist nicht gestartet. Der Server ist vielleicht ausgelastet, oder die Datei fehlt.",
     noPlaylistOnAccount:
         "Bei deinem Tuned-Konto angemeldet, aber es hat noch keine Playlist. Versuche es erneut, um eine vom Handy zu senden.",

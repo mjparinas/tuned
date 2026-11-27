@@ -4,12 +4,15 @@
 // in the background, so they never hold up the channels.
 import { ACCOUNT_BASE, TunedAccount, type AccountState as SharedAccount } from "@tuned/shared/account";
 import { Favourites, favouritesKey } from "@tuned/shared/favourites";
+import { visible, type Hiding } from "@tuned/shared/filters";
 import type { Fetch, KeyValueStore } from "@tuned/shared/platform";
+import { progressKey, WatchProgress, type Watched } from "@tuned/shared/progress";
+import { isSortOrder, nextSort, sortItems, type SortOrder } from "@tuned/shared/sort";
 import { search as searchItems } from "@tuned/shared/search";
 import { Tmdb, type Details, type EpisodeInfo } from "@tuned/shared/tmdb";
 import type { Http } from "../core/http";
 import { addSecret, clearSecrets, launchSafely, log } from "../core/log";
-import type { Channel, Episode, Library, Lineup, Login, Playable, Programme, Title } from "../core/models";
+import type { Category, Channel, Episode, Library, Lineup, Login, Playable, Programme, Title } from "../core/models";
 import { OneStream, type StreamPlayer } from "../core/oneStream";
 import { downloadLibrary, downloadLineup, failureText, isStale } from "../core/playlist";
 import type { StepProgress } from "../core/progress";
@@ -44,6 +47,18 @@ export type Route =
 
 /** The category that holds what the person starred, first after All in Live TV, Movies and Shows. */
 export const FAVOURITES = "__favourites";
+
+/** The category of movies and shows started and not finished, first in Movies and Shows when there are any. */
+export const CONTINUE = "__continue";
+
+/** Settings › Content, and each tab's sort, kept on the stick. */
+export interface Prefs extends Hiding {
+    sortMovies: SortOrder;
+    sortShows: SortOrder;
+}
+
+export const DEFAULT_PREFS: Prefs = { hideAdult: true, hide247: false, sortMovies: "provider", sortShows: "provider" };
+const PREFS_KEY = "settings";
 
 /** One search result: a channel, a movie or a show. */
 export type Found = { kind: "live"; channel: Channel } | { kind: "movie" | "show"; title: Title };
@@ -83,6 +98,9 @@ export interface State {
     vod: Playable | null;
     /** Where each movie and episode was left, in seconds. */
     positions: Record<string, number>;
+    /** The newest unfinished movie or episode per title, newest first (Continue Watching). */
+    watching: readonly Watched[];
+    prefs: Prefs;
     /** The ids starred, channels, movies and shows alike. */
     favourites: ReadonlySet<string>;
     /** What a star just did, said for a few seconds ("Added to Favourites"). */
@@ -133,6 +151,8 @@ export class AppModel {
         episodesLoad: { id: null, busy: false, failed: false },
         vod: null,
         positions: {},
+        watching: [],
+        prefs: DEFAULT_PREFS,
         favourites: new Set(),
         notice: null,
         details: {},
@@ -143,6 +163,8 @@ export class AppModel {
     readonly saved: Storage;
     readonly favourites: Favourites;
     readonly tmdb: Tmdb;
+    readonly progress: WatchProgress;
+    private readonly shared: KeyValueStore;
     private noticeTimer: ReturnType<typeof setTimeout> | null = null;
     /** Where Back from a movie's or show's page goes: the grid it was picked from, or Search. */
     private titleFrom: Route = "movies";
@@ -169,6 +191,14 @@ export class AppModel {
         this.favourites = new Favourites(shared, favouritesKey("current"));
         this.favourites.onChange((favourites) => this.set({ favourites }));
         this.tmdb = new Tmdb(services.fetch, shared, services.tmdbKey ?? "", Date.now, services.language ?? "en-CA");
+        this.shared = shared;
+        this.progress = new WatchProgress(shared, progressKey("current"));
+        this.progress.onChange((list) =>
+            this.set({
+                positions: Object.fromEntries(list.map((w) => [w.id, w.at])),
+                watching: this.progress.continueWatching(),
+            }),
+        );
     }
 
     subscribe = (listener: () => void) => {
@@ -202,7 +232,7 @@ export class AppModel {
             this.saved.loadLastChannel().catch(() => null),
         ]);
         rememberSecrets(login);
-        await this.favourites.load().catch(() => undefined);
+        await Promise.all([this.favourites.load().catch(() => undefined), this.loadPrefs(), this.readProgress()]);
         if (!login) return this.set({ route: "signin", account });
         if (!lineup) {
             this.set({ login, account, route: "loading" });
@@ -221,6 +251,7 @@ export class AppModel {
     /** A login from the phone or the form: saved, then the first download. */
     async useLogin(login: Login): Promise<void> {
         rememberSecrets(login);
+        await this.readProgress();
         await this.saved.saveLogin(login);
         this.set({ login, lineup: null, library: null, episodes: {}, route: "loading" });
         await this.firstDownload();
@@ -279,11 +310,130 @@ export class AppModel {
     private async readSavedLibrary(): Promise<void> {
         if (this.libraryRead) return;
         this.libraryRead = true;
-        const [library, positions] = await Promise.all([
-            this.saved.loadLibrary().catch(() => null),
-            this.saved.loadPositions().catch(() => ({})),
-        ]);
-        this.set({ library: this.state.library ?? library, positions });
+        const library = await this.saved.loadLibrary().catch(() => null);
+        this.set({ library: this.state.library ?? library });
+    }
+
+    private progressRead: Promise<void> | null = null;
+
+    /** Where movies and episodes were left, read once (small, so it comes with the first screen). */
+    private readProgress(): Promise<void> {
+        this.progressRead ??= (async () => {
+            const old = await this.saved.loadPositions().catch(() => ({}));
+            await this.progress.load();
+            // Positions kept before Continue Watching knew each one's title: a movie's id is its own title.
+            await this.progress.adopt(old, (id) => (id.startsWith("m") ? id : null)).catch((e) => log.warn("AppModel", "adopt", e));
+        })();
+        return this.progressRead;
+    }
+
+    private async loadPrefs(): Promise<void> {
+        try {
+            const raw = await this.shared.get(PREFS_KEY);
+            const saved = raw ? (JSON.parse(raw) as Partial<Prefs>) : {};
+            this.set({
+                prefs: {
+                    hideAdult: typeof saved.hideAdult === "boolean" ? saved.hideAdult : DEFAULT_PREFS.hideAdult,
+                    hide247: typeof saved.hide247 === "boolean" ? saved.hide247 : DEFAULT_PREFS.hide247,
+                    sortMovies: isSortOrder(saved.sortMovies) ? saved.sortMovies : DEFAULT_PREFS.sortMovies,
+                    sortShows: isSortOrder(saved.sortShows) ? saved.sortShows : DEFAULT_PREFS.sortShows,
+                },
+            });
+        } catch (error) {
+            log.warn("AppModel", "settings", error);
+        }
+    }
+
+    /** Settings › Content and the tabs' Sort: on screen at once, then kept. */
+    async setPrefs(patch: Partial<Prefs>): Promise<void> {
+        const prefs = { ...this.state.prefs, ...patch };
+        const category = (kind: "movies" | "shows") => (kind === "movies" ? this.state.movieCategory : this.state.showCategory);
+        this.set({ prefs });
+        // A category that just got hidden can't stay picked.
+        if (this.state.category && !this.shownCategories("live").some((c) => c.id === this.state.category)) this.set({ category: null });
+        for (const kind of ["movies", "shows"] as const) {
+            const id = category(kind);
+            if (id && id !== FAVOURITES && id !== CONTINUE && !this.shownCategories(kind).some((c) => c.id === id)) {
+                this.pickBrowseCategory(kind, null);
+            }
+        }
+        await this.shared.set(PREFS_KEY, JSON.stringify(prefs)).catch((e) => log.warn("AppModel", "save settings", e));
+    }
+
+    /** The tab's Sort button: the next order (Playlist order, Recently added, Newest, Top rated, A to Z). */
+    async nextSort(kind: "movies" | "shows"): Promise<void> {
+        const key = kind === "movies" ? "sortMovies" : "sortShows";
+        await this.setPrefs({ [key]: nextSort(this.state.prefs[key]) });
+    }
+
+    /** A tab's categories without the hidden ones (adult, 24/7). */
+    shownCategories(kind: "live" | "movies" | "shows"): Category[] {
+        const list =
+            kind === "live"
+                ? (this.state.lineup?.categories ?? [])
+                : kind === "movies"
+                  ? (this.state.library?.movieCategories ?? [])
+                  : (this.state.library?.showCategories ?? []);
+        return visible(
+            list,
+            this.state.prefs,
+            (c) => c.name,
+            () => "",
+        );
+    }
+
+    /** Channels, movies or shows without the hidden ones, by their category's name or their own. */
+    private shown<T extends { name: string; categoryId: string }>(items: readonly T[], categories: readonly Category[]): T[] {
+        const names = new Map(categories.map((c) => [c.id, c.name]));
+        return visible(
+            items,
+            this.state.prefs,
+            (x) => x.name,
+            (x) => names.get(x.categoryId) ?? "",
+        );
+    }
+
+    /** Every channel that isn't hidden. */
+    shownChannels(): Channel[] {
+        const lineup = this.state.lineup;
+        return lineup ? this.shownMemo("live", lineup.channels, lineup.categories) : [];
+    }
+
+    /** Every movie or show that isn't hidden, in the playlist's order. */
+    shownTitles(kind: "movies" | "shows"): Title[] {
+        const library = this.state.library;
+        if (!library) return [];
+        return kind === "movies"
+            ? this.shownMemo("movies", library.movies, library.movieCategories)
+            : this.shownMemo("shows", library.shows, library.showCategories);
+    }
+
+    private memo = new Map<string, { items: readonly unknown[]; prefs: Prefs; out: unknown[] }>();
+
+    /** Filtering a big list once per change of list or setting, not on every screen draw. */
+    private shownMemo<T extends { name: string; categoryId: string }>(
+        key: string,
+        items: readonly T[],
+        categories: readonly Category[],
+    ): T[] {
+        const hit = this.memo.get(key);
+        if (
+            hit &&
+            hit.items === items &&
+            hit.prefs.hideAdult === this.state.prefs.hideAdult &&
+            hit.prefs.hide247 === this.state.prefs.hide247
+        ) {
+            return hit.out as T[];
+        }
+        const out = this.shown(items, categories);
+        this.memo.set(key, { items, prefs: this.state.prefs, out });
+        return out;
+    }
+
+    /** Continue Watching for a tab: its titles, newest watched first. */
+    continueTitles(kind: "movies" | "shows"): Title[] {
+        const byId = new Map(this.shownTitles(kind).map((x) => [x.id, x]));
+        return this.state.watching.flatMap((w) => byId.get(w.titleId) ?? []);
     }
 
     /**
@@ -317,13 +467,20 @@ export class AppModel {
         this.set(kind === "movies" ? { movieCategory: id } : { showCategory: id });
     }
 
+    /** What a tab's grid shows: the picked category, sorted as the tab's Sort says (Continue Watching stays newest first). */
     visibleTitles(kind: "movies" | "shows"): Title[] {
-        const library = this.state.library;
-        if (!library) return [];
-        const all = kind === "movies" ? library.movies : library.shows;
         const category = kind === "movies" ? this.state.movieCategory : this.state.showCategory;
-        if (category === FAVOURITES) return all.filter((t) => this.state.favourites.has(t.id));
-        return category ? all.filter((t) => t.categoryId === category) : all;
+        if (category === CONTINUE) return this.continueTitles(kind);
+        const all = this.shownTitles(kind);
+        const picked =
+            category === FAVOURITES
+                ? all.filter((t) => this.state.favourites.has(t.id))
+                : category
+                  ? all.filter((t) => t.categoryId === category)
+                  : all;
+        const order = kind === "movies" ? this.state.prefs.sortMovies : this.state.prefs.sortShows;
+        // Top rated uses the rating the poster shows: TMDB's once read, else the provider's.
+        return sortItems(picked, order, (t) => this.state.details[t.id]?.rating);
     }
 
     /** Stars or unstars a channel, movie or show, and says which for a few seconds. */
@@ -353,9 +510,10 @@ export class AppModel {
     results(): Found[] {
         const q = this.state.query;
         if (!q.trim()) return [];
-        const channels = searchItems(this.state.lineup?.channels ?? [], q, (c) => c.name, 200);
-        const movies = searchItems(this.state.library?.movies ?? [], q, (t) => t.name, 200);
-        const shows = searchItems(this.state.library?.shows ?? [], q, (t) => t.name, 200);
+        // Hidden channels, movies and shows stay out of search too, as on Android.
+        const channels = searchItems(this.shownChannels(), q, (c) => c.name, 200);
+        const movies = searchItems(this.shownTitles("movies"), q, (t) => t.name, 200);
+        const shows = searchItems(this.shownTitles("shows"), q, (t) => t.name, 200);
         return [
             ...channels.map((channel) => ({ kind: "live" as const, channel })),
             ...movies.map((title) => ({ kind: "movie" as const, title })),
@@ -457,9 +615,8 @@ export class AppModel {
         const vod = this.state.vod;
         const where = this.services.player.position?.();
         if (!vod || !where || where.at < 5) return;
-        const done = where.length > 0 && where.at > where.length * 0.95;
-        const positions = await this.saved.savePosition(vod.id, done ? 0 : where.at);
-        this.set({ positions });
+        // Near its end it counts as watched, leaves Continue Watching and starts over next time.
+        await this.progress.save(vod.id, vod.titleId ?? this.state.title?.id ?? vod.id, where.at, where.length);
     }
 
     pickCategory(id: string | null): void {
@@ -467,10 +624,10 @@ export class AppModel {
     }
 
     visibleChannels(): Channel[] {
-        const { lineup, category } = this.state;
-        if (!lineup) return [];
-        if (category === FAVOURITES) return lineup.channels.filter((c) => this.state.favourites.has(c.id));
-        return category ? lineup.channels.filter((c) => c.categoryId === category) : lineup.channels;
+        const { category } = this.state;
+        const all = this.shownChannels();
+        if (category === FAVOURITES) return all.filter((c) => this.state.favourites.has(c.id));
+        return category ? all.filter((c) => c.categoryId === category) : all;
     }
 
     /** Plays a channel: the old stream closes before this one opens. */
@@ -597,13 +754,16 @@ export class AppModel {
             episodesLoad: { id: null, busy: false, failed: false },
             vod: null,
             positions: {},
+            watching: [],
+            prefs: DEFAULT_PREFS,
             favourites: new Set(),
             details: {},
             detailsLoad: { id: null, busy: false, failed: false },
             seasons: {},
             query: "",
         });
-        await this.favourites.load().catch(() => undefined);
+        this.progressRead = null;
+        await Promise.all([this.favourites.load().catch(() => undefined), this.readProgress(), this.loadPrefs()]);
         this.libraryRead = false;
     }
 }

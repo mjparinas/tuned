@@ -49,6 +49,12 @@ export function ratingOf(value: unknown): number | null {
     return Number.isFinite(n) && n > 0 && n <= 10 ? Math.round(n * 10) / 10 : null;
 }
 
+/** A provider's "added" or "last_modified", in Unix seconds, as ms; undefined when it gives none. */
+export function addedOf(value: unknown): number | undefined {
+    const n = Number(value);
+    return Number.isFinite(n) && n > 0 ? n * 1000 : undefined;
+}
+
 const text = (value: unknown): string => (typeof value === "string" || typeof value === "number" ? String(value).trim() : "");
 
 /** Movies from `get_vod_streams`, in the server's order. */
@@ -67,11 +73,17 @@ export function parseMovies(json: unknown, login: XtreamLogin): Title[] {
             poster: picture(s.stream_icon),
             year: yearOf(s.year, s.releaseDate, s.release_date, name),
             rating: ratingOf(s.rating),
+            ...withAdded(s.added),
             url: vodUrl(login, "movie", id, s.container_extension),
         });
     }
     return out;
 }
+
+const withAdded = (value: unknown) => {
+    const added = addedOf(value);
+    return added ? { added } : {};
+};
 
 /** Shows from `get_series`; their episodes are read when one is opened. */
 export function parseShows(json: unknown): Title[] {
@@ -90,6 +102,7 @@ export function parseShows(json: unknown): Title[] {
             poster: picture(s.cover),
             year: yearOf(s.year, s.releaseDate, s.release_date, name),
             rating: ratingOf(s.rating),
+            ...withAdded(s.last_modified),
             ...(plot ? { plot } : {}),
             seriesId: id,
         });
