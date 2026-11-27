@@ -389,6 +389,10 @@
     <string name="premium_store_unreachable">Nie udało się połączyć z Google Play. Spróbuj za chwilę.</string>
     <string name="premium_loading">Pobieramy ceny z Google Play…</string>
     <string name="premium_fine_print">Plan roczny odnawia się, dopóki nie anulujesz go w Google Play. Jeden zakup obejmuje do 3 urządzeń na Twoim koncie Google, np. telefon, telewizor i jeszcze jedno.</string>
+    <string name="premium_account_only">Premium na tym telewizorze jest powiązane z kontem Tuned. Masz już Premium? Zaloguj się poniżej, a włączy się tutaj.</string>
+    <string name="premium_account_check">Sprawdź ponownie</string>
+    <string name="premium_account_none">Twoje konto Tuned nie ma jeszcze Premium.</string>
+    <string name="premium_account_unreachable">Nie udało się połączyć z kontem Tuned. Spróbuj ponownie za chwilę.</string>
     <string name="premium_summary_on">Wł.</string>
     <string name="premium_summary_off">Plan darmowy. Zobacz, co daje Premium</string>
     <string name="premium_locked">Premium</string>

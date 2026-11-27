@@ -55,7 +55,10 @@ object RemoteKeys {
     ): Action = when (keyCode) {
         CHANNEL_UP, PAGE_UP -> if (live) Action.NEXT_CHANNEL else Action.NONE
         CHANNEL_DOWN, PAGE_DOWN -> if (live) Action.PREVIOUS_CHANNEL else Action.NONE
-        GUIDE, MENU -> if (live) Action.GUIDE else Action.NONE
+        GUIDE -> if (live) Action.GUIDE else Action.NONE
+        // A Fire TV remote's only spare button is the menu (three lines): the mini guide on live TV, as the guide
+        // button does, and the controls in films and episodes, where there is no guide (docs/decisions/tv.md#fire-tv).
+        MENU -> if (live) Action.GUIDE else Action.INFO
         INFO -> Action.INFO
         LAST_CHANNEL -> if (live) Action.LAST_CHANNEL else Action.NONE
         else -> if (controlsShown) Action.NONE else arrow(keyCode, live)

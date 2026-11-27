@@ -376,6 +376,10 @@
     <string name="premium_store_unreachable">Couldn\'t reach Google Play. Try again in a moment.</string>
     <string name="premium_loading">Asking Google Play for prices…</string>
     <string name="premium_fine_print">The yearly plan renews until you cancel it in Google Play. One purchase covers up to 3 devices on your Google account, like a phone, a TV and one more.</string>
+    <string name="premium_account_only">Premium on this TV comes with your Tuned account. Already have Premium? Sign in below and it turns on here.</string>
+    <string name="premium_account_check">Check again</string>
+    <string name="premium_account_none">Your Tuned account doesn\'t have Premium yet.</string>
+    <string name="premium_account_unreachable">Couldn\'t reach your Tuned account. Try again in a moment.</string>
     <string name="premium_summary_on">On</string>
     <string name="premium_summary_off">Free plan. See what Premium adds</string>
     <string name="premium_locked">Premium</string>

@@ -389,6 +389,10 @@
     <string name="premium_store_unreachable">Не удалось связаться с Google Play. Попробуйте чуть позже.</string>
     <string name="premium_loading">Запрашиваем цены в Google Play…</string>
     <string name="premium_fine_print">Годовой план продлевается, пока вы не отмените его в Google Play. Одна покупка действует на 3 устройствах вашего аккаунта Google, например на телефоне, ТВ и ещё одном.</string>
+    <string name="premium_account_only">Premium на этом телевизоре привязан к вашему аккаунту Tuned. Уже есть Premium? Войдите ниже, и он включится здесь.</string>
+    <string name="premium_account_check">Проверить снова</string>
+    <string name="premium_account_none">В вашем аккаунте Tuned пока нет Premium.</string>
+    <string name="premium_account_unreachable">Не удалось связаться с аккаунтом Tuned. Попробуйте ещё раз чуть позже.</string>
     <string name="premium_summary_on">Вкл.</string>
     <string name="premium_summary_off">Бесплатный план. Узнайте, что даёт Premium</string>
     <string name="premium_locked">Premium</string>

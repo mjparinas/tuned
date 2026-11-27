@@ -235,12 +235,12 @@ jobs:
       - uses: ./.github/actions/ffmpeg-decoder
         with:
           required: "false"
-      # Unsigned release builds of both the GitHub and the store build, so R8 fails here on a missing keep rule, not in
+      # Unsigned release builds of the GitHub, Play and Fire TV builds, so R8 fails here on a missing keep rule, not in
       # Release. No debug APK: Melvin
       # (2026-11-18) installs only production releases, and lint and the unit tests already compile the debug variant.
       # Without the release lint pass (lintVital), which repeats Android Lint in Checks and took about 2 minutes of the
       # build's CPU (Melvin, 2026-11-19). Release builds in release.yml still run it.
-      - run: ./gradlew :app:assembleRelease -x lintVitalGithubRelease -x lintVitalPlayRelease
+      - run: ./gradlew :app:assembleRelease -x lintVitalGithubRelease -x lintVitalPlayRelease -x lintVitalAmazonRelease
         env:
           # The commit shown at the bottom of Settings: a pull request's own head, not the merge commit GitHub builds.
           GIT_COMMIT: ${{ github.event.pull_request.head.sha || github.sha }}
@@ -275,7 +275,7 @@ jobs:
       - uses: ./.github/actions/ffmpeg-decoder
         with:
           required: "false"
-      - run: ./gradlew :app:assembleRelease -x lintVitalGithubRelease -x lintVitalPlayRelease
+      - run: ./gradlew :app:assembleRelease -x lintVitalGithubRelease -x lintVitalPlayRelease -x lintVitalAmazonRelease
 
   # The github debug app on an emulator against a fake provider: sign in, play, change channel, go back, and never two
   # stream connections at once (smoketest/, docs/decisions/diagnostics.md).

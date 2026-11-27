@@ -115,7 +115,7 @@ object DeviceDetails {
     private fun app(context: Context) = section("Tuned") {
         add("Version") { "${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})" }
         add("Build") { BuildConfig.GIT_COMMIT.ifEmpty { "local" } }
-        add("From") { if (BuildConfig.GITHUB_UPDATES) "GitHub" else "store" }
+        add("From") { BuildConfig.STORE }
         add("Debug") { BuildConfig.DEBUG }
         add("Installed by") { installer(context) ?: "unknown (side-loaded)" }
         add("First installed") { date(packageInfo(context).firstInstallTime) }

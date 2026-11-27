@@ -22,12 +22,13 @@ android {
 
     targetProjectPath = ":app"
 
-    // The app's two stores (docs/decisions/premium.md). Only the github build is driven; the profile is merged into
-    // main, so the play build ships it too.
+    // The app's three builds (docs/decisions/premium.md). Only the github build is driven; the profile is merged into
+    // main, so the play and amazon builds ship it too.
     flavorDimensions += "store"
     productFlavors {
         create("github") { dimension = "store" }
         create("play") { dimension = "store" }
+        create("amazon") { dimension = "store" }
     }
 
     compileOptions {
@@ -46,7 +47,7 @@ android {
 }
 
 androidComponents {
-    beforeVariants { if (it.productFlavors.contains("store" to "play")) it.enable = false }
+    beforeVariants { if (!it.productFlavors.contains("store" to "github")) it.enable = false }
 }
 
 kotlin {

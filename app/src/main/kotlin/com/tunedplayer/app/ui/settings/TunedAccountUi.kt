@@ -34,6 +34,7 @@ import com.tunedplayer.app.data.TvRelay
 import com.tunedplayer.app.diagnostics.launchSafely
 import com.tunedplayer.app.diagnostics.startActivitySafely
 import com.tunedplayer.app.premium.LockedRow
+import com.tunedplayer.app.premium.Premium
 import com.tunedplayer.app.premium.premiumUnlocked
 import com.tunedplayer.app.ui.common.DialogMaxWidth
 import com.tunedplayer.app.ui.common.DialogWideMaxWidth
@@ -213,7 +214,9 @@ class TunedAccountViewModel(
 
 /**
  * Settings › Playlists and account › Tuned account: sign in with a code, see when it last backed up, back up now, sign
- * out. Backing up between devices is Premium in the store build, as Drive sync was (docs/decisions/premium.md).
+ * out. Backing up between devices is Premium in the Play build, as Drive sync was (docs/decisions/premium.md). The
+ * Fire TV build sells nothing in the app, so signing in is how Premium gets there and is never locked
+ * (docs/decisions/tv.md#fire-tv).
  */
 @Composable
 fun TunedAccountRows(vm: TunedAccountViewModel = viewModel()) {
@@ -224,7 +227,7 @@ fun TunedAccountRows(vm: TunedAccountViewModel = viewModel()) {
     val backupResult by vm.backupResult.collectAsStateWithLifecycle()
     SectionHeader(stringResource(R.string.tuned_account))
     when {
-        !signedIn && !premiumUnlocked() -> {
+        !signedIn && !premiumUnlocked() && Premium.SOLD_IN_APP -> {
             LockedRow(stringResource(R.string.tuned_account_sign_in))
         }
 
@@ -237,12 +240,17 @@ fun TunedAccountRows(vm: TunedAccountViewModel = viewModel()) {
         }
 
         else -> {
-            SettingRow(
-                stringResource(R.string.tuned_account_backup_now),
-                backupText(status, backupResult),
-                onClick = vm::backUpNow,
-                trailing = if (status.running) ({ RowSpinner() }) else null,
-            )
+            // On Fire TV anyone can sign in, since that's how Premium arrives; backing up stays Premium, as on Play.
+            if (!Premium.SOLD_IN_APP && !premiumUnlocked()) {
+                LockedRow(stringResource(R.string.tuned_account_backup_now))
+            } else {
+                SettingRow(
+                    stringResource(R.string.tuned_account_backup_now),
+                    backupText(status, backupResult),
+                    onClick = vm::backUpNow,
+                    trailing = if (status.running) ({ RowSpinner() }) else null,
+                )
+            }
             SettingRow(
                 stringResource(R.string.tuned_account_sign_out),
                 listOfNotNull(
