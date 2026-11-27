@@ -3,6 +3,7 @@
 // one to land on, are in the page. Focus scrolls the list (focus.ts uses scrollIntoView).
 import type { ComponentChildren } from "preact";
 import { useEffect, useRef, useState } from "preact/hooks";
+import { remotePlacedByApp } from "../focus.ts";
 
 const SPARE = 3;
 
@@ -58,11 +59,11 @@ export function VirtualGrid<T>(props: {
         if (box.current) box.current.scrollTop = 0;
         setTop(0);
     }, [props.resetKey]);
-    // Opening a screen with nothing focused yet: the remote lands on the first item as soon as there is one.
+    // Opening a screen: the remote lands on the first item as soon as there is one, unless the person already moved it.
     useEffect(() => {
         if (!props.start || !props.items.length || !box.current) return;
         const active = document.activeElement;
-        if (active && active !== document.body) return;
+        if (active && active !== document.body && !remotePlacedByApp()) return;
         box.current.querySelector<HTMLElement>("[data-focus]")?.focus({ preventScroll: true });
     }, [props.start, props.items.length > 0]);
     const firstRow = Math.max(0, Math.floor(top / props.cellHeight) - SPARE);
