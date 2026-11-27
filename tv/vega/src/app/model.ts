@@ -49,6 +49,7 @@ import type { Fetch, KeyValueStore } from "@tuned/shared/platform";
 import { progressKey, WatchProgress, type Watched } from "@tuned/shared/progress";
 import { isSortOrder, nextSort, sortItems, type SortOrder } from "@tuned/shared/sort";
 import { search as searchItems } from "@tuned/shared/search";
+import { Simkl, simklFromBackup, simklProgress, type ScrobbleMedia, type SignInCode } from "@tuned/shared/simkl";
 import { Tmdb, type Details, type EpisodeInfo } from "@tuned/shared/tmdb";
 import type { Http } from "../core/http";
 import { addSecret, clearSecrets, launchSafely, log } from "../core/log";
@@ -238,6 +239,8 @@ export interface State {
     listFor: { id: string; name: string } | null;
     /** A change to the account saving (what for: a list's id, "new", "favourite"), and why the last one didn't stick. */
     listSave: { busy: string | null; problem: ListProblem | null };
+    /** Simkl in Settings: signed in or not, the code being shown, and how the last step ended. */
+    simkl: SimklView;
 }
 
 export interface Services {
@@ -253,9 +256,25 @@ export interface Services {
     quietStart?: () => Promise<void>;
     /** The app's TMDB key, built in at build time (platform/keys.ts); empty turns details off. */
     tmdbKey?: string;
+    /** Simkl's app id (SIMKL_CLIENT_ID), built in the same way; empty hides Simkl. */
+    simklId?: string;
     /** The TV's language for TMDB ("fr-CA"). */
     language?: string;
 }
+
+export interface SimklView {
+    signedIn: boolean;
+    user: string | null;
+    /** Settings' Scrobble what you watch. */
+    scrobble: boolean;
+    /** Connecting or disconnecting. */
+    busy: boolean;
+    /** The code to type at simkl.com/pin while connecting. */
+    code: SignInCode | null;
+    problem: "offline" | "expired" | "denied" | null;
+}
+
+export const NO_SIMKL: SimklView = { signedIn: false, user: null, scrobble: true, busy: false, code: null, problem: null };
 
 export class AppModel {
     state: State = {
@@ -302,9 +321,15 @@ export class AppModel {
         lists: NO_LISTS,
         listFor: null,
         listSave: { busy: null, problem: null },
+        simkl: NO_SIMKL,
     };
     /** One guard for every PIN on the stick, so switching between a profile's and the parental PIN doesn't reset it. */
     readonly pins = new PinThrottle();
+    private readonly simkl: Simkl;
+    /** Each Connect counts up, so going back stops its polling. */
+    private simklRun = 0;
+    /** What Simkl was told is playing, until it stops. */
+    private scrobbling: ScrobbleMedia | null = null;
     /** Whether "Who's watching?" has been answered since the app opened; it asks at each start, as on Android. */
     private picked = false;
     /** A layer over the screen (the PIN pad) that Back closes first; it says whether it took the key. */
@@ -351,6 +376,13 @@ export class AppModel {
         const shared = sharedStore(services.store);
         this.tmdb = new Tmdb(services.fetch, shared, services.tmdbKey ?? "", Date.now, services.language ?? "en-CA");
         this.shared = shared;
+        this.simkl = new Simkl({
+            fetch: services.fetch,
+            store: shared,
+            clientId: services.simklId ?? "",
+            appVersion: "vega",
+            log: (tag, message) => log.info(tag, message),
+        });
         this.keepFor(FIRST);
     }
 
@@ -413,7 +445,7 @@ export class AppModel {
         if (account) await this.readProfiles();
         this.keepFor(this.state.playlistId);
         await this.readPlaylists(login);
-        await Promise.all([this.loadKept(), this.loadPrefs()]);
+        await Promise.all([this.loadKept(), this.loadPrefs(), this.readSimkl()]);
         if (!login) return this.set({ route: "signin", account });
         if (!lineup) {
             this.set({ login, account, route: "loading" });
@@ -962,6 +994,7 @@ export class AppModel {
 
     /** A movie or an episode, from `from` seconds: the old stream closes before this one opens. */
     async playVod(item: Playable, from = 0): Promise<void> {
+        this.scrobbleEnd();
         this.endTune();
         this.set({ vod: item, route: "player" });
         await this.stream.play(item.url, from > 0 ? from : undefined);
@@ -993,6 +1026,7 @@ export class AppModel {
 
     /** Plays a channel: the old stream closes before this one opens. */
     async play(channel: Channel): Promise<void> {
+        this.scrobbleEnd();
         this.endTune();
         this.set({ channelId: channel.id, vod: null, route: "player" });
         launchSafely("play.remember", () => this.saved.saveLastChannel(channel.id));
@@ -1016,6 +1050,7 @@ export class AppModel {
 
     async stopPlaying(): Promise<void> {
         const vod = this.state.vod;
+        this.scrobbleEnd();
         if (vod) await this.rememberPosition().catch((error) => log.warn("AppModel", "position", error));
         const tuned = !!this.state.tune;
         this.endTune();
@@ -1361,6 +1396,7 @@ export class AppModel {
 
     /** What the player says, for auto-tune: a picture means this channel works; an error, or none in time, moves on. */
     playback(state: "idle" | "starting" | "playing" | "buffering" | "failed"): void {
+        if (state === "playing") this.scrobbleStart();
         const tune = this.state.tune;
         if (!tune || tune.failed) return;
         const id = tune.ids[tune.at];
@@ -1540,6 +1576,9 @@ export class AppModel {
         const read = profilesFromBackup(text);
         const follows = followsFromBackup(text);
         const lists = listsFromBackup(text);
+        launchSafely("simkl.adopt", async () => {
+            if (await this.simkl.adopt(simklFromBackup(text))) await this.readSimkl();
+        });
         await Promise.all([
             this.shared.set(PROFILES_KEY, JSON.stringify(read)),
             this.shared.set(FOLLOWS_KEY, JSON.stringify(follows)),
@@ -1751,9 +1790,111 @@ export class AppModel {
         return !(await this.changeAccount(listId, { op: "list_delete", profileId: profile.id, listId }));
     }
 
+    /** Whether this build has Simkl's id; without it, nothing of Simkl shows. */
+    get simklAvailable(): boolean {
+        return this.simkl.available;
+    }
+
+    /** Simkl is Premium, as on Android, and needs the app's id in the build (simkl.md). */
+    simklOn(): boolean {
+        return this.simkl.available && hasPremium(this.state.account);
+    }
+
+    private async readSimkl(): Promise<void> {
+        try {
+            const [now, scrobble] = await Promise.all([this.simkl.state(), this.simkl.scrobbleOn()]);
+            this.set({ simkl: { ...this.state.simkl, signedIn: now.signedIn, user: now.user, scrobble } });
+        } catch (e) {
+            log.warn("AppModel", "simkl state", e);
+        }
+    }
+
+    /**
+     * Settings › Simkl › Connect: shows a code to type at simkl.com/pin and asks Simkl each few seconds until it's typed,
+     * runs out, or the person goes back. The tokens stay on the stick (`simkl.token`) and are never logged.
+     */
+    async connectSimkl(): Promise<void> {
+        if (this.state.simkl.busy) return;
+        const run = ++this.simklRun;
+        this.set({ simkl: { ...this.state.simkl, busy: true, code: null, problem: null } });
+        const code = await this.simkl.startSignIn();
+        if (run !== this.simklRun) return;
+        if (!code) return this.set({ simkl: { ...this.state.simkl, busy: false, problem: "offline" } });
+        this.set({ simkl: { ...this.state.simkl, code } });
+        let wait = code.intervalMs;
+        for (;;) {
+            await new Promise((resolve) => setTimeout(resolve, wait));
+            if (run !== this.simklRun) return;
+            const answer = await this.simkl.pollSignIn(code);
+            if (run !== this.simklRun) return;
+            if (answer === "waiting") continue;
+            if (answer === "slow down") {
+                wait = Simkl.slowDown(wait);
+                continue;
+            }
+            if (typeof answer === "object") {
+                this.set({ simkl: { ...this.state.simkl, busy: false, code: null, signedIn: true, user: answer.user, problem: null } });
+                return;
+            }
+            return this.set({ simkl: { ...this.state.simkl, busy: false, code: null, problem: answer } });
+        }
+    }
+
+    /** Back, or Cancel, while the code shows. */
+    cancelSimkl(): void {
+        this.simklRun++;
+        this.set({ simkl: { ...this.state.simkl, busy: false, code: null } });
+    }
+
+    /** Settings › Simkl › Disconnect: forgets the sign-in and tells Simkl to drop the token. */
+    async disconnectSimkl(): Promise<void> {
+        this.set({ simkl: { ...this.state.simkl, busy: true, problem: null } });
+        await this.simkl.signOut().catch((e) => log.warn("AppModel", "simkl sign out", e));
+        this.set({ simkl: { ...this.state.simkl, busy: false, signedIn: false, user: null } });
+    }
+
+    async setSimklScrobble(on: boolean): Promise<void> {
+        this.set({ simkl: { ...this.state.simkl, scrobble: on } });
+        await this.simkl.setScrobble(on).catch((e) => log.warn("AppModel", "simkl scrobble", e));
+    }
+
+    /** The player paused or went on (the remote's play and pause), told to Simkl as Android does. */
+    pauseChanged(paused: boolean): void {
+        if (!this.scrobbling) return;
+        if (paused) this.scrobbleSend("pause", this.scrobbling);
+        else this.scrobbleSend("start", this.scrobbling);
+    }
+
+    /** A movie or episode started playing: tells Simkl once per play, from where it is. */
+    private scrobbleStart(): void {
+        const media = this.state.vod?.scrobble;
+        if (!media || this.state.vod?.replay || this.scrobbling === media) return;
+        this.scrobbling = media;
+        this.scrobbleSend("start", media);
+    }
+
+    /** It ended, closed or something else was picked: a stop with how far it got (watched from 80%). */
+    private scrobbleEnd(): void {
+        const media = this.scrobbling;
+        this.scrobbling = null;
+        if (media) this.scrobbleSend("stop", media);
+    }
+
+    private scrobbleSend(kind: "start" | "pause" | "stop", media: ScrobbleMedia): void {
+        if (!this.simklOn() || !this.state.simkl.signedIn || !this.state.simkl.scrobble) return;
+        const where = this.services.player.position?.() ?? { at: 0, length: 0 };
+        const progress = simklProgress(where.at * 1000, where.length * 1000);
+        launchSafely(`simkl.${kind}`, async () => {
+            const answer = await this.simkl.scrobble(kind, media, progress);
+            if (answer === "signed out") await this.readSimkl();
+        });
+    }
+
     /** Sign out: back to how the stick was installed (AGENTS.md), the account signed out too. */
     async signOut(): Promise<void> {
+        this.scrobbleEnd();
         await this.stream.stop();
+        await this.simkl.forget().catch((e) => log.warn("AppModel", "simkl forget", e));
         if (this.state.account) await this.account.signOut();
         await this.saved.reset();
         clearSecrets();
@@ -1775,6 +1916,7 @@ export class AppModel {
             episodes: {},
             episodesLoad: { id: null, busy: false, failed: false },
             vod: null,
+            simkl: NO_SIMKL,
             positions: {},
             watching: [],
             prefs: DEFAULT_PREFS,

@@ -103,7 +103,11 @@ export const PlayerScreen = React.forwardRef<
         const type = event.eventType;
         if (vod) {
             if (type === "select" || type === "play_pause" || type === "playpause") {
-                if (controls || type !== "select") setPaused(player.togglePause());
+                if (controls || type !== "select") {
+                    const now = player.togglePause();
+                    setPaused(now);
+                    model.pauseChanged(now);
+                }
                 showControls();
             } else if (type === "left" || type === "rewind") {
                 player.seekBy(-SKIP_S);

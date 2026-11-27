@@ -1,3 +1,4 @@
+import type { ScrobbleMedia } from "@tuned/shared/simkl";
 import type { CatchUp } from "@tuned/shared/guide";
 
 /** A playlist the stick signs in to: an Xtream login, or an M3U link with an optional guide. */
@@ -104,4 +105,6 @@ export interface Playable {
     /** "Season 1, episode 2" under a show's name. */
     subtitle?: string;
     url: string;
+    /** What Simkl is told is playing: the movie, or the show with the season and episode. */
+    scrobble?: ScrobbleMedia;
 }

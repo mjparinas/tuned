@@ -30,6 +30,7 @@ export const App = makeApp(
         deviceName: "Fire TV (Vega OS)",
         quietStart,
         tmdbKey: KEYS.tmdb,
+        simklId: KEYS.simkl,
         language: locale(),
     },
     player,
