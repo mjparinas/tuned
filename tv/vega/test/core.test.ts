@@ -12,14 +12,14 @@ describe("M3U", () => {
         "#EXTM3U",
         '#EXTINF:-1 tvg-id="one.ca" tvg-logo="http://logo/1.png" group-title="News, Canada",CBC News',
         "http://tv.example/live/u/p/1.ts",
-        '#EXTINF:-1 group-title="Films",A Film',
+        '#EXTINF:-1 group-title="Movies",A Movie',
         "http://tv.example/movie/u/p/9.mkv",
         "#EXTINF:-1,No Group",
         "#EXTGRP:Sports",
         "http://tv.example/live/u/p/2.ts",
     ].join("\r\n");
 
-    it("reads live channels in pieces, leaving out films, with commas in quoted groups", () => {
+    it("reads live channels in pieces, leaving out movies, with commas in quoted groups", () => {
         const reader = new M3uReader();
         for (let i = 0; i < text.length; i += 7) reader.feed(text.slice(i, i + 7));
         const { categories, channels } = reader.end();
