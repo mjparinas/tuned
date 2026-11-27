@@ -5,7 +5,7 @@ import * as React from "react";
 import { ScrollView, Text, View } from "react-native";
 import { hasPremium, premiumText, TUNE_WAITS, type AppModel, type State } from "../app/model";
 import { ProgressLines } from "./LoadingScreen";
-import { Button, Focusable, Screen } from "./parts";
+import { Button, Focusable, OneLineCode, Screen, Spinner } from "./parts";
 import { ManageLists } from "./AddToList";
 import { Avatar, PinPad } from "./ProfilesScreen";
 import { TopBar } from "./TopBar";
@@ -104,6 +104,64 @@ function Toggle({ label, hint, on, onChange }: { label: string; hint: string; on
     );
 }
 
+/**
+ * Settings › Simkl (simkl.md): Connect shows a code to type at simkl.com/pin with a spinner while Simkl is asked, Back
+ * stops it; once in, Scrobble what you watch and Disconnect. Premium, as on Android.
+ */
+function SimklSection({ model, state }: { model: AppModel; state: State }) {
+    const dp = useDp();
+    const simkl = state.simkl;
+    const code = simkl.code;
+    // The remote's Back stops waiting for the code, not the screen under it.
+    React.useEffect(() => {
+        if (!code) return;
+        model.onBack = () => {
+            model.cancelSimkl();
+            return true;
+        };
+        return () => {
+            model.onBack = null;
+        };
+    }, [model, code]);
+    if (!model.simklOn()) return <Line text={t.simklPremium} />;
+    if (code) {
+        const site = code.verificationUrl.replace(/^https?:\/\//, "");
+        return (
+            <View style={{ gap: dp(10) }}>
+                <Line text={t.simklCode(site)} />
+                <OneLineCode code={code.userCode} size={dp(40)} />
+                <Spinner line={t.simklWaiting} />
+                <View style={{ flexDirection: "row" }}>
+                    <Button label={t.back} start onPress={() => model.cancelSimkl()} />
+                </View>
+            </View>
+        );
+    }
+    return (
+        <View style={{ gap: dp(10) }}>
+            <Line text={simkl.signedIn ? t.simklConnected(simkl.user) : t.simklHint} tone={simkl.signedIn ? "ok" : "muted"} />
+            {simkl.problem ? <Line text={t.simklProblem[simkl.problem]} tone="bad" /> : null}
+            {simkl.signedIn ? (
+                <>
+                    <Toggle
+                        label={t.simklScrobble}
+                        hint={t.simklScrobbleHint}
+                        on={simkl.scrobble}
+                        onChange={(on) => void model.setSimklScrobble(on)}
+                    />
+                    <View style={{ flexDirection: "row" }}>
+                        <Button label={t.simklDisconnect} busy={simkl.busy} onPress={() => void model.disconnectSimkl()} />
+                    </View>
+                </>
+            ) : (
+                <View style={{ flexDirection: "row" }}>
+                    <Button label={t.simklConnect} busy={simkl.busy} onPress={() => void model.connectSimkl()} />
+                </View>
+            )}
+        </View>
+    );
+}
+
 export function SettingsScreen({ model, state }: { model: AppModel; state: State }) {
     const dp = useDp();
     const account = state.account;
@@ -168,6 +226,11 @@ export function SettingsScreen({ model, state }: { model: AppModel; state: State
                 {model.canUseLists() ? (
                     <Section title={t.yourLists}>
                         <ManageLists model={model} state={state} />
+                    </Section>
+                ) : null}
+                {model.simklAvailable ? (
+                    <Section title={t.simkl}>
+                        <SimklSection model={model} state={state} />
                     </Section>
                 ) : null}
                 <Section title={t.playlists}>

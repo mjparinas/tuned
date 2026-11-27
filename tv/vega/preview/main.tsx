@@ -185,6 +185,7 @@ function model(patch: Partial<State>): AppModel {
         random: (n) => crypto.getRandomValues(new Uint8Array(n)),
         player: new VegaPlayer(),
         deviceName: "Preview",
+        simklId: "preview",
     });
     m.state = { ...m.state, ...patch };
     return m;
@@ -483,6 +484,20 @@ function Scene({ name }: { name: string }) {
                 model({ route: "movies", lineup, library, account, profiles: PROFILES, profileId: "1", movieCategory: "__list:9003" }),
             );
             return <BrowseScreen model={m} state={m.state} kind="movies" />;
+        }
+        case "settings-simkl":
+        case "settings-simkl-on": {
+            const code = { userCode: "QW7E9K", verificationUrl: "https://simkl.com/pin", deviceCode: "", expiresAt: 0, intervalMs: 5000 };
+            const m = model({
+                route: "settings",
+                lineup,
+                account,
+                simkl:
+                    name === "settings-simkl"
+                        ? { signedIn: false, user: null, scrobble: true, busy: true, code, problem: null }
+                        : { signedIn: true, user: "Alex", scrobble: true, busy: false, code: null, problem: null },
+            });
+            return <SettingsScreen model={m} state={m.state} />;
         }
         case "settings-lists": {
             const m = withLists(model({ route: "settings", lineup, account, profiles: PROFILES, profileId: "1" }));
