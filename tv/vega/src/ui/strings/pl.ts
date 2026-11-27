@@ -87,6 +87,24 @@ export const pl: Strings = {
     episodeCount: (n: number) => count(n, "odcinek", "odcinki", "odcinków"),
     rating: (r: number) => `★ ${r.toFixed(1).replace(".", ",")}`,
     paused: "Wstrzymano",
+    search: "Szukaj",
+    searchHint: "Wpisz kanał, film lub serial",
+    noResults: (q: string) => `Nic nie pasuje do „${q}”.`,
+    favourites: "Ulubione",
+    favourite: "Dodaj do Ulubionych",
+    unfavourite: "Usuń z Ulubionych",
+    favouriteHint: "Przytrzymaj OK na kanale, aby dodać go do Ulubionych.",
+    favouriteAdded: (name: string) => `${name} jest w Ulubionych.`,
+    favouriteRemoved: (name: string) => `${name} usunięto z Ulubionych.`,
+    gettingDetails: "Pobieranie szczegółów…",
+    detailsFailed: "Nie można połączyć się z TMDB. Pokazujemy szczegóły z playlisty.",
+    cast: "Obsada",
+    runtime: (minutes: number) => {
+        const h = Math.floor(minutes / 60);
+        const m = minutes % 60;
+        return h && m ? `${h} godz. ${m} min` : h ? `${h} godz.` : `${m} min`;
+    },
+    tmdbNotice: "Ten produkt korzysta z API TMDB, ale nie jest wspierany ani certyfikowany przez TMDB.",
     movieDidntStart: "Nie uruchomiło się. Serwer może być zajęty albo brakuje pliku.",
     noPlaylistOnAccount: "Zalogowano na konto Tuned, ale nie ma ono jeszcze playlisty. Spróbuj ponownie, aby wysłać ją z telefonu.",
     nothingUsable: "W tym, co wysłał telefon, nie było playlisty, której telewizor może użyć. Wyślij ją ponownie z telefonu.",

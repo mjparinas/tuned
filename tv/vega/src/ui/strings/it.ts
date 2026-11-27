@@ -87,6 +87,24 @@ export const it: Strings = {
     episodeCount: (n: number) => count(n, "episodio", "episodi"),
     rating: (r: number) => `★ ${r.toFixed(1).replace(".", ",")}`,
     paused: "In pausa",
+    search: "Cerca",
+    searchHint: "Scrivi un canale, un film o una serie",
+    noResults: (q: string) => `Nessun risultato per “${q}”.`,
+    favourites: "Preferiti",
+    favourite: "Aggiungi ai Preferiti",
+    unfavourite: "Rimuovi dai Preferiti",
+    favouriteHint: "Tieni premuto OK su un canale per aggiungerlo ai Preferiti.",
+    favouriteAdded: (name: string) => `${name} è nei Preferiti.`,
+    favouriteRemoved: (name: string) => `${name} non è più nei Preferiti.`,
+    gettingDetails: "Recupero dei dettagli…",
+    detailsFailed: "Impossibile raggiungere TMDB. Vengono mostrati i dettagli della playlist.",
+    cast: "Cast",
+    runtime: (minutes: number) => {
+        const h = Math.floor(minutes / 60);
+        const m = minutes % 60;
+        return h && m ? `${h} h ${m} min` : h ? `${h} h` : `${m} min`;
+    },
+    tmdbNotice: "Questo prodotto usa l'API di TMDB ma non è approvato né certificato da TMDB.",
     movieDidntStart: "Non è partito. Il server potrebbe essere occupato, o il file potrebbe mancare.",
     noPlaylistOnAccount: "Accesso eseguito al tuo account Tuned, ma non ha ancora una playlist. Riprova per inviarne una dal telefono.",
     nothingUsable: "Quello che ha inviato il telefono non conteneva una playlist utilizzabile dal TV. Inviala di nuovo dal telefono.",

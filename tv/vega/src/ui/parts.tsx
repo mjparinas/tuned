@@ -22,11 +22,23 @@ const GLOW = {
     backgroundImage: `radial-gradient(circle at 12% 0%, ${colours.glow} 0%, transparent 55%)`,
 } as unknown as ViewStyle;
 
-export function Screen({ children, glow = true }: { children: React.ReactNode; glow?: boolean }) {
+/** Darkens a backdrop picture from the left, so the words over it stay readable. */
+const SCRIM = {
+    experimental_backgroundImage: `linear-gradient(90deg, ${colours.bg} 30%, rgba(18, 16, 24, 0.82) 60%, rgba(18, 16, 24, 0.55) 100%)`,
+    backgroundImage: `linear-gradient(90deg, ${colours.bg} 30%, rgba(18, 16, 24, 0.82) 60%, rgba(18, 16, 24, 0.55) 100%)`,
+} as unknown as ViewStyle;
+
+export function Screen({ children, glow = true, backdrop }: { children: React.ReactNode; glow?: boolean; backdrop?: string | null }) {
     const dp = useDp();
     return (
         <View style={[styles.fill, { backgroundColor: colours.bg }]}>
-            {glow ? <View pointerEvents="none" style={[StyleSheet.absoluteFill, GLOW]} /> : null}
+            {backdrop ? (
+                <>
+                    <Image source={{ uri: backdrop }} resizeMode="cover" style={StyleSheet.absoluteFill} accessibilityIgnoresInvertColors />
+                    <View pointerEvents="none" style={[StyleSheet.absoluteFill, SCRIM]} />
+                </>
+            ) : null}
+            {glow && !backdrop ? <View pointerEvents="none" style={[StyleSheet.absoluteFill, GLOW]} /> : null}
             <View style={[styles.fill, { paddingHorizontal: dp(SAFE.side + 24), paddingVertical: dp(SAFE.top + 12) }]}>{children}</View>
         </View>
     );

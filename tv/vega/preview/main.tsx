@@ -13,6 +13,7 @@ import { LiveScreen } from "../src/ui/LiveScreen";
 import { LoadingScreen } from "../src/ui/LoadingScreen";
 import { ManualScreen } from "../src/ui/ManualScreen";
 import { PlayerScreen } from "../src/ui/PlayerScreen";
+import { SearchScreen } from "../src/ui/SearchScreen";
 import { SettingsScreen } from "../src/ui/SettingsScreen";
 import { SignInScreen } from "../src/ui/SignInScreen";
 import { TitleScreen } from "../src/ui/TitleScreen";
@@ -316,6 +317,52 @@ function Scene({ name }: { name: string }) {
         case "shows": {
             const m = model({ route: "shows", lineup, library, showCategory: null });
             return <BrowseScreen model={m} state={m.state} kind="shows" focusTitle="s1" />;
+        }
+        case "live-favourites": {
+            const m = model({
+                route: "live",
+                lineup,
+                channelId: "c107",
+                favourites: new Set(["c101", "c107", "c110"]),
+                notice: { on: true, name: "Field One" },
+            });
+            return <LiveScreen model={m} state={m.state} focusChannel="c107" />;
+        }
+        case "search": {
+            const m = model({ route: "search", lineup, library, query: "harbour" });
+            return <SearchScreen model={m} state={m.state} focusFirst />;
+        }
+        case "movie-details": {
+            const title = library.movies[2];
+            const m = model({
+                route: "title",
+                lineup,
+                library,
+                title,
+                favourites: new Set([title.id]),
+                details: {
+                    [title.id]: {
+                        tmdbId: 1,
+                        title: title.name,
+                        overview:
+                            "Two friends race paper boats down the spring melt every year, until the year one of them moves away and the river decides to go looking.",
+                        year: 2025,
+                        rating: 7.8,
+                        runtime: 112,
+                        genres: ["Drama", "Family"],
+                        poster: null,
+                        backdrop: poster("", 30),
+                        cast: ["Ada Lake", "Theo Marsh", "June Park", "Sam Okafor", "Rita Vale", "Leo Brandt"].map((name, i) => ({
+                            id: i,
+                            name,
+                            character: null,
+                            photo: null,
+                        })),
+                        seasons: null,
+                    },
+                },
+            });
+            return <TitleScreen model={m} state={m.state} />;
         }
         case "movie": {
             const title = {

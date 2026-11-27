@@ -1,8 +1,11 @@
-// A movie's page (Play, or Resume where it was left and From the start) and a show's (its seasons and episodes, with
-// the episodes' own names where the provider gives them; Melvin, 2026-11-17: real names over "S1 E1"). The remote
-// starts on the likely choice: Resume or Play, or the first episode of the first season.
+// A movie's page (Play, or Resume where it was left and From the start, and Favourite) and a show's (its seasons and
+// episodes, with each episode's real name from TMDB or the provider; Melvin, 2026-11-17: real names over "S1 E1").
+// TMDB's details (summary, genres, running time, rating, backdrop and cast) fill in once read, and the playlist's own
+// show meanwhile or when TMDB can't be reached. The remote starts on the likely choice: Resume or Play, or the first
+// episode of the first season.
+import type { Details } from "@tuned/shared/tmdb";
 import * as React from "react";
-import { FlatList, ScrollView, Text, View } from "react-native";
+import { FlatList, Image, ScrollView, Text, View } from "react-native";
 import type { AppModel, State } from "../app/model";
 import type { Episode, Title } from "../core/models";
 import { clockTime } from "../core/progress";
@@ -13,30 +16,94 @@ import { colours, useDp } from "./theme";
 
 const EPISODE_ROW = 60;
 
-function Meta({ title, category }: { title: Title; category?: string }) {
+function Meta({ title, details, category }: { title: Title; details?: Details | null; category?: string }) {
     const dp = useDp();
-    const line = [title.year, title.rating ? t.rating(title.rating) : null, category].filter(Boolean).join("  ·  ");
+    const rating = details?.rating ?? title.rating;
+    const genres = details?.genres.length ? details.genres.slice(0, 3).join(", ") : category;
+    const line = [
+        title.year ?? details?.year,
+        rating ? t.rating(rating) : null,
+        details?.runtime ? t.runtime(details.runtime) : null,
+        genres,
+    ]
+        .filter(Boolean)
+        .join("  ·  ");
     return line ? <Text style={{ color: colours.muted, fontSize: dp(15) }}>{line}</Text> : null;
 }
 
-function Plot({ text }: { text?: string }) {
+function Plot({ text, lines = 4 }: { text?: string | null; lines?: number }) {
     const dp = useDp();
     return text ? (
-        <Text numberOfLines={4} style={{ color: colours.text, fontSize: dp(15), lineHeight: dp(23), maxWidth: dp(560) }}>
+        <Text numberOfLines={lines} style={{ color: colours.text, fontSize: dp(15), lineHeight: dp(23), maxWidth: dp(600) }}>
             {text}
         </Text>
     ) : null;
+}
+
+/** While TMDB is asked, a spinner; if it can't be reached, a line saying the playlist's own details are shown. */
+function DetailsStatus({ state, title }: { state: State; title: Title }) {
+    const dp = useDp();
+    const load = state.detailsLoad;
+    if (load.id !== title.id) return null;
+    if (load.busy) return <Spinner line={t.gettingDetails} />;
+    return load.failed ? <Text style={{ color: colours.muted, fontSize: dp(13) }}>{t.detailsFailed}</Text> : null;
+}
+
+function Cast({ details }: { details?: Details | null }) {
+    const dp = useDp();
+    const cast = (details?.cast ?? []).slice(0, 8);
+    if (!cast.length) return null;
+    return (
+        <View style={{ gap: dp(8) }} accessibilityLabel={`${t.cast}: ${cast.map((c) => c.name).join(", ")}`}>
+            <Text style={{ color: colours.muted, fontSize: dp(13), fontWeight: "600" }}>{t.cast}</Text>
+            <View style={{ flexDirection: "row", gap: dp(14) }}>
+                {cast.map((c) => (
+                    <View key={c.id} style={{ width: dp(64), alignItems: "center", gap: dp(4) }}>
+                        <View
+                            style={{
+                                width: dp(48),
+                                height: dp(48),
+                                borderRadius: dp(24),
+                                backgroundColor: colours.card2,
+                                overflow: "hidden",
+                                alignItems: "center",
+                                justifyContent: "center",
+                            }}
+                        >
+                            {c.photo ? (
+                                <Image source={{ uri: c.photo }} style={{ width: dp(48), height: dp(48) }} />
+                            ) : (
+                                <Text style={{ color: colours.muted, fontSize: dp(15), fontWeight: "600" }}>{c.name.slice(0, 1)}</Text>
+                            )}
+                        </View>
+                        <Text numberOfLines={2} style={{ color: colours.text, fontSize: dp(11), textAlign: "center" }}>
+                            {c.name}
+                        </Text>
+                    </View>
+                ))}
+            </View>
+        </View>
+    );
+}
+
+function FavouriteButton({ model, state, title }: { model: AppModel; state: State; title: Title }) {
+    const on = state.favourites.has(title.id);
+    return (
+        <Button label={on ? `★  ${t.unfavourite}` : `☆  ${t.favourite}`} onPress={() => void model.toggleFavourite(title.id, title.name)} />
+    );
 }
 
 function MoviePage({ model, state, title, category }: { model: AppModel; state: State; title: Title; category?: string }) {
     const dp = useDp();
     const at = state.positions[title.id] ?? 0;
     const item = { id: title.id, title: title.name, url: title.url ?? "" };
+    const details = state.details[title.id];
     return (
         <View style={{ gap: dp(14), flex: 1 }}>
             <Text style={{ color: colours.text, fontSize: dp(30), fontWeight: "600" }}>{title.name}</Text>
-            <Meta title={title} category={category} />
-            <Plot text={title.plot} />
+            <Meta title={title} details={details} category={category} />
+            <Plot text={title.plot ?? details?.overview} />
+            <DetailsStatus state={state} title={title} />
             <View style={{ flexDirection: "row", gap: dp(12), marginTop: dp(8) }}>
                 {at > 0 ? (
                     <>
@@ -46,6 +113,10 @@ function MoviePage({ model, state, title, category }: { model: AppModel; state: 
                 ) : (
                     <Button label={t.play} filled start onPress={() => void model.playVod(item, 0)} />
                 )}
+                <FavouriteButton model={model} state={state} title={title} />
+            </View>
+            <View style={{ marginTop: dp(10) }}>
+                <Cast details={details} />
             </View>
         </View>
     );
@@ -53,19 +124,21 @@ function MoviePage({ model, state, title, category }: { model: AppModel; state: 
 
 function EpisodeRow({
     episode,
+    name: ownName,
     at,
     onPress,
     start,
     showFocused,
 }: {
     episode: Episode;
+    name: string | null;
     at: number;
     onPress: () => void;
     start?: boolean;
     showFocused?: boolean;
 }) {
     const dp = useDp();
-    const name = episode.name ?? t.episodeNumber(episode.episode);
+    const name = ownName ?? t.episodeNumber(episode.episode);
     return (
         <Focusable
             start={start}
@@ -125,16 +198,19 @@ function ShowPage({
     const [season, setSeason] = React.useState<number | null>(null);
     const shown = season ?? seasons[0] ?? 1;
     const inSeason = React.useMemo(() => (episodes ?? []).filter((e) => e.season === shown), [episodes, shown]);
-    const play = (e: Episode) =>
+    const details = state.details[title.id];
+    const play = (e: Episode) => {
+        const name = model.episodeName(title, e);
         void model.playVod(
             {
                 id: e.id,
                 title: title.name,
-                subtitle: e.name ? `${t.seasonEpisode(e.season, e.episode)}: ${e.name}` : t.seasonEpisode(e.season, e.episode),
+                subtitle: name ? `${t.seasonEpisode(e.season, e.episode)}: ${name}` : t.seasonEpisode(e.season, e.episode),
                 url: e.url,
             },
             state.positions[e.id] ?? 0,
         );
+    };
 
     let list: React.ReactNode;
     if (!episodes) {
@@ -201,6 +277,7 @@ function ShowPage({
                     renderItem={({ item, index }) => (
                         <EpisodeRow
                             episode={item}
+                            name={model.episodeName(title, item)}
                             at={state.positions[item.id] ?? 0}
                             start={index === 0}
                             showFocused={item.id === focusEpisode}
@@ -216,12 +293,16 @@ function ShowPage({
         <View style={{ gap: dp(10), flex: 1 }}>
             <Text style={{ color: colours.text, fontSize: dp(28), fontWeight: "600" }}>{title.name}</Text>
             <View style={{ flexDirection: "row", gap: dp(14), alignItems: "baseline" }}>
-                <Meta title={title} category={category} />
+                <Meta title={title} details={details} category={category} />
                 {episodes?.length ? (
                     <Text style={{ color: colours.muted, fontSize: dp(15) }}>{t.episodeCount(episodes.length)}</Text>
                 ) : null}
             </View>
-            <Plot text={title.plot} />
+            <Plot text={title.plot ?? details?.overview} lines={2} />
+            <View style={{ flexDirection: "row", gap: dp(12), alignItems: "center" }}>
+                <FavouriteButton model={model} state={state} title={title} />
+                <DetailsStatus state={state} title={title} />
+            </View>
             <View style={{ flex: 1, marginTop: dp(4) }}>{list}</View>
         </View>
     );
@@ -233,11 +314,13 @@ export function TitleScreen({ model, state, focusEpisode }: { model: AppModel; s
     if (!title) return null;
     const categories = title.kind === "movie" ? state.library?.movieCategories : state.library?.showCategories;
     const category = categories?.find((c) => c.id === title.categoryId)?.name;
+    const details = state.details[title.id];
+    const shown = title.poster || !details?.poster ? title : { ...title, poster: details.poster };
     return (
-        <Screen>
+        <Screen backdrop={details?.backdrop}>
             <Brand />
             <View style={{ flex: 1, flexDirection: "row", gap: dp(28), marginTop: dp(18) }}>
-                <Poster title={title} width={dp(200)} height={dp(300)} />
+                <Poster title={shown} width={dp(200)} height={dp(300)} />
                 {title.kind === "movie" ? (
                     <MoviePage model={model} state={state} title={title} category={category} />
                 ) : (
