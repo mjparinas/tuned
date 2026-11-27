@@ -4,6 +4,7 @@ seoTitle: "How to record live TV and download films in Tuned"
 description: Save films, episodes and whole seasons to watch offline, and record the live channel you're watching, all on one connection.
 date: 2026-11-19
 kind: guide
+updated: 2026-11-26
 ---
 
 Tuned can keep films and episodes on your device to watch without a connection, and record the live channel you're watching. Both follow Tuned's main rule: **one stream connection at a time**, so you never go over your provider's limit.
@@ -35,15 +36,21 @@ A saved film or episode always plays from your device, never the stream, whereve
 2. Tap **Record** in the player's top row. A small **REC** mark stays in the corner.
 3. Tap Record again to stop. Recording also stops when you change channel, close the player, or the device has less than 500 MB free.
 
-Recording saves the stream the player is already receiving, so it never opens a second connection. That also means it records only the channel you're watching, and there are no scheduled recordings of something else.
+Recording saves the stream the player is already receiving, so it never opens a second connection.
+
+## Schedule a recording from the guide
+
+Open a channel's guide and tap **Record** beside any programme that hasn't ended. Tuned records it in the background, from a little before it starts to a little after it ends (2 minutes each side by default, in **Settings › Playback › Start recordings early and end late**). Watching always comes first: if something is playing when a recording is due, it waits and records what's left once you stop. Two recordings can't overlap.
+
+<figure><img src="/blog/img/guides/browse-guide.webp" alt="A channel's guide in Tuned, with a reminder bell and a record button beside each upcoming programme" width="270" height="586" loading="lazy"><figcaption>Record and the reminder bell, beside each programme.</figcaption></figure>
 
 Recordings appear under **Recordings** on the Downloads page, newest first, with the programme name from the guide, the channel, time, length and size. They play offline like a film.
 
-Live channels sent as HLS (`.m3u8`), catch-up and casting can't be recorded; the button doesn't show for them.
+Catch-up, casting and a few HLS channels that can't be saved as one file (encrypted ones, for example) can't be recorded; the button doesn't show for them. More on pausing and rewinding too in [pause, rewind and record live TV](/blog/guides/pause-rewind-record-live-tv/).
 
 ## Premium
 
-Recording and more than three downloads at a time are part of [Premium](/blog/guides/premium/).
+Recording, scheduled recordings and more than three downloads at a time are part of [Premium](/blog/guides/premium/).
 
 ## Signing out
 

@@ -7,6 +7,11 @@
 // <screens> is a folder with the PNGs from the Screenshots workflow (the `screenshots/staging` branch:
 // `git archive origin/screenshots/staging | tar -x -C <screens>`), plus `web-playlists.png`, the website's Playlists and
 // settings page on a desktop. Uses the Playwright that CI's accessibility check already installs.
+//
+//   node devices/email-images.mjs <screens> [only-id] --blog
+//
+// draws the blog's pictures instead (`devices/site/blog-images.mjs`, the same frames) into
+// devices/public/blog/img/posts/<id>.jpg; <screens> then also needs the website's `web-*.png` pictures.
 import { createRequire } from "node:module";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
@@ -14,10 +19,12 @@ import { fileURLToPath } from "node:url";
 
 const { chromium } = createRequire(import.meta.url)("playwright");
 const here = fileURLToPath(new URL(".", import.meta.url));
-const out = join(here, "public", "email");
-const screens = resolve(process.argv[2] ?? "");
-const only = process.argv[3];
-if (!process.argv[2] || !existsSync(screens)) {
+const blog = process.argv.includes("--blog");
+const args = process.argv.slice(2).filter((a) => a !== "--blog");
+const out = join(here, "public", ...(blog ? ["blog", "img", "posts"] : ["email"]));
+const screens = resolve(args[0] ?? "");
+const only = args[1];
+if (!args[0] || !existsSync(screens)) {
     console.error("Usage: node devices/email-images.mjs <folder of app screenshots> [id]");
     process.exit(1);
 }
@@ -171,6 +178,10 @@ const IMAGES = {
     },
 };
 
+const PICTURES = blog
+    ? (await import("./site/blog-images.mjs")).blogImages({ phone, tv, tablet, browser, player, event, stack, tiles, mark })
+    : IMAGES;
+
 const CSS = `
 * { box-sizing: border-box; margin: 0 }
 html, body { width: 1200px; height: 760px; overflow: hidden }
@@ -257,12 +268,12 @@ mkdirSync(out, { recursive: true });
 const browserApp = await chromium.launch();
 const tab = await browserApp.newPage({ viewport: { width: 1200, height: 760 }, deviceScaleFactor: 1 });
 const temp = join(screens, ".email-image.html");
-for (const [id, spec] of Object.entries(IMAGES)) {
+for (const [id, spec] of Object.entries(PICTURES)) {
     if (only && id !== only) continue;
     writeFileSync(temp, page(spec));
     await tab.goto(`file://${temp}`);
     await tab.waitForLoadState("networkidle");
     await tab.screenshot({ path: join(out, `${id}.jpg`), type: "jpeg", quality: 80 });
-    console.log(`public/email/${id}.jpg`);
+    console.log(join(out, `${id}.jpg`));
 }
 await browserApp.close();

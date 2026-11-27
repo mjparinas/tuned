@@ -764,6 +764,17 @@ body.web {
     transform: translateY(-2px);
     border-color: var(--primary);
 }
+/* A post's top picture, along the top of its card. */
+.post-card .thumb {
+    display: block;
+    width: calc(100% + 44px);
+    max-width: none;
+    height: auto;
+    aspect-ratio: 1200 / 760;
+    object-fit: cover;
+    margin: -22px -22px 16px;
+    border-radius: 20px 20px 0 0;
+}
 .post-card .kind {
     color: var(--primary);
     font-size: 0.75rem;
@@ -899,6 +910,37 @@ body.web {
     height: auto;
     border-radius: 16px;
     border: 1px solid var(--line);
+}
+.prose figure {
+    margin: 24px 0;
+}
+.prose figure img {
+    display: block;
+    margin: 0 auto;
+}
+.prose figcaption {
+    margin-top: 10px;
+    color: var(--muted);
+    font-size: 0.92rem;
+    line-height: 1.45;
+    text-align: center;
+}
+/* A post's top picture (docs/decisions/website.md › The blog): the app's screens framed, as wide as the text. */
+.prose figure.cover img {
+    width: 100%;
+    border: 0;
+}
+/* Two or three phone screens side by side, wrapping to one a row on a narrow phone. */
+.prose .shots {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 20px;
+    margin: 24px 0;
+}
+.prose .shots figure {
+    flex: 0 1 240px;
+    margin: 0;
 }
 .prose blockquote {
     margin: 0 0 18px;

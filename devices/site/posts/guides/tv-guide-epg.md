@@ -4,6 +4,7 @@ seoTitle: "How to set up an IPTV TV guide (EPG) in Tuned"
 description: Get what's on now and next on every channel, the full grid guide, reminders, and fixes for channels with the wrong times.
 date: 2026-11-19
 kind: guide
+updated: 2026-11-26
 ---
 
 The TV guide, or EPG (electronic programme guide), is what tells you what's on now and next. In IPTV it comes as an **XMLTV** file from your provider, separate from the channel list. Tuned downloads it with your playlist, keeps it on the device, and shows it everywhere: under each channel, in the player, in a full grid, and on the Live Events page of today's games and events.
@@ -24,6 +25,8 @@ The TV guide, or EPG (electronic programme guide), is what tells you what's on n
 
 The grid works with your groups, favourites and search, and it only reads the guide for the rows on screen, so it stays quick with thousands of channels.
 
+<figure><img src="/blog/img/guides/browse-guide-grid-tv.webp" alt="Tuned's TV guide grid on a TV, with channels down the side and half-hour times across the top" width="640" height="360" loading="lazy"><figcaption>The grid guide on a TV.</figcaption></figure>
+
 ## Reminders
 
 Tap the bell beside an upcoming programme. Tuned sends a notification a few minutes before it starts (5 by default, changeable in **Settings › Guide and refresh**), and tapping it plays the channel.
@@ -36,6 +39,11 @@ Tap the bell beside an upcoming programme. Tuned sends a notification a few minu
 - **Guide days**: how many days ahead to keep.
 - **Time zone**: guide times show in your phone's time zone unless you pick another.
 - **Guide time offset** moves the whole guide by half an hour or by whole hours, up to 12 either way, for a provider whose guide is consistently off.
+
+<div class="shots">
+<figure><img src="/blog/img/guides/settings-page-guide.webp" alt="Tuned's Guide and refresh settings with refresh times, guide days, time offset, extra guide links and time zone" width="270" height="586" loading="lazy"><figcaption>Settings › Guide and refresh.</figcaption></figure>
+<figure><img src="/blog/img/guides/browse-search-guide.webp" alt="Searching hockey in Tuned finds every programme in the guide with hockey in its name" width="270" height="586" loading="lazy"><figcaption>Search reads the guide too.</figcaption></figure>
+</div>
 
 ## Add more guide links
 
