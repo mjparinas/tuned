@@ -168,7 +168,9 @@ class BrowseScreenshots : Screenshots() {
 
     @Test
     @Config(qualifiers = TV)
-    fun showsOnTv() = shot("browse-shows-tv", HomeRoute, wait = "Snowline", settings = DARK.copy(startTab = StartTab.SHOWS))
+    // The TV's grid has two big posters a row beside the details pane, so only the first row (Harbour Town and The
+    // Night Desk) is drawn; Snowline sits below the fold, out of the lazy grid, and waiting for it timed out.
+    fun showsOnTv() = shot("browse-shows-tv", HomeRoute, wait = "The Night Desk", settings = DARK.copy(startTab = StartTab.SHOWS))
 
     /** Movies' sort, open: the order in use ticked (Melvin, 2026-11-20: "sort by newest first or sort by the rating"). */
     @Test
