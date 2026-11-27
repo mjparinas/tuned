@@ -988,3 +988,142 @@ describe("profiles, kids and PINs on Vega", () => {
         expect(model.shownChannels().length).toBe(2);
     });
 });
+
+describe("your own lists, account Favourites and renamed channels on Vega", () => {
+    const login = { kind: "xtream" as const, server: "http://tv.example", username: "u", password: "p" };
+    const answers: Record<string, unknown> = {
+        account: { user_info: { auth: 1, status: "Active" } },
+        get_live_categories: [{ category_id: "1", category_name: "News" }],
+        get_live_streams: [
+            { stream_id: 5, name: "Harbour News", category_id: "1" },
+            { stream_id: 6, name: "Puffin Weather", category_id: "1" },
+        ],
+        get_vod_categories: [{ category_id: "3", category_name: "Drama" }],
+        get_vod_streams: [
+            { stream_id: 7, name: "Paper Boats", category_id: "3" },
+            { stream_id: 8, name: "Quiet Orchard", category_id: "3" },
+        ],
+        get_series_categories: [],
+        get_series: [],
+    };
+    const xtream: Http = {
+        async getJson(url) {
+            return { status: 200, body: answers[new URL(url).searchParams.get("action") ?? "account"] };
+        },
+        async postJson() {
+            return { status: 500, body: null };
+        },
+        async text(url) {
+            return JSON.stringify(answers[new URL(url).searchParams.get("action") ?? ""]);
+        },
+    };
+    const news = fnv64("0|5|Harbour News");
+    const weather = fnv64("0|6|Puffin Weather");
+    const boats = fnv64("1|7|Paper Boats");
+    const orchard = fnv64("1|8|Quiet Orchard");
+    const start = `{"fingerprint":"f","changedAt":1,"copy":{"version":3,"playlists":[],
+        "profiles":[{"id":7340000000000000001,"name":"Mel","colour":1,"kids":false,"favourites":[{"itemId":${orchard},"position":0}],
+            "lists":[{"id":7340000000000000099,"name":"Weekend","position":0,"createdAt":1,"items":[
+                {"itemId":${weather},"addedAt":2,"position":1},{"itemId":${news},"addedAt":1,"position":0},{"itemId":${boats},"addedAt":3,"position":2}]}]}],
+        "channelEdits":[{"itemId":${news},"name":"Harbour 24","logo":"https://logos.example/h.png"}],
+        "settings":{}}}`;
+    /** The account's backup as the server keeps it: a version, and a PUT that must name it. */
+    const server = (premium = true) => {
+        const s = { text: start, version: 4, puts: 0, down: false };
+        const fetch: Fetch = async (url, init) => {
+            const path = new URL(url).pathname;
+            const reply = (status: number, body: string, version?: number) => ({
+                ok: status < 300,
+                status,
+                headers: { get: (h: string) => (h === "X-Backup-Version" && version !== undefined ? String(version) : null) },
+                text: async () => body,
+                json: async () => JSON.parse(body),
+            });
+            if (path === "/api/backup" && init?.method === "PUT") {
+                if (s.down) return reply(503, "{}");
+                const wanted = (init.headers as Record<string, string>)["If-Match"];
+                if (wanted !== `"${s.version}"`) return reply(409, "{}");
+                s.text = init.body ?? "";
+                s.version += 1;
+                s.puts += 1;
+                return reply(200, "{}");
+            }
+            if (path === "/api/backup") return reply(200, s.text, s.version);
+            if (path === "/api/auth/token") return reply(200, '{"status":"ok","token":"tok","email":""}');
+            return reply(200, premium ? '{"seat":"active"}' : '{"seat":"none"}');
+        };
+        return { s, fetch };
+    };
+    const ready = async (premium = true) => {
+        const { s, fetch } = server(premium);
+        const model = new AppModel({ ...services(xtream), fetch });
+        await model.useLogin(login);
+        await model.refreshLibrary();
+        await model.accountLinked("link");
+        await model.useProfile("7340000000000000001");
+        return { model, s };
+    };
+
+    it("shows the account's lists after Favourites, a renamed channel under its new name, and finds it by either", async () => {
+        const { model } = await ready();
+        expect(model.canUseLists()).toBe(true);
+        expect([...model.state.favourites]).toEqual(["m8"]);
+        expect(model.shownChannels().map((c) => c.name)).toEqual(["Harbour 24", "Puffin Weather"]);
+        expect(model.shownChannels()[0].logo).toBe("https://logos.example/h.png");
+        // Channels in the order they were added; movies in the playlist's.
+        const [live] = model.listCategories("live");
+        expect(live).toMatchObject({ name: "Weekend", count: 2 });
+        model.pickCategory(live.id);
+        expect(model.visibleChannels().map((c) => c.name)).toEqual(["Harbour 24", "Puffin Weather"]);
+        expect(model.listCategories("movies")).toMatchObject([{ name: "Weekend", count: 1 }]);
+        for (const q of ["harbour 24", "harbour news"]) {
+            model.setQuery(q);
+            expect(model.results().map((f) => (f.kind === "live" ? f.channel.name : f.title.name))).toEqual(["Harbour 24"]);
+        }
+    });
+
+    it("adds to a list, makes a new one with the item inside, deletes it, and stars into the account", async () => {
+        const { model, s } = await ready();
+        const list = model.myLists()[0];
+        model.openAddToList("m8", "Quiet Orchard");
+        await model.setInList(list.id, true);
+        expect(s.puts).toBe(1);
+        expect(model.myLists()[0].items).toContain(orchard);
+        expect(model.state.listSave).toEqual({ busy: null, problem: null });
+
+        expect(await model.newList("Rainy days")).toBe(true);
+        const made = model.myLists().find((l) => l.name === "Rainy days");
+        expect(made?.items).toEqual([orchard]);
+        expect(s.text).toContain('"Rainy days"');
+        // 64-bit ids stay whole in what goes back.
+        expect(s.text).toContain(`"itemId":${orchard}`);
+        model.closeAddToList();
+
+        expect(await model.deleteList(made!.id)).toBe(true);
+        expect(model.myLists().map((l) => l.name)).toEqual(["Weekend"]);
+
+        await model.toggleFavourite("5", "Harbour 24");
+        expect([...model.state.favourites].sort()).toEqual(["5", "m8"]);
+        expect(s.text).toContain(`"itemId":${news}`);
+        expect(s.puts).toBe(4);
+    });
+
+    it("puts a star back and says why when the account didn't take it", async () => {
+        const { model, s } = await ready();
+        s.down = true;
+        await model.toggleFavourite("m8", "Quiet Orchard");
+        expect(model.state.favourites.has("m8")).toBe(true);
+        expect(model.state.notice?.text).toBeTruthy();
+        model.openAddToList("5", "Harbour 24");
+        await model.setInList(model.myLists()[0].id, false);
+        expect(model.state.listSave.problem).toBe("offline");
+        expect(model.myLists()[0].items).toContain(news);
+    });
+
+    it("keeps lists to Premium: a free account stars on the stick, and sees no lists", async () => {
+        const { model, s } = await ready(false);
+        expect(model.canUseLists()).toBe(false);
+        expect(model.listCategories("live")).toEqual([]);
+        expect(s.puts).toBe(0);
+    });
+});

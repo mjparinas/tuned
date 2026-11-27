@@ -3,7 +3,7 @@
 // step in the corner while the saved channels stay usable.
 import * as React from "react";
 import { FlatList, Image, Text, View } from "react-native";
-import { FAVOURITES, type AppModel, type State } from "../app/model";
+import { FAVOURITES, LIST, type AppModel, type State } from "../app/model";
 import type { Category, Channel } from "../core/models";
 import { GuideGrid } from "./GuideGrid";
 import { Button, Focusable, Screen, Spinner } from "./parts";
@@ -163,24 +163,33 @@ export function LiveScreen({
         for (const c of shown) out.set(c.categoryId, (out.get(c.categoryId) ?? 0) + 1);
         return out;
     }, [shown]);
-    const channels = React.useMemo(() => model.visibleChannels(), [model, shown, state.category, state.favourites]);
+    const channels = React.useMemo(
+        () => model.visibleChannels(),
+        [model, shown, state.category, state.favourites, state.lists, state.profileId],
+    );
     const startId = state.channelId && channels.some((c) => c.id === state.channelId) ? state.channelId : channels[0]?.id;
     const startIndex = Math.max(
         0,
         channels.findIndex((c) => c.id === startId),
     );
     const favouriteCount = React.useMemo(() => shown.filter((c) => state.favourites.has(c.id)).length, [shown, state.favourites]);
+    // Your own lists that hold a channel, after Favourites (lists.md).
+    const lists = React.useMemo(() => model.listCategories("live"), [model, shown, state.lists, state.profileId, state.account]);
+    const listCounts = new Map(lists.map((l) => [l.id, l.count]));
     const categories: (Category | null)[] = [
         null,
         ...(favouriteCount || state.category === FAVOURITES ? [{ id: FAVOURITES, name: t.favourites }] : []),
+        ...lists.map((l) => ({ id: l.id, name: l.name })),
         ...shownCategories.filter((c) => counts.has(c.id)),
     ];
     const title =
         state.category === FAVOURITES
             ? t.favourites
-            : state.category
-              ? (lineup?.categories.find((c) => c.id === state.category)?.name ?? "")
-              : t.allChannels;
+            : state.category?.startsWith(LIST)
+              ? (lists.find((l) => l.id === state.category)?.name ?? "")
+              : state.category
+                ? (lineup?.categories.find((c) => c.id === state.category)?.name ?? "")
+                : t.allChannels;
     const nowTitle = (c: Channel) => state.guide[c.id]?.[0]?.title;
     // Live events first, as Android's chip is, when the playlist has sports or pay-per-view channels.
     const hasSports = React.useMemo(() => model.sportsChannels().length > 0, [model, shown]);
@@ -221,7 +230,13 @@ export function LiveScreen({
                         renderItem={({ item }) => (
                             <CategoryRow
                                 name={item ? item.name : t.allChannels}
-                                count={item ? (item.id === FAVOURITES ? favouriteCount : counts.get(item.id)) : shown.length}
+                                count={
+                                    item
+                                        ? item.id === FAVOURITES
+                                            ? favouriteCount
+                                            : (listCounts.get(item.id) ?? counts.get(item.id))
+                                        : shown.length
+                                }
                                 selected={(item?.id ?? null) === state.category}
                                 onPress={() => model.pickCategory(item?.id ?? null)}
                             />
@@ -237,7 +252,7 @@ export function LiveScreen({
                         </Text>
                         <Text style={{ color: colours.muted, fontSize: dp(13) }}>{t.channels(channels.length)}</Text>
                         <Text numberOfLines={1} style={{ flex: 1, textAlign: "right", color: colours.muted, fontSize: dp(12) }}>
-                            {state.prefs.liveGrid ? t.reminderOpenNote : t.favouriteHint}
+                            {state.prefs.liveGrid ? t.reminderOpenNote : model.canUseLists() ? t.listHint : t.favouriteHint}
                         </Text>
                         <Button
                             label={state.prefs.liveGrid ? t.listView : t.guideView}
@@ -264,7 +279,11 @@ export function LiveScreen({
                                     showFocused={item.id === focusChannel}
                                     favourite={state.favourites.has(item.id)}
                                     onPress={() => void model.play(item)}
-                                    onLongPress={() => void model.toggleFavourite(item.id, item.name)}
+                                    onLongPress={() =>
+                                        model.canUseLists()
+                                            ? model.openAddToList(item.id, item.name)
+                                            : void model.toggleFavourite(item.id, item.name)
+                                    }
                                 />
                             )}
                         />
