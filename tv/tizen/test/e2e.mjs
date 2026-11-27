@@ -57,10 +57,11 @@ const pinHash = (pin) => {
 };
 /**
  * The account's backup as the phone left it: a grown-up profile with a PIN and a list for game night, a kids one whose
- * favourite is Treehouse, and CBC News renamed on the website.
+ * favourite is Treehouse, CBC News renamed on the website, and Simkl connected on the phone.
  */
 const backup = (base) =>
     `{"fingerprint":"f1","changedAt":1,"copy":{"settings":{"adult_pin":{"s":"${pinHash("4321")}"}},` +
+    `"simkl":{"access":"s-acc","refresh":"s-ref","expiresAt":${now + 90 * 86400_000},"username":"Robin"},` +
     `"channelEdits":[{"itemId":${androidId(0, `${base}/live/0.webm`, "CBC News")},"name":"CBC National","logo":null}],"profiles":[` +
     `{"id":1,"name":"Sam","colour":1,"kids":false,"pinHash":"${pinHash("1234")}","createdAt":1,"avatar":"fox",` +
     `"lists":[{"id":31,"name":"Game night","position":1,"createdAt":1,"items":[{"itemId":${androidId(0, `${base}/live/1.webm`, "TSN 1")},"addedAt":1,"position":1}]}]},` +
@@ -470,6 +471,85 @@ try {
         await page.getByText("Your lists").waitFor();
         await page.waitForTimeout(300);
         await shot("15-your-lists");
+    });
+    await step("Trakt with a code, Simkl from the phone, and what plays sent to both", async () => {
+        // Stand-ins for Trakt and Simkl: nothing leaves the machine.
+        const asked = { trakt: [], simkl: [] };
+        let polls = 0;
+        const cors = {
+            "access-control-allow-origin": "*",
+            "access-control-allow-headers": "*",
+            "access-control-allow-methods": "GET, POST",
+        };
+        const answer = (route, status, body) =>
+            route.fulfill({ status, headers: { ...cors, "content-type": "application/json" }, body: JSON.stringify(body) });
+        await page.route("https://api.trakt.tv/**", (route) => {
+            const req = route.request();
+            if (req.method() === "OPTIONS") return route.fulfill({ status: 204, headers: cors });
+            const path = new URL(req.url()).pathname;
+            asked.trakt.push(`${req.method()} ${path}`);
+            if (path === "/oauth/device/code")
+                return answer(route, 200, {
+                    device_code: "dev",
+                    user_code: "4F7A21C9",
+                    verification_url: "https://trakt.tv/activate",
+                    expires_in: 600,
+                    interval: 1,
+                });
+            if (path === "/oauth/device/token")
+                return ++polls < 2
+                    ? answer(route, 400, {})
+                    : answer(route, 200, {
+                          access_token: "t-acc",
+                          refresh_token: "t-ref",
+                          expires_in: 7_776_000,
+                          created_at: Math.floor(Date.now() / 1000),
+                      });
+            if (path === "/users/settings") return answer(route, 200, { user: { username: "sam" } });
+            if (path.startsWith("/scrobble/")) return answer(route, 201, {});
+            return answer(route, 404, {});
+        });
+        await page.route("https://api.simkl.com/**", (route) => {
+            const req = route.request();
+            if (req.method() === "OPTIONS") return route.fulfill({ status: 204, headers: cors });
+            const path = new URL(req.url()).pathname;
+            asked.simkl.push(`${req.method()} ${path}`);
+            return answer(route, path.startsWith("/scrobble/") ? 201 : 404, {});
+        });
+        await page.getByText("Connected to Simkl as Robin").waitFor({ timeout: 10_000 });
+        await key("ArrowRight");
+        for (let i = 0; i < 20 && !(await focused()).includes("Connect Trakt"); i++) await key("ArrowDown");
+        if (!(await focused()).includes("Connect Trakt")) throw new Error(`Focus is on "${await focused()}"`);
+        await key("Enter");
+        await page.getByText("4F7A21C9").waitFor({ timeout: 5000 });
+        await page.waitForTimeout(300);
+        await shot("16-trakt-code");
+        await page.locator(".dialog.service", { hasText: "Connected to Trakt as sam" }).waitFor({ timeout: 10_000 });
+        if (!(await focused()).includes("Done")) throw new Error(`Focus is on "${await focused()}"`);
+        await key("Enter");
+        await page.locator(".dialog.service").waitFor({ state: "detached" });
+        await page.getByText("Connected to Trakt as sam").waitFor();
+        await page.waitForTimeout(300);
+        if (!(await focused()).includes("Disconnect")) throw new Error(`Focus went to "${await focused()}", not back to Trakt`);
+        await shot("17-trakt-and-simkl");
+        // A movie plays: both hear it start, and stop where it got to.
+        await key("ArrowLeft", 3);
+        for (let i = 0; i < 8 && !(await focused()).includes("Movies"); i++) await key("ArrowUp");
+        await page.locator(".poster").first().waitFor();
+        await key("ArrowRight");
+        await key("Enter");
+        await page.getByRole("button", { name: "Play" }).waitFor();
+        await page.waitForTimeout(200);
+        await key("Enter");
+        await page.waitForFunction(() => window.__tuned.playback().state === "playing", null, { timeout: 15_000 });
+        for (let i = 0; i < 30 && !(asked.trakt.includes("POST /scrobble/start") && asked.simkl.includes("POST /scrobble/start")); i++)
+            await page.waitForTimeout(100);
+        if (!asked.trakt.includes("POST /scrobble/start")) throw new Error(`Trakt wasn't told the movie started: ${asked.trakt}`);
+        if (!asked.simkl.includes("POST /scrobble/start")) throw new Error(`Simkl wasn't told the movie started: ${asked.simkl}`);
+        await page.waitForTimeout(3000);
+        for (let i = 0; i < 3 && (await page.evaluate(() => window.__tuned.playback().state)) !== "idle"; i++) await key("Escape");
+        for (let i = 0; i < 30 && !asked.trakt.includes("POST /scrobble/stop"); i++) await page.waitForTimeout(100);
+        if (!asked.trakt.includes("POST /scrobble/stop")) throw new Error(`Trakt wasn't told the movie stopped: ${asked.trakt}`);
     });
     const app = await page.evaluate(() => window.__tuned.connections());
     console.log(`Stream connections at once: app ${app.highest}, server ${highest}`);
