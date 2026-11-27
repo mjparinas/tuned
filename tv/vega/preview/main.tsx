@@ -8,6 +8,7 @@ import type { Http } from "../src/core/http";
 import type { Channel, Library, Lineup, Title } from "../src/core/models";
 import { memoryStore } from "../src/core/storage";
 import { ReminderBanner, Shell } from "../src/App";
+import { AddToList } from "../src/ui/AddToList";
 import { BrowseScreen } from "../src/ui/BrowseScreen";
 import { PinPad, ProfilesScreen } from "../src/ui/ProfilesScreen";
 import { EventsScreen } from "../src/ui/EventsScreen";
@@ -203,6 +204,25 @@ const PROFILES = {
     ],
     parentalPin: "v1:preview:only",
 };
+
+/** Alex's own lists from the account, filled with sample channels and movies by Android's ids, and one renamed channel. */
+function withLists(m: AppModel): AppModel {
+    const a = (id: string) => m.androidIdOf(id) ?? "";
+    m.state = {
+        ...m.state,
+        lists: {
+            lists: {
+                "1": [
+                    { id: "9001", name: "Game night", items: [a("c107"), a("c110"), a("c108")] },
+                    { id: "9002", name: "Morning news", items: [a("c101"), a("c102")] },
+                    { id: "9003", name: "Cosy movies", items: [a("m3"), a("m7"), a("m12")] },
+                ],
+            },
+            edits: { [a("c103")]: { name: "Harbour Local", logo: null } },
+        },
+    };
+    return m;
+}
 
 function Scene({ name }: { name: string }) {
     const player = React.useMemo(() => new VegaPlayer(), []);
@@ -433,6 +453,40 @@ function Scene({ name }: { name: string }) {
         case "live-kids": {
             const m = model({ route: "live", lineup, account, profiles: PROFILES, profileId: "3" });
             return <LiveScreen model={m} state={m.state} focusChannel={m.shownChannels()[0]?.id} />;
+        }
+        case "live-lists": {
+            const m = withLists(model({ route: "live", lineup, account, profiles: PROFILES, profileId: "1", channelId: "c107" }));
+            m.pickCategory("__list:9001");
+            return <LiveScreen model={m} state={m.state} focusChannel="c107" />;
+        }
+        case "add-to-list":
+        case "add-to-list-new": {
+            const m = withLists(
+                model({
+                    route: "live",
+                    lineup,
+                    account,
+                    profiles: PROFILES,
+                    profileId: "1",
+                    favourites: new Set(["c107"]),
+                    listFor: { id: "c107", name: lineup.channels.find((c) => c.id === "c107")?.name ?? "" },
+                }),
+            );
+            return name === "add-to-list" ? (
+                <AddToList model={m} state={m.state} showFocused={1} />
+            ) : (
+                <AddToList model={m} state={m.state} naming="Weekend games" />
+            );
+        }
+        case "movie-lists": {
+            const m = withLists(
+                model({ route: "movies", lineup, library, account, profiles: PROFILES, profileId: "1", movieCategory: "__list:9003" }),
+            );
+            return <BrowseScreen model={m} state={m.state} kind="movies" />;
+        }
+        case "settings-lists": {
+            const m = withLists(model({ route: "settings", lineup, account, profiles: PROFILES, profileId: "1" }));
+            return <SettingsScreen model={m} state={m.state} />;
         }
         case "settings-profile": {
             const m = model({ route: "settings", lineup, account, profiles: PROFILES, profileId: "1" });

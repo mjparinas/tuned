@@ -23,6 +23,8 @@ export interface Channel {
     guideId?: string;
     /** How its recordings are reached, for a channel that keeps them (catch-up); missing when it keeps none. */
     catchUp?: CatchUp;
+    /** The playlist's own name, for a channel renamed on the phone or website, so search finds it by either. */
+    was?: string;
 }
 
 export interface Lineup {

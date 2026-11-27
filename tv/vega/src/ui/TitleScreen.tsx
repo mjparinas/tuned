@@ -114,6 +114,9 @@ function MoviePage({ model, state, title, category }: { model: AppModel; state: 
                     <Button label={t.play} filled start onPress={() => void model.playVod(item, 0)} />
                 )}
                 <FavouriteButton model={model} state={state} title={title} />
+                {model.canUseLists() ? (
+                    <Button label={`+  ${t.addToList}`} onPress={() => model.openAddToList(title.id, title.name)} />
+                ) : null}
             </View>
             <View style={{ marginTop: dp(10) }}>
                 <Cast details={details} />

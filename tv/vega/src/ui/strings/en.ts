@@ -1,6 +1,8 @@
 // The stick's words in English, the language every translation beside this file follows (docs/decisions/languages.md).
 // A new or changed line here gets its translation in every other file in this folder in the same pull request;
 // test/strings.test.ts fails otherwise. "Tuned" and Premium are never translated, and it's "Movies", never "Films".
+import type { ListProblem } from "@tuned/shared/lists";
+
 export const en = {
     noContent: "Tuned includes no content. Use it with a playlist from your own provider.",
     signInTitle: "Sign in with your phone",
@@ -212,6 +214,29 @@ export const en = {
     ok: "OK",
     pinPick: "Pick the numbers below, then OK.",
     adultPin: "Enter the parental PIN to show adult categories",
+    addToList: "Add to list",
+    addToListTitle: (n: string) => `Add ${n} to a list`,
+    newList: "New list",
+    listName: "List name",
+    create: "Create",
+    done: "Done",
+    yourLists: "Your lists",
+    deleteList: "Delete",
+    deleteListSure: "Press again to delete",
+    listCount: (c: number) => `${c} ${c === 1 ? "item" : "items"}`,
+    noListsYet: "No lists yet. Use Add to list on a channel or a movie to make one.",
+    listsOnPhone: "Rename lists in the Tuned app on your phone, or at tunedplayer.com/account.",
+    listsPremium: "Your own lists come with Premium, through your Tuned account.",
+    listsSignIn: "Sign in to your Tuned account to keep your own lists, as on your phone.",
+    savingToAccount: "Saving to your account…",
+    listProblem: {
+        offline: "Couldn't reach your Tuned account. Check the TV's internet connection and try again.",
+        gone: "That changed on another device. Try again.",
+        "too many lists": "A profile keeps up to 50 lists.",
+        "bad name": "Give the list a name.",
+        busy: "Another device is saving to your account. Try again in a moment.",
+    } as Record<ListProblem, string>,
+    listHint: "Hold OK on a channel to add it to Favourites or one of your lists.",
 };
 
 export type Strings = typeof en;

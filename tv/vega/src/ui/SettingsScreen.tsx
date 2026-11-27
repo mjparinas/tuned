@@ -6,6 +6,7 @@ import { ScrollView, Text, View } from "react-native";
 import { hasPremium, premiumText, TUNE_WAITS, type AppModel, type State } from "../app/model";
 import { ProgressLines } from "./LoadingScreen";
 import { Button, Focusable, Screen } from "./parts";
+import { ManageLists } from "./AddToList";
 import { Avatar, PinPad } from "./ProfilesScreen";
 import { TopBar } from "./TopBar";
 import { t } from "./strings";
@@ -162,6 +163,11 @@ export function SettingsScreen({ model, state }: { model: AppModel; state: State
                             </Text>
                             <Button label={t.switchProfile} onPress={() => model.openProfiles()} />
                         </View>
+                    </Section>
+                ) : null}
+                {model.canUseLists() ? (
+                    <Section title={t.yourLists}>
+                        <ManageLists model={model} state={state} />
                     </Section>
                 ) : null}
                 <Section title={t.playlists}>

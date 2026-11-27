@@ -4,7 +4,7 @@
 // on screen exist. The saved ones show at once; with none saved yet, the download's steps fill the screen.
 import * as React from "react";
 import { FlatList, Image, Text, View } from "react-native";
-import { CONTINUE, FAVOURITES, type AppModel, type State } from "../app/model";
+import { CONTINUE, FAVOURITES, LIST, type AppModel, type State } from "../app/model";
 import type { Category, Title } from "../core/models";
 import { CategoryRow } from "./LiveScreen";
 import { ProgressLines } from "./LoadingScreen";
@@ -134,7 +134,7 @@ export function BrowseScreen({
     }, [all]);
     const titles = React.useMemo(
         () => model.visibleTitles(kind),
-        [model, all, kind, category, state.favourites, order, state.watching, order === "rating" ? state.details : null],
+        [model, all, kind, category, state.favourites, order, state.watching, state.lists, order === "rating" ? state.details : null],
     );
     const rows = React.useMemo(() => {
         const out: Title[][] = [];
@@ -142,10 +142,16 @@ export function BrowseScreen({
         return out;
     }, [titles]);
     const favouriteCount = React.useMemo(() => all.filter((x) => state.favourites.has(x.id)).length, [all, state.favourites]);
+    // Your own lists that hold a movie, after Favourites; shows aren't added to lists, as on Samsung (lists.md).
+    const lists = React.useMemo(
+        () => (kind === "movies" ? model.listCategories("movies") : []),
+        [model, all, kind, state.lists, state.profileId, state.account],
+    );
     const categories: (Category | null)[] = [
         ...(watching.length || category === CONTINUE ? [{ id: CONTINUE, name: t.continueWatching }] : []),
         null,
         ...(favouriteCount || category === FAVOURITES ? [{ id: FAVOURITES, name: t.favourites }] : []),
+        ...lists.map((l) => ({ id: l.id, name: l.name })),
         ...categoryList.filter((c) => counts.has(c.id)),
     ];
     const allName = kind === "movies" ? t.allMovies : t.allShows;
@@ -154,9 +160,11 @@ export function BrowseScreen({
             ? t.continueWatching
             : category === FAVOURITES
               ? t.favourites
-              : category
-                ? (categoryList.find((c) => c.id === category)?.name ?? "")
-                : allName;
+              : category?.startsWith(LIST)
+                ? (lists.find((l) => l.id === category)?.name ?? "")
+                : category
+                  ? (categoryList.find((c) => c.id === category)?.name ?? "")
+                  : allName;
     const count = kind === "movies" ? t.movieCount(titles.length) : t.showCount(titles.length);
     const open = state.title && state.title.kind === (kind === "movies" ? "movie" : "show") ? state.title.id : null;
     const startId = open && titles.some((x) => x.id === open) ? open : titles[0]?.id;
@@ -214,7 +222,7 @@ export function BrowseScreen({
                                             ? favouriteCount
                                             : item.id === CONTINUE
                                               ? watching.length
-                                              : counts.get(item.id)
+                                              : (lists.find((l) => l.id === item.id)?.count ?? counts.get(item.id))
                                         : all.length
                                 }
                                 selected={(item?.id ?? null) === category}

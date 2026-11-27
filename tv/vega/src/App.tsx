@@ -11,6 +11,7 @@ import { LiveScreen } from "./ui/LiveScreen";
 import { LoadingScreen } from "./ui/LoadingScreen";
 import { ManualScreen } from "./ui/ManualScreen";
 import { ProfilesScreen } from "./ui/ProfilesScreen";
+import { AddToList } from "./ui/AddToList";
 import { PlayerScreen, type PlayerHandle } from "./ui/PlayerScreen";
 import { Button, Screen, Spinner } from "./ui/parts";
 import { t } from "./ui/strings";
@@ -136,6 +137,8 @@ function Screens({ model, player, state }: { model: AppModel; player: VegaPlayer
         return () => subscription.remove();
     }, [model, back]);
 
+    // "Add to list" sits over the screen it was opened from, with Back to close it.
+    if (state.listFor && state.route !== "player") return <AddToList model={model} state={state} />;
     switch (state.route) {
         case "boot":
             return (

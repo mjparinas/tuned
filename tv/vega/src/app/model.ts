@@ -14,7 +14,16 @@ import {
     type AccountProfiles,
     type Profile,
 } from "@tuned/shared/profiles";
-import { androidIdHex, idToHex, xtreamShowLink } from "@tuned/shared/stableid";
+import { androidIdHex, hexToId, idToHex, xtreamShowLink } from "@tuned/shared/stableid";
+import {
+    changeBackup,
+    listsFromBackup,
+    NO_LISTS,
+    type AccountLists,
+    type ListChange,
+    type ListProblem,
+    type UserList,
+} from "@tuned/shared/lists";
 import { visible, type Hiding } from "@tuned/shared/filters";
 import {
     ChannelHealth,
@@ -143,6 +152,10 @@ const PREFS_KEY = "settings";
 const PROFILES_KEY = "profiles";
 const PROFILE_KEY = "profile.current";
 const FOLLOWS_KEY = "events.follows";
+/** The account's own lists and its renamed channels, as last read (the Samsung app's key). */
+const LISTS_KEY = "lists.account";
+/** A list's category in Live TV and Movies: this and the list's Android id. */
+export const LIST = "__list:";
 
 /** One search result: a channel, a movie or a show. */
 export type Found = { kind: "live"; channel: Channel } | { kind: "movie" | "show"; title: Title };
@@ -219,6 +232,12 @@ export interface State {
     profiles: AccountProfiles;
     /** The profile in use; null with fewer than two profiles, or before one is picked. */
     profileId: string | null;
+    /** Each profile's own lists, and channels renamed or given a logo on the phone or website. */
+    lists: AccountLists;
+    /** "Add to list" open for a channel or a movie. */
+    listFor: { id: string; name: string } | null;
+    /** A change to the account saving (what for: a list's id, "new", "favourite"), and why the last one didn't stick. */
+    listSave: { busy: string | null; problem: ListProblem | null };
 }
 
 export interface Services {
@@ -280,6 +299,9 @@ export class AppModel {
         tune: null,
         profiles: NO_PROFILES,
         profileId: null,
+        lists: NO_LISTS,
+        listFor: null,
+        listSave: { busy: null, problem: null },
     };
     /** One guard for every PIN on the stick, so switching between a profile's and the parental PIN doesn't reset it. */
     readonly pins = new PinThrottle();
@@ -338,7 +360,7 @@ export class AppModel {
      */
     private keepFor(id: string): void {
         this.favourites = new Favourites(this.shared, this.profileKey(favouritesKey(id)));
-        this.favourites.onChange((favourites) => this.set({ favourites }));
+        this.favourites.onChange(() => this.showFavourites());
         this.progress = new WatchProgress(this.shared, this.profileKey(progressKey(id)));
         this.progress.onChange((list) =>
             this.set({
@@ -685,7 +707,16 @@ export class AppModel {
             (x) => names.get(x.categoryId) ?? "",
         );
         // A kids profile sees kids and family only (`KidsContent`), as on Android.
-        return kids ? out.filter((x) => isKids(names.get(x.categoryId) ?? "", x.name, live)) : out;
+        const allowed = kids ? out.filter((x) => isKids(names.get(x.categoryId) ?? "", x.name, live)) : out;
+        // Channels renamed or given a logo on the phone or website show that way here too (lists.md).
+        const edits = this.state.lists.edits;
+        if (!live || !Object.keys(edits).length) return allowed;
+        return allowed.map((x) => {
+            const c = x as unknown as Channel;
+            const edit = edits[hexToId(androidIdHex("live", c.url, c.name))];
+            if (!edit) return x;
+            return { ...c, name: edit.name ?? c.name, logo: edit.logo ?? c.logo, was: c.name } as unknown as T;
+        });
     }
 
     /** Whether the profile in use is a kids one. */
@@ -708,7 +739,7 @@ export class AppModel {
             : this.shownMemo("shows", library.shows, library.showCategories);
     }
 
-    private memo = new Map<string, { items: readonly unknown[]; prefs: Prefs; kids: boolean; out: unknown[] }>();
+    private memo = new Map<string, { items: readonly unknown[]; prefs: Prefs; kids: boolean; edits: unknown; out: unknown[] }>();
 
     /** Filtering a big list once per change of list or setting, not on every screen draw. */
     private shownMemo<T extends { name: string; categoryId: string }>(
@@ -722,12 +753,13 @@ export class AppModel {
             hit.items === items &&
             hit.prefs.hideAdult === this.state.prefs.hideAdult &&
             hit.prefs.hide247 === this.state.prefs.hide247 &&
-            hit.kids === this.kids()
+            hit.kids === this.kids() &&
+            hit.edits === this.state.lists.edits
         ) {
             return hit.out as T[];
         }
         const out = this.shown(items, categories, key === "live");
-        this.memo.set(key, { items, prefs: this.state.prefs, kids: this.kids(), out });
+        this.memo.set(key, { items, prefs: this.state.prefs, kids: this.kids(), edits: this.state.lists.edits, out });
         return out;
     }
 
@@ -776,6 +808,8 @@ export class AppModel {
         const category = kind === "movies" ? this.state.movieCategory : this.state.showCategory;
         if (category === CONTINUE) return this.continueTitles(kind);
         const all = this.shownTitles(kind);
+        const list = category?.startsWith(LIST) ? this.myLists().find((l) => LIST + l.id === category) : null;
+        if (list) return this.inList(list, all);
         const picked =
             category === FAVOURITES
                 ? all.filter((t) => this.state.favourites.has(t.id))
@@ -789,8 +823,26 @@ export class AppModel {
 
     /** Stars or unstars a channel, movie or show, and says which for a few seconds. */
     async toggleFavourite(id: string, name: string): Promise<void> {
-        const on = await this.favourites.toggle(id);
+        const profile = this.currentProfile();
+        const android = profile && this.state.account ? this.androidIdOf(id) : null;
+        if (!profile || !android) {
+            const on = await this.favourites.toggle(id);
+            return this.say({ on, name });
+        }
+        // Favourites are the account's: the screen changes at once, and goes back with a note if it didn't stick.
+        const on = !this.state.favourites.has(id);
+        this.accountFavs = new Set(this.accountFavs);
+        if (on) this.accountFavs.add(id);
+        else this.accountFavs.delete(id);
+        this.showFavourites(false);
         this.say({ on, name });
+        const failed = await this.changeAccount("favourite", { op: "favourite", profileId: profile.id, itemId: android, on });
+        if (!failed) return;
+        this.accountFavs = new Set(this.accountFavs);
+        if (on) this.accountFavs.delete(id);
+        else this.accountFavs.add(id);
+        this.showFavourites(false);
+        this.say({ on: !on, name, text: t.listProblem[failed] });
     }
 
     /** A short line the screens show and take away themselves. */
@@ -815,7 +867,7 @@ export class AppModel {
         const q = this.state.query;
         if (!q.trim()) return [];
         // Hidden channels, movies and shows stay out of search too, as on Android.
-        const channels = searchItems(this.shownChannels(), q, (c) => c.name, 200);
+        const channels = searchItems(this.shownChannels(), q, (c) => (c.was ? `${c.name} ${c.was}` : c.name), 200);
         const movies = searchItems(this.shownTitles("movies"), q, (t) => t.name, 200);
         const shows = searchItems(this.shownTitles("shows"), q, (t) => t.name, 200);
         return [
@@ -932,6 +984,10 @@ export class AppModel {
         const { category } = this.state;
         const all = this.shownChannels();
         if (category === FAVOURITES) return all.filter((c) => this.state.favourites.has(c.id));
+        if (category?.startsWith(LIST)) {
+            const list = this.myLists().find((l) => LIST + l.id === category);
+            return list ? this.inList(list, all) : [];
+        }
         return category ? all.filter((c) => c.categoryId === category) : all;
     }
 
@@ -1447,11 +1503,14 @@ export class AppModel {
     /** The profiles, the one used last and the teams followed, as the stick last read them (none while signed out). */
     private async readProfiles(): Promise<void> {
         try {
-            const [raw, who, follows] = await Promise.all([
+            const [raw, who, follows, lists] = await Promise.all([
                 this.shared.get(PROFILES_KEY),
                 this.shared.get(PROFILE_KEY),
                 this.shared.get(FOLLOWS_KEY),
+                this.shared.get(LISTS_KEY),
             ]);
+            const keptLists = lists ? (JSON.parse(lists) as AccountLists) : null;
+            if (keptLists && keptLists.lists && keptLists.edits) this.set({ lists: keptLists });
             const kept = raw ? (JSON.parse(raw) as AccountProfiles) : null;
             const list = kept && Array.isArray(kept.profiles) ? kept : NO_PROFILES;
             const followed: unknown = follows ? JSON.parse(follows) : [];
@@ -1473,28 +1532,40 @@ export class AppModel {
         if (!this.state.account) return;
         const text = await this.account.backup().catch(() => null);
         if (!text) return;
+        await this.takeBackup(text, true);
+    }
+
+    /** The profiles, lists, renamed channels and followed teams in the backup, as read or as the stick just saved it. */
+    private async takeBackup(text: string, opening = false): Promise<void> {
         const read = profilesFromBackup(text);
         const follows = followsFromBackup(text);
+        const lists = listsFromBackup(text);
         await Promise.all([
             this.shared.set(PROFILES_KEY, JSON.stringify(read)),
             this.shared.set(FOLLOWS_KEY, JSON.stringify(follows)),
+            this.shared.set(LISTS_KEY, JSON.stringify(lists)),
         ]).catch((e) => log.warn("AppModel", "save profiles", e));
         const before = this.state.profileId;
         const first = this.state.profiles.profiles[0]?.id;
-        this.set({ profiles: read, follows });
+        const editsChanged = JSON.stringify(lists.edits) !== JSON.stringify(this.state.lists.edits);
+        this.set({ profiles: read, follows, lists: editsChanged ? lists : { ...lists, edits: this.state.lists.edits } });
         const still = read.profiles.length > 1 && read.profiles.some((p) => p.id === before) ? before : null;
         if (still !== before || first !== read.profiles[0]?.id) await this.switchProfile(still);
-        if (read.profiles.length > 1 && !this.picked && this.state.route === "live") this.go("profiles");
-        else await this.seedFavourites();
+        if (opening && read.profiles.length > 1 && !this.picked && this.state.route === "live") this.go("profiles");
+        else this.showFavourites();
     }
 
     private async forgetProfiles(): Promise<void> {
-        await Promise.all([this.shared.remove(PROFILES_KEY), this.shared.remove(PROFILE_KEY), this.shared.remove(FOLLOWS_KEY)]).catch((e) =>
-            log.warn("AppModel", "forget profiles", e),
-        );
+        await Promise.all([
+            this.shared.remove(PROFILES_KEY),
+            this.shared.remove(PROFILE_KEY),
+            this.shared.remove(FOLLOWS_KEY),
+            this.shared.remove(LISTS_KEY),
+        ]).catch((e) => log.warn("AppModel", "forget profiles", e));
         const had = this.state.profileId;
-        this.set({ profiles: NO_PROFILES, follows: [] });
+        this.set({ profiles: NO_PROFILES, follows: [], lists: NO_LISTS, listFor: null });
         if (had) await this.switchProfile(null);
+        else this.showFavourites();
     }
 
     /** Whether "Who's watching?" has been answered since the app opened. */
@@ -1542,32 +1613,142 @@ export class AppModel {
         await this.loadKept();
     }
 
+    // ---- Account Favourites and your own lists (docs/decisions/lists.md) ----
+
+    /** Account favourites matched on this stick (channels and movies); shows' stay on the stick, as on Samsung. */
+    private accountFavs = new Set<string>();
+    private index: { lineup: unknown; library: unknown; byHex: Map<string, string> } | null = null;
+
+    /** This playlist's channels, movies and Xtream shows by Android's id (as hex), built once per download. */
+    private androidIndex(): Map<string, string> {
+        const { lineup, library } = this.state;
+        if (this.index && this.index.lineup === lineup && this.index.library === library) return this.index.byHex;
+        const byHex = new Map<string, string>();
+        for (const c of lineup?.channels ?? []) byHex.set(androidIdHex("live", c.url, c.name), c.id);
+        for (const m of library?.movies ?? []) if (m.url) byHex.set(androidIdHex("movie", m.url, m.name), m.id);
+        this.index = { lineup, library, byHex };
+        return byHex;
+    }
+
+    /** Android's id for a channel or a movie on this stick; null for a show, which Android doesn't favourite or list. */
+    androidIdOf(id: string): string | null {
+        const channel = this.state.lineup?.channels.find((c) => c.id === id);
+        if (channel) return hexToId(androidIdHex("live", channel.url, channel.name));
+        const movie = this.state.library?.movies.find((m) => m.id === id);
+        return movie?.url ? hexToId(androidIdHex("movie", movie.url, movie.name)) : null;
+    }
+
+    /** The stick's ids for Android ids, in their order, leaving out what this playlist doesn't have. */
+    private onStick(androidIds: readonly string[]): string[] {
+        const index = this.androidIndex();
+        return androidIds.flatMap((a) => {
+            const hex = idToHex(a);
+            const id = hex ? index.get(hex) : undefined;
+            return id ? [id] : [];
+        });
+    }
+
     /**
-     * A profile's first time on this stick starts with the favourites the account keeps for it, matched by Android's
-     * ids (`StableId`). Once only: what's starred here after that is the stick's own.
+     * Favourites as shown: signed in to an account with profiles, the account's for channels and movies (as the phone
+     * and website keep them) and the stick's own for shows; otherwise the stick's own, per playlist and profile.
      */
+    private showFavourites(fromAccount = true): void {
+        const profile = this.state.account ? this.currentProfile() : null;
+        const local = this.favourites?.all ?? new Set<string>();
+        if (!profile) return this.set({ favourites: local });
+        if (fromAccount) this.accountFavs = new Set(this.onStick(profile.favourites));
+        const shows = new Set((this.state.library?.shows ?? []).map((x) => x.id));
+        this.set({ favourites: new Set([...this.accountFavs, ...[...local].filter((x) => shows.has(x))]) });
+    }
+
+    /** Kept for the callers that matched favourites before they lived in the account. */
     private async seedFavourites(): Promise<void> {
+        this.showFavourites();
+    }
+
+    /** Your own lists for the profile in use; Premium, as on Android, so none on a free or signed-out stick. */
+    myLists(): readonly UserList[] {
+        const profile = this.state.account ? this.currentProfile() : null;
+        return profile && hasPremium(this.state.account) ? (this.state.lists.lists[profile.id] ?? []) : [];
+    }
+
+    /** Whether "Add to list" can save: a profile in the account, and Premium. */
+    canUseLists(): boolean {
+        return !!this.state.account && !!this.currentProfile() && hasPremium(this.state.account);
+    }
+
+    /** What of `items` is in `list`: channels in the order they were added, movies in the playlist's order. */
+    inList<T extends { id: string }>(list: UserList, items: readonly T[]): T[] {
+        const ids = this.onStick(list.items);
+        const byId = new Map(items.map((x) => [x.id, x]));
+        const found = ids.flatMap((id) => byId.get(id) ?? []);
+        if (found.length && "url" in found[0] && "number" in found[0]) return found;
+        const set = new Set(ids);
+        return items.filter((x) => set.has(x.id));
+    }
+
+    /** Each list holding something of a kind, with how many, after Favourites in Live TV and Movies. */
+    listCategories(kind: "live" | "movies"): { id: string; name: string; count: number }[] {
+        const items: readonly { id: string }[] = kind === "live" ? this.shownChannels() : this.shownTitles("movies");
+        return this.myLists()
+            .map((l) => ({ id: LIST + l.id, name: l.name, count: this.inList(l, items).length }))
+            .filter((c) => c.count > 0);
+    }
+
+    /** Hold OK on a channel, or a movie page's button: "Add to list" with Favourites first. */
+    openAddToList(id: string, name: string): void {
+        this.set({ listFor: { id, name }, listSave: { busy: null, problem: null } });
+    }
+
+    closeAddToList(): void {
+        this.set({ listFor: null });
+    }
+
+    private changes: Promise<unknown> = Promise.resolve();
+
+    /** Makes `change` in the account's backup, after any change still saving. Null when it stuck. */
+    private changeAccount(busy: string, change: ListChange): Promise<ListProblem | null> {
+        const run = this.changes.then(async (): Promise<ListProblem | null> => {
+            this.set({ listSave: { busy, problem: null } });
+            let problem: ListProblem | null = null;
+            try {
+                const done = await changeBackup(this.account, change, { random: (b) => (b.set(this.services.random(b.length)), b) });
+                if ("problem" in done) problem = done.problem;
+                else await this.takeBackup(done.text);
+            } catch (error) {
+                log.warn("AppModel", "change account", error);
+                problem = "offline";
+            }
+            if (problem) log.info("Lists", `A change to the account didn't stick: ${problem}`);
+            this.set({ listSave: { busy: null, problem } });
+            return problem;
+        });
+        this.changes = run.catch(() => null);
+        return run;
+    }
+
+    /** Ticks or unticks a list for the item "Add to list" is open for. */
+    async setInList(listId: string, on: boolean): Promise<void> {
         const profile = this.currentProfile();
-        const { lineup, library, login } = this.state;
-        if (!profile?.favourites.length || !lineup || (login?.kind === "xtream" && !library)) return;
-        const key = this.profileKey(favouritesKey(this.state.playlistId));
-        if ((await this.shared.get(key).catch(() => "")) !== null) return;
-        const wanted = new Map<string, string>();
-        for (const id of profile.favourites) {
-            const hex = idToHex(id);
-            if (hex) wanted.set(hex, id);
-        }
-        const found = new Map<string, string>();
-        const match = (hex: string, id: string) => {
-            const android = wanted.get(hex);
-            if (android && !found.has(android)) found.set(android, id);
-        };
-        for (const c of lineup.channels) match(androidIdHex("live", c.url, c.name), c.id);
-        for (const m of library?.movies ?? []) if (m.url) match(androidIdHex("movie", m.url, m.name), m.id);
-        for (const x of library?.shows ?? []) if (x.seriesId != null) match(androidIdHex("show", xtreamShowLink(x.seriesId), x.name), x.id);
-        const ids = profile.favourites.flatMap((a) => found.get(a) ?? []);
-        await this.shared.set(key, JSON.stringify(ids)).catch((e) => log.warn("AppModel", "seed favourites", e));
-        await this.favourites.load().catch(() => undefined);
+        const item = this.state.listFor && this.androidIdOf(this.state.listFor.id);
+        if (!profile || !item) return;
+        await this.changeAccount(listId, { op: "list_item", profileId: profile.id, listId, itemId: item, on });
+    }
+
+    /** A new list with the item "Add to list" is open for already inside. True when it stuck. */
+    async newList(name: string): Promise<boolean> {
+        const profile = this.currentProfile();
+        const item = this.state.listFor ? this.androidIdOf(this.state.listFor.id) : null;
+        if (!profile) return false;
+        const change: ListChange = { op: "list_add", profileId: profile.id, name, ...(item ? { itemId: item } : {}) };
+        return !(await this.changeAccount("new", change));
+    }
+
+    /** Settings › Your lists › Delete (pressed twice). Renaming stays on the phone or website. */
+    async deleteList(listId: string): Promise<boolean> {
+        const profile = this.currentProfile();
+        if (!profile) return false;
+        return !(await this.changeAccount(listId, { op: "list_delete", profileId: profile.id, listId }));
     }
 
     /** Sign out: back to how the stick was installed (AGENTS.md), the account signed out too. */
@@ -1613,6 +1794,9 @@ export class AppModel {
             tune: null,
             profiles: NO_PROFILES,
             profileId: null,
+            lists: NO_LISTS,
+            listFor: null,
+            listSave: { busy: null, problem: null },
         });
         this.picked = false;
         this.endTune();
