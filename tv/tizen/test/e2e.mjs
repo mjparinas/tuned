@@ -457,6 +457,25 @@ try {
     console.log(`Pictures in ${out}`);
 } catch (error) {
     await shot("failure").catch(() => undefined);
+    // What the player was doing, so a failure says why without a rerun.
+    const state = await page
+        .evaluate(() => {
+            const v = document.querySelector("video");
+            const p = window.__tuned.playback();
+            return {
+                playback: { state: p.state, item: p.item?.name, buffering: p.buffering },
+                video: v && {
+                    src: v.currentSrc,
+                    readyState: v.readyState,
+                    networkState: v.networkState,
+                    paused: v.paused,
+                    time: v.currentTime,
+                    error: v.error?.message,
+                },
+            };
+        })
+        .catch(() => null);
+    console.error("Player:", JSON.stringify(state), "server streams open:", open);
     console.error(`\n${error.stack ?? error}`);
     process.exitCode = 1;
 } finally {
