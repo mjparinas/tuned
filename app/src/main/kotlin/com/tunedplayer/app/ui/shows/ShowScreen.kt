@@ -284,6 +284,7 @@ private fun PhoneShowDetails(
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         metadata?.trailer?.let { TrailerButton(it) }
                         WatchLaterButton(LibraryViewModel.show(showKey, title, metadata?.poster ?: episodes.firstOrNull()?.logo))
+                        ShowFavouriteButton(showKey)
                     }
                     Spacer(Modifier.height(12.dp))
                     DetailsBody(metadata, hasKey, onOpenPerson = onOpenPerson)
@@ -384,6 +385,7 @@ private fun TvShowPage(
                         ) {
                             metadata?.trailer?.let { TrailerButton(it) }
                             WatchLaterButton(LibraryViewModel.show(showKey, title, poster))
+                            ShowFavouriteButton(showKey)
                         }
                         DetailsBody(metadata, hasKey, onOpenPerson = onOpenPerson)
                         if (seasons.size > 1) {

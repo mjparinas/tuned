@@ -10,4 +10,5 @@ export * from "./xmltv.ts";
 export * from "./handoff.ts";
 export * from "./account.ts";
 export * from "./player.ts";
+export * from "./guide.ts";
 export * from "./i18n.ts";

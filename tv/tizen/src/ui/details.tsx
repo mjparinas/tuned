@@ -2,10 +2,12 @@
 // episode names where the playlist has them).
 import { useEffect, useMemo, useState } from "preact/hooks";
 import type { Item } from "@tuned/shared";
-import { episodesOf, favourites, toggleFavourite } from "../app.ts";
+import { episodesOf, favourites } from "../app.ts";
+import { toggleFavourite } from "../my-lists.ts";
 import { play, savedPosition } from "../player/controller.ts";
 import { useStore } from "../state.ts";
 import { clock, t } from "../strings.ts";
+import { AddToList } from "./add-to-list.tsx";
 import { VirtualList } from "./lists.tsx";
 import { Button, Screen, Spinner } from "./parts.tsx";
 import { Poster } from "./posters.tsx";
@@ -18,6 +20,7 @@ function FavouriteButton(props: { item: Item }) {
 
 export function FilmPage(props: { item: Item }) {
     const [resumeAt, setResumeAt] = useState(0);
+    const [adding, setAdding] = useState(false);
     useEffect(() => {
         void savedPosition(props.item).then(setResumeAt);
     }, [props.item.id]);
@@ -47,8 +50,10 @@ export function FilmPage(props: { item: Item }) {
                         <Button kind="primary" start label={t.play} onClick={() => void play(item, [item], 0)} />
                     )}
                     <FavouriteButton item={item} />
+                    <Button label={t.addToList} onClick={() => setAdding(true)} />
                 </div>
             </div>
+            {adding ? <AddToList item={item} onClose={() => setAdding(false)} /> : null}
         </Screen>
     );
 }

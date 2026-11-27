@@ -202,6 +202,71 @@ export class TunedAccount {
         }
     }
 
+    /**
+     * The account's backup, Android's sync copy as JSON text (`GET /api/backup`), for its profiles; null when signed
+     * out, when there's none yet, or when the server can't be reached (the TV keeps what it read last).
+     */
+    async backup(): Promise<string | null> {
+        const token = await this.deps.store.get(KEYS.token);
+        if (!token) return null;
+        try {
+            const response = await this.deps.fetch(`${this.base}/api/backup`, { headers: { Authorization: `Bearer ${token}` } });
+            if (!response.ok) {
+                if (response.status !== 404) this.log(`The backup answered ${response.status}`);
+                return response.status === 404 ? "{}" : null;
+            }
+            return await response.text();
+        } catch (error) {
+            this.log(`Couldn't read the backup: ${String((error as Error)?.message ?? error)}`);
+            return null;
+        }
+    }
+
+    /**
+     * The backup with its version, for changing it (`@tuned/shared/lists`): "none" when the account has none yet, null
+     * when signed out or the server can't be reached.
+     */
+    async backupToChange(): Promise<{ text: string; version: number } | "none" | null> {
+        const token = await this.deps.store.get(KEYS.token);
+        if (!token) return null;
+        try {
+            const response = await this.deps.fetch(`${this.base}/api/backup`, { headers: { Authorization: `Bearer ${token}` } });
+            if (response.status === 404) return "none";
+            if (!response.ok) {
+                this.log(`The backup answered ${response.status}`);
+                return null;
+            }
+            const version = Number(response.headers.get("X-Backup-Version") ?? response.headers.get("ETag")?.replace(/\D/g, "") ?? "");
+            if (!Number.isInteger(version) || version < 0) return null;
+            return { text: await response.text(), version };
+        } catch (error) {
+            this.log(`Couldn't read the backup: ${String((error as Error)?.message ?? error)}`);
+            return null;
+        }
+    }
+
+    /**
+     * Saves `text` as the backup on top of `version`, as the app's upload does (`PUT /api/backup`, If-Match): "conflict"
+     * when another device saved since, so the change is made again on the newer copy.
+     */
+    async saveBackup(text: string, version: number): Promise<"ok" | "conflict" | "failed"> {
+        const token = await this.deps.store.get(KEYS.token);
+        if (!token) return "failed";
+        try {
+            const response = await this.deps.fetch(`${this.base}/api/backup`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}`, "If-Match": `"${version}"` },
+                body: text,
+            });
+            if (response.status === 409) return "conflict";
+            if (!response.ok) this.log(`Saving the backup answered ${response.status}`);
+            return response.ok ? "ok" : "failed";
+        } catch (error) {
+            this.log(`Couldn't save the backup: ${String((error as Error)?.message ?? error)}`);
+            return "failed";
+        }
+    }
+
     /** Signs this TV out of the account, on the server too when it can be reached. */
     async signOut(): Promise<AccountState> {
         const token = await this.deps.store.get(KEYS.token);

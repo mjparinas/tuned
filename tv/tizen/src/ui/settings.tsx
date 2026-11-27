@@ -5,8 +5,11 @@ import {
     account,
     canAddPlaylist,
     currentId,
+    currentProfile,
     nameOf,
     playlists,
+    profileId,
+    profiles,
     refresh,
     refreshNow,
     removePlaylist,
@@ -21,6 +24,8 @@ import { ago, t } from "../strings.ts";
 import { open } from "./nav.ts";
 import { Button, Screen, Spinner } from "./parts.tsx";
 import { StepLine } from "./loading.tsx";
+import { Avatar, PinPad } from "./profiles.tsx";
+import { ManageLists } from "./add-to-list.tsx";
 
 function Toggle(props: { label: string; on: boolean; onChange: (on: boolean) => void }) {
     return (
@@ -39,6 +44,10 @@ export function Settings(props: { height: number }) {
     const s = useStore(settings);
     const [confirming, setConfirming] = useState(false);
     const [checking, setChecking] = useState(false);
+    const [askingPin, setAskingPin] = useState(false);
+    const accountProfiles = useStore(profiles);
+    useStore(profileId);
+    const who = currentProfile();
     const usingList = lists.find((p) => p.id === using);
     return (
         <div class="settings" style={{ height: `${props.height}px` }}>
@@ -72,6 +81,18 @@ export function Settings(props: { height: number }) {
                     </>
                 )}
             </section>
+            {accountProfiles.profiles.length > 1 && who ? (
+                <section>
+                    <h2>{t.profiles}</h2>
+                    <div class="row" data-row>
+                        <Avatar profile={who} size={56} />
+                        <span class="grow">{t.watchingAs(who.name)}</span>
+                        <Button label={t.switchProfile} onClick={() => open({ name: "profiles" })} />
+                    </div>
+                    <p class="muted">{t.profilesOnPhone}</p>
+                </section>
+            ) : null}
+            <ManageLists />
             <section>
                 <h2>{t.playlists}</h2>
                 <div class="buttons" data-row>
@@ -112,7 +133,16 @@ export function Settings(props: { height: number }) {
             <section>
                 <h2>{t.settings}</h2>
                 <Toggle label={t.channelNumbers} on={s.channelNumbers} onChange={(on) => void saveSettings({ channelNumbers: on })} />
-                <Toggle label={t.hideAdult} on={s.hideAdult} onChange={(on) => void saveSettings({ hideAdult: on })} />
+                <Toggle
+                    label={t.hideAdult}
+                    on={s.hideAdult}
+                    onChange={(on) => {
+                        // Showing adult groups asks for the parental PIN when the account has one (profiles.md).
+                        if (!on && accountProfiles.parentalPin) setAskingPin(true);
+                        else void saveSettings({ hideAdult: on });
+                    }}
+                />
+                <Toggle label={t.guideGrid} on={s.guideGrid} onChange={(on) => void saveSettings({ guideGrid: on })} />
                 <button type="button" class="row" data-focus onClick={() => open({ name: "log" })}>
                     {t.log}
                 </button>
@@ -124,6 +154,17 @@ export function Settings(props: { height: number }) {
                 </p>
             </section>
             {confirming ? <ConfirmSignOut onClose={() => setConfirming(false)} /> : null}
+            {askingPin ? (
+                <PinPad
+                    title={t.parentalPin}
+                    hash={accountProfiles.parentalPin}
+                    onCancel={() => setAskingPin(false)}
+                    onOk={() => {
+                        setAskingPin(false);
+                        void saveSettings({ hideAdult: false });
+                    }}
+                />
+            ) : null}
         </div>
     );
 }

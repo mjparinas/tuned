@@ -2,7 +2,7 @@
 // press to the screen on top: its own handler first, then moving focus, OK, and Back.
 import { render } from "preact";
 import { start } from "./app.ts";
-import { focus, move, focusables } from "./focus.ts";
+import { focus, focusables, keepFocus, move, remoteMoved } from "./focus.ts";
 import { isTyping, readKey } from "./keys.ts";
 import { log } from "./log.ts";
 import { language, rightToLeft } from "./strings.ts";
@@ -49,6 +49,7 @@ document.addEventListener("keydown", (event) => {
     }
     if (press.action === null && press.digit === null) return;
     event.preventDefault();
+    remoteMoved();
     try {
         if (handleKey(press)) return;
         switch (press.action) {
@@ -81,5 +82,7 @@ document.addEventListener("keydown", (event) => {
 document.documentElement.lang = language;
 document.documentElement.dir = rightToLeft ? "rtl" : "ltr";
 
-render(<App />, document.getElementById("app") as HTMLElement);
+const root = document.getElementById("app") as HTMLElement;
+render(<App />, root);
+keepFocus(root);
 void start();

@@ -14,6 +14,7 @@ import com.tunedplayer.app.core.Episodes
 import com.tunedplayer.app.core.ProgrammeGenre
 import com.tunedplayer.app.core.Search
 import com.tunedplayer.app.core.TitleSort
+import com.tunedplayer.app.data.FavouriteShows
 import com.tunedplayer.app.data.db.CatchUpItemEntity
 import com.tunedplayer.app.data.db.CurrentProfileEntity
 import com.tunedplayer.app.data.db.DownloadEntity
@@ -122,6 +123,8 @@ object SampleData {
         db.library().saveProgress(HistoryEntity(4, positionMs = 0, durationMs = 0, watchedAt = now - 3))
         db.library().addFavourite(FavouriteEntity(1, now))
         db.library().addFavourite(FavouriteEntity(4, now))
+        // A show favourited whole (Melvin, 2026-11-27), so its page's heart is filled and Shows › Favourites lists it.
+        db.library().addFavourite(FavouriteEntity(FavouriteShows.id(Episodes.showKey("Harbour Town")), now))
         db.library().saveProgress(HistoryEntity(SHOW_IDS, positionMs = 2_400_000, durationMs = 2_700_000, watchedAt = now))
         db.library().saveProgress(HistoryEntity(SHOW_IDS + 1, positionMs = 900_000, durationMs = 2_700_000, watchedAt = now - 1))
         db.library().saveProgress(HistoryEntity(MOVIE_IDS, positionMs = 1_800_000, durationMs = 6_600_000, watchedAt = now - 2))

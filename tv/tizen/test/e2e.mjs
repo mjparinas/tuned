@@ -4,6 +4,7 @@
 // checks there was never more than one stream connection, in the app and at the server, and saves a picture of each
 // screen in test/out/.
 import { execFileSync } from "node:child_process";
+import { pbkdf2Sync } from "node:crypto";
 import { createReadStream, existsSync, mkdirSync, readFileSync, statSync } from "node:fs";
 import { createServer } from "node:http";
 import { extname, join } from "node:path";
@@ -38,8 +39,42 @@ colours.forEach((src, i) => {
         ]);
 });
 
+/** Android's id for a stream (`StableId`): FNV-1a 64 of kind, link tail and name, as signed decimal text. */
+function androidId(kind, url, name) {
+    const tail = url
+        .split("?")[0]
+        .split("/")
+        .pop()
+        .replace(/\.[^.]*$/, "");
+    let hash = 0xcbf29ce484222325n;
+    for (const byte of Buffer.from(`${kind}|${tail}|${name}`)) hash = ((hash ^ BigInt(byte)) * 0x100000001b3n) & 0xffffffffffffffffn;
+    return BigInt.asIntN(64, hash).toString();
+}
+/** A PIN hashed as Android's `PinHash` does. */
+const pinHash = (pin) => {
+    const salt = Buffer.from("tuned-e2e-salt!!");
+    return `v1:${salt.toString("base64")}:${pbkdf2Sync(pin, salt, 120_000, 32, "sha256").toString("base64")}`;
+};
+/**
+ * The account's backup as the phone left it: a grown-up profile with a PIN and a list for game night, a kids one whose
+ * favourite is Treehouse, and CBC News renamed on the website.
+ */
+const backup = (base) =>
+    `{"fingerprint":"f1","changedAt":1,"copy":{"settings":{"adult_pin":{"s":"${pinHash("4321")}"}},` +
+    `"channelEdits":[{"itemId":${androidId(0, `${base}/live/0.webm`, "CBC News")},"name":"CBC National","logo":null}],"profiles":[` +
+    `{"id":1,"name":"Sam","colour":1,"kids":false,"pinHash":"${pinHash("1234")}","createdAt":1,"avatar":"fox",` +
+    `"lists":[{"id":31,"name":"Game night","position":1,"createdAt":1,"items":[{"itemId":${androidId(0, `${base}/live/1.webm`, "TSN 1")},"addedAt":1,"position":1}]}]},` +
+    `{"id":2,"name":"Robin","colour":5,"kids":true,"createdAt":2,"avatar":"dragon","favourites":[{"itemId":${androidId(0, `${base}/live/2.webm`, "Treehouse")},"addedAt":1,"position":0}]}]}}`;
+/** The backup as saved last (the TV saves its changes on top), and its version. */
+let saved = null;
+let savedVersion = 1;
+/** Once true, the phone signs the TV in to the account as soon as the code shows. */
+let phoneSignsIn = false;
+
 let open = 0;
 let highest = 0;
+/** What catch-up recordings the app asked for. */
+const replays = [];
 const now = Date.now();
 const xmltvTime = (ms) => new Date(ms).toISOString().replace(/[-:T]/g, "").slice(0, 14) + " +0000";
 
@@ -51,8 +86,13 @@ function playlist(base) {
         ["kids.ca", "Treehouse", "Kids"],
         ["docs.ca", "Documentary Channel", "News"],
     ];
+    // CBC News keeps three days of recordings, as a Kodi-style playlist says so (playlist.md › Catch-up).
+    const catchUp = `catchup="default" catchup-days="3" catchup-source="${base}/catchup/{utc}-{duration}.webm"`;
     channels.forEach(([id, name, group], i) =>
-        lines.push(`#EXTINF:-1 tvg-id="${id}" tvg-name="${name}" group-title="${group}",${name}`, `${base}/live/${i}.webm`),
+        lines.push(
+            `#EXTINF:-1 tvg-id="${id}" tvg-name="${name}" ${i === 0 ? catchUp + " " : ""}group-title="${group}",${name}`,
+            `${base}/live/${i}.webm`,
+        ),
     );
     for (const [i, movie] of ["The Long Field (2021)", "Northern Lights (2019)", "Harbour Town (2023)"].entries())
         lines.push(`#EXTINF:-1 group-title="Movies Drama",${movie}`, `${base}/movie/${i}.mp4`);
@@ -69,6 +109,8 @@ function guide() {
     };
     let xml = '<?xml version="1.0"?><tv>';
     for (const id of Object.keys(shows)) xml += `<channel id="${id}"><display-name>${id}</display-name></channel>`;
+    // Something CBC News showed earlier, which its recordings can replay.
+    xml += `<programme channel="news.ca" start="${xmltvTime(now - 9000_000)}" stop="${xmltvTime(now - 1800_000)}"><title>Morning Show</title></programme>`;
     for (const [id, [a, b]] of Object.entries(shows)) {
         xml += `<programme channel="${id}" start="${xmltvTime(now - 1800_000)}" stop="${xmltvTime(now + 1800_000)}"><title>${a}</title><desc>Tonight's top stories from across the country.</desc></programme>`;
         xml += `<programme channel="${id}" start="${xmltvTime(now + 1800_000)}" stop="${xmltvTime(now + 5400_000)}"><title>${b}</title></programme>`;
@@ -87,13 +129,34 @@ const server = createServer((req, res) => {
     }
     if (url.pathname === "/api/tv/take") {
         res.setHeader("Content-Type", "application/json");
-        return res.end(JSON.stringify({ status: "waiting" }));
+        return res.end(JSON.stringify(phoneSignsIn ? { status: "ok", link: "one-time" } : { status: "waiting" }));
     }
-    if (url.pathname === "/api/account/seat") return res.writeHead(401).end();
+    const signedIn = req.headers.authorization === "Bearer tv-token";
+    res.setHeader("Content-Type", "application/json");
+    if (url.pathname === "/api/auth/token")
+        return res.end(JSON.stringify({ status: "ok", token: "tv-token", email: "viewer@example.com" }));
+    if (url.pathname === "/api/account/seat")
+        return signedIn ? res.end(JSON.stringify({ seat: "active", email: "viewer@example.com" })) : res.writeHead(401).end();
+    if (url.pathname === "/api/backup") {
+        if (!signedIn) return res.writeHead(401).end();
+        saved ??= backup(base);
+        if (req.method !== "PUT") return res.writeHead(200, { "X-Backup-Version": String(savedVersion) }).end(saved);
+        let body = "";
+        req.on("data", (c) => (body += c));
+        req.on("end", () => {
+            if (req.headers["if-match"] !== `"${savedVersion}"`) return res.writeHead(409).end(JSON.stringify({ status: "conflict" }));
+            saved = body;
+            savedVersion++;
+            res.end(JSON.stringify({ status: "ok", version: savedVersion }));
+        });
+        return;
+    }
+    res.removeHeader("Content-Type");
     if (url.pathname === "/get.m3u") return res.end(playlist(base));
     if (url.pathname === "/guide.xml") return res.end(guide());
-    const stream = url.pathname.match(/^\/(live|movie|series)\/(.+)$/);
+    const stream = url.pathname.match(/^\/(live|movie|series|catchup)\/(.+)$/);
     if (stream) {
+        if (stream[1] === "catchup") replays.push(stream[2]);
         const n = Number(stream[2].match(/\d/)?.[0] ?? 0) % 3;
         const file = join(out, `clip${n}.webm`);
         open++;
@@ -121,11 +184,17 @@ const browser = await chromium.launch({
     executablePath: process.env.CHROMIUM_PATH || undefined,
 });
 const errors = [];
+/** The page's last console lines, printed when a step fails. */
+const consoleLines = [];
 /** A fresh TV (nothing saved) whose language is `locale`; Tizen hands the TV's menu language to the page the same way. */
 const freshTv = async (locale) => {
     const tv = await browser.newPage({ viewport: { width: 1920, height: 1080 }, locale });
     tv.on("pageerror", (e) => errors.push(String(e)));
-    tv.on("console", (m) => process.env.VERBOSE && console.log("page:", m.text()));
+    tv.on("console", (m) => {
+        consoleLines.push(m.text());
+        if (consoleLines.length > 30) consoleLines.shift();
+        if (process.env.VERBOSE) console.log("page:", m.text());
+    });
     return tv;
 };
 let page = await freshTv("en-CA");
@@ -142,7 +211,23 @@ const key = async (k, times = 1) => {
         await page.waitForTimeout(120);
     }
 };
-const focused = () => page.evaluate(() => document.activeElement?.textContent ?? "");
+/** A key only a Samsung remote has (the colour keys), sent with its Tizen code. */
+const remote = async (code) => {
+    await page.evaluate((c) => {
+        const event = new Event("keydown", { bubbles: true, cancelable: true });
+        Object.defineProperty(event, "keyCode", { value: c });
+        document.dispatchEvent(event);
+    }, code);
+    await page.waitForTimeout(150);
+};
+const GREEN = 404;
+const YELLOW = 405;
+const BLUE = 406;
+/** What the remote is on; nothing when focus fell to the page itself (whose text holds every word on screen). */
+const focused = () =>
+    page.evaluate(() =>
+        document.activeElement && document.activeElement !== document.body ? (document.activeElement.textContent ?? "") : "",
+    );
 
 try {
     await page.goto(base);
@@ -173,6 +258,17 @@ try {
         await page.waitForTimeout(300);
         await shot("3-live-tv");
         if (!(await focused()).includes("CBC News")) throw new Error(`Focus is on "${await focused()}"`);
+        // A focused element taken off the page (a screen or a list redrawn under the remote) leaves the remote on
+        // the screen's likely choice, never on nothing.
+        await page.evaluate(() => {
+            const temp = document.createElement("button");
+            temp.setAttribute("data-focus", "");
+            document.querySelector("[data-layer]")?.appendChild(temp);
+            temp.focus();
+            temp.remove();
+        });
+        await page.waitForTimeout(200);
+        if (!(await focused()).includes("CBC News")) throw new Error(`After a redraw the remote is on "${await focused()}"`);
     });
     await step("OK plays the channel", async () => {
         await key("Enter");
@@ -194,6 +290,28 @@ try {
         await page.waitForTimeout(300);
         const playing = await page.evaluate(() => document.body.classList.contains("playing"));
         if (playing) throw new Error("Still playing after Back");
+    });
+    await step("Green shows the guide grid, and a past programme replays from its recording", async () => {
+        await remote(GREEN);
+        await page.locator(".grid").waitFor();
+        await page.locator(".prog.on").getByText("The National").waitFor({ timeout: 5000 });
+        await page.waitForTimeout(300);
+        await shot("8-guide-grid");
+        await key("ArrowLeft");
+        await page.locator(".prog.on").getByText("Morning Show").waitFor({ timeout: 5000 });
+        await page.getByText("OK plays it from the start").waitFor();
+        await page.waitForTimeout(300);
+        await shot("9-catch-up");
+        await key("Enter");
+        await page.waitForFunction(() => document.querySelector("video")?.currentTime > 0.5, null, { timeout: 15_000 });
+        const start = Math.floor((now - 9000_000) / 1000);
+        if (replays[replays.length - 1] !== `${start}-7200.webm`) throw new Error(`Asked for the recording ${replays.join(", ")}`);
+        await page.waitForTimeout(5500);
+        await key("Escape");
+        await page.locator(".player").waitFor({ state: "detached", timeout: 5000 });
+        await remote(GREEN);
+        await page.locator(".channel").first().waitFor();
+        await page.waitForTimeout(300);
     });
     await step("Movies", async () => {
         await key("ArrowLeft", 3);
@@ -263,6 +381,96 @@ try {
             await shot(`${tag}-3-settings`);
         });
     }
+    await step("Who's watching, a kids profile, and a PIN", async () => {
+        await page.close();
+        page = await freshTv("en-CA");
+        phoneSignsIn = true;
+        await page.goto(base);
+        await page.getByText("Signed in to your Tuned account.").waitFor({ timeout: 10_000 });
+        await page.waitForTimeout(300);
+        await page.getByText("Type a login with the remote").click();
+        await page.getByText("Xtream login").waitFor();
+        await page.waitForTimeout(200);
+        await key("ArrowRight");
+        await key("Enter");
+        await key("ArrowDown");
+        await page.keyboard.type(`${base}/get.m3u`);
+        await key("ArrowDown");
+        await page.keyboard.type(`${base}/guide.xml`);
+        await key("ArrowDown");
+        await key("Enter");
+        await page.getByText("Who's watching?").waitFor({ timeout: 20_000 });
+        await page.waitForTimeout(300);
+        await shot("10-whos-watching");
+        if (!(await focused()).includes("Sam")) throw new Error(`Focus is on "${await focused()}"`);
+        await key("ArrowRight");
+        await key("Enter");
+        await page.locator(".channel").first().waitFor({ timeout: 10_000 });
+        await page.getByText("Favourites").first().waitFor({ timeout: 5000 });
+        const names = await page.locator(".channel .name").allTextContents();
+        if (names.join() !== "Treehouse") throw new Error(`A kids profile sees ${names.join(", ")}`);
+        if (await page.locator(".rail").getByText("Settings").count()) throw new Error("A kids profile has Settings");
+        await page.waitForTimeout(300);
+        await shot("11-kids-profile");
+        await key("ArrowLeft", 3);
+        for (let i = 0; i < 6 && !(await focused()).includes("Robin"); i++) await key("ArrowDown");
+        await key("Enter");
+        await page.getByText("Who's watching?").waitFor();
+        await page.waitForTimeout(300);
+        await key("ArrowLeft");
+        await key("Enter");
+        await page.getByText("Enter Sam's PIN").waitFor();
+        await page.keyboard.type("1111");
+        await page.waitForTimeout(200);
+        await key("Enter");
+        await page.getByText("That PIN isn't right.").waitFor({ timeout: 10_000 });
+        await page.waitForTimeout(300);
+        await shot("12-pin");
+        await page.keyboard.type("1234");
+        await page.waitForTimeout(200);
+        await key("Enter");
+        await page.getByText("Who's watching?").waitFor({ state: "detached", timeout: 10_000 });
+        await page.locator(".channel").nth(3).waitFor({ timeout: 10_000 });
+        phoneSignsIn = false;
+    });
+    await step("Your own lists, a renamed channel, and Favourites in the account", async () => {
+        await page.getByText("CBC National").first().waitFor({ timeout: 5000 });
+        await page.locator(".chip", { hasText: "Game night" }).waitFor({ timeout: 5000 });
+        await key("ArrowRight");
+        for (let i = 0; i < 4 && !(await focused()).includes("CBC National"); i++) await key("ArrowUp");
+        if (!(await focused()).includes("CBC National")) throw new Error(`Focus is on "${await focused()}"`);
+        await remote(BLUE);
+        await page.getByText("Add CBC National to a list").waitFor();
+        await page.waitForTimeout(300);
+        await shot("13-add-to-list");
+        const cbc = androidId(0, `${base}/live/0.webm`, "CBC News");
+        await key("Enter");
+        await page.locator('.dialog.lists [role="checkbox"][aria-checked="true"]').waitFor({ timeout: 10_000 });
+        if (!saved.includes(`{"itemId":${cbc},`)) throw new Error("Game night didn't get CBC News in the account");
+        await key("ArrowDown");
+        await key("Enter");
+        await page.getByPlaceholder("List name").waitFor();
+        await page.keyboard.type("Evening");
+        await key("ArrowDown");
+        await key("Enter");
+        await page.locator(".dialog.lists .row", { hasText: "Evening" }).waitFor({ timeout: 10_000 });
+        if (!saved.includes('"name":"Evening"')) throw new Error("The new list isn't in the account");
+        await key("Escape");
+        await page.locator(".dialog.lists").waitFor({ state: "detached" });
+        await remote(YELLOW);
+        await page.locator(".chip", { hasText: "Evening" }).waitFor({ timeout: 10_000 });
+        await page.waitForTimeout(1500);
+        const copy = JSON.parse(saved.replace(/(?<=[:\[,])-?\d{16,}/g, (d) => `"${d}"`)).copy;
+        if (!copy.profiles[0].favourites?.some((f) => f.itemId === cbc)) throw new Error("Yellow didn't add a favourite to the account");
+        await page.waitForTimeout(300);
+        await shot("14-lists-on-live-tv");
+        await key("ArrowLeft", 3);
+        for (let i = 0; i < 6 && !(await focused()).includes("Settings"); i++) await key("ArrowDown");
+        await key("Enter");
+        await page.getByText("Your lists").waitFor();
+        await page.waitForTimeout(300);
+        await shot("15-your-lists");
+    });
     const app = await page.evaluate(() => window.__tuned.connections());
     console.log(`Stream connections at once: app ${app.highest}, server ${highest}`);
     if (app.highest > 1 || highest > 1) throw new Error("More than one stream connection was open at once");
@@ -270,6 +478,28 @@ try {
     console.log(`Pictures in ${out}`);
 } catch (error) {
     await shot("failure").catch(() => undefined);
+    // What the player was doing, so a failure says why without a rerun.
+    const state = await page
+        .evaluate(() => {
+            const v = document.querySelector("video");
+            const p = window.__tuned.playback();
+            return {
+                playback: { state: p.state, item: p.item?.name, buffering: p.buffering },
+                focused: document.activeElement?.outerHTML.slice(0, 160),
+                layers: document.querySelectorAll("[data-layer]").length,
+                video: v && {
+                    src: v.currentSrc,
+                    readyState: v.readyState,
+                    networkState: v.networkState,
+                    paused: v.paused,
+                    time: v.currentTime,
+                    error: v.error?.message,
+                },
+            };
+        })
+        .catch(() => null);
+    console.error("Player:", JSON.stringify(state), "server streams open:", open);
+    console.error("Page console:\n" + consoleLines.join("\n"));
     console.error(`\n${error.stack ?? error}`);
     process.exitCode = 1;
 } finally {

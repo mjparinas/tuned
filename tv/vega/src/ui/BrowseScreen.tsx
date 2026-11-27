@@ -1,9 +1,10 @@
-// Movies and Shows: the tabs along the top, categories down the left and posters beside them, in the provider's own
-// order (Playlist order, Android's default; docs/decisions/playlist.md). Both are windowed lists, so only the posters
+// Movies and Shows: the tabs along the top, categories down the left and posters beside them, in the order the tab's
+// Sort button says (Playlist order by default, as on Android; docs/decisions/playlist.md), with Continue watching first
+// when something is half watched. Both are windowed lists, so only the posters
 // on screen exist. The saved ones show at once; with none saved yet, the download's steps fill the screen.
 import * as React from "react";
 import { FlatList, Image, Text, View } from "react-native";
-import type { AppModel, State } from "../app/model";
+import { CONTINUE, FAVOURITES, LIST, type AppModel, type State } from "../app/model";
 import type { Category, Title } from "../core/models";
 import { CategoryRow } from "./LiveScreen";
 import { ProgressLines } from "./LoadingScreen";
@@ -47,7 +48,19 @@ export function Poster({ title, width, height }: { title: Title; width: number; 
     );
 }
 
-function PosterCard({ title, onPress, start, showFocused }: { title: Title; onPress: () => void; start?: boolean; showFocused?: boolean }) {
+function PosterCard({
+    title,
+    favourite,
+    onPress,
+    start,
+    showFocused,
+}: {
+    title: Title;
+    favourite: boolean;
+    onPress: () => void;
+    start?: boolean;
+    showFocused?: boolean;
+}) {
     const dp = useDp();
     const meta = [title.year, title.rating ? t.rating(title.rating) : null].filter(Boolean).join("  ·  ");
     return (
@@ -62,7 +75,25 @@ function PosterCard({ title, onPress, start, showFocused }: { title: Title; onPr
         >
             {() => (
                 <View style={{ gap: dp(4) }}>
-                    <Poster title={title} width={dp(POSTER_W)} height={dp(POSTER_H)} />
+                    <View>
+                        <Poster title={title} width={dp(POSTER_W)} height={dp(POSTER_H)} />
+                        {favourite ? (
+                            <Text
+                                accessibilityLabel={t.favourites}
+                                style={{
+                                    position: "absolute",
+                                    top: dp(6),
+                                    right: dp(6),
+                                    color: colours.primary,
+                                    fontSize: dp(16),
+                                    textShadowColor: "#000",
+                                    textShadowRadius: 4,
+                                }}
+                            >
+                                ★
+                            </Text>
+                        ) : null}
+                    </View>
                     <Text numberOfLines={1} style={{ color: colours.text, fontSize: dp(13), fontWeight: "500" }}>
                         {title.name}
                     </Text>
@@ -91,23 +122,49 @@ export function BrowseScreen({
     const dp = useDp();
     const library = state.library;
     const load = state.libraryLoad;
-    const all = kind === "movies" ? (library?.movies ?? []) : (library?.shows ?? []);
-    const categoryList = kind === "movies" ? (library?.movieCategories ?? []) : (library?.showCategories ?? []);
+    const all = React.useMemo(() => model.shownTitles(kind), [model, library, kind, state.prefs]);
+    const categoryList = React.useMemo(() => model.shownCategories(kind), [model, library, kind, state.prefs]);
     const category = kind === "movies" ? state.movieCategory : state.showCategory;
+    const order = kind === "movies" ? state.prefs.sortMovies : state.prefs.sortShows;
+    const watching = React.useMemo(() => model.continueTitles(kind), [model, all, state.watching]);
     const counts = React.useMemo(() => {
         const out = new Map<string, number>();
         for (const title of all) out.set(title.categoryId, (out.get(title.categoryId) ?? 0) + 1);
         return out;
     }, [all]);
-    const titles = React.useMemo(() => model.visibleTitles(kind), [model, library, kind, category]);
+    const titles = React.useMemo(
+        () => model.visibleTitles(kind),
+        [model, all, kind, category, state.favourites, order, state.watching, state.lists, order === "rating" ? state.details : null],
+    );
     const rows = React.useMemo(() => {
         const out: Title[][] = [];
         for (let i = 0; i < titles.length; i += COLUMNS) out.push(titles.slice(i, i + COLUMNS));
         return out;
     }, [titles]);
-    const categories: (Category | null)[] = [null, ...categoryList.filter((c) => counts.has(c.id))];
+    const favouriteCount = React.useMemo(() => all.filter((x) => state.favourites.has(x.id)).length, [all, state.favourites]);
+    // Your own lists that hold a movie, after Favourites; shows aren't added to lists, as on Samsung (lists.md).
+    const lists = React.useMemo(
+        () => (kind === "movies" ? model.listCategories("movies") : []),
+        [model, all, kind, state.lists, state.profileId, state.account],
+    );
+    const categories: (Category | null)[] = [
+        ...(watching.length || category === CONTINUE ? [{ id: CONTINUE, name: t.continueWatching }] : []),
+        null,
+        ...(favouriteCount || category === FAVOURITES ? [{ id: FAVOURITES, name: t.favourites }] : []),
+        ...lists.map((l) => ({ id: l.id, name: l.name })),
+        ...categoryList.filter((c) => counts.has(c.id)),
+    ];
     const allName = kind === "movies" ? t.allMovies : t.allShows;
-    const heading = category ? (categoryList.find((c) => c.id === category)?.name ?? "") : allName;
+    const heading =
+        category === CONTINUE
+            ? t.continueWatching
+            : category === FAVOURITES
+              ? t.favourites
+              : category?.startsWith(LIST)
+                ? (lists.find((l) => l.id === category)?.name ?? "")
+                : category
+                  ? (categoryList.find((c) => c.id === category)?.name ?? "")
+                  : allName;
     const count = kind === "movies" ? t.movieCount(titles.length) : t.showCount(titles.length);
     const open = state.title && state.title.kind === (kind === "movies" ? "movie" : "show") ? state.title.id : null;
     const startId = open && titles.some((x) => x.id === open) ? open : titles[0]?.id;
@@ -159,7 +216,15 @@ export function BrowseScreen({
                         renderItem={({ item }) => (
                             <CategoryRow
                                 name={item ? item.name : allName}
-                                count={item ? counts.get(item.id) : all.length}
+                                count={
+                                    item
+                                        ? item.id === FAVOURITES
+                                            ? favouriteCount
+                                            : item.id === CONTINUE
+                                              ? watching.length
+                                              : (lists.find((l) => l.id === item.id)?.count ?? counts.get(item.id))
+                                        : all.length
+                                }
                                 selected={(item?.id ?? null) === category}
                                 onPress={() => model.pickBrowseCategory(kind, item?.id ?? null)}
                             />
@@ -169,15 +234,18 @@ export function BrowseScreen({
                     />
                 </View>
                 <View style={{ flex: 1 }}>
-                    <View style={{ flexDirection: "row", alignItems: "baseline", gap: dp(12), marginBottom: dp(10) }}>
+                    <View style={{ flexDirection: "row", alignItems: "center", gap: dp(12), marginBottom: dp(10) }}>
                         <Text numberOfLines={1} style={{ color: colours.text, fontSize: dp(22), fontWeight: "600", flexShrink: 1 }}>
                             {heading}
                         </Text>
-                        <Text style={{ color: colours.muted, fontSize: dp(13) }}>{count}</Text>
+                        <Text style={{ color: colours.muted, fontSize: dp(13), flex: 1 }}>{count}</Text>
+                        {category === CONTINUE ? null : (
+                            <Button label={t.sortButton(t.sortNames[order])} onPress={() => void model.nextSort(kind)} />
+                        )}
                     </View>
                     {rows.length ? (
                         <FlatList
-                            key={`${kind}:${category ?? "all"}`}
+                            key={`${kind}:${category ?? "all"}:${order}`}
                             data={rows}
                             keyExtractor={(row) => row[0].id}
                             getItemLayout={(_, index) => ({ length: dp(ROW), offset: dp(ROW) * index, index })}
@@ -192,6 +260,7 @@ export function BrowseScreen({
                                         <PosterCard
                                             key={title.id}
                                             title={title}
+                                            favourite={state.favourites.has(title.id)}
                                             start={title.id === startId}
                                             showFocused={title.id === focusTitle}
                                             onPress={() => void model.openTitle(title)}
@@ -210,7 +279,7 @@ export function BrowseScreen({
 
     return (
         <Screen>
-            <TopBar model={model} tab={kind} status={status} />
+            <TopBar model={model} state={state} tab={kind} status={status} />
             {body}
         </Screen>
     );

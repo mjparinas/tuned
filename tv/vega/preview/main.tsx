@@ -3,21 +3,25 @@
 import * as React from "react";
 import { createRoot } from "react-dom/client";
 import { View } from "react-native";
-import { AppModel, type State } from "../src/app/model";
+import { AppModel, CONTINUE, DEFAULT_PREFS, type State } from "../src/app/model";
 import type { Http } from "../src/core/http";
 import type { Channel, Library, Lineup, Title } from "../src/core/models";
 import { memoryStore } from "../src/core/storage";
-import { Shell } from "../src/App";
+import { ReminderBanner, Shell } from "../src/App";
+import { AddToList } from "../src/ui/AddToList";
 import { BrowseScreen } from "../src/ui/BrowseScreen";
+import { PinPad, ProfilesScreen } from "../src/ui/ProfilesScreen";
+import { EventsScreen } from "../src/ui/EventsScreen";
 import { LiveScreen } from "../src/ui/LiveScreen";
 import { LoadingScreen } from "../src/ui/LoadingScreen";
 import { ManualScreen } from "../src/ui/ManualScreen";
 import { PlayerScreen } from "../src/ui/PlayerScreen";
+import { SearchScreen } from "../src/ui/SearchScreen";
 import { SettingsScreen } from "../src/ui/SettingsScreen";
 import { SignInScreen } from "../src/ui/SignInScreen";
 import { TitleScreen } from "../src/ui/TitleScreen";
 import { VegaPlayer } from "../src/platform/VegaPlayer";
-import { chooseLanguage, rightToLeft } from "../src/ui/strings";
+import { chooseLanguage, rightToLeft, t as tr0 } from "../src/ui/strings";
 
 const offline: Http = {
     text: () => Promise.reject(new Error("preview")),
@@ -181,6 +185,7 @@ function model(patch: Partial<State>): AppModel {
         random: (n) => crypto.getRandomValues(new Uint8Array(n)),
         player: new VegaPlayer(),
         deviceName: "Preview",
+        simklId: "preview",
     });
     m.state = { ...m.state, ...patch };
     return m;
@@ -190,6 +195,35 @@ const hour = 3600_000;
 const at = (h: number, m: number) => new Date(2026, 10, 27, h, m).getTime();
 const lineup = sampleLineup();
 const account = { email: "you@example.com", premium: true, seat: "active" as const, checkedAt: Date.now() };
+
+const PROFILES = {
+    profiles: [
+        { id: "1", name: "Alex", colour: 0, kids: false, pinHash: null, avatar: null, favourites: [] },
+        { id: "2", name: "Jordan", colour: 2, kids: false, pinHash: "v1:preview:only", avatar: "owl", favourites: [] },
+        { id: "3", name: "Robin", colour: 5, kids: true, pinHash: null, avatar: "fox", favourites: [] },
+        { id: "4", name: "Sam", colour: 4, kids: false, pinHash: null, avatar: "rocket", favourites: [] },
+    ],
+    parentalPin: "v1:preview:only",
+};
+
+/** Alex's own lists from the account, filled with sample channels and movies by Android's ids, and one renamed channel. */
+function withLists(m: AppModel): AppModel {
+    const a = (id: string) => m.androidIdOf(id) ?? "";
+    m.state = {
+        ...m.state,
+        lists: {
+            lists: {
+                "1": [
+                    { id: "9001", name: "Game night", items: [a("c107"), a("c110"), a("c108")] },
+                    { id: "9002", name: "Morning news", items: [a("c101"), a("c102")] },
+                    { id: "9003", name: "Cosy movies", items: [a("m3"), a("m7"), a("m12")] },
+                ],
+            },
+            edits: { [a("c103")]: { name: "Harbour Local", logo: null } },
+        },
+    };
+    return m;
+}
 
 function Scene({ name }: { name: string }) {
     const player = React.useMemo(() => new VegaPlayer(), []);
@@ -248,6 +282,129 @@ function Scene({ name }: { name: string }) {
             });
             return <LiveScreen model={m} state={m.state} focusChannel="c101" />;
         }
+        case "live-guide":
+        case "reminder": {
+            const base = at(18, 40);
+            const shows = ["Evening Headlines", "Weather Watch", "Market Hour", "City Desk", "Late Edition", "The Week Ahead"];
+            const grid: State["grid"] = {};
+            lineup.channels.slice(0, 12).forEach((c, i) => {
+                const list = [];
+                let start = at(17, 0) + (i % 3) * 15 * 60_000;
+                for (let k = 0; k < 8; k++) {
+                    const length = (k + i) % 3 === 0 ? 60 : 30;
+                    list.push({
+                        start,
+                        stop: start + length * 60_000,
+                        title: shows[(k + i) % shows.length],
+                        desc: "A made-up programme for the preview.",
+                    });
+                    start += length * 60_000;
+                }
+                grid[c.id] = i === 4 ? [] : list;
+            });
+            const withCatchUp = {
+                ...lineup,
+                channels: lineup.channels.map((c, i) => (i < 3 ? { ...c, catchUp: { mode: "xc" as const, days: 3, source: null } } : c)),
+            };
+            const focusStart = grid.c101[2].start;
+            const m = model({
+                route: "live",
+                lineup: withCatchUp,
+                channelId: "c101",
+                grid,
+                prefs: { ...DEFAULT_PREFS, liveGrid: true },
+                reminders: [
+                    { channelId: "c102", channelName: "", title: grid.c102[3].title, start: grid.c102[3].start, stop: grid.c102[3].stop },
+                ],
+                due:
+                    name === "reminder"
+                        ? {
+                              channelId: "c103",
+                              channelName: lineup.channels[2].name,
+                              title: "Late Edition",
+                              start: base,
+                              stop: base + 3600_000,
+                          }
+                        : null,
+            });
+            return (
+                <View style={{ flex: 1 }}>
+                    <LiveScreen model={m} state={m.state} focusProgramme={{ channelId: "c101", start: focusStart }} fixedNow={base} />
+                    <ReminderBanner model={m} state={m.state} />
+                </View>
+            );
+        }
+        case "events":
+        case "events-reading": {
+            // Made-up teams and events: store builds never name a league, team or brand.
+            const now = at(19, 10);
+            const ev = (title: string, start: number, length: number, channels: string[], timeKnown = true) => ({
+                key: title.toLowerCase(),
+                title,
+                start,
+                stop: start + length * 60_000,
+                channels,
+                timeKnown,
+            });
+            const events = [
+                ev("Harbour Hawks vs. Valley Bears", at(19, 0), 180, ["c107", "c108", "c109"]),
+                ev("City Cup Final", at(18, 30), 120, ["c110"]),
+                ev("Fight Night 12: Main Card", now, 180, ["c111", "c112"], false),
+                ev("Lakeside Open: Final Round", at(20, 0), 240, ["c108"]),
+                ev("Coast Kings @ Metro Stars", at(22, 30), 150, ["c109", "c112"]),
+                ev("Rink Classic: North vs. South", at(19, 0) + 24 * hour, 150, ["c109"]),
+            ];
+            const m = model({
+                route: "events",
+                lineup,
+                events,
+                reminders: [
+                    {
+                        channelId: "c109",
+                        channelName: "Rink Live",
+                        title: events[4].title,
+                        start: events[4].start,
+                        stop: events[4].stop,
+                        tune: true,
+                    },
+                ],
+                eventsLoad:
+                    name === "events-reading"
+                        ? {
+                              busy: true,
+                              progress: { step: 1, steps: 1, label: "", loaded: 34, total: 120, eta: "about 1 min left" },
+                          }
+                        : { busy: false },
+            });
+            if (name === "events-reading") m.state.eventsLoad.progress!.label = tr0.eventsGuide(34, 120);
+            return <EventsScreen model={m} state={m.state} fixedNow={now} showFocused={0} />;
+        }
+        case "tune-trying":
+        case "tune-found":
+        case "tune-none": {
+            const ids = ["c107", "c108", "c109", "c110", "c111", "c112", "c101", "c102", "c103"];
+            const m = model({
+                route: "player",
+                lineup,
+                channelId: name === "tune-trying" ? "c108" : "c109",
+                guide: { c109: [{ title: "Harbour Hawks vs. Valley Bears", start: at(19, 0), end: at(22, 0) }] },
+                tune: {
+                    title: "Harbour Hawks vs. Valley Bears",
+                    ids,
+                    at: name === "tune-trying" ? 1 : 2,
+                    found: name === "tune-found",
+                    failed: name === "tune-none",
+                },
+            });
+            return (
+                <PlayerScreen
+                    model={m}
+                    state={m.state}
+                    player={player}
+                    shown={{ controls: name === "tune-found", playback: name === "tune-trying" ? "starting" : "playing" }}
+                />
+            );
+        }
         case "live-refreshing": {
             const m = model({
                 route: "live",
@@ -276,8 +433,95 @@ function Scene({ name }: { name: string }) {
             const m = model({ route: "player", lineup, channelId: "c107" });
             return <PlayerScreen model={m} state={m.state} player={player} shown={{ playback: "failed" }} />;
         }
+        case "profiles": {
+            const m = model({ route: "profiles", lineup, account, profiles: PROFILES, profileId: "1" });
+            return <ProfilesScreen model={m} state={m.state} showFocused={1} />;
+        }
+        case "profiles-pin":
+        case "profiles-pin-wrong": {
+            const m = model({ route: "profiles", lineup, account, profiles: PROFILES, profileId: "1" });
+            return (
+                <PinPad
+                    model={m}
+                    title={tr0.pinFor("Jordan")}
+                    hash={null}
+                    onOk={() => undefined}
+                    onCancel={() => undefined}
+                    preview={name === "profiles-pin" ? { typed: 3 } : { typed: 0, problem: tr0.pinWrong }}
+                />
+            );
+        }
+        case "live-kids": {
+            const m = model({ route: "live", lineup, account, profiles: PROFILES, profileId: "3" });
+            return <LiveScreen model={m} state={m.state} focusChannel={m.shownChannels()[0]?.id} />;
+        }
+        case "live-lists": {
+            const m = withLists(model({ route: "live", lineup, account, profiles: PROFILES, profileId: "1", channelId: "c107" }));
+            m.pickCategory("__list:9001");
+            return <LiveScreen model={m} state={m.state} focusChannel="c107" />;
+        }
+        case "add-to-list":
+        case "add-to-list-new": {
+            const m = withLists(
+                model({
+                    route: "live",
+                    lineup,
+                    account,
+                    profiles: PROFILES,
+                    profileId: "1",
+                    favourites: new Set(["c107"]),
+                    listFor: { id: "c107", name: lineup.channels.find((c) => c.id === "c107")?.name ?? "" },
+                }),
+            );
+            return name === "add-to-list" ? (
+                <AddToList model={m} state={m.state} showFocused={1} />
+            ) : (
+                <AddToList model={m} state={m.state} naming="Weekend games" />
+            );
+        }
+        case "movie-lists": {
+            const m = withLists(
+                model({ route: "movies", lineup, library, account, profiles: PROFILES, profileId: "1", movieCategory: "__list:9003" }),
+            );
+            return <BrowseScreen model={m} state={m.state} kind="movies" />;
+        }
+        case "settings-simkl":
+        case "settings-simkl-on": {
+            const code = { userCode: "QW7E9K", verificationUrl: "https://simkl.com/pin", deviceCode: "", expiresAt: 0, intervalMs: 5000 };
+            const m = model({
+                route: "settings",
+                lineup,
+                account,
+                simkl:
+                    name === "settings-simkl"
+                        ? { signedIn: false, user: null, scrobble: true, busy: true, code, problem: null }
+                        : { signedIn: true, user: "Alex", scrobble: true, busy: false, code: null, problem: null },
+            });
+            return <SettingsScreen model={m} state={m.state} />;
+        }
+        case "settings-lists": {
+            const m = withLists(model({ route: "settings", lineup, account, profiles: PROFILES, profileId: "1" }));
+            return <SettingsScreen model={m} state={m.state} />;
+        }
+        case "settings-profile": {
+            const m = model({ route: "settings", lineup, account, profiles: PROFILES, profileId: "1" });
+            return <SettingsScreen model={m} state={m.state} />;
+        }
         case "settings": {
             const m = model({ route: "settings", lineup, account });
+            return <SettingsScreen model={m} state={m.state} />;
+        }
+        case "settings-playlists": {
+            const m = model({
+                route: "settings",
+                lineup,
+                account,
+                playlists: [
+                    { id: "current", name: "Home" },
+                    { id: "p2", name: "provider.example" },
+                ],
+                playlistId: "current",
+            });
             return <SettingsScreen model={m} state={m.state} />;
         }
         case "settings-refreshing": {
@@ -294,6 +538,17 @@ function Scene({ name }: { name: string }) {
         case "movies": {
             const m = model({ route: "movies", lineup, library });
             return <BrowseScreen model={m} state={m.state} kind="movies" focusTitle="m1" />;
+        }
+        case "movies-sorted": {
+            const m = model({ route: "movies", lineup, library, prefs: { ...DEFAULT_PREFS, sortMovies: "rating" } });
+            return <BrowseScreen model={m} state={m.state} kind="movies" />;
+        }
+        case "movies-continue": {
+            const watching = library.movies
+                .slice(2, 5)
+                .map((x, i) => ({ id: x.id, titleId: x.id, at: 1200, length: 6000, watchedAt: 10 - i }));
+            const m = model({ route: "movies", lineup, library, watching, movieCategory: CONTINUE });
+            return <BrowseScreen model={m} state={m.state} kind="movies" />;
         }
         case "movies-loading": {
             const m = model({
@@ -316,6 +571,52 @@ function Scene({ name }: { name: string }) {
         case "shows": {
             const m = model({ route: "shows", lineup, library, showCategory: null });
             return <BrowseScreen model={m} state={m.state} kind="shows" focusTitle="s1" />;
+        }
+        case "live-favourites": {
+            const m = model({
+                route: "live",
+                lineup,
+                channelId: "c107",
+                favourites: new Set(["c101", "c107", "c110"]),
+                notice: { on: true, name: "Field One" },
+            });
+            return <LiveScreen model={m} state={m.state} focusChannel="c107" />;
+        }
+        case "search": {
+            const m = model({ route: "search", lineup, library, query: "harbour" });
+            return <SearchScreen model={m} state={m.state} focusFirst />;
+        }
+        case "movie-details": {
+            const title = library.movies[2];
+            const m = model({
+                route: "title",
+                lineup,
+                library,
+                title,
+                favourites: new Set([title.id]),
+                details: {
+                    [title.id]: {
+                        tmdbId: 1,
+                        title: title.name,
+                        overview:
+                            "Two friends race paper boats down the spring melt every year, until the year one of them moves away and the river decides to go looking.",
+                        year: 2025,
+                        rating: 7.8,
+                        runtime: 112,
+                        genres: ["Drama", "Family"],
+                        poster: null,
+                        backdrop: poster("", 30),
+                        cast: ["Ada Lake", "Theo Marsh", "June Park", "Sam Okafor", "Rita Vale", "Leo Brandt"].map((name, i) => ({
+                            id: i,
+                            name,
+                            character: null,
+                            photo: null,
+                        })),
+                        seasons: null,
+                    },
+                },
+            });
+            return <TitleScreen model={m} state={m.state} />;
         }
         case "movie": {
             const title = {

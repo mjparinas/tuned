@@ -1,8 +1,9 @@
 // The app's screens: the welcome (sign in with a phone) until there's a playlist, its first download, then Home.
 // Screens opened from there stack above it and keep their place underneath; the player sits on top of everything.
-import { useLayoutEffect, useRef } from "preact/hooks";
-import { currentId, playlists, ready } from "../app.ts";
+import { useEffect, useLayoutEffect, useRef } from "preact/hooks";
+import { currentId, playlists, profilePicked, ready } from "../app.ts";
 import { focus } from "../focus.ts";
+import { notice } from "../my-lists.ts";
 import { playback } from "../player/controller.ts";
 import { useStore } from "../state.ts";
 import { FilmPage, ShowPage } from "./details.tsx";
@@ -12,6 +13,7 @@ import { LogScreen } from "./log.tsx";
 import { routes, type Route } from "./nav.ts";
 import { Spinner } from "./parts.tsx";
 import { Player } from "./player.tsx";
+import { WhoIsWatching } from "./profiles.tsx";
 import { Manual, SignIn } from "./signin.tsx";
 
 function screenFor(route: Route) {
@@ -28,6 +30,8 @@ function screenFor(route: Route) {
             return <Manual />;
         case "log":
             return <LogScreen />;
+        case "profiles":
+            return <WhoIsWatching closable />;
     }
 }
 
@@ -39,8 +43,17 @@ export function App() {
     const p = useStore(playback);
     const playing = p.state !== "idle";
     const using = lists.find((x) => x.id === id);
+    const picked = useStore(profilePicked);
 
-    const base = !lists.length ? <SignIn purpose="playlist" welcome /> : using && !using.gen ? <FirstLoad /> : screenFor(stack[0]);
+    const base = !lists.length ? (
+        <SignIn purpose="playlist" welcome />
+    ) : using && !using.gen ? (
+        <FirstLoad />
+    ) : !picked ? (
+        <WhoIsWatching />
+    ) : (
+        screenFor(stack[0])
+    );
     const screens = [base, ...stack.slice(1).map(screenFor)];
     const depth = screens.length + (playing ? 1 : 0);
 
@@ -77,6 +90,22 @@ export function App() {
                 </div>
             ))}
             {playing ? <Player /> : null}
+            <Notice />
         </>
+    );
+}
+
+/** A change to the account that didn't stick says so for a few seconds, over whatever is on screen. */
+function Notice() {
+    const text = useStore(notice);
+    useEffect(() => {
+        if (!text) return;
+        const id = setTimeout(() => notice.set(null), 5000);
+        return () => clearTimeout(id);
+    }, [text]);
+    return (
+        <div class={text ? "notice on" : "notice"} role="status" aria-live="polite">
+            {text ?? ""}
+        </div>
     );
 }

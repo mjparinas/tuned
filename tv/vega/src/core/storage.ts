@@ -21,7 +21,16 @@ export const KEYS = {
     libraryHead: `${PREFIX}library`,
     libraryChunk: (part: "m" | "s", i: number) => `${PREFIX}library:${part}:${i}`,
     positions: `${PREFIX}positions`,
+    /** Every playlist on the stick, and which one is open (`login` above is always the open one's). */
+    playlists: `${PREFIX}playlists`,
+    playlist: `${PREFIX}playlist`,
 } as const;
+
+/** A playlist kept on the stick. The first one's id is "current", so what it kept before there were several stays. */
+export interface SavedPlaylist {
+    id: string;
+    login: Login;
+}
 
 /** How many movies and episodes keep where they were left; the oldest go first. */
 const POSITIONS = 300;
@@ -42,7 +51,8 @@ export function storage(store: Store) {
         saveLogin: (login: Login) => store.set(KEYS.login, JSON.stringify(login)),
 
         async loadLineup(): Promise<Lineup | null> {
-            const head = await readJson<{ categories: Lineup["categories"]; chunks: number; savedAt: number }>(store, KEYS.lineupHead);
+            type Head = Pick<Lineup, "categories" | "savedAt" | "timezone" | "guideUrl"> & { chunks: number };
+            const head = await readJson<Head>(store, KEYS.lineupHead);
             if (!head) return null;
             const channels: Lineup["channels"] = [];
             for (let i = 0; i < head.chunks; i++) {
@@ -50,7 +60,13 @@ export function storage(store: Store) {
                 if (!chunk) return null;
                 channels.push(...chunk);
             }
-            return { categories: head.categories, channels, savedAt: head.savedAt };
+            return {
+                categories: head.categories,
+                channels,
+                savedAt: head.savedAt,
+                ...(head.timezone ? { timezone: head.timezone } : {}),
+                ...(head.guideUrl ? { guideUrl: head.guideUrl } : {}),
+            };
         },
 
         async saveLineup(lineup: Lineup): Promise<void> {
@@ -59,7 +75,16 @@ export function storage(store: Store) {
                 await store.set(KEYS.lineupChunk(i), JSON.stringify(lineup.channels.slice(i * CHUNK, (i + 1) * CHUNK)));
             }
             // The head goes last, so a stick that stops halfway keeps reading the old lineup's head and chunks.
-            await store.set(KEYS.lineupHead, JSON.stringify({ categories: lineup.categories, chunks, savedAt: lineup.savedAt }));
+            await store.set(
+                KEYS.lineupHead,
+                JSON.stringify({
+                    categories: lineup.categories,
+                    chunks,
+                    savedAt: lineup.savedAt,
+                    timezone: lineup.timezone ?? null,
+                    guideUrl: lineup.guideUrl,
+                }),
+            );
             const stale = (await store.keys()).filter((k) => k.startsWith(`${KEYS.lineupHead}:`) && Number(k.split(":").pop()) >= chunks);
             if (stale.length) await store.remove(stale);
         },
@@ -120,6 +145,18 @@ export function storage(store: Store) {
             for (const old of keys.slice(0, Math.max(0, keys.length - POSITIONS))) delete all[old];
             await store.set(KEYS.positions, JSON.stringify(all));
             return all;
+        },
+
+        loadPlaylists: async () => (await readJson<SavedPlaylist[]>(store, KEYS.playlists)) ?? [],
+        savePlaylists: (list: SavedPlaylist[]) => store.set(KEYS.playlists, JSON.stringify(list)),
+        loadPlaylistId: () => store.get(KEYS.playlist),
+        savePlaylistId: (id: string) => store.set(KEYS.playlist, id),
+
+        /** Switching playlists: the open one's channels, movies and last channel go, so the next one's download replaces them. */
+        async clearDownloads(): Promise<void> {
+            const heads = [KEYS.lineupHead, KEYS.libraryHead];
+            const gone = (await store.keys()).filter((k) => heads.some((h) => k === h || k.startsWith(`${h}:`)) || k === KEYS.lastChannel);
+            if (gone.length) await store.remove(gone);
         },
 
         loadLastChannel: () => store.get(KEYS.lastChannel),

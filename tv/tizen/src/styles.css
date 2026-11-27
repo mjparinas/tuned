@@ -709,3 +709,349 @@ button.row:focus {
 .seek .bar {
     flex: 1;
 }
+
+/* ---- The grid guide (playlist.md › Grid guide) ---- */
+
+.guide {
+    display: flex;
+    flex-direction: column;
+}
+
+.guide-info {
+    flex: none;
+    padding: 8px 4px 16px;
+    overflow: hidden;
+}
+
+.guide-info .when {
+    color: var(--muted);
+    font-size: 24px;
+}
+
+.guide-info .title {
+    font-size: 34px;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.guide-info .desc {
+    margin: 4px 0;
+    color: var(--muted);
+    font-size: 24px;
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.guide-info .action {
+    color: var(--teal);
+    font-size: 24px;
+}
+
+.guide-info .action.error {
+    color: var(--error);
+}
+
+.grid {
+    position: relative;
+    flex: none;
+    overflow: hidden;
+    border-radius: 16px;
+    outline: none;
+}
+
+.grid:focus {
+    box-shadow: none;
+}
+
+.grid-head {
+    position: relative;
+    color: var(--muted);
+    font-size: 22px;
+}
+
+.grid-day {
+    position: absolute;
+    left: 0;
+    top: 0;
+    height: 100%;
+    padding: 8px 20px;
+    font-weight: 600;
+    color: var(--text);
+}
+
+.tick {
+    position: absolute;
+    top: 8px;
+    padding-left: 8px;
+    border-left: 2px solid var(--card-high);
+    white-space: nowrap;
+}
+
+.grid-row {
+    position: absolute;
+    left: 0;
+    right: 0;
+}
+
+.grid-channel {
+    position: absolute;
+    left: 0;
+    top: 3px;
+    bottom: 3px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 0 14px;
+    border-radius: 12px;
+    background: var(--card);
+}
+
+.grid-channel.on {
+    background: var(--card-high);
+}
+
+.grid-channel .number {
+    min-width: 48px;
+}
+
+.grid-channel .name {
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.prog {
+    position: absolute;
+    top: 3px;
+    bottom: 3px;
+    margin-left: 6px;
+    padding: 0 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border-radius: 12px;
+    background: var(--card);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.prog.now {
+    background: #2b2350;
+}
+
+.prog.past {
+    color: var(--muted);
+}
+
+.prog.empty {
+    color: var(--muted);
+    font-style: italic;
+}
+
+.grid:focus .prog.on {
+    color: var(--ink);
+    background: #fff;
+    box-shadow: 0 0 0 4px var(--ring);
+}
+
+.prog .replay {
+    color: var(--teal);
+}
+
+.grid:focus .prog.on .replay {
+    color: var(--violet);
+}
+
+.now-line {
+    position: absolute;
+    width: 3px;
+    margin-left: 4px;
+    background: var(--teal);
+    pointer-events: none;
+}
+
+.hint {
+    margin: 12px 0 0;
+    color: var(--muted);
+    font-size: 22px;
+}
+
+/* Who's watching? (profiles.md): the account's profiles in a row, a PIN pad for the locked ones. */
+.profiles .brand {
+    position: absolute;
+    top: var(--safe-y);
+    left: var(--safe-x);
+}
+
+.profile-row {
+    display: flex;
+    gap: 40px;
+    flex-wrap: wrap;
+    justify-content: center;
+    max-width: 1600px;
+}
+
+.profile {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    width: 220px;
+    padding: 20px 8px;
+    border: 0;
+    border-radius: 28px;
+    font: inherit;
+    color: var(--text);
+    background: transparent;
+}
+
+.profile .name {
+    font-size: 30px;
+    font-weight: 600;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* As on Android TV (profiles.md, Melvin 2026-11-22): a thin accent ring on the picture, never a box around the card. */
+.profile:focus {
+    box-shadow: none;
+}
+
+.profile.picked .avatar,
+.profile:focus .avatar {
+    box-shadow:
+        0 0 0 5px var(--ink),
+        0 0 0 9px var(--ring);
+}
+
+.profile:focus .avatar {
+    transform: scale(1.06);
+}
+
+.avatar {
+    flex: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    color: #fff;
+    font-weight: 700;
+    line-height: 1;
+    transition: transform 120ms ease-out;
+}
+
+.rail-item.who {
+    margin-top: auto;
+}
+
+.rail-item.who .grow {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.dialog.pin {
+    width: 760px;
+    text-align: center;
+}
+
+.pin-dots {
+    display: flex;
+    justify-content: center;
+    gap: 18px;
+    margin: 12px 0;
+}
+
+.pin-dots .dot {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    border: 3px solid var(--muted);
+}
+
+.pin-dots .dot.on {
+    background: var(--text);
+    border-color: var(--text);
+}
+
+.pin-keys {
+    display: grid;
+    grid-template-columns: repeat(3, 160px);
+    gap: 16px;
+    justify-content: center;
+    margin: 20px 0;
+}
+
+.pin-keys .button {
+    justify-content: center;
+    font-size: 32px;
+}
+
+.dialog.pin .buttons {
+    justify-content: center;
+}
+
+/* Add to list (lists.md): the profile's lists as ticks, then New list and Done. */
+.dialog.lists .list-choices {
+    max-height: 520px;
+    overflow-y: auto;
+}
+
+.dialog.lists .row {
+    background: var(--card-high);
+}
+
+.dialog.lists button.row:focus {
+    background: #fff;
+    color: var(--ink);
+}
+
+.dialog.lists .field {
+    width: 100%;
+    margin: 16px 0;
+}
+
+.check {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    border: 3px solid var(--muted);
+    border-radius: 10px;
+    font-weight: 700;
+}
+
+.check.on {
+    border-color: var(--teal);
+    background: var(--teal);
+    color: var(--ink);
+}
+
+/* A change to the account that didn't stick, for a few seconds at the foot of the screen. */
+.notice {
+    position: fixed;
+    left: 50%;
+    bottom: calc(var(--safe-y) + 24px);
+    max-width: 1200px;
+    padding: 20px 36px;
+    border-radius: 20px;
+    background: var(--card-high);
+    color: var(--text);
+    transform: translateX(-50%);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s;
+}
+
+.notice.on {
+    opacity: 1;
+}

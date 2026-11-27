@@ -434,3 +434,80 @@ input.switch:disabled {
         padding: 14px 16px;
     }
 }
+
+/*
+ * Signed out (Melvin, 2026-11-27: "it should be centered, the layout within the card looks off"): the one sign-in card,
+ * centred across and down the space between the header and the footer, in a 440 px column. The page title stays for
+ * screen readers; the card's own heading says what to do. The two sign-in buttons stack at full width and the note about
+ * the daily emails sits apart, under a rule, as the card's small print.
+ */
+main.account.signed-out {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: calc(100svh - 72px);
+    padding-top: 32px;
+    padding-bottom: 64px;
+}
+main.account.signed-out .account-head,
+main.account.signed-out .account-body {
+    width: 100%;
+    max-width: 440px;
+}
+main.account.signed-out .account-head h1 {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+}
+main.account.signed-out #status {
+    margin: 0 0 16px;
+}
+.sign-in-card {
+    margin-top: 0;
+    padding: 40px 32px 28px;
+    border-radius: 24px;
+    text-align: center;
+}
+.sign-in-mark {
+    display: block;
+    width: 56px;
+    height: 56px;
+    margin: 0 auto 20px;
+    border-radius: 15px;
+    box-shadow: 0 6px 20px rgba(11, 10, 16, 0.35);
+}
+.sign-in-card h2 {
+    margin: 0 0 8px;
+    font-size: 1.5rem;
+    line-height: 1.25;
+    font-weight: 700;
+    letter-spacing: -0.015em;
+}
+.sign-in-lead {
+    max-width: 32ch;
+    margin: 0 auto 28px;
+    text-wrap: balance;
+}
+.sign-in-note {
+    margin-top: 28px;
+    padding-top: 20px;
+    border-top: 1px solid var(--line);
+    font-size: 0.8125rem;
+    line-height: 1.5;
+    text-wrap: pretty;
+}
+@media (max-width: 480px) {
+    main.account.signed-out {
+        justify-content: flex-start;
+        min-height: 0;
+        padding-top: 24px;
+    }
+    .sign-in-card {
+        padding: 32px 20px 24px;
+    }
+}

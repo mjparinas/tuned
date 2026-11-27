@@ -51,4 +51,11 @@ class TunedCoreTest {
         assertNull(TunedCore.region("Sports", null, "ESPN", null))
         assertTrue(TunedCore.isAdult("XXX", "Something"))
     }
+
+    @Test
+    fun keepsAndroidsIds() {
+        val live = Xtream("h", "u", "p").stream("live", "7", "Sky News", null, "UK | News", null, false, null, 0.0, null, null, 0)
+        assertEquals(StableId.fnv64("0|7|Sky News").toString(), live.stableId)
+        assertEquals("-3750763034362895579", StableId.fnv64("").toString())
+    }
 }

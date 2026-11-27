@@ -1,6 +1,8 @@
 // The Samsung TV app's words in English, the language every translation beside this file follows
 // (docs/decisions/languages.md). A new or changed line here gets its translation in every other file in this folder in
 // the same pull request; strings.test.ts fails otherwise. "Tuned" and Premium are never translated.
+import type { ListProblem } from "@tuned/shared/lists";
+
 export const en = {
     noContent: "Tuned includes no content. Use it with a playlist from your own provider.",
     welcome: "Watch your own playlist on your Samsung TV",
@@ -107,6 +109,55 @@ export const en = {
         const [unit, value] = eta.split(":");
         return unit === "s" ? `about ${value} s left` : unit === "m" ? `about ${value} min left` : `about ${value} h left`;
     },
+    guideGrid: "Show Live TV as a guide grid",
+    gridHint: "Green switches between the list and the guide grid",
+    today: "Today",
+    catchUp: "Catch-up",
+    replayHint: "OK plays it from the start",
+    watchLiveHint: "OK watches it live",
+    aired: "Already aired. This channel keeps no recordings of it.",
+    startsAt: (time: string) => `Starts at ${time}`,
+    replayFailed: "Couldn't make a link for this recording.",
+    profiles: "Profiles",
+    whosWatching: "Who's watching?",
+    switchProfile: "Switch profile",
+    watchingAs: (n: string) => `Watching as ${n}`,
+    profilesOnPhone: "Add and change profiles in the Tuned app on your phone, or at tunedplayer.com/account.",
+    kidsProfile: "Kids",
+    pinLocked: "PIN",
+    pinFor: (n: string) => `Enter ${n}'s PIN`,
+    parentalPinFor: (n: string) => `Enter the parental PIN to switch to ${n}`,
+    parentalPin: "Enter the parental PIN",
+    pinHint: "Type the PIN with the remote's number keys, or pick the numbers below.",
+    pinChecking: "Checking…",
+    pinWrong: "That PIN isn't right.",
+    pinWait: "Too many tries. Wait 30 seconds, then try again.",
+    pinDelete: "Delete",
+    pinTyped: (c: number) => `${c} digits typed`,
+    ok: "OK",
+    addToList: "Add to list",
+    addToListTitle: (n: string) => `Add ${n} to a list`,
+    newList: "New list",
+    listName: "List name",
+    create: "Create",
+    done: "Done",
+    yourLists: "Your lists",
+    deleteList: "Delete",
+    deleteListSure: "Press again to delete",
+    listCount: (c: number) => `${c} ${c === 1 ? "item" : "items"}`,
+    noListsYet: "No lists yet. Use Add to list on a channel or a movie to make one.",
+    listsOnPhone: "Rename lists in the Tuned app on your phone, or at tunedplayer.com/account.",
+    listsPremium: "Your own lists come with Premium, through your Tuned account.",
+    listsSignIn: "Sign in to your Tuned account to keep your own lists, as on your phone.",
+    liveKeysHint: "Yellow adds to Favourites. Blue adds to a list.",
+    savingToAccount: "Saving to your account…",
+    listProblem: {
+        offline: "Couldn't reach your Tuned account. Check the TV's internet connection and try again.",
+        gone: "That changed on another device. Try again.",
+        "too many lists": "A profile keeps up to 50 lists.",
+        "bad name": "Give the list a name.",
+        busy: "Another device is saving to your account. Try again in a moment.",
+    } as Record<ListProblem, string>,
 };
 
 export type Strings = typeof en;

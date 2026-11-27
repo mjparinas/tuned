@@ -1,5 +1,5 @@
 // A tiny shared state for the screens: a value, a way to change it, and a hook that redraws on change.
-import { useEffect, useState } from "preact/hooks";
+import { useEffect, useRef, useState } from "preact/hooks";
 
 export interface Store<T> {
     get(): T;
@@ -25,8 +25,20 @@ export function store<T>(initial: T): Store<T> {
     };
 }
 
+/**
+ * The store's value, redrawn when it changes. Preact runs effects after the frame is drawn, so a change between the
+ * draw and the subscription would otherwise be missed (the app could sit on its spinner after `ready` was set):
+ * subscribing checks the value the screen drew against the one now, and redraws if they differ.
+ */
 export function useStore<T>(s: Store<T>): T {
     const [, redraw] = useState(0);
-    useEffect(() => s.subscribe(() => redraw((n) => n + 1)), [s]);
-    return s.get();
+    const value = s.get();
+    const drawn = useRef(value);
+    drawn.current = value;
+    useEffect(() => {
+        const stop = s.subscribe(() => redraw((n) => n + 1));
+        if (!Object.is(s.get(), drawn.current)) redraw((n) => n + 1);
+        return stop;
+    }, [s]);
+    return value;
 }

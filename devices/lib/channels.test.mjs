@@ -16,6 +16,7 @@ import {
     fileName,
     fillLogin,
     fromAppCopy,
+    parseWholeIds,
     noCopyText,
     filterChannels,
     gridPlace,
@@ -246,7 +247,7 @@ test("the app's copy becomes channels and a guide, with the login put back", () 
         ["http://p:8080/live/me%40x/a%2Fb/1.ts", "http://p/play?username=me%40x&password=a%2Fb", "http://other/stream.m3u8"],
     );
     assert.deepEqual(read.channels[0], {
-        id: 0,
+        id: "",
         region: "",
         name: "CBC",
         group: "Canada",
@@ -256,7 +257,7 @@ test("the app's copy becomes channels and a guide, with the login put back", () 
         url: "http://p:8080/live/me%40x/a%2Fb/1.ts",
     });
     // A newer app's row carries the stable id the website edits with.
-    assert.equal(fromAppCopy({ v: 1, channels: [["CBC", "", "", "", 1, "http://a", "CA", 0, 42]], guide: {} }, null).channels[0].id, 42);
+    assert.equal(fromAppCopy({ v: 1, channels: [["CBC", "", "", "", 1, "http://a", "CA", 0, 42]], guide: {} }, null).channels[0].id, "42");
     assert.equal(read.channels[1].number, "");
     assert.deepEqual(
         read.guide.get("cbc.ca").map((p) => [p.title, p.start]),
@@ -398,4 +399,16 @@ test("a playlist with no channels in the account says so, why, and what to do", 
     // Our own server failing isn't "not backed up".
     assert.doesNotMatch(noCopyText("error").title, /backed up for/);
     assert.equal(noCopyText("too many").fix, "Try again later.");
+});
+
+test("the app's copy keeps its 64-bit channel ids whole", () => {
+    const text = `{"v":1,"channels":[["CBC","","","",1,"http://a","CA",0,-7046029254386353131],["TSN","","","",2,"http://b","CA",0,5397910112836148011],["Old","","","",3,"http://c","CA",0]],"guide":{"x":[[1,2,"News \\" 1234567890123456789",""]]}}`;
+    const copy = parseWholeIds(text);
+    const read = fromAppCopy(copy, null);
+    assert.deepEqual(
+        read.channels.map((c) => c.id),
+        ["-7046029254386353131", "5397910112836148011", ""],
+    );
+    assert.equal(copy.guide.x[0][2], 'News " 1234567890123456789');
+    assert.equal(parseWholeIds("[1.5, 12345678901234567.5, 1e20]")[1], 12345678901234567.5);
 });

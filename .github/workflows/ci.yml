@@ -447,6 +447,10 @@ jobs:
           echo "$HOME/vega/bin" >> "$GITHUB_PATH"
           "$HOME/vega/bin/vega" --version
       - name: Build the .vpkg
+        env:
+          # Built in like the Android release's (scripts/keys.mjs); with no secret, its feature stays off.
+          TMDB_API_KEY: ${{ secrets.TMDB_API_KEY }}
+          SIMKL_CLIENT_ID: ${{ secrets.SIMKL_CLIENT_ID }}
         run: |
           source ~/vega/env 2>/dev/null || true
           npm run build:release

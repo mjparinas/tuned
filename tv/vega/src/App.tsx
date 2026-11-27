@@ -2,15 +2,21 @@
 // as Amazon expects). Nothing here waits on the network: boot reads what the stick saved and draws it.
 import { useKeplerBackHandler } from "@amazon-devices/react-native-kepler";
 import * as React from "react";
-import { View } from "react-native";
+import { Text, View } from "react-native";
 import { AppModel, type Services, type State } from "./app/model";
 import { launchSafely, log } from "./core/log";
 import { BrowseScreen } from "./ui/BrowseScreen";
+import { EventsScreen } from "./ui/EventsScreen";
 import { LiveScreen } from "./ui/LiveScreen";
 import { LoadingScreen } from "./ui/LoadingScreen";
 import { ManualScreen } from "./ui/ManualScreen";
+import { ProfilesScreen } from "./ui/ProfilesScreen";
+import { AddToList } from "./ui/AddToList";
 import { PlayerScreen, type PlayerHandle } from "./ui/PlayerScreen";
-import { Screen, Spinner } from "./ui/parts";
+import { Button, Screen, Spinner } from "./ui/parts";
+import { t } from "./ui/strings";
+import { colours, useDp } from "./ui/theme";
+import { SearchScreen } from "./ui/SearchScreen";
 import { SettingsScreen } from "./ui/SettingsScreen";
 import { SignInScreen } from "./ui/SignInScreen";
 import { TitleScreen } from "./ui/TitleScreen";
@@ -36,30 +42,91 @@ class Recover extends React.Component<{ children: React.ReactNode; onError: () =
     }
 }
 
+/**
+ * A reminder whose programme just started, over whatever is on screen except the player: what and where, with Watch
+ * and Not now. It never takes the remote's focus, so nothing being done is interrupted.
+ */
+export function ReminderBanner({ model, state }: { model: AppModel; state: State }) {
+    const dp = useDp();
+    const due = state.due;
+    if (!due || state.route === "player") return null;
+    return (
+        <View
+            accessibilityLiveRegion="assertive"
+            style={{
+                position: "absolute",
+                left: dp(48),
+                right: dp(48),
+                bottom: dp(32),
+                flexDirection: "row",
+                alignItems: "center",
+                gap: dp(14),
+                padding: dp(16),
+                borderRadius: dp(18),
+                backgroundColor: colours.card2,
+            }}
+        >
+            <Text numberOfLines={2} style={{ flex: 1, color: colours.text, fontSize: dp(16), fontWeight: "600" }}>
+                {t.reminderNow(due.title, due.channelName)}
+            </Text>
+            <Button label={t.watch} filled onPress={() => void model.watchDue()} />
+            <Button label={t.notNow} onPress={() => model.dismissDue()} />
+        </View>
+    );
+}
+
 export function Shell({ model, player }: { model: AppModel; player: VegaPlayer }) {
     const state = useModelState(model);
+    return (
+        <View style={{ flex: 1 }}>
+            <Screens model={model} player={player} state={state} />
+            <ReminderBanner model={model} state={state} />
+        </View>
+    );
+}
+
+function Screens({ model, player, state }: { model: AppModel; player: VegaPlayer; state: State }) {
     const playerRef = React.useRef<PlayerHandle>(null);
     const back = useKeplerBackHandler();
 
     React.useEffect(() => {
         const handler = () => {
+            if (model.onBack?.()) return true;
             switch (model.state.route) {
+                case "profiles":
+                    if (model.state.lineup && model.answered) model.go("live");
+                    else back.exitApp();
+                    return true;
                 case "player":
                     if (!playerRef.current?.back()) launchSafely("back.player", () => model.stopPlaying());
                     return true;
                 case "settings":
                 case "account":
-                    model.go(model.state.lineup ? (model.state.route === "account" ? "settings" : "live") : "signin");
+                    if (model.state.route === "account") model.go("settings");
+                    else model.go(model.state.lineup ? "live" : model.state.login ? "loading" : "signin");
+                    return true;
+                case "signin":
+                    if (!model.state.adding) {
+                        back.exitApp();
+                        return true;
+                    }
+                    model.cancelAdding();
+                    return true;
+                case "loading":
+                    if (model.state.playlists.length > 1) model.go("settings");
+                    else back.exitApp();
                     return true;
                 case "manual":
                     model.go("signin");
                     return true;
                 case "movies":
                 case "shows":
+                case "search":
+                case "events":
                     model.go("live");
                     return true;
                 case "title":
-                    model.go(model.state.title?.kind === "show" ? "shows" : "movies");
+                    model.closeTitle();
                     return true;
                 default:
                     back.exitApp();
@@ -70,6 +137,8 @@ export function Shell({ model, player }: { model: AppModel; player: VegaPlayer }
         return () => subscription.remove();
     }, [model, back]);
 
+    // "Add to list" sits over the screen it was opened from, with Back to close it.
+    if (state.listFor && state.route !== "player") return <AddToList model={model} state={state} />;
     switch (state.route) {
         case "boot":
             return (
@@ -85,11 +154,17 @@ export function Shell({ model, player }: { model: AppModel; player: VegaPlayer }
             return <ManualScreen model={model} />;
         case "loading":
             return <LoadingScreen model={model} state={state} />;
+        case "profiles":
+            return <ProfilesScreen model={model} state={state} />;
         case "live":
             return <LiveScreen model={model} state={state} />;
+        case "events":
+            return <EventsScreen model={model} state={state} />;
         case "movies":
         case "shows":
             return <BrowseScreen model={model} state={state} kind={state.route} />;
+        case "search":
+            return <SearchScreen model={model} state={state} />;
         case "title":
             return <TitleScreen model={model} state={state} />;
         case "player":

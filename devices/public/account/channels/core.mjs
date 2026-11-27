@@ -547,6 +547,47 @@ export function noCopyText(missing) {
 }
 
 /**
+ * JSON text read with every integer of 16 digits or more (the app's 64-bit ids, past what a Number holds without
+ * rounding) kept as its digits in a string. Mirrors parseWholeIds in tv/shared/src/profiles.ts.
+ */
+export function parseWholeIds(text) {
+    let out = "";
+    let from = 0;
+    let inString = false;
+    for (let i = 0; i < text.length; i++) {
+        const c = text[i];
+        if (inString) {
+            if (c === "\\") i++;
+            else if (c === '"') inString = false;
+            continue;
+        }
+        if (c === '"') {
+            inString = true;
+            continue;
+        }
+        if (c === "-" || (c >= "0" && c <= "9")) {
+            let end = i + 1;
+            while (end < text.length && text[end] >= "0" && text[end] <= "9") end++;
+            const next = text[end];
+            const digits = end - i - (c === "-" ? 1 : 0);
+            if (digits >= 16 && next !== "." && next !== "e" && next !== "E") {
+                out += `${text.slice(from, i)}"${text.slice(i, end)}"`;
+                from = end;
+            }
+            i = end - 1;
+        }
+    }
+    return JSON.parse(out + text.slice(from));
+}
+
+/** A channel's app id as the page keeps it: its digits as a string (ids are 64-bit and often negative), or "" for none. */
+export function channelId(v) {
+    if (typeof v === "number") return Number.isSafeInteger(v) && v !== 0 ? String(v) : "";
+    if (typeof v === "string" && /^-?[1-9]\d{0,18}$/.test(v)) return v;
+    return "";
+}
+
+/**
  * The app's copy (core ChannelShare's JSON) as the page's channels and guide: `{ channels, guide, savedAt }`, the
  * channels whose links need a login the page doesn't have left out. Null when it isn't a copy.
  */
@@ -561,7 +602,7 @@ export function fromAppCopy(copy, login) {
         const url = fillLogin(link, login);
         if (!url) continue;
         channels.push({
-            id: Number.isFinite(Number(id)) && Number(id) > 0 ? Number(id) : 0,
+            id: channelId(id),
             region: typeof region === "string" ? region.toUpperCase() : "",
             name: String(name ?? "").trim() || "Channel",
             group: String(group ?? ""),

@@ -2,10 +2,13 @@
 // now and next from the guide. OK plays it; channel up and down then walk the same group (player.md).
 import { useEffect, useMemo, useState } from "preact/hooks";
 import type { Item, Programme } from "@tuned/shared";
-import { currentId, favourites, groupsOf, guideVersion, inGroup, nowNext, settings, toggleFavourite } from "../app.ts";
+import { currentId, favourites, groupsOf, guideVersion, inGroup, nowNext, saveSettings, settings } from "../app.ts";
+import { toggleFavourite } from "../my-lists.ts";
 import { play } from "../player/controller.ts";
 import { useStore } from "../state.ts";
 import { t, timeOfDay } from "../strings.ts";
+import { AddToList } from "./add-to-list.tsx";
+import { GuideGrid } from "./guide.tsx";
 import { Groups, usePickedGroup } from "./groups.tsx";
 import { useItems } from "./library.ts";
 import { px, VirtualList } from "./lists.tsx";
@@ -34,10 +37,13 @@ export function Logo(props: { item: Item; size: number }) {
     );
 }
 
+/** Live TV's width beside Home's rail, inside the overscan margin. */
+const WIDTH = 1920 - 2 * 64 - 300 - 40;
+
 export function LiveTv(props: { height: number }) {
     const { items, loading } = useItems("live");
     const listId = useStore(currentId);
-    const numbers = useStore(settings).channelNumbers;
+    const { channelNumbers: numbers, guideGrid } = useStore(settings);
     const favs = useStore(favourites);
     const [picked, pick] = usePickedGroup("live", listId);
     const groups = useMemo(() => groupsOf(items), [items, favs]);
@@ -46,10 +52,21 @@ export function LiveTv(props: { height: number }) {
         [items, picked, groups],
     );
     const [focused, setFocused] = useState<Item | null>(null);
+    const [adding, setAdding] = useState<Item | null>(null);
 
-    // Yellow on a channel: add to or take from Favourites, as the Android TV app's long press does.
+    // Yellow on a channel: add to or take from Favourites, as the Android TV app's long press does; blue: Add to list.
     useKeys((press) => {
-        if (press.action !== "yellow" || !focused) return false;
+        // Green switches between the list and the grid guide, and Live TV stays that way (Settings has the same switch).
+        if (press.action === "green") {
+            void saveSettings({ guideGrid: !guideGrid });
+            return true;
+        }
+        if (!focused || guideGrid || adding) return false;
+        if (press.action === "blue") {
+            setAdding(focused);
+            return true;
+        }
+        if (press.action !== "yellow") return false;
         void toggleFavourite(focused);
         return true;
     });
@@ -57,6 +74,13 @@ export function LiveTv(props: { height: number }) {
     if (loading) return <Spinner />;
     if (!items.length) return <p class="empty">{t.nothingHere}</p>;
     const listHeight = props.height - 96;
+    if (guideGrid)
+        return (
+            <div class="live">
+                <Groups groups={groups} picked={picked} onPick={pick} />
+                <GuideGrid channels={shown} width={WIDTH} height={listHeight} resetKey={picked} numbers={numbers} />
+            </div>
+        );
     return (
         <div class="live">
             <Groups groups={groups} picked={picked} onPick={pick} />
@@ -85,6 +109,7 @@ export function LiveTv(props: { height: number }) {
                 />
                 <ChannelInfo item={focused ?? shown[0] ?? null} />
             </div>
+            {adding ? <AddToList item={adding} onClose={() => setAdding(null)} /> : null}
         </div>
     );
 }
@@ -113,6 +138,8 @@ function ChannelInfo(props: { item: Item | null }) {
             ) : (
                 <p class="muted">{t.noGuide}</p>
             )}
+            <p class="hint">{t.liveKeysHint}</p>
+            <p class="hint">{t.gridHint}</p>
         </aside>
     );
 }

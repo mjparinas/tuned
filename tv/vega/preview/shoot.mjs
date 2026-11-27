@@ -30,6 +30,31 @@ const SCENES = [
     "movie",
     "show",
     "movie-player",
+    "live-favourites",
+    "search",
+    "movie-details",
+    "movies-sorted",
+    "movies-continue",
+    "settings-playlists",
+    "live-guide",
+    "reminder",
+    "events",
+    "events-reading",
+    "tune-trying",
+    "tune-found",
+    "tune-none",
+    "profiles",
+    "profiles-pin",
+    "profiles-pin-wrong",
+    "live-kids",
+    "settings-profile",
+    "live-lists",
+    "add-to-list",
+    "add-to-list-new",
+    "movie-lists",
+    "settings-lists",
+    "settings-simkl",
+    "settings-simkl-on",
 ];
 // A few scenes in other languages: German for long words, Arabic right to left, Chinese for another script.
 const LANGUAGE_SCENES = ["de-DE", "ar-EG", "zh-CN"].flatMap((lang) =>
@@ -55,6 +80,12 @@ page.on("pageerror", (e) => failures.push(e.message));
 for (const scene of SCENES) {
     await page.goto(`http://localhost:${port}/?scene=${scene}`);
     await page.waitForTimeout(400);
+    // Settings › Your lists is further down the page: scroll to it, as the remote would.
+    const below = { "settings-lists": "Your lists", "settings-simkl": "Simkl", "settings-simkl-on": "Simkl" }[scene];
+    if (below) {
+        await page.getByText(below, { exact: true }).evaluate((e) => e.scrollIntoView({ block: "start" }));
+        await page.waitForTimeout(100);
+    }
     await page.screenshot({ path: join(shots, `vega-${scene}.png`) });
 }
 for (const { scene, lang } of LANGUAGE_SCENES) {

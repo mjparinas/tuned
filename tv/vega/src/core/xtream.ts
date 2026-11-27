@@ -1,7 +1,8 @@
 // Xtream Codes servers, as core/XtreamUrls.kt and the Android client read them. Replaced by @tuned/shared's Xtream
 // client when it lands (docs/decisions/vega.md).
 import type { Http } from "./http";
-import type { Category, Channel, Episode, Login, Programme, Title } from "./models";
+import type { Category, Channel, GuideProgramme, Episode, Login, Programme, Title } from "./models";
+import { xtreamDays, type CatchUp } from "@tuned/shared/guide";
 
 export function normalizeServer(server: string): string {
     const trimmed = server.trim().replace(/\/+$/, "");
@@ -49,6 +50,12 @@ export function ratingOf(value: unknown): number | null {
     return Number.isFinite(n) && n > 0 && n <= 10 ? Math.round(n * 10) / 10 : null;
 }
 
+/** A provider's "added" or "last_modified", in Unix seconds, as ms; undefined when it gives none. */
+export function addedOf(value: unknown): number | undefined {
+    const n = Number(value);
+    return Number.isFinite(n) && n > 0 ? n * 1000 : undefined;
+}
+
 const text = (value: unknown): string => (typeof value === "string" || typeof value === "number" ? String(value).trim() : "");
 
 /** Movies from `get_vod_streams`, in the server's order. */
@@ -67,11 +74,17 @@ export function parseMovies(json: unknown, login: XtreamLogin): Title[] {
             poster: picture(s.stream_icon),
             year: yearOf(s.year, s.releaseDate, s.release_date, name),
             rating: ratingOf(s.rating),
+            ...withAdded(s.added),
             url: vodUrl(login, "movie", id, s.container_extension),
         });
     }
     return out;
 }
+
+const withAdded = (value: unknown) => {
+    const added = addedOf(value);
+    return added ? { added } : {};
+};
 
 /** Shows from `get_series`; their episodes are read when one is opened. */
 export function parseShows(json: unknown): Title[] {
@@ -90,6 +103,7 @@ export function parseShows(json: unknown): Title[] {
             poster: picture(s.cover),
             year: yearOf(s.year, s.releaseDate, s.release_date, name),
             rating: ratingOf(s.rating),
+            ...withAdded(s.last_modified),
             ...(plot ? { plot } : {}),
             seriesId: id,
         });
@@ -153,12 +167,25 @@ export type AccountCheck = "ok" | "wrong login" | "expired" | "unreachable";
 
 /** Whether the login works: `user_info.auth` is 1 for a good one, and `status` says when it ran out. */
 export async function checkAccount(http: Http, login: Extract<Login, { kind: "xtream" }>): Promise<AccountCheck> {
+    return (await readAccount(http, login)).check;
+}
+
+/** The login check, and the server's time zone (`server_info.timezone`) that catch-up links' dates are in. */
+export async function readAccount(
+    http: Http,
+    login: Extract<Login, { kind: "xtream" }>,
+): Promise<{ check: AccountCheck; timezone: string | null }> {
     let answer;
     try {
         answer = await http.getJson(accountUrl(login.server, login.username, login.password));
     } catch {
-        return "unreachable";
+        return { check: "unreachable", timezone: null };
     }
+    const zone = answer.body?.server_info?.timezone;
+    return { check: accountCheck(answer), timezone: typeof zone === "string" && zone.trim() ? zone.trim() : null };
+}
+
+function accountCheck(answer: { status: number; body: any }): AccountCheck {
     const info = answer.body?.user_info;
     if (answer.status === 401 || answer.status === 403 || (info && Number(info.auth) === 0)) return "wrong login";
     if (!info) return answer.status >= 200 && answer.status < 300 ? "wrong login" : "unreachable";
@@ -190,9 +217,37 @@ export function parseLiveStreams(json: unknown, login: Extract<Login, { kind: "x
             url: liveUrl(login.server, login.username, login.password, streamId),
             streamId,
             guideId: typeof s.epg_channel_id === "string" && s.epg_channel_id ? s.epg_channel_id : undefined,
+            ...withCatchUp(s),
         });
     }
     return out;
+}
+
+/** Xtream's timeshift, for a channel whose `tv_archive` is 1, kept as many days as `tv_archive_duration` says. */
+function withCatchUp(s: any): { catchUp?: CatchUp } {
+    const days = xtreamDays(s?.tv_archive, s?.tv_archive_duration);
+    return days > 0 ? { catchUp: { mode: "xc", days, source: null } } : {};
+}
+
+/** A channel's whole guide, recordings included (`get_simple_data_table`): a small answer, read for the rows on screen. */
+export function epgTableUrl(login: Extract<Login, { kind: "xtream" }>, streamId: number): string {
+    return `${accountUrl(login.server, login.username, login.password)}&action=get_simple_data_table&stream_id=${streamId}`;
+}
+
+export function parseEpgTable(json: any): GuideProgramme[] {
+    const list = Array.isArray(json?.epg_listings) ? json.epg_listings : [];
+    const out: GuideProgramme[] = [];
+    for (const p of list) {
+        const title = base64Text(p?.title).trim();
+        const start = Number(p?.start_timestamp) * 1000;
+        const stop = Number(p?.stop_timestamp) * 1000;
+        if (!title || !Number.isFinite(start) || !Number.isFinite(stop) || stop <= start) continue;
+        const desc = base64Text(p?.description).trim();
+        out.push({ start, stop, title, desc: desc || null });
+    }
+    out.sort((a, b) => a.start - b.start);
+    // Providers repeat a programme now and then; keep the first of each start.
+    return out.filter((p, i) => i === 0 || p.start !== out[i - 1].start);
 }
 
 /** Base64 text from the guide; a provider that sends plain text gets it back as it is. */
