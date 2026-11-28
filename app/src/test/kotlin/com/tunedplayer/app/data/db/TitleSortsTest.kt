@@ -381,6 +381,8 @@ class TitleSortsTest {
         )
         TunedDatabase.MIGRATION_21_22.migrate(old)
         TunedDatabase.MIGRATION_22_23.migrate(old)
+        // 24 only adds indexes on other tables; 25 adds the hiding filters' tags to items.
+        TunedDatabase.MIGRATION_24_25.migrate(old)
         val fresh = db.openHelper.writableDatabase
         for (table in listOf("items", "show_groups", "show_details")) assertEquals(columns(fresh, table), columns(old, table), table)
         for (index in listOf("added", "year", "topRating", "sortTitle")) {
