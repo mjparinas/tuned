@@ -7,7 +7,7 @@ kind: guide
 
 <figure class="cover"><img src="/blog/img/posts/profiles.jpg" alt="Tuned's Who's watching screen with named and kids profiles on a phone and a TV" width="1200" height="760"></figure>
 
-Profiles let everyone in the house keep their own **favourites, Continue Watching, watched marks, watch later and new-episode markers**, while sharing the same playlist, settings and downloads.
+Profiles let everyone in the house keep their own **favourites, Continue Watching, watched marks and new-episode markers**, while sharing the same playlist, settings and downloads.
 
 ## Add a profile
 

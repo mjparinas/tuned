@@ -21,6 +21,7 @@ import com.tunedplayer.app.data.AppSettings
 import com.tunedplayer.app.data.FavouriteShows
 import com.tunedplayer.app.data.SyncProgress
 import com.tunedplayer.app.data.TitleRatings
+import com.tunedplayer.app.data.WatchLaterFold
 import com.tunedplayer.app.data.db.ChannelNumbers
 import com.tunedplayer.app.data.db.ChannelWithNow
 import com.tunedplayer.app.data.db.ContinueRow
@@ -121,6 +122,8 @@ class BrowseViewModel(
         // runs its SQL off the screen thread itself (data/db/OffMain.kt).
         viewModelScope.launchSafely("BrowseViewModel") {
             container.quietStart.await()
+            // Watch later saved before it became part of Favourites (2026-11-27): move it there.
+            attempt("BrowseViewModel", "Watch later into Favourites failed") { WatchLaterFold.fold(container.db) }
             // A cache from before channel numbers: number it.
             ChannelNumbers.fillIfMissing(container.db)
             // A cache from before the Movies and Shows sorts: work out its titles and years.

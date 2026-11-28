@@ -1,6 +1,8 @@
 package com.tunedplayer.app.data.db
 
 import androidx.room.Dao
+import androidx.room.Insert
+import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Transaction
 import androidx.room.Upsert
@@ -25,4 +27,8 @@ interface WatchLaterDao {
 
     @Query("SELECT `key` FROM watch_later WHERE profileId = $ME")
     fun keys(): Flow<List<String>>
+
+    /** Favourites that aren't already there, leaving one that is as it was ([com.tunedplayer.app.data.WatchLaterFold]). */
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    suspend fun insertFavouritesIfMissing(rows: List<FavouriteEntity>)
 }
