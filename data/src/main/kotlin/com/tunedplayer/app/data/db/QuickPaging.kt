@@ -10,7 +10,11 @@ import com.tunedplayer.app.diagnostics.attempt
 import com.tunedplayer.app.diagnostics.launchSafely
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.withContext
+import java.io.File
 import java.lang.ref.WeakReference
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicBoolean
@@ -30,6 +34,8 @@ class QuickQuery<T : Any>(
     /** The tables the list reads: a change to one starts it over and makes its count a guess. */
     val tables: Array<String>,
     val clock: String? = null,
+    /** A quicker `SELECT COUNT(*)` of the same rows, or null to count [sql] itself. */
+    private val countSql: String? = null,
     val read: suspend (QuickDao, SupportSQLiteQuery) -> List<T>,
 ) {
     /** What decides how many rows there are. */
@@ -43,7 +49,7 @@ class QuickQuery<T : Any>(
         offset: Int,
     ): SupportSQLiteQuery = raw("$sql $orderBy LIMIT :limit OFFSET :offset", args + mapOf("limit" to limit, "offset" to offset))
 
-    fun count(): SupportSQLiteQuery = raw("SELECT COUNT(*) FROM ($sql)", args)
+    fun count(): SupportSQLiteQuery = raw(countSql ?: "SELECT COUNT(*) FROM ($sql)", args)
 
     private fun raw(
         text: String,
@@ -58,11 +64,14 @@ class QuickQuery<T : Any>(
  * How long each browse list is, counted in the background ([QuickPagingSource]). One per screen, so going back to a
  * tab, a filter or a sort already counted puts its whole length (and the fast scrollbar) up at once. Any change to
  * the tables the lists read makes every count a guess again ([QUICK_TABLES]): still used for the list's length while
- * the new count runs, and corrected if it was wrong.
+ * the new count runs, and corrected if it was wrong. The last counts are also kept in [saved] (in the cache folder,
+ * which signing out empties), so the lists have their whole length from the first frame after the app opens, and the
+ * count that follows only starts a list over if the playlist changed meanwhile.
  */
 class ListCounts(
     private val db: TunedDatabase,
     internal val scope: CoroutineScope,
+    private val saved: File? = null,
 ) {
     private class Counted(
         val count: Int,
@@ -73,6 +82,11 @@ class ListCounts(
     private val latest = ConcurrentHashMap<List<Any?>, Int>()
     private val versions = QUICK_TABLES.associateWith { AtomicLong() }
     private val watching = AtomicBoolean(false)
+
+    /** Counts from before the app opened, by [QuickQuery.familyKey]'s hash: guesses only, the newest last. */
+    private val remembered = LinkedHashMap<Int, Int>(REMEMBERED, LOAD_FACTOR, true)
+    private val loaded = AtomicBoolean(false)
+    private val saving = AtomicBoolean(false)
 
     private val changes =
         object : InvalidationTracker.Observer(QUICK_TABLES) {
@@ -87,6 +101,7 @@ class ListCounts(
 
     /** Starts noticing changes; called from a list's first page, which runs off the screen thread. */
     internal fun watch() {
+        load()
         if (!watching.compareAndSet(false, true)) return
         val added = attempt(TAG, "Couldn't watch the lists' tables") { db.invalidationTracker.addObserver(changes) }
         if (added.isFailure) {
@@ -100,7 +115,8 @@ class ListCounts(
     fun exact(query: QuickQuery<*>): Int? = exact[query.countKey]?.count
 
     /** The last count of the same list, with these filters or a few minutes ago: a guess while it is recounted. */
-    fun guess(query: QuickQuery<*>): Int? = exact(query) ?: latest[query.familyKey]
+    fun guess(query: QuickQuery<*>): Int? =
+        exact(query) ?: latest[query.familyKey] ?: synchronized(remembered) { remembered[query.familyKey.hashCode()] }
 
     /** Notes a count, unless [query]'s tables changed while it was taken ([taken] is its [stamp] from before). */
     fun record(
@@ -110,6 +126,44 @@ class ListCounts(
     ) {
         latest[query.familyKey] = count
         if (stamp(query) == taken) exact[query.countKey] = Counted(count, query.tables)
+        val changed = synchronized(remembered) { remembered.put(query.familyKey.hashCode(), count) != count }
+        if (changed) saveSoon()
+    }
+
+    /** Reads the counts from before the app opened, once; off the screen thread (a list's first page calls it). */
+    private fun load() {
+        val file = saved ?: return
+        if (!loaded.compareAndSet(false, true)) return
+        val lines = attempt(TAG, "Couldn't read the saved list lengths") { if (file.exists()) file.readLines() else emptyList() }
+        val read =
+            lines.getOrDefault(emptyList()).mapNotNull { line ->
+                val (key, count) = line.split('\t').takeIf { it.size == 2 } ?: return@mapNotNull null
+                (key.toIntOrNull() ?: return@mapNotNull null) to (count.toIntOrNull() ?: return@mapNotNull null)
+            }
+        // Counts taken since the app opened are newer than the file's.
+        synchronized(remembered) { read.forEach { (key, count) -> remembered.putIfAbsent(key, count) } }
+    }
+
+    /** Writes the counts a moment after they change, so a run of counts is one write. */
+    private fun saveSoon() {
+        val file = saved ?: return
+        if (!saving.compareAndSet(false, true)) return
+        scope.launchSafely(TAG, onError = { saving.set(false) }) {
+            delay(SAVE_DELAY_MS)
+            saving.set(false)
+            val text =
+                synchronized(remembered) {
+                    while (remembered.size > REMEMBERED) remembered.remove(remembered.keys.first())
+                    remembered.entries.joinToString("\n") { (key, count) -> "$key\t$count" }
+                }
+            withContext(Dispatchers.IO) {
+                attempt(TAG, "Couldn't save the list lengths") {
+                    val temp = File(file.path + ".tmp")
+                    temp.writeText(text)
+                    if (!temp.renameTo(file)) temp.delete()
+                }
+            }
+        }
     }
 
     /** How many times [query]'s tables have changed, to tell whether a count taken since still holds. */
@@ -117,6 +171,9 @@ class ListCounts(
 
     private companion object {
         const val TAG = "ListCounts"
+        const val REMEMBERED = 256
+        const val LOAD_FACTOR = 0.75f
+        const val SAVE_DELAY_MS = 2_000L
     }
 }
 

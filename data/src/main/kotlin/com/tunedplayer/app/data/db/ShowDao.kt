@@ -60,6 +60,10 @@ interface ShowDao {
     @Query("DELETE FROM show_groups")
     suspend fun deleteShowGroups()
 
+    /** Whether every show has one row in [ShowGroupEntity], so the Shows tab can skip grouping ([SHOWS_TAB_FLAT]). */
+    @Query("SELECT NOT EXISTS (SELECT 1 FROM show_groups a JOIN show_groups b ON b.showKey = a.showKey AND b.rowId > a.rowId)")
+    fun oneRowEach(): Flow<Boolean>
+
     /** Every show's key, to find the shows favourited whole ([com.tunedplayer.app.data.FavouriteShows]). */
     @Query("SELECT DISTINCT showKey FROM show_groups")
     suspend fun showKeys(): List<String>
@@ -137,18 +141,29 @@ private const val DETAILS_BATCH = 500
  * The Shows tab when nothing narrows it: grouped from [ShowGroupEntity], a few rows per show, instead of from every
  * episode. New episodes are counted only for the shows on screen. Each sort adds its own ORDER BY ([ShowDao.showsTab]).
  */
-internal const val SHOWS_TAB = """
-        SELECT s.showKey, MIN(s.showName) AS showName, MAX(s.logo) AS logo, MIN(s.groupName) AS groupName,
-            SUM(s.episodes) AS episodes,
-            CASE WHEN s.showKey IN (SELECT showKey FROM seen_episodes WHERE profileId = $ME) THEN (
-                SELECT COUNT(*) FROM items e
-                WHERE e.kind = 2 AND e.showKey = s.showKey AND e.id NOT IN (SELECT itemId FROM seen_episodes WHERE profileId = $ME)
-            ) ELSE 0 END AS newEpisodes
-        FROM show_groups s
+internal const val SHOWS_TAB =
+    "SELECT s.showKey, MIN(s.showName) AS showName, MAX(s.logo) AS logo, MIN(s.groupName) AS groupName, " +
+        "SUM(s.episodes) AS episodes, $SHOWS_TAB_NEW FROM show_groups s $SHOWS_TAB_WHERE GROUP BY s.showKey"
+
+/**
+ * [SHOWS_TAB] when every show has one row in [ShowGroupEntity] (one category, one country), as in most playlists: the
+ * same rows without grouping, so each sort reads its index and stops at the page instead of grouping every show.
+ */
+internal const val SHOWS_TAB_FLAT =
+    "SELECT s.showKey, s.showName, s.logo, s.groupName, s.episodes, $SHOWS_TAB_NEW FROM show_groups s $SHOWS_TAB_WHERE"
+
+/** How many episodes of a show this profile has started are still unseen. */
+private const val SHOWS_TAB_NEW =
+    "CASE WHEN s.showKey IN (SELECT showKey FROM seen_episodes WHERE profileId = $ME) THEN (" +
+        "SELECT COUNT(*) FROM items e WHERE e.kind = 2 AND e.showKey = s.showKey " +
+        "AND e.id NOT IN (SELECT itemId FROM seen_episodes WHERE profileId = $ME)" +
+        ") ELSE 0 END AS newEpisodes"
+
+/** The rows of [ShowGroupEntity] the Shows tab keeps: hidden countries and groups out, the group chip narrows. */
+internal const val SHOWS_TAB_WHERE = """
         WHERE COALESCE(s.region, 'none') NOT IN (:hidden) AND ('g:2:' || s.groupName) NOT IN (:hidden)
             AND (:adult OR s.adult = 0)
             $KIDS_ONLY_S
             $ROUND_THE_CLOCK_S
             AND (:group IS NULL OR s.groupName = :group)
-        GROUP BY s.showKey
 """

@@ -39,6 +39,7 @@ import com.tunedplayer.app.data.db.ShowSummary
 import com.tunedplayer.app.data.db.SortFields
 import com.tunedplayer.app.data.hiddenCountries
 import com.tunedplayer.app.data.hiddenKeys
+import com.tunedplayer.app.diagnostics.AppLog
 import com.tunedplayer.app.diagnostics.attempt
 import com.tunedplayer.app.diagnostics.launchSafely
 import com.tunedplayer.app.ui.settings.PinActions
@@ -55,6 +56,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.debounce
@@ -96,6 +98,17 @@ private data class Query(
     val search: String,
     val now: Long,
 )
+
+/** What the Shows tab reads: the filters, the sort, the shows favourited whole, and whether to skip grouping. */
+private data class ShowsQuery(
+    val q: Query,
+    val order: TitleSort.Order,
+    val favs: List<String>,
+    val flat: Boolean,
+)
+
+/** The browse lists' last lengths ([ListCounts]), in the cache folder. */
+private const val LIST_COUNTS_FILE = "list-counts"
 
 /** What [BrowseViewModel.liveRegions] reads from Settings, so the Flow only restarts when one of them changes. */
 private data class LiveRegionsQuery(
@@ -197,8 +210,11 @@ class BrowseViewModel(
 
     private val config = PagingConfig(pageSize = 60, prefetchDistance = 60, enablePlaceholders = true, initialLoadSize = 120)
 
-    /** How long each list is, counted in the background so the first rows never wait on it ([QuickPagingSource]). */
-    private val counts = ListCounts(container.db, viewModelScope)
+    /**
+     * How long each list is, counted in the background so the first rows never wait on it ([QuickPagingSource]). The
+     * last lengths are kept in the cache folder, which signing out empties (data/AppReset).
+     */
+    private val counts = ListCounts(container.db, viewModelScope, app.cacheDir.resolve(LIST_COUNTS_FILE))
 
     /** Live TV's quick filters (Sports, PPV, a country or a language), on top of the chip chosen. */
     val liveQuick = MutableStateFlow(LiveQuick())
@@ -417,14 +433,31 @@ class BrowseViewModel(
                 }.getOrDefault(emptyList())
             }.distinctUntilChanged()
 
+    /** Every show has one row in the per-show table, so the Shows tab skips grouping (most playlists). */
+    private val oneRowEach: Flow<Boolean> =
+        container.db
+            .shows()
+            .oneRowEach()
+            .catch { e ->
+                AppLog.w("BrowseViewModel", "Couldn't check the per-show table", e)
+                emit(false)
+            }.distinctUntilChanged()
+
     val shows: Flow<PagingData<ShowSummary>> =
-        combine(query(ContentKind.SERIES), sort(ContentKind.SERIES), favouriteShows) { q, order, favs -> Triple(q, order, favs) }
-            .flatMapLatest { (q, order, favs) ->
+        combine(
+            query(ContentKind.SERIES),
+            sort(ContentKind.SERIES),
+            favouriteShows,
+            oneRowEach,
+        ) { q, order, favs, flat -> ShowsQuery(q, order, favs, flat) }
+            .flatMapLatest { shows ->
+                val (q, order, favs) = shows
+                val flat = shows.flat
                 val group = (q.filter as? Filter.Group)?.name
                 // Browsing reads the per-show table; a search or Favourites narrows the episodes themselves.
                 val list =
                     if (q.search.isEmpty() && q.filter != Filter.Favourites) {
-                        QuickLists.showsTab(order, q.hidden, q.adult, group)
+                        QuickLists.showsTab(order, q.hidden, q.adult, group, flat)
                     } else {
                         QuickLists.shows(
                             order,

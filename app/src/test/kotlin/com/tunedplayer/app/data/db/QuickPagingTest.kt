@@ -12,6 +12,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.withTimeout
@@ -20,6 +21,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
+import java.io.File
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertNull
@@ -205,7 +207,92 @@ class QuickPagingTest {
                 QuickPagingSource(db, counts, QuickLists.showsTab(order, emptyList(), false, null)).all(),
                 "the Shows tab by $order",
             )
+            assertEquals(
+                db.sortedShowsTab(order, emptyList(), false, null).all(),
+                QuickPagingSource(db, counts, QuickLists.showsTab(order, emptyList(), false, null, oneRowEach = true)).all(),
+                "the flat Shows tab by $order",
+            )
         }
+    }
+
+    @Test
+    fun theQuickCountsCountWhatTheListsShow() = runTest {
+        db.items().insertAll(
+            listOf(
+                item(1, 0, "News", tvgId = "a"),
+                item(2, 0, "Sport 24/7"),
+                item(3, 0, "Movies", tvgId = "b"),
+                item(4, 0, "Kids", group = "Kids"),
+                item(5, 0, "Docs"),
+            ),
+        )
+        db.programmes().insertAll(
+            listOf(
+                ProgrammeEntity(channelId = "a", start = 0, stop = 100, title = "Morning", description = null, genre = 1),
+                ProgrammeEntity(channelId = "b", start = 0, stop = 100, title = "Film", description = null, genre = 2),
+            ),
+        )
+        db.library().addFavourite(FavouriteEntity(1, addedAt = 1, position = 1))
+        db.library().addFavourite(FavouriteEntity(2, addedAt = 2, position = 2))
+        db.library().saveProgress(HistoryEntity(3, 0, 0, watchedAt = 5))
+        val hidden = listOf("247", "g:0:Kids")
+        for (source in listOf(LiveSource.All, LiveSource.Favourites, LiveSource.Recent, LiveSource.OwnList(9))) {
+            for (genre in listOf(0, 1)) {
+                val list = QuickLists.channels(source, 50, hidden, false, null, "", "", "", listOf("any"), "", genre)
+                assertEquals(
+                    QuickPagingSource(db, counts, list).all().size,
+                    db.quick().count(list.count()),
+                    "$source with genre $genre",
+                )
+            }
+        }
+    }
+
+    @Test
+    fun theShowsTabSkipsGroupingWhenEveryShowHasOneRow() = runTest {
+        val sql = db.openHelper.writableDatabase
+        // Ties, missing ratings and years, and titles left empty, in every sort.
+        val rows =
+            listOf(
+                "('b', 'All', NULL, 0, 'B', NULL, 3, 4, 10, 2001, 7.5, 'b')",
+                "('a', 'All', NULL, 0, 'A', NULL, 1, 2, 10, NULL, NULL, '')",
+                "('c', 'All', NULL, 0, 'C', NULL, 2, 1, 30, 2001, 7.5, 'c')",
+                "('d', 'All', NULL, 0, 'D', NULL, 5, 3, 20, 1999, NULL, '')",
+                "('e', 'Kids', NULL, 0, 'E', NULL, 5, 5, 0, 2010, 9.0, 'e')",
+            )
+        sql.execSQL("INSERT INTO show_groups (${ShowGroups.COLUMNS}) VALUES ${rows.joinToString()}")
+        assertTrue(db.shows().oneRowEach().first())
+        for (order in TitleSort.Order.entries) {
+            for (hidden in listOf(emptyList(), listOf("g:2:Kids"))) {
+                val flat = QuickLists.showsTab(order, hidden, false, null, oneRowEach = true)
+                val all = QuickPagingSource(db, counts, flat).all()
+                assertEquals(db.sortedShowsTab(order, hidden, false, null).all(), all, "the flat Shows tab by $order")
+                assertEquals(all.size, db.quick().count(flat.count()))
+                val grouped = QuickLists.showsTab(order, hidden, false, null)
+                assertEquals(all.size, db.quick().count(grouped.count()))
+            }
+        }
+
+        sql.execSQL("INSERT INTO show_groups (${ShowGroups.COLUMNS}) VALUES ('a', 'Kids', NULL, 0, 'A', NULL, 1, 9, 0, NULL, NULL, '')")
+
+        assertEquals(false, db.shows().oneRowEach().first())
+        assertEquals(5, db.quick().count(QuickLists.showsTab(TitleSort.Order.PROVIDER, emptyList(), false, null).count()))
+    }
+
+    @Test
+    fun theLastLengthsAreAGuessWhenTheAppOpensAgain() = runBlocking {
+        db.items().insertAll((1L..300L).map { item(it, 0, "Channel $it") })
+        val file = File(context.cacheDir, "list-counts-test").apply { delete() }
+        val before = ListCounts(db, scope, file)
+        before.record(live(), 300, before.stamp(live()))
+        withTimeout(10_000) { while (!file.exists()) delay(10) }
+
+        val after = ListCounts(db, scope, file)
+        val first = QuickPagingSource(db, after, live()).page()
+
+        assertNull(after.exact(live()), "a guess until it is counted again")
+        assertEquals(300 - PAGE.toInt(), first.itemsAfter, "the whole length from the first page")
+        file.delete()
     }
 
     @Test
