@@ -1,32 +1,18 @@
 ---
 title: What's new in Tuned 2.19.0
-description: "Tuned 2.19.0, the IPTV player for Android and Android TV, is out. Centre the account sign-in card and match the Google and Apple buttons."
+description: "Tuned 2.19.0 is out. You can favourite a whole show, and editing on the website keeps your favourites and lists."
 date: 2026-11-27
 kind: release
 version: 2.19.0
 ---
 
-Tuned 2.19.0 is out: 14 new, 3 fixed.
+Tuned 2.19.0 is out: 1 new, 2 fixed.
 
 ## New
 
-- Search, favourites and TMDB details on the Vega stick, shared with the Samsung app
-- Sorting, hiding adult and 24/7, and Continue watching on the Vega stick, shared with the Samsung app
-- The guide grid and catch-up TV on Samsung TVs
-- More than one playlist on the Vega stick
-- The guide grid, catch-up and reminders on the Vega stick
-- Who's watching? profiles, kids mode and PINs on Samsung TVs
-- Live events and auto-tune on the Vega stick
-- Profiles, kids and PINs on the Vega stick
-- Your own lists, account Favourites and renamed channels on Samsung TVs
-- Your own lists, account Favourites and renamed channels on the Vega stick
-- Shared Simkl sign-in, scrobbling and history for the TV apps
-- Simkl on the Vega stick
-- Favourite whole TV shows
-- Trakt for the TV apps in tv/shared
+- Favourite a whole show: the heart on a show's page, or in its poster's menu, saves the show itself, and Shows › Favourites lists it
 
 ## Fixed
 
-- Centre the account sign-in card and match the Google and Apple buttons
-- Keep the app's 64-bit ids whole when the website edits a backup
-- The Samsung remote lands on the first channel, never on nothing
+- Changing a playlist, a setting, a favourite or a list on the website no longer loses favourites, lists or renamed channels in the app
+- The account sign-in page sits in the centre of the screen, and the Google and Apple buttons match
