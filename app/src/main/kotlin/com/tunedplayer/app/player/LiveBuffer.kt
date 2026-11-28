@@ -108,7 +108,7 @@ internal class LiveBuffer(
         hls = if (isHls) HlsState() else null
         stopRecording()
         closePiece()
-        dir.listFiles()?.forEach { it.delete() }
+        discardOld()
         dir.mkdirs()
         pieces.clear()
         sizes.clear()
@@ -209,7 +209,30 @@ internal class LiveBuffer(
         stopRecording()
         closePiece()
         dir.deleteRecursively()
+        leftovers().forEach { it.deleteRecursively() }
     }
+
+    /**
+     * The last channel's pieces (up to half an hour of them) leave the folder at once and are deleted on a quiet
+     * thread, so the next channel's stream opens without waiting on the disk (Melvin, 2026-11-28: faster channel
+     * zapping). It used to delete them one by one on the stream's own thread before opening the new one.
+     */
+    private fun discardOld() {
+        val old = dir.listFiles().orEmpty()
+        if (old.isEmpty()) return
+        val trash = File(dir.parentFile, "${dir.name}$TRASH${System.nanoTime()}")
+        if (dir.renameTo(trash)) {
+            trashCan.execute { trash.deleteRecursively() }
+        } else {
+            old.forEach { it.delete() }
+        }
+    }
+
+    /** Folders of old pieces a closed player left behind. */
+    private fun leftovers(): List<File> = dir.parentFile
+        ?.listFiles { f -> f.name.startsWith(dir.name + TRASH) }
+        .orEmpty()
+        .toList()
 
     private fun newSegmenter() = TsSegmenter(
         sink =
@@ -338,6 +361,17 @@ internal class LiveBuffer(
     }
 
     companion object {
+        private const val TRASH = "-old-"
+
+        /** One quiet thread for deleting old pieces, so a run of channel changes never piles up threads. */
+        private val trashCan =
+            java.util.concurrent.Executors.newSingleThreadExecutor { r ->
+                Thread(r, "LiveBufferTrash").apply {
+                    isDaemon = true
+                    priority = Thread.MIN_PRIORITY
+                }
+            }
+
         const val PLAYLIST = "live.m3u8"
         const val GATE_WAIT_S = 5L
         private const val MAX_LISTED = 64

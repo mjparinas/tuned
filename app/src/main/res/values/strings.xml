@@ -48,6 +48,8 @@
     <string name="episode_label">Episode %1$d</string>
 
     <string name="player_now">Now: %1$s</string>
+    <!-- The channel card as a channel starts: its number, then its name. -->
+    <string name="player_zap_channel" translatable="false">%1$d   %2$s</string>
     <string name="player_next">Next: %1$s</string>
     <string name="player_not_allowed">This is locked on this profile. Open Tuned to unlock it.</string>
     <string name="player_error">Can\'t play this stream (%1$s)</string>

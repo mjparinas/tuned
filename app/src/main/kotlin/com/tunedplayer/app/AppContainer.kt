@@ -51,6 +51,7 @@ import com.tunedplayer.app.premium.DeviceSeatsClient
 import com.tunedplayer.app.premium.Premium
 import com.tunedplayer.app.updates.GitHubUpdates
 import com.tunedplayer.app.work.BrowseWarm
+import com.tunedplayer.app.work.TitlePrefetch
 import com.tunedplayer.app.work.OfflineWorker
 import com.tunedplayer.app.work.QuietStart
 import com.tunedplayer.app.work.Reminders
@@ -64,6 +65,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import okhttp3.OkHttpClient
@@ -135,6 +137,13 @@ class AppContainer(
                 touchHttp = { http },
             ),
         )
+    }
+
+    /** A film's or show's page fetched as the remote rests on its poster, or a finger comes down on it ([TitlePrefetch]). */
+    val titlePrefetch by lazy {
+        TitlePrefetch(appScope, { metadata }, { browseWarm }) {
+            connectivity.onlineNow() && settings.settings.first().warmNextScreens
+        }
     }
     val scheduler = SyncScheduler(context) { quietStart.openNow() }
     val guideFixes by lazy { GuideFixRepository(db, sync, scheduler, credentials) }

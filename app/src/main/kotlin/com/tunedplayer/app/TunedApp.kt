@@ -20,6 +20,7 @@ import com.tunedplayer.app.data.settleNewRegions
 import com.tunedplayer.app.diagnostics.CrashReporter
 import com.tunedplayer.app.diagnostics.FreezeWatch
 import com.tunedplayer.app.diagnostics.Lighter
+import com.tunedplayer.app.diagnostics.SpeedTrace
 import com.tunedplayer.app.diagnostics.launchSafely
 import com.tunedplayer.app.work.CloudSyncWorker
 import kotlinx.coroutines.Dispatchers
@@ -39,6 +40,8 @@ class TunedApp :
 
     override fun onCreate() {
         super.onCreate()
+        // Settings' Record a speed trace restarted the app to time this start; a file check otherwise.
+        SpeedTrace.startIfAsked(this)
         CrashReporter.install(this)
         FreezeWatch.start(this)
         Lighter.load(this)
@@ -60,6 +63,7 @@ class TunedApp :
             )
         }
         container = AppContainer(this)
+        SpeedTrace.mark("App built")
         // Background work waits until the first screen is up (docs/decisions/speed.md › Quiet start).
         container.quietStart.begin()
         // A sign-out the app was closed in the middle of finishes now, before the first screen is chosen.

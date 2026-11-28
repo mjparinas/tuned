@@ -33,7 +33,6 @@ import androidx.media3.ui.PlayerView
 import com.tunedplayer.app.R
 import com.tunedplayer.app.container
 import com.tunedplayer.app.core.ContentKind
-import com.tunedplayer.app.core.PlayGate
 import com.tunedplayer.app.core.Titles
 import com.tunedplayer.app.data.AppSettings
 import com.tunedplayer.app.data.ServerFlags
@@ -253,6 +252,9 @@ class PlayerActivity : FragmentActivity() {
         }, { cast?.tvPosition() })
     }
 
+    /** The channel card and quick flips; see [ChannelZap]. */
+    private val zap by lazy { ChannelZap(this, { queue }) { cast?.casting == true } }
+
     private val frameRate by lazy { FrameRateMatch(this) { settings.matchFrameRate && cast?.casting != true } }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -303,7 +305,7 @@ class PlayerActivity : FragmentActivity() {
                 return@launchSafely
             }
             // The tile, the widget, TV home cards and other apps' play intents skip the lists' filters.
-            if (channel != null && recording == 0L && !mayPlay(channel)) {
+            if (channel != null && recording == 0L && !settings.mayPlay(channel)) {
                 Toast.makeText(this@PlayerActivity, R.string.player_not_allowed, Toast.LENGTH_LONG).show()
                 finish()
                 return@launchSafely
@@ -360,6 +362,7 @@ class PlayerActivity : FragmentActivity() {
                 recorder.onControls(visibility)
                 jumpToLive.onControls(visibility)
                 tuneNext.onControls(visibility)
+                zap.onControls(visibility)
             },
         )
         setContentView(root)
@@ -374,6 +377,7 @@ class PlayerActivity : FragmentActivity() {
         skipIntro.attach(root)
         jumpToLive.attach(root)
         tuneNext.attach(root)
+        zap.attach(root)
         levelBars.attach(root)
         castScreen.attach(root, playerView)
     }
@@ -444,7 +448,7 @@ class PlayerActivity : FragmentActivity() {
                         flash(getString(if (forward) R.string.gesture_forward else R.string.gesture_back, seconds))
                     }
                 },
-                onChannel = { next -> player?.let { p -> if (next) p.seekToNextMediaItem() else p.seekToPreviousMediaItem() } },
+                onChannel = { next -> playerView.player?.let { p -> if (next) p.seekToNextMediaItem() else p.seekToPreviousMediaItem() } },
                 bars = levelBars,
             )
         gestures = g
@@ -513,22 +517,13 @@ class PlayerActivity : FragmentActivity() {
         tuner.begin()
     }
 
-    private fun mayPlay(item: ItemEntity): Boolean = PlayGate.allowed(
-        item.adult,
-        item.groupName,
-        item.name,
-        live = item.kind == ContentKind.LIVE.code,
-        showAdult = settings.showAdult,
-        kidsProfile = settings.kidsProfile,
-    )
-
     private suspend fun start(item: ItemEntity) {
         val kind = ContentKind.fromCode(item.kind)
         val live = kind == ContentKind.LIVE
         val exo = buildPlayer(live)
         player = exo
         scrobblers.attach(exo)
-        val shown = ViewPlayer(exo, { cast?.tv }, { statusView.visibility = View.GONE }, ::pauseLive, ::live)
+        val shown = ViewPlayer(exo, { cast?.tv }, { statusView.visibility = View.GONE }, ::pauseLive, ::live) { zap.flip(exo, it) }
         playerView.player = shown
         // Media buttons and the Assistant act through the same player as the on-screen controls.
         session.attach(shown)
@@ -618,6 +613,7 @@ class PlayerActivity : FragmentActivity() {
                 addListener(skipIntro.listener)
                 addListener(subtitleSearch.listener)
                 addListener(pills.listener)
+                addListener(zap.listener)
             }
     }
 

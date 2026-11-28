@@ -1,5 +1,7 @@
 package com.tunedplayer.app.work
 
+import com.tunedplayer.app.diagnostics.SpeedTrace
+import com.tunedplayer.app.diagnostics.SpeedTraceReport
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -47,12 +49,14 @@ class QuietStart(
 
     /** A screen is coming up (the main screen's onCreate), so the work waits for it. */
     fun screenStarting() {
+        SpeedTrace.mark("First screen starting")
         screen.value = true
     }
 
     /** Home has drawn its first frame: the work can start a moment later. */
     @Synchronized
     fun homeShown() {
+        SpeedTrace.mark(SpeedTraceReport.HOME)
         screen.value = true
         if (open.value || homeTimer != null) return
         homeTimer =

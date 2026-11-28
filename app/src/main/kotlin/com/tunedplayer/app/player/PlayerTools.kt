@@ -283,12 +283,13 @@ class PlayerTools(
     private fun perform(action: RemoteKeys.Action) {
         val player = hooks.player()
         when (action) {
+            // Through the on-screen player, so a flip shows the channel card at once ([ChannelZap]).
             RemoteKeys.Action.NEXT_CHANNEL -> {
-                player?.seekToNextMediaItem()
+                playerView.player?.seekToNextMediaItem()
             }
 
             RemoteKeys.Action.PREVIOUS_CHANNEL -> {
-                player?.seekToPreviousMediaItem()
+                playerView.player?.seekToPreviousMediaItem()
             }
 
             RemoteKeys.Action.SEEK_FORWARD -> {
