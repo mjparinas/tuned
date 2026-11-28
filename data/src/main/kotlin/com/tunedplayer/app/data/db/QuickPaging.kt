@@ -245,7 +245,7 @@ class QuickPagingSource<T : Any>(
                 val total =
                     attempt(TAG, "Couldn't count ${query.name}") {
                         offMain { db.quick().count(query.count()) }
-                    }.getOrNull() ?: return@launch
+                    }.getOrNull() ?: return@launchSafely
                 counts.record(query, total, stamp)
                 if (total != shown) invalidate()
             }
