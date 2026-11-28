@@ -381,6 +381,8 @@ class TitleSortsTest {
         )
         TunedDatabase.MIGRATION_21_22.migrate(old)
         TunedDatabase.MIGRATION_22_23.migrate(old)
+        // Version 25 adds the tags column to items (version 24 only adds indexes to other tables).
+        TunedDatabase.MIGRATION_24_25.migrate(old)
         val fresh = db.openHelper.writableDatabase
         for (table in listOf("items", "show_groups", "show_details")) assertEquals(columns(fresh, table), columns(old, table), table)
         for (index in listOf("added", "year", "topRating", "sortTitle")) {

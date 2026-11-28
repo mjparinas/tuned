@@ -34,7 +34,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         CatchUpItemEntity::class,
         ShowDetailsEntity::class,
     ],
-    version = 24,
+    version = 26,
     exportSchema = true,
 )
 abstract class TunedDatabase : RoomDatabase() {
@@ -80,6 +80,9 @@ abstract class TunedDatabase : RoomDatabase() {
 
     abstract fun titleSorts(): TitleSortDao
 
+    /** The browse lists a page at a time, first rows before the count ([QuickPagingSource]). */
+    abstract fun quick(): QuickDao
+
     companion object {
         fun create(context: Context): TunedDatabase = Room
             .databaseBuilder(context, TunedDatabase::class.java, "tuned.db")
@@ -110,6 +113,8 @@ abstract class TunedDatabase : RoomDatabase() {
                 MIGRATION_21_22,
                 MIGRATION_22_23,
                 MIGRATION_23_24,
+                MIGRATION_24_25,
+                MIGRATION_25_26,
             ).addCallback(FirstProfile)
             // Going back to an older release (installing an older APK) can't keep a newer database: start it afresh
             // rather than crash on every launch. Upgrades always migrate, above.
@@ -438,6 +443,38 @@ abstract class TunedDatabase : RoomDatabase() {
                     )
                 }
             }
+
+        /**
+         * What the hiding filters read ([ItemTags]), worked out once per stream instead of on every row of every list
+         * and count; a refresh writes it from then on.
+         */
+        val MIGRATION_24_25 =
+            object : Migration(24, 25) {
+                override fun migrate(db: SupportSQLiteDatabase) {
+                    db.execSQL("ALTER TABLE `items` ADD COLUMN `tags` INTEGER NOT NULL DEFAULT 0")
+                    // Without the search index's triggers, which would rewrite every name in it for an unchanged name.
+                    for ((name, _) in ftsTriggers) db.execSQL("DROP TRIGGER IF EXISTS room_fts_content_sync_items_fts_$name")
+                    db.execSQL("UPDATE `items` SET `tags` = ${ItemTags.SQL}")
+                    for ((name, sql) in ftsTriggers) db.execSQL("CREATE TRIGGER IF NOT EXISTS room_fts_content_sync_items_fts_$name $sql")
+                }
+            }
+
+        /**
+         * Widens the category index so the category chips count from it alone, taking the place of the narrower
+         * one, so a refresh keeps the same number of indexes to write.
+         */
+        val MIGRATION_25_26 =
+            object : Migration(25, 26) {
+                override fun migrate(db: SupportSQLiteDatabase) {
+                    db.execSQL("DROP INDEX IF EXISTS `index_items_kind_groupName`")
+                    db.execSQL(
+                        "CREATE INDEX IF NOT EXISTS `$CATEGORY_INDEX` " +
+                            "ON `items` (`kind`, `groupName`, `region`, `adult`, `tags`, `sortOrder`)",
+                    )
+                }
+            }
+
+        const val CATEGORY_INDEX = "index_items_kind_groupName_region_adult_tags_sortOrder"
 
         private const val FTS_INSERT = "INSERT INTO `items_fts`(`docid`, `searchName`) VALUES (NEW.`rowid`, NEW.`searchName`); END"
 

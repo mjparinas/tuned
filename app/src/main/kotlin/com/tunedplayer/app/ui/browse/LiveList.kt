@@ -121,41 +121,51 @@ private fun LiveList(
     val focus = rememberTvFocus(focusReturn)
     WarmVisibleArt(channels, listState = state) { it.logo }
     Box(Modifier.fillMaxSize()) {
-        LazyColumn(
-            state = state,
-            modifier = Modifier.fillMaxSize().tvPagedList(focus, state),
-            contentPadding = PaddingValues(start = 12.dp, end = 12.dp, top = 4.dp, bottom = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            if (channels.firstLoad) items(SKELETON_ROWS) { ChannelRowSkeleton() }
-            items(count = channels.itemCount, key = channels.itemKey { it.id }) { index ->
-                val channel = channels[index]
-                if (channel == null) {
-                    ChannelRowSkeleton()
-                } else {
-                    val favourite = channel.id in favourites
-                    ChannelRow(
-                        modifier =
-                            Modifier.tvFocusItem(focus, channel.id, first = index == 0).then(
-                                if (onFocusChannel ==
-                                    null
-                                ) {
-                                    Modifier
-                                } else {
-                                    Modifier.onFocusChanged { if (it.hasFocus) onFocusChannel(channel) }
-                                },
-                            ),
-                        channel = channel,
-                        favourite = favourite,
-                        showGuide = showGuide,
-                        showNumber = showNumbers,
-                        onPlay = { onPlay(channel.id) },
-                        onGuide = { onOpenGuide(channel.id) },
-                        onToggleFavourite = { vm.toggleFavourite(channel.id, favourite) },
-                        onAddToList = { picker.open(channel.id) },
-                        onRename = if (canEditChannel) ({ editPicker.rename(channel.id) }) else null,
-                        onChangeLogo = if (canEditChannel) ({ editPicker.changeLogo(channel.id) }) else null,
-                    )
+        if (channels.firstLoad) {
+            // The grey rows have a column of their own, so the list's scroll state is never measured against them:
+            // back on this tab, the list opens where it was left instead of at the top.
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = LIST_PADDING,
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                userScrollEnabled = false,
+            ) { items(SKELETON_ROWS) { ChannelRowSkeleton() } }
+        } else {
+            LazyColumn(
+                state = state,
+                modifier = Modifier.fillMaxSize().tvPagedList(focus, state),
+                contentPadding = LIST_PADDING,
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                items(count = channels.itemCount, key = channels.itemKey { it.id }) { index ->
+                    val channel = channels[index]
+                    if (channel == null) {
+                        ChannelRowSkeleton()
+                    } else {
+                        val favourite = channel.id in favourites
+                        ChannelRow(
+                            modifier =
+                                Modifier.tvFocusItem(focus, channel.id, first = index == 0).then(
+                                    if (onFocusChannel ==
+                                        null
+                                    ) {
+                                        Modifier
+                                    } else {
+                                        Modifier.onFocusChanged { if (it.hasFocus) onFocusChannel(channel) }
+                                    },
+                                ),
+                            channel = channel,
+                            favourite = favourite,
+                            showGuide = showGuide,
+                            showNumber = showNumbers,
+                            onPlay = { onPlay(channel.id) },
+                            onGuide = { onOpenGuide(channel.id) },
+                            onToggleFavourite = { vm.toggleFavourite(channel.id, favourite) },
+                            onAddToList = { picker.open(channel.id) },
+                            onRename = if (canEditChannel) ({ editPicker.rename(channel.id) }) else null,
+                            onChangeLogo = if (canEditChannel) ({ editPicker.changeLogo(channel.id) }) else null,
+                        )
+                    }
                 }
             }
         }
@@ -166,6 +176,8 @@ private fun LiveList(
         NoQuickMatches(channels, vm)
     }
 }
+
+private val LIST_PADDING = PaddingValues(start = 12.dp, end = 12.dp, top = 4.dp, bottom = 16.dp)
 
 /** One tap to favourite a channel or take it off: a filled heart in the accent colour when it is a favourite. */
 @Composable

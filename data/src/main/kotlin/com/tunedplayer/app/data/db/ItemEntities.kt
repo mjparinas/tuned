@@ -11,7 +11,9 @@ import androidx.room.PrimaryKey
     tableName = "items",
     indices = [
         Index(value = ["kind", "sortOrder"]),
-        Index(value = ["kind", "groupName"]),
+        // The category chips read every row of a tab but only these columns, so they count from the index alone and
+        // never open a row (Melvin, 2026-11-28: "does the db need more indexes?"). It also serves a category's channels.
+        Index(value = ["kind", "groupName", "region", "adult", "tags", "sortOrder"]),
         Index(value = ["kind", "showKey", "season", "episode"]),
         Index(value = ["tvgId"]),
         Index(value = ["region"]),
@@ -58,6 +60,11 @@ data class ItemEntity(
      * Worked out after each refresh and as TMDB answers; a refresh never writes it, so it isn't in [PlaylistWriter]'s columns.
      */
     val topRating: Double? = null,
+    /**
+     * What the hiding filters read ([ItemTags]): 24/7, kids, an empty event slot. Worked out from the name, category and
+     * kind as the stream is made, so no list tests every name again.
+     */
+    @ColumnInfo(defaultValue = "0") val tags: Int = ItemTags.of(kind, name, groupName, searchName),
 )
 
 /**

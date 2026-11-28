@@ -112,6 +112,34 @@ class GuideSearchTest {
         assertEquals(emptyList(), titles("grey"))
     }
 
+    private suspend fun channelsFor(text: String) =
+        GuideSearchIndex.searchChannels(db, text, Search.match(text), NOW, emptyList(), adult = false, limit = 25).map { it.name }
+
+    @Test
+    fun searchFindsTheChannelShowingAMatchNowThroughTheGuideIndex() = runTest {
+        db.items().insertAll(listOf(channel(1, "TSN 1", "tsn"), channel(2, "News 24", "news"), channel(3, "Leafs TV", "ltv")))
+        writeGuide(
+            programme("tsn", NOW - HOUR, "Hockey: Leafs at Canucks", 2 * HOUR),
+            programme("news", NOW + 2 * DAY, "The Leafs Report"),
+        )
+
+        // By name, and by what's on now; a programme two days off isn't "on now".
+        assertEquals(listOf("TSN 1", "Leafs TV"), channelsFor("leafs"))
+        assertEquals(listOf("News 24"), channelsFor("news"))
+        // The same rows, in the same order, as the slower read it stands in for.
+        val slow = db.items().searchChannels("leafs", Search.match("leafs"), NOW, emptyList(), adult = false, limit = 25)
+        assertEquals(slow.map { it.name }, channelsFor("leafs"))
+        assertEquals("Hockey: Leafs at Canucks", slow.first().nowTitle)
+    }
+
+    @Test
+    fun searchStillFindsWhatsOnBeforeTheGuideIsIndexed() = runTest {
+        db.items().insertAll(listOf(channel(1, "TSN 1", "tsn")))
+        db.programmes().insertAll(listOf(programme("tsn", NOW - HOUR, "Grey Cup", 2 * HOUR)))
+
+        assertEquals(listOf("TSN 1"), channelsFor("grey"))
+    }
+
     private fun programme(
         channel: String,
         start: Long,

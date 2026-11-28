@@ -58,9 +58,7 @@ interface ItemDao {
 
     /** Live TV in playlist order. Paged, so it reads only the rows on screen, straight down the (kind, sortOrder) index. */
     @Suppress("LongParameterList") // Every Live TV filter is a parameter of the one query, so the list stays one read.
-    @Query(
-        "SELECT $CHANNEL_COLUMNS, 0 AS favourite FROM items i $NOW_JOIN WHERE $CHANNEL_FILTER $LIVE_QUICK ORDER BY i.sortOrder",
-    )
+    @Query("$LIVE_ALL $LIVE_ALL_ORDER")
     fun channels(
         now: Long,
         hidden: List<String>,
@@ -76,10 +74,7 @@ interface ItemDao {
 
     /** Favourite channels, in their own order (Settings › Order favourites). */
     @Suppress("LongParameterList") // Every Live TV filter is a parameter of the one query, so the list stays one read.
-    @Query(
-        "SELECT $CHANNEL_COLUMNS, 1 AS favourite FROM items i JOIN favourites f ON f.itemId = i.id AND f.profileId = $ME $NOW_JOIN " +
-            "WHERE $CHANNEL_FILTER $LIVE_QUICK ORDER BY f.position",
-    )
+    @Query("$LIVE_FAVOURITES $LIVE_FAVOURITES_ORDER")
     fun favouriteChannels(
         now: Long,
         hidden: List<String>,
@@ -95,10 +90,7 @@ interface ItemDao {
 
     /** Channels watched lately, latest first. */
     @Suppress("LongParameterList") // Every Live TV filter is a parameter of the one query, so the list stays one read.
-    @Query(
-        "SELECT $CHANNEL_COLUMNS, 0 AS favourite FROM items i JOIN history h ON h.itemId = i.id AND h.profileId = $ME $NOW_JOIN " +
-            "WHERE $CHANNEL_FILTER $LIVE_QUICK ORDER BY h.watchedAt DESC",
-    )
+    @Query("$LIVE_RECENT $LIVE_RECENT_ORDER")
     fun recentChannels(
         now: Long,
         hidden: List<String>,
@@ -121,12 +113,7 @@ interface ItemDao {
         WHERE h.profileId = $ME AND i.kind = :kind
             AND COALESCE(i.region, 'none') NOT IN (:hidden) AND ('g:' || i.kind || ':' || i.groupName) NOT IN (:hidden)
             AND NOT ('scan:dead' IN (:hidden) AND i.id IN (SELECT itemId FROM channel_scan WHERE hidden = 1))
-            AND NOT ('placeholder' IN (:hidden) AND i.kind = 0
-                AND ((' ' || i.searchName) GLOB '* no event*' OR (' ' || i.searchName) GLOB '* no live event*'))
-            AND NOT ('247' IN (:hidden)
-                AND ((' ' || lower(i.groupName || ' ' || i.name) || ' ') GLOB '*[^0-9]24[/ x-]7[^0-9]*'
-                    OR (' ' || lower(i.groupName || ' ' || i.name) || ' ') GLOB '*[^0-9]247[^0-9]*'
-                    OR (' ' || lower(i.groupName || ' ' || i.name) || ' ') GLOB '*[^0-9]24 / 7[^0-9]*'))
+            $TAGGED_HIDDEN_I
             AND (:adult OR i.adult = 0)
             $KIDS_ONLY_I
             AND h.durationMs > 0 AND h.positionMs > 30000 AND h.positionMs < h.durationMs * 95 / 100
@@ -140,7 +127,7 @@ interface ItemDao {
         adult: Boolean,
     ): Flow<List<ContinueRow>>
 
-    @Query("SELECT * FROM items i $TITLE_FILTER ORDER BY i.sortOrder")
+    @Query("$TITLES $TITLES_PROVIDER")
     @Suppress("LongParameterList") // Every filter is a parameter of the one query, so the list stays one read.
     fun items(
         kind: Int,
@@ -154,7 +141,7 @@ interface ItemDao {
         listId: Long,
     ): PagingSource<Int, ItemEntity>
 
-    @Query("$SHOW_SUMMARY $SHOW_FILTER ORDER BY MIN(sortOrder)")
+    @Query("$SHOWS $SHOWS_PROVIDER")
     fun shows(
         hidden: List<String>,
         adult: Boolean,
@@ -179,12 +166,7 @@ interface ItemDao {
         WHERE i.kind = 0
             AND COALESCE(i.region, 'none') NOT IN (:hidden) AND ('g:' || i.kind || ':' || i.groupName) NOT IN (:hidden)
             AND NOT ('scan:dead' IN (:hidden) AND i.id IN (SELECT itemId FROM channel_scan WHERE hidden = 1))
-            AND NOT ('placeholder' IN (:hidden) AND i.kind = 0
-                AND ((' ' || i.searchName) GLOB '* no event*' OR (' ' || i.searchName) GLOB '* no live event*'))
-            AND NOT ('247' IN (:hidden)
-                AND ((' ' || lower(i.groupName || ' ' || i.name) || ' ') GLOB '*[^0-9]24[/ x-]7[^0-9]*'
-                    OR (' ' || lower(i.groupName || ' ' || i.name) || ' ') GLOB '*[^0-9]247[^0-9]*'
-                    OR (' ' || lower(i.groupName || ' ' || i.name) || ' ') GLOB '*[^0-9]24 / 7[^0-9]*'))
+            $TAGGED_HIDDEN_I
             AND (:adult OR i.adult = 0)
             $KIDS_ONLY_I
             AND (i.id IN (SELECT docid FROM items_fts WHERE items_fts MATCH :match) OR i.tvgId IN (
@@ -210,12 +192,7 @@ interface ItemDao {
         WHERE i.kind = 1 AND i.id IN (SELECT docid FROM items_fts WHERE items_fts MATCH :match)
             AND COALESCE(i.region, 'none') NOT IN (:hidden) AND ('g:' || i.kind || ':' || i.groupName) NOT IN (:hidden)
             AND NOT ('scan:dead' IN (:hidden) AND i.id IN (SELECT itemId FROM channel_scan WHERE hidden = 1))
-            AND NOT ('placeholder' IN (:hidden) AND i.kind = 0
-                AND ((' ' || i.searchName) GLOB '* no event*' OR (' ' || i.searchName) GLOB '* no live event*'))
-            AND NOT ('247' IN (:hidden)
-                AND ((' ' || lower(i.groupName || ' ' || i.name) || ' ') GLOB '*[^0-9]24[/ x-]7[^0-9]*'
-                    OR (' ' || lower(i.groupName || ' ' || i.name) || ' ') GLOB '*[^0-9]247[^0-9]*'
-                    OR (' ' || lower(i.groupName || ' ' || i.name) || ' ') GLOB '*[^0-9]24 / 7[^0-9]*'))
+            $TAGGED_HIDDEN_I
             AND (:adult OR i.adult = 0)
             $KIDS_ONLY_I
         ORDER BY i.sortOrder
@@ -239,12 +216,7 @@ interface ItemDao {
         WHERE i.kind = 2 AND i.showKey IS NOT NULL AND i.id IN (SELECT docid FROM items_fts WHERE items_fts MATCH :match)
             AND COALESCE(i.region, 'none') NOT IN (:hidden) AND ('g:' || i.kind || ':' || i.groupName) NOT IN (:hidden)
             AND NOT ('scan:dead' IN (:hidden) AND i.id IN (SELECT itemId FROM channel_scan WHERE hidden = 1))
-            AND NOT ('placeholder' IN (:hidden) AND i.kind = 0
-                AND ((' ' || i.searchName) GLOB '* no event*' OR (' ' || i.searchName) GLOB '* no live event*'))
-            AND NOT ('247' IN (:hidden)
-                AND ((' ' || lower(i.groupName || ' ' || i.name) || ' ') GLOB '*[^0-9]24[/ x-]7[^0-9]*'
-                    OR (' ' || lower(i.groupName || ' ' || i.name) || ' ') GLOB '*[^0-9]247[^0-9]*'
-                    OR (' ' || lower(i.groupName || ' ' || i.name) || ' ') GLOB '*[^0-9]24 / 7[^0-9]*'))
+            $TAGGED_HIDDEN_I
             AND (:adult OR i.adult = 0)
             $KIDS_ONLY_I
         GROUP BY showKey
@@ -270,13 +242,8 @@ interface ItemDao {
         SELECT * FROM items
         WHERE kind = 0 AND groupName = :group AND COALESCE(region, 'none') NOT IN (:hidden) AND ('g:' || kind || ':' || groupName) NOT IN (:hidden)
             AND NOT ('scan:dead' IN (:hidden) AND id IN (SELECT itemId FROM channel_scan WHERE hidden = 1)) AND (:adult OR adult = 0)
-            $KIDS_ONLY
-            AND NOT ('placeholder' IN (:hidden) AND kind = 0
-                AND ((' ' || searchName) GLOB '* no event*' OR (' ' || searchName) GLOB '* no live event*'))
-            AND NOT ('247' IN (:hidden)
-                AND ((' ' || lower(groupName || ' ' || name) || ' ') GLOB '*[^0-9]24[/ x-]7[^0-9]*'
-                    OR (' ' || lower(groupName || ' ' || name) || ' ') GLOB '*[^0-9]247[^0-9]*'
-                    OR (' ' || lower(groupName || ' ' || name) || ' ') GLOB '*[^0-9]24 / 7[^0-9]*'))
+            $KIDS_ONLY_TAGS
+            $TAGGED_HIDDEN
         ORDER BY sortOrder
         """,
     )
@@ -286,21 +253,7 @@ interface ItemDao {
         adult: Boolean,
     ): List<ItemEntity>
 
-    @Query(
-        """
-        SELECT groupName, COUNT(*) AS count FROM items
-        WHERE kind = :kind AND COALESCE(region, 'none') NOT IN (:hidden) AND ('g:' || kind || ':' || groupName) NOT IN (:hidden)
-            AND NOT ('scan:dead' IN (:hidden) AND id IN (SELECT itemId FROM channel_scan WHERE hidden = 1)) AND (:adult OR adult = 0)
-            $KIDS_ONLY
-            AND NOT ('placeholder' IN (:hidden) AND kind = 0
-                AND ((' ' || searchName) GLOB '* no event*' OR (' ' || searchName) GLOB '* no live event*'))
-            AND NOT ('247' IN (:hidden)
-                AND ((' ' || lower(groupName || ' ' || name) || ' ') GLOB '*[^0-9]24[/ x-]7[^0-9]*'
-                    OR (' ' || lower(groupName || ' ' || name) || ' ') GLOB '*[^0-9]247[^0-9]*'
-                    OR (' ' || lower(groupName || ' ' || name) || ' ') GLOB '*[^0-9]24 / 7[^0-9]*'))
-        GROUP BY groupName ORDER BY MIN(sortOrder)
-        """,
-    )
+    @Query(GROUP_COUNTS)
     fun groups(
         kind: Int,
         hidden: List<String>,
@@ -326,8 +279,7 @@ interface ItemDao {
             )) AS guideMatch,
             h.okAt, h.deadAt, h.height,
             (('scan:dead' IN (:hidden) AND i.id IN (SELECT itemId FROM channel_scan WHERE hidden = 1))
-                OR ('placeholder' IN (:hidden)
-                    AND ((' ' || i.searchName) GLOB '* no event*' OR (' ' || i.searchName) GLOB '* no live event*'))) AS held
+                OR ('placeholder' IN (:hidden) AND (i.tags & ${ItemTags.PLACEHOLDER}) != 0)) AS held
         FROM items i
         LEFT JOIN channel_health h ON h.itemId = i.id
         WHERE i.kind = 0
@@ -363,12 +315,7 @@ interface ItemDao {
             AND i.id IN (SELECT docid FROM items_fts WHERE items_fts MATCH :match)
             AND COALESCE(i.region, 'none') NOT IN (:hidden) AND ('g:' || i.kind || ':' || i.groupName) NOT IN (:hidden)
             AND NOT ('scan:dead' IN (:hidden) AND i.id IN (SELECT itemId FROM channel_scan WHERE hidden = 1))
-            AND NOT ('placeholder' IN (:hidden) AND i.kind = 0
-                AND ((' ' || i.searchName) GLOB '* no event*' OR (' ' || i.searchName) GLOB '* no live event*'))
-            AND NOT ('247' IN (:hidden)
-                AND ((' ' || lower(i.groupName || ' ' || i.name) || ' ') GLOB '*[^0-9]24[/ x-]7[^0-9]*'
-                    OR (' ' || lower(i.groupName || ' ' || i.name) || ' ') GLOB '*[^0-9]247[^0-9]*'
-                    OR (' ' || lower(i.groupName || ' ' || i.name) || ' ') GLOB '*[^0-9]24 / 7[^0-9]*'))
+            $TAGGED_HIDDEN_I
             AND (:adult OR i.adult = 0)
             $KIDS_ONLY_I
         ORDER BY i.sortOrder

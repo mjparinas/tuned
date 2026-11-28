@@ -21,10 +21,7 @@ interface ListDao {
 
     /** The channels in one of the person's own lists, in the list's order, with Live TV's filters. */
     @Suppress("LongParameterList") // Every Live TV filter is a parameter of the one query, so the list stays one read.
-    @Query(
-        "SELECT $CHANNEL_COLUMNS, 0 AS favourite FROM items i JOIN list_items li ON li.itemId = i.id AND li.listId = :listId $NOW_JOIN " +
-            "WHERE $CHANNEL_FILTER $LIVE_QUICK ORDER BY li.position",
-    )
+    @Query("$LIVE_LIST $LIVE_LIST_ORDER")
     fun listChannels(
         listId: Long,
         now: Long,

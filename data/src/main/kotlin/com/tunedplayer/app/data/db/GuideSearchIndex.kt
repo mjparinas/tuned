@@ -100,7 +100,9 @@ object GuideSearchIndex {
     ): List<GuideHit> {
         val match = Search.match(text)
         if (match.isEmpty()) return emptyList()
-        offMain { ensure(db.openHelper.writableDatabase) }
+        // A read, not `ensure`: creating the table needs the writer, which a refresh can hold for seconds. Until
+        // [fillIfMissing] has made it there's nothing to find.
+        if (!offMain { exists(db) }) return emptyList()
         val keys = hidden.ifEmpty { listOf(NOTHING) }
         val marks = keys.joinToString { "?" }
         // The channel filter is the same as Live TV's, written for positional arguments: each `IN (:hidden)` takes
@@ -131,6 +133,58 @@ object GuideSearchIndex {
         return db.programmes().searchGuide(SimpleSQLiteQuery(query, args.toTypedArray()))
     }
 
+    /**
+     * Search's live channels: names by their words, and the channels showing a match now or within the hour, found
+     * through this index rather than reading every title in the guide (`LIKE`) on each letter typed. Until the index
+     * is there and filled it falls back to that slower read ([ItemDao.searchChannels]), so nothing goes missing.
+     * Same rows and order as [ItemDao.searchChannels], except that titles match by the start of a word, as names do.
+     */
+    @Suppress("LongParameterList") // The same filters as the DAO query it stands in for.
+    suspend fun searchChannels(
+        db: TunedDatabase,
+        text: String,
+        match: String,
+        now: Long,
+        hidden: List<String>,
+        adult: Boolean,
+        limit: Int,
+    ): List<ChannelWithNow> {
+        if (match.isEmpty() || !offMain { filled(db) }) return db.items().searchChannels(text, match, now, hidden, adult, limit)
+        val keys = hidden.ifEmpty { listOf(NOTHING) }
+        val filter = channelFilter(keys.joinToString { "?" })
+        val args = mutableListOf<Any>(now, now)
+        repeat(filter.uses) { args.addAll(keys) }
+        args.add(if (adult) 1 else 0)
+        repeat(filter.kidsUses) { args.addAll(keys) }
+        args.addAll(listOf(match, match, now, now, now, limit))
+        val query =
+            """
+            SELECT i.id, i.name, i.logo, i.groupName, i.tvgId, i.number,
+                p.title AS nowTitle, p.start AS nowStart, p.stop AS nowStop, (f.itemId IS NOT NULL) AS favourite
+            FROM items i
+            LEFT JOIN programmes p ON p.rowId = (
+                SELECT rowId FROM programmes WHERE channelId = i.tvgId AND start <= ? AND stop > ? ORDER BY start DESC LIMIT 1
+            )
+            LEFT JOIN favourites f ON f.itemId = i.id AND f.profileId = $ME
+            WHERE ${filter.sql}
+                AND (i.id IN (SELECT docid FROM items_fts WHERE items_fts MATCH ?) OR i.tvgId IN (
+                    SELECT channelId FROM programmes
+                    WHERE rowId IN (SELECT docid FROM `$TABLE` WHERE `$TABLE` MATCH ?)
+                        AND start > ? - $DAY AND start < ? + $HOUR AND stop > ?
+                ))
+            ORDER BY (f.itemId IS NULL), i.sortOrder
+            LIMIT ?
+            """.trimIndent()
+        return db.quick().channels(SimpleSQLiteQuery(query, args.toTypedArray()))
+    }
+
+    private fun exists(db: TunedDatabase): Boolean =
+        count(db.openHelper.readableDatabase, "SELECT COUNT(*) FROM sqlite_master WHERE type = 'table' AND name = '$TABLE'") > 0
+
+    /** The index is there and has titles in it (a guide cached before it existed is indexed in the background). */
+    private fun filled(db: TunedDatabase): Boolean =
+        exists(db) && count(db.openHelper.readableDatabase, "SELECT EXISTS(SELECT 1 FROM `${TABLE}_docsize`)") > 0
+
     private class Filter(
         val sql: String,
         val uses: Int,
@@ -142,12 +196,8 @@ object GuideSearchIndex {
         val before =
             "i.kind = 0 AND COALESCE(i.region, 'none') NOT IN ($marks) AND ('g:' || i.kind || ':' || i.groupName) NOT IN ($marks) " +
                 "AND NOT ('scan:dead' IN ($marks) AND i.id IN (SELECT itemId FROM channel_scan WHERE hidden = 1)) " +
-                "AND NOT ('placeholder' IN ($marks) AND ((' ' || i.searchName) GLOB '* no event*' " +
-                "OR (' ' || i.searchName) GLOB '* no live event*')) " +
-                "AND NOT ('247' IN ($marks) AND ((' ' || lower(i.groupName || ' ' || i.name) || ' ') GLOB '*[^0-9]24[/ x-]7[^0-9]*' " +
-                "OR (' ' || lower(i.groupName || ' ' || i.name) || ' ') GLOB '*[^0-9]247[^0-9]*' " +
-                "OR (' ' || lower(i.groupName || ' ' || i.name) || ' ') GLOB '*[^0-9]24 / 7[^0-9]*')) " +
-                "AND (? OR i.adult = 0) "
+                TAGGED_HIDDEN_I.replace("(:hidden)", "($marks)") +
+                " AND (? OR i.adult = 0) "
         val kids = KIDS_ONLY_I.replace("(:hidden)", "($marks)")
         return Filter(before + kids, uses = 5, kidsUses = KIDS_ONLY_I.split("(:hidden)").size - 1)
     }
@@ -161,6 +211,8 @@ object GuideSearchIndex {
     private const val NOTHING = "\u0000"
     private const val CHUNK = 5_000
     private const val WEEK = 7L * 24 * 60 * 60 * 1000
+    private const val DAY = 24L * 60 * 60 * 1000
+    private const val HOUR = 60L * 60 * 1000
 }
 
 /** A programme found by [GuideSearchIndex.search], with the channel it plays on. */
