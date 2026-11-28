@@ -180,7 +180,16 @@ class MainActivity : ComponentActivity() {
                 }
             }
         val app = AppNav(nav, current, play, tune, openPerson, openHome, openWelcome)
-        NavHost(navController = nav, startDestination = start) {
+        NavHost(
+            navController = nav,
+            startDestination = start,
+            enterTransition = ScreenFade.enterTransition,
+            exitTransition = ScreenFade.exitTransition,
+            popEnterTransition = ScreenFade.enterTransition,
+            popExitTransition = ScreenFade.exitTransition,
+            predictivePopEnterTransition = ScreenFade.predictiveEnterTransition,
+            predictivePopExitTransition = ScreenFade.predictiveExitTransition,
+        ) {
             // Each feature adds its own screens, in its own file, so two features never edit the same lines here.
             playlistScreens(app)
             browseScreens(app)
