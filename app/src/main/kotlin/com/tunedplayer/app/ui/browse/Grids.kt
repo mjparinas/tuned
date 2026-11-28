@@ -95,52 +95,61 @@ internal fun MovieGrid(
     val focus = rememberTvFocus(focusReturn)
     WarmVisibleArt(movies, gridState = state) { it.logo }
     Box(Modifier.fillMaxSize()) {
-        LazyVerticalGrid(
-            columns = GridCells.Adaptive(minSize = ScreenLayout.posterMinDp(windowWidthDp()).dp),
-            state = state,
-            contentPadding = PaddingValues(12.dp),
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp),
-            modifier = Modifier.fillMaxSize().tvPagedGrid(focus, state),
-        ) {
-            ratingProgress(ratings?.takeIf { !it.tv })
-            continueWatching(vm, ContentKind.MOVIE, onPlay)
-            favouritesRow(shows = false, visible = { fullList(vm, ContentKind.MOVIE) }, onOpenMovie = onOpenMovie, onOpenShow = { _, _ -> })
-            if (movies.firstLoad) items(SKELETON_ROWS) { PosterPlaceholder() }
-            items(count = movies.itemCount, key = movies.itemKey { it.id }) { index ->
-                val movie: ItemEntity? = movies[index]
-                if (movie == null) {
-                    PosterPlaceholder()
-                } else {
-                    val favourite = movie.id in favourites
-                    val rating by produceState<Double?>(null, movie.name) { value = vm.rating(movie.name, tv = false) }
-                    // A tap opens the film's page; Play now is in the long-press menu for a straight start.
-                    val done = movie.id in watched
-                    Poster(
-                        modifier =
-                            Modifier.tvFocusItem(focus, movie.id, first = index == 0).then(
-                                if (onFocusMovie == null) {
-                                    Modifier
-                                } else {
-                                    Modifier.onFocusChanged { if (it.hasFocus) onFocusMovie(movie) }
-                                },
-                            ),
-                        title = Titles.display(movie.name),
-                        image = movie.logo,
-                        favourite = favourite,
-                        rating = rating,
-                        watched = done,
-                        onClick = { onOpenMovie(movie.id) },
-                        onToggleFavourite = { vm.toggleFavourite(movie.id, favourite) },
-                        onPlayNow = { onPlay(movie.id) },
-                        extraMenu =
-                            listOf(
-                                stringResource(if (done) R.string.mark_unwatched else R.string.mark_watched) to {
-                                    library.setWatched(listOf(movie.id), !done)
-                                },
-                                stringResource(R.string.list_add) to { picker.open(movie.id) },
-                            ),
-                    )
+        // Grey posters in a grid of their own, so the grid's scroll state is never measured against them ([PosterSkeletons]).
+        if (movies.firstLoad) {
+            PosterSkeletons()
+        } else {
+            LazyVerticalGrid(
+                columns = GridCells.Adaptive(minSize = ScreenLayout.posterMinDp(windowWidthDp()).dp),
+                state = state,
+                contentPadding = PaddingValues(12.dp),
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                verticalArrangement = Arrangement.spacedBy(14.dp),
+                modifier = Modifier.fillMaxSize().tvPagedGrid(focus, state),
+            ) {
+                ratingProgress(ratings?.takeIf { !it.tv })
+                continueWatching(vm, ContentKind.MOVIE, onPlay)
+                favouritesRow(
+                    shows = false,
+                    visible = { fullList(vm, ContentKind.MOVIE) },
+                    onOpenMovie = onOpenMovie,
+                    onOpenShow = { _, _ -> },
+                )
+                items(count = movies.itemCount, key = movies.itemKey { it.id }) { index ->
+                    val movie: ItemEntity? = movies[index]
+                    if (movie == null) {
+                        PosterPlaceholder()
+                    } else {
+                        val favourite = movie.id in favourites
+                        val rating by produceState<Double?>(null, movie.name) { value = vm.rating(movie.name, tv = false) }
+                        // A tap opens the film's page; Play now is in the long-press menu for a straight start.
+                        val done = movie.id in watched
+                        Poster(
+                            modifier =
+                                Modifier.tvFocusItem(focus, movie.id, first = index == 0).then(
+                                    if (onFocusMovie == null) {
+                                        Modifier
+                                    } else {
+                                        Modifier.onFocusChanged { if (it.hasFocus) onFocusMovie(movie) }
+                                    },
+                                ),
+                            title = Titles.display(movie.name),
+                            image = movie.logo,
+                            favourite = favourite,
+                            rating = rating,
+                            watched = done,
+                            onClick = { onOpenMovie(movie.id) },
+                            onToggleFavourite = { vm.toggleFavourite(movie.id, favourite) },
+                            onPlayNow = { onPlay(movie.id) },
+                            extraMenu =
+                                listOf(
+                                    stringResource(if (done) R.string.mark_unwatched else R.string.mark_watched) to {
+                                        library.setWatched(listOf(movie.id), !done)
+                                    },
+                                    stringResource(R.string.list_add) to { picker.open(movie.id) },
+                                ),
+                        )
+                    }
                 }
             }
         }
@@ -168,54 +177,58 @@ internal fun ShowGrid(
     val focus = rememberTvFocus(focusReturn)
     WarmVisibleArt(shows, gridState = state) { it.logo }
     Box(Modifier.fillMaxSize()) {
-        LazyVerticalGrid(
-            columns = GridCells.Adaptive(minSize = ScreenLayout.posterMinDp(windowWidthDp()).dp),
-            state = state,
-            contentPadding = PaddingValues(12.dp),
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp),
-            modifier = Modifier.fillMaxSize().tvPagedGrid(focus, state),
-        ) {
-            ratingProgress(ratings?.takeIf { it.tv })
-            continueWatching(vm, ContentKind.SERIES, onPlay)
-            favouritesRow(shows = true, visible = { fullList(vm, ContentKind.SERIES) }, onOpenMovie = {}, onOpenShow = onOpenShow)
-            if (shows.firstLoad) items(SKELETON_ROWS) { PosterPlaceholder() }
-            items(count = shows.itemCount, key = shows.itemKey { it.showKey }) { index ->
-                val show: ShowSummary? = shows[index]
-                if (show == null) {
-                    PosterPlaceholder()
-                } else {
-                    // The show's own cover, TMDB's poster first, rather than an episode's still.
-                    val art = rememberShowArt(show.showName, show.logo)
-                    // The show itself as a favourite, not one of its episodes (Melvin, 2026-11-27).
-                    val favourite = FavouriteShows.id(show.showKey) in favourites
-                    Poster(
-                        modifier =
-                            Modifier.tvFocusItem(focus, show.showKey, first = index == 0).then(
-                                if (onFocusShow == null) {
-                                    Modifier
+        // Grey posters in a grid of their own, so the grid's scroll state is never measured against them ([PosterSkeletons]).
+        if (shows.firstLoad) {
+            PosterSkeletons()
+        } else {
+            LazyVerticalGrid(
+                columns = GridCells.Adaptive(minSize = ScreenLayout.posterMinDp(windowWidthDp()).dp),
+                state = state,
+                contentPadding = PaddingValues(12.dp),
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                verticalArrangement = Arrangement.spacedBy(14.dp),
+                modifier = Modifier.fillMaxSize().tvPagedGrid(focus, state),
+            ) {
+                ratingProgress(ratings?.takeIf { it.tv })
+                continueWatching(vm, ContentKind.SERIES, onPlay)
+                favouritesRow(shows = true, visible = { fullList(vm, ContentKind.SERIES) }, onOpenMovie = {}, onOpenShow = onOpenShow)
+                items(count = shows.itemCount, key = shows.itemKey { it.showKey }) { index ->
+                    val show: ShowSummary? = shows[index]
+                    if (show == null) {
+                        PosterPlaceholder()
+                    } else {
+                        // The show's own cover, TMDB's poster first, rather than an episode's still.
+                        val art = rememberShowArt(show.showName, show.logo)
+                        // The show itself as a favourite, not one of its episodes (Melvin, 2026-11-27).
+                        val favourite = FavouriteShows.id(show.showKey) in favourites
+                        Poster(
+                            modifier =
+                                Modifier.tvFocusItem(focus, show.showKey, first = index == 0).then(
+                                    if (onFocusShow == null) {
+                                        Modifier
+                                    } else {
+                                        Modifier.onFocusChanged { if (it.hasFocus) onFocusShow(show) }
+                                    },
+                                ),
+                            title = Titles.display(show.showName),
+                            image = art.image,
+                            rating = art.rating,
+                            show = true,
+                            subtitle =
+                                if (show.newEpisodes > 0) {
+                                    stringResource(
+                                        R.string.episodes_with_new,
+                                        pluralEpisodes(show.episodes),
+                                        pluralStringResource(R.plurals.new_episodes, show.newEpisodes, show.newEpisodes),
+                                    )
                                 } else {
-                                    Modifier.onFocusChanged { if (it.hasFocus) onFocusShow(show) }
+                                    pluralEpisodes(show.episodes)
                                 },
-                            ),
-                        title = Titles.display(show.showName),
-                        image = art.image,
-                        rating = art.rating,
-                        show = true,
-                        subtitle =
-                            if (show.newEpisodes > 0) {
-                                stringResource(
-                                    R.string.episodes_with_new,
-                                    pluralEpisodes(show.episodes),
-                                    pluralStringResource(R.plurals.new_episodes, show.newEpisodes, show.newEpisodes),
-                                )
-                            } else {
-                                pluralEpisodes(show.episodes)
-                            },
-                        favourite = favourite,
-                        onClick = { onOpenShow(show.showKey, show.showName) },
-                        onToggleFavourite = { vm.toggleShowFavourite(show.showKey, favourite) },
-                    )
+                            favourite = favourite,
+                            onClick = { onOpenShow(show.showKey, show.showName) },
+                            onToggleFavourite = { vm.toggleShowFavourite(show.showKey, favourite) },
+                        )
+                    }
                 }
             }
         }
@@ -363,3 +376,19 @@ internal fun RatingBadge(
 
 /** The usual star gold, which reads on the dark badge whatever the app's accent. */
 private val RATING_GOLD = Color(0xFFF5C518)
+
+/**
+ * A grid's grey posters while its first page loads, apart from the grid itself: measured against a dozen stand-ins,
+ * the grid's saved scroll position would be cut back to the top, so coming back to the tab would lose the place.
+ */
+@Composable
+private fun PosterSkeletons() {
+    LazyVerticalGrid(
+        columns = GridCells.Adaptive(minSize = ScreenLayout.posterMinDp(windowWidthDp()).dp),
+        contentPadding = PaddingValues(12.dp),
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+        verticalArrangement = Arrangement.spacedBy(14.dp),
+        userScrollEnabled = false,
+        modifier = Modifier.fillMaxSize(),
+    ) { items(SKELETON_ROWS) { PosterPlaceholder() } }
+}
