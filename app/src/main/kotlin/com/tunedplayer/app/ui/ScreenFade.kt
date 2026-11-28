@@ -11,8 +11,8 @@ import androidx.navigation.NavBackStackEntry
 /**
  * Every move between screens is the same cross-fade: opening a screen, Back, and Android's back gesture alike (Melvin,
  * 2026-11-28). Navigation Compose fades forward and on a plain Back, but its default for the predictive back gesture
- * (Android 14 and later) shrinks the old screen away, so Back from Settings
- * looked different from opening it from the bottom bar. These are Navigation's own fade, given to all six transitions.
+ * (Android 14 and later) shrinks the old screen away, so Back from Settings looked different from opening it from the
+ * bottom bar. These are Navigation's own fade, given to all six transitions.
  */
 object ScreenFade {
     private const val DURATION_MS = 700
