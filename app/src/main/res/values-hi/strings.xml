@@ -230,6 +230,12 @@
     <string name="settings_header_troubleshooting">समस्या निवारण</string>
     <string name="settings_logs_summary">क्रैश रिपोर्ट और हाल का लॉग, पढ़ने, कॉपी करने या शेयर करने के लिए। लॉगिन शामिल नहीं होते।</string>
     <string name="logs_title">लॉग</string>
+    <string name="settings_speed_trace">स्पीड ट्रेस रिकॉर्ड करें</string>
+    <string name="settings_speed_trace_summary">Tuned को फिर से शुरू करता है और उसकी शुरुआत व अगले 20 सेकंड का समय मापता है, ताकि इस डिवाइस पर धीमी जगहें मिलें। समय लॉग में जाते हैं।</string>
+    <string name="settings_speed_trace_restarting">रिकॉर्ड करने के लिए Tuned फिर से शुरू हो रहा है…</string>
+    <string name="settings_speed_trace_recording">रिकॉर्डिंग, %1$d से. बाकी। Tuned को हमेशा की तरह चलाएँ।</string>
+    <string name="settings_speed_trace_done">हो गया। समय लॉग में हैं।</string>
+    <string name="settings_speed_trace_done_home">हो गया: Tuned शुरू होने के %1$s से. बाद होम स्क्रीन पर था। समय लॉग में हैं।</string>
     <string name="logs_copy">लॉग कॉपी करें</string>
     <string name="logs_copied">लॉग कॉपी हो गया</string>
     <string name="logs_share">लॉग शेयर करें</string>

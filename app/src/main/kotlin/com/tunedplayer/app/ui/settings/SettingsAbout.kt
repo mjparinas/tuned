@@ -74,6 +74,7 @@ internal fun AboutPage(
         onClick = { onOpen(DeveloperLogRoute) },
         trailing = { Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null) },
     )
+    SpeedTraceRow()
 }
 
 /**

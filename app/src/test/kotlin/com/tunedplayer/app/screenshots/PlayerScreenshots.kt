@@ -15,8 +15,11 @@ import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.PlayerView
 import com.github.takahirom.roborazzi.captureRoboImage
 import com.tunedplayer.app.R
+import com.tunedplayer.app.core.ContentKind
 import com.tunedplayer.app.data.Accent
+import com.tunedplayer.app.data.db.ItemEntity
 import com.tunedplayer.app.player.CastingScreen
+import com.tunedplayer.app.player.ChannelZap
 import com.tunedplayer.app.player.InfoPills
 import com.tunedplayer.app.player.StatusNote
 import com.tunedplayer.app.player.StreamInfo
@@ -220,6 +223,41 @@ class PlayerScreenshots {
         shadowOf(Looper.getMainLooper()).idle()
         root.captureRoboImage("$name.png")
         exo.release()
+    }
+
+    /**
+     * The channel card the moment a live channel is flipped to (Melvin, 2026-11-28: faster zapping): number and name at
+     * once, over the last picture, before the new stream has started. The logo sits at its left when the channel has one.
+     */
+    @Test
+    fun channelCard() {
+        val activity = Robolectric.buildActivity(ComponentActivity::class.java).setup().get()
+        val channel =
+            ItemEntity(
+                id = 7,
+                kind = ContentKind.LIVE.code,
+                name = "CA| Harbour News HD",
+                searchName = "harbour news hd",
+                groupName = "CA| NEWS",
+                region = "CA",
+                adult = false,
+                logo = null,
+                url = "http://tv.invalid/7.ts",
+                tvgId = null,
+                showKey = null,
+                showName = null,
+                season = null,
+                episode = null,
+                sortOrder = 7,
+                number = 7,
+            )
+        val root = FrameLayout(activity).apply { setBackgroundColor(Color.rgb(24, 32, 44)) }
+        val zap = ChannelZap(activity, { listOf(channel) }) { false }
+        zap.attach(root)
+        activity.setContentView(root)
+        zap.listener.onMediaItemTransition(MediaItem.Builder().setMediaId("7").build(), Player.MEDIA_ITEM_TRANSITION_REASON_SEEK)
+        shadowOf(Looper.getMainLooper()).idle()
+        root.captureRoboImage("player-channel-card.png")
     }
 
     /** The casting screen over [playerView], as `PlayerActivity` shows it while a TV plays. */

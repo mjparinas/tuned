@@ -234,6 +234,12 @@
     <string name="settings_header_troubleshooting">Dépannage</string>
     <string name="settings_logs_summary">Rapports de plantage et journal récent, à lire, copier ou partager. Sans identifiants.</string>
     <string name="logs_title">Journaux</string>
+    <string name="settings_speed_trace">Enregistrer une trace de vitesse</string>
+    <string name="settings_speed_trace_summary">Redémarre Tuned et chronomètre son démarrage et les 20 secondes suivantes, pour trouver les lenteurs sur cet appareil. Les mesures vont dans les journaux.</string>
+    <string name="settings_speed_trace_restarting">Redémarrage de Tuned pour enregistrer…</string>
+    <string name="settings_speed_trace_recording">Enregistrement, encore %1$d s. Utilisez Tuned comme d’habitude.</string>
+    <string name="settings_speed_trace_done">Terminé. Les mesures sont dans les journaux.</string>
+    <string name="settings_speed_trace_done_home">Terminé : l’accueil était à l’écran %1$s s après le démarrage de Tuned. Les mesures sont dans les journaux.</string>
     <string name="logs_copy">Copier le journal</string>
     <string name="logs_copied">Journal copié</string>
     <string name="logs_share">Partager le journal</string>

@@ -11,7 +11,12 @@ import com.tunedplayer.app.data.db.GuideChannelEntity
 import com.tunedplayer.app.data.db.GuideWriter
 import com.tunedplayer.app.data.db.ProgrammeEntity
 import com.tunedplayer.app.data.db.TunedDatabase
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.channels.SendChannel
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.launch
 import java.io.InputStream
 
 /**
@@ -31,6 +36,9 @@ class GuideImport(
     private val filled = HashSet<String>()
     private val channels = LinkedHashMap<String, String>()
     private var count = 0
+
+    /** Where batches go while a guide is read, saved on their own thread; null between reads. */
+    private var saves: SendChannel<List<ProgrammeEntity>>? = null
 
     /** Each guide channel to read, and the ids to write its programmes under, with how far to move each copy. */
     private lateinit var targets: Map<String, List<Pair<String, Long>>>
@@ -87,8 +95,7 @@ class GuideImport(
                 keep = { id, start, stop -> wanted(id, start, stop, before) },
                 onChannel = { id, name -> channels.putIfAbsent(id, name) },
             )
-        for (p in programmes) take(p, saved)
-        flush()
+        savingAlongside { for (p in programmes) take(p, saved) }
     }
 
     /** Reads programmes from another source than XMLTV (a Stalker portal's own guide), the same way as [read]. */
@@ -97,8 +104,31 @@ class GuideImport(
         saved: (Int) -> Unit,
     ) {
         val before = HashSet(filled)
-        programmes.collect { p -> if (wanted(p.channelId, p.start, p.stop, before)) take(p, saved) }
-        flush()
+        savingAlongside { programmes.collect { p -> if (wanted(p.channelId, p.start, p.stop, before)) take(p, saved) } }
+    }
+
+    /**
+     * Reads with [block] while the batches already read are saved on another thread (Melvin, 2026-11-28: "parse and
+     * save in parallel chunks"), as the playlist has been since 2026-11-20. Reading used to stop for every save.
+     */
+    private suspend fun savingAlongside(block: suspend () -> Unit) = coroutineScope {
+        val out = Channel<List<ProgrammeEntity>>(SAVES_AHEAD)
+        val saver = launch(Dispatchers.IO) { for (rows in out) writer.add(rows) }
+        saves = out
+        try {
+            block()
+            flush()
+        } finally {
+            saves = null
+            out.close()
+        }
+        saver.join()
+    }
+
+    /** A batch to the saver beside the reading, or straight to the database outside [savingAlongside]. */
+    private suspend fun save(rows: List<ProgrammeEntity>) {
+        val out = saves
+        if (out != null) out.send(rows) else writer.add(rows)
     }
 
     /** A channel no earlier guide filled, and a programme inside the window for one of its copies. */
@@ -118,14 +148,14 @@ class GuideImport(
             if (inWindow(to, p.start + shift + by, p.stop + shift + by)) add(to, p, shift + by)
         }
         if (batch.size >= BATCH) {
-            writer.add(batch.toList())
+            save(batch.toList())
             batch.clear()
             saved(count)
         }
     }
 
     private suspend fun flush() {
-        writer.add(batch.toList())
+        save(batch.toList())
         batch.clear()
     }
 
@@ -163,6 +193,9 @@ class GuideImport(
 
     private companion object {
         const val BATCH = 1_000
+
+        /** Batches read ahead of the one being saved. */
+        const val SAVES_AHEAD = 4
         const val HOUR = 3_600_000L
         const val DAY = 24 * HOUR
     }

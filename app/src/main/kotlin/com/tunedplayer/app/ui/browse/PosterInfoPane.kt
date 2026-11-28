@@ -38,12 +38,14 @@ import com.tunedplayer.app.data.Metadata
 import com.tunedplayer.app.data.db.ItemEntity
 import com.tunedplayer.app.data.db.ShowSummary
 import com.tunedplayer.app.diagnostics.attempt
+import com.tunedplayer.app.work.TitlePrefetch
+import kotlinx.coroutines.delay
 import java.util.Locale
 
 /**
  * Movies and Shows on a TV use the big screen the same way Live TV does: beside the poster grid, what the title under
- * the remote's focus is, from the metadata already on the device. It is words and a poster only, never a stream, and
- * it takes no focus, so the arrows stay in the grid (docs/decisions/tv.md).
+ * the remote's focus is, from the metadata already on the device and then TMDB once the remote rests there. It is words
+ * and pictures only, never a stream, and it takes no focus, so the arrows stay in the grid (docs/decisions/tv.md).
  */
 @Composable
 internal fun PosterInfoPane(
@@ -190,15 +192,22 @@ private fun Overview(overview: String?) {
     }
 }
 
-/** Metadata already on the device for [name]; never asks the network, so flipping through posters stays quiet. */
+/**
+ * Metadata already on the device for [name] at once; then, once the remote has rested on the title for
+ * [TitlePrefetch.REST_MS], its full details from TMDB, with its backdrop and cast photos put in the image cache, so
+ * OK opens a page that is already whole (Melvin, 2026-11-28). Moving on cancels the wait, so flipping along a row
+ * asks nothing.
+ */
 @Composable
 private fun rememberCachedMetadata(
     name: String,
     tv: Boolean,
 ): State<Metadata?> {
-    val metadata = LocalContext.current.container.metadata
+    val container = LocalContext.current.container
     return produceState<Metadata?>(null, name, tv) {
-        value = attempt(TAG, "cached poster info") { metadata.cached(name, tv) }.getOrNull()
+        value = attempt(TAG, "cached poster info") { container.metadata.cached(name, tv) }.getOrNull()
+        delay(TitlePrefetch.REST_MS)
+        container.titlePrefetch.details(name, tv)?.let { value = it }
     }
 }
 

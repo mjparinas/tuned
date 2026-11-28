@@ -234,6 +234,12 @@
     <string name="settings_header_troubleshooting">Risoluzione dei problemi</string>
     <string name="settings_logs_summary">Rapporti sugli arresti anomali e il log recente, da leggere, copiare o condividere. Senza dati di accesso.</string>
     <string name="logs_title">Log</string>
+    <string name="settings_speed_trace">Registra una traccia di velocità</string>
+    <string name="settings_speed_trace_summary">Riavvia Tuned e misura l’avvio e i 20 secondi successivi, per trovare i punti lenti su questo dispositivo. I tempi finiscono nei Log.</string>
+    <string name="settings_speed_trace_restarting">Riavvio di Tuned per registrare…</string>
+    <string name="settings_speed_trace_recording">Registrazione, mancano %1$d s. Usa Tuned come al solito.</string>
+    <string name="settings_speed_trace_done">Fatto. I tempi sono nei Log.</string>
+    <string name="settings_speed_trace_done_home">Fatto: la Home era sullo schermo %1$s s dopo l’avvio di Tuned. I tempi sono nei Log.</string>
     <string name="logs_copy">Copia log</string>
     <string name="logs_copied">Log copiato</string>
     <string name="logs_share">Condividi log</string>

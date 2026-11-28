@@ -33,6 +33,8 @@ class ViewPlayer(
     private val pauseLive: (ExoPlayer) -> Boolean,
     /** Playing a live channel: no playback speed (Melvin, 2026-11-19: "remove that for live tv"). */
     private val live: () -> Boolean = { false },
+    /** Channel up (true) or down on live TV; true when it took the flip ([ChannelZap]). */
+    private val zap: (next: Boolean) -> Boolean = { false },
 ) : ForwardingPlayer(exo) {
     /** The TV, while something is cast to it. */
     private val casting: TvControls? get() = tv()?.takeIf { it.casting }
@@ -215,12 +217,30 @@ class ViewPlayer(
      * player still holds where it was when the cast began.
      */
     override fun seekToPrevious() {
+        // Live TV with nothing to rewind: the previous channel, as Media3 would, but through the channel card.
+        val previousChannel = live() && (!isCurrentMediaItemSeekable || currentPosition <= maxSeekToPreviousPosition)
+        if (casting == null && previousChannel && zap(false)) return
         val t = casting ?: return super.seekToPrevious()
         if (t.state().seekable && t.state().positionMs > maxSeekToPreviousPosition) {
             t.seekTo(0)
         } else {
             super.seekToPreviousMediaItem()
         }
+    }
+
+    override fun seekToNext() {
+        if (casting == null && live() && hasNextMediaItem() && zap(true)) return
+        super.seekToNext()
+    }
+
+    override fun seekToNextMediaItem() {
+        if (casting == null && live() && zap(true)) return
+        super.seekToNextMediaItem()
+    }
+
+    override fun seekToPreviousMediaItem() {
+        if (casting == null && live() && zap(false)) return
+        super.seekToPreviousMediaItem()
     }
 
     // The TV's subtitles, shown to the CC button as one text track.

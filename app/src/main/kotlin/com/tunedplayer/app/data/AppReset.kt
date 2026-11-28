@@ -9,6 +9,7 @@ import coil3.SingletonImageLoader
 import com.tunedplayer.app.AppContainer
 import com.tunedplayer.app.data.db.wipe
 import com.tunedplayer.app.diagnostics.AppLog
+import com.tunedplayer.app.diagnostics.SpeedTrace
 import com.tunedplayer.app.diagnostics.attempt
 import com.tunedplayer.app.diagnostics.launchSafely
 import com.tunedplayer.app.widget.Widgets
@@ -131,6 +132,7 @@ class AppReset(
         context.filesDir.resolve(SUBTITLES).deleteRecursively()
         context.noBackupFilesDir.resolve(SYNC).deleteRecursively()
         context.noBackupFilesDir.resolve(PlaylistCache.DIR).deleteRecursively()
+        SpeedTrace.clear(context)
         context.cacheDir
             .listFiles()
             .orEmpty()

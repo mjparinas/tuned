@@ -118,7 +118,7 @@ internal fun MovieGrid(
                     val done = movie.id in watched
                     Poster(
                         modifier =
-                            Modifier.tvFocusItem(focus, movie.id, first = index == 0).then(
+                            Modifier.tvFocusItem(focus, movie.id, first = index == 0).prefetchOnPress(movie.name, tv = false).then(
                                 if (onFocusMovie == null) {
                                     Modifier
                                 } else {
@@ -191,7 +191,7 @@ internal fun ShowGrid(
                     val favourite = FavouriteShows.id(show.showKey) in favourites
                     Poster(
                         modifier =
-                            Modifier.tvFocusItem(focus, show.showKey, first = index == 0).then(
+                            Modifier.tvFocusItem(focus, show.showKey, first = index == 0).prefetchOnPress(show.showName, tv = true).then(
                                 if (onFocusShow == null) {
                                     Modifier
                                 } else {

@@ -28,6 +28,10 @@ Melvin, 2026-11-17: "optimize for the app not crashing or being unreliable", and
 - **Logs** is always there, under Troubleshooting: Send to Tuned (below), crash reports, then the recent log newest first, with copy, share (plain text, up to 200,000 characters) and clear.
 - **Developer mode was removed** (Melvin, 2026-11-18: "remove developer mode but keep logs"). It was a switch that kept the detailed log and showed Logs; now both are always on, so there is nothing to turn on before a problem can be looked into. The old stored `developer_mode` value is simply ignored.
 
+## Record a speed trace (Melvin, 2026-11-28)
+
+Melvin: "a one-tap debug trace to find slow spots that only show on real hardware" (his Shield). Settings › Updates and advanced › Troubleshooting › **Record a speed trace** says "Restarting Tuned to record…", restarts the app, and records its first 20 seconds from the moment the process starts (`diagnostics/SpeedTrace.kt`): when the app was built, when the first screen started and Home drew, and how long each channel change took to show a picture. While it records the row counts down with a spinner; afterwards it says how long Home took ("Done: Home was on screen 1.42 s after Tuned started") and the timings are in Logs, so Share and Report a problem carry them. Android's sampled method trace (1 ms) is saved beside them for `adb pull` from the app's folder under `Android/data` and Android Studio's profiler; its path is in the timings. Nothing is recorded unless asked for, and sign-out deletes the trace with the rest of the cache (`AppReset`).
+
 ## Report a problem (Melvin, 2026-11-19)
 
 "Do 3", from the Horizon Maps review. Settings › Updates and advanced › Troubleshooting › **Report a problem** asks what happened and, optionally, an email for a reply, then **Send to Tuned** sends it to the admin's Reports ([admin](admin.md)) with everything a fix needs, gathered on its own (`diagnostics/ProblemReport.kt`).

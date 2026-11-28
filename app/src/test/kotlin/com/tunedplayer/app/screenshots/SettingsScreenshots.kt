@@ -171,6 +171,15 @@ class SettingsScreenshots : Screenshots() {
         }
     }
 
+    /** Record a speed trace, under Troubleshooting after Logs (Melvin, 2026-11-28). */
+    @Test
+    fun speedTrace() = shot(
+        "settings-speed-trace",
+        SettingsPageRoute(SettingsPage.ABOUT.name),
+        wait = text(R.string.settings_user_agent),
+        then = { compose.onNodeWithText(text(R.string.settings_speed_trace)).performScrollTo() },
+    )
+
     /** The usage stats switch, under Privacy in Settings › About. */
     @Test
     fun usageStats() = shot(

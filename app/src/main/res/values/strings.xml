@@ -48,6 +48,8 @@
     <string name="episode_label">Episode %1$d</string>
 
     <string name="player_now">Now: %1$s</string>
+    <!-- The channel card as a channel starts: its number, then its name. -->
+    <string name="player_zap_channel" translatable="false">%1$d   %2$s</string>
     <string name="player_next">Next: %1$s</string>
     <string name="player_not_allowed">This is locked on this profile. Open Tuned to unlock it.</string>
     <string name="player_error">Can\'t play this stream (%1$s)</string>
@@ -244,6 +246,12 @@
     <string name="settings_header_troubleshooting">Troubleshooting</string>
     <string name="settings_logs_summary">Crash reports and the recent log, to read, copy or share. Logins are left out.</string>
     <string name="logs_title">Logs</string>
+    <string name="settings_speed_trace">Record a speed trace</string>
+    <string name="settings_speed_trace_summary">Restarts Tuned and times its start and the next 20 seconds, to find slow spots on this device. The timings go to Logs.</string>
+    <string name="settings_speed_trace_restarting">Restarting Tuned to record…</string>
+    <string name="settings_speed_trace_recording">Recording, %1$d s left. Use Tuned as usual.</string>
+    <string name="settings_speed_trace_done">Done. The timings are in Logs.</string>
+    <string name="settings_speed_trace_done_home">Done: Home was on screen %1$s s after Tuned started. The timings are in Logs.</string>
     <string name="logs_copy">Copy log</string>
     <string name="logs_copied">Log copied</string>
     <string name="logs_share">Share log</string>
