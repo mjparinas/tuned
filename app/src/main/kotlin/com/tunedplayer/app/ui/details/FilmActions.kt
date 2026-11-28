@@ -15,8 +15,9 @@ import com.tunedplayer.app.ui.browse.FavouriteButton
 import com.tunedplayer.app.ui.browse.rememberListPicker
 
 /**
- * A film's favourite heart and Add to list on its page, beside Watch later and Watched, so nothing a poster's long press
- * offers needs that long press (Melvin, 2026-11-19: "Optimize TV for remotes, avoid 3 dot drop downs").
+ * A film's favourite heart and Add to list on its page, beside Watched (the heart is Watch later too, since 2026-11-27),
+ * so nothing a poster's long press offers needs that long press (Melvin, 2026-11-19: "Optimize TV for remotes, avoid 3
+ * dot drop downs").
  */
 @Composable
 internal fun FilmPicks(itemId: Long) {

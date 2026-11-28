@@ -3,7 +3,7 @@
 // then says how it ended (docs/decisions/settings.md#every-button-says-it-did-something-melvin-2026-11-21).
 import * as React from "react";
 import { ScrollView, Text, View } from "react-native";
-import { hasPremium, premiumText, TUNE_WAITS, type AppModel, type State } from "../app/model";
+import { hasPremium, premiumText, TRACKERS, TUNE_WAITS, type AppModel, type State, type Tracker } from "../app/model";
 import { ProgressLines } from "./LoadingScreen";
 import { Button, Focusable, OneLineCode, Screen, Spinner } from "./parts";
 import { ManageLists } from "./AddToList";
@@ -104,58 +104,80 @@ function Toggle({ label, hint, on, onChange }: { label: string; hint: string; on
     );
 }
 
+/** Each service's words: its name and the lines that say it, the rest shared. */
+const TRACKER_WORDS = {
+    trakt: () => ({
+        name: t.trakt,
+        hint: t.traktHint,
+        connect: t.traktConnect,
+        scrobbleHint: t.traktScrobbleHint,
+        problem: t.traktProblem,
+        premium: t.traktPremium,
+    }),
+    simkl: () => ({
+        name: t.simkl,
+        hint: t.simklHint,
+        connect: t.simklConnect,
+        scrobbleHint: t.simklScrobbleHint,
+        problem: t.simklProblem,
+        premium: t.simklPremium,
+    }),
+};
+
 /**
- * Settings › Simkl (simkl.md): Connect shows a code to type at simkl.com/pin with a spinner while Simkl is asked, Back
- * stops it; once in, Scrobble what you watch and Disconnect. Premium, as on Android.
+ * Settings › Trakt and Settings › Simkl ([trakt](trakt.md), [simkl](simkl.md)): Connect shows a code to type at
+ * trakt.tv/activate or simkl.com/pin with a spinner while the service is asked, Back stops it; once in, Scrobble what you
+ * watch and Disconnect. Premium, as on Android.
  */
-function SimklSection({ model, state }: { model: AppModel; state: State }) {
+function TrackerSection({ model, state, name }: { model: AppModel; state: State; name: Tracker }) {
     const dp = useDp();
-    const simkl = state.simkl;
-    const code = simkl.code;
+    const view = state.trackers[name];
+    const words = TRACKER_WORDS[name]();
+    const code = view.code;
     // The remote's Back stops waiting for the code, not the screen under it.
     React.useEffect(() => {
         if (!code) return;
         model.onBack = () => {
-            model.cancelSimkl();
+            model.cancelTracker(name);
             return true;
         };
         return () => {
             model.onBack = null;
         };
-    }, [model, code]);
-    if (!model.simklOn()) return <Line text={t.simklPremium} />;
+    }, [model, code, name]);
+    if (!model.trackerOn(name)) return <Line text={words.premium} />;
     if (code) {
         const site = code.verificationUrl.replace(/^https?:\/\//, "");
         return (
             <View style={{ gap: dp(10) }}>
-                <Line text={t.simklCode(site)} />
+                <Line text={t.trackerCode(site)} />
                 <OneLineCode code={code.userCode} size={dp(40)} />
-                <Spinner line={t.simklWaiting} />
+                <Spinner line={t.trackerWaiting} />
                 <View style={{ flexDirection: "row" }}>
-                    <Button label={t.back} start onPress={() => model.cancelSimkl()} />
+                    <Button label={t.back} start onPress={() => model.cancelTracker(name)} />
                 </View>
             </View>
         );
     }
     return (
         <View style={{ gap: dp(10) }}>
-            <Line text={simkl.signedIn ? t.simklConnected(simkl.user) : t.simklHint} tone={simkl.signedIn ? "ok" : "muted"} />
-            {simkl.problem ? <Line text={t.simklProblem[simkl.problem]} tone="bad" /> : null}
-            {simkl.signedIn ? (
+            <Line text={view.signedIn ? t.trackerConnected(view.user) : words.hint} tone={view.signedIn ? "ok" : "muted"} />
+            {view.problem ? <Line text={words.problem[view.problem]} tone="bad" /> : null}
+            {view.signedIn ? (
                 <>
                     <Toggle
-                        label={t.simklScrobble}
-                        hint={t.simklScrobbleHint}
-                        on={simkl.scrobble}
-                        onChange={(on) => void model.setSimklScrobble(on)}
+                        label={t.trackerScrobble}
+                        hint={words.scrobbleHint}
+                        on={view.scrobble}
+                        onChange={(on) => void model.setTrackerScrobble(name, on)}
                     />
                     <View style={{ flexDirection: "row" }}>
-                        <Button label={t.simklDisconnect} busy={simkl.busy} onPress={() => void model.disconnectSimkl()} />
+                        <Button label={t.trackerDisconnect} busy={view.busy} onPress={() => void model.disconnectTracker(name)} />
                     </View>
                 </>
             ) : (
                 <View style={{ flexDirection: "row" }}>
-                    <Button label={t.simklConnect} busy={simkl.busy} onPress={() => void model.connectSimkl()} />
+                    <Button label={words.connect} busy={view.busy} onPress={() => void model.connectTracker(name)} />
                 </View>
             )}
         </View>
@@ -228,11 +250,11 @@ export function SettingsScreen({ model, state }: { model: AppModel; state: State
                         <ManageLists model={model} state={state} />
                     </Section>
                 ) : null}
-                {model.simklAvailable ? (
-                    <Section title={t.simkl}>
-                        <SimklSection model={model} state={state} />
+                {TRACKERS.filter((name) => model.trackerAvailable(name)).map((name) => (
+                    <Section key={name} title={TRACKER_WORDS[name]().name}>
+                        <TrackerSection model={model} state={state} name={name} />
                     </Section>
-                ) : null}
+                ))}
                 <Section title={t.playlists}>
                     {state.playlists.map((p) => (
                         <View key={p.id} style={{ flexDirection: "row", alignItems: "center", gap: dp(12), minHeight: dp(48) }}>

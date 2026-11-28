@@ -1,8 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="watch_later">Guarda più tardi</string>
-    <string name="watch_later_add">Aggiungi a Guarda più tardi</string>
-    <string name="watch_later_remove">Rimuovi da Guarda più tardi</string>
     <string name="watched">Visto</string>
     <string name="mark_watched">Segna come visto</string>
     <string name="mark_unwatched">Segna come non visto</string>

@@ -7,7 +7,8 @@ import { isTyping, readKey } from "./keys.ts";
 import { log } from "./log.ts";
 import { language, rightToLeft } from "./strings.ts";
 import { AvPlayPlayer } from "./player/avplay.ts";
-import { connections, playback, playerEvents, usePlayer } from "./player/controller.ts";
+import { connections, onWatch, playback, playerEvents, usePlayer } from "./player/controller.ts";
+import { scrobble } from "./services.ts";
 import { VideoPlayer } from "./player/html5.ts";
 import { exitApp, onTv, registerKeys } from "./tizen.ts";
 import { App } from "./ui/app.tsx";
@@ -33,6 +34,9 @@ if (onTv() && av) {
 }
 
 registerKeys();
+
+// What plays goes to Trakt and Simkl when they're connected (docs/decisions/trakt.md).
+onWatch((event, item, at, length) => void scrobble(event, item, at, length));
 
 document.addEventListener("keydown", (event) => {
     const typing = isTyping(event.target);

@@ -1,8 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="watch_later">Assistir depois</string>
-    <string name="watch_later_add">Adicionar a Assistir depois</string>
-    <string name="watch_later_remove">Remover de Assistir depois</string>
     <string name="watched">Assistido</string>
     <string name="mark_watched">Marcar como assistido</string>
     <string name="mark_unwatched">Marcar como não assistido</string>

@@ -2,7 +2,6 @@ package com.tunedplayer.app.data
 
 import com.tunedplayer.app.data.db.FavouriteEntity
 import com.tunedplayer.app.data.db.TunedDatabase
-import com.tunedplayer.app.data.db.WatchLaterEntity
 import com.tunedplayer.app.diagnostics.attempt
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
@@ -60,7 +59,7 @@ class OptimisticSet<K>(
     }
 }
 
-/** Favourites and Watch later, shared by every screen so a tap shows everywhere at once. */
+/** Favourites (which took in Watch later, 2026-11-27), shared by every screen so a tap shows everywhere at once. */
 class Picks(
     private val db: TunedDatabase,
     scope: CoroutineScope,
@@ -68,7 +67,6 @@ class Picks(
     private val onFavouritesChanged: () -> Unit = {},
 ) {
     val favourites = OptimisticSet(db.library().favouriteIds(), scope)
-    val watchLater = OptimisticSet(db.watchLater().keys(), scope)
 
     fun setFavourite(
         itemId: Long,
@@ -83,9 +81,4 @@ class Picks(
         showKey: String,
         on: Boolean,
     ) = setFavourite(FavouriteShows.id(showKey), on)
-
-    fun setWatchLater(
-        row: WatchLaterEntity,
-        on: Boolean,
-    ) = watchLater.set(row.key, on) { if (on) db.watchLater().add(row) else db.watchLater().remove(row.key) }
 }

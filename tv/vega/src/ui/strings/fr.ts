@@ -244,16 +244,27 @@ export const fr: Strings = {
     simklHint:
         "Les films et épisodes que vous regardez ici apparaissent dans votre historique Simkl, comme depuis l'app Tuned sur votre téléphone.",
     simklConnect: "Connecter Simkl",
-    simklCode: (site: string) => "Sur votre téléphone ou votre ordinateur, allez sur " + site + " et saisissez ce code :",
-    simklWaiting: "En attente du code…",
-    simklConnected: (user: string | null) => (user ? "Connecté en tant que " + user + "" : "Connecté"),
-    simklScrobble: "Scrobbler ce que vous regardez",
+    trackerCode: (site: string) => `Sur votre téléphone ou votre ordinateur, allez sur ${site} et saisissez ce code :`,
+    trackerWaiting: "En attente du code…",
+    trackerConnected: (user: string | null) => (user ? `Connecté en tant que ${user}` : "Connecté"),
+    trackerScrobble: "Scrobbler ce que vous regardez",
     simklScrobbleHint: "Indiquez à Simkl ce qui est en lecture, pour l'ajouter à votre historique et à En cours.",
-    simklDisconnect: "Déconnecter",
+    trackerDisconnect: "Déconnecter",
     simklProblem: {
         offline: "Impossible de joindre Simkl. Vérifiez la connexion Internet du téléviseur et réessayez.",
         expired: "Le code a expiré avant d'être saisi. Réessayez pour en obtenir un nouveau.",
         denied: "Simkl n'a pas autorisé la connexion de Tuned. Réessayez plus tard.",
     },
     simklPremium: "Simkl est inclus dans Premium, avec votre compte Tuned.",
+    trakt: "Trakt",
+    traktHint:
+        "Les films et épisodes que vous regardez ici apparaissent dans votre historique Trakt, comme depuis l'app Tuned sur votre téléphone.",
+    traktConnect: "Connecter Trakt",
+    traktScrobbleHint: "Indiquez à Trakt ce qui est en lecture, pour l'ajouter à votre historique et à En cours.",
+    traktProblem: {
+        offline: "Impossible de joindre Trakt. Vérifiez la connexion Internet du téléviseur et réessayez.",
+        expired: "Le code a expiré avant d'être saisi. Réessayez pour en obtenir un nouveau.",
+        denied: "Trakt n'a pas autorisé la connexion de Tuned. Réessayez plus tard.",
+    },
+    traktPremium: "Trakt est inclus dans Premium, avec votre compte Tuned.",
 };

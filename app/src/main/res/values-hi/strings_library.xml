@@ -1,8 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="watch_later">बाद में देखें</string>
-    <string name="watch_later_add">बाद में देखें में जोड़ें</string>
-    <string name="watch_later_remove">बाद में देखें से हटाएं</string>
     <string name="watched">देखा गया</string>
     <string name="mark_watched">देखा गया मार्क करें</string>
     <string name="mark_unwatched">नहीं देखा मार्क करें</string>

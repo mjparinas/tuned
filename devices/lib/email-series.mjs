@@ -231,7 +231,7 @@ export const SERIES = [
         title: "Your channels, your names, your order",
         intro: "Make the channel list feel like yours.",
         points: [
-            "Favourites are one tap away for everyone, pinned to the top of Live TV.",
+            "Favourites are one tap away for everyone: heart a channel, a film or a whole show, and find it again at the top of its tab.",
             "Premium: make your own lists beside Favourites, like playlists in a music app.",
             "Premium: rename a channel or give it a better logo.",
             "Premium: manage your lists from a phone, a tablet or the website.",

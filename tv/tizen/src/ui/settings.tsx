@@ -1,4 +1,4 @@
-// Settings on the TV: the Tuned account (Premium), playlists, Refresh now with its progress and how it ended, channel
+// Settings on the TV: the Tuned account (Premium), Trakt and Simkl, playlists, Refresh now with its progress and how it ended, channel
 // numbers, adult groups, the app log and signing out of everything. Every button answers at once (settings.md).
 import { useState } from "preact/hooks";
 import {
@@ -26,6 +26,7 @@ import { Button, Screen, Spinner } from "./parts.tsx";
 import { StepLine } from "./loading.tsx";
 import { Avatar, PinPad } from "./profiles.tsx";
 import { ManageLists } from "./add-to-list.tsx";
+import { Services } from "./services.tsx";
 
 function Toggle(props: { label: string; on: boolean; onChange: (on: boolean) => void }) {
     return (
@@ -93,6 +94,7 @@ export function Settings(props: { height: number }) {
                 </section>
             ) : null}
             <ManageLists />
+            <Services />
             <section>
                 <h2>{t.playlists}</h2>
                 <div class="buttons" data-row>

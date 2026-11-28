@@ -78,7 +78,10 @@ export const FEATURE_GROUPS = [
             { title: "Sort your way", body: "Newest, year, rating as the poster shows it, or A to Z." },
             { title: "Actor pages", body: "Tap an actor to see their films and shows, with what's in your playlist marked." },
             { title: "Continue watching", body: "Pick up where you left off, and see new episodes since you last looked." },
-            { title: "Watch later and watched", body: "Save films and episodes for later, and mark what you've seen." },
+            {
+                title: "Favourites and watched",
+                body: "Heart channels, films and whole shows to find them again, and mark what you've seen.",
+            },
             { title: "Skip intro", body: "A button that learns each show's intro." },
             {
                 title: "Downloads",
