@@ -145,9 +145,6 @@ internal const val CHANNEL_FILTER =
  * recordings, and those this profile has watched. `:genre` keeps the channels whose programme on now ([NOW_JOIN]'s
  * `p`) is of that kind ([com.tunedplayer.app.core.ProgrammeGenre.code]), or 0 for any.
  */
-const val LIVE_QUICK = "$LIVE_QUICK_ROWS AND (:genre = 0 OR p.genre = :genre)"
-
-/** [LIVE_QUICK] without the kind of programme on now, which is all that reads [NOW_JOIN]: for counting without it. */
 internal const val LIVE_QUICK_ROWS =
     "AND (:topic = '' OR ('g:' || i.groupName) IN (:quick) " +
         "OR i.id IN (SELECT docid FROM items_fts WHERE items_fts MATCH :topic)) " +
@@ -157,6 +154,9 @@ internal const val LIVE_QUICK_ROWS =
         "AND ('guide' NOT IN (:quick) OR EXISTS (SELECT 1 FROM programmes WHERE channelId = i.tvgId AND stop > :now)) " +
         "AND ('catchup' NOT IN (:quick) OR i.id IN (SELECT itemId FROM catchup_items)) " +
         "AND ('watched' NOT IN (:quick) OR i.id IN (SELECT itemId FROM history WHERE profileId = $ME))"
+
+/** [LIVE_QUICK_ROWS] and the kind of programme on now (`:genre`), which reads [NOW_JOIN]'s `p`. */
+const val LIVE_QUICK = "$LIVE_QUICK_ROWS AND (:genre = 0 OR p.genre = :genre)"
 
 /**
  * Movies (or any one kind) with everything that narrows the tab: hidden countries and groups, the group chip,

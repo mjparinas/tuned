@@ -137,21 +137,6 @@ interface ShowDao {
 
 private const val DETAILS_BATCH = 500
 
-/**
- * The Shows tab when nothing narrows it: grouped from [ShowGroupEntity], a few rows per show, instead of from every
- * episode. New episodes are counted only for the shows on screen. Each sort adds its own ORDER BY ([ShowDao.showsTab]).
- */
-internal const val SHOWS_TAB =
-    "SELECT s.showKey, MIN(s.showName) AS showName, MAX(s.logo) AS logo, MIN(s.groupName) AS groupName, " +
-        "SUM(s.episodes) AS episodes, $SHOWS_TAB_NEW FROM show_groups s $SHOWS_TAB_WHERE GROUP BY s.showKey"
-
-/**
- * [SHOWS_TAB] when every show has one row in [ShowGroupEntity] (one category, one country), as in most playlists: the
- * same rows without grouping, so each sort reads its index and stops at the page instead of grouping every show.
- */
-internal const val SHOWS_TAB_FLAT =
-    "SELECT s.showKey, s.showName, s.logo, s.groupName, s.episodes, $SHOWS_TAB_NEW FROM show_groups s $SHOWS_TAB_WHERE"
-
 /** How many episodes of a show this profile has started are still unseen. */
 private const val SHOWS_TAB_NEW =
     "CASE WHEN s.showKey IN (SELECT showKey FROM seen_episodes WHERE profileId = $ME) THEN (" +
@@ -167,3 +152,18 @@ internal const val SHOWS_TAB_WHERE = """
             $ROUND_THE_CLOCK_S
             AND (:group IS NULL OR s.groupName = :group)
 """
+
+/**
+ * The Shows tab when nothing narrows it: grouped from [ShowGroupEntity], a few rows per show, instead of from every
+ * episode. New episodes are counted only for the shows on screen. Each sort adds its own ORDER BY ([ShowDao.showsTab]).
+ */
+internal const val SHOWS_TAB =
+    "SELECT s.showKey, MIN(s.showName) AS showName, MAX(s.logo) AS logo, MIN(s.groupName) AS groupName, " +
+        "SUM(s.episodes) AS episodes, $SHOWS_TAB_NEW FROM show_groups s $SHOWS_TAB_WHERE GROUP BY s.showKey"
+
+/**
+ * [SHOWS_TAB] when every show has one row in [ShowGroupEntity] (one category, one country), as in most playlists: the
+ * same rows without grouping, so each sort reads its index and stops at the page instead of grouping every show.
+ */
+internal const val SHOWS_TAB_FLAT =
+    "SELECT s.showKey, s.showName, s.logo, s.groupName, s.episodes, $SHOWS_TAB_NEW FROM show_groups s $SHOWS_TAB_WHERE"
