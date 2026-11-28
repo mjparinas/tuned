@@ -28,16 +28,18 @@ import com.tunedplayer.app.data.db.ContinueRow
 import com.tunedplayer.app.data.db.GroupCount
 import com.tunedplayer.app.data.db.GuideSearchIndex
 import com.tunedplayer.app.data.db.ItemEntity
+import com.tunedplayer.app.data.db.ListCounts
 import com.tunedplayer.app.data.db.ListEntity
+import com.tunedplayer.app.data.db.LiveSource
 import com.tunedplayer.app.data.db.ProfileEntity
+import com.tunedplayer.app.data.db.QuickLists
+import com.tunedplayer.app.data.db.QuickPagingSource
 import com.tunedplayer.app.data.db.RegionCount
 import com.tunedplayer.app.data.db.ShowSummary
 import com.tunedplayer.app.data.db.SortFields
-import com.tunedplayer.app.data.db.sortedItems
-import com.tunedplayer.app.data.db.sortedShows
-import com.tunedplayer.app.data.db.sortedShowsTab
 import com.tunedplayer.app.data.hiddenCountries
 import com.tunedplayer.app.data.hiddenKeys
+import com.tunedplayer.app.diagnostics.AppLog
 import com.tunedplayer.app.diagnostics.attempt
 import com.tunedplayer.app.diagnostics.launchSafely
 import com.tunedplayer.app.ui.settings.PinActions
@@ -54,6 +56,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.debounce
@@ -95,6 +98,17 @@ private data class Query(
     val search: String,
     val now: Long,
 )
+
+/** What the Shows tab reads: the filters, the sort, the shows favourited whole, and whether to skip grouping. */
+private data class ShowsQuery(
+    val q: Query,
+    val order: TitleSort.Order,
+    val favs: List<String>,
+    val flat: Boolean,
+)
+
+/** The browse lists' last lengths ([ListCounts]), in the cache folder. */
+private const val LIST_COUNTS_FILE = "list-counts"
 
 /** What [BrowseViewModel.liveRegions] reads from Settings, so the Flow only restarts when one of them changes. */
 private data class LiveRegionsQuery(
@@ -195,6 +209,12 @@ class BrowseViewModel(
     }
 
     private val config = PagingConfig(pageSize = 60, prefetchDistance = 60, enablePlaceholders = true, initialLoadSize = 120)
+
+    /**
+     * How long each list is, counted in the background so the first rows never wait on it ([QuickPagingSource]). The
+     * last lengths are kept in the cache folder, which signing out empties (data/AppReset).
+     */
+    private val counts = ListCounts(container.db, viewModelScope, app.cacheDir.resolve(LIST_COUNTS_FILE))
 
     /** Live TV's quick filters (Sports, PPV, a country or a language), on top of the chip chosen. */
     val liveQuick = MutableStateFlow(LiveQuick())
@@ -306,39 +326,28 @@ class BrowseViewModel(
             // The categories only change the keys while Sports or PPV is chosen; otherwise the list isn't reloaded.
             .distinctUntilChanged()
             .flatMapLatest { (q, f) ->
-                Pager(config) {
-                    val group = (q.filter as? Filter.Group)?.name
-                    val match = Search.match(q.search)
+                val source =
                     when (q.filter) {
-                        Filter.Favourites -> {
-                            items.favouriteChannels(q.now, q.hidden, q.adult, group, q.search, match, f.topic, f.keys, f.quality, f.genre)
-                        }
-
-                        is Filter.OwnList -> {
-                            container.db.lists().listChannels(
-                                q.filter.id,
-                                q.now,
-                                q.hidden,
-                                q.adult,
-                                group,
-                                q.search,
-                                match,
-                                f.topic,
-                                f.keys,
-                                f.quality,
-                                f.genre,
-                            )
-                        }
-
-                        Filter.Recent -> {
-                            items.recentChannels(q.now, q.hidden, q.adult, group, q.search, match, f.topic, f.keys, f.quality, f.genre)
-                        }
-
-                        else -> {
-                            items.channels(q.now, q.hidden, q.adult, group, q.search, match, f.topic, f.keys, f.quality, f.genre)
-                        }
+                        Filter.Favourites -> LiveSource.Favourites
+                        is Filter.OwnList -> LiveSource.OwnList(q.filter.id)
+                        Filter.Recent -> LiveSource.Recent
+                        else -> LiveSource.All
                     }
-                }.flow
+                val list =
+                    QuickLists.channels(
+                        source,
+                        q.now,
+                        q.hidden,
+                        q.adult,
+                        (q.filter as? Filter.Group)?.name,
+                        q.search,
+                        Search.match(q.search),
+                        f.topic,
+                        f.keys,
+                        f.quality,
+                        f.genre,
+                    )
+                Pager(config) { QuickPagingSource(container.db, counts, list) }.flow
             }.cachedIn(viewModelScope)
 
     /** The order each tab's titles are listed in (Movies and Shows; Live TV keeps the playlist's), remembered in Settings. */
@@ -393,8 +402,8 @@ class BrowseViewModel(
     val movies: Flow<PagingData<ItemEntity>> =
         combine(query(ContentKind.MOVIE), sort(ContentKind.MOVIE)) { q, order -> q to order }
             .flatMapLatest { (q, order) ->
-                Pager(config) {
-                    container.db.sortedItems(
+                val list =
+                    QuickLists.titles(
                         order,
                         ContentKind.MOVIE.code,
                         q.hidden,
@@ -405,7 +414,7 @@ class BrowseViewModel(
                         Search.match(q.search),
                         (q.filter as? Filter.OwnList)?.id ?: 0,
                     )
-                }.flow
+                Pager(config) { QuickPagingSource(container.db, counts, list) }.flow
             }.cachedIn(viewModelScope)
 
     /**
@@ -424,16 +433,33 @@ class BrowseViewModel(
                 }.getOrDefault(emptyList())
             }.distinctUntilChanged()
 
+    /** Every show has one row in the per-show table, so the Shows tab skips grouping (most playlists). */
+    private val oneRowEach: Flow<Boolean> =
+        container.db
+            .shows()
+            .oneRowEach()
+            .catch { e ->
+                AppLog.w("BrowseViewModel", "Couldn't check the per-show table", e)
+                emit(false)
+            }.distinctUntilChanged()
+
     val shows: Flow<PagingData<ShowSummary>> =
-        combine(query(ContentKind.SERIES), sort(ContentKind.SERIES), favouriteShows) { q, order, favs -> Triple(q, order, favs) }
-            .flatMapLatest { (q, order, favs) ->
-                Pager(config) {
-                    val group = (q.filter as? Filter.Group)?.name
-                    // Browsing reads the per-show table; a search or Favourites narrows the episodes themselves.
+        combine(
+            query(ContentKind.SERIES),
+            sort(ContentKind.SERIES),
+            favouriteShows,
+            oneRowEach,
+        ) { q, order, favs, flat -> ShowsQuery(q, order, favs, flat) }
+            .flatMapLatest { shows ->
+                val (q, order, favs) = shows
+                val flat = shows.flat
+                val group = (q.filter as? Filter.Group)?.name
+                // Browsing reads the per-show table; a search or Favourites narrows the episodes themselves.
+                val list =
                     if (q.search.isEmpty() && q.filter != Filter.Favourites) {
-                        container.db.sortedShowsTab(order, q.hidden, q.adult, group)
+                        QuickLists.showsTab(order, q.hidden, q.adult, group, flat)
                     } else {
-                        container.db.sortedShows(
+                        QuickLists.shows(
                             order,
                             q.hidden,
                             q.adult,
@@ -444,7 +470,7 @@ class BrowseViewModel(
                             favs,
                         )
                     }
-                }.flow
+                Pager(config) { QuickPagingSource(container.db, counts, list) }.flow
             }.cachedIn(viewModelScope)
 
     private val continueFlows = mutableMapOf<ContentKind, StateFlow<List<ContinueRow>>>()

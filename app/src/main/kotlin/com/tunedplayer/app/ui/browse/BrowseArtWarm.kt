@@ -9,6 +9,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.paging.compose.LazyPagingItems
 import com.tunedplayer.app.container
 import com.tunedplayer.app.work.BrowseWarm
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 
@@ -51,7 +52,9 @@ internal fun <T : Any> WarmVisibleArt(
                     snapshotFlow { 0 to 0 }
                 }
             }
-        visible
+        // The count is read inside the snapshot too: the first rows land, and later the list's full length, without
+        // a scroll, and the logos just below the screen should start then rather than at the first swipe.
+        combine(visible, snapshotFlow { items.itemCount }) { range, _ -> range }
             .map { (first, last) ->
                 val end = (last + BrowseWarm.PAGE).coerceAtMost((items.itemCount - 1).coerceAtLeast(0))
                 val start = first.coerceAtLeast(0)

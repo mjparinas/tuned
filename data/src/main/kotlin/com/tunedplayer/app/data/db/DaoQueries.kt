@@ -5,29 +5,16 @@ package com.tunedplayer.app.data.db
 /** The profile in use; 1 (the first profile) when none is set, as in a fresh test database. */
 internal const val ME = "COALESCE((SELECT profileId FROM current_profile), 1)"
 
-/** Kids profiles: only kids and family categories ([com.tunedplayer.app.core.KidsContent], keep the two in step). */
-internal const val KIDS_ONLY_I =
-    "AND NOT ('kids' IN (:hidden) AND NOT (" +
-        "lower(i.groupName) GLOB '*kid*' OR " +
-        "lower(i.groupName) GLOB '*child*' OR " +
-        "lower(i.groupName) GLOB '*cartoon*' OR " +
-        "lower(i.groupName) GLOB '*family*' OR " +
-        "lower(i.groupName) GLOB '*junior*' OR " +
-        "lower(i.groupName) GLOB '*disney*' OR " +
-        "lower(i.groupName) GLOB '*nick*' OR " +
-        "lower(i.groupName) GLOB '*baby*' OR " +
-        "lower(i.groupName) GLOB '*animation*' OR " +
-        "lower(i.groupName) GLOB '*boomerang*' OR " +
-        "(i.kind = 0 AND (" +
-        "i.searchName GLOB '*kid*' OR " +
-        "i.searchName GLOB '*child*' OR " +
-        "i.searchName GLOB '*cartoon*' OR " +
-        "i.searchName GLOB '*junior*' OR " +
-        "i.searchName GLOB '*disney*' OR " +
-        "i.searchName GLOB '*nick*' OR " +
-        "i.searchName GLOB '*baby*' OR " +
-        "i.searchName GLOB '*boomerang*'" +
-        "))))"
+/**
+ * Kids profiles: only kids and family categories and channels ([com.tunedplayer.app.core.KidsContent], keep the two in
+ * step in [ItemTags]), from the tag worked out when the stream was saved.
+ */
+internal const val KIDS_ONLY_I = "AND NOT ('kids' IN (:hidden) AND (i.tags & ${ItemTags.KIDS}) = 0)"
+
+/** Hide 24/7 ([com.tunedplayer.app.core.RoundTheClock]) and empty event slots, from the tags ([ItemTags]). */
+internal const val TAGGED_HIDDEN_I =
+    "AND NOT ('247' IN (:hidden) AND (i.tags & ${ItemTags.ROUND_THE_CLOCK}) != 0) " +
+        "AND NOT ('placeholder' IN (:hidden) AND (i.tags & ${ItemTags.PLACEHOLDER}) != 0)"
 
 /**
  * Live Events: sports and pay-per-view channels by name or category, a quick first cut that
@@ -140,11 +127,7 @@ internal const val NOW_JOIN =
 internal const val CHANNEL_FILTER =
     "i.kind = 0 AND COALESCE(i.region, 'none') NOT IN (:hidden) AND ('g:0:' || i.groupName) NOT IN (:hidden) " +
         "AND NOT ('scan:dead' IN (:hidden) AND i.id IN (SELECT itemId FROM channel_scan WHERE hidden = 1)) " +
-        "AND NOT ('placeholder' IN (:hidden) AND ((' ' || i.searchName) GLOB '* no event*' " +
-        "OR (' ' || i.searchName) GLOB '* no live event*')) " +
-        "AND NOT ('247' IN (:hidden) AND ((' ' || lower(i.groupName || ' ' || i.name) || ' ') GLOB '*[^0-9]24[/ x-]7[^0-9]*' " +
-        "OR (' ' || lower(i.groupName || ' ' || i.name) || ' ') GLOB '*[^0-9]247[^0-9]*' " +
-        "OR (' ' || lower(i.groupName || ' ' || i.name) || ' ') GLOB '*[^0-9]24 / 7[^0-9]*')) " +
+        "$TAGGED_HIDDEN_I " +
         "AND (:adult OR i.adult = 0) $KIDS_ONLY_I AND (:group IS NULL OR i.groupName = :group) " +
         "AND (:query = '' OR i.id IN (SELECT docid FROM items_fts WHERE items_fts MATCH :match) OR i.tvgId IN (" +
         // An event search ("UFC") also finds the channels showing it now or within the hour.
@@ -162,7 +145,7 @@ internal const val CHANNEL_FILTER =
  * recordings, and those this profile has watched. `:genre` keeps the channels whose programme on now ([NOW_JOIN]'s
  * `p`) is of that kind ([com.tunedplayer.app.core.ProgrammeGenre.code]), or 0 for any.
  */
-const val LIVE_QUICK =
+internal const val LIVE_QUICK_ROWS =
     "AND (:topic = '' OR ('g:' || i.groupName) IN (:quick) " +
         "OR i.id IN (SELECT docid FROM items_fts WHERE items_fts MATCH :topic)) " +
         "AND ('any' IN (:quick) OR i.region IN (:quick)) " +
@@ -170,8 +153,10 @@ const val LIVE_QUICK =
         "AND (:quality = '' OR i.id IN (SELECT docid FROM items_fts WHERE items_fts MATCH :quality)) " +
         "AND ('guide' NOT IN (:quick) OR EXISTS (SELECT 1 FROM programmes WHERE channelId = i.tvgId AND stop > :now)) " +
         "AND ('catchup' NOT IN (:quick) OR i.id IN (SELECT itemId FROM catchup_items)) " +
-        "AND ('watched' NOT IN (:quick) OR i.id IN (SELECT itemId FROM history WHERE profileId = $ME)) " +
-        "AND (:genre = 0 OR p.genre = :genre)"
+        "AND ('watched' NOT IN (:quick) OR i.id IN (SELECT itemId FROM history WHERE profileId = $ME))"
+
+/** [LIVE_QUICK_ROWS] and the kind of programme on now (`:genre`), which reads [NOW_JOIN]'s `p`. */
+const val LIVE_QUICK = "$LIVE_QUICK_ROWS AND (:genre = 0 OR p.genre = :genre)"
 
 /**
  * Movies (or any one kind) with everything that narrows the tab: hidden countries and groups, the group chip,
@@ -181,12 +166,7 @@ internal const val TITLE_FILTER = """
         WHERE i.kind = :kind
             AND COALESCE(i.region, 'none') NOT IN (:hidden) AND ('g:' || i.kind || ':' || i.groupName) NOT IN (:hidden)
             AND NOT ('scan:dead' IN (:hidden) AND i.id IN (SELECT itemId FROM channel_scan WHERE hidden = 1))
-            AND NOT ('placeholder' IN (:hidden) AND i.kind = 0
-                AND ((' ' || i.searchName) GLOB '* no event*' OR (' ' || i.searchName) GLOB '* no live event*'))
-            AND NOT ('247' IN (:hidden)
-                AND ((' ' || lower(i.groupName || ' ' || i.name) || ' ') GLOB '*[^0-9]24[/ x-]7[^0-9]*'
-                    OR (' ' || lower(i.groupName || ' ' || i.name) || ' ') GLOB '*[^0-9]247[^0-9]*'
-                    OR (' ' || lower(i.groupName || ' ' || i.name) || ' ') GLOB '*[^0-9]24 / 7[^0-9]*'))
+            $TAGGED_HIDDEN_I
             AND (:adult OR i.adult = 0)
             $KIDS_ONLY_I
             AND (:group IS NULL OR i.groupName = :group)
@@ -213,12 +193,7 @@ internal const val SHOW_FILTER = """
         WHERE i.kind = 2 AND i.showKey IS NOT NULL
             AND COALESCE(i.region, 'none') NOT IN (:hidden) AND ('g:' || i.kind || ':' || i.groupName) NOT IN (:hidden)
             AND NOT ('scan:dead' IN (:hidden) AND i.id IN (SELECT itemId FROM channel_scan WHERE hidden = 1))
-            AND NOT ('placeholder' IN (:hidden) AND i.kind = 0
-                AND ((' ' || i.searchName) GLOB '* no event*' OR (' ' || i.searchName) GLOB '* no live event*'))
-            AND NOT ('247' IN (:hidden)
-                AND ((' ' || lower(i.groupName || ' ' || i.name) || ' ') GLOB '*[^0-9]24[/ x-]7[^0-9]*'
-                    OR (' ' || lower(i.groupName || ' ' || i.name) || ' ') GLOB '*[^0-9]247[^0-9]*'
-                    OR (' ' || lower(i.groupName || ' ' || i.name) || ' ') GLOB '*[^0-9]24 / 7[^0-9]*'))
+            $TAGGED_HIDDEN_I
             AND (:adult OR i.adult = 0)
             $KIDS_ONLY_I
             AND (:group IS NULL OR i.groupName = :group)

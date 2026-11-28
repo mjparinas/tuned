@@ -58,6 +58,11 @@ data class ItemEntity(
      * Worked out after each refresh and as TMDB answers; a refresh never writes it, so it isn't in [PlaylistWriter]'s columns.
      */
     val topRating: Double? = null,
+    /**
+     * What the hiding filters read ([ItemTags]): 24/7, kids, an empty event slot. Worked out from the name, category and
+     * kind as the stream is made, so no list tests every name again.
+     */
+    @ColumnInfo(defaultValue = "0") val tags: Int = ItemTags.of(kind, name, groupName, searchName),
 )
 
 /**

@@ -80,6 +80,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -162,6 +163,10 @@ fun HomeScreen(
         }
     var selected by rememberSaveable { mutableIntStateOf(start) }
     val tab = tabs[selected]
+    // Each tab keeps its place: its scroll position and, on a TV, the item the remote was on, so switching to Movies
+    // and back to Live TV lands where it was left (Melvin, 2026-11-28: "Even if things take long to load there are
+    // things we can do to make it appear quick").
+    val tabPlaces = rememberSaveableStateHolder()
     val empty by vm.empty.collectAsStateWithLifecycle()
     val refreshing by vm.refreshing.collectAsStateWithLifecycle()
     val lastError by vm.lastError.collectAsStateWithLifecycle()
@@ -373,41 +378,43 @@ fun HomeScreen(
                     val events = onOpenEvents.takeIf { tab.kind == ContentKind.LIVE }
                     if (!tvPosterColumns) CategoryChips(vm, tab.kind, onGroupHidden, events)
                     val lists: @Composable () -> Unit = {
-                        when (tab.kind) {
-                            ContentKind.LIVE -> {
-                                LiveTab(
-                                    vm,
-                                    settings,
-                                    onPlay,
-                                    openGuide,
-                                    onOpenSearch,
-                                    focusReturn,
-                                    onFocusChannel = if (tvColumns) ({ focusedChannel = it }) else null,
-                                )
-                            }
+                        tabPlaces.SaveableStateProvider(tab.kind.name) {
+                            when (tab.kind) {
+                                ContentKind.LIVE -> {
+                                    LiveTab(
+                                        vm,
+                                        settings,
+                                        onPlay,
+                                        openGuide,
+                                        onOpenSearch,
+                                        focusReturn,
+                                        onFocusChannel = if (tvColumns) ({ focusedChannel = it }) else null,
+                                    )
+                                }
 
-                            ContentKind.MOVIE -> {
-                                MovieGrid(
-                                    vm,
-                                    onPlay,
-                                    openMovie,
-                                    settings.alwaysShowScrollbar,
-                                    onOpenSearch,
-                                    focusReturn,
-                                    onFocusMovie = if (tvColumns) ({ focusedPoster = PosterFocus.Movie(it) }) else null,
-                                )
-                            }
+                                ContentKind.MOVIE -> {
+                                    MovieGrid(
+                                        vm,
+                                        onPlay,
+                                        openMovie,
+                                        settings.alwaysShowScrollbar,
+                                        onOpenSearch,
+                                        focusReturn,
+                                        onFocusMovie = if (tvColumns) ({ focusedPoster = PosterFocus.Movie(it) }) else null,
+                                    )
+                                }
 
-                            ContentKind.SERIES -> {
-                                ShowGrid(
-                                    vm,
-                                    openShow,
-                                    onPlay,
-                                    settings.alwaysShowScrollbar,
-                                    onOpenSearch,
-                                    focusReturn,
-                                    onFocusShow = if (tvColumns) ({ focusedPoster = PosterFocus.Show(it) }) else null,
-                                )
+                                ContentKind.SERIES -> {
+                                    ShowGrid(
+                                        vm,
+                                        openShow,
+                                        onPlay,
+                                        settings.alwaysShowScrollbar,
+                                        onOpenSearch,
+                                        focusReturn,
+                                        onFocusShow = if (tvColumns) ({ focusedPoster = PosterFocus.Show(it) }) else null,
+                                    )
+                                }
                             }
                         }
                     }
