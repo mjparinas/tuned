@@ -58,9 +58,7 @@ interface ItemDao {
 
     /** Live TV in playlist order. Paged, so it reads only the rows on screen, straight down the (kind, sortOrder) index. */
     @Suppress("LongParameterList") // Every Live TV filter is a parameter of the one query, so the list stays one read.
-    @Query(
-        "SELECT $CHANNEL_COLUMNS, 0 AS favourite FROM items i $NOW_JOIN WHERE $CHANNEL_FILTER $LIVE_QUICK ORDER BY i.sortOrder",
-    )
+    @Query("$LIVE_ALL $LIVE_ALL_ORDER")
     fun channels(
         now: Long,
         hidden: List<String>,
@@ -76,10 +74,7 @@ interface ItemDao {
 
     /** Favourite channels, in their own order (Settings › Order favourites). */
     @Suppress("LongParameterList") // Every Live TV filter is a parameter of the one query, so the list stays one read.
-    @Query(
-        "SELECT $CHANNEL_COLUMNS, 1 AS favourite FROM items i JOIN favourites f ON f.itemId = i.id AND f.profileId = $ME $NOW_JOIN " +
-            "WHERE $CHANNEL_FILTER $LIVE_QUICK ORDER BY f.position",
-    )
+    @Query("$LIVE_FAVOURITES $LIVE_FAVOURITES_ORDER")
     fun favouriteChannels(
         now: Long,
         hidden: List<String>,
@@ -95,10 +90,7 @@ interface ItemDao {
 
     /** Channels watched lately, latest first. */
     @Suppress("LongParameterList") // Every Live TV filter is a parameter of the one query, so the list stays one read.
-    @Query(
-        "SELECT $CHANNEL_COLUMNS, 0 AS favourite FROM items i JOIN history h ON h.itemId = i.id AND h.profileId = $ME $NOW_JOIN " +
-            "WHERE $CHANNEL_FILTER $LIVE_QUICK ORDER BY h.watchedAt DESC",
-    )
+    @Query("$LIVE_RECENT $LIVE_RECENT_ORDER")
     fun recentChannels(
         now: Long,
         hidden: List<String>,
@@ -140,7 +132,7 @@ interface ItemDao {
         adult: Boolean,
     ): Flow<List<ContinueRow>>
 
-    @Query("SELECT * FROM items i $TITLE_FILTER ORDER BY i.sortOrder")
+    @Query("$TITLES $TITLES_PROVIDER")
     @Suppress("LongParameterList") // Every filter is a parameter of the one query, so the list stays one read.
     fun items(
         kind: Int,
@@ -154,7 +146,7 @@ interface ItemDao {
         listId: Long,
     ): PagingSource<Int, ItemEntity>
 
-    @Query("$SHOW_SUMMARY $SHOW_FILTER ORDER BY MIN(sortOrder)")
+    @Query("$SHOWS $SHOWS_PROVIDER")
     fun shows(
         hidden: List<String>,
         adult: Boolean,

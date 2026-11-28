@@ -80,6 +80,9 @@ abstract class TunedDatabase : RoomDatabase() {
 
     abstract fun titleSorts(): TitleSortDao
 
+    /** The browse lists a page at a time, first rows before the count ([QuickPagingSource]). */
+    abstract fun quick(): QuickDao
+
     companion object {
         fun create(context: Context): TunedDatabase = Room
             .databaseBuilder(context, TunedDatabase::class.java, "tuned.db")

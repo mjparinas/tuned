@@ -15,7 +15,7 @@ interface ShowDao {
      * The Shows tab when nothing narrows it: grouped from [ShowGroupEntity], a few rows per show, instead of from
      * every episode. New episodes are counted only for the shows on screen.
      */
-    @Query("$SHOWS_TAB ORDER BY MIN(s.sortOrder)")
+    @Query("$SHOWS_TAB $SHOWS_TAB_PROVIDER")
     fun showsTab(
         hidden: List<String>,
         adult: Boolean,
@@ -23,7 +23,7 @@ interface ShowDao {
     ): PagingSource<Int, ShowSummary>
 
     /** [showsTab], newest first: the newest episode or the provider's last change. */
-    @Query("$SHOWS_TAB ORDER BY MAX(s.added) DESC, MIN(s.sortOrder)")
+    @Query("$SHOWS_TAB $SHOWS_TAB_ADDED")
     fun showsTabByAdded(
         hidden: List<String>,
         adult: Boolean,
@@ -31,7 +31,7 @@ interface ShowDao {
     ): PagingSource<Int, ShowSummary>
 
     /** [showsTab], newest release year first, shows without one last. */
-    @Query("$SHOWS_TAB ORDER BY MAX(s.year) DESC, MIN(s.sortOrder)")
+    @Query("$SHOWS_TAB $SHOWS_TAB_YEAR")
     fun showsTabByYear(
         hidden: List<String>,
         adult: Boolean,
@@ -42,7 +42,7 @@ interface ShowDao {
      * [showsTab], highest rated first, shows without a rating last (Melvin, 2026-11-23: "without a rating need to go
      * all the way to the bottom" / "highest scores first").
      */
-    @Query("$SHOWS_TAB ORDER BY (MAX(s.rating) IS NULL), MAX(s.rating) DESC, MIN(s.sortOrder)")
+    @Query("$SHOWS_TAB $SHOWS_TAB_RATING")
     fun showsTabByRating(
         hidden: List<String>,
         adult: Boolean,
@@ -50,7 +50,7 @@ interface ShowDao {
     ): PagingSource<Int, ShowSummary>
 
     /** [showsTab], A to Z by title without tags. */
-    @Query("$SHOWS_TAB ORDER BY MIN(NULLIF(s.sortTitle, '')), MIN(s.sortOrder)")
+    @Query("$SHOWS_TAB $SHOWS_TAB_TITLE")
     fun showsTabByTitle(
         hidden: List<String>,
         adult: Boolean,
@@ -137,7 +137,7 @@ private const val DETAILS_BATCH = 500
  * The Shows tab when nothing narrows it: grouped from [ShowGroupEntity], a few rows per show, instead of from every
  * episode. New episodes are counted only for the shows on screen. Each sort adds its own ORDER BY ([ShowDao.showsTab]).
  */
-private const val SHOWS_TAB = """
+internal const val SHOWS_TAB = """
         SELECT s.showKey, MIN(s.showName) AS showName, MAX(s.logo) AS logo, MIN(s.groupName) AS groupName,
             SUM(s.episodes) AS episodes,
             CASE WHEN s.showKey IN (SELECT showKey FROM seen_episodes WHERE profileId = $ME) THEN (
