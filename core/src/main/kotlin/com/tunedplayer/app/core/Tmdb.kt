@@ -13,6 +13,20 @@ object Tmdb {
     /** Episode screenshots: 300 pixels wide is sharp at a row thumbnail's size and a fraction of a full still. */
     const val STILLS = "https://image.tmdb.org/t/p/w300"
 
+    /** Posters for a tile no wider than this: about half the bytes of [IMAGES] and sharp at a grid tile's size. */
+    const val SMALL_POSTERS = "https://image.tmdb.org/t/p/w342"
+    private const val SMALL_POSTER_PX = 342
+
+    /**
+     * A poster from [IMAGES] at the smaller size when it's drawn [widthPx] wide or less (a grid tile on a phone or a TV),
+     * so the grid downloads and decodes less while it scrolls (Melvin, 2026-11-28); a bigger view keeps [IMAGES].
+     * Anything else comes back as it was.
+     */
+    fun posterFor(
+        url: String,
+        widthPx: Int,
+    ): String = if (widthPx in 1..SMALL_POSTER_PX && url.startsWith("$IMAGES/")) SMALL_POSTERS + url.substring(IMAGES.length) else url
+
     /** What to search for: the title without the provider's tags, and the year when the name has one. */
     data class Query(
         val title: String,

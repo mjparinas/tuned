@@ -5,8 +5,8 @@ package com.tunedplayer.app.core
  * names one of [GROUP_WORDS], or, for a live channel, when its own name has one of [CHANNEL_WORDS] (a "Cartoon
  * Network" in "US | Entertainment"). Channel names leave out "family" and "animation", which match grown-up channels.
  *
- * The database applies the same rule in SQL (`KIDS_ONLY` in `Daos.kt`), on the lower-case group and the normalized
- * name ([Search.normalize]). Keep the two in step; `KidsFilterTest` checks they agree.
+ * The database applies the same rule when it saves a stream (`ItemTags` in `:data`), on the lower-case group and the normalized
+ * name ([Search.normalize]). Keep the two in step; `ItemTagsTest` checks they agree.
  */
 object KidsContent {
     /** Added to the hidden keys while a kids profile is in use. */

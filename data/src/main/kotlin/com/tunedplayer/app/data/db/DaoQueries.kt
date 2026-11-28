@@ -16,6 +16,14 @@ internal const val TAGGED_HIDDEN_I =
     "AND NOT ('247' IN (:hidden) AND (i.tags & ${ItemTags.ROUND_THE_CLOCK}) != 0) " +
         "AND NOT ('placeholder' IN (:hidden) AND (i.tags & ${ItemTags.PLACEHOLDER}) != 0)"
 
+/** [KIDS_ONLY_I] for queries that don't name the table. */
+internal const val KIDS_ONLY_TAGS = "AND NOT ('kids' IN (:hidden) AND (tags & ${ItemTags.KIDS}) = 0)"
+
+/** [TAGGED_HIDDEN_I] for queries that don't name the table. */
+internal const val TAGGED_HIDDEN =
+    "AND NOT ('247' IN (:hidden) AND (tags & ${ItemTags.ROUND_THE_CLOCK}) != 0) " +
+        "AND NOT ('placeholder' IN (:hidden) AND (tags & ${ItemTags.PLACEHOLDER}) != 0)"
+
 /**
  * Live Events: sports and pay-per-view channels by name or category, a quick first cut that
  * [com.tunedplayer.app.core.EventChannels] then decides on.
@@ -42,30 +50,6 @@ internal const val SPORTY_I =
         "(lower(i.groupName) || ' ' || i.searchName) GLOB '*tennis*' OR " +
         "(lower(i.groupName) || ' ' || i.searchName) GLOB '*cricket*' OR " +
         "(lower(i.groupName) || ' ' || i.searchName) GLOB '*rugby*')"
-
-/** [KIDS_ONLY_I] for queries that don't name the table. */
-internal const val KIDS_ONLY =
-    "AND NOT ('kids' IN (:hidden) AND NOT (" +
-        "lower(groupName) GLOB '*kid*' OR " +
-        "lower(groupName) GLOB '*child*' OR " +
-        "lower(groupName) GLOB '*cartoon*' OR " +
-        "lower(groupName) GLOB '*family*' OR " +
-        "lower(groupName) GLOB '*junior*' OR " +
-        "lower(groupName) GLOB '*disney*' OR " +
-        "lower(groupName) GLOB '*nick*' OR " +
-        "lower(groupName) GLOB '*baby*' OR " +
-        "lower(groupName) GLOB '*animation*' OR " +
-        "lower(groupName) GLOB '*boomerang*' OR " +
-        "(kind = 0 AND (" +
-        "searchName GLOB '*kid*' OR " +
-        "searchName GLOB '*child*' OR " +
-        "searchName GLOB '*cartoon*' OR " +
-        "searchName GLOB '*junior*' OR " +
-        "searchName GLOB '*disney*' OR " +
-        "searchName GLOB '*nick*' OR " +
-        "searchName GLOB '*baby*' OR " +
-        "searchName GLOB '*boomerang*'" +
-        "))))"
 
 /** [KIDS_ONLY_I] for the per-show table, which has groups but no channel names. */
 internal const val KIDS_ONLY_S =
@@ -122,6 +106,17 @@ internal const val CHANNEL_COLUMNS =
 internal const val NOW_JOIN =
     "LEFT JOIN programmes p ON p.rowId = (SELECT rowId FROM programmes WHERE channelId = i.tvgId AND start <= :now " +
         "AND stop > :now ORDER BY start DESC LIMIT 1)"
+
+/**
+ * A tab's categories with how many streams each shows, in the playlist's order, for the category chips. Every column
+ * it reads is in the category index ([TunedDatabase.CATEGORY_INDEX]), so it never opens a row.
+ */
+internal const val GROUP_COUNTS =
+    "SELECT groupName, COUNT(*) AS count FROM items " +
+        "WHERE kind = :kind AND COALESCE(region, 'none') NOT IN (:hidden) AND ('g:' || kind || ':' || groupName) NOT IN (:hidden) " +
+        "AND NOT ('scan:dead' IN (:hidden) AND id IN (SELECT itemId FROM channel_scan WHERE hidden = 1)) AND (:adult OR adult = 0) " +
+        "$KIDS_ONLY_TAGS $TAGGED_HIDDEN " +
+        "GROUP BY groupName ORDER BY MIN(sortOrder)"
 
 /** Hidden countries, groups, dead channels and empty event slots stay out; the group chip and the search narrow. */
 internal const val CHANNEL_FILTER =

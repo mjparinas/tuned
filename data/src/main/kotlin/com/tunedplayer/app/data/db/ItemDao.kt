@@ -113,12 +113,7 @@ interface ItemDao {
         WHERE h.profileId = $ME AND i.kind = :kind
             AND COALESCE(i.region, 'none') NOT IN (:hidden) AND ('g:' || i.kind || ':' || i.groupName) NOT IN (:hidden)
             AND NOT ('scan:dead' IN (:hidden) AND i.id IN (SELECT itemId FROM channel_scan WHERE hidden = 1))
-            AND NOT ('placeholder' IN (:hidden) AND i.kind = 0
-                AND ((' ' || i.searchName) GLOB '* no event*' OR (' ' || i.searchName) GLOB '* no live event*'))
-            AND NOT ('247' IN (:hidden)
-                AND ((' ' || lower(i.groupName || ' ' || i.name) || ' ') GLOB '*[^0-9]24[/ x-]7[^0-9]*'
-                    OR (' ' || lower(i.groupName || ' ' || i.name) || ' ') GLOB '*[^0-9]247[^0-9]*'
-                    OR (' ' || lower(i.groupName || ' ' || i.name) || ' ') GLOB '*[^0-9]24 / 7[^0-9]*'))
+            $TAGGED_HIDDEN_I
             AND (:adult OR i.adult = 0)
             $KIDS_ONLY_I
             AND h.durationMs > 0 AND h.positionMs > 30000 AND h.positionMs < h.durationMs * 95 / 100
@@ -171,12 +166,7 @@ interface ItemDao {
         WHERE i.kind = 0
             AND COALESCE(i.region, 'none') NOT IN (:hidden) AND ('g:' || i.kind || ':' || i.groupName) NOT IN (:hidden)
             AND NOT ('scan:dead' IN (:hidden) AND i.id IN (SELECT itemId FROM channel_scan WHERE hidden = 1))
-            AND NOT ('placeholder' IN (:hidden) AND i.kind = 0
-                AND ((' ' || i.searchName) GLOB '* no event*' OR (' ' || i.searchName) GLOB '* no live event*'))
-            AND NOT ('247' IN (:hidden)
-                AND ((' ' || lower(i.groupName || ' ' || i.name) || ' ') GLOB '*[^0-9]24[/ x-]7[^0-9]*'
-                    OR (' ' || lower(i.groupName || ' ' || i.name) || ' ') GLOB '*[^0-9]247[^0-9]*'
-                    OR (' ' || lower(i.groupName || ' ' || i.name) || ' ') GLOB '*[^0-9]24 / 7[^0-9]*'))
+            $TAGGED_HIDDEN_I
             AND (:adult OR i.adult = 0)
             $KIDS_ONLY_I
             AND (i.id IN (SELECT docid FROM items_fts WHERE items_fts MATCH :match) OR i.tvgId IN (
@@ -202,12 +192,7 @@ interface ItemDao {
         WHERE i.kind = 1 AND i.id IN (SELECT docid FROM items_fts WHERE items_fts MATCH :match)
             AND COALESCE(i.region, 'none') NOT IN (:hidden) AND ('g:' || i.kind || ':' || i.groupName) NOT IN (:hidden)
             AND NOT ('scan:dead' IN (:hidden) AND i.id IN (SELECT itemId FROM channel_scan WHERE hidden = 1))
-            AND NOT ('placeholder' IN (:hidden) AND i.kind = 0
-                AND ((' ' || i.searchName) GLOB '* no event*' OR (' ' || i.searchName) GLOB '* no live event*'))
-            AND NOT ('247' IN (:hidden)
-                AND ((' ' || lower(i.groupName || ' ' || i.name) || ' ') GLOB '*[^0-9]24[/ x-]7[^0-9]*'
-                    OR (' ' || lower(i.groupName || ' ' || i.name) || ' ') GLOB '*[^0-9]247[^0-9]*'
-                    OR (' ' || lower(i.groupName || ' ' || i.name) || ' ') GLOB '*[^0-9]24 / 7[^0-9]*'))
+            $TAGGED_HIDDEN_I
             AND (:adult OR i.adult = 0)
             $KIDS_ONLY_I
         ORDER BY i.sortOrder
@@ -231,12 +216,7 @@ interface ItemDao {
         WHERE i.kind = 2 AND i.showKey IS NOT NULL AND i.id IN (SELECT docid FROM items_fts WHERE items_fts MATCH :match)
             AND COALESCE(i.region, 'none') NOT IN (:hidden) AND ('g:' || i.kind || ':' || i.groupName) NOT IN (:hidden)
             AND NOT ('scan:dead' IN (:hidden) AND i.id IN (SELECT itemId FROM channel_scan WHERE hidden = 1))
-            AND NOT ('placeholder' IN (:hidden) AND i.kind = 0
-                AND ((' ' || i.searchName) GLOB '* no event*' OR (' ' || i.searchName) GLOB '* no live event*'))
-            AND NOT ('247' IN (:hidden)
-                AND ((' ' || lower(i.groupName || ' ' || i.name) || ' ') GLOB '*[^0-9]24[/ x-]7[^0-9]*'
-                    OR (' ' || lower(i.groupName || ' ' || i.name) || ' ') GLOB '*[^0-9]247[^0-9]*'
-                    OR (' ' || lower(i.groupName || ' ' || i.name) || ' ') GLOB '*[^0-9]24 / 7[^0-9]*'))
+            $TAGGED_HIDDEN_I
             AND (:adult OR i.adult = 0)
             $KIDS_ONLY_I
         GROUP BY showKey
@@ -262,13 +242,8 @@ interface ItemDao {
         SELECT * FROM items
         WHERE kind = 0 AND groupName = :group AND COALESCE(region, 'none') NOT IN (:hidden) AND ('g:' || kind || ':' || groupName) NOT IN (:hidden)
             AND NOT ('scan:dead' IN (:hidden) AND id IN (SELECT itemId FROM channel_scan WHERE hidden = 1)) AND (:adult OR adult = 0)
-            $KIDS_ONLY
-            AND NOT ('placeholder' IN (:hidden) AND kind = 0
-                AND ((' ' || searchName) GLOB '* no event*' OR (' ' || searchName) GLOB '* no live event*'))
-            AND NOT ('247' IN (:hidden)
-                AND ((' ' || lower(groupName || ' ' || name) || ' ') GLOB '*[^0-9]24[/ x-]7[^0-9]*'
-                    OR (' ' || lower(groupName || ' ' || name) || ' ') GLOB '*[^0-9]247[^0-9]*'
-                    OR (' ' || lower(groupName || ' ' || name) || ' ') GLOB '*[^0-9]24 / 7[^0-9]*'))
+            $KIDS_ONLY_TAGS
+            $TAGGED_HIDDEN
         ORDER BY sortOrder
         """,
     )
@@ -278,21 +253,7 @@ interface ItemDao {
         adult: Boolean,
     ): List<ItemEntity>
 
-    @Query(
-        """
-        SELECT groupName, COUNT(*) AS count FROM items
-        WHERE kind = :kind AND COALESCE(region, 'none') NOT IN (:hidden) AND ('g:' || kind || ':' || groupName) NOT IN (:hidden)
-            AND NOT ('scan:dead' IN (:hidden) AND id IN (SELECT itemId FROM channel_scan WHERE hidden = 1)) AND (:adult OR adult = 0)
-            $KIDS_ONLY
-            AND NOT ('placeholder' IN (:hidden) AND kind = 0
-                AND ((' ' || searchName) GLOB '* no event*' OR (' ' || searchName) GLOB '* no live event*'))
-            AND NOT ('247' IN (:hidden)
-                AND ((' ' || lower(groupName || ' ' || name) || ' ') GLOB '*[^0-9]24[/ x-]7[^0-9]*'
-                    OR (' ' || lower(groupName || ' ' || name) || ' ') GLOB '*[^0-9]247[^0-9]*'
-                    OR (' ' || lower(groupName || ' ' || name) || ' ') GLOB '*[^0-9]24 / 7[^0-9]*'))
-        GROUP BY groupName ORDER BY MIN(sortOrder)
-        """,
-    )
+    @Query(GROUP_COUNTS)
     fun groups(
         kind: Int,
         hidden: List<String>,
@@ -318,8 +279,7 @@ interface ItemDao {
             )) AS guideMatch,
             h.okAt, h.deadAt, h.height,
             (('scan:dead' IN (:hidden) AND i.id IN (SELECT itemId FROM channel_scan WHERE hidden = 1))
-                OR ('placeholder' IN (:hidden)
-                    AND ((' ' || i.searchName) GLOB '* no event*' OR (' ' || i.searchName) GLOB '* no live event*'))) AS held
+                OR ('placeholder' IN (:hidden) AND (i.tags & ${ItemTags.PLACEHOLDER}) != 0)) AS held
         FROM items i
         LEFT JOIN channel_health h ON h.itemId = i.id
         WHERE i.kind = 0
@@ -355,12 +315,7 @@ interface ItemDao {
             AND i.id IN (SELECT docid FROM items_fts WHERE items_fts MATCH :match)
             AND COALESCE(i.region, 'none') NOT IN (:hidden) AND ('g:' || i.kind || ':' || i.groupName) NOT IN (:hidden)
             AND NOT ('scan:dead' IN (:hidden) AND i.id IN (SELECT itemId FROM channel_scan WHERE hidden = 1))
-            AND NOT ('placeholder' IN (:hidden) AND i.kind = 0
-                AND ((' ' || i.searchName) GLOB '* no event*' OR (' ' || i.searchName) GLOB '* no live event*'))
-            AND NOT ('247' IN (:hidden)
-                AND ((' ' || lower(i.groupName || ' ' || i.name) || ' ') GLOB '*[^0-9]24[/ x-]7[^0-9]*'
-                    OR (' ' || lower(i.groupName || ' ' || i.name) || ' ') GLOB '*[^0-9]247[^0-9]*'
-                    OR (' ' || lower(i.groupName || ' ' || i.name) || ' ') GLOB '*[^0-9]24 / 7[^0-9]*'))
+            $TAGGED_HIDDEN_I
             AND (:adult OR i.adult = 0)
             $KIDS_ONLY_I
         ORDER BY i.sortOrder

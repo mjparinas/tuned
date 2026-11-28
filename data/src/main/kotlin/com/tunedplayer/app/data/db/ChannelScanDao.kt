@@ -12,12 +12,7 @@ interface ChannelScanDao {
         """
         SELECT id FROM items
         WHERE kind = 0 AND COALESCE(region, 'none') NOT IN (:hidden) AND ('g:' || kind || ':' || groupName) NOT IN (:hidden)
-            AND NOT ('placeholder' IN (:hidden)
-                AND ((' ' || searchName) GLOB '* no event*' OR (' ' || searchName) GLOB '* no live event*'))
-            AND NOT ('247' IN (:hidden) AND kind = 0
-                AND ((' ' || lower(groupName || ' ' || name) || ' ') GLOB '*[^0-9]24[/ x-]7[^0-9]*'
-                    OR (' ' || lower(groupName || ' ' || name) || ' ') GLOB '*[^0-9]247[^0-9]*'
-                    OR (' ' || lower(groupName || ' ' || name) || ' ') GLOB '*[^0-9]24 / 7[^0-9]*'))
+            $TAGGED_HIDDEN
             AND (:adult OR adult = 0)
         ORDER BY sortOrder
         """,

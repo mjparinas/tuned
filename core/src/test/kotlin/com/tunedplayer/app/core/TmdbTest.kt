@@ -54,4 +54,16 @@ class TmdbTest {
         assertEquals("teaser", Tmdb.trailer(videos.take(2)))
         assertNull(Tmdb.trailer(emptyList()))
     }
+
+    @Test
+    fun aGridTileGetsTheSmallerPosterAndABigViewKeepsTheFullOne() {
+        val poster = "https://image.tmdb.org/t/p/w500/abc.jpg"
+        assertEquals("https://image.tmdb.org/t/p/w342/abc.jpg", Tmdb.posterFor(poster, 300))
+        assertEquals("https://image.tmdb.org/t/p/w342/abc.jpg", Tmdb.posterFor(poster, 342))
+        assertEquals(poster, Tmdb.posterFor(poster, 343))
+        // Size not known yet, a backdrop, or the provider's own picture: left as it is.
+        assertEquals(poster, Tmdb.posterFor(poster, 0))
+        assertEquals("https://image.tmdb.org/t/p/w1280/b.jpg", Tmdb.posterFor("https://image.tmdb.org/t/p/w1280/b.jpg", 200))
+        assertEquals("http://provider.example/logo.png", Tmdb.posterFor("http://provider.example/logo.png", 200))
+    }
 }

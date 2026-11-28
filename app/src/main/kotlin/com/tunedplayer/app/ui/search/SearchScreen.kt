@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -22,6 +23,7 @@ import androidx.compose.material.icons.filled.Radar
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
@@ -71,15 +73,20 @@ import com.tunedplayer.app.ui.common.remoteTextInput
 import com.tunedplayer.app.ui.common.searchBoxTrailing
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
-import kotlinx.coroutines.async
-import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.channelFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.mapLatest
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 
 /** One search across Live TV, Movies and Shows, typed or spoken (also what the Assistant and TV remote open). */
 @OptIn(ExperimentalCoroutinesApi::class, FlowPreview::class)
@@ -89,45 +96,70 @@ class SearchViewModel(
     private val container = app.container
     val query = MutableStateFlow("")
 
+    /**
+     * What a search found so far. Each section lands as soon as its own read is done (Melvin, 2026-11-28: "make the
+     * app more responsive"), so names show while the guide is still being searched; [done] is false until all four
+     * are in, which keeps "Nothing found" back and shows the bar at the top.
+     */
     data class Results(
         val channels: List<ChannelWithNow> = emptyList(),
         val movies: List<ItemEntity> = emptyList(),
         val shows: List<ShowSummary> = emptyList(),
         val guide: List<GuideHit> = emptyList(),
         val now: Long = 0,
+        val done: Boolean = true,
     ) {
         val empty get() = channels.isEmpty() && movies.isEmpty() && shows.isEmpty() && guide.isEmpty()
     }
+
+    /** The last results shown, kept on screen (with the bar) while the next search's first section is read. */
+    @Volatile private var shown: Results? = null
 
     val results =
         combine(
             query.debounce(200).distinctUntilChanged(),
             container.settings.settings,
         ) { q, s -> Triple(q, s.hiddenKeys(), s.showAdult) }
-            .mapLatest { (q, hidden, adult) ->
+            .flatMapLatest { (q, hidden, adult) ->
                 val text = Search.normalize(q).trim()
-                if (text.isEmpty()) {
-                    null
-                } else {
-                    val items = container.db.items()
-                    val match = Search.match(text)
-                    // The three lists are separate reads, so they run side by side on the database's reader connections.
-                    val now = System.currentTimeMillis()
-                    coroutineScope {
-                        val channels = async { items.searchChannels(text, match, now, hidden, adult, LIMIT) }
-                        val movies = async { items.searchMovies(match, hidden, adult, LIMIT) }
-                        val shows = async { items.searchShows(match, hidden, adult, LIMIT) }
-                        // The whole week's guide, not only what's on within the hour (Melvin, 2026-11-20).
-                        val guide =
-                            async {
-                                attempt("Search", "guide search") {
-                                    GuideSearchIndex.search(container.db, text, now, hidden, adult, GUIDE_LIMIT)
-                                }.getOrDefault(emptyList())
-                            }
-                        Results(channels.await(), movies.await(), shows.await(), guide.await(), now)
-                    }
-                }
-            }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
+                if (text.isEmpty()) flowOf(null) else search(text, hidden, adult)
+            }.onEach { shown = it }
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
+
+    private fun search(
+        text: String,
+        hidden: List<String>,
+        adult: Boolean,
+    ): Flow<Results> = channelFlow {
+        shown?.let { send(it.copy(done = false)) }
+        val db = container.db
+        val items = db.items()
+        val match = Search.match(text)
+        val now = System.currentTimeMillis()
+        val lock = Mutex()
+        var found = Results(now = now, done = false)
+        var left = SECTIONS
+
+        // The four lists are separate reads, so they run side by side on the database's reader connections, and
+        // each one shows as soon as it's read. A failed one is logged and stays empty; the rest still show.
+        fun <T> section(
+            what: String,
+            read: suspend () -> List<T>,
+            put: Results.(List<T>) -> Results,
+        ) = launch {
+            val rows = attempt("Search", "Couldn't search $what") { read() }.getOrDefault(emptyList())
+            lock.withLock {
+                left--
+                found = found.put(rows).copy(done = left == 0)
+                send(found)
+            }
+        }
+        section("channels", { GuideSearchIndex.searchChannels(db, text, match, now, hidden, adult, LIMIT) }) { copy(channels = it) }
+        section("films", { items.searchMovies(match, hidden, adult, LIMIT) }) { copy(movies = it) }
+        section("shows", { items.searchShows(match, hidden, adult, LIMIT) }) { copy(shows = it) }
+        // The whole week's guide, not only what's on within the hour (Melvin, 2026-11-20).
+        section("the guide", { GuideSearchIndex.search(db, text, now, hidden, adult, GUIDE_LIMIT) }) { copy(guide = it) }
+    }
 
     /** Which channels are favourites, live, so a heart fills the moment it's tapped. */
     val favourites = container.picks.favourites.value
@@ -142,6 +174,7 @@ class SearchViewModel(
     private companion object {
         const val LIMIT = 25
         const val GUIDE_LIMIT = 40
+        const val SECTIONS = 4
     }
 }
 
@@ -209,7 +242,11 @@ fun SearchScreen(
         },
     ) { padding ->
         val r = results
-        if (r != null && r.empty) {
+        // Searching: a thin bar under the box while any section is still being read, over what's already found.
+        if (r != null && !r.done) {
+            LinearProgressIndicator(Modifier.padding(padding).fillMaxWidth().height(2.dp))
+        }
+        if (r != null && r.done && r.empty) {
             Text(
                 stringResource(R.string.search_nothing, text.trim()),
                 style = MaterialTheme.typography.bodyLarge,

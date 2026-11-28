@@ -34,7 +34,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         CatchUpItemEntity::class,
         ShowDetailsEntity::class,
     ],
-    version = 25,
+    version = 26,
     exportSchema = true,
 )
 abstract class TunedDatabase : RoomDatabase() {
@@ -114,6 +114,7 @@ abstract class TunedDatabase : RoomDatabase() {
                 MIGRATION_22_23,
                 MIGRATION_23_24,
                 MIGRATION_24_25,
+                MIGRATION_25_26,
             ).addCallback(FirstProfile)
             // Going back to an older release (installing an older APK) can't keep a newer database: start it afresh
             // rather than crash on every launch. Upgrades always migrate, above.
@@ -457,6 +458,23 @@ abstract class TunedDatabase : RoomDatabase() {
                     for ((name, sql) in ftsTriggers) db.execSQL("CREATE TRIGGER IF NOT EXISTS room_fts_content_sync_items_fts_$name $sql")
                 }
             }
+
+        /**
+         * Widens the category index so the category chips count from it alone, taking the place of the narrower
+         * one, so a refresh keeps the same number of indexes to write.
+         */
+        val MIGRATION_25_26 =
+            object : Migration(25, 26) {
+                override fun migrate(db: SupportSQLiteDatabase) {
+                    db.execSQL("DROP INDEX IF EXISTS `index_items_kind_groupName`")
+                    db.execSQL(
+                        "CREATE INDEX IF NOT EXISTS `$CATEGORY_INDEX` " +
+                            "ON `items` (`kind`, `groupName`, `region`, `adult`, `tags`, `sortOrder`)",
+                    )
+                }
+            }
+
+        internal const val CATEGORY_INDEX = "index_items_kind_groupName_region_adult_tags_sortOrder"
 
         private const val FTS_INSERT = "INSERT INTO `items_fts`(`docid`, `searchName`) VALUES (NEW.`rowid`, NEW.`searchName`); END"
 

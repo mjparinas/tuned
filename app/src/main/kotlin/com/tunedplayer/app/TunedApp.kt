@@ -21,6 +21,7 @@ import com.tunedplayer.app.diagnostics.CrashReporter
 import com.tunedplayer.app.diagnostics.FreezeWatch
 import com.tunedplayer.app.diagnostics.Lighter
 import com.tunedplayer.app.diagnostics.launchSafely
+import com.tunedplayer.app.ui.common.PosterSize
 import com.tunedplayer.app.work.CloudSyncWorker
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -160,8 +161,10 @@ class TunedApp :
         val lighter = Lighter.on.value
         return ImageLoader
             .Builder(context)
-            .components { add(OkHttpNetworkFetcherFactory(callFactory = { container.http })) }
-            .memoryCache { MemoryCache.Builder().maxSizePercent(context, if (lighter) LIGHTER_MEMORY_SHARE else MEMORY_SHARE).build() }
+            .components {
+                add(PosterSize)
+                add(OkHttpNetworkFetcherFactory(callFactory = { container.http }))
+            }.memoryCache { MemoryCache.Builder().maxSizePercent(context, if (lighter) LIGHTER_MEMORY_SHARE else MEMORY_SHARE).build() }
             .diskCache {
                 DiskCache
                     .Builder()
