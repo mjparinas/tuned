@@ -280,7 +280,7 @@ class QuickPagingTest {
     }
 
     @Test
-    fun theLastLengthsAreAGuessWhenTheAppOpensAgain() = runBlocking {
+    fun theLastLengthsAreAGuessWhenTheAppOpensAgain() = runBlocking<Unit> {
         db.items().insertAll((1L..300L).map { item(it, 0, "Channel $it") })
         val file = File(context.cacheDir, "list-counts-test").apply { delete() }
         val before = ListCounts(db, scope, file)
