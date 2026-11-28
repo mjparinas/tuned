@@ -230,6 +230,12 @@
     <string name="settings_header_troubleshooting">Fehlerbehebung</string>
     <string name="settings_logs_summary">Absturzberichte und das aktuelle Protokoll zum Lesen, Kopieren oder Teilen. Ohne Anmeldedaten.</string>
     <string name="logs_title">Protokolle</string>
+    <string name="settings_speed_trace">Geschwindigkeits-Trace aufzeichnen</string>
+    <string name="settings_speed_trace_summary">Startet Tuned neu und misst den Start und die nächsten 20 Sekunden, um langsame Stellen auf diesem Gerät zu finden. Die Zeiten stehen in den Protokollen.</string>
+    <string name="settings_speed_trace_restarting">Tuned wird zum Aufzeichnen neu gestartet…</string>
+    <string name="settings_speed_trace_recording">Aufzeichnung, noch %1$d s. Nutze Tuned wie gewohnt.</string>
+    <string name="settings_speed_trace_done">Fertig. Die Zeiten stehen in den Protokollen.</string>
+    <string name="settings_speed_trace_done_home">Fertig: Die Startseite war %1$s s nach dem Start von Tuned zu sehen. Die Zeiten stehen in den Protokollen.</string>
     <string name="logs_copy">Protokoll kopieren</string>
     <string name="logs_copied">Protokoll kopiert</string>
     <string name="logs_share">Protokoll teilen</string>

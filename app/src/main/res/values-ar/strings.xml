@@ -246,6 +246,12 @@
     <string name="settings_header_troubleshooting">حل المشكلات</string>
     <string name="settings_logs_summary">تقارير الأعطال والسجل الأخير، للقراءة أو النسخ أو المشاركة. بيانات الدخول مستبعدة.</string>
     <string name="logs_title">السجلات</string>
+    <string name="settings_speed_trace">تسجيل تتبّع السرعة</string>
+    <string name="settings_speed_trace_summary">يعيد تشغيل Tuned ويقيس بدء تشغيله والثواني العشرين التالية، لإيجاد مواضع البطء على هذا الجهاز. تُحفظ القياسات في السجلات.</string>
+    <string name="settings_speed_trace_restarting">جارٍ إعادة تشغيل Tuned للتسجيل…</string>
+    <string name="settings_speed_trace_recording">جارٍ التسجيل، بقي %1$d ث. استخدم Tuned كالمعتاد.</string>
+    <string name="settings_speed_trace_done">تم. القياسات في السجلات.</string>
+    <string name="settings_speed_trace_done_home">تم: ظهرت الشاشة الرئيسية بعد %1$s ث من بدء Tuned. القياسات في السجلات.</string>
     <string name="logs_copy">نسخ السجل</string>
     <string name="logs_copied">نُسخ السجل</string>
     <string name="logs_share">مشاركة السجل</string>

@@ -51,13 +51,13 @@ import com.tunedplayer.app.premium.DeviceSeatsClient
 import com.tunedplayer.app.premium.Premium
 import com.tunedplayer.app.updates.GitHubUpdates
 import com.tunedplayer.app.work.BrowseWarm
-import com.tunedplayer.app.work.TitlePrefetch
 import com.tunedplayer.app.work.OfflineWorker
 import com.tunedplayer.app.work.QuietStart
 import com.tunedplayer.app.work.Reminders
 import com.tunedplayer.app.work.ScanWorker
 import com.tunedplayer.app.work.ScheduledRecordings
 import com.tunedplayer.app.work.SyncScheduler
+import com.tunedplayer.app.work.TitlePrefetch
 import com.tunedplayer.app.work.TvHome
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob

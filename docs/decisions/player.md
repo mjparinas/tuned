@@ -69,6 +69,15 @@ Melvin asked for auto-reconnect and player gestures. Both are on by default and 
 
 **Episode names everywhere** (Melvin, 2026-11-17: "if you can find the actual name of an episode, prioritize that over showing the season number and episode number"). Continue Watching cards read "The Simpsons · Kamp Krusty" instead of "The Simpsons · S4 E1", the player's title is the episode's name with "The Simpsons · S4 E1" beneath it, and Downloads lists episodes by name with TMDB's screenshot (a season's picture is its first episode's screenshot). All go through `MetadataRepository.cachedEpisode` and `episode`: the device's answer first, otherwise one show search and one season request, both kept, so every other episode of that season is known after. Nothing waits for it: the number and the provider's picture show until the name arrives, and nothing is asked offline. On a show's page, an episode TMDB has no name for uses the words after the number in the provider's title ("Severance S01E10 - The We We Are" reads "The We We Are", through `Episodes.title`), and a title that is only the show and its number reads "Episode 1" once rather than "Episode 1" over "Harbour Town S01E01" (2026-11-18, UI review).
 
+## Changing channel (Melvin, 2026-11-28)
+
+Melvin, 2026-11-28, yes to "faster channel zapping: tear down the old stream and start the new one sooner, with the channel's logo and name showing instantly" (buffering the next and previous channel was dropped: it would open a second connection).
+
+- **The channel card** (`player/ChannelZap.kt`): the moment a live channel is opened, flipped to, typed or picked, a card at the lower left shows its logo, number and name, then what's on from the guide. It goes 1.5 s after the picture comes (8 s at most), when the controls come up, and never shows while casting or in picture-in-picture.
+- **Quick flips** (`core/ChannelFlips`): a flip after a pause changes the stream at once; flips within 0.6 s of each other only move the card, and the stream changes once, 0.3 s after the last, to where they stopped. Up five times quickly opens one more connection rather than five, and reaches the fifth channel sooner. The remote, swipes, the on-screen buttons and media keys all go through it (`ViewPlayer`); auto-tune and backup copies don't.
+- **The old stream goes faster.** With pause and rewind on, the last channel's pieces (up to half an hour) leave their folder in one rename and are deleted on a quiet thread; they used to be deleted one by one before the next channel's stream could open. The new stream still waits for the old one to close, so there is never a second connection.
+- Each change's time to picture goes into a speed trace when one is recording ([diagnostics](diagnostics.md#record-a-speed-trace-melvin-2026-11-28)).
+
 ## Backup copies (2026-11-17)
 
 From the app audit, Melvin picked "backup streams per channel". Providers list one channel several times ("ESPN", "US| ESPN HD", "US| ESPN FHD", "ESPN (Backup)"), and when one copy dies another usually works.

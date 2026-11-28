@@ -230,6 +230,12 @@
     <string name="settings_header_troubleshooting">Sorun giderme</string>
     <string name="settings_logs_summary">Çökme raporları ve son günlük; okumak, kopyalamak veya paylaşmak için. Giriş bilgileri dâhil değildir.</string>
     <string name="logs_title">Günlükler</string>
+    <string name="settings_speed_trace">Hız izi kaydet</string>
+    <string name="settings_speed_trace_summary">Tuned’ı yeniden başlatır, açılışını ve sonraki 20 saniyeyi ölçer; bu cihazdaki yavaş noktaları bulmak için. Süreler Günlükler’e yazılır.</string>
+    <string name="settings_speed_trace_restarting">Kayıt için Tuned yeniden başlatılıyor…</string>
+    <string name="settings_speed_trace_recording">Kaydediliyor, %1$d sn kaldı. Tuned’ı her zamanki gibi kullanın.</string>
+    <string name="settings_speed_trace_done">Bitti. Süreler Günlükler’de.</string>
+    <string name="settings_speed_trace_done_home">Bitti: Ana sayfa, Tuned açıldıktan %1$s sn sonra ekrandaydı. Süreler Günlükler’de.</string>
     <string name="logs_copy">Günlüğü kopyala</string>
     <string name="logs_copied">Günlük kopyalandı</string>
     <string name="logs_share">Günlüğü paylaş</string>

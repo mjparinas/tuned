@@ -234,6 +234,12 @@
     <string name="settings_header_troubleshooting">Solución de problemas</string>
     <string name="settings_logs_summary">Informes de fallos y el registro reciente, para leer, copiar o compartir. Sin datos de acceso.</string>
     <string name="logs_title">Registros</string>
+    <string name="settings_speed_trace">Grabar un registro de velocidad</string>
+    <string name="settings_speed_trace_summary">Reinicia Tuned y mide su inicio y los 20 segundos siguientes, para encontrar lentitudes en este dispositivo. Los tiempos van a Registros.</string>
+    <string name="settings_speed_trace_restarting">Reiniciando Tuned para grabar…</string>
+    <string name="settings_speed_trace_recording">Grabando, quedan %1$d s. Usa Tuned como siempre.</string>
+    <string name="settings_speed_trace_done">Listo. Los tiempos están en Registros.</string>
+    <string name="settings_speed_trace_done_home">Listo: el inicio apareció %1$s s después de abrir Tuned. Los tiempos están en Registros.</string>
     <string name="logs_copy">Copiar registro</string>
     <string name="logs_copied">Registro copiado</string>
     <string name="logs_share">Compartir registro</string>

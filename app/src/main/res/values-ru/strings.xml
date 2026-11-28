@@ -238,6 +238,12 @@
     <string name="settings_header_troubleshooting">Устранение неполадок</string>
     <string name="settings_logs_summary">Отчёты о сбоях и недавний журнал, чтобы прочитать, скопировать или отправить. Без данных для входа.</string>
     <string name="logs_title">Журналы</string>
+    <string name="settings_speed_trace">Записать трассировку скорости</string>
+    <string name="settings_speed_trace_summary">Перезапускает Tuned и замеряет запуск и следующие 20 секунд, чтобы найти медленные места на этом устройстве. Замеры попадут в журналы.</string>
+    <string name="settings_speed_trace_restarting">Перезапуск Tuned для записи…</string>
+    <string name="settings_speed_trace_recording">Запись, осталось %1$d с. Пользуйтесь Tuned как обычно.</string>
+    <string name="settings_speed_trace_done">Готово. Замеры в журналах.</string>
+    <string name="settings_speed_trace_done_home">Готово: главный экран появился через %1$s с после запуска Tuned. Замеры в журналах.</string>
     <string name="logs_copy">Копировать журнал</string>
     <string name="logs_copied">Журнал скопирован</string>
     <string name="logs_share">Поделиться журналом</string>

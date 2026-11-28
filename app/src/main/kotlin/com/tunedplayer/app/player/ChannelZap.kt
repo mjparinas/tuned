@@ -181,7 +181,13 @@ internal class ChannelZap(
         logo.visibility = if (item.logo.isNullOrBlank()) View.GONE else View.VISIBLE
         item.logo?.takeIf { it.isNotBlank() }?.let { url ->
             attempt(TAG, "Couldn't load a channel logo") {
-                SingletonImageLoader.get(activity).enqueue(ImageRequest.Builder(activity).data(url).target(ImageViewTarget(logo)).build())
+                SingletonImageLoader.get(activity).enqueue(
+                    ImageRequest
+                        .Builder(activity)
+                        .data(url)
+                        .target(ImageViewTarget(logo))
+                        .build(),
+                )
             }
         }
         card.visibility = View.VISIBLE

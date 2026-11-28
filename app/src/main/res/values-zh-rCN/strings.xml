@@ -226,6 +226,12 @@
     <string name="settings_header_troubleshooting">故障排除</string>
     <string name="settings_logs_summary">崩溃报告和最近的日志，可查看、复制或分享。不含登录信息。</string>
     <string name="logs_title">日志</string>
+    <string name="settings_speed_trace">录制速度追踪</string>
+    <string name="settings_speed_trace_summary">重新启动 Tuned，并记录启动及之后 20 秒的耗时，以找出此设备上的慢点。耗时写入日志。</string>
+    <string name="settings_speed_trace_restarting">正在重新启动 Tuned 以录制…</string>
+    <string name="settings_speed_trace_recording">录制中，还剩 %1$d 秒。照常使用 Tuned 即可。</string>
+    <string name="settings_speed_trace_done">完成。耗时在日志中。</string>
+    <string name="settings_speed_trace_done_home">完成：Tuned 启动后 %1$s 秒主页出现在屏幕上。耗时在日志中。</string>
     <string name="logs_copy">复制日志</string>
     <string name="logs_copied">已复制日志</string>
     <string name="logs_share">分享日志</string>

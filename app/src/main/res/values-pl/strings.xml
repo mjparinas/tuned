@@ -238,6 +238,12 @@
     <string name="settings_header_troubleshooting">Rozwiązywanie problemów</string>
     <string name="settings_logs_summary">Raporty awarii i ostatni dziennik do przeczytania, skopiowania lub udostępnienia. Bez danych logowania.</string>
     <string name="logs_title">Dzienniki</string>
+    <string name="settings_speed_trace">Nagraj ślad szybkości</string>
+    <string name="settings_speed_trace_summary">Uruchamia Tuned ponownie i mierzy start oraz kolejne 20 sekund, aby znaleźć wolne miejsca na tym urządzeniu. Czasy trafiają do Dzienników.</string>
+    <string name="settings_speed_trace_restarting">Ponowne uruchamianie Tuned do nagrania…</string>
+    <string name="settings_speed_trace_recording">Nagrywanie, zostało %1$d s. Używaj Tuned jak zwykle.</string>
+    <string name="settings_speed_trace_done">Gotowe. Czasy są w Dziennikach.</string>
+    <string name="settings_speed_trace_done_home">Gotowe: ekran główny pojawił się %1$s s po starcie Tuned. Czasy są w Dziennikach.</string>
     <string name="logs_copy">Kopiuj dziennik</string>
     <string name="logs_copied">Skopiowano dziennik</string>
     <string name="logs_share">Udostępnij dziennik</string>
