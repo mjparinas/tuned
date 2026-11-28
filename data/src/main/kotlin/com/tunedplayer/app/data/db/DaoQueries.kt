@@ -111,7 +111,7 @@ internal const val NOW_JOIN =
  * A tab's categories with how many streams each shows, in the playlist's order, for the category chips. Every column
  * it reads is in the category index ([TunedDatabase.CATEGORY_INDEX]), so it never opens a row.
  */
-internal const val GROUP_COUNTS =
+const val GROUP_COUNTS =
     "SELECT groupName, COUNT(*) AS count FROM items " +
         "WHERE kind = :kind AND COALESCE(region, 'none') NOT IN (:hidden) AND ('g:' || kind || ':' || groupName) NOT IN (:hidden) " +
         "AND NOT ('scan:dead' IN (:hidden) AND id IN (SELECT itemId FROM channel_scan WHERE hidden = 1)) AND (:adult OR adult = 0) " +

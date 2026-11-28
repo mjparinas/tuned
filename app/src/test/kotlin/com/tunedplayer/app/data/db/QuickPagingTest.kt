@@ -45,7 +45,7 @@ class QuickPagingTest {
         db.close()
     }
 
-    private fun refresh(size: Int = PAGE) = PagingSource.LoadParams.Refresh<Int>(null, size, false)
+    private fun refresh(size: Int = PAGE.toInt()) = PagingSource.LoadParams.Refresh<Int>(null, size, false)
 
     private suspend fun <T : Any> PagingSource<Int, T>.page(params: PagingSource.LoadParams<Int> = refresh()) =
         load(params) as PagingSource.LoadResult.Page<Int, T>

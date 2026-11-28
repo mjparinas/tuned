@@ -474,7 +474,7 @@ abstract class TunedDatabase : RoomDatabase() {
                 }
             }
 
-        internal const val CATEGORY_INDEX = "index_items_kind_groupName_region_adult_tags_sortOrder"
+        const val CATEGORY_INDEX = "index_items_kind_groupName_region_adult_tags_sortOrder"
 
         private const val FTS_INSERT = "INSERT INTO `items_fts`(`docid`, `searchName`) VALUES (NEW.`rowid`, NEW.`searchName`); END"
 
