@@ -4,6 +4,7 @@ import androidx.room.Dao
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 import androidx.room.Query
+import androidx.room.Transaction
 import androidx.room.Upsert
 import androidx.sqlite.db.SupportSQLiteDatabase
 import com.tunedplayer.app.core.Search
@@ -45,14 +46,29 @@ interface ChannelEditDao {
     @Query("DELETE FROM channel_edits WHERE itemId = :itemId")
     suspend fun delete(itemId: Long)
 
-    /** Shows a name and logo in every list, the guide, search and the player at once. */
-    @Query("UPDATE items SET name = :name, logo = :logo, searchName = :searchName WHERE id = :itemId")
+    /** Shows a name and logo in every list, the guide, search and the player at once, with the tags the new name has. */
+    @Transaction
     suspend fun show(
         itemId: Long,
         name: String,
         logo: String?,
         searchName: String,
+    ) {
+        rename(itemId, name, logo, searchName)
+        retag(itemId)
+    }
+
+    @Query("UPDATE items SET name = :name, logo = :logo, searchName = :searchName WHERE id = :itemId")
+    suspend fun rename(
+        itemId: Long,
+        name: String,
+        logo: String?,
+        searchName: String,
     )
+
+    /** Works out [ItemTags] again for a renamed stream. */
+    @Query("UPDATE items SET tags = ${ItemTags.SQL} WHERE id = :itemId")
+    suspend fun retag(itemId: Long)
 }
 
 /** Lays the person's renames and logos over a fresh copy of the playlist as each refresh saves it ([PlaylistWriter]). */
@@ -83,6 +99,7 @@ object ChannelEdits {
                 "UPDATE $table SET name = ?, logo = ?, searchName = ? WHERE id = ?",
                 arrayOf<Any?>(name ?: edit.originalName, logo ?: edit.originalLogo, edit.searchName, id),
             )
+            sql.execSQL("UPDATE $table SET tags = ${ItemTags.SQL} WHERE id = ?", arrayOf<Any?>(id))
         }
     }
 

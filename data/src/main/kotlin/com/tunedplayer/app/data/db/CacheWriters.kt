@@ -300,6 +300,7 @@ class PlaylistWriter(
         val rating = item.rating
         if (rating == null) bindNull(19) else bindDouble(19, rating)
         bindString(20, item.sortTitle)
+        bindLong(21, item.tags.toLong())
     }
 
     private fun SupportSQLiteStatement.bindText(
@@ -351,6 +352,7 @@ class PlaylistWriter(
                 "year",
                 "rating",
                 "sortTitle",
+                "tags",
             )
         val COLUMNS = COLUMN_LIST.joinToString()
         const val SCHEMA =
@@ -358,7 +360,7 @@ class PlaylistWriter(
                 "groupName TEXT NOT NULL, region TEXT, adult INTEGER NOT NULL, logo TEXT, url TEXT NOT NULL, tvgId TEXT, " +
                 "showKey TEXT, showName TEXT, season INTEGER, episode INTEGER, sortOrder INTEGER NOT NULL, " +
                 "number INTEGER NOT NULL DEFAULT 0, added INTEGER NOT NULL DEFAULT 0, year INTEGER, rating REAL, " +
-                "sortTitle TEXT NOT NULL DEFAULT ''"
+                "sortTitle TEXT NOT NULL DEFAULT '', tags INTEGER NOT NULL DEFAULT 0"
 
         /** A stream that came back exactly as it was. */
         val SAME = COLUMN_LIST.drop(1).joinToString(" AND ") { "i.$it IS n.$it" }
