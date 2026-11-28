@@ -44,7 +44,7 @@ The account is optional. If you sign in with Google or Apple, Tuned's service ke
 - your **email address and name** from that provider,
 - your **devices**: the name Android gives them (like "Pixel 8"), the kind of device, a scrambled device ID and when each was last used,
 - **what you bought**,
-- and, if you use it, **your backup**: saved playlists (including their logins), settings, profiles, favourites, lists and watch later. The last 5 versions are kept.
+- and, if you use it, **your backup**: saved playlists (including their logins), settings, profiles, favourites and lists. The last 5 versions are kept.
 
 The backup isn't encrypted by Tuned; only devices signed in to your account can read it. You can delete it, or your whole account, on the account page any time.
 

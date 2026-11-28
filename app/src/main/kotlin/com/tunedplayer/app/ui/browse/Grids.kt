@@ -60,7 +60,6 @@ import com.tunedplayer.app.data.FavouriteShows
 import com.tunedplayer.app.data.db.ContinueRow
 import com.tunedplayer.app.data.db.ItemEntity
 import com.tunedplayer.app.data.db.ShowSummary
-import com.tunedplayer.app.data.db.WatchLaterEntity
 import com.tunedplayer.app.ui.common.FastScrollbar
 import com.tunedplayer.app.ui.common.SKELETON_ROWS
 import com.tunedplayer.app.ui.common.firstLoad
@@ -72,7 +71,7 @@ import com.tunedplayer.app.ui.common.tvFocusItem
 import com.tunedplayer.app.ui.common.tvPagedGrid
 import com.tunedplayer.app.ui.common.windowWidthDp
 import com.tunedplayer.app.ui.library.LibraryViewModel
-import com.tunedplayer.app.ui.library.watchLaterRow
+import com.tunedplayer.app.ui.library.favouritesRow
 
 @Composable
 internal fun MovieGrid(
@@ -91,7 +90,6 @@ internal fun MovieGrid(
     val picker = rememberListPicker()
     val library: LibraryViewModel = viewModel()
     val watched by library.watched.collectAsStateWithLifecycle()
-    val later by library.laterKeys.collectAsStateWithLifecycle()
     val ratings by vm.ratingProgress.collectAsStateWithLifecycle()
     val state = rememberLazyGridState()
     val focus = rememberTvFocus(focusReturn)
@@ -107,7 +105,7 @@ internal fun MovieGrid(
         ) {
             ratingProgress(ratings?.takeIf { !it.tv })
             continueWatching(vm, ContentKind.MOVIE, onPlay)
-            watchLaterRow(shows = false, visible = { fullList(vm, ContentKind.MOVIE) }, onOpenMovie = onOpenMovie, onOpenShow = { _, _ -> })
+            favouritesRow(shows = false, visible = { fullList(vm, ContentKind.MOVIE) }, onOpenMovie = onOpenMovie, onOpenShow = { _, _ -> })
             if (movies.firstLoad) items(SKELETON_ROWS) { PosterPlaceholder() }
             items(count = movies.itemCount, key = movies.itemKey { it.id }) { index ->
                 val movie: ItemEntity? = movies[index]
@@ -118,7 +116,6 @@ internal fun MovieGrid(
                     val rating by produceState<Double?>(null, movie.name) { value = vm.rating(movie.name, tv = false) }
                     // A tap opens the film's page; Play now is in the long-press menu for a straight start.
                     val done = movie.id in watched
-                    val saved = WatchLaterEntity.movieKey(movie.id) in later
                     Poster(
                         modifier =
                             Modifier.tvFocusItem(focus, movie.id, first = index == 0).then(
@@ -138,9 +135,6 @@ internal fun MovieGrid(
                         onPlayNow = { onPlay(movie.id) },
                         extraMenu =
                             listOf(
-                                stringResource(if (saved) R.string.watch_later_remove else R.string.watch_later_add) to {
-                                    library.toggleLater(LibraryViewModel.movie(movie.id, movie.name, movie.logo))
-                                },
                                 stringResource(if (done) R.string.mark_unwatched else R.string.mark_watched) to {
                                     library.setWatched(listOf(movie.id), !done)
                                 },
@@ -169,8 +163,6 @@ internal fun ShowGrid(
 ) {
     val shows = vm.shows.collectAsLazyPagingItems()
     val favourites by vm.favouriteIds.collectAsStateWithLifecycle()
-    val library: LibraryViewModel = viewModel()
-    val later by library.laterKeys.collectAsStateWithLifecycle()
     val ratings by vm.ratingProgress.collectAsStateWithLifecycle()
     val state = rememberLazyGridState()
     val focus = rememberTvFocus(focusReturn)
@@ -186,7 +178,7 @@ internal fun ShowGrid(
         ) {
             ratingProgress(ratings?.takeIf { it.tv })
             continueWatching(vm, ContentKind.SERIES, onPlay)
-            watchLaterRow(shows = true, visible = { fullList(vm, ContentKind.SERIES) }, onOpenMovie = {}, onOpenShow = onOpenShow)
+            favouritesRow(shows = true, visible = { fullList(vm, ContentKind.SERIES) }, onOpenMovie = {}, onOpenShow = onOpenShow)
             if (shows.firstLoad) items(SKELETON_ROWS) { PosterPlaceholder() }
             items(count = shows.itemCount, key = shows.itemKey { it.showKey }) { index ->
                 val show: ShowSummary? = shows[index]
@@ -223,18 +215,6 @@ internal fun ShowGrid(
                         favourite = favourite,
                         onClick = { onOpenShow(show.showKey, show.showName) },
                         onToggleFavourite = { vm.toggleShowFavourite(show.showKey, favourite) },
-                        extraMenu =
-                            listOf(
-                                stringResource(
-                                    if (WatchLaterEntity.showKey(show.showKey) in
-                                        later
-                                    ) {
-                                        R.string.watch_later_remove
-                                    } else {
-                                        R.string.watch_later_add
-                                    },
-                                ) to { library.toggleLater(LibraryViewModel.show(show.showKey, show.showName, art.image ?: show.logo)) },
-                            ),
                     )
                 }
             }
@@ -245,7 +225,7 @@ internal fun ShowGrid(
 }
 
 /**
- * The poster grids' scroll bar. The rows across the top (Continue Watching, Watch later) come before the posters,
+ * The poster grids' scroll bar. The rows across the top (Continue Watching, Favourites) come before the posters,
  * so a grid index is moved back by them before it's looked up among the [count] posters.
  */
 @Composable

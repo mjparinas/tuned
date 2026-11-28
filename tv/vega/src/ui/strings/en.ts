@@ -240,18 +240,28 @@ export const en = {
     simkl: "Simkl",
     simklHint: "Movies and episodes you watch here show up in your Simkl history, as from the Tuned app on your phone.",
     simklConnect: "Connect Simkl",
-    simklCode: (site: string) => "On your phone or computer, go to " + site + " and type this code:",
-    simklWaiting: "Waiting for the code…",
-    simklConnected: (user: string | null) => (user ? "Connected as " + user + "" : "Connected"),
-    simklScrobble: "Scrobble what you watch",
+    trackerCode: (site: string) => `On your phone or computer, go to ${site} and type this code:`,
+    trackerWaiting: "Waiting for the code…",
+    trackerConnected: (user: string | null) => (user ? `Connected as ${user}` : "Connected"),
+    trackerScrobble: "Scrobble what you watch",
     simklScrobbleHint: "Tell Simkl what's playing, so it lands in your history and Watching now.",
-    simklDisconnect: "Disconnect",
+    trackerDisconnect: "Disconnect",
     simklProblem: {
         offline: "Couldn't reach Simkl. Check the TV's internet connection and try again.",
         expired: "The code ran out before it was typed. Try again for a new one.",
         denied: "Simkl didn't let Tuned sign in. Try again later.",
     },
     simklPremium: "Simkl comes with Premium, through your Tuned account.",
+    trakt: "Trakt",
+    traktHint: "Movies and episodes you watch here show up in your Trakt history, as from the Tuned app on your phone.",
+    traktConnect: "Connect Trakt",
+    traktScrobbleHint: "Tell Trakt what's playing, so it lands in your history and Watching now.",
+    traktProblem: {
+        offline: "Couldn't reach Trakt. Check the TV's internet connection and try again.",
+        expired: "The code ran out before it was typed. Try again for a new one.",
+        denied: "Trakt didn't let Tuned sign in. Try again later.",
+    },
+    traktPremium: "Trakt comes with Premium, through your Tuned account.",
 };
 
 export type Strings = typeof en;

@@ -7,6 +7,7 @@ import com.tunedplayer.app.data.db.ListEntity
 import com.tunedplayer.app.data.db.ListItemEntity
 import com.tunedplayer.app.data.db.TunedDatabase
 import com.tunedplayer.app.data.db.WatchLaterEntity
+import com.tunedplayer.app.diagnostics.attempt
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
@@ -279,6 +280,8 @@ class SyncCopyRepository(
         } else {
             applyLegacyLibrary(contents)
         }
+        // A device that hasn't updated still sends Watch later; it is part of Favourites now.
+        attempt("SyncCopy", "Watch later into Favourites failed") { WatchLaterFold.fold(db) }
         ChannelEditor(db).replaceAll(contents.channelEdits.map { ChannelEditEntity(it.itemId, it.name, it.logo, "", null) })
         val guideChanged = contents.guideFixes?.let { applyGuideFixes(it) } ?: false
         contents.intros?.let { intros.replaceAll(it) }

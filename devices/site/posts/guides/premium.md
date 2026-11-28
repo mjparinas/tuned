@@ -68,7 +68,7 @@ One-time and yearly can't be mixed: lifetime Premium takes one-time seats, yearl
 
 An account is optional; watching never needs one. You sign in with Google or Apple, on the website or in the app (on a TV, with your phone). It:
 
-- **backs up** your playlists, settings, profiles, favourites, lists and watch later, so a new phone or TV restores them in one step,
+- **backs up** your playlists, settings, profiles, favourites and lists, so a new phone or TV restores them in one step,
 - **holds your seats**, wherever you bought Premium,
 - lets you **remove a device** on the website, even if you've lost all of them.
 

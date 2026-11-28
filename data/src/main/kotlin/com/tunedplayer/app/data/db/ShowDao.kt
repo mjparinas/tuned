@@ -64,6 +64,10 @@ interface ShowDao {
     @Query("SELECT DISTINCT showKey FROM show_groups")
     suspend fun showKeys(): List<String>
 
+    /** The name and picture of each show in [keys], for the Favourites row on Shows. */
+    @Query("SELECT showKey, MIN(showName) AS showName, MAX(logo) AS logo FROM show_groups WHERE showKey IN (:keys) GROUP BY showKey")
+    suspend fun showArt(keys: List<String>): List<WarmShowArtRow>
+
     /** Opened Xtream shows' own covers ([ShowCoverEntity]). */
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun saveCovers(covers: List<ShowCoverEntity>)

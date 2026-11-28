@@ -28,6 +28,19 @@ interface LibraryDao {
     @Query("SELECT itemId FROM favourites WHERE profileId = $ME")
     fun favouriteIds(): Flow<List<Long>>
 
+    /** Every favourite, newest first: the Shows tab's Favourites row picks the whole shows from it. */
+    @Query("SELECT * FROM favourites WHERE profileId = $ME ORDER BY addedAt DESC")
+    fun favouritesNewest(): Flow<List<FavouriteEntity>>
+
+    /** Favourite films, newest first, for the Favourites row across the top of Movies (where Watch later was). */
+    @Query(
+        """
+        SELECT i.id, i.name, i.logo FROM favourites f JOIN items i ON i.id = f.itemId
+        WHERE f.profileId = $ME AND i.kind = 1 ORDER BY f.addedAt DESC LIMIT 60
+        """,
+    )
+    fun favouriteFilms(): Flow<List<WarmArtRow>>
+
     @Query("SELECT EXISTS(SELECT 1 FROM favourites WHERE itemId = :itemId AND profileId = $ME)")
     fun isFavourite(itemId: Long): Flow<Boolean>
 

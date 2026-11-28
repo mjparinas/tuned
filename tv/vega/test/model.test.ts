@@ -1128,7 +1128,7 @@ describe("your own lists, account Favourites and renamed channels on Vega", () =
     });
 });
 
-describe("Simkl on Vega", () => {
+describe("Trakt and Simkl on Vega", () => {
     const login = { kind: "xtream" as const, server: "http://tv.example", username: "u", password: "p" };
     const answers: Record<string, unknown> = {
         account: { user_info: { auth: 1, status: "Active" } },
@@ -1153,6 +1153,7 @@ describe("Simkl on Vega", () => {
     const make = (backup: string) => {
         const sent: { path: string; body: any }[] = [];
         const polls = ["authorization_pending", "slow_down"];
+        const traktPolls = [400, 429];
         const fetch: Fetch = async (url, init) => {
             const u = new URL(url);
             const reply = (status: number, body: unknown) => ({
@@ -1179,13 +1180,37 @@ describe("Simkl on Vega", () => {
                 if (u.pathname === "/users/settings") return reply(200, { user: { name: "Robin" } });
                 return reply(201, {});
             }
+            if (u.host === "api.trakt.tv") {
+                sent.push({ path: `trakt${u.pathname}`, body: init?.body ? JSON.parse(init.body) : null });
+                if (u.pathname === "/oauth/device/code")
+                    return reply(200, {
+                        device_code: "td",
+                        user_code: "TR4K",
+                        verification_url: "https://trakt.tv/activate",
+                        expires_in: 600,
+                        interval: 1,
+                    });
+                if (u.pathname === "/oauth/device/token") {
+                    const status = traktPolls.shift();
+                    return status
+                        ? reply(status, {})
+                        : reply(200, {
+                              access_token: "ta",
+                              refresh_token: "tr",
+                              expires_in: 90 * 86400,
+                              created_at: Math.floor(Date.now() / 1000),
+                          });
+                }
+                if (u.pathname === "/users/settings") return reply(200, { user: { username: "robin" } });
+                return reply(201, {});
+            }
             if (u.pathname === "/api/backup") return { ...reply(200, null), text: async () => backup };
             if (u.pathname === "/api/auth/token") return reply(200, { status: "ok", token: "tok", email: "" });
             return reply(200, { seat: "active" });
         };
         let at = 0;
         const player = { open: async () => {}, close: async () => {}, position: () => ({ at, length: 2000 }) };
-        const model = new AppModel({ ...services(xtream), fetch, player, simklId: "cid" });
+        const model = new AppModel({ ...services(xtream), fetch, player, simklId: "cid", traktId: "tid" });
         return { model, sent, seek: (s: number) => (at = s) };
     };
     const noProfiles = '{"fingerprint":"f","changedAt":1,"copy":{"version":3,"playlists":[],"profiles":[],"settings":{}}}';
@@ -1203,20 +1228,20 @@ describe("Simkl on Vega", () => {
         const { model, sent, seek } = make(noProfiles);
         await model.useLogin(login);
         await model.accountLinked("link");
-        expect(model.simklOn()).toBe(true);
+        expect(model.trackerOn("simkl")).toBe(true);
         jest.useFakeTimers();
-        const connecting = model.connectSimkl();
+        const connecting = model.connectTracker("simkl");
         await jest.advanceTimersByTimeAsync(0);
-        expect(model.state.simkl.code?.userCode).toBe("QW7E");
-        expect(model.state.simkl.busy).toBe(true);
+        expect(model.state.trackers.simkl.code?.userCode).toBe("QW7E");
+        expect(model.state.trackers.simkl.busy).toBe(true);
         await jest.advanceTimersByTimeAsync(1000); // waiting
         await jest.advanceTimersByTimeAsync(1000); // slow down: the next ask waits 6 s
         await jest.advanceTimersByTimeAsync(5000);
-        expect(model.state.simkl.signedIn).toBe(false);
+        expect(model.state.trackers.simkl.signedIn).toBe(false);
         await jest.advanceTimersByTimeAsync(1000);
         await connecting;
         jest.useRealTimers();
-        expect(model.state.simkl).toMatchObject({ signedIn: true, user: "Robin", code: null, busy: false, problem: null });
+        expect(model.state.trackers.simkl).toMatchObject({ signedIn: true, user: "Robin", code: null, busy: false, problem: null });
 
         await model.playVod(movie);
         model.playback("playing");
@@ -1233,11 +1258,11 @@ describe("Simkl on Vega", () => {
         ]);
 
         // Scrobble off sends nothing; live TV and catch-up never do.
-        await model.setSimklScrobble(false);
+        await model.setTrackerScrobble("simkl", false);
         await model.playVod(movie);
         model.playback("playing");
         await model.stopPlaying();
-        await model.setSimklScrobble(true);
+        await model.setTrackerScrobble("simkl", true);
         await model.playVod({ ...movie, replay: true });
         model.playback("playing");
         await model.stopPlaying();
@@ -1250,20 +1275,46 @@ describe("Simkl on Vega", () => {
         await model.useLogin(login);
         await model.accountLinked("link");
         jest.useFakeTimers();
-        void model.connectSimkl();
+        void model.connectTracker("simkl");
         await jest.advanceTimersByTimeAsync(0);
-        model.cancelSimkl();
+        model.cancelTracker("simkl");
         await jest.advanceTimersByTimeAsync(10_000);
-        expect(model.state.simkl).toMatchObject({ signedIn: false, busy: false, code: null });
+        expect(model.state.trackers.simkl).toMatchObject({ signedIn: false, busy: false, code: null });
     });
 
-    it("takes the phone's Simkl sign-in from the account's backup", async () => {
+    it("connects Trakt beside Simkl, and both are told what plays", async () => {
+        const { model, sent, seek } = make(noProfiles);
+        await model.useLogin(login);
+        await model.accountLinked("link");
+        jest.useFakeTimers();
+        const connecting = model.connectTracker("trakt");
+        await jest.advanceTimersByTimeAsync(0);
+        expect(model.state.trackers.trakt.code?.userCode).toBe("TR4K");
+        await jest.advanceTimersByTimeAsync(1000); // 400: waiting
+        await jest.advanceTimersByTimeAsync(1000); // 429: the next ask waits a second longer
+        await jest.advanceTimersByTimeAsync(2000);
+        await connecting;
+        jest.useRealTimers();
+        expect(model.state.trackers.trakt).toMatchObject({ signedIn: true, user: "robin", code: null });
+        expect(model.state.trackers.simkl.signedIn).toBe(false);
+        await model.playVod(movie);
+        model.playback("playing");
+        seek(1800);
+        await model.stopPlaying();
+        await until(() => sent.filter((x) => x.path.startsWith("trakt/scrobble")).length === 2);
+        expect(sent.filter((x) => x.path.startsWith("/scrobble"))).toEqual([]);
+        expect(sent.find((x) => x.path === "trakt/scrobble/start")?.body).toMatchObject({ movie: { title: "Paper Boats", year: 2025 } });
+    });
+
+    it("takes the phone's Trakt and Simkl sign-ins and switches from the account's backup", async () => {
         const backup = `{"fingerprint":"f","changedAt":1,"copy":{"version":3,"playlists":[],"profiles":[],"settings":{},
-            "simkl":{"access":"a","refresh":"r","expiresAt":${Date.now() + 30 * 86400_000},"username":"Robin"}}}`;
+            "simkl":{"access":"a","refresh":"r","expiresAt":${Date.now() + 30 * 86400_000},"username":"Robin"},"simklScrobble":false,
+            "trakt":{"access":"a","refresh":"r","expiresAt":${Date.now() + 30 * 86400_000},"username":"robin"}}}`;
         const { model } = make(backup);
         await model.useLogin(login);
         await model.accountLinked("link");
-        await until(() => model.state.simkl.signedIn);
-        expect(model.state.simkl.user).toBe("Robin");
+        await until(() => model.state.trackers.simkl.signedIn && model.state.trackers.trakt.signedIn);
+        expect(model.state.trackers.simkl).toMatchObject({ user: "Robin", scrobble: false });
+        expect(model.state.trackers.trakt).toMatchObject({ user: "robin", scrobble: true });
     });
 });

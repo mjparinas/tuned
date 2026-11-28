@@ -3,7 +3,7 @@
 import * as React from "react";
 import { createRoot } from "react-dom/client";
 import { View } from "react-native";
-import { AppModel, CONTINUE, DEFAULT_PREFS, type State } from "../src/app/model";
+import { AppModel, CONTINUE, DEFAULT_PREFS, NO_TRACKER, type State } from "../src/app/model";
 import type { Http } from "../src/core/http";
 import type { Channel, Library, Lineup, Title } from "../src/core/models";
 import { memoryStore } from "../src/core/storage";
@@ -186,6 +186,7 @@ function model(patch: Partial<State>): AppModel {
         player: new VegaPlayer(),
         deviceName: "Preview",
         simklId: "preview",
+        traktId: "preview",
     });
     m.state = { ...m.state, ...patch };
     return m;
@@ -485,17 +486,27 @@ function Scene({ name }: { name: string }) {
             );
             return <BrowseScreen model={m} state={m.state} kind="movies" />;
         }
-        case "settings-simkl":
-        case "settings-simkl-on": {
+        case "settings-simkl-code":
+        case "settings-trakt-code": {
             const code = { userCode: "QW7E9K", verificationUrl: "https://simkl.com/pin", deviceCode: "", expiresAt: 0, intervalMs: 5000 };
             const m = model({
                 route: "settings",
                 lineup,
                 account,
-                simkl:
-                    name === "settings-simkl"
-                        ? { signedIn: false, user: null, scrobble: true, busy: true, code, problem: null }
-                        : { signedIn: true, user: "Alex", scrobble: true, busy: false, code: null, problem: null },
+                trackers:
+                    name === "settings-simkl-code"
+                        ? {
+                              trakt: { ...NO_TRACKER, signedIn: true, user: "alex" },
+                              simkl: { ...NO_TRACKER, busy: true, code },
+                          }
+                        : {
+                              trakt: {
+                                  ...NO_TRACKER,
+                                  busy: true,
+                                  code: { ...code, userCode: "7F3A9C21", verificationUrl: "https://trakt.tv/activate" },
+                              },
+                              simkl: { ...NO_TRACKER, signedIn: true, user: "Alex" },
+                          },
             });
             return <SettingsScreen model={m} state={m.state} />;
         }

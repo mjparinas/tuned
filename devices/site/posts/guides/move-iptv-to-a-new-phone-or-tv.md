@@ -22,7 +22,7 @@ Tuned is a player for your own playlist and includes no channels. What moves is 
 | Settings (guide, playback, hidden groups) | Yes          | Yes           |
 | Favourites                                | Yes          | Yes           |
 | Profiles, their pictures and PINs         | Yes          | Yes           |
-| Your own lists and watch later            | Yes          | Yes           |
+| Your own lists                            | Yes          | Yes           |
 | Trakt and Simkl connections               | Yes          | Yes           |
 | Restore after the old device is gone      | No           | Yes           |
 

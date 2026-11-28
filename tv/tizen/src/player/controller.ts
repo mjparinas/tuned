@@ -40,6 +40,23 @@ let ticket = 0;
 let dialTimer: ReturnType<typeof setTimeout> | undefined;
 let saveTimer: ReturnType<typeof setInterval> | undefined;
 
+/** Told when a movie or episode starts, pauses or stops, with where it is (Trakt and Simkl, services.ts). */
+export type WatchEvent = "start" | "pause" | "stop";
+let watcher: ((event: WatchEvent, item: Item, positionMs: number, durationMs: number) => void) | null = null;
+
+export function onWatch(w: typeof watcher): void {
+    watcher = w;
+}
+
+function tell(event: WatchEvent, item: Item, positionMs = player?.position() ?? 0, durationMs = player?.duration() ?? 0): void {
+    if (!watcher || item.kind === "live" || isReplay(item)) return;
+    try {
+        watcher(event, item, positionMs, durationMs);
+    } catch (error) {
+        log("Player", `Watch hook failed: ${String((error as Error)?.message ?? error)}`);
+    }
+}
+
 export function usePlayer(p: TvPlayer): void {
     player = p;
     guard = new OneConnection(p);
@@ -60,7 +77,9 @@ export const playerEvents = {
             return;
         }
         void forgetPosition(p.item);
-        void stop();
+        const length = player?.duration() ?? 0;
+        tell("stop", p.item, length, length);
+        void finish();
     },
     onError: (message: string) => {
         log("Player", `Stream error: ${message}`);
@@ -100,6 +119,8 @@ export async function play(item: Item, list: readonly Item[] = [item], startAt =
     const before = playback.get();
     const previous = before.item && before.item.id !== item.id && before.item.kind === "live" ? before.item : before.previous;
     savePosition();
+    // What played before stops where it got to, before the next one opens.
+    if (before.item && before.state === "playing") tell("stop", before.item);
     const mine = ++ticket;
     playback.set({ item, list, state: "opening", buffering: false, paused: false, dial: "", previous });
     const login = current()?.login;
@@ -109,6 +130,7 @@ export async function play(item: Item, list: readonly Item[] = [item], startAt =
         await guard.play(core.address(item.url), { headers, startAt });
         if (mine !== ticket) return;
         playback.set((p) => ({ ...p, state: "playing" }));
+        tell("start", item, startAt);
         clearInterval(saveTimer);
         saveTimer = setInterval(savePosition, 10_000);
     } catch (error) {
@@ -150,6 +172,12 @@ export async function retry(): Promise<void> {
 
 /** Ends playback and closes the connection. */
 export async function stop(): Promise<void> {
+    const p = playback.get();
+    if (p.item && p.state === "playing") tell("stop", p.item);
+    await finish();
+}
+
+async function finish(): Promise<void> {
     if (playback.get().state === "idle") return;
     savePosition();
     clearInterval(saveTimer);
@@ -197,6 +225,7 @@ export function togglePause(): void {
     if (!player || p.state !== "playing") return;
     if (p.paused) player.resume();
     else player.pause();
+    if (p.item) tell(p.paused ? "start" : "pause", p.item);
     playback.set((x) => ({ ...x, paused: !x.paused }));
 }
 
